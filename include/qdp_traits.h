@@ -11,6 +11,45 @@
 
 namespace QDP {
 
+template<class T>       struct JITContainerType;
+template<class T>       struct WordSize;
+template<class T,int N> struct GetLimit;
+
+
+  // GetLimit extracts the size of the specified QDP type level
+
+  template<class T> 
+  struct GetLimit<T,0>
+  {
+    enum { Limit_v = T::ThisSize };
+  };
+  
+  template<class T,int N> 
+  struct GetLimit
+  {
+    enum { Limit_v = GetLimit<typename T::Sub_t,N-1>::Limit_v };
+  };
+
+
+
+
+template<> struct JITContainerType<int>  { typedef int  Type_t; };
+template<> struct JITContainerType<float>  { typedef float  Type_t; };
+template<> struct JITContainerType<double> { typedef double  Type_t; };
+
+
+template< template<class> class T, class T2> 
+struct WordSize< T<T2> >
+{
+  enum { Size = WordSize<T2>::Size };
+};
+
+template<class T>
+struct WordSize {
+  enum { Size=sizeof(T) };
+};
+
+
 //-----------------------------------------------------------------------------
 // Traits class for returning the subset-ted class name of a outer grid class
 //-----------------------------------------------------------------------------

@@ -22,6 +22,7 @@
  * Matrix.
  */
 
+#include "qdp_primscalarjit.h"
 #include "qdp_primscalar.h"
 #include "qdp_primmatrix.h"
 #include "qdp_primvector.h"

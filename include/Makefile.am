@@ -141,6 +141,18 @@ MEMORY_HDRS = qdp_allocator.h \
 	      qdp_default_allocator.h \
 	      qdp_qcdoc_allocator.h
 
+CUDA_HDRS = qdp_cuda.h \
+	    qdp_cache.h \
+	    qdp_mapresource.h \
+            qdp_pool_allocator.h \
+	    qdp_cuda_allocator.h \
+	    qdp_deviceparams.h \
+	    qdp_jit.h qdp_layoutfunc.h \
+	    qdp_word.h qdp_wordjit.h \
+	    qdp_jitfunction.h qdp_pete_visitors.h qdp_qdptypejit.h \
+	    qdp_outerjit.h qdp_realityjit.h qdp_primscalarjit.h
+
+
 # All the include files - avoid flattening of dirs by using nobase
 nobase_include_HEADERS = \
 		qdp_config.h \
@@ -191,7 +203,6 @@ nobase_include_HEADERS = \
 		qdp_specializations.h \
 		qdp_subset.h \
 		qdp_traits.h \
-		qdp_word.h \
 		qdp_dispatch.h \
 	        qdp_scalar_specific.h \
 	        qdp_parscalar_specific.h \
@@ -216,7 +227,8 @@ nobase_include_HEADERS = \
 		$(QCDOC_HDRS) \
 		$(SSESITE_HDRS) \
 		$(SSEVEC_HDRS) \
-	        $(BAGEL_HDRS)
+	        $(BAGEL_HDRS) \
+	        $(CUDA_HDRS)
 
 nodist_include_HEADERS = qdp_config_internal.h
 

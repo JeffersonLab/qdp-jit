@@ -13,10 +13,23 @@ AM_INIT_AUTOMAKE
 dnl defines...
 AC_CONFIG_HEADERS([include/qdp_config_internal.h])
 
+
+AC_ARG_WITH(cuda,
+  AC_HELP_STRING([--with-cuda=CUDADIR], [ Specify CUDA installation directory (default: /usr/local/cuda)]),
+  [ cuda_home="${withval}" ],
+  [ cuda_home="/usr/local/cuda" ]
+)
+AC_MSG_NOTICE([Configuring with CUDA installed in = ${cuda_home}])
+AC_DEFINE_UNQUOTED(CUDA_DIR,"${cuda_home}",[CUDA install path])
+AC_SUBST(SUBST_CUDA_DIR,"${cuda_home}")
+
+
 dnl
 dnl
 dnl --with-xxxx and --enable-xxxx switches 
 dnl
+
+
 
 dnl --enable-Nd
 AC_ARG_ENABLE(Nd,
@@ -125,6 +138,25 @@ AC_ARG_ENABLE(filedb,
   [filedb_enabled="${enableval}"],
   [filedb_enabled="yes"]
 )
+
+
+dnl if test "X${gpu_enabled}X" == "XyesX"; 
+dnl then
+     ac_gcc="$CXX"     				      
+     ac_generics="no"
+     ac_sse="0"
+     ac_sse2="0"
+     ac_sse3="0"
+     ac_3dnow="0"
+     AC_DEFINE_UNQUOTED([CUDA_GCC],"${ac_gcc}",[CUDA C/C++ Compiler])
+     AC_DEFINE_UNQUOTED(QDP_IS_QDPJIT, ${gpu_enabled}, [Enable GPU/JIT])
+     AC_SUBST(CUDA_LIBS, [-lcuda])
+     AC_SUBST(CUDA_CXXFLAGS, [-I${cuda_home}/include])
+dnl else
+dnl     AC_MSG_NOTICE([Not using GPUs ])
+dnl fi
+
+
 
 dnl --enable-sse
 AC_ARG_ENABLE(sse,

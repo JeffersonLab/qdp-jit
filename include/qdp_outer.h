@@ -4,7 +4,6 @@
 #define QDP_OUTER_H
 
 #include "qdp_config.h"
-#include "qdp_allocator.h"
 
 /*! \file
  * \brief Outer grid classes
@@ -32,105 +31,147 @@ namespace QDP {
 
 //! Outer grid Scalar class */
 /*! All outer lattices are of OScalar or OLattice type */
-template<class T>
-class OScalar: public QDPType<T, OScalar<T> >
-{
-public:
-  OScalar() {}
-  ~OScalar() {}
+  template<class T>
+  class OScalar: public QDPType<T, OScalar<T> >
+  {
+  public:
+    typedef T SubType_t;
 
-  //---------------------------------------------------------
-  //! construct dest = const
-  OScalar(const typename WordType<T>::Type_t& rhs)
+    OScalar() {
+      QDPCache::Instance().sayHi();
+      alloc_mem();
+    }
+
+    virtual ~OScalar() {
+      free_mem();
+    }
+
+
+    OScalar(const typename WordType<T>::Type_t& rhs)
     {
+      QDPCache::Instance().sayHi();
+      alloc_mem();
       typedef typename InternalScalar<T>::Type_t  Scalar_t;
       elem() = Scalar_t(rhs);
     }
 
 
-  //! construct dest = 0
-  OScalar(const Zero& rhs)
+    OScalar(const Zero& rhs)
     {
+      QDPCache::Instance().sayHi();
+      alloc_mem();
       this->assign(rhs);
     }
 
 
-  //! conversion by constructor  OScalar<T> = OScalar<T1>
-  template<class T1>
-  OScalar(const OScalar<T1>& rhs)
+    template<class T1>
+    OScalar(const OScalar<T1>& rhs)
     {
+      QDPCache::Instance().sayHi();
+      alloc_mem();
       this->assign(rhs);
     }
 
 
-  //! conversion by constructor  OScalar = Expr
-  template<class RHS, class T1>
-  OScalar(const QDPExpr<RHS, OScalar<T1> >& rhs)
+    template<class RHS, class T1>
+    OScalar(const QDPExpr<RHS, OScalar<T1> >& rhs)
     {
+      QDPCache::Instance().sayHi();
+      alloc_mem();
       this->assign(rhs);
     }
 
 
-  //---------------------------------------------------------
-  // Operators
-  // NOTE: all this->assignment-like operators except operator= are
-  // inherited from QDPType
-
-  inline
-  OScalar& operator=(const typename WordType<T>::Type_t& rhs)
+    inline
+    OScalar& operator=(const typename WordType<T>::Type_t& rhs)
     {
       return this->assign(rhs);
     }
 
-  inline
-  OScalar& operator=(const Zero& rhs)
+    inline
+    OScalar& operator=(const Zero& rhs)
     {
       return this->assign(rhs);
     }
 
-  template<class T1,class C1>
-  inline
-  OScalar& operator=(const QDPType<T1,C1>& rhs)
+    template<class T1,class C1>
+    inline
+    OScalar& operator=(const QDPType<T1,C1>& rhs)
     {
       return this->assign(rhs);
     }
 
-  template<class T1,class C1>
-  inline
-  OScalar& operator=(const QDPExpr<T1,C1>& rhs)
+    template<class T1,class C1>
+    inline
+    OScalar& operator=(const QDPExpr<T1,C1>& rhs)
     {
       return this->assign(rhs);
     }
 
 
-  //! Use this for default operator=
-  inline
-  OScalar& operator=(const OScalar& rhs)
+    inline
+    OScalar& operator=(const OScalar& rhs)
     {
       return this->assign(rhs);
     }
 
 
-  //---------------------------------------------------------
-  // Subsets
-  OSubScalar<T> operator[](const Subset& s) const
+
+    OSubScalar<T>  operator[](const Subset& s) const
     {return OSubScalar<T>(*this,s);}
 
-  //---------------------------------------------------------
-  //! Deep copy constructor
-  OScalar(const OScalar& a): F(a.F) {/*fprintf(stderr,"copy OScalar\n");*/}
 
 
-public:
-  inline T& elem() {return F;}
-  inline const T& elem() const {return F;}
 
-  inline T& elem(int i) {return F;}  // The indexing is a nop
-  inline const T& elem(int i) const {return F;}  // The indexing is a nop
+    OScalar(const OScalar& rhs) {
+      QDPCache::Instance().sayHi();
+      alloc_mem();
+      this->assign(rhs);
+    }
 
-private:
-  T F;
-};
+
+  public:
+
+
+    inline bool onDevice() const {
+      return QDPCache::Instance().onDevice( myId );
+    }
+    inline T* getF() const { assert_on_host(); return F; };
+    inline T* getFdev() const {
+      return (T*)QDPCache::Instance().getDevicePtr( myId );
+    }
+
+
+
+    inline T& elem() { assert_on_host(); return *F;  }
+    inline const T& elem() const { assert_on_host(); return *F; }
+    inline T& elem(int i) { assert_on_host(); return *F; }
+    inline const T& elem(int i) const { assert_on_host(); return *F; }
+
+  private:
+
+
+    inline void alloc_mem() {
+      myId = QDPCache::Instance().registrate( sizeof(T) , 0 );
+    }
+    inline void free_mem() {
+      QDPCache::Instance().signoff( myId );
+    }
+    inline void assert_on_host() const {
+      // Here or somewhere we sould make sure that 
+      // if the pointer is still valid, we do not much
+      if (QDPCache::Instance().getHostPtr( (void**)&F , myId )) {
+	CudaSyncTransferStream();
+      }
+    }
+
+
+  private:
+
+    mutable T* F;
+    mutable int myId;
+
+  };
 
 
 //! Ascii input
@@ -247,50 +288,50 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 
 //! Outer grid Lattice type
 /*! All outer lattices are of OScalar or OLattice type */
-template<class T> 
-class OLattice: public QDPType<T, OLattice<T> >
-{
-public:
-  OLattice() 
+  template<class T> 
+  class OLattice: public QDPType<T, OLattice<T> >
+  {
+  public:
+    typedef T Subtype;
+
+    OLattice()
     {
       alloc_mem("create");
     }
-  ~OLattice()
+
+
+    virtual ~OLattice()
     {
       free_mem();
     }
 
 
-  //---------------------------------------------------------
-  //! conversion by constructor  OLattice<T> = OScalar<T1>
-  template<class T1>
-  OLattice(const OScalar<T1>& rhs)
+
+    template<class T1>
+    OLattice(const OScalar<T1>& rhs)
     {
       alloc_mem("construct from OScalar");
       this->assign(rhs);
     }
 
 
-  //! conversion by constructor  OLattice<T> = OLattice<T1>
-  template<class T1>
-  OLattice(const OLattice<T1>& rhs)
+    template<class T1>
+    OLattice(const OLattice<T1>& rhs)
     {
       alloc_mem("construct from OLattice");
       this->assign(rhs);
     }
 
 
-  //! conversion by constructor  OLattice = Expr
-  template<class RHS, class T1>
-  OLattice(const QDPExpr<RHS, OLattice<T1> >& rhs)
+    template<class RHS, class T1>
+    OLattice(const QDPExpr<RHS, OLattice<T1> >& rhs)
     {
       alloc_mem("construct from expr");
       this->assign(rhs);
     }
 
 
-  //! construct OLattice = const
-  OLattice(const typename WordType<T>::Type_t& rhs)
+    OLattice(const typename WordType<T>::Type_t& rhs)
     {
       alloc_mem("construct from const");
 
@@ -299,8 +340,7 @@ public:
     }
 
 
-  //! construct OLattice = 0
-  OLattice(const Zero& rhs)
+    OLattice(const Zero& rhs)
     {
       alloc_mem("construct from zero");
       this->assign(rhs);
@@ -311,197 +351,162 @@ public:
   // NOTE: all assignment-like operators except operator= are
   // inherited from QDPType
 
-  inline
-  OLattice& operator=(const typename WordType<T>::Type_t& rhs)
+    inline
+    OLattice& operator=(const typename WordType<T>::Type_t& rhs)
     {
       return this->assign(rhs);
     }
 
-  inline
-  OLattice& operator=(const Zero& rhs)
+    inline
+    OLattice& operator=(const Zero& rhs)
     {
       return this->assign(rhs);
     }
 
-  template<class T1,class C1>
-  inline
-  OLattice& operator=(const QDPType<T1,C1>& rhs)
+    template<class T1,class C1>
+    inline
+    OLattice& operator=(const QDPType<T1,C1>& rhs)
     {
       return this->assign(rhs);
     }
 
-  template<class T1,class C1>
-  inline
-  OLattice& operator=(const QDPExpr<T1,C1>& rhs)
+    template<class T1,class C1>
+    inline
+    OLattice& operator=(const QDPExpr<T1,C1>& rhs)
     {
       return this->assign(rhs);
     }
 
-  inline
-  OLattice& operator=(const OLattice& rhs)
+    inline
+    OLattice& operator=(const OLattice& rhs)
     {
       return this->assign(rhs);
     }
 
 
-  //---------------------------------------------------------
-  // Subsets
-  OSubLattice<T> operator[](const Subset& s) const
+
+    OSubLattice<T> operator[](const Subset& s) const
     {return OSubLattice<T>(*this,s);}
 
-  //---------------------------------------------------------
-  //! Copy constructor
-  /*! For now, a deep copy */
-  OLattice(const OLattice& rhs)
+
+    OLattice(const OLattice& rhs)
     {
       alloc_mem("copy");
       this->assign(rhs);
     }
 
 
-public:
-  //! The backdoor
-  /*! 
-   * Used by optimization routines (e.g., SSE) that need the memory address of data.
-   * BTW: to make this a friend would be a real pain since functions are templatized.
-   */
-  inline T* getF() const {return F;}
 
-#ifndef QDP_USE_QCDOC
-  // Nop if not on QCDOC
+    inline bool onDevice() const {
+      return QDPCache::Instance().onDevice( myId );
+    }
+    inline T* getFdev() const {
+      return (T*)QDPCache::Instance().getDevicePtr( myId );
+    }
+    inline T* elem_devptr(int i) const {
+      return &((T*)QDPCache::Instance().getDevicePtr( myId ))[i];
+    }
+
+
+    inline T* getF() const { 
+      assert_on_host(); 
+      return F; 
+    }
+
+    inline T& elem(int i) { 
+      assert_on_host(); 
+      return F[i]; 
+    }
+    inline const T& elem(int i) const { 
+      assert_on_host(); 
+      return F[i]; 
+    }
+
+
   inline void moveToFastMemoryHint(bool copy=false) {}
-#else
-  // Special for QCDOC
-  inline
-  void moveToFastMemoryHint(bool copy=false) {
-
-    if( fast == 0x0 ) {
-      try { 
-	int nodeSites = Layout::sitesOnNode();
-	fast = (T*)QDP::Allocator::theQDPAllocator::Instance().allocate(sizeof(T)*nodeSites,QDP::Allocator::FAST);
-	if( copy ) { 
-	  for(int i=0; i < sizeof(T)*nodeSites; i++) {
-	    *(( unsigned char *)fast + i) = *((unsigned char *)slow + i);
-	  }
-	}
-	F=fast;
-      }
-      catch(std::bad_alloc) {
-	// Failed to get Fast Memory
-	fast = 0x0;
-	F=slow;
-      }
-    }
-  }
-#endif
-
-#ifndef QDP_USE_QCDOC
-  // Nop if not on QCDOC
   inline void revertFromFastMemoryHint(bool copy=false) {}
-#else
-  // Special for QCDOC
-  inline
-  void revertFromFastMemoryHint(bool copy=false) {
 
-    // If the memory is fast
-    if ( fast != 0x0 ) { 
 
-      // Copy if necessary
-      if(copy) { 
-	nodeSites = Layout::sitesOnNode();
-	for(int i=0; i < sizeof(T)*nodeSites; i++) { 
-	  *(( unsigned char *)slow + i) = *((unsigned char *)fast + i);
-	}
+  private:
+
+
+    inline void alloc_mem(const char* msg) { 
+      myId = QDPCache::Instance().registrate( Layout::sitesOnNode() * sizeof(T) , 1 ); 
+    }
+    inline void free_mem()  { 
+      QDPCache::Instance().signoff( myId ); 
+    }
+
+
+
+    inline void assert_on_host() const {
+      // Here or somewhere we sould make sure that 
+      // if the pointer is still valid, we do not much
+      if (QDPCache::Instance().getHostPtr( (void**)&F , myId )) {
+	CudaSyncTransferStream();
       }
-      // Free the fast memory
-      QDP::Allocator::theQDPAllocator::Instance().free(fast);
-
-      // Set the fast memory pointer to 0
-      fast = 0x0;
-
-      // Make slow memory active
-      F = slow;
-    }
-  }
-#endif 
-  
-  
-public:
-  inline T& elem(int i) {return F[i];}
-  inline const T& elem(int i) const {return F[i];}
-
-
-private:
-  //! Internal memory allocator
-  /*! 
-   * NOTE: compilers/run-time-libs like GNU do not seem to align on big boundaries 
-   * under an operator-new even if there are alignment attributes on types.
-   * However, GNU will align when vars are allocated on the stack (automatic vars).
-   * So, force alignment in general by allocating slop space.
-   */
-  inline void alloc_mem(const char* const p) 
-    {
-      // Barfs if allocator fails
-      try 
-      {
-	slow=(T*)QDP::Allocator::theQDPAllocator::Instance().allocate(sizeof(T)*Layout::sitesOnNode(),QDP::Allocator::DEFAULT);
-      // slow is active 
-	F=slow;
-      }
-      catch(std::bad_alloc) 
-      {
-	QDPIO::cerr << "Allocation failed in OLattice alloc_mem" << endl;
-	QDP::Allocator::theQDPAllocator::Instance().dump();
-	QDP_abort(1);
-      }
-
-#ifdef QDP_USE_QCDOC
-      // Make sure fast is set to 0x0
-      fast=0x0;
-#endif
     }
 
-  //! Internal memory free
-  inline void free_mem() 
-  {
-    if( slow != 0x0 ) 
-    { 
-      QDP::Allocator::theQDPAllocator::Instance().free(slow);
-      slow = 0x0;
-    }
-    F = slow;
-#ifdef QDP_USE_QCDOC 
-    if( fast != 0x0 ) { 
-      QDP::Allocator::theQDPAllocator::Instance().free(fast);      
-      fast = 0x0;
-    }
-#endif
-  }
+  private:
+
+    mutable T *F;
+    mutable int myId;
+
+  };
+
+template<class T> 
+struct JITContainerType<OLattice<T> >
+{
+  typedef OLatticeJIT<typename JITContainerType<T>::Type_t>  Type_t;
+};
 
 
-public:
-  //! Debugging info
-  void print_info(char *name)
-    {
-      QDP_info("Info: %s = OLattice[%d]=0x%x, this=0x%xn",
-	       name,Layout::sitesOnNode(),(void *)F,this);
-    }
-
-
-private:
-  T *F; // Alias to current memory space
-  T *slow; // Pointer to default slow memory space
-#ifdef QDP_USE_QCDOC
-  T *fast; // Pointer to fast memory space
-#endif
-
+template<class T> 
+struct JITContainerType<OScalar<T> >
+{
+  typedef OScalarJIT<typename JITContainerType<T>::Type_t>  Type_t;
 };
 
 
 /*! @} */  // end of group olattice
 
 
+template<class T>
+struct LeafFunctor<OLattice<T>, ParamLeaf>
+{
+  typedef typename JITContainerType< OLattice<T> >::Type_t  TypeA_t;
+  typedef TypeA_t  Type_t;
+  inline static
+  Type_t apply(const OLattice<T>& do_not_use, const ParamLeaf& p) 
+  {
+    return Type_t( p.getFunc() , p.getParamLattice( WordSize<T>::Size ) );
+  }
+};
 
+template<class T>
+struct LeafFunctor<OScalar<T>, ParamLeaf>
+{
+  typedef typename JITContainerType< OScalar<T> >::Type_t  TypeA_t;
+  typedef TypeA_t  Type_t;
+  inline static
+  Type_t apply(const OScalar<T>& do_not_use, const ParamLeaf& p) 
+  {
+    return Type_t( p.getFunc() , p.getParamScalar( WordSize<T>::Size ) );
+  }
+};
+
+
+template<class T>
+struct LeafFunctor<OLattice<T>, AddressLeaf>
+{
+  typedef int Type_t;
+  inline static
+  Type_t apply(const OLattice<T>& s, const AddressLeaf& p) 
+  {
+    p.setAddr(const_cast<OLattice<T>&>(s).getFdev());
+    return 0;
+  }
+};
 
 
 //-----------------------------------------------------------------------------

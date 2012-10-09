@@ -5,6 +5,8 @@
  * @brief  Various gauge readers/writers and propagator readers/writers.
  */
 
+#if 0
+
 #include "qdp.h"
 #include "qdp_iogauge.h"
 
@@ -748,3 +750,5 @@ void writeArchiv(const multi1d<LatticeColorMatrix>& u,
 
 
 } // namespace QDP;
+
+#endif

@@ -42,7 +42,6 @@ public:
   RScalar(const T1& rhs) : F(rhs) {}
 
   //---------------------------------------------------------
-#if 0
   //! dest = const
   /*! Fill with a constant. Will be promoted to underlying word type */
   inline
@@ -51,13 +50,18 @@ public:
       elem() = rhs;
       return *this;
     }
-#endif
 
   //! RScalar = RScalar
   /*! Set equal to another RScalar */
   template<class T1>
   inline
   RScalar& operator=(const RScalar<T1>& rhs) 
+    {
+      elem() = rhs.elem();
+      return *this;
+    }
+
+  RScalar& operator=(const RScalar& rhs) 
     {
       elem() = rhs.elem();
       return *this;
@@ -317,8 +321,14 @@ public:
   //! RComplex = RComplex
   /*! Set equal to another RComplex */
   template<class T1>
-  inline
   RComplex& operator=(const RComplex<T1>& rhs) 
+    {
+      real() = rhs.real();
+      imag() = rhs.imag();
+      return *this;
+    }
+
+  RComplex& operator=(const RComplex& rhs) 
     {
       real() = rhs.real();
       imag() = rhs.imag();
@@ -386,6 +396,22 @@ private:
   T re;
   T im;
 } QDP_ALIGN8;   // possibly force alignment
+
+
+template<class T> 
+struct JITContainerType<RScalar<T> >
+{
+  typedef RScalarJIT<typename JITContainerType<T>::Type_t>  Type_t;
+};
+
+
+template<class T> 
+struct JITContainerType<RComplex<T> >
+{
+  typedef RComplexJIT<typename JITContainerType<T>::Type_t>  Type_t;
+};
+
+
 
 
 //! Stream output

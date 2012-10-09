@@ -22,9 +22,41 @@ namespace QDP {
 		REAL64* norm2_results;
 		REAL64* innerProd_results;
 	}
-	
-	//! Private flag for status
-	static bool isInit = false;
+
+  //! Private flag for status
+  static bool isInit = false;
+
+
+  //! Public flag for using the GPU or not
+  bool QDPuseGPU = false;
+
+  void QDP_startGPU()
+  {
+    QDP_info_primary("Start using the GPU");
+    QDPuseGPU=true;
+    
+    CudaCreateStreams();
+    CUDAHostPoolAllocator::Instance().registerMemory();
+  }
+
+
+  //! Set the GPU device
+  void QDP_setGPU()
+  {
+    int deviceCount;
+    CudaGetDeviceCount(&deviceCount);
+    if (deviceCount == 0) {
+      QDP_error_exit("No CUDA devices found");
+    }
+    
+    int rank_QMP = QMP_get_node_number();
+    int dev      = rank_QMP % deviceCount;
+    
+    QDP_info("JIT: Setting active CUDA device to %d",dev);
+    CudaSetDevice( dev );
+  }
+
+
 	
 	//! Turn on the machine
 	void QDP_initialize(int *argc, char ***argv)
@@ -34,6 +66,12 @@ namespace QDP {
 			QDPIO::cerr << "QDP already inited" << endl;
 			QDP_abort(1);
 		}
+
+
+		CudaInit();
+		bool paramCC = false;
+		bool setPoolSize = false;
+
 		
 		//
 		// Process command line
@@ -113,6 +151,45 @@ namespace QDP {
 				setProgramProfileLevel(lev);
 			}
 #endif
+			else if (strcmp((*argv)[i], "-sm")==0) 
+			  {
+			    int uu;
+			    sscanf((*argv)[++i], "%d", &uu);
+			    paramCC=true;
+			    DeviceParams::Instance().setCC(uu);
+			  }
+			else if (strcmp((*argv)[i], "-sync")==0) 
+			  {
+			    DeviceParams::Instance().setSyncDevice(true);
+			  }
+			else if (strcmp((*argv)[i], "-poolsize")==0) 
+			  {
+			    float f;
+			    char c;
+			    sscanf((*argv)[++i],"%f%c",&f,&c);
+			    double mul;
+			    switch (tolower(c)) {
+			    case 'k': 
+			      mul=1024.; 
+			      break;
+			    case 'm': 
+			      mul=1024.*1024; 
+			      break;
+			    case 'g': 
+			      mul=1024.*1024*1024; 
+			      break;
+			    case 't':
+			      mul=1024.*1024*1024*1024;
+			      break;
+			    case '\0':
+			      break;
+			    default:
+			      QDP_error_exit("unknown multiplication factor");
+			    }
+			    size_t val = (size_t)((double)(f) * mul);
+			    CUDADevicePoolAllocator::Instance().setPoolSize(val);
+			    setPoolSize = true;
+			  }
 			else if (strcmp((*argv)[i], "-geom")==0) 
 			{
 				setGeomP = true;
@@ -169,6 +246,12 @@ namespace QDP {
 			}
 		}
 		
+
+		if (!setPoolSize)
+		  QDP_error_exit("Run-time argument -poolsize <size> missing. Please consult README.");
+		if (!paramCC)
+		  DeviceParams::Instance().setCC(20);
+
 		
 		QMP_verbose (QMP_verboseP);
 		
@@ -296,6 +379,12 @@ namespace QDP {
 			QDP_abort(1);
 		}
 		
+		FnMapRsrcMatrix::Instance().cleanup();
+
+
+		CUDAHostPoolAllocator::Instance().unregisterMemory();
+
+	
 		//
 		// finalise qmt
 		//

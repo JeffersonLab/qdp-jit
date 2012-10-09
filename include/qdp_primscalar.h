@@ -40,7 +40,6 @@ public:
   PScalar(const T1& rhs) : F(rhs) {}
 
   //---------------------------------------------------------
-#if 0
   //! dest = const
   /*! Fill with an integer constant. Will be promoted to underlying word type */
   inline
@@ -49,13 +48,17 @@ public:
       elem() = rhs;
       return *this;
     }
-#endif
 
   //! PScalar = PScalar
   /*! Set equal to another PScalar */
   template<class T1>
-  inline
   PScalar& operator=(const PScalar<T1>& rhs) 
+    {
+      elem() = rhs.elem();
+      return *this;
+    }
+
+  PScalar& operator=(const PScalar& rhs) 
     {
       elem() = rhs.elem();
       return *this;
@@ -161,6 +164,14 @@ public:
 private:
   T F;
 };
+
+
+template<class T> 
+struct JITContainerType<PScalar<T> >
+{
+  typedef PScalarJIT<typename JITContainerType<T>::Type_t>  Type_t;
+};
+
 
 
 // Input

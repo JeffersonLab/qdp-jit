@@ -31,6 +31,11 @@ typedef GammaTypeDP<Ns> GammaDP;
 
 // Aliases for a scalar architecture
 
+  typedef OLattice< PScalar< PScalar< RScalar< Word <REAL> > > > > NEWLatticeReal;
+  //  typedef OLattice< PScalar< RScalar< Word <REAL> > > > NEWLatticeReal;
+  //  typedef OLattice< RScalar< Word <REAL> > > NEWLatticeReal;
+
+
 // Fixed fermion type
 typedef OLattice< PSpinVector< PColorVector< RComplex<REAL>, Nc>, 4> > LatticeDiracFermion;
 typedef OLattice< PSpinVector< PColorVector< RComplex<REAL>, Nc>, 1> > LatticeStaggeredFermion;
@@ -53,7 +58,8 @@ typedef OLattice< PSpinMatrix< PColorMatrix< RComplex<REAL>, Nc>, Ns> > LatticeP
 typedef OLattice< PScalar< PScalar< RComplex<REAL> > > > LatticeComplex;
 
 typedef OLattice< PScalar< PSeed < RScalar<INTEGER32> > > > LatticeSeed;
-typedef OLattice< PScalar< PScalar< RScalar<INTEGER32> > > > LatticeInteger;
+  //typedef OLattice< PScalar< PScalar< RScalar<INTEGER32> > > > LatticeInteger;
+  typedef OLattice< PScalar< PScalar< RScalar< Word<INTEGER32> > > > > LatticeInteger;
 typedef OLattice< PScalar< PScalar< RScalar<REAL> > > > LatticeReal;
 typedef OLattice< PScalar< PScalar< RScalar<DOUBLE> > > > LatticeDouble;
 typedef OLattice< PScalar< PScalar< RScalar<LOGICAL> > > > LatticeBoolean;

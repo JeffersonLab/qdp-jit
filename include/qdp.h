@@ -99,6 +99,16 @@ namespace QDP {
 }
 
 #include "qdp_init.h"
+
+#include "cuda.h"
+#include "qdp_deviceparams.h"
+#include "qdp_cuda.h"
+#include "qdp_cuda_allocator.h"
+#include "qdp_pool_allocator.h"
+#include "qdp_cache.h"
+#include "qdp_jit.h"
+#include "qdp_layoutfunc.h"
+
 #include "qdp_forward.h"
 #include "qdp_multi.h"
 #include "qdp_arrays.h"
@@ -117,11 +127,15 @@ namespace QDP {
 
 
 #include "qdp_subset.h"
+#include "qdp_mapresource.h"
 #include "qdp_map.h"
 #include "qdp_stopwatch.h"
 
+#include "qdp_pete_visitors.h"
+
 #include "qdp_traits.h"
 #include "qdp_qdpexpr.h"
+#include "qdp_qdptypejit.h"
 #include "qdp_qdptype.h"
 #include "qdp_qdpsubtype.h"
 
@@ -135,11 +149,14 @@ namespace QDP {
 #include "qdp_newops.h"
 #include "qdp_optops.h"
 #include "qdp_profile.h"
-//#include "qdp_word.h"
+#include "qdp_wordjit.h"
+#include "qdp_word.h"
 #include "qdp_simpleword.h"
+#include "qdp_realityjit.h"
 #include "qdp_reality.h"
 #include "qdp_inner.h"
 #include "qdp_primitive.h"
+#include "qdp_outerjit.h"
 #include "qdp_outer.h"
 #include "qdp_outersubtype.h"
 
@@ -157,6 +174,8 @@ namespace QDP {
 namespace ThreadReductions { 
  
 }
+
+#include "qdp_jitfunction.h"
 
 #if defined(ARCH_SCALAR)
 // Architectural specific code to a single node/single proc box

@@ -1,30 +1,9 @@
 // -*- C++ -*-
-// ACL:license
-// ----------------------------------------------------------------------
-// This software and ancillary information (herein called "SOFTWARE")
-// called PETE (Portable Expression Template Engine) is
-// made available under the terms described here.  The SOFTWARE has been
-// approved for release with associated LA-CC Number LA-CC-99-5.
-// 
-// Unless otherwise indicated, this SOFTWARE has been authored by an
-// employee or employees of the University of California, operator of the
-// Los Alamos National Laboratory under Contract No.  W-7405-ENG-36 with
-// the U.S. Department of Energy.  The U.S. Government has rights to use,
-// reproduce, and distribute this SOFTWARE. The public may copy, distribute,
-// prepare derivative works and publicly display this SOFTWARE without 
-// charge, provided that this Notice and any statement of authorship are 
-// reproduced on all copies.  Neither the Government nor the University 
-// makes any warranty, express or implied, or assumes any liability or 
-// responsibility for the use of this SOFTWARE.
-// 
-// If SOFTWARE is modified to produce derivative works, such modified
-// SOFTWARE should be clearly marked, so as not to confuse it with the
-// version available from LANL.
-// 
-// For more information about PETE, send e-mail to pete@acl.lanl.gov,
-// or visit the PETE web page at http://www.acl.lanl.gov/pete/.
-// ----------------------------------------------------------------------
-// ACL:license
+// $Id: Header.h,v 1.3 2002-10-14 02:06:56 edwards Exp $
+
+/*! @file
+ * @brief Bulk of QDP operators produced by PETE
+ */
 
 #ifndef PETE_PETE_OPERATORTAGS_H
 #define PETE_PETE_OPERATORTAGS_H
@@ -37,7 +16,7 @@
 // THE FOLLOWING INPUT FILES WERE USED TO MAKE THIS FILE:
 //
 // MakeOperators
-// PeteOps.in
+// Tools/PeteOps.in
 //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -278,23 +257,6 @@ struct UnaryReturn<T, OpNot > {
   typedef bool Type_t;
 };
 
-template <class T1>
-struct OpCast
-{
-  PETE_EMPTY_CONSTRUCTORS_TEMPLATE(OpCast, T1)
-  template<class T2>
-  inline UnaryReturn<T2, OpCast<T1> >
-  operator()(const T2 &a) const
-  {
-    return T1(a);
-  }
-};
-
-template<class T1, class T2>
-struct UnaryReturn<T2, OpCast<T1> > {
-  typedef T1 Type_t;
-};
-
 struct OpAdd
 {
   PETE_EMPTY_CONSTRUCTORS(OpAdd)
@@ -324,7 +286,11 @@ struct OpMultiply
   inline typename BinaryReturn<T1, T2, OpMultiply >::Type_t
   operator()(const T1 &a, const T2 &b) const
   {
-    return (a * b);
+    
+    typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t  Ret_t;
+    Ret_t dest(a.getFunc());
+    mulRep(dest, a, b);
+    return dest;
   }
 };
 
@@ -754,32 +720,23 @@ struct OpAssign
   inline typename BinaryReturn<T1, T2, OpAssign >::Type_t
   operator()(const T1 &a, const T2 &b) const
   {
-    return (const_cast<T1 &>(a) = b );
+    return (const_cast<T1 &>(a) = b);
   }
 };
 
-template<class T1, class T2 >
-struct BinaryReturn<T1, T2, OpAssign > {
-  typedef T1 &Type_t;
-};
+
 
 struct FnWhere
 {
   PETE_EMPTY_CONSTRUCTORS(FnWhere)
   template<class T1, class T2, class T3>
-  inline typename TrinaryReturn<T1, T2, T3, FnWhere >::Type_t
+  inline typename TrinaryReturn<T1, T2, T3, FnWhere >
+  ::Type_t
   operator()(const T1 &a, const T2 &b, const T3 &c) const
   {
-//    if (a) return b; else return c;
-    return where(a, b, c);  // Must use a function since ? cannot be overloaded
+    if (a) return b; else return c;
   }
 };
 
 #endif // PETE_PETE_OPERATORTAGS_H
 
-// ACL:rcsinfo
-// ----------------------------------------------------------------------
-// $RCSfile: OperatorTags.h,v $   $Author: bjoo $
-// $Revision: 1.5 $   $Date: 2006-07-11 13:13:22 $
-// ----------------------------------------------------------------------
-// ACL:rcsinfo

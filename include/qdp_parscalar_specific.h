@@ -11,17 +11,16 @@
 
 namespace QDP {
 
-
 // Use separate defs here. This will cause subroutine calls under g++
 
 //-----------------------------------------------------------------------------
 // Layout stuff specific to a parallel architecture
+
 namespace Layout
 {
   //! coord[mu]  <- mu  : fill with lattice coord in mu direction
   LatticeInteger latticeCoordinate(int mu);
 }
-
 
 //-----------------------------------------------------------------------------
 // Internal ops with ties to QMP
@@ -355,31 +354,28 @@ template<class T, class T1, class Op, class RHS>
 void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs,
 	      const Subset& s)
 {
-//  cerr << "In evaluateSubset(olattice,olattice)" << endl;
-
 #if defined(QDP_USE_PROFILING)   
   static QDPProfile_t prof(dest, op, rhs);
   prof.time -= getClockTime();
 #endif
 
-  int numSiteTable = s.numSiteTable();
+  static CUfunction function;
 
-  user_arg<T,T1,Op,RHS> a(dest, rhs, op, s.siteTable().slice());
+  // Build the function
+  if (function == NULL)
+    {
+      std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
+      function = function_build(dest, op, rhs);
+      std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
+    }
+  else
+    {
+      std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
+    }
 
-  dispatch_to_threads< user_arg<T,T1,Op,RHS> >(numSiteTable, a, evaluate_userfunc);
+  // Execute the function
+  function_exec(function, dest, op, rhs);
 
-  ////////////////////
-  // Original code
-  ///////////////////
-
-  // General form of loop structure
-  //const int *tab = s.siteTable().slice();
-  //for(int j=0; j < s.numSiteTable(); ++j) 
-  //{
-  //int i = tab[j];
-//    fprintf(stderr,"eval(olattice,olattice): site %d\n",i);
-  //op(dest.elem(i), forEach(rhs, EvalLeaf1(i), OpCombine()));
-  //}
 
 #if defined(QDP_USE_PROFILING)   
   prof.time += getClockTime();

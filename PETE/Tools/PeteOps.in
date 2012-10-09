@@ -181,12 +181,13 @@ binaryOps
 -----
   TAG = "OpMultiply"
   FUNCTION = "operator*"
-  EXPR = "return (a * b);"
-  COMMENTA = "//! Binary multiply"
-  COMMENTB = "/*! 
-  @return (a * b)
-  @ingroup group1
-  @relates QDPType */"
+  EXPR = "
+    typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t  Ret_t;
+    Ret_t dest(a.getFunc());
+    mulRep(dest, a, b);
+    return dest;"
+  COMMENTA = ""
+  COMMENTB = ""
 -----
   TAG = "OpDivide"
   FUNCTION = "operator/"

@@ -18,6 +18,12 @@
 /* Build filedb */
 #undef BUILD_FILEDB
 
+/* CUDA install path */
+#undef CUDA_DIR
+
+/* CUDA C/C++ Compiler */
+#undef CUDA_GCC
+
 /* Define to 1 if you have the `gethostname' function. */
 #undef HAVE_GETHOSTNAME
 
@@ -48,6 +54,9 @@
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
 
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
@@ -56,6 +65,9 @@
 
 /* Enable memory debugging */
 #undef QDP_DEBUG_MEMORY
+
+/* Enable GPU/JIT */
+#undef QDP_IS_QDPJIT
 
 /* Number of color components */
 #undef QDP_NC

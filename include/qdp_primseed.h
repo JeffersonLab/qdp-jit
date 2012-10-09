@@ -104,6 +104,14 @@ private:
 };
 
 
+template<class T> 
+struct JITContainerType<PSeed<T> >
+{
+  typedef PSeedJIT<typename JITContainerType<T>::Type_t>  Type_t;
+};
+
+
+
 //! Text input
 template<class T>
 inline

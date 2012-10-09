@@ -34,6 +34,8 @@ public:
   //! Type of the container class
   typedef C Container_t;
 
+  QDPType(Jit& func_, int addr_) : C::C(func_,addr_) {}
+
   //! Main constructor 
   QDPType(){}
 
@@ -371,10 +373,12 @@ public:
     }
 
 public:
-  T& elem(int i) {return static_cast<const C*>(this)->elem(i);}
+  T* getFdev() const   { return static_cast<const C*>(this)->getFdev();}
+
+        T& elem(int i)       {return static_cast<const C*>(this)->elem(i);}
   const T& elem(int i) const {return static_cast<const C*>(this)->elem(i);}
 
-  T& elem() {return static_cast<const C*>(this)->elem();}
+        T& elem()       {return static_cast<const C*>(this)->elem();}
   const T& elem() const {return static_cast<const C*>(this)->elem();}
 };
 
@@ -451,6 +455,47 @@ struct LeafFunctor<QDPType<T,C>, EvalLeaf1>
       return Type_t(a.elem(f.val1()));
     }
 };
+
+
+
+template<class T>
+struct LeafFunctor<QDPType<T,OLattice<T> >, ParamLeaf>
+{
+  typedef QDPTypeJIT<typename JITContainerType<T>::Type_t,typename JITContainerType<OLattice<T> >::Type_t>  TypeA_t;
+  //typedef typename JITContainerType< OLattice<T> >::Type_t  TypeA_t;
+  typedef TypeA_t  Type_t;
+  inline static Type_t apply(const QDPType<T,OLattice<T> > &a, const ParamLeaf& p)
+  {
+    return Type_t( p.getFunc() , p.getParamLattice( WordSize<T>::Size ) );
+  }
+};
+
+template<class T>
+struct LeafFunctor<QDPType<T,OScalar<T> >, ParamLeaf>
+{
+  typedef QDPTypeJIT<typename JITContainerType<T>::Type_t,typename JITContainerType<OScalar<T> >::Type_t>  TypeA_t;
+  //typedef typename JITContainerType< OScalar<T> >::Type_t  TypeA_t;
+  typedef TypeA_t  Type_t;
+  inline static Type_t apply(const QDPType<T,OScalar<T> > &a, const ParamLeaf& p)
+  {
+    return Type_t( p.getFunc() , p.getParamScalar() );
+  }
+};
+
+
+
+template<class T, class C>
+struct LeafFunctor<QDPType<T,C>, AddressLeaf>
+{
+  typedef int Type_t;
+  inline static
+  Type_t apply(const QDPType<T,C>& s, const AddressLeaf& p) 
+  {
+    p.setAddr( s.getFdev() );
+    return 0;
+  }
+};
+
 
 } // namespace QDP
 

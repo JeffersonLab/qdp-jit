@@ -1097,6 +1097,7 @@ operator*(const QDPExpr<T1,C1> & l,const GammaTypeDP<N> & r)
 // Additional operators
 //-----------------------------------------------------------------------------
 
+#if 0
 // Explicit casts
 template<class T1,class T2,class C2>
 inline typename MakeReturn<UnaryNode<OpCast<T1>,
@@ -1110,6 +1111,7 @@ peteCast(const T1&, const QDPType<T2,C2>& l)
   return MakeReturn<Tree_t,Container_t>::make(Tree_t(
     CreateLeaf<QDPType<T2,C2> >::make(l)));
 }
+#endif
 
 } // namespace QDP
 
