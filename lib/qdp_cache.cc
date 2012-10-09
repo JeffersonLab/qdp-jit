@@ -453,7 +453,8 @@ namespace QDP
 	}
       }
       if (e.hstPtr) {
-	CudaMemcpyAsync( e.devPtr , e.hstPtr , e.size );
+	//	CudaMemcpyAsync( e.devPtr , e.hstPtr , e.size );
+	CudaMemcpyH2DAsync( e.devPtr , e.hstPtr , e.size );
 	CudaSyncTransferStream();
 	if (e.flags != 2)
 	  freeHostMemory(e);
@@ -503,7 +504,8 @@ namespace QDP
       if (!e.hstPtr) {
 	allocateHostMemory(e);
 	if (e.devPtr) {
-	  CudaMemcpyAsync( e.hstPtr , e.devPtr , e.size );
+	  // CudaMemcpyAsync( e.hstPtr , e.devPtr , e.size );
+	  CudaMemcpyD2HAsync( e.hstPtr , e.devPtr , e.size );
 	  CudaSyncTransferStream();
 	  CUDADevicePoolAllocator::Instance().free( e.devPtr );
 	  e.devPtr = NULL;

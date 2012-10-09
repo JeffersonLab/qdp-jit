@@ -4,8 +4,18 @@ namespace QDP {
 
   void DeviceParams::setCC(int sm) {
     switch(sm) {
+    case 12:
+      asyncTransfers = false;
+      smem = 16*1024;
+      smem_default = 0;
+      max_gridx  = max_gridy = 32768; // We need a power of 2 here!
+      max_gridz = 1;
+      max_blockx = max_blocky = 512;
+      max_blockz = 64;
+      break;
     case 20:
     case 21:
+      asyncTransfers = true;
       smem = 48*1024;
       smem_default = 0;
       max_gridx  = max_gridy = max_gridz = 32768; // We need a power of 2 here!
@@ -13,6 +23,7 @@ namespace QDP {
       max_blockz = 64;
       break;
     case 30:
+      asyncTransfers = true;
       smem = 48*1024;
       smem_default = 0;
       max_gridx  = max_gridy = max_gridz = 512 * 1024; // Its 2^31-1, but this value is large enough

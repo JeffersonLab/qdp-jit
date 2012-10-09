@@ -39,6 +39,8 @@ namespace QDP {
 
     int& getMaxKernelArg() { return maxKernelArg; }
 
+    bool getAsyncTransfers() { return asyncTransfers; }
+
   private:
     DeviceParams(): syncDevice(false), maxKernelArg(512) {};   // Private constructor
     DeviceParams(const DeviceParams&);                            // Prevent copy-construction
@@ -46,6 +48,7 @@ namespace QDP {
 
   private:
     bool syncDevice;
+    bool asyncTransfers;
     int maxKernelArg;
 
     int smem;

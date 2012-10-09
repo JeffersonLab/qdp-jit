@@ -5,8 +5,9 @@
 
 #include "qdp_config_internal.h" 
 
-#include "qdp_cuda.h"
 #include "qdp_init.h"
+#include "qdp_deviceparams.h"
+#include "qdp_cuda.h"
 #include "cuda.h"
 
 using namespace std;
@@ -83,6 +84,11 @@ namespace QDP {
     std::cout << "trying to create a context \n";
     ret = cuCtxCreate(&cuContext, 0, cuDevice);
     CudaRes("",ret);
+
+    int unified;
+    ret = cuDeviceGetAttribute( &unified, CU_DEVICE_ATTRIBUTE_UNIFIED_ADDRESSING, dev );
+    CudaRes("cuDeviceGetAttribute",ret);
+    std::cout << "device supports UA = " << unified << "\n";
   }
 
   void CudaGetDeviceCount(int * count)
@@ -151,11 +157,61 @@ namespace QDP {
     QDP_debug_deep("cudaMemcpy dest=%p src=%p size=%d" ,  dest , src , size );
 #endif
 
-    ret = cuMemcpyAsync((CUdeviceptr)const_cast<void*>(dest),
-			(CUdeviceptr)const_cast<void*>(src),
-			size,QDPcudastreams[TRANSFER]);
+    if (DeviceParams::Instance().getAsyncTransfers()) {
+      ret = cuMemcpyAsync((CUdeviceptr)const_cast<void*>(dest),
+			  (CUdeviceptr)const_cast<void*>(src),
+			  size,QDPcudastreams[TRANSFER]);
+    } else {
+      std::cout << "using sync copy\n";
+      ret = cuMemcpy((CUdeviceptr)const_cast<void*>(dest),
+		     (CUdeviceptr)const_cast<void*>(src),
+		     size);
+    }
 
     CudaRes("cuMemcpyAsync",ret);
+  }
+
+  
+  void CudaMemcpyH2DAsync( void * dest , const void * src , size_t size )
+  {
+    CUresult ret;
+#ifdef GPU_DEBUG_DEEP
+    QDP_debug_deep("CudaMemcpyH2DAsync dest=%p src=%p size=%d" ,  dest , src , size );
+#endif
+
+    if (DeviceParams::Instance().getAsyncTransfers()) {
+      ret = cuMemcpyHtoDAsync((CUdeviceptr)const_cast<void*>(dest),
+			      src,
+			      size,QDPcudastreams[TRANSFER]);
+    } else {
+      std::cout << "using sync H2D copy\n";
+      ret = cuMemcpyHtoD((CUdeviceptr)const_cast<void*>(dest),
+			 src,
+			 size);
+    }
+
+    CudaRes("cuMemcpyH2DAsync",ret);
+  }
+
+  void CudaMemcpyD2HAsync( void * dest , const void * src , size_t size )
+  {
+    CUresult ret;
+#ifdef GPU_DEBUG_DEEP
+    QDP_debug_deep("CudaMemcpyD2HAsync dest=%p src=%p size=%d" ,  dest , src , size );
+#endif
+
+    if (DeviceParams::Instance().getAsyncTransfers()) {
+      ret = cuMemcpyDtoHAsync( dest,
+			      (CUdeviceptr)const_cast<void*>(src),
+			      size,QDPcudastreams[TRANSFER]);
+    } else {
+      std::cout << "using sync D2H copy\n";
+      ret = cuMemcpyDtoH( const_cast<void*>(dest),
+			 (CUdeviceptr)const_cast<void*>(src),
+			 size);
+    }
+
+    CudaRes("cuMemcpyH2DAsync",ret);
   }
 
 

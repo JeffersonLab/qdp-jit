@@ -27,6 +27,8 @@ namespace QDP {
 
   void CudaMemcpy(const void * dest ,  const void * src , size_t size);
   void CudaMemcpyAsync(const void * dest ,  const void * src , size_t size );
+  void CudaMemcpyH2DAsync( void * dest , const void * src , size_t size );
+  void CudaMemcpyD2HAsync( void * dest , const void * src , size_t size );
 
   bool CudaMalloc( void **mem , const size_t size );
   //  void CudaMallocHost( void **mem , size_t size );
