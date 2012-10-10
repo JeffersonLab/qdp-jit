@@ -184,6 +184,77 @@ struct JITContainerType<Word<T> >
 
 
 
+// Input
+//! Ascii input
+template<class T>
+inline
+istream& operator>>(istream& s, Word<T>& d)
+{
+  return s >> d.elem();
+}
+
+//! Ascii input
+template<class T>
+inline
+StandardInputStream& operator>>(StandardInputStream& s, Word<T>& d)
+{
+  return s >> d.elem();
+}
+
+//! Ascii output
+template<class T> 
+inline  
+ostream& operator<<(ostream& s, const Word<T>& d)
+{
+  return s << d.elem();
+}
+
+//! Ascii output
+template<class T> 
+inline  
+StandardOutputStream& operator<<(StandardOutputStream& s, const Word<T>& d)
+{
+  return s << d.elem();
+}
+
+
+//! Text input
+template<class T>
+inline
+TextReader& operator>>(TextReader& s, Word<T>& d)
+{
+  return s >> d.elem();
+}
+
+//! Text output
+template<class T> 
+inline  
+TextWriter& operator<<(TextWriter& s, const Word<T>& d)
+{
+  return s << d.elem();
+}
+
+#ifndef QDP_NO_LIBXML2
+//! XML output
+template<class T>
+inline
+XMLWriter& operator<<(XMLWriter& xml, const Word<T>& d)
+{
+  return xml << d.elem();
+}
+
+//! XML input
+template<class T>
+inline
+void read(XMLReader& xml, const string& path, Word<T>& d)
+{
+  read(xml, path, d.elem());
+}
+#endif
+
+
+
+
 // Underlying word type
 template<class T>
 struct WordType<Word<T> > 

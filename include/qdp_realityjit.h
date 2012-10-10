@@ -50,12 +50,12 @@ public:
   /*! Set equal to another RScalar */
   template<class T1>
   RScalarJIT& operator=( const RScalarJIT<T1>& rhs) {
-    elem().assign(rhs.elem());
+    elem() = rhs.elem();
     return *this;
   }
 
   RScalarJIT& operator=( const RScalarJIT& rhs) {
-    elem().assign(rhs.elem());
+    elem() = rhs.elem();
     return *this;
   }
 
@@ -299,16 +299,6 @@ public:
   //! Destructor
   ~RComplexJIT() {}
 
-  //---------------------------------------------------------
-  //! RScalar = RScalar
-  /*! Set equal to another RScalar */
-  template <class T1>
-  inline
-  RComplexJIT& assign( const RComplexJIT<T1>& rhs) {
-    real().assign(rhs.real());
-    imag().assign(rhs.imag());
-    return *this;
-  }
 
 #if 0
   RComplexJIT() {}
@@ -408,6 +398,30 @@ public:
       return *this;
     }
 
+  template<class T1>
+  RComplexJIT& operator=(const RComplexJIT<T1>& rhs) 
+    {
+      real() = rhs.real();
+      imag() = rhs.imag();
+      return *this;
+    }
+
+
+  RComplexJIT& operator=(const RComplexJIT& rhs) 
+    {
+      real() = rhs.real();
+      imag() = rhs.imag();
+      return *this;
+    }
+
+  template<class T1>
+  inline
+  RComplexJIT& operator=(const RScalarJIT<T1>& rhs) 
+    {
+      real() = rhs.elem();
+      zero_rep(imag());
+      return *this;
+    }
 
 
 public:
@@ -419,26 +433,11 @@ public:
 
   Jit&  getFunc() const {return function;}
 
+
 private:
   //! Deep copy constructor
   RComplexJIT(const RComplexJIT& a);//: re(a.re), im(a.im) {}
 
-  template<class T1>
-  inline
-  RComplexJIT& operator=(const RComplexJIT<T1>& rhs) 
-    {
-      real() = rhs.real();
-      imag() = rhs.imag();
-      return *this;
-    }
-  template<class T1>
-  inline
-  RComplexJIT& operator=(const RScalarJIT<T1>& rhs) 
-    {
-      real() = rhs.elem();
-      zero_rep(imag());
-      return *this;
-    }
 
 private:
   Jit&  function;

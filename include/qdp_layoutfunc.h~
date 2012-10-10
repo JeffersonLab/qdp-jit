@@ -1,7 +1,5 @@
-#ifndef QDP_LAYOUTF_H
-#define QDP_LAYOUTF_H
-
-
+#ifndef QDP_LAYOUTFUNC_H
+#define QDP_LAYOUTFUNC_H
 
 namespace QDP {
 

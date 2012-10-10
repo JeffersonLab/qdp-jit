@@ -22,6 +22,7 @@ namespace QDP
   {
     struct Entry;
   public:
+    typedef void (* LayoutFptr)(bool toDev,void * hstPtr,void * devPtr);
     static QDPCache& Instance();
 
     void beginNewLockSet();
@@ -34,7 +35,7 @@ namespace QDP
     void sayHi();
     bool onDevice(int id) const;    
     void enlargeStack();
-    int registrate( size_t size, unsigned flags);
+    int registrate( size_t size, unsigned flags, LayoutFptr func );
     int registrateOwnHostMem( size_t size, void* ptr);
     void signoff(int id);
     void * getDevicePtr(int id);

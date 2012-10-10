@@ -64,8 +64,8 @@ namespace QDP {
       QDP_error_exit("QMP_declare_multiple for mh failed in Map::operator()\n");
     }
 
-    srcId = QDPCache::Instance().registrate( srcnum , 1 );
-    dstId = QDPCache::Instance().registrate( dstnum , 1 );
+    srcId = QDPCache::Instance().registrate( srcnum , 1 , NULL );
+    dstId = QDPCache::Instance().registrate( dstnum , 1 , NULL );
 
   }
 

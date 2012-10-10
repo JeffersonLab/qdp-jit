@@ -215,6 +215,27 @@ namespace QDP {
   }
 
 
+  void CudaMemcpyH2D( void * dest , const void * src , size_t size )
+  {
+    CUresult ret;
+#ifdef GPU_DEBUG_DEEP
+    QDP_debug_deep("CudaMemcpyH2D dest=%p src=%p size=%d" ,  dest , src , size );
+#endif
+    ret = cuMemcpyHtoD((CUdeviceptr)const_cast<void*>(dest), src, size);
+    CudaRes("cuMemcpyH2D",ret);
+  }
+
+  void CudaMemcpyD2H( void * dest , const void * src , size_t size )
+  {
+    CUresult ret;
+#ifdef GPU_DEBUG_DEEP
+    QDP_debug_deep("CudaMemcpyD2H dest=%p src=%p size=%d" ,  dest , src , size );
+#endif
+    ret = cuMemcpyDtoH( dest, (CUdeviceptr)const_cast<void*>(src), size);
+    CudaRes("cuMemcpyH2D",ret);
+  }
+
+
   bool CudaMalloc(void **mem , size_t size )
   {
     CUresult ret;

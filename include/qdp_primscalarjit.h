@@ -30,7 +30,7 @@ public:
   PScalarJIT(Jit& func_) : function(func_), member(func_)  {}
 
   // View from global state space
-  PScalarJIT(Jit& func_ , int r_addr_ , LayoutFunc lf_ ) : 
+  PScalarJIT(Jit& func_ , int r_addr_ , const LayoutFunc& lf_ ) : 
     function(func_), 
     lf(lf_), 
     r_addr(r_addr_),
@@ -176,9 +176,11 @@ public:
   inline       T& elem()       { return member; }
   inline const T& elem() const { return member; }
 
-  PScalarJIT(const PScalarJIT& a): function(a.function), r_addr(a.r_addr), lf(lf), member(a.function) {}
+
 
   Jit&  getFunc() const {return function;}
+
+  PScalarJIT(const PScalarJIT& a): function(a.function), r_addr(a.r_addr), lf(a.lf), member(a.function) {}
 
 private:
   Jit&  function;

@@ -26,6 +26,10 @@ namespace QDP {
 template<class T> class RScalar
 {
 public:
+  typedef T Sub_t;
+  enum { ThisSize = 1 };
+  enum { Size = ThisSize * WordSize<T>::Size };
+
   RScalar() {}
   ~RScalar() {}
 
@@ -255,6 +259,10 @@ void read(XMLReader& xml, const string& path, RScalar<T>& d)
 template<class T> class RComplex
 {
 public:
+  typedef T Sub_t;
+  enum { ThisSize = 2 };
+  enum { Size = ThisSize * WordSize<T>::Size };
+
   RComplex() {}
   ~RComplex() {}
 

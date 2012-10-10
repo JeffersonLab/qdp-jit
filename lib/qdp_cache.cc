@@ -19,6 +19,7 @@ namespace QDP
     void*  devPtr;  // NULL if not allocated
     int    lockCount;
     list<int>::iterator iterTrack;
+    LayoutFptr fptr;
   };
 
 
@@ -193,7 +194,7 @@ namespace QDP
   }
 
 
-  int QDPCache::registrate( size_t size, unsigned flags)
+  int QDPCache::registrate( size_t size, unsigned flags, LayoutFptr func)
   {
 
 #ifdef SANITY_CHECKS_CACHE
@@ -225,6 +226,7 @@ namespace QDP
     e.devPtr    = NULL;
     e.lockCount = 0;
     e.iterTrack = lstTracker.insert( lstTracker.end() , Id );
+    e.fptr      = func;
       
     stackFree.pop();
 
@@ -455,6 +457,8 @@ namespace QDP
       if (e.hstPtr) {
 	//	CudaMemcpyAsync( e.devPtr , e.hstPtr , e.size );
 	CudaMemcpyH2DAsync( e.devPtr , e.hstPtr , e.size );
+	if (e.fptr)
+	  std::cout << "call layout changer\n";
 	CudaSyncTransferStream();
 	if (e.flags != 2)
 	  freeHostMemory(e);
@@ -505,7 +509,12 @@ namespace QDP
 	allocateHostMemory(e);
 	if (e.devPtr) {
 	  // CudaMemcpyAsync( e.hstPtr , e.devPtr , e.size );
-	  CudaMemcpyD2HAsync( e.hstPtr , e.devPtr , e.size );
+	  //CudaMemcpyD2HAsync( e.hstPtr , e.devPtr , e.size );
+	  if (e.fptr) {
+	    std::cout << "call layout changer\n";
+	    e.fptr(false, e.hstPtr , e.devPtr );
+	  }
+
 	  CudaSyncTransferStream();
 	  CUDADevicePoolAllocator::Instance().free( e.devPtr );
 	  e.devPtr = NULL;

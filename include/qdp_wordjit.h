@@ -17,7 +17,7 @@ namespace QDP {
     enum {Size_t = 1};
 
     //! View of an object from global state space
-    WordJIT(Jit& func_ , int r_addr_ , LayoutFunc lf_ ) : function(func_), lf(lf_), r_addr(r_addr_) {
+    WordJIT(Jit& func_ , int r_addr_ , const LayoutFunc& lf_ ) : function(func_), lf(lf_), r_addr(r_addr_) {
       //std::cout << "WordJIT(Jit& func_ , int r_addr_ , const LayoutFunc& lf_ ) global view\n";
     }
 
@@ -32,8 +32,16 @@ namespace QDP {
 
     //---------------------------------------------------------
     template <class T1>
-    WordJIT& assign(const WordJIT<T1>& s1) {
+    WordJIT& operator=(const WordJIT<T1>& s1) {
       std::cout << __PRETTY_FUNCTION__ << ": instructions needed?\n" << (void*)this << " " << (void*)&s1 << "\n";
+
+      // Value can be in register file (AddAssign for example)
+      function.asm_st( r_addr , lf.getOffset()*WordSize<T>::Size , s1.getReg( JitRegType<T>::Val_t ) );
+      return *this;
+    }
+
+    WordJIT& operator=(const WordJIT& s1) {
+      std::cout << __PRETTY_FUNCTION__ << ": (assignment op) instructions needed?\n" << (void*)this << " " << (void*)&s1 << "\n";
 
       // Value can be in register file (AddAssign for example)
       function.asm_st( r_addr , lf.getOffset()*WordSize<T>::Size , s1.getReg( JitRegType<T>::Val_t ) );
@@ -89,18 +97,9 @@ namespace QDP {
     }
 
 
-  public:
-    // Accessors
+
     Jit& getFunc() const {return function;}
 
-  private:
-    template<class T1>
-    void operator=(const WordJIT<T1>& s1) {
-      assign(s1);
-    }
-    void operator=(const WordJIT& s1) {
-      assign(s1);
-    }
 
   private:
     typedef std::map< Jit::RegType , int > MapRegType;

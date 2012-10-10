@@ -24,6 +24,7 @@ namespace QDP {
       return ret;
     };
     LayoutFunc& operator=(const LayoutFunc& rhs) {
+      //std::cout << "LayoutFunc op=\n";
       lim = rhs.lim;
       val = rhs.val;
     }
@@ -39,8 +40,10 @@ namespace QDP {
       }
       return off;
     }
+
     std::vector<int> lim;
     std::vector<int> val;
+  private:
   };
 
 }
