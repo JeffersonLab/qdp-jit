@@ -17,13 +17,13 @@ namespace QDP {
     enum {Size_t = 1};
 
     //! View of an object from global state space
-    WordJIT(Jit& func_ , int r_addr_ , const LayoutFunc& lf_ ) : function(func_), lf(lf_), r_addr(r_addr_) {
-      //std::cout << "WordJIT(Jit& func_ , int r_addr_ , const LayoutFunc& lf_ ) global view\n";
+    WordJIT(Jit& func_ , int r_addr_ , LayoutFunc lf_ ) : function(func_), lf(lf_), r_addr(r_addr_) {
+      std::cout << "WordJIT(Jit& func_ , int r_addr_ , const LayoutFunc& lf_ ) global view\n";
     }
 
     //! New space 
     WordJIT(Jit& func_ ) : function(func_) {
-      //std::cout << "WordJIT(Jit& func_ , int r_start_ ) register view\n";
+      std::cout << "WordJIT(Jit& func_ ) new space\n";
       mapReg.insert( std::make_pair( JitRegType<T>::Val_t , function.getRegs( JitRegType<T>::Val_t , 1 ) ) );
     }
 

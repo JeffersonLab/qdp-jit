@@ -24,6 +24,12 @@
 /* CUDA C/C++ Compiler */
 #undef CUDA_GCC
 
+/* GPU debugging output */
+#undef GPU_DEBUG
+
+/* GPU deep debugging output */
+#undef GPU_DEBUG_DEEP
+
 /* Define to 1 if you have the `gethostname' function. */
 #undef HAVE_GETHOSTNAME
 

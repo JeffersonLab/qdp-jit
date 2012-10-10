@@ -105,6 +105,22 @@ dnl tell the user
 AC_MSG_NOTICE([Fallback to generic C routines if needed: ${ac_generics}])
 
 
+dnl gpu
+AC_ARG_ENABLE(gpudebug,
+  AC_HELP_STRING([--enable-gpudebug],
+    [Produce GPU debug output]),
+  [gpudebug_enabled="${enableval}"],
+  [gpudebug_enabled="no"]
+)
+
+dnl gpu
+AC_ARG_ENABLE(gpudebugdeep,
+  AC_HELP_STRING([--enable-gpudebugdeep],
+    [Produce GPU deep debug output]),
+  [gpudebugdeep_enabled="${enableval}"],
+  [gpudebugdeep_enabled="no"]
+)
+
 
 dnl --enable-profiling
 AC_ARG_ENABLE(profiling,
@@ -255,6 +271,20 @@ fi
 AM_CONDITIONAL(BUILD_LIBINTRIN,
 	[ test "x${build_libintrin}x" = "xyesx"] )
 
+
+if test "X${gpudebug_enabled}X" == "XyesX"; 
+then
+     AC_MSG_NOTICE([Configuring to produce GPU debug output])
+     AC_DEFINE([GPU_DEBUG],[1],[GPU debugging output])
+     AC_SUBST(GPU_DEBUG_CXX,"-DGPU_DEBUG")
+fi
+
+if test "X${gpudebugdeep_enabled}X" == "XyesX"; 
+then
+     AC_MSG_NOTICE([Configuring to produce GPU deep debug output])
+     AC_DEFINE([GPU_DEBUG_DEEP],[1],[GPU deep debugging output])
+     AC_SUBST(GPU_DEBUGDEEP_CXX,"-DGPU_DEBUG_DEEP")
+fi
 
 dnl if QCDOC is enabled change some settings
 if test ${ac_qcdoc_enabled} -eq 1; then 

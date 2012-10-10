@@ -132,20 +132,6 @@ namespace QDP {
 
   public:
 
-    void static copy_dh(bool toDev,void * hstPtr,void * devPtr) 
-    {
-      if (toDev)
-	std::cout << "copy scalar data to device\n";
-      else
-	std::cout << "copy scalar data to host\n";
-
-      if (toDev)
-	CudaMemcpyH2D( (void*)devPtr, (void*)hstPtr , sizeof(T) );
-      else
-	CudaMemcpyD2H( (void*)hstPtr , (void*)devPtr , sizeof(T) );
-    }
-
-
 
     inline bool onDevice() const {
       return QDPCache::Instance().onDevice( myId );
@@ -166,7 +152,7 @@ namespace QDP {
 
 
     inline void alloc_mem() {
-      myId = QDPCache::Instance().registrate( sizeof(T) , 0 , &copy_dh );
+      myId = QDPCache::Instance().registrate( sizeof(T) , 0 , NULL );
     }
     inline void free_mem() {
       QDPCache::Instance().signoff( myId );
@@ -441,44 +427,53 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
   inline void revertFromFastMemoryHint(bool copy=false) {}
 
 
-    void static copy_dh(bool toDev,void * hstPtr,void * devPtr) 
+    void static changeLayout(bool toDev,void * outPtr,void * inPtr)
     {
+      std::cout << __PRETTY_FUNCTION__ << "\n";
       if (toDev)
-	std::cout << "copy data to device\n";
+	std::cout << "changing data layout to device format\n";
       else
-	std::cout << "copy data to host\n";
+	std::cout << "changing data layout  to host format\n";
 
-      typename WordType<T>::Type_t * dev_data = new typename WordType<T>::Type_t[ WordSize<T>::Size * Layout::sitesOnNode() ];
-      typename WordType<T>::Type_t * hst_data = (typename WordType<T>::Type_t*)hstPtr;
+      typename WordType<T>::Type_t * in_data  = (typename WordType<T>::Type_t *)inPtr;
+      typename WordType<T>::Type_t * out_data = (typename WordType<T>::Type_t *)outPtr;
 
-      if (!toDev)
-	CudaMemcpyD2H( (void*)dev_data , (void*)devPtr , sizeof(T)*Layout::sitesOnNode() );
+      int lim_rea = GetLimit<T,2>::Limit_v; //T::ThisSize;
+      int lim_col = GetLimit<T,1>::Limit_v; //T::ThisSize;
+      int lim_spi = GetLimit<T,0>::Limit_v; //T::ThisSize;
 
-      int r_lim = GetLimit<T,0>::Limit_v; //T::ThisSize;
 
       for ( int site = 0 ; site < Layout::sitesOnNode() ; site++ ) {
-	for ( int reality = 0 ; reality < r_lim ; reality++ ) {
-	  int hst_idx = reality + r_lim * site;
-	  int dev_idx = site + Layout::sitesOnNode() * reality;
-	  if (toDev)
-	    dev_data[dev_idx] = hst_data[hst_idx];
-	  else
-	    hst_data[hst_idx] = dev_data[dev_idx];
+	for ( int reality = 0 ; reality < lim_rea ; reality++ ) {
+	  for ( int color = 0 ; color < lim_col ; color++ ) {
+	    for ( int spin = 0 ; spin < lim_spi ; spin++ ) {
+	      int hst_idx = 
+		reality + 
+		lim_rea * color +
+		lim_rea * lim_col * spin +
+		lim_rea * lim_col * lim_spi * site;
+	      int dev_idx = 
+		site + 
+		Layout::sitesOnNode() * spin +
+		Layout::sitesOnNode() * lim_spi * color +
+		Layout::sitesOnNode() * lim_spi * lim_col * reality;
+	      if (toDev)
+		out_data[dev_idx] = in_data[hst_idx];
+	      else {
+		//std::cout << hst_idx  << " <= " << dev_idx << "\n";
+		out_data[hst_idx] = in_data[dev_idx];
+	      }
+	    }
+	  }
 	}
       }
-
-      if (toDev)
-	CudaMemcpyH2D( (void*)devPtr, (void*)dev_data , sizeof(T)*Layout::sitesOnNode() );
-
-      delete[] dev_data;
-
     }
 
   private:
 
 
-    inline void alloc_mem(const char* msg) { 
-      myId = QDPCache::Instance().registrate( Layout::sitesOnNode() * sizeof(T) , 1 , &copy_dh ); 
+    inline void alloc_mem(const char* msg) {
+      myId = QDPCache::Instance().registrate( Layout::sitesOnNode() * sizeof(T) , 1 , &changeLayout ); 
     }
     inline void free_mem()  { 
       QDPCache::Instance().signoff( myId ); 

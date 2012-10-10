@@ -22,7 +22,7 @@ namespace QDP
   {
     struct Entry;
   public:
-    typedef void (* LayoutFptr)(bool toDev,void * hstPtr,void * devPtr);
+    typedef void (* LayoutFptr)(bool toDev,void * outPtr,void * inPtr);
     static QDPCache& Instance();
 
     void beginNewLockSet();
