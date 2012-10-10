@@ -27,7 +27,9 @@ public:
   enum {Size_t = T::Size_t};
 
   // New space
-  PScalarJIT(Jit& func_) : function(func_), member(func_)  {}
+  PScalarJIT(Jit& func_) : function(func_), member(func_)  {
+    std::cout << "PScalarJIT new space\n";
+  }
 
   // View from global state space
   PScalarJIT(Jit& func_ , int r_addr_ , LayoutFunc lf_ ) : 
@@ -173,14 +175,16 @@ public:
 
 
 public:
-  inline       T& elem()       { return member; }
-  inline const T& elem() const { return member; }
+  inline       T elem()       { return member; }
+  inline const T elem() const { return member; }
 
 
 
   Jit&  getFunc() const {return function;}
 
-  PScalarJIT(const PScalarJIT& a): function(a.function), r_addr(a.r_addr), lf(a.lf), member(a.function) {}
+  PScalarJIT(const PScalarJIT& a): function(a.function), r_addr(a.r_addr), lf(a.lf), member(a.member) {
+    std::cout << "PScalarJIT copy c-tor\n";
+  }
 
 private:
   Jit&  function;
@@ -452,7 +456,7 @@ operator-(const PScalarJIT<T1>& l, const PScalarJIT<T2>& r)
 
 // PScalarJIT * PScalarJIT
 template<class T1, class T2>
-void mulRep(typename BinaryReturn<PScalarJIT<T1>, PScalarJIT<T2>, OpMultiply>::Type_t& dest, const PScalarJIT<T1>& l, const PScalarJIT<T2>& r)
+void mulRep(const typename BinaryReturn<PScalarJIT<T1>, PScalarJIT<T2>, OpMultiply>::Type_t& dest, const PScalarJIT<T1>& l, const PScalarJIT<T2>& r)
 {
   mulRep(dest.elem(),l.elem(),r.elem());
 }

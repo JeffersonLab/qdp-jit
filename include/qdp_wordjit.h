@@ -23,8 +23,9 @@ namespace QDP {
 
     //! New space 
     WordJIT(Jit& func_ ) : function(func_) {
-      std::cout << "WordJIT(Jit& func_ ) new space\n";
-      mapReg.insert( std::make_pair( JitRegType<T>::Val_t , function.getRegs( JitRegType<T>::Val_t , 1 ) ) );
+      int tmp;
+      mapReg.insert( std::make_pair( JitRegType<T>::Val_t , tmp = function.getRegs( JitRegType<T>::Val_t , 1 ) ) );
+      std::cout << "WordJIT(Jit& func_ ) new space   regName = " << function.getName(tmp) << "\n";
     }
 
     //! Destructor
@@ -96,6 +97,9 @@ namespace QDP {
       }
     }
 
+    WordJIT(const WordJIT& a): function(a.function), mapReg(a.mapReg), r_addr(a.r_addr), lf(a.lf) {
+      std::cout << "WordJIT copy c-tor\n";
+    }
 
 
     Jit& getFunc() const {return function;}

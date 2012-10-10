@@ -720,7 +720,12 @@ struct OpAssign
   inline typename BinaryReturn<T1, T2, OpAssign >::Type_t
   operator()(const T1 &a, const T2 &b) const
   {
-    return (const_cast<T1 &>(a) = b);
+      // T1& aa = const_cast<T1&>(a);
+      // T2& bb = const_cast<T2&>(b);
+    std::cout << __PRETTY_FUNCTION__ << "\n";
+    return const_cast<T1&>(a) = b;
+
+      //    return (const_cast<T1 &>(a) = b);
   }
 };
 

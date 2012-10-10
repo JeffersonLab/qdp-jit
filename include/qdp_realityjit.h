@@ -29,7 +29,9 @@ public:
   enum {Size_t = T::Size_t};
 
   // New space
-  RScalarJIT(Jit& func_) : function(func_), member(func_)  {}
+  RScalarJIT(Jit& func_) : function(func_), member(func_)  {
+    std::cout << "RScalarJIT new space\n";
+  }
 
   // View from global state space
   RScalarJIT(Jit& func_ , int r_addr_ , LayoutFunc lf_ ) : 
@@ -171,7 +173,13 @@ public:
     }
 
 
+
   Jit&  getFunc() const {return function;}
+
+  RScalarJIT(const RScalarJIT& a): function(a.function), r_addr(a.r_addr), lf(a.lf), member(a.member) {
+    std::cout << "RScalarJIT copy c-tor\n";
+  }
+
 
 public:
   inline       T& elem()       { return member; }
@@ -409,6 +417,7 @@ public:
 
   RComplexJIT& operator=(const RComplexJIT& rhs) 
     {
+      std::cout << "RComplexJIT& operator=\n";
       real() = rhs.real();
       imag() = rhs.imag();
       return *this;
@@ -433,10 +442,10 @@ public:
 
   Jit&  getFunc() const {return function;}
 
+  RComplexJIT(const RComplexJIT& a): function(a.function), r_addr(a.r_addr), lf(a.lf), mem_real(a.mem_real), mem_imag(a.mem_imag) {
+    std::cout << "RComplexJIT copy c-tor\n";
+  }
 
-private:
-  //! Deep copy constructor
-  RComplexJIT(const RComplexJIT& a);//: re(a.re), im(a.im) {}
 
 
 private:
@@ -1902,16 +1911,36 @@ operator-(const RScalarJIT<T1>& l, const RComplexJIT<T2>& r)
 }
 
 
-//! RComplexJIT = RComplexJIT * RComplexJIT
-template<class T1, class T2>
-inline typename BinaryReturn<RComplexJIT<T1>, RComplexJIT<T2>, OpMultiply>::Type_t
-operator*(const RComplexJIT<T1>& __restrict__ l, const RComplexJIT<T2>& __restrict__ r) 
-{
-  typedef typename BinaryReturn<RComplexJIT<T1>, RComplexJIT<T2>, OpMultiply>::Type_t  Ret_t;
 
-  return Ret_t(l.real()*r.real() - l.imag()*r.imag(),
-	       l.real()*r.imag() + l.imag()*r.real());
+template<class T1, class T2>
+inline void
+mulRep(const typename BinaryReturn<RComplexJIT<T1>, RComplexJIT<T2>, OpMultiply>::Type_t& dest, const RComplexJIT<T1>& l, const RComplexJIT<T2>& r)
+{
+#if 0
+  RScalarJIT<T1> t0(dest.getFunc());
+  RScalarJIT<T1> t1(dest.getFunc());
+
+  mulRep( t0.elem() , l.imag() , r.imag() );
+  negRep( t0.elem() , t0.elem() );
+  fmaRep( dest.real() , l.real() , r.real() , t0.elem() );
+
+  mulRep( t1.elem() , l.imag() , r.real() );
+  fmaRep( dest.imag() , l.real() , r.imag() , t1.elem() );
+#else
+  RScalarJIT<T1> t0(dest.getFunc());
+
+  mulRep( t0.elem() , l.imag() , r.imag() );
+  mulRep( dest.real() , l.real() , r.real() );
+  subRep( dest.real() , dest.real() , t0.elem() );
+
+  mulRep( t0.elem() , l.imag() , r.real() );
+  mulRep( dest.imag() , l.real() , r.imag() );
+  addRep( dest.imag() , dest.imag() , t0.elem() );
+#endif
 }
+
+
+
 
 //! RComplexJIT = RScalarJIT * RComplexJIT
 template<class T1, class T2>
