@@ -17,8 +17,12 @@ namespace QDP {
     enum {Size_t = 1};
 
     //! View of an object from global state space
-    WordJIT(Jit& func_ , int r_addr_ , LayoutFunc lf_ ) : function(func_), lf(lf_), r_addr(r_addr_) {
-      std::cout << "WordJIT(Jit& func_ , int r_addr_ , const LayoutFunc& lf_ ) global view\n";
+    WordJIT(Jit& func_ , int r_addr_ , int offset_full_ , int offset_level_ ) : 
+      function(func_), 
+      r_addr(r_addr_),
+      offset_full(offset_full_),
+      offset_level(offset_level_) {
+      //std::cout << "WordJIT(Jit& func_ , int r_addr_  ) global view\n";
     }
 
     //! New space 
@@ -37,15 +41,13 @@ namespace QDP {
       std::cout << __PRETTY_FUNCTION__ << ": instructions needed?\n" << (void*)this << " " << (void*)&s1 << "\n";
 
       // Value can be in register file (AddAssign for example)
-      function.asm_st( r_addr , lf.getOffset()*WordSize<T>::Size , s1.getReg( JitRegType<T>::Val_t ) );
+      function.asm_st( r_addr , offset_level * WordSize<T>::Size , s1.getReg( JitRegType<T>::Val_t ) );
       return *this;
     }
 
     WordJIT& operator=(const WordJIT& s1) {
       std::cout << __PRETTY_FUNCTION__ << ": (assignment op) instructions needed?\n" << (void*)this << " " << (void*)&s1 << "\n";
-
-      // Value can be in register file (AddAssign for example)
-      function.asm_st( r_addr , lf.getOffset()*WordSize<T>::Size , s1.getReg( JitRegType<T>::Val_t ) );
+      function.asm_st( r_addr , offset_level * WordSize<T>::Size , s1.getReg( JitRegType<T>::Val_t ) );
       return *this;
     }
 
@@ -91,13 +93,18 @@ namespace QDP {
 	  // We don't have the value in a register. Need to load it.
 	  Jit::RegType myType = JitRegType<T>::Val_t;
 	  mapReg.insert( std::make_pair( myType , function.getRegs( JitRegType<T>::Val_t , 1 ) ) );
-	  function.asm_ld( mapReg.at( myType ) , r_addr , lf.getOffset()*WordSize<T>::Size );
+	  function.asm_ld( mapReg.at( myType ) , r_addr , offset_level * WordSize<T>::Size );
 	  return getReg(type);
 	}
       }
     }
 
-    WordJIT(const WordJIT& a): function(a.function), mapReg(a.mapReg), r_addr(a.r_addr), lf(a.lf) {
+    WordJIT(const WordJIT& a): 
+      function(a.function), 
+      mapReg(a.mapReg), 
+      r_addr(a.r_addr),  
+      offset_full(a.offset_full), 
+      offset_level(a.offset_level) {
       std::cout << "WordJIT copy c-tor\n";
     }
 
@@ -110,7 +117,8 @@ namespace QDP {
     Jit&  function;
     mutable MapRegType mapReg;
     mutable int r_addr;
-    LayoutFunc lf;
+    int offset_full;
+    int offset_level;
   };
 
 

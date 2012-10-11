@@ -107,7 +107,6 @@ namespace QDP {
 #include "qdp_pool_allocator.h"
 #include "qdp_cache.h"
 #include "qdp_jit.h"
-#include "qdp_layoutfunc.h"
 
 #include "qdp_forward.h"
 #include "qdp_multi.h"

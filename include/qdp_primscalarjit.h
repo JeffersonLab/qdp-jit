@@ -24,6 +24,7 @@ namespace QDP {
 template<class T> class PScalarJIT
 {
 public:
+  enum {ThisSize = 1};
   enum {Size_t = T::Size_t};
 
   // New space
@@ -32,13 +33,14 @@ public:
   }
 
   // View from global state space
-  PScalarJIT(Jit& func_ , int r_addr_ , LayoutFunc lf_ ) : 
+  PScalarJIT(Jit& func_ , int r_addr_ , int offset_full_ , int offset_level_ ) : 
     function(func_), 
-    lf(lf_), 
     r_addr(r_addr_),
-    member(func_, r_addr, lf.curry(1,0) )
+    offset_full(offset_full_),
+    offset_level(offset_level_), 
+    member(func_, r_addr, offset_full_ * ThisSize , offset_level_ + offset_full_ * 0 )
   {
-    std::cout << "PScalarJIT global view " << lf.lim.size() << " " << lf.val.size() << "\n";
+    //std::cout << "PScalarJIT global view " << lf.lim.size() << " " << lf.val.size() << "\n";
   }
 
 
@@ -182,14 +184,21 @@ public:
 
   Jit&  getFunc() const {return function;}
 
-  PScalarJIT(const PScalarJIT& a): function(a.function), r_addr(a.r_addr), lf(a.lf), member(a.member) {
-    std::cout << "PScalarJIT copy c-tor\n";
+  PScalarJIT(const PScalarJIT& a): 
+    function(a.function), 
+    r_addr(a.r_addr), 
+    offset_full(a.offset_full),
+    offset_level(a.offset_level),
+    member(a.member) {
+    std::cout << "RComplexJIT copy c-tor\n";
   }
+
 
 private:
   Jit&  function;
   int r_addr;
-  LayoutFunc lf;
+  int offset_full;
+  int offset_level;
   T member;
 };
 

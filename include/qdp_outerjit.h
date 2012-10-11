@@ -22,11 +22,11 @@ namespace QDP {
   public:
     inline T elem(unsigned site) {
       std::cout << "OLatJIT elem() \n";
-      return T(QDPTypeJIT<T, OLatticeJIT<T> >::getFunc(), QDPTypeJIT<T, OLatticeJIT<T> >::getAddr(), LayoutFunc(Layout::sitesOnNode(),site) );
+      return T(QDPTypeJIT<T, OLatticeJIT<T> >::getFunc(), QDPTypeJIT<T, OLatticeJIT<T> >::getAddr(), Layout::sitesOnNode() , site );
     }
     inline const T elem(unsigned site) const {
       std::cout << "OLatJIT elem() \n";
-      return T(QDPTypeJIT<T, OLatticeJIT<T> >::getFunc(), QDPTypeJIT<T, OLatticeJIT<T> >::getAddr(), LayoutFunc(Layout::sitesOnNode(),site) );
+      return T(QDPTypeJIT<T, OLatticeJIT<T> >::getFunc(), QDPTypeJIT<T, OLatticeJIT<T> >::getAddr(), Layout::sitesOnNode() , site );
     }
 
   private:
@@ -51,19 +51,19 @@ namespace QDP {
   public:
     inline T elem(unsigned site) {
       std::cout << "OScaJIT elem(int) \n";
-      return T(QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), LayoutFunc(1,0) );
+      return T(QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 1,0 );
     }
     inline const T elem(unsigned site) const {
       std::cout << "OScaJIT elem(int) \n";
-      return T(QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), LayoutFunc(1,0) );
+      return T(QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 1,0 );
     }
     inline T elem() {
       std::cout << "OScaJIT elem() \n";
-      return T(QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), LayoutFunc(1,0) );
+      return T(QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 1,0 );
     }
     inline const T elem() const {
       std::cout << "OScaJIT elem() \n";
-      return T(QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), LayoutFunc(1,0) );
+      return T(QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 1,0 );
     }
 
 

@@ -26,6 +26,7 @@ namespace QDP {
 template<class T> class RScalarJIT
 {
 public:
+  enum { ThisSize = 1 };
   enum {Size_t = T::Size_t};
 
   // New space
@@ -34,13 +35,14 @@ public:
   }
 
   // View from global state space
-  RScalarJIT(Jit& func_ , int r_addr_ , LayoutFunc lf_ ) : 
+  RScalarJIT(Jit& func_ , int r_addr_ , int offset_full_ , int offset_level_ ) : 
     function(func_), 
-    lf(lf_), 
+    offset_full(offset_full_),
+    offset_level(offset_level_), 
     r_addr(r_addr_),
-    member(func_, r_addr, lf.curry(1,0) )
+    member(func_, r_addr, offset_full_ * ThisSize , offset_level_ + offset_full_ * 0 )
   {
-    std::cout << "RScalarJIT global view " << lf.lim.size() << " " << lf.val.size() << "\n";
+    //std::cout << "RScalarJIT global view " << lf.lim.size() << " " << lf.val.size() << "\n";
   }
 
 
@@ -176,7 +178,12 @@ public:
 
   Jit&  getFunc() const {return function;}
 
-  RScalarJIT(const RScalarJIT& a): function(a.function), r_addr(a.r_addr), lf(a.lf), member(a.member) {
+  RScalarJIT(const RScalarJIT& a): 
+    function(a.function), 
+    r_addr(a.r_addr), 
+    offset_full(a.offset_full),
+    offset_level(a.offset_level),
+    member(a.member) {
     std::cout << "RScalarJIT copy c-tor\n";
   }
 
@@ -192,7 +199,8 @@ public:
 private:
   Jit&  function;
   int r_addr;
-  LayoutFunc lf;
+  int offset_full;
+  int offset_level;
   T member;
 };
 
@@ -282,7 +290,8 @@ void read(XMLReader& xml, const string& path, RScalarJIT<T>& d)
 template<class T> class RComplexJIT
 {
 public:
-  enum {Size_t = 2 * T::Size_t};
+  enum { ThisSize = 2 };
+  enum {Size_t = ThisSize * T::Size_t};
 
   // New space
   RComplexJIT(Jit& func_) : 
@@ -294,12 +303,13 @@ public:
 
   // View from global state space
   // NOTE: no additional offset (a complex would multiply by 2)
-  RComplexJIT(Jit& func_ , int r_addr_ , LayoutFunc lf_ ) : 
+  RComplexJIT(Jit& func_ , int r_addr_ , int offset_full_ , int offset_level_ ) : 
     function(func_), 
-    lf(lf_), 
+    offset_full(offset_full_),
+    offset_level(offset_level_),
     r_addr(r_addr_),
-    mem_real(func_, r_addr, lf.curry(2,0) ),
-    mem_imag(func_, r_addr, lf.curry(2,1) )
+    mem_real(func_, r_addr, offset_full_ * ThisSize , offset_level_ + offset_full_ * 0 ),
+    mem_imag(func_, r_addr, offset_full_ * ThisSize , offset_level_ + offset_full_ * 1 )
   {
   }
 
@@ -442,7 +452,13 @@ public:
 
   Jit&  getFunc() const {return function;}
 
-  RComplexJIT(const RComplexJIT& a): function(a.function), r_addr(a.r_addr), lf(a.lf), mem_real(a.mem_real), mem_imag(a.mem_imag) {
+  RComplexJIT(const RComplexJIT& a): 
+    function(a.function), 
+    r_addr(a.r_addr), 
+    offset_full(a.offset_full),
+    offset_level(a.offset_level),
+    mem_real(a.mem_real), 
+    mem_imag(a.mem_imag) {
     std::cout << "RComplexJIT copy c-tor\n";
   }
 
@@ -451,7 +467,8 @@ public:
 private:
   Jit&  function;
   int r_addr;
-  LayoutFunc lf;
+  int offset_full;
+  int offset_level;
   T mem_real;
   T mem_imag;
 } QDP_ALIGN8;   // possibly force alignment
