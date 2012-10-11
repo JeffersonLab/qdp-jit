@@ -303,7 +303,7 @@ public:
 
   // View from global state space
   // NOTE: no additional offset (a complex would multiply by 2)
-  RComplexJIT(Jit& func_ , int r_addr_ , int offset_full_ , int offset_level_ ) : 
+  RComplexJIT(Jit& func_ , int r_addr_ , int offset_full_ , int offset_level_ ):
     function(func_), 
     offset_full(offset_full_),
     offset_level(offset_level_),

@@ -24,6 +24,7 @@
 
 #include "qdp_primscalarjit.h"
 #include "qdp_primscalar.h"
+#include "qdp_primmatrixjit.h"
 #include "qdp_primmatrix.h"
 #include "qdp_primvector.h"
 #include "qdp_primseed.h"

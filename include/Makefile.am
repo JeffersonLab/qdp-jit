@@ -147,10 +147,11 @@ CUDA_HDRS = qdp_cuda.h \
             qdp_pool_allocator.h \
 	    qdp_cuda_allocator.h \
 	    qdp_deviceparams.h \
-	    qdp_jit.h qdp_layoutfunc.h \
+	    qdp_jit.h \
 	    qdp_word.h qdp_wordjit.h \
 	    qdp_jitfunction.h qdp_pete_visitors.h qdp_qdptypejit.h \
-	    qdp_outerjit.h qdp_realityjit.h qdp_primscalarjit.h
+	    qdp_outerjit.h qdp_realityjit.h qdp_primscalarjit.h \
+	    qdp_primmatrixjit.h
 
 
 # All the include files - avoid flattening of dirs by using nobase

@@ -20,6 +20,42 @@ namespace QDP {
  */
 
 
+template<int... I>
+struct indices {
+  typedef indices<I..., sizeof...(I)> next;
+};
+
+template<int S> 
+struct build_indices {
+  typedef typename build_indices<S - 1>::type::next type;
+};
+
+template<> struct build_indices<0> {
+  typedef indices<> type;
+};
+
+template<int S>
+constexpr typename build_indices<S>::type
+make_indices() { return {}; }
+
+  // mem_imag(func_, r_addr, offset_full_ * ThisSize , offset_level_ + offset_full_ * 1 )
+  // array(func_, r_addr, ThisSize , offset_full_ , offset_level_ , make_indices<N*N>() )
+  // Jit& func_ , int r_addr_ , int offset_full_ , int offset_level_
+
+template<typename T, int N>
+struct Array 
+{
+  Array(Jit& func_)
+
+  template<int... Indices>
+  explicit Array(Jit& func,int r_addr, int thisSize, int off_full , int off_level, indices<Indices...>)
+    : F { { func , r_addr , thisSize * off_full , off_level + off_full * Indices }... }
+  {}
+
+  T F[N];
+};
+
+
 //! Primitive Matrix class
 /*!
  * All Matrix classes inherit this class
@@ -30,19 +66,21 @@ namespace QDP {
 template <class T, int N, template<class,int> class C> class PMatrixJIT
 {
 public:
-  enum {Size_t = T::Size_t};
+  enum {ThisSize = N*N};
+  enum {Size_t = ThisSize * T::Size_t};
 
   // New space
-  PMatrixJIT(Jit& func_) : function(func_), member(func_)  {
+  PMatrixJIT(Jit& func_) : function(func_), array(func_)  {
     std::cout << "PScalarJIT new space\n";
   }
 
   // View from global state space
-  PMatrixJIT(Jit& func_ , int r_addr_ , LayoutFunc lf_ ) : 
+  PMatrixJIT(Jit& func_ , int r_addr_ , int offset_full_ , int offset_level_ ) : 
     function(func_), 
-    lf(lf_), 
     r_addr(r_addr_),
-    member(func_, r_addr, lf.curry(1,0) )
+    offset_full(offset_full_),
+    offset_level(offset_level_),
+    array(func_, r_addr, ThisSize , offset_full_ , offset_level_ , make_indices<N*N>() )
   {
     std::cout << "PScalarJIT global view " << lf.lim.size() << " " << lf.val.size() << "\n";
   }
@@ -164,8 +202,9 @@ public:
 private:
   Jit&  function;
   int r_addr;
-  LayoutFunc lf;
-  T member[N*N];
+  int offset_full;
+  int offset_level;
+  Array<T,N*N> array;
 };
 
 
