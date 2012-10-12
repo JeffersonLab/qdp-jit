@@ -66,6 +66,8 @@ namespace QDP {
       return view;
     }
   private:
+    OLatticeJIT(const OLatticeJIT& a);
+
     T view;
 #endif
 

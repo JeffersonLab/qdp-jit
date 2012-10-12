@@ -146,15 +146,19 @@ public:
       return *this;
     }
 
-
+#if 0
   RScalarJIT(const RScalarJIT& a) : JV<T,1>::JV(a) {
     std::cout << "RScalarJIT copy c-tor " << (void*)this << "\n";
   }
+#endif
 
 
 public:
   inline       T& elem()       { return JV<T,1>::getF()[0]; }
   inline const T& elem() const { return JV<T,1>::getF()[0]; }
+
+private:
+  //RScalarJIT(const RScalarJIT& a);
 };
 
  
@@ -370,10 +374,11 @@ public:
       return *this;
     }
 
-
+#if 0
   RComplexJIT(const RComplexJIT& a) : JV<T,2>::JV(a) {
     std::cout << "RComplexJIT copy c-tor " << (void*)this << "\n";
   }
+#endif
 
 public:
   inline       T& real()       { return JV<T,2>::getF()[0]; }
@@ -382,6 +387,8 @@ public:
   inline       T& imag()       { return JV<T,2>::getF()[1]; }
   inline const T& imag() const { return JV<T,2>::getF()[1]; }
 
+private:
+  //RComplexJIT(const RComplexJIT& a);
 };
 
 

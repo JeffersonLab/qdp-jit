@@ -84,7 +84,7 @@ namespace QDP {
 	    exit(1);
 	  }
 	  // We have the value in a register, but not with the requested type 
-	  std::cout << "We have the value in a register, but not with the requested type\n";
+	  // std::cout << "We have the value in a register, but not with the requested type\n";
 	  MapRegType::iterator loaded = mapReg.begin();
 	  Jit::RegType loadedType = loaded->first;
 	  int loadedId = loaded->second;
@@ -93,16 +93,10 @@ namespace QDP {
 	  return mapReg.at(type);
 	} else {
 	  // We don't have the value in a register. Need to load it.
-	  std::cout << "We don't have the value in a register. Need to load it " << (void*)this << " " << (void*)&jit << "\n";
+	  // std::cout << "We don't have the value in a register. Need to load it " << (void*)this << " " << (void*)&jit << "\n";
 	  Jit::RegType myType = JitRegType<T>::Val_t;
-	  std::cout << "1\n";
 	  mapReg.insert( std::make_pair( myType , jit.getRegs( JitRegType<T>::Val_t , 1 ) ) );
-	  std::cout << "2\n";
 	  jit.asm_ld( mapReg.at( myType ) , r_addr , offset_level * WordSize<T>::Size );
-	  std::cout << "3\n";
-
-	  std::cout << "inserted load " << jit.getName(mapReg.at( myType ))  << "\n";
-
 	  return getReg(type);
 	}
       }

@@ -53,6 +53,14 @@ public:
 // Traits classes 
 //-----------------------------------------------------------------------------
 
+  template<class T, int N> 
+  struct JITContainerType<PColorMatrix<T,N> >
+{
+  typedef PColorMatrixJIT<typename JITContainerType<T>::Type_t,N>  Type_t;
+};
+
+
+
 // Underlying word type
 template<class T1, int N>
 struct WordType<PColorMatrix<T1,N> > 

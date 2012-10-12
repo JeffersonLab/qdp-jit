@@ -28,13 +28,13 @@ namespace QDP {
  * portion is a part of the generic class, hence it is called a domain
  * and not a category
  */
-  template <class T, int N, template<class,int> class C> class PMatrixJIT : public JV<T,N*N>
+template <class T, int N, template<class,int> class C> class PMatrixJIT : public JV<T,N*N>
 {
 public:
   typedef C<T,N>  CC;
 
-  PMatrixJIT(Jit& j,int r , int of , int ol): JV<T,1>(j,r,of,ol) {}
-  PMatrixJIT(Jit& j): JV<T,1>(j) {}
+  PMatrixJIT(Jit& j,int r , int of , int ol): JV<T,N*N>(j,r,of,ol) {}
+  PMatrixJIT(Jit& j): JV<T,N*N>(j) {}
 
 
   //! PMatrixJIT = PScalarJIT
@@ -137,8 +137,11 @@ public:
     }
 
 
-  //PMatrixJIT(const PMatrixJIT& a): function(a.function), r_addr(a.r_addr), lf(a.lf), member(a.member) {}
-
+#if 0
+  PMatrixJIT(const PMatrixJIT& a) : JV<T,N*N>::JV(a) {
+    std::cout << "PMatrixJIT copy c-tor " << (void*)this << "\n";
+  }
+#endif
 
 public:
   T& elem(int i, int j) {return JV<T,N*N>::getF()[j+N*i];}

@@ -156,15 +156,20 @@ public:
       return *this;
     }
 
-  
+  // Compiler generated copy constructor calls the copy constructor
+  // of the base class.
+#if 0
   PScalarJIT(const PScalarJIT& a) : JV<T,1>::JV(a) {
     std::cout << "PScalarJIT copy c-tor " << (void*)this << "\n";
   }
+#endif
   
 public:
   inline       T& elem()       { return JV<T,1>::getF()[0]; }
   inline const T& elem() const { return JV<T,1>::getF()[0]; }
 
+private:
+  //PScalarJIT(const PScalarJIT& a);
 };
 
 

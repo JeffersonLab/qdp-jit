@@ -22,10 +22,10 @@ namespace QDP {
 
 
 //! Primitive color Matrix class 
-template <class T, int N> class PColorMatrixJIT : public PMatrix<T, N, PColorMatrixJIT>
+template <class T, int N> class PColorMatrixJIT : public PMatrixJIT<T, N, PColorMatrixJIT>
 {
 public:
-  enum {Size_t = T::Size_t};
+  //enum {Size_t = T::Size_t};
 
   //! PColorMatrixJIT = PScalarJIT
   /*! Fill with primitive scalar */
@@ -47,6 +47,14 @@ public:
       return *this;
     }
 
+
+
+  PColorMatrixJIT& operator=(const PColorMatrixJIT& rhs) 
+    {
+      assign(rhs);
+      return *this;
+    }
+
 };
 
 /*! @} */   // end of group primcolormatrix
@@ -54,6 +62,7 @@ public:
 //-----------------------------------------------------------------------------
 // Traits classes 
 //-----------------------------------------------------------------------------
+
 
 // Underlying word type
 template<class T1, int N>
