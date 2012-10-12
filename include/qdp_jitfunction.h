@@ -16,6 +16,8 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 
   Jit function("ptxtest.ptx","func");
 
+  std::cout << "function = " << (void*)&function <<"\n";
+
   ParamLeaf param_leaf(function);
 
   // Destination

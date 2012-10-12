@@ -17,19 +17,20 @@ namespace QDP {
     enum {Size_t = 1};
 
     //! View of an object from global state space
-    WordJIT(Jit& func_ , int r_addr_ , int offset_full_ , int offset_level_ ) : 
-      function(func_), 
+    WordJIT(Jit& j , int r_addr_ , int offset_full_ , int offset_level_ ) : 
+      jit(j), 
       r_addr(r_addr_),
       offset_full(offset_full_),
       offset_level(offset_level_) {
       //std::cout << "WordJIT(Jit& func_ , int r_addr_  ) global view\n";
+      std::cout << "WordJIT() global view   " << (void*)this << " " << (void*)&j << "\n";
     }
 
     //! New space 
-    WordJIT(Jit& func_ ) : function(func_) {
+    WordJIT(Jit& j ) : jit(j) {
       int tmp;
-      mapReg.insert( std::make_pair( JitRegType<T>::Val_t , tmp = function.getRegs( JitRegType<T>::Val_t , 1 ) ) );
-      std::cout << "WordJIT(Jit& func_ ) new space   regName = " << function.getName(tmp) << "\n";
+      mapReg.insert( std::make_pair( JitRegType<T>::Val_t , tmp = jit.getRegs( JitRegType<T>::Val_t , 1 ) ) );
+      std::cout << "WordJIT(Jit& func_ ) new space   regName = " << jit.getName(tmp) << " " << (void*)this << " " << (void*)&jit <<  "\n";
     }
 
     //! Destructor
@@ -41,13 +42,13 @@ namespace QDP {
       std::cout << __PRETTY_FUNCTION__ << ": instructions needed?\n" << (void*)this << " " << (void*)&s1 << "\n";
 
       // Value can be in register file (AddAssign for example)
-      function.asm_st( r_addr , offset_level * WordSize<T>::Size , s1.getReg( JitRegType<T>::Val_t ) );
+      jit.asm_st( r_addr , offset_level * WordSize<T>::Size , s1.getReg( JitRegType<T>::Val_t ) );
       return *this;
     }
 
     WordJIT& operator=(const WordJIT& s1) {
       std::cout << __PRETTY_FUNCTION__ << ": (assignment op) instructions needed?\n" << (void*)this << " " << (void*)&s1 << "\n";
-      function.asm_st( r_addr , offset_level * WordSize<T>::Size , s1.getReg( JitRegType<T>::Val_t ) );
+      jit.asm_st( r_addr , offset_level * WordSize<T>::Size , s1.getReg( JitRegType<T>::Val_t ) );
       return *this;
     }
 
@@ -66,7 +67,7 @@ namespace QDP {
 
     //! Do shallow copies here
     // Not sure?? Maybe deep
-    //WordJIT(const WordJIT& a): function(a.function), addr(a.addr), off(a.off) {}
+    //WordJIT(const WordJIT& a): jit(a.jit), addr(a.addr), off(a.off) {}
 
     int getReg( Jit::RegType type ) const {
       std::cout << "getReg type=" << type 
@@ -83,40 +84,49 @@ namespace QDP {
 	    exit(1);
 	  }
 	  // We have the value in a register, but not with the requested type 
+	  std::cout << "We have the value in a register, but not with the requested type\n";
 	  MapRegType::iterator loaded = mapReg.begin();
 	  Jit::RegType loadedType = loaded->first;
 	  int loadedId = loaded->second;
-	  mapReg.insert( std::make_pair( type , function.getRegs( type , 1 ) ) );
-	  function.asm_cvt( mapReg.at(type) , loadedId );
+	  mapReg.insert( std::make_pair( type , jit.getRegs( type , 1 ) ) );
+	  jit.asm_cvt( mapReg.at(type) , loadedId );
 	  return mapReg.at(type);
 	} else {
 	  // We don't have the value in a register. Need to load it.
+	  std::cout << "We don't have the value in a register. Need to load it " << (void*)this << " " << (void*)&jit << "\n";
 	  Jit::RegType myType = JitRegType<T>::Val_t;
-	  mapReg.insert( std::make_pair( myType , function.getRegs( JitRegType<T>::Val_t , 1 ) ) );
-	  function.asm_ld( mapReg.at( myType ) , r_addr , offset_level * WordSize<T>::Size );
+	  std::cout << "1\n";
+	  mapReg.insert( std::make_pair( myType , jit.getRegs( JitRegType<T>::Val_t , 1 ) ) );
+	  std::cout << "2\n";
+	  jit.asm_ld( mapReg.at( myType ) , r_addr , offset_level * WordSize<T>::Size );
+	  std::cout << "3\n";
+
+	  std::cout << "inserted load " << jit.getName(mapReg.at( myType ))  << "\n";
+
 	  return getReg(type);
 	}
       }
     }
 
+#if 0
     WordJIT(const WordJIT& a): 
-      function(a.function), 
+      jit(a.jit), 
       mapReg(a.mapReg), 
       r_addr(a.r_addr),  
       offset_full(a.offset_full), 
       offset_level(a.offset_level) {
       std::cout << "WordJIT copy c-tor\n";
     }
+#endif
 
-
-    Jit& getFunc() const {return function;}
+    Jit& func() const {return jit;}
 
 
   private:
     typedef std::map< Jit::RegType , int > MapRegType;
-    Jit&  function;
+    Jit&  jit;
     mutable MapRegType mapReg;
-    mutable int r_addr;
+    int r_addr;
     int offset_full;
     int offset_level;
   };
@@ -141,7 +151,7 @@ struct WordType<WordJIT<T> >
   inline void
   addRep(const WordJIT<T0>& dest, const WordJIT<T1>& l, const WordJIT<T2>& r)
   {
-    dest.getFunc().asm_add( dest.getReg( JitRegType<T0>::Val_t ) , 
+    dest.func().asm_add( dest.getReg( JitRegType<T0>::Val_t ) , 
 			    l.getReg( JitRegType<T0>::Val_t ) , 
 			    r.getReg( JitRegType<T0>::Val_t ) );
   }
@@ -152,7 +162,7 @@ struct WordType<WordJIT<T> >
   inline void
   subRep(const WordJIT<T0>& dest, const WordJIT<T1>& l, const WordJIT<T2>& r)
   {
-    dest.getFunc().asm_sub( dest.getReg( JitRegType<T0>::Val_t ) , 
+    dest.func().asm_sub( dest.getReg( JitRegType<T0>::Val_t ) , 
 			    l.getReg( JitRegType<T0>::Val_t ) , 
 			    r.getReg( JitRegType<T0>::Val_t ) );
   }
@@ -164,7 +174,7 @@ struct WordType<WordJIT<T> >
   inline void
   mulRep(const WordJIT<T0>& dest,const WordJIT<T1>& l, const WordJIT<T2>& r)
   {
-    dest.getFunc().asm_mul( dest.getReg( JitRegType<T0>::Val_t ) , 
+    dest.func().asm_mul( dest.getReg( JitRegType<T0>::Val_t ) , 
 			    l.getReg( JitRegType<T0>::Val_t ) , 
 			    r.getReg( JitRegType<T0>::Val_t ) );
   }
@@ -175,7 +185,7 @@ struct WordType<WordJIT<T> >
   inline void
   fmaRep( const WordJIT<T0>& dest, const WordJIT<T1>& l, const WordJIT<T2>& r, const WordJIT<T3>& add )
   {
-    dest.getFunc().asm_fma( dest.getReg( JitRegType<T0>::Val_t ) , 
+    dest.func().asm_fma( dest.getReg( JitRegType<T0>::Val_t ) , 
 			    l.getReg( JitRegType<T0>::Val_t ) , 
 			    r.getReg( JitRegType<T0>::Val_t ) , 
 			    add.getReg( JitRegType<T0>::Val_t ) );
@@ -186,7 +196,7 @@ struct WordType<WordJIT<T> >
   inline void
   negRep( const WordJIT<T0>& dest, const WordJIT<T1>& src )
   {
-    dest.getFunc().asm_neg( dest.getReg( JitRegType<T0>::Val_t ) , 
+    dest.func().asm_neg( dest.getReg( JitRegType<T0>::Val_t ) , 
 			    src.getReg( JitRegType<T0>::Val_t ) );
   }
 
@@ -195,7 +205,7 @@ struct WordType<WordJIT<T> >
   inline void
   idRep( const WordJIT<T0>& dest, const WordJIT<T1>& src )
   {
-    dest.getFunc().asm_mov( dest.getReg( JitRegType<T0>::Val_t ) , 
+    dest.func().asm_mov( dest.getReg( JitRegType<T0>::Val_t ) , 
 			    src.getReg( JitRegType<T0>::Val_t ) );
   }
 

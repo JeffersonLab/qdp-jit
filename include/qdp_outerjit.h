@@ -13,12 +13,39 @@ namespace QDP {
 
     //OLatticeJIT(Jit& func_, int addr_) : function(func_), r_addr(addr_) {}
 
-    OLatticeJIT(Jit& func_, int addr_) : QDPTypeJIT<T, OLatticeJIT<T> >(func_,addr_) {}
+#if 0
+    OLatticeJIT(const OLatticeJIT& a): 
+      QDPTypeJIT<T, OLatticeJIT<T> >( a.getFunc() , a.getAddr() ),
+      view( a.getFunc() , a.getAddr() , Layout::sitesOnNode() , 0 ) 
+    {
+      std::cout << "OLatJIT copy ctor " << (void*)this <<"\n";
+    }
+#endif
+
+    ~OLatticeJIT() {
+      std::cout << "OLatJIT dtor " << (void*)this <<"\n";
+    }
+
+#if 0
+    OLatticeJIT(Jit& func_, int addr_) : 
+      QDPTypeJIT<T, OLatticeJIT<T> >(func_,addr_),
+      view( func_ , addr_ , Layout::sitesOnNode() , 0 ) 
+    {
+      std::cout << "OLatJIT() constr " << (void*)this << " " << (void*)&func_ << "\n";
+    }
+#else
+    OLatticeJIT(Jit& func_, int addr_) : 
+      QDPTypeJIT<T, OLatticeJIT<T> >(func_,addr_)
+    {
+      std::cout << "OLatJIT() constr " << (void*)this << " " << (void*)&func_ << "\n";
+    }
+#endif
 
   private:
     // These are not working yet
-    void operator=(const OLatticeJIT& a) {}
+    void operator=(const OLatticeJIT& a);
 
+#if 1
   public:
     inline T elem(unsigned site) {
       std::cout << "OLatJIT elem() \n";
@@ -28,10 +55,21 @@ namespace QDP {
       std::cout << "OLatJIT elem() \n";
       return T(QDPTypeJIT<T, OLatticeJIT<T> >::getFunc(), QDPTypeJIT<T, OLatticeJIT<T> >::getAddr(), Layout::sitesOnNode() , site );
     }
-
+#else
+  public:
+    inline T& elem(unsigned site) {
+      std::cout << "OLatJIT elem() " << (void*)this << " " << (void*)&QDPTypeJIT<T, OLatticeJIT<T> >::getFunc() <<"\n";
+      return view;
+    }
+    inline const T& elem(unsigned site) const {
+      std::cout << "OLatJIT elem() " << (void*)this << " " << (void*)&QDPTypeJIT<T, OLatticeJIT<T> >::getFunc() <<"\n";
+      return view;
+    }
   private:
-    // Jit& function;
-    // int  r_addr;
+    T view;
+#endif
+
+    
   };
 
 

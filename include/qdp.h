@@ -145,6 +145,8 @@ namespace QDP {
 // Include the allocator stuff here, before QDP_outer
 #include "qdp_allocator.h"
 
+#include "qdp_jitresource.h"
+
 #include "qdp_newops.h"
 #include "qdp_optops.h"
 #include "qdp_profile.h"

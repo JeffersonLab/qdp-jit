@@ -288,7 +288,7 @@ struct OpMultiply
   {
     
     typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t  Ret_t;
-    Ret_t dest(a.getFunc());
+    Ret_t dest(a.func());
     mulRep(dest, a, b);
     return dest;
   }
@@ -720,16 +720,14 @@ struct OpAssign
   inline typename BinaryReturn<T1, T2, OpAssign >::Type_t
   operator()(const T1 &a, const T2 &b) const
   {
-      // T1& aa = const_cast<T1&>(a);
-      // T2& bb = const_cast<T2&>(b);
-    std::cout << __PRETTY_FUNCTION__ << "\n";
-    return const_cast<T1&>(a) = b;
-
-      //    return (const_cast<T1 &>(a) = b);
+    return (const_cast<T1 &>(a) = b);
   }
 };
 
-
+template<class T1, class T2 >
+struct BinaryReturn<T1, T2, OpAssign > {
+  typedef T1 &Type_t;
+};
 
 struct FnWhere
 {

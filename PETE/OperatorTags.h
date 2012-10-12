@@ -288,7 +288,7 @@ struct OpMultiply
   {
     
     typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t  Ret_t;
-    Ret_t dest(a.getFunc());
+    Ret_t dest(a.func());
     mulRep(dest, a, b);
     return dest;
   }

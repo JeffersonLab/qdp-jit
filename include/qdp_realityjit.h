@@ -13,45 +13,17 @@
 namespace QDP {
 
 
-//-------------------------------------------------------------------------------------
-/*! \addtogroup rscalar Scalar reality
- * \ingroup fiber
- *
- * Reality Scalar is a type for objects that are only real - no imaginary part
- *
- * @{
- */
 
-//! Scalar reality (not complex)
-template<class T> class RScalarJIT
+
+template<class T>
+class RScalarJIT : public JV<T,1>
 {
 public:
-  enum { ThisSize = 1 };
-  enum {Size_t = T::Size_t};
 
-  // New space
-  RScalarJIT(Jit& func_) : function(func_), member(func_)  {
-    std::cout << "RScalarJIT new space\n";
-  }
-
-  // View from global state space
-  RScalarJIT(Jit& func_ , int r_addr_ , int offset_full_ , int offset_level_ ) : 
-    function(func_), 
-    offset_full(offset_full_),
-    offset_level(offset_level_), 
-    r_addr(r_addr_),
-    member(func_, r_addr, offset_full_ * ThisSize , offset_level_ + offset_full_ * 0 )
-  {
-    //std::cout << "RScalarJIT global view " << lf.lim.size() << " " << lf.val.size() << "\n";
-  }
+  RScalarJIT(Jit& j,int r , int of , int ol): JV<T,1>(j,r,of,ol) {}
+  RScalarJIT(Jit& j): JV<T,1>(j) {}
 
 
-  //! Destructor
-  ~RScalarJIT() {}
-
-  //---------------------------------------------------------
-  //! RScalar = RScalar
-  /*! Set equal to another RScalar */
   template<class T1>
   RScalarJIT& operator=( const RScalarJIT<T1>& rhs) {
     elem() = rhs.elem();
@@ -175,33 +147,14 @@ public:
     }
 
 
-
-  Jit&  getFunc() const {return function;}
-
-  RScalarJIT(const RScalarJIT& a): 
-    function(a.function), 
-    r_addr(a.r_addr), 
-    offset_full(a.offset_full),
-    offset_level(a.offset_level),
-    member(a.member) {
-    std::cout << "RScalarJIT copy c-tor\n";
+  RScalarJIT(const RScalarJIT& a) : JV<T,1>::JV(a) {
+    std::cout << "RScalarJIT copy c-tor " << (void*)this << "\n";
   }
 
 
 public:
-  inline       T& elem()       { return member; }
-  inline const T& elem() const { return member; }
-
-
-
-
-
-private:
-  Jit&  function;
-  int r_addr;
-  int offset_full;
-  int offset_level;
-  T member;
+  inline       T& elem()       { return JV<T,1>::getF()[0]; }
+  inline const T& elem() const { return JV<T,1>::getF()[0]; }
 };
 
  
@@ -285,38 +238,13 @@ void read(XMLReader& xml, const string& path, RScalarJIT<T>& d)
  * @{
  */
 
-//! Reality complex
-/*! All fields are either complex or scalar reality */
-template<class T> class RComplexJIT
+template<class T>
+class RComplexJIT: public JV<T,2>
 {
 public:
-  enum { ThisSize = 2 };
-  enum {Size_t = ThisSize * T::Size_t};
 
-  // New space
-  RComplexJIT(Jit& func_) : 
-    function(func_),
-    mem_real(func_),
-    mem_imag(func_)
-  {
-  }
-
-  // View from global state space
-  // NOTE: no additional offset (a complex would multiply by 2)
-  RComplexJIT(Jit& func_ , int r_addr_ , int offset_full_ , int offset_level_ ):
-    function(func_), 
-    offset_full(offset_full_),
-    offset_level(offset_level_),
-    r_addr(r_addr_),
-    mem_real(func_, r_addr, offset_full_ * ThisSize , offset_level_ + offset_full_ * 0 ),
-    mem_imag(func_, r_addr, offset_full_ * ThisSize , offset_level_ + offset_full_ * 1 )
-  {
-  }
-
-
-  //! Destructor
-  ~RComplexJIT() {}
-
+  RComplexJIT(Jit& j,int r , int of , int ol): JV<T,2>(j,r,of,ol) {}
+  RComplexJIT(Jit& j): JV<T,2>(j) {}
 
 #if 0
   RComplexJIT() {}
@@ -443,35 +371,18 @@ public:
     }
 
 
-public:
-  inline       T& real()       { return mem_real; }
-  inline const T& real() const { return mem_real; }
-
-  inline       T& imag()       { return mem_imag; }
-  inline const T& imag() const { return mem_imag; }
-
-  Jit&  getFunc() const {return function;}
-
-  RComplexJIT(const RComplexJIT& a): 
-    function(a.function), 
-    r_addr(a.r_addr), 
-    offset_full(a.offset_full),
-    offset_level(a.offset_level),
-    mem_real(a.mem_real), 
-    mem_imag(a.mem_imag) {
-    std::cout << "RComplexJIT copy c-tor\n";
+  RComplexJIT(const RComplexJIT& a) : JV<T,2>::JV(a) {
+    std::cout << "RComplexJIT copy c-tor " << (void*)this << "\n";
   }
 
+public:
+  inline       T& real()       { return JV<T,2>::getF()[0]; }
+  inline const T& real() const { return JV<T,2>::getF()[0]; }
 
+  inline       T& imag()       { return JV<T,2>::getF()[1]; }
+  inline const T& imag() const { return JV<T,2>::getF()[1]; }
 
-private:
-  Jit&  function;
-  int r_addr;
-  int offset_full;
-  int offset_level;
-  T mem_real;
-  T mem_imag;
-} QDP_ALIGN8;   // possibly force alignment
+};
 
 
 
@@ -1944,7 +1855,7 @@ mulRep(const typename BinaryReturn<RComplexJIT<T1>, RComplexJIT<T2>, OpMultiply>
   mulRep( t1.elem() , l.imag() , r.real() );
   fmaRep( dest.imag() , l.real() , r.imag() , t1.elem() );
 #else
-  RScalarJIT<T1> t0(dest.getFunc());
+  RScalarJIT<T1> t0(dest.func());
 
   mulRep( t0.elem() , l.imag() , r.imag() );
   mulRep( dest.real() , l.real() , r.real() );

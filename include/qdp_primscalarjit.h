@@ -21,31 +21,14 @@ namespace QDP {
 
 //! Primitive Scalar
 /*! Placeholder for no primitive structure */
-template<class T> class PScalarJIT
+template<class T> class PScalarJIT : public JV<T,1>
 {
 public:
-  enum {ThisSize = 1};
-  enum {Size_t = T::Size_t};
 
-  // New space
-  PScalarJIT(Jit& func_) : function(func_), member(func_)  {
-    std::cout << "PScalarJIT new space\n";
-  }
+  PScalarJIT(Jit& j,int r , int of , int ol): JV<T,1>(j,r,of,ol) {}
+  PScalarJIT(Jit& j): JV<T,1>(j) {}
 
-  // View from global state space
-  PScalarJIT(Jit& func_ , int r_addr_ , int offset_full_ , int offset_level_ ) : 
-    function(func_), 
-    r_addr(r_addr_),
-    offset_full(offset_full_),
-    offset_level(offset_level_), 
-    member(func_, r_addr, offset_full_ * ThisSize , offset_level_ + offset_full_ * 0 )
-  {
-    //std::cout << "PScalarJIT global view " << lf.lim.size() << " " << lf.val.size() << "\n";
-  }
-
-
-  //! Destructor
-  ~PScalarJIT() {}
+  //PScalarJIT(const PScalarJIT& a): JV<T,1>(a) {}
 
   //---------------------------------------------------------
   //! PScalar = PScalar
@@ -173,33 +156,15 @@ public:
       return *this;
     }
 
-
-
-
-public:
-  inline       T elem()       { return member; }
-  inline const T elem() const { return member; }
-
-
-
-  Jit&  getFunc() const {return function;}
-
-  PScalarJIT(const PScalarJIT& a): 
-    function(a.function), 
-    r_addr(a.r_addr), 
-    offset_full(a.offset_full),
-    offset_level(a.offset_level),
-    member(a.member) {
-    std::cout << "RComplexJIT copy c-tor\n";
+  
+  PScalarJIT(const PScalarJIT& a) : JV<T,1>::JV(a) {
+    std::cout << "PScalarJIT copy c-tor " << (void*)this << "\n";
   }
+  
+public:
+  inline       T& elem()       { return JV<T,1>::getF()[0]; }
+  inline const T& elem() const { return JV<T,1>::getF()[0]; }
 
-
-private:
-  Jit&  function;
-  int r_addr;
-  int offset_full;
-  int offset_level;
-  T member;
 };
 
 

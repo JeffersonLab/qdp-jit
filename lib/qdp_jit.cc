@@ -2,6 +2,10 @@
 
 namespace QDP {
 
+const Jit::RegType JitRegType<float>::Val_t;
+const Jit::RegType JitRegType<double>::Val_t;
+const Jit::RegType JitRegType<int>::Val_t;
+
 Jit::Jit(const std::string& _filename , const std::string& _funcname ) :
     filename(_filename) , funcname(_funcname)
 {
