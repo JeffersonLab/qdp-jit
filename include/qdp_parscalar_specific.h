@@ -370,7 +370,7 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
     }
   else
     {
-      std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
+      //std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
     }
 
   // Execute the function

@@ -59,7 +59,7 @@ template<class T, class T1, class Op, class RHS>
 void 
 function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs)
 {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   AddressLeaf addr_leaf;
 
@@ -69,7 +69,7 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
   std::vector<void*> addr;
   for(int i=0; i < addr_leaf.addr.size(); ++i) {
     addr.push_back( &addr_leaf.addr[i] );
-    std::cout << "addr=" << addr_leaf.addr[i] << "\n";
+    //std::cout << "addr=" << addr_leaf.addr[i] << "\n";
   }
 
   static int threadsPerBlock = 0;
@@ -117,7 +117,7 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
     QDP_info_primary("Threads per block favored = %d  (time=%f micro secs)",best_cfg,best_time);
     threadsPerBlock = best_cfg;
   } else {
-    QDP_info_primary("Previous auto-tuning result = %d",threadsPerBlock);
+    //QDP_info_primary("Previous auto-tuning result = %d",threadsPerBlock);
   }
 
   kernel_geom_t now = getGeom( Layout::sitesOnNode() , threadsPerBlock );
