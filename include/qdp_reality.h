@@ -173,6 +173,13 @@ private:
   T F;
 };
 
+
+template<class T> 
+struct WordSize< RScalar<T> >
+{
+  enum { Size = WordSize<T>::Size };
+};
+
  
 // Input
 //! Ascii input
@@ -405,6 +412,12 @@ private:
   T im;
 } QDP_ALIGN8;   // possibly force alignment
 
+
+template<class T> 
+struct WordSize< RComplex<T> >
+{
+  enum { Size = WordSize<T>::Size };
+};
 
 template<class T> 
 struct JITContainerType<RScalar<T> >

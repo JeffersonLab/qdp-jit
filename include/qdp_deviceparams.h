@@ -41,14 +41,19 @@ namespace QDP {
 
     bool getAsyncTransfers() { return asyncTransfers; }
 
+    void autoDetect();
+
   private:
     DeviceParams(): syncDevice(false), maxKernelArg(512) {};   // Private constructor
     DeviceParams(const DeviceParams&);                            // Prevent copy-construction
     DeviceParams& operator=(const DeviceParams&);
+    int roundDown2pow(int x);
 
   private:
+    int device;
     bool syncDevice;
     bool asyncTransfers;
+    bool unifiedAddressing;
     int maxKernelArg;
 
     int smem;

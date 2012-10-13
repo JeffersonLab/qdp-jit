@@ -878,10 +878,10 @@ operator-(const RScalarJIT<T1>& l)
 
 
 template<class T1, class T2>
-inline typename BinaryReturn<RScalarJIT<T1>, RScalarJIT<T2>, OpAdd>::Type_t
-operator+(const RScalarJIT<T1>& l, const RScalarJIT<T2>& r)
+inline void
+addRep(const typename BinaryReturn<RScalarJIT<T1>, RScalarJIT<T2>, OpAdd>::Type_t& dest, const RScalarJIT<T1>& l, const RScalarJIT<T2>& r)
 {
-  return l.elem()+r.elem();
+  addRep( dest.elem() , l.elem() , r.elem() );
 }
 
 
@@ -1780,13 +1780,11 @@ operator-(const RComplexJIT<T1>& l)
 
 //! RComplexJIT = RComplexJIT + RComplexJIT
 template<class T1, class T2>
-inline typename BinaryReturn<RComplexJIT<T1>, RComplexJIT<T2>, OpAdd>::Type_t
-operator+(const RComplexJIT<T1>& l, const RComplexJIT<T2>& r)
+inline void
+addRep(const typename BinaryReturn<RComplexJIT<T1>, RComplexJIT<T2>, OpAdd>::Type_t& dest, const RComplexJIT<T1>& l, const RComplexJIT<T2>& r)
 {
-  typedef typename BinaryReturn<RComplexJIT<T1>, RComplexJIT<T2>, OpAdd>::Type_t  Ret_t;
-
-  return Ret_t(l.real()+r.real(),
-	       l.imag()+r.imag());
+  addRep( dest.real() , l.real() , r.real() );
+  addRep( dest.imag() , l.imag() , r.imag() );
 }
 
 //! RComplexJIT = RComplexJIT + RScalarJIT

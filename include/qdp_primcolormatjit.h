@@ -25,7 +25,11 @@ namespace QDP {
 template <class T, int N> class PColorMatrixJIT : public PMatrixJIT<T, N, PColorMatrixJIT>
 {
 public:
-  //enum {Size_t = T::Size_t};
+
+  PColorMatrixJIT(Jit& j,int r , int of , int ol): PMatrixJIT<T, N, PColorMatrixJIT>(j,r,of,ol) {}
+  PColorMatrixJIT(Jit& j): PMatrixJIT<T, N, PColorMatrixJIT>(j) {}
+
+
 
   //! PColorMatrixJIT = PScalarJIT
   /*! Fill with primitive scalar */
@@ -33,7 +37,7 @@ public:
   inline
   PColorMatrixJIT& operator=(const PScalarJIT<T1>& rhs)
     {
-      assign(rhs);
+      this->assign(rhs);
       return *this;
     }
 
@@ -43,7 +47,7 @@ public:
   inline
   PColorMatrixJIT& operator=(const PColorMatrixJIT<T1,N>& rhs) 
     {
-      assign(rhs);
+      this->assign(rhs);
       return *this;
     }
 
@@ -51,7 +55,7 @@ public:
 
   PColorMatrixJIT& operator=(const PColorMatrixJIT& rhs) 
     {
-      assign(rhs);
+      this->assign(rhs);
       return *this;
     }
 

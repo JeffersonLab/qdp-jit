@@ -53,11 +53,20 @@ public:
 // Traits classes 
 //-----------------------------------------------------------------------------
 
+
+
+  template<class T, int N> 
+  struct WordSize< PColorMatrix<T,N> >
+  {
+    enum { Size = WordSize<T>::Size };
+  };
+
+
   template<class T, int N> 
   struct JITContainerType<PColorMatrix<T,N> >
-{
-  typedef PColorMatrixJIT<typename JITContainerType<T>::Type_t,N>  Type_t;
-};
+  {
+    typedef PColorMatrixJIT<typename JITContainerType<T>::Type_t,N>  Type_t;
+  };
 
 
 

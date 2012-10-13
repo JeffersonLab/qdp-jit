@@ -69,7 +69,6 @@ namespace QDP {
 
 
 		CudaInit();
-		bool paramCC = false;
 		bool setPoolSize = false;
 
 		
@@ -151,6 +150,7 @@ namespace QDP {
 				setProgramProfileLevel(lev);
 			}
 #endif
+#if 0
 			else if (strcmp((*argv)[i], "-sm")==0) 
 			  {
 			    int uu;
@@ -158,6 +158,7 @@ namespace QDP {
 			    paramCC=true;
 			    DeviceParams::Instance().setCC(uu);
 			  }
+#endif
 			else if (strcmp((*argv)[i], "-sync")==0) 
 			  {
 			    DeviceParams::Instance().setSyncDevice(true);
@@ -249,8 +250,6 @@ namespace QDP {
 
 		if (!setPoolSize)
 		  QDP_error_exit("Run-time argument -poolsize <size> missing. Please consult README.");
-		if (!paramCC)
-		  DeviceParams::Instance().setCC(20);
 
 		
 		QMP_verbose (QMP_verboseP);

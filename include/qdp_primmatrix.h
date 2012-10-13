@@ -167,6 +167,56 @@ private:
 };
 
 
+
+
+// Input
+//! Ascii input
+#if 0
+template<class T>
+inline
+istream& operator>>(istream& s, PScalar<T>& d)
+{
+  return s >> d.elem();
+}
+
+//! Ascii input
+template<class T>
+inline
+StandardInputStream& operator>>(StandardInputStream& s, PScalar<T>& d)
+{
+  return s >> d.elem();
+}
+#endif
+
+// Output
+//! Ascii output
+template<class T, int N, template<class,int> class C>  
+inline
+ostream& operator<<(ostream& s, const PMatrix<T,N,C>& d)
+{
+  for(int j=0; j < N; ++j) {
+    for(int i=0; i < N; ++i)
+      s << d.elem(i,j);
+    s << "\n";
+  }
+  return s;
+}
+
+#if 0
+//! Ascii output
+template<class T, int N, template<class,int> class C>  
+inline
+StandardOutputStream& operator<<(StandardOutputStream& s, PMatrix<T,N,C>& d)
+{
+  for(int j=0; j < N; ++j)
+    for(int i=0; i < N; ++i)
+      s << d.elem(i,j);
+  return s;
+}
+#endif
+
+
+
 //! Text input
 template<class T, int N, template<class,int> class C>  
 inline

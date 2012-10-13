@@ -174,6 +174,10 @@ private:
 
 
 
+template<> struct WordSize< Word<float> > { enum { Size = sizeof(float) }; };
+template<> struct WordSize< Word<double> > { enum { Size = sizeof(double) }; };
+template<> struct WordSize< Word<int> > { enum { Size = sizeof(int) }; };
+template<> struct WordSize< Word<bool> > { enum { Size = sizeof(bool) }; };
 
 
 template<class T> 

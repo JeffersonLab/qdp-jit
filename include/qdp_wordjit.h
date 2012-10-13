@@ -21,35 +21,44 @@ namespace QDP {
       jit(j), 
       r_addr(r_addr_),
       offset_full(offset_full_),
-      offset_level(offset_level_) {
+      offset_level(offset_level_) , global_state(true) {
       //std::cout << "WordJIT(Jit& func_ , int r_addr_  ) global view\n";
       std::cout << "WordJIT() global view   " << (void*)this << " " << (void*)&j << "\n";
     }
 
     //! New space 
-    WordJIT(Jit& j ) : jit(j) {
+    WordJIT(Jit& j ) : jit(j), global_state(false) {
       int tmp;
       mapReg.insert( std::make_pair( JitRegType<T>::Val_t , tmp = jit.getRegs( JitRegType<T>::Val_t , 1 ) ) );
       std::cout << "WordJIT(Jit& func_ ) new space   regName = " << jit.getName(tmp) << " " << (void*)this << " " << (void*)&jit <<  "\n";
     }
 
-    //! Destructor
-    ~WordJIT() {}
+
+    template <class T1>
+    WordJIT& assign(const WordJIT<T1>& s1) {
+      if (global_state)
+	jit.asm_st( r_addr , offset_level * WordSize<T>::Size , s1.getReg( JitRegType<T>::Val_t ) );
+      else
+	jit.asm_mov( getReg( JitRegType<T>::Val_t ) , s1.getReg( JitRegType<T>::Val_t ) );
+      return *this;
+    }
 
     //---------------------------------------------------------
     template <class T1>
     WordJIT& operator=(const WordJIT<T1>& s1) {
       std::cout << __PRETTY_FUNCTION__ << ": instructions needed?\n" << (void*)this << " " << (void*)&s1 << "\n";
-
       // Value can be in register file (AddAssign for example)
-      jit.asm_st( r_addr , offset_level * WordSize<T>::Size , s1.getReg( JitRegType<T>::Val_t ) );
-      return *this;
+      // jit.asm_st( r_addr , offset_level * WordSize<T>::Size , s1.getReg( JitRegType<T>::Val_t ) );
+      // return *this;
+      return assign(s1);
     }
+
 
     WordJIT& operator=(const WordJIT& s1) {
       std::cout << __PRETTY_FUNCTION__ << ": (assignment op) instructions needed?\n" << (void*)this << " " << (void*)&s1 << "\n";
-      jit.asm_st( r_addr , offset_level * WordSize<T>::Size , s1.getReg( JitRegType<T>::Val_t ) );
-      return *this;
+      // jit.asm_st( r_addr , offset_level * WordSize<T>::Size , s1.getReg( JitRegType<T>::Val_t ) );
+      // return *this;
+      return assign(s1);
     }
 
     template<class T1>
@@ -118,6 +127,7 @@ namespace QDP {
 
   private:
     typedef std::map< Jit::RegType , int > MapRegType;
+    bool global_state;
     Jit&  jit;
     mutable MapRegType mapReg;
     int r_addr;

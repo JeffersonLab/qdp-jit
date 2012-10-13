@@ -15,6 +15,10 @@ template<class T>       struct JITContainerType;
 template<class T>       struct WordSize;
 template<class T,int N> struct GetLimit;
 
+template<> struct WordSize< float > { enum { Size = sizeof(float) }; };
+template<> struct WordSize< double > { enum { Size = sizeof(double) }; };
+template<> struct WordSize< int > { enum { Size = sizeof(int) }; };
+template<> struct WordSize< bool > { enum { Size = sizeof(bool) }; };
 
   // GetLimit extracts the size of the specified QDP type level
 
@@ -38,16 +42,16 @@ template<> struct JITContainerType<float>  { typedef float  Type_t; };
 template<> struct JITContainerType<double> { typedef double  Type_t; };
 
 
-template< template<class> class T, class T2> 
-struct WordSize< T<T2> >
-{
-  enum { Size = WordSize<T2>::Size };
-};
+// template< template<class> class T, class T2> 
+// struct WordSize< T<T2> >
+// {
+//   enum { Size = WordSize<T2>::Size };
+// };
 
-template<class T>
-struct WordSize {
-  enum { Size=sizeof(T) };
-};
+// template<class T>
+// struct WordSize {
+//   enum { Size=sizeof(T) };
+// };
 
 
 //-----------------------------------------------------------------------------

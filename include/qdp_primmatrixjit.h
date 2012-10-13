@@ -66,6 +66,17 @@ public:
       return static_cast<CC&>(*this);
     }
 
+#if 0
+  PMatrixJIT& assign(const PMatrixJIT& rhs) 
+    {
+      for(int i=0; i < N; ++i)
+	for(int j=0; j < N; ++j)
+	  elem(i,j) = rhs.elem(i,j);
+
+      return static_cast<PMatrixJIT&>(*this);
+    }
+#endif
+
   //! PMatrixJIT += PMatrixJIT
   template<class T1>
   inline
@@ -370,17 +381,27 @@ struct BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpAdd> {
   typedef C<typename BinaryReturn<T1, T2, OpAdd>::Type_t, N>  Type_t;
 };
 
-template<class T1, class T2, int N, template<class,int> class C>
-inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpAdd>::Type_t
-operator+(const PMatrixJIT<T1,N,C>& l, const PMatrixJIT<T2,N,C>& r)
-{
-  typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpAdd>::Type_t  d;
 
+// template<class T1, class T2, int N, template<class,int> class C>
+// inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpAdd>::Type_t
+// operator+(const PMatrixJIT<T1,N,C>& l, const PMatrixJIT<T2,N,C>& r)
+// {
+//   typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpAdd>::Type_t  d;
+
+//   for(int i=0; i < N; ++i)
+//     for(int j=0; j < N; ++j)
+//       d.elem(i,j) = l.elem(i,j) + r.elem(i,j);
+
+//   return d;
+// }
+
+template<class T1, class T2, int N, template<class,int> class C>
+inline void
+addRep(const typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpAdd>::Type_t& dest, const PMatrixJIT<T1,N,C>& l, const PMatrixJIT<T2,N,C>& r)
+{
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
-      d.elem(i,j) = l.elem(i,j) + r.elem(i,j);
-
-  return d;
+      addRep( dest.elem(i,j) , l.elem(i,j) , r.elem(i,j) );
 }
 
 // PMatrixJIT = PMatrixJIT + PScalarJIT
@@ -633,21 +654,41 @@ struct BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiply> {
   typedef C<typename BinaryReturn<T1, T2, OpMultiply>::Type_t, N>  Type_t;
 };
 
-template<class T1, class T2, int N, template<class,int> class C>
-inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiply>::Type_t
-operator*(const PMatrixJIT<T1,N,C>& l, const PMatrixJIT<T2,N,C>& r)
-{
-  typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiply>::Type_t  d;
 
+// template<class T1, class T2, int N, template<class,int> class C>
+// inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiply>::Type_t
+// operator*(const PMatrixJIT<T1,N,C>& l, const PMatrixJIT<T2,N,C>& r)
+// {
+//   typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiply>::Type_t  d;
+
+//   for(int i=0; i < N; ++i)
+//     for(int j=0; j < N; ++j)
+//     {
+//       d.elem(i,j) = l.elem(i,0) * r.elem(0,j);
+//       for(int k=1; k < N; ++k)
+// 	d.elem(i,j) += l.elem(i,k) * r.elem(k,j);
+//     }
+
+//   return d;
+// }
+
+
+template<class T1, class T2, int N, template<class,int> class C>
+inline void
+mulRep(const typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiply>::Type_t& dest,
+       const PMatrixJIT<T1,N,C>& l, const PMatrixJIT<T2,N,C>& r)
+{
+  typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiply>::Type_t& dd = const_cast<typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiply>::Type_t&>(dest);
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
     {
-      d.elem(i,j) = l.elem(i,0) * r.elem(0,j);
-      for(int k=1; k < N; ++k)
-	d.elem(i,j) += l.elem(i,k) * r.elem(k,j);
+      mulRep( dest.elem(i,j) , l.elem(i,0) , r.elem(0,j) );
+      for(int k=1; k < N; ++k) {
+	typename BinaryReturn<T1,T2,OpMultiply>::Type_t tmp(dest.func());
+	mulRep( tmp , l.elem(i,k) , r.elem(k,j) ); 
+	dd.elem(i,j) += tmp;
+      }
     }
-
-  return d;
 }
 
 // Optimized  PMatrixJIT = adj(PMatrixJIT)*PMatrixJIT

@@ -496,6 +496,14 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 
   };
 
+
+template<class T> 
+struct WordSize< OLattice<T> >
+{
+  enum { Size = WordSize<T>::Size };
+};
+
+
 template<class T> 
 struct JITContainerType<OLattice<T> >
 {

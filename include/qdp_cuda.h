@@ -7,6 +7,8 @@ namespace QDP {
   enum QDPCudaStream { TRANSFER=0 , KERNEL=1 };
 
   void CudaInit();
+  //int CudaGetConfig(CUdevice_attribute what);
+  int CudaGetConfig(int what);
 
   bool CudaHostRegister(void * ptr , size_t size);
   void CudaHostUnregister(void * ptr );

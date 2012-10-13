@@ -16,11 +16,31 @@ using namespace std;
 
 namespace QDP {
 
+  CUstream * QDPcudastreams;
+  CUevent * QDPevCopied;
+
+  CUdevice cuDevice;
+  CUcontext cuContext;
+
+  bool deviceSet = false;
+
   void CudaRes(const std::string& s,CUresult ret) {
     if (ret != CUDA_SUCCESS) {
       std::cout << "cuda error: " << s << "\n";
       exit(1);
     }
+  }
+
+  //int CudaGetConfig(CUdevice_attribute what)
+  int CudaGetConfig(int what)
+  {
+    if (!deviceSet)
+      QDP_error_exit("CudaGetConfig called before device set");
+    int data;
+    CUresult ret;
+    ret = cuDeviceGetAttribute( &data, (CUdevice_attribute)what , cuDevice );
+    CudaRes("cuDeviceGetAttribute",ret);
+    return data;
   }
 
 
@@ -40,11 +60,7 @@ namespace QDP {
 
 
 
-  CUstream * QDPcudastreams;
-  CUevent * QDPevCopied;
 
-  CUdevice cuDevice;
-  CUcontext cuContext;
 
 
   void * CudaGetKernelStream() {
@@ -85,10 +101,8 @@ namespace QDP {
     ret = cuCtxCreate(&cuContext, 0, cuDevice);
     CudaRes("",ret);
 
-    int unified;
-    ret = cuDeviceGetAttribute( &unified, CU_DEVICE_ATTRIBUTE_UNIFIED_ADDRESSING, dev );
-    CudaRes("cuDeviceGetAttribute",ret);
-    std::cout << "device supports UA = " << unified << "\n";
+    deviceSet=true;
+    DeviceParams::Instance().autoDetect();
   }
 
   void CudaGetDeviceCount(int * count)

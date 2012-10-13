@@ -264,7 +264,11 @@ struct OpAdd
   inline typename BinaryReturn<T1, T2, OpAdd >::Type_t
   operator()(const T1 &a, const T2 &b) const
   {
-    return (a + b);
+    
+    typedef typename BinaryReturn<T1, T2, OpAdd>::Type_t  Ret_t;
+    Ret_t dest(a.func());
+    addRep(dest, a, b);
+    return dest;
   }
 };
 

@@ -2,6 +2,36 @@
 
 namespace QDP {
 
+  int DeviceParams::roundDown2pow(int x) {
+    int s=1;
+    while (s<=x) s <<= 1;
+    s >>= 1;
+    return s;
+  }
+
+
+  void DeviceParams::autoDetect() {
+    unifiedAddressing = CudaGetConfig(CU_DEVICE_ATTRIBUTE_UNIFIED_ADDRESSING) == 1;
+    asyncTransfers = CudaGetConfig(CU_DEVICE_ATTRIBUTE_GPU_OVERLAP) == 1;
+    smem = CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_SHARED_MEMORY_PER_BLOCK );
+    smem_default = 0;
+    max_gridx = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_X ) );
+    max_gridy = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_Y ) );
+    max_gridz = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_Z ) );
+    max_blockx = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X ) );
+    max_blocky = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y ) );
+    max_blockz = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Z ) );
+    QDP_info_primary("unified addr   = %d",unifiedAddressing ? 1 : 0);
+    QDP_info_primary("asyncTransfers = %d",asyncTransfers ? 1 : 0);
+    QDP_info_primary("smem           = %d",smem);
+    QDP_info_primary("max_gridx      = %d",max_gridx);
+    QDP_info_primary("max_gridy      = %d",max_gridy);
+    QDP_info_primary("max_gridz      = %d",max_gridz);
+    QDP_info_primary("max_blockx     = %d",max_blockx);
+    QDP_info_primary("max_blocky     = %d",max_blocky);
+    QDP_info_primary("max_blockz     = %d",max_blockz);
+  }
+
   void DeviceParams::setCC(int sm) {
     switch(sm) {
     case 12:

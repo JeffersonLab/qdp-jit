@@ -171,6 +171,14 @@ private:
 
 
 template<class T> 
+struct WordSize< PScalar<T> >
+{
+  enum { Size = WordSize<T>::Size };
+};
+
+
+
+template<class T> 
 struct JITContainerType<PScalar<T> >
 {
   typedef PScalarJIT<typename JITContainerType<T>::Type_t>  Type_t;

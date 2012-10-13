@@ -105,6 +105,14 @@ private:
 
 
 template<class T> 
+struct WordSize< PSeed<T> >
+{
+  enum { Size = WordSize<T>::Size };
+};
+
+
+
+template<class T> 
 struct JITContainerType<PSeed<T> >
 {
   typedef PSeedJIT<typename JITContainerType<T>::Type_t>  Type_t;

@@ -418,11 +418,17 @@ operator-(const PScalarJIT<T1>& l)
 }
 
 // PScalarJIT + PScalarJIT
+// template<class T1, class T2>
+// inline typename BinaryReturn<PScalarJIT<T1>, PScalarJIT<T2>, OpAdd>::Type_t
+// operator+(const PScalarJIT<T1>& l, const PScalarJIT<T2>& r)
+// {
+//   return l.elem() + r.elem();
+// }
 template<class T1, class T2>
-inline typename BinaryReturn<PScalarJIT<T1>, PScalarJIT<T2>, OpAdd>::Type_t
-operator+(const PScalarJIT<T1>& l, const PScalarJIT<T2>& r)
+inline void 
+addRep(const typename BinaryReturn<PScalarJIT<T1>, PScalarJIT<T2>, OpAdd>::Type_t& dest, const PScalarJIT<T1>& l, const PScalarJIT<T2>& r)
 {
-  return l.elem() + r.elem();
+  addRep(dest.elem() , l.elem() , r.elem() );
 }
 
 // PScalarJIT - PScalarJIT
