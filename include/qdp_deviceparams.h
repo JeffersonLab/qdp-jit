@@ -9,6 +9,14 @@
 
 namespace QDP {
 
+  struct kernel_geom_t {
+    int threads_per_block;
+    int Nblock_x;
+    int Nblock_y;
+  };
+
+  kernel_geom_t getGeom(int numSites , int threadsPerBlock);
+
 
   class DeviceParams {
   public:
