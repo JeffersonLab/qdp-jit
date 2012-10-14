@@ -78,6 +78,14 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
 
   if (!threadsPerBlock) {
     // Auto tuning
+
+    // Fist get a data field of the same size as "dest" where we can play on
+    // (in case the final operator is an OpAddAssign, etc.)
+    int tmpId = QDPCache::Instance().registrate( QDPCache::Instance().getSize( dest.getId() ) , 1 , NULL );
+    void * devPtr = QDPCache::Instance().getDevicePtr( tmpId );
+    //QDPCache::Instance().printLockSets();
+    addr[0] = &devPtr;
+
     double best_time;
     int best_cfg=-1;
     bool first=true;
@@ -117,6 +125,12 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
 
     QDP_info_primary("Threads per block favored = %d  (time=%f micro secs)",best_cfg,best_time);
     threadsPerBlock = best_cfg;
+
+    // Restore original "dest" device address
+    addr[0] = &addr_leaf.addr[0];
+    QDPCache::Instance().signoff( tmpId );
+    //QDPCache::Instance().printLockSets();
+
   } else {
     //QDP_info_primary("Previous auto-tuning result = %d",threadsPerBlock);
   }

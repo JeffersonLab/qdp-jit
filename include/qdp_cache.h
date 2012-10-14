@@ -25,6 +25,7 @@ namespace QDP
     typedef void (* LayoutFptr)(bool toDev,void * outPtr,void * inPtr);
     static QDPCache& Instance();
 
+    size_t getSize(int id);
     void beginNewLockSet();
     void releasePrevLockSet();
     void printLockSets();

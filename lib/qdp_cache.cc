@@ -51,6 +51,9 @@ namespace QDP
 
       vecLockSet[prevLS].pop_back();
     }
+
+    // Inserted this one. Not sure.
+    deleteObjects();
   }
 
   void QDPCache::printLockSets() {
@@ -169,7 +172,10 @@ namespace QDP
     CUDAHostPoolAllocator::Instance().sayHi();
   }
 
-
+  size_t QDPCache::getSize(int id) {
+    const Entry& e = vecEntry[id];
+    return e.size;
+  }
 
   bool QDPCache::onDevice(int id) const {
 
@@ -628,8 +634,9 @@ namespace QDP
 	QDP_debug_deep("cache delete obj size=%u",(unsigned)e.size);
 #endif
 	  
-	if (e.devPtr)
+	if (e.devPtr) {
 	  CUDADevicePoolAllocator::Instance().free( e.devPtr );
+	}
 
 	if (e.hstPtr)
 	  freeHostMemory(e);
