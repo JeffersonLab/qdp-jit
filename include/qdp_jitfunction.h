@@ -66,7 +66,7 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
   int junk_dst = forEach(dest, addr_leaf, NullCombine());
   int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
 
-  QDPCache::Instance().printLockSets();
+  //QDPCache::Instance().printLockSets();
 
   std::vector<void*> addr;
   for(int i=0; i < addr_leaf.addr.size(); ++i) {
@@ -83,7 +83,6 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
     bool first=true;
     for ( int cfg = 1 ; cfg <= DeviceParams::Instance().getMaxBlockX(); cfg *= 2 ) {
       kernel_geom_t now = getGeom( Layout::sitesOnNode() , cfg );
-      std::cout << "launching threads per block = " << cfg << "  grid=(" << now.Nblock_x << "," << now.Nblock_y << ",1)\n";
 
       StopWatch w;
       CUresult result = CUDA_SUCCESS;
@@ -97,7 +96,7 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
       if (result == CUDA_SUCCESS) {
 	w.stop();
 	double time = w.getTimeInMicroseconds();
-	QDP_info_primary("(time=%f micro secs)",time);
+	QDP_info_primary("launched threads per block = %d grid = (%d,%d) (time=%f micro secs)",cfg,now.Nblock_x,now.Nblock_y,time);
 	if (first) {
 	  best_time = time;
 	  best_cfg = cfg;
@@ -109,7 +108,7 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
 	  }
 	}
       } else {
-	QDP_info_primary("Launch failed with code = %d",result);
+	QDP_info_primary("tried threads per block = %d, failed, code = %d ",cfg,result);
       }
     }
 

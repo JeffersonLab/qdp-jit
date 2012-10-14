@@ -34,6 +34,7 @@ typedef GammaTypeDP<Ns> GammaDP;
   typedef OLattice< PScalar< PScalar< RScalar< Word <REAL> > > > > NEWLatticeReal;
   typedef OLattice< PScalar< PScalar< RComplex< Word <REAL> > > > > NEWLatticeComplex;
   typedef OLattice< PScalar< PColorMatrix< RComplex< Word<REAL> >, Nc> > > NEWLatticeColorMatrix;
+  typedef OLattice< PSpinMatrix< PColorMatrix< RComplex< Word<REAL> >, Nc>, Ns> > NEWLatticePropagator;
   //  typedef OLattice< PScalar< RScalar< Word <REAL> > > > NEWLatticeReal;
   //  typedef OLattice< RScalar< Word <REAL> > > NEWLatticeReal;
 

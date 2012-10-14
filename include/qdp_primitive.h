@@ -32,6 +32,7 @@
 #include "qdp_primcolormat.h"
 #include "qdp_primcolorvec.h"
 #include "qdp_primgamma.h"
+#include "qdp_primspinmatjit.h"
 #include "qdp_primspinmat.h"
 #include "qdp_primspinvec.h"
 

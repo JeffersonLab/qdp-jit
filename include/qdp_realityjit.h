@@ -359,7 +359,6 @@ public:
 
   RComplexJIT& operator=(const RComplexJIT& rhs) 
     {
-      std::cout << "RComplexJIT& operator=\n";
       real() = rhs.real();
       imag() = rhs.imag();
       return *this;
@@ -386,9 +385,6 @@ public:
 
   inline       T& imag()       { return JV<T,2>::getF()[1]; }
   inline const T& imag() const { return JV<T,2>::getF()[1]; }
-
-private:
-  //RComplexJIT(const RComplexJIT& a);
 };
 
 

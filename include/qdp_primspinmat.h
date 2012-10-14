@@ -67,6 +67,20 @@ public:
 #endif
 
 
+  template<class T, int N> 
+  struct WordSize< PSpinMatrix<T,N> >
+  {
+    enum { Size = WordSize<T>::Size };
+  };
+
+
+  template<class T, int N> 
+  struct JITContainerType<PSpinMatrix<T,N> >
+  {
+    typedef PSpinMatrixJIT<typename JITContainerType<T>::Type_t,N>  Type_t;
+  };
+
+
 //-----------------------------------------------------------------------------
 // Traits classes 
 //-----------------------------------------------------------------------------

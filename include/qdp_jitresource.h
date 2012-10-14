@@ -31,7 +31,7 @@ public:
   enum { Size_t = ThisSize * T::Size_t}; // Size in registers
 
   JV(const JV& a): JV( a.jit , a.r_addr , a.off_full , a.off_level ) {
-    std::cout << "JV::JV() copy ctor " << __PRETTY_FUNCTION__ << " " << (void*)this << " " << (void*)&a.jit << "\n";
+    //std::cout << "JV::JV() copy ctor " << __PRETTY_FUNCTION__ << " " << (void*)this << " " << (void*)&a.jit << "\n";
   }
 
 
@@ -39,7 +39,7 @@ public:
   template<int... Is>
   JV(Jit& j ,  indices<Is...>) : 
     jit(j),  F{{(void(Is),j)...}} {
-    std::cout << "JV::JV() new regs " << (void*)this << " " << (void*)&j << "\n";
+    //std::cout << "JV::JV() new regs " << (void*)this << " " << (void*)&j << "\n";
   }
 
 
@@ -48,11 +48,11 @@ public:
   JV(Jit& j, int r , int of , int ol, indices<Indices...>)
     : jit(j), r_addr(r), off_full(of), off_level(ol), F { { {j,r,of*N,ol+of*Indices}... } }
   {
-    std::cout << "JV::JV() global view " << (void*)this << " " << (void*)&j << "\n";
+    //std::cout << "JV::JV() global view " << (void*)this << " " << (void*)&j << "\n";
   }
 
   Jit& func() const {
-    std::cout << "JV::func() " << (void*)this << " returns=" << (void*)&jit << "\n";
+    //std::cout << "JV::func() " << (void*)this << " returns=" << (void*)&jit << "\n";
 
     return jit;
   }
