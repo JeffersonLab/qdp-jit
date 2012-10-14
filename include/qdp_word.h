@@ -330,7 +330,7 @@ struct BinaryReturn<Word<T1>, Word<T2>, OpAddAssign > {
   typedef Word<typename BinaryReturn<T1, T2, OpAddAssign>::Type_t>  Type_t;
 };
 
-#if 0 
+
 template<class T1, class T2>
 struct BinaryReturn<Word<T1>, Word<T2>, OpSubtractAssign > {
   typedef Word<typename BinaryReturn<T1, T2, OpSubtractAssign>::Type_t>  Type_t;
@@ -425,12 +425,12 @@ template<class T2, int N, class OpMultiplyGammaTypeDP>
 struct BinaryReturn<Word<T2>, GammaTypeDP<N>, OpMultiplyGammaTypeDP> {
   typedef Word<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
 };
-#endif
 
 
 
 
-#if 0
+
+
 // Scalar Reality
 template<class T>
 struct UnaryReturn<Word<T>, OpNot > {
@@ -459,7 +459,7 @@ operator-(const Word<T1>& l)
 {
   return -l.elem();
 }
-#endif
+
 
 template<class T1, class T2>
  inline typename BinaryReturn<Word<T1>, Word<T2>, OpAdd>::Type_t
@@ -484,7 +484,7 @@ operator*(const Word<T1>& l, const Word<T2>& r)
   return l.elem() * r.elem();
 }
 
-#if 0
+
 // Optimized  adj(Word)*Word
 template<class T1, class T2>
  inline typename BinaryReturn<Word<T1>, Word<T2>, OpAdjMultiply>::Type_t
@@ -689,7 +689,7 @@ operator||(const Word<T1>& l, const Word<T2>& r)
 {
   return l.elem() || r.elem();
 }
-#endif
+
 
 
 //-----------------------------------------------------------------------------
@@ -706,7 +706,7 @@ adj(const Word<T1>& s1)
   return s1.elem(); // The complex nature has been eaten here
 }
 
-#if 0
+
 // Conjugate
 template<class T1>
  inline typename UnaryReturn<Word<T1>, FnConjugate>::Type_t
@@ -790,7 +790,7 @@ traceMultiply(const Word<T1>& l, const Word<T2>& r)
   /*! NOTE: removed trace here !!!!!  */
   return l.elem() * r.elem();
 }
-#endif
+
 
 // Word = Re(Word)  [identity]
 template<class T>
@@ -810,7 +810,7 @@ imag(const Word<T>& s1)
   return S(0);
 }
 
-#if 0
+
 // ArcCos
 template<class T1>
  inline typename UnaryReturn<Word<T1>, FnArcCos>::Type_t
@@ -1018,7 +1018,7 @@ peekSpin(const Word<T>& l, int row, int col)
 {
   return peekSpin(l.elem(),row,col);
 }
-#endif
+
 
 
 //-----------------------------------------------------------------------------
@@ -1063,7 +1063,7 @@ toWordType(const Word<T>& s)
 }
 
 
-#if 0
+
 //------------------------------------------
 //! dest = (mask) ? s1 : dest
 template<class T, class T1> 
@@ -1238,7 +1238,7 @@ where(const Word<T1>& a, const Word<T2>& b, const Word<T3>& c)
 {
   return where(a.elem(), b.elem(), c.elem());
 }
-#endif
+
 
 
 //-----------------------------------------------------------------------------
@@ -1269,7 +1269,7 @@ cmplx(const Word<T1>& s1, const Word<T2>& s2)
 }
 
 
-#if 0
+
 // RComplex = i * Word
 template<class T>
 struct UnaryReturn<Word<T>, FnTimesI > {
@@ -1304,7 +1304,7 @@ timesMinusI(const Word<T>& s1)
   d.imag() = -s1.elem();
   return d;
 }
-#endif
+
 
 
 } // namespace QDP

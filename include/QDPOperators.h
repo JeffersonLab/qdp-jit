@@ -1,4 +1,5 @@
 // -*- C++ -*-
+// $Id: Header.h,v 1.3 2002-10-14 02:06:56 edwards Exp $
 
 /*! @file
  * @brief Bulk of QDP operators produced by PETE
@@ -28,7 +29,11 @@ struct FnAdjoint
   inline typename UnaryReturn<T, FnAdjoint >::Type_t
   operator()(const T &a) const
   {
-    return (adj(a));
+    
+    typedef typename UnaryReturn<T, FnAdjoint>::Type_t  Ret_t;
+    Ret_t dest(a.func());
+    adjRep(dest, a);
+    return dest;
   }
 };
 

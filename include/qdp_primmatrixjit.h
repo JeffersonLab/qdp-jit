@@ -720,21 +720,37 @@ struct BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiplyAdj> {
   typedef C<typename BinaryReturn<T1, T2, OpMultiplyAdj>::Type_t, N>  Type_t;
 };
 
-template<class T1, class T2, int N, template<class,int> class C>
-inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiplyAdj>::Type_t
-multiplyAdj(const PMatrixJIT<T1,N,C>& l, const PMatrixJIT<T2,N,C>& r)
-{
-  typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiplyAdj>::Type_t  d;
+// template<class T1, class T2, int N, template<class,int> class C>
+// inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiplyAdj>::Type_t
+// multiplyAdj(const PMatrixJIT<T1,N,C>& l, const PMatrixJIT<T2,N,C>& r)
+// {
+//   typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiplyAdj>::Type_t  d;
 
+//   for(int i=0; i < N; ++i)
+//     for(int j=0; j < N; ++j)
+//     {
+//       d.elem(i,j) = multiplyAdj(l.elem(i,0), r.elem(j,0));
+//       for(int k=1; k < N; ++k)
+// 	d.elem(i,j) += multiplyAdj(l.elem(i,k), r.elem(j,k));
+//     }
+
+//   return d;
+// }
+template<class T1, class T2, int N, template<class,int> class C>
+void
+multiplyAdjRep(const typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiplyAdj>::Type_t& d, const PMatrixJIT<T1,N,C>& l, const PMatrixJIT<T2,N,C>& r)
+{
+  typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiplyAdj>::Type_t& dd = const_cast<typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiplyAdj>::Type_t&>(d);
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
     {
-      d.elem(i,j) = multiplyAdj(l.elem(i,0), r.elem(j,0));
-      for(int k=1; k < N; ++k)
-	d.elem(i,j) += multiplyAdj(l.elem(i,k), r.elem(j,k));
+      multiplyAdjRep(dd.elem(i,j), l.elem(i,0), r.elem(j,0));
+      for(int k=1; k < N; ++k) {
+	typename BinaryReturn<T1,T2,OpMultiplyAdj>::Type_t tmp(d.func());
+	multiplyAdjRep( tmp , l.elem(i,k), r.elem(j,k));
+	dd.elem(i,j) += tmp;
+      }
     }
-
-  return d;
 }
 
 // Optimized  PMatrixJIT = adj(PMatrixJIT)*adj(PMatrixJIT)

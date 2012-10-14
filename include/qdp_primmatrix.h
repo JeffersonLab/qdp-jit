@@ -32,7 +32,7 @@ template <class T, int N, template<class,int> class C> class PMatrix
 public:
   typedef T Sub_t;
   enum { ThisSize = N*N };
-  enum { Size = ThisSize * WordSize<T>::Size };
+  //enum { Size = ThisSize * WordSize<T>::Size };
 
   PMatrix() {}
   ~PMatrix() {}

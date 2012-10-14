@@ -456,11 +456,17 @@ adjMultiply(const PScalarJIT<T1>& l, const PScalarJIT<T2>& r)
 }
 
 // Optimized  PMatrix*adj(PMatrix)
+// template<class T1, class T2>
+// inline typename BinaryReturn<PScalarJIT<T1>, PScalarJIT<T2>, OpMultiplyAdj>::Type_t
+// multiplyAdj(const PScalarJIT<T1>& l, const PScalarJIT<T2>& r)
+// {
+//   return multiplyAdj(l.elem(), r.elem());
+// }
 template<class T1, class T2>
-inline typename BinaryReturn<PScalarJIT<T1>, PScalarJIT<T2>, OpMultiplyAdj>::Type_t
-multiplyAdj(const PScalarJIT<T1>& l, const PScalarJIT<T2>& r)
+inline void
+multiplyAdjRep(const typename BinaryReturn<PScalarJIT<T1>, PScalarJIT<T2>, OpMultiplyAdj>::Type_t& d,const PScalarJIT<T1>& l, const PScalarJIT<T2>& r)
 {
-  return multiplyAdj(l.elem(), r.elem());
+  multiplyAdjRep(d.elem(), l.elem(), r.elem());
 }
 
 // Optimized  PMatrix*adj(PMatrix)
@@ -1479,47 +1485,6 @@ where(const PScalarJIT<T1>& a, const PScalarJIT<T2>& b, const PScalarJIT<T3>& c)
   return where(a.elem(), b.elem(), c.elem());
 }
 
-
-//-----------------------------------------------------------------------------
-//! QDP Int to int primitive in conversion routine
-template<class T> 
-inline int 
-toInt(const PScalarJIT<T>& s) 
-{
-  return toInt(s.elem());
-}
-
-//! QDP Real to float primitive in conversion routine
-template<class T> 
-inline float
-toFloat(const PScalarJIT<T>& s) 
-{
-  return toFloat(s.elem());
-}
-
-//! QDP Double to double primitive in conversion routine
-template<class T> 
-inline double
-toDouble(const PScalarJIT<T>& s) 
-{
-  return toDouble(s.elem());
-}
-
-//! QDP Boolean to bool primitive in conversion routine
-template<class T> 
-inline bool
-toBool(const PScalarJIT<T>& s) 
-{
-  return toBool(s.elem());
-}
-
-//! QDP Wordtype to primitive wordtype
-template<class T> 
-inline typename WordType< PScalarJIT<T> >::Type_t
-toWordType(const PScalarJIT<T>& s) 
-{
-  return toWordType(s.elem());
-}
 
 
 //-----------------------------------------------------------------------------

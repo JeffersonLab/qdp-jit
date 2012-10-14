@@ -890,7 +890,7 @@ operator-(const RScalarJIT<T1>& l, const RScalarJIT<T2>& r)
 
 
 template<class T1, class T2>
-void mulRep(typename BinaryReturn<RScalarJIT<T1>, RScalarJIT<T2>, OpMultiply>::Type_t& dest, const RScalarJIT<T1>& l, const RScalarJIT<T2>& r)
+void mulRep(const typename BinaryReturn<RScalarJIT<T1>, RScalarJIT<T2>, OpMultiply>::Type_t& dest, const RScalarJIT<T1>& l, const RScalarJIT<T2>& r)
 {
   mulRep(dest.elem(),l.elem(),r.elem());
 }
@@ -1871,22 +1871,28 @@ adjMultiply(const RComplexJIT<T1>& l, const RComplexJIT<T2>& r)
 	       l.real()*r.imag() - l.imag()*r.real());
 }
 
-// Optimized  RComplexJIT*adj(RComplexJIT)
+
+// template<class T1, class T2>
+// inline typename BinaryReturn<RComplexJIT<T1>, RComplexJIT<T2>, OpMultiplyAdj>::Type_t
+// multiplyAdj(const RComplexJIT<T1>& l, const RComplexJIT<T2>& r)
+// {
+//   typedef typename BinaryReturn<RComplexJIT<T1>, RComplexJIT<T2>, OpMultiplyAdj>::Type_t  Ret_t;
+
+//   return Ret_t(l.real()*r.real() + l.imag()*r.imag(),
+// 	       l.imag()*r.real() - l.real()*r.imag());
+// }
 template<class T1, class T2>
-inline typename BinaryReturn<RComplexJIT<T1>, RComplexJIT<T2>, OpMultiplyAdj>::Type_t
-multiplyAdj(const RComplexJIT<T1>& l, const RComplexJIT<T2>& r)
+inline void
+multiplyAdjRep(const typename BinaryReturn<RComplexJIT<T1>, RComplexJIT<T2>, OpMultiplyAdj>::Type_t& d, const RComplexJIT<T1>& l, const RComplexJIT<T2>& r)
 {
-  typedef typename BinaryReturn<RComplexJIT<T1>, RComplexJIT<T2>, OpMultiplyAdj>::Type_t  Ret_t;
+  typename BinaryReturn<T1, T2, OpMultiplyAdj>::Type_t tmp(d.func());
+  mulRep( d.real() , l.real(), r.real() );
+  mulRep( tmp , l.imag() , r.imag() );
+  addRep( d.real() , d.real() , tmp );
 
-  // The complex conjugate nature has been eaten here leaving simple multiples
-  // involving transposes - which are probably null
-//  d.real() = l.real()*transpose(r.real()) + l.imag()*transpose(r.imag());
-//  d.imag() = l.imag()*transpose(r.real()) - l.real()*transpose(r.imag());
-//  return d;
-
-  /*! NOTE: removed transpose here !!!!!  */
-  return Ret_t(l.real()*r.real() + l.imag()*r.imag(),
-	       l.imag()*r.real() - l.real()*r.imag());
+  mulRep( d.imag() , l.imag() , r.real() );
+  mulRep( tmp , l.real() , r.imag() );
+  subRep( d.imag() , d.imag() , tmp );
 }
 
 // Optimized  adj(RComplexJIT)*adj(RComplexJIT)

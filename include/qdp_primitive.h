@@ -27,6 +27,7 @@
 #include "qdp_primmatrixjit.h"
 #include "qdp_primmatrix.h"
 #include "qdp_primvector.h"
+#include "qdp_primseedjit.h"
 #include "qdp_primseed.h"
 #include "qdp_primcolormatjit.h"
 #include "qdp_primcolormat.h"

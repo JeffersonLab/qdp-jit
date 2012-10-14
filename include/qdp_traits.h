@@ -40,6 +40,7 @@ template<> struct WordSize< bool > { enum { Size = sizeof(bool) }; };
 template<> struct JITContainerType<int>  { typedef int  Type_t; };
 template<> struct JITContainerType<float>  { typedef float  Type_t; };
 template<> struct JITContainerType<double> { typedef double  Type_t; };
+template<> struct JITContainerType<bool> { typedef bool  Type_t; };
 
 
 // template< template<class> class T, class T2> 

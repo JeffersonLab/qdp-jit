@@ -203,6 +203,18 @@ struct WordType<WordJIT<T> >
 
 
 
+template<class T1, class T2 >
+struct BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpGT > {
+  typedef WordJIT<typename BinaryReturn<T1, T2, OpGT>::Type_t>  Type_t;
+};
+
+template<class T1, class T2>
+inline void
+opGTRep(const typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpGT>::Type_t& d,const WordJIT<T1>& l, const WordJIT<T2>& r)
+{
+  //return l.elem() > r.elem();
+}
+
 
 } // namespace QDP
 

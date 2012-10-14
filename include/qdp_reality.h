@@ -28,7 +28,6 @@ template<class T> class RScalar
 public:
   typedef T Sub_t;
   enum { ThisSize = 1 };
-  enum { Size = ThisSize * WordSize<T>::Size };
 
   RScalar() {}
   ~RScalar() {}
@@ -268,7 +267,6 @@ template<class T> class RComplex
 public:
   typedef T Sub_t;
   enum { ThisSize = 2 };
-  enum { Size = ThisSize * WordSize<T>::Size };
 
   RComplex() {}
   ~RComplex() {}

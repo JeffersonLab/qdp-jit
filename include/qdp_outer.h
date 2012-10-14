@@ -148,6 +148,8 @@ namespace QDP {
     inline T& elem(int i) { assert_on_host(); return *F; }
     inline const T& elem(int i) const { assert_on_host(); return *F; }
 
+    int getId() const { return myId; }
+
   private:
 
 
@@ -163,9 +165,6 @@ namespace QDP {
       QDPCache::Instance().getHostPtr( (void**)&F , myId );
     }
 
-    int getId() const { return myId; }
-
-  private:
 
     mutable T* F;
     mutable int myId;
@@ -551,6 +550,18 @@ struct LeafFunctor<OLattice<T>, AddressLeaf>
   typedef int Type_t;
   inline static
   Type_t apply(const OLattice<T>& s, const AddressLeaf& p) 
+  {
+    p.setAddr( QDPCache::Instance().getDevicePtr( s.getId() ) );
+    return 0;
+  }
+};
+
+template<class T>
+struct LeafFunctor<OScalar<T>, AddressLeaf>
+{
+  typedef int Type_t;
+  inline static
+  Type_t apply(const OScalar<T>& s, const AddressLeaf& p) 
   {
     p.setAddr( QDPCache::Instance().getDevicePtr( s.getId() ) );
     return 0;
