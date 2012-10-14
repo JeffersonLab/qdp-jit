@@ -132,7 +132,7 @@ namespace QDP {
 
   public:
 
-
+#if 0
     inline bool onDevice() const {
       return QDPCache::Instance().onDevice( myId );
     }
@@ -140,7 +140,7 @@ namespace QDP {
     inline T* getFdev() const {
       return (T*)QDPCache::Instance().getDevicePtr( myId );
     }
-
+#endif
 
 
     inline T& elem() { assert_on_host(); return *F;  }
@@ -159,12 +159,11 @@ namespace QDP {
     }
     inline void assert_on_host() const {
       // Here or somewhere we sould make sure that 
-      // if the pointer is still valid, we do not much
-      if (QDPCache::Instance().getHostPtr( (void**)&F , myId )) {
-	CudaSyncTransferStream();
-      }
+      // if the pointer is still valid, we do not too much
+      QDPCache::Instance().getHostPtr( (void**)&F , myId );
     }
 
+    int getId() const { return myId; }
 
   private:
 
@@ -396,7 +395,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
     }
 
 
-
+#if 0
     inline bool onDevice() const {
       return QDPCache::Instance().onDevice( myId );
     }
@@ -406,7 +405,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
     inline T* elem_devptr(int i) const {
       return &((T*)QDPCache::Instance().getDevicePtr( myId ))[i];
     }
-
+#endif
 
     inline T* getF() const { 
       assert_on_host(); 
@@ -469,6 +468,8 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
       }
     }
 
+    int getId() const { return myId; }
+
   private:
 
 
@@ -483,10 +484,8 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 
     inline void assert_on_host() const {
       // Here or somewhere we sould make sure that 
-      // if the pointer is still valid, we do not much
-      if (QDPCache::Instance().getHostPtr( (void**)&F , myId )) {
-	CudaSyncTransferStream();
-      }
+      // if the pointer is still valid, we do not too much
+      QDPCache::Instance().getHostPtr( (void**)&F , myId );
     }
 
   private:
@@ -553,7 +552,7 @@ struct LeafFunctor<OLattice<T>, AddressLeaf>
   inline static
   Type_t apply(const OLattice<T>& s, const AddressLeaf& p) 
   {
-    p.setAddr(const_cast<OLattice<T>&>(s).getFdev());
+    p.setAddr( QDPCache::Instance().getDevicePtr( s.getId() ) );
     return 0;
   }
 };

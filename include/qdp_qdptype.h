@@ -373,7 +373,10 @@ public:
     }
 
 public:
-  T* getFdev() const   { return static_cast<const C*>(this)->getFdev();}
+  //T* getFdev() const   { return static_cast<const C*>(this)->getFdev();}
+
+  int getId() const   { return static_cast<const C*>(this)->getId();}
+
 
         T& elem(int i)       {return static_cast<const C*>(this)->elem(i);}
   const T& elem(int i) const {return static_cast<const C*>(this)->elem(i);}
@@ -491,7 +494,8 @@ struct LeafFunctor<QDPType<T,C>, AddressLeaf>
   inline static
   Type_t apply(const QDPType<T,C>& s, const AddressLeaf& p) 
   {
-    p.setAddr( s.getFdev() );
+    //p.setAddr( s.getFdev() );
+    p.setAddr( QDPCache::Instance().getDevicePtr( s.getId() ) );
     return 0;
   }
 };

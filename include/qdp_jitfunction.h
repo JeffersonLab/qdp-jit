@@ -66,6 +66,8 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
   int junk_dst = forEach(dest, addr_leaf, NullCombine());
   int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
 
+  QDPCache::Instance().printLockSets();
+
   std::vector<void*> addr;
   for(int i=0; i < addr_leaf.addr.size(); ++i) {
     addr.push_back( &addr_leaf.addr[i] );

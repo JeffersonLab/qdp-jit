@@ -9,7 +9,7 @@
 #include "string.h"
 #include "math.h"
 
-//#define SANITY_CHECKS_CACHE
+#define SANITY_CHECKS_CACHE
 
 using namespace std;
 
@@ -39,7 +39,7 @@ namespace QDP
     int registrateOwnHostMem( size_t size, void* ptr);
     void signoff(int id);
     void * getDevicePtr(int id);
-    bool getHostPtr(void ** ptr , int id);
+    void getHostPtr(void ** ptr , int id);
     void freeHostMemory(Entry& e);
     void allocateHostMemory(Entry& e);
     void assureDevice(Entry& e);

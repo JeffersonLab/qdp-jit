@@ -336,7 +336,7 @@ namespace QDP
 
 
 
-  bool QDPCache::getHostPtr(void ** ptr , int id) {
+  void QDPCache::getHostPtr(void ** ptr , int id) {
 #ifdef GPU_DEBUG_DEEP
     QDP_debug_deep("cache get host ptr id=%lu",(long)id );
 #endif
@@ -353,10 +353,9 @@ namespace QDP
 
     Entry& e = vecEntry[id];
 
-    bool in_flight = assureHost( e );
+    assureHost( e );
 
     *ptr = e.hstPtr;
-    return in_flight;
   }
 
 
