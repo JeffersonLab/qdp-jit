@@ -15,16 +15,7 @@
 namespace QDP {
 
 
-//-------------------------------------------------------------------------------------
-/*! \addtogroup rscalar Scalar reality
- * \ingroup fiber
- *
- * Reality Scalar is a type for objects that are only real - no imaginary part
- *
- * @{
- */
 
-//! Scalar reality (not complex)
 template<class T> class Word
 {
 public:
@@ -1027,6 +1018,8 @@ peekSpin(const Word<T>& l, int row, int col)
 {
   return peekSpin(l.elem(),row,col);
 }
+#endif
+
 
 //-----------------------------------------------------------------------------
 //! QDP Int to int primitive in conversion routine
@@ -1070,7 +1063,7 @@ toWordType(const Word<T>& s)
 }
 
 
-
+#if 0
 //------------------------------------------
 //! dest = (mask) ? s1 : dest
 template<class T, class T1> 
@@ -1262,7 +1255,7 @@ void zero_rep(Word<T>& dest)
 //! RComplex<T> = (Word<T> , Word<T>)
 template<class T1, class T2>
 struct BinaryReturn<Word<T1>, Word<T2>, FnCmplx > {
-  typedef RComplex<typename BinaryReturn<T1, T2, FnCmplx>::Type_t>  Type_t;
+  typedef Word<typename BinaryReturn<T1, T2, FnCmplx>::Type_t>  Type_t;
 };
 
 template<class T1, class T2>
@@ -1280,7 +1273,7 @@ cmplx(const Word<T1>& s1, const Word<T2>& s2)
 // RComplex = i * Word
 template<class T>
 struct UnaryReturn<Word<T>, FnTimesI > {
-  typedef RComplex<typename UnaryReturn<T, FnTimesI>::Type_t>  Type_t;
+  typedef Word<typename UnaryReturn<T, FnTimesI>::Type_t>  Type_t;
 };
 
 template<class T>
@@ -1298,7 +1291,7 @@ timesI(const Word<T>& s1)
 // RComplex = -i * Word
 template<class T>
 struct UnaryReturn<Word<T>, FnTimesMinusI > {
-  typedef RComplex<typename UnaryReturn<T, FnTimesMinusI>::Type_t>  Type_t;
+  typedef Word<typename UnaryReturn<T, FnTimesMinusI>::Type_t>  Type_t;
 };
 
 template<class T>

@@ -1429,48 +1429,6 @@ peekSpin(const RScalarJIT<T>& l, int row, int col)
   return peekSpin(l.elem(),row,col);
 }
 
-//-----------------------------------------------------------------------------
-//! QDP Int to int primitive in conversion routine
-template<class T> 
-inline int 
-toInt(const RScalarJIT<T>& s) 
-{
-  return toInt(s.elem());
-}
-
-//! QDP Real to float primitive in conversion routine
-template<class T> 
-inline float
-toFloat(const RScalarJIT<T>& s) 
-{
-  return toFloat(s.elem());
-}
-
-//! QDP Double to double primitive in conversion routine
-template<class T> 
-inline double
-toDouble(const RScalarJIT<T>& s) 
-{
-  return toDouble(s.elem());
-}
-
-//! QDP Boolean to bool primitive in conversion routine
-template<class T> 
-inline bool
-toBool(const RScalarJIT<T>& s) 
-{
-  return toBool(s.elem());
-}
-
-//! QDP Wordtype to primitive wordtype
-template<class T> 
-inline typename WordType< RScalarJIT<T> >::Type_t
-toWordType(const RScalarJIT<T>& s) 
-{
-  return toWordType(s.elem());
-}
-
-
 
 //------------------------------------------
 //! dest = (mask) ? s1 : dest
