@@ -48,10 +48,14 @@ public:
   template<class T1>
   RScalarJIT(const RScalarJIT<T1>& rhs) : F(rhs.elem()) {}
 
+#endif
   //! construct dest = rhs
   template<class T1>
-  RScalarJIT(const T1& rhs) : F(rhs) {}
-#endif
+  RScalarJIT(const T1& rhs) : JV<T,1>(rhs) {
+    std::cout << "RScalarJIT(const T1& rhs)\n";
+  }
+
+
 
 
 
@@ -257,11 +261,12 @@ public:
   //! Construct from two reality scalars
   template<class T1, class T2>
   RComplexJIT(const RScalarJIT<T1>& _re, const RScalarJIT<T2>& _im): re(_re.elem()), im(_im.elem()) {}
+#endif
 
   //! Construct from two scalars
   template<class T1, class T2>
-  RComplexJIT(const T1& _re, const T2& _im): re(_re), im(_im) {}
-#endif
+  RComplexJIT(const T1& _re, const T2& _im): JV<T,2>(_re,_im) {}
+
 
 
   //! RComplexJIT += RScalarJIT
@@ -874,10 +879,10 @@ operator-(const RScalarJIT<T1>& l)
 
 
 template<class T1, class T2>
-inline void
-addRep(const typename BinaryReturn<RScalarJIT<T1>, RScalarJIT<T2>, OpAdd>::Type_t& dest, const RScalarJIT<T1>& l, const RScalarJIT<T2>& r)
+inline typename BinaryReturn<RScalarJIT<T1>, RScalarJIT<T2>, OpAdd>::Type_t
+operator+(const RScalarJIT<T1>& l, const RScalarJIT<T2>& r)
 {
-  addRep( dest.elem() , l.elem() , r.elem() );
+  return l.elem() + r.elem();
 }
 
 
@@ -890,10 +895,17 @@ operator-(const RScalarJIT<T1>& l, const RScalarJIT<T2>& r)
 
 
 template<class T1, class T2>
-void mulRep(const typename BinaryReturn<RScalarJIT<T1>, RScalarJIT<T2>, OpMultiply>::Type_t& dest, const RScalarJIT<T1>& l, const RScalarJIT<T2>& r)
+inline typename BinaryReturn<RScalarJIT<T1>, RScalarJIT<T2>, OpMultiply>::Type_t
+operator*(const RScalarJIT<T1>& l, const RScalarJIT<T2>& r)
 {
-  mulRep(dest.elem(),l.elem(),r.elem());
+  typename BinaryReturn<RScalarJIT<T1>, RScalarJIT<T2>, OpMultiply>::Type_t ret(l.func());
+  ret = l.elem() * r.elem();
+  std::cout << " ret=" << ret.elem().mapReg.size() << "\n";
+  return ret;
+  //  return l.elem() * r.elem();
 }
+
+
 
 // Optimized  adj(RScalarJIT)*RScalarJIT
 template<class T1, class T2>
@@ -1732,14 +1744,18 @@ operator-(const RComplexJIT<T1>& l)
 }
 
 
-//! RComplexJIT = RComplexJIT + RComplexJIT
+
+//! RComplexJIT = RComplexJIT - RComplexJIT
 template<class T1, class T2>
-inline void
-addRep(const typename BinaryReturn<RComplexJIT<T1>, RComplexJIT<T2>, OpAdd>::Type_t& dest, const RComplexJIT<T1>& l, const RComplexJIT<T2>& r)
+inline typename BinaryReturn<RComplexJIT<T1>, RComplexJIT<T2>, OpAdd>::Type_t
+operator+(const RComplexJIT<T1>& l, const RComplexJIT<T2>& r)
 {
-  addRep( dest.real() , l.real() , r.real() );
-  addRep( dest.imag() , l.imag() , r.imag() );
+  typedef typename BinaryReturn<RComplexJIT<T1>, RComplexJIT<T2>, OpAdd>::Type_t  Ret_t;
+
+  return Ret_t(l.real() + r.real(),
+	       l.imag() + r.imag());
 }
+
 
 //! RComplexJIT = RComplexJIT + RScalarJIT
 template<class T1, class T2>
@@ -1799,31 +1815,16 @@ operator-(const RScalarJIT<T1>& l, const RComplexJIT<T2>& r)
 
 
 
+
+
 template<class T1, class T2>
-inline void
-mulRep(const typename BinaryReturn<RComplexJIT<T1>, RComplexJIT<T2>, OpMultiply>::Type_t& dest, const RComplexJIT<T1>& l, const RComplexJIT<T2>& r)
+inline typename BinaryReturn<RComplexJIT<T1>, RComplexJIT<T2>, OpMultiply>::Type_t
+operator*(const RComplexJIT<T1>& l, const RComplexJIT<T2>& r) 
 {
-#if 0
-  RScalarJIT<T1> t0(dest.getFunc());
-  RScalarJIT<T1> t1(dest.getFunc());
+  typedef typename BinaryReturn<RComplexJIT<T1>, RComplexJIT<T2>, OpMultiply>::Type_t  Ret_t;
 
-  mulRep( t0.elem() , l.imag() , r.imag() );
-  negRep( t0.elem() , t0.elem() );
-  fmaRep( dest.real() , l.real() , r.real() , t0.elem() );
-
-  mulRep( t1.elem() , l.imag() , r.real() );
-  fmaRep( dest.imag() , l.real() , r.imag() , t1.elem() );
-#else
-  RScalarJIT<T1> t0(dest.func());
-
-  mulRep( t0.elem() , l.imag() , r.imag() );
-  mulRep( dest.real() , l.real() , r.real() );
-  subRep( dest.real() , dest.real() , t0.elem() );
-
-  mulRep( t0.elem() , l.imag() , r.real() );
-  mulRep( dest.imag() , l.real() , r.imag() );
-  addRep( dest.imag() , dest.imag() , t0.elem() );
-#endif
+  return Ret_t(l.real()*r.real() - l.imag()*r.imag(),
+	       l.real()*r.imag() + l.imag()*r.real());
 }
 
 
@@ -1872,28 +1873,16 @@ adjMultiply(const RComplexJIT<T1>& l, const RComplexJIT<T2>& r)
 }
 
 
-// template<class T1, class T2>
-// inline typename BinaryReturn<RComplexJIT<T1>, RComplexJIT<T2>, OpMultiplyAdj>::Type_t
-// multiplyAdj(const RComplexJIT<T1>& l, const RComplexJIT<T2>& r)
-// {
-//   typedef typename BinaryReturn<RComplexJIT<T1>, RComplexJIT<T2>, OpMultiplyAdj>::Type_t  Ret_t;
-
-//   return Ret_t(l.real()*r.real() + l.imag()*r.imag(),
-// 	       l.imag()*r.real() - l.real()*r.imag());
-// }
 template<class T1, class T2>
-inline void
-multiplyAdjRep(const typename BinaryReturn<RComplexJIT<T1>, RComplexJIT<T2>, OpMultiplyAdj>::Type_t& d, const RComplexJIT<T1>& l, const RComplexJIT<T2>& r)
+inline typename BinaryReturn<RComplexJIT<T1>, RComplexJIT<T2>, OpMultiplyAdj>::Type_t
+multiplyAdj(const RComplexJIT<T1>& l, const RComplexJIT<T2>& r)
 {
-  typename BinaryReturn<T1, T2, OpMultiplyAdj>::Type_t tmp(d.func());
-  mulRep( d.real() , l.real(), r.real() );
-  mulRep( tmp , l.imag() , r.imag() );
-  addRep( d.real() , d.real() , tmp );
+  typedef typename BinaryReturn<RComplexJIT<T1>, RComplexJIT<T2>, OpMultiplyAdj>::Type_t  Ret_t;
 
-  mulRep( d.imag() , l.imag() , r.real() );
-  mulRep( tmp , l.real() , r.imag() );
-  subRep( d.imag() , d.imag() , tmp );
+  return Ret_t(l.real()*r.real() + l.imag()*r.imag(),
+	       l.imag()*r.real() - l.real()*r.imag());
 }
+
 
 // Optimized  adj(RComplexJIT)*adj(RComplexJIT)
 template<class T1, class T2>

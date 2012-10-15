@@ -42,6 +42,13 @@ public:
     //std::cout << "JV::JV() new regs " << (void*)this << " " << (void*)&j << "\n";
   }
 
+  JV(const T& t0,const T& t1) : jit(t0.func()), F{{t0,t1}} {
+    std::cout << __PRETTY_FUNCTION__ << "\n";
+  }
+  JV(const T& t0) : jit(t0.func()), F{{t0}} {
+    std::cout << __PRETTY_FUNCTION__ << "\n";
+  }
+
 
   JV(Jit& j, int r , int of , int ol): JV(j,r,of,ol,build_indices<N>{}) {}
   template<int... Indices>

@@ -57,11 +57,14 @@ public:
   //! construct dest = rhs
   template<class T1>
   PScalarJIT(const PScalarJIT<T1>& rhs) : F(rhs.elem()) {}
-
-  //! construct dest = rhs
-  template<class T1>
-  PScalarJIT(const T1& rhs) : F(rhs) {}
 #endif
+
+
+  template<class T1>
+  PScalarJIT(const T1& rhs) : JV<T,1>(rhs) {
+    std::cout << "PScalarJIT(const T1& rhs)\n";
+  }
+
 
 
 
@@ -417,19 +420,14 @@ operator-(const PScalarJIT<T1>& l)
   return -l.elem();
 }
 
-// PScalarJIT + PScalarJIT
-// template<class T1, class T2>
-// inline typename BinaryReturn<PScalarJIT<T1>, PScalarJIT<T2>, OpAdd>::Type_t
-// operator+(const PScalarJIT<T1>& l, const PScalarJIT<T2>& r)
-// {
-//   return l.elem() + r.elem();
-// }
+  //PScalarJIT + PScalarJIT
 template<class T1, class T2>
-inline void 
-addRep(const typename BinaryReturn<PScalarJIT<T1>, PScalarJIT<T2>, OpAdd>::Type_t& dest, const PScalarJIT<T1>& l, const PScalarJIT<T2>& r)
+inline typename BinaryReturn<PScalarJIT<T1>, PScalarJIT<T2>, OpAdd>::Type_t
+operator+(const PScalarJIT<T1>& l, const PScalarJIT<T2>& r)
 {
-  addRep(dest.elem() , l.elem() , r.elem() );
+  return l.elem() + r.elem();
 }
+
 
 // PScalarJIT - PScalarJIT
 template<class T1, class T2>
@@ -439,12 +437,15 @@ operator-(const PScalarJIT<T1>& l, const PScalarJIT<T2>& r)
   return l.elem() - r.elem();
 }
 
-// PScalarJIT * PScalarJIT
+
+  //PScalarJIT + PScalarJIT
 template<class T1, class T2>
-void mulRep(const typename BinaryReturn<PScalarJIT<T1>, PScalarJIT<T2>, OpMultiply>::Type_t& dest, const PScalarJIT<T1>& l, const PScalarJIT<T2>& r)
+inline typename BinaryReturn<PScalarJIT<T1>, PScalarJIT<T2>, OpMultiply>::Type_t
+operator*(const PScalarJIT<T1>& l, const PScalarJIT<T2>& r)
 {
-  mulRep(dest.elem(),l.elem(),r.elem());
+  return l.elem() * r.elem();
 }
+
 
 
 // Optimized  adj(PMatrix)*PMatrix
@@ -455,18 +456,12 @@ adjMultiply(const PScalarJIT<T1>& l, const PScalarJIT<T2>& r)
   return adjMultiply(l.elem(), r.elem());
 }
 
-// Optimized  PMatrix*adj(PMatrix)
-// template<class T1, class T2>
-// inline typename BinaryReturn<PScalarJIT<T1>, PScalarJIT<T2>, OpMultiplyAdj>::Type_t
-// multiplyAdj(const PScalarJIT<T1>& l, const PScalarJIT<T2>& r)
-// {
-//   return multiplyAdj(l.elem(), r.elem());
-// }
+
 template<class T1, class T2>
-inline void
-multiplyAdjRep(const typename BinaryReturn<PScalarJIT<T1>, PScalarJIT<T2>, OpMultiplyAdj>::Type_t& d,const PScalarJIT<T1>& l, const PScalarJIT<T2>& r)
+inline typename BinaryReturn<PScalarJIT<T1>, PScalarJIT<T2>, OpMultiplyAdj>::Type_t
+multiplyAdj(const PScalarJIT<T1>& l, const PScalarJIT<T2>& r)
 {
-  multiplyAdjRep(d.elem(), l.elem(), r.elem());
+  return multiplyAdj(l.elem(), r.elem());
 }
 
 // Optimized  PMatrix*adj(PMatrix)

@@ -22,23 +22,29 @@ namespace QDP {
       r_addr(r_addr_),
       offset_full(offset_full_),
       offset_level(offset_level_) , global_state(true) {
-      //std::cout << "WordJIT() global view   " << (void*)this << " " << (void*)&j << "\n";
+      std::cout << "WordJIT() global view   " << (void*)this << " " << (void*)&j << "\n";
     }
 
     //! New space 
     WordJIT(Jit& j ) : jit(j), global_state(false) {
       int tmp;
       mapReg.insert( std::make_pair( JitRegType<T>::Val_t , tmp = jit.getRegs( JitRegType<T>::Val_t , 1 ) ) );
-      //std::cout << "WordJIT(Jit& func_ ) new space   regName = " << jit.getName(tmp) << " " << (void*)this << " " << (void*)&jit <<  "\n";
+      std::cout << "WordJIT(Jit& func_ ) new space   regName = " << jit.getName(tmp) << " " << (void*)this << " " << (void*)&jit <<  "\n";
     }
 
 
     template <class T1>
     WordJIT& assign(const WordJIT<T1>& s1) {
-      if (global_state)
+
+      if (global_state) {
+	std::cout << " WordJIT& assign global " << s1.mapReg.size() << "\n";
 	jit.asm_st( r_addr , offset_level * WordSize<T>::Size , s1.getReg( JitRegType<T>::Val_t ) );
-      else
+      }
+      else {
+	std::cout << " WordJIT& assign reg \n";
 	jit.asm_mov( getReg( JitRegType<T>::Val_t ) , s1.getReg( JitRegType<T>::Val_t ) );
+      }
+      std::cout << " WordJIT& assign finished \n";
       return *this;
     }
 
@@ -49,6 +55,7 @@ namespace QDP {
       // Value can be in register file (AddAssign for example)
       // jit.asm_st( r_addr , offset_level * WordSize<T>::Size , s1.getReg( JitRegType<T>::Val_t ) );
       // return *this;
+      std::cout << " WordJIT& op= \n";
       return assign(s1);
     }
 
@@ -57,19 +64,20 @@ namespace QDP {
       // std::cout << __PRETTY_FUNCTION__ << ": (assignment op) instructions needed?\n" << (void*)this << " " << (void*)&s1 << "\n";
       // jit.asm_st( r_addr , offset_level * WordSize<T>::Size , s1.getReg( JitRegType<T>::Val_t ) );
       // return *this;
+      std::cout << " WordJIT& op=copy \n";
       return assign(s1);
     }
 
     template<class T1>
     WordJIT& operator+=(const WordJIT<T1>& rhs) {
-      addRep( *this , *this , rhs );
-      assign(*this);
+      *this = *this + rhs;
+      return *this;
     }
 
     template<class T1>
     WordJIT& operator-=(const WordJIT<T1>& rhs) {
-      subRep( *this , *this , rhs );
-      assign(*this);
+      *this = *this - rhs;
+      return *this;
     }
 
 
@@ -78,11 +86,12 @@ namespace QDP {
     //WordJIT(const WordJIT& a): jit(a.jit), addr(a.addr), off(a.off) {}
 
     int getReg( Jit::RegType type ) const {
-      // std::cout << "getReg type=" << type 
-      // 		<< "  mapReg.count(type)=" << mapReg.count(type) 
-      // 		<< "  mapReg.size()=" << mapReg.size() << "\n";
+      std::cout << "getReg type=" << type 
+      		<< "  mapReg.count(type)=" << mapReg.count(type) 
+      		<< "  mapReg.size()=" << mapReg.size() << "\n";
       if (mapReg.count(type) > 0) {
 	// We already have the value in a register of the type requested
+	std::cout << jit.getName(mapReg.at(type)) << "\n";
 	return mapReg.at(type);
       } else {
 	if (mapReg.size() > 0) {
@@ -92,7 +101,7 @@ namespace QDP {
 	    exit(1);
 	  }
 	  // We have the value in a register, but not with the requested type 
-	  // std::cout << "We have the value in a register, but not with the requested type\n";
+	  std::cout << "We have the value in a register, but not with the requested type\n";
 	  MapRegType::iterator loaded = mapReg.begin();
 	  Jit::RegType loadedType = loaded->first;
 	  int loadedId = loaded->second;
@@ -101,7 +110,7 @@ namespace QDP {
 	  return mapReg.at(type);
 	} else {
 	  // We don't have the value in a register. Need to load it.
-	  // std::cout << "We don't have the value in a register. Need to load it " << (void*)this << " " << (void*)&jit << "\n";
+	  std::cout << "We don't have the value in a register. Need to load it " << (void*)this << " " << (void*)&jit << "\n";
 	  Jit::RegType myType = JitRegType<T>::Val_t;
 	  mapReg.insert( std::make_pair( myType , jit.getRegs( JitRegType<T>::Val_t , 1 ) ) );
 	  jit.asm_ld( mapReg.at( myType ) , r_addr , offset_level * WordSize<T>::Size );
@@ -113,7 +122,7 @@ namespace QDP {
     Jit& func() const {return jit;}
 
 
-  private:
+  public:
     typedef std::map< Jit::RegType , int > MapRegType;
     bool global_state;
     Jit&  jit;
@@ -137,83 +146,63 @@ struct WordType<WordJIT<T> >
     typedef WordJIT<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
   };
 
-  // Add
-  //template<>
-  template<class T0,class T1, class T2>
-  inline void
-  addRep(const WordJIT<T0>& dest, const WordJIT<T1>& l, const WordJIT<T2>& r)
+
+  template<class T1, class T2>
+  inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpAdd>::Type_t
+  operator+(const WordJIT<T1>& l, const WordJIT<T2>& r)
   {
-    dest.func().asm_add( dest.getReg( JitRegType<T0>::Val_t ) , 
-			    l.getReg( JitRegType<T0>::Val_t ) , 
-			    r.getReg( JitRegType<T0>::Val_t ) );
+    typedef typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpAdd>::Type_t Ret_t;
+    typedef typename WordType<Ret_t>::Type_t WT;
+    Ret_t tmp(l.func());
+    tmp.func().asm_add( tmp.getReg( JitRegType<WT>::Val_t ) , 
+			l.getReg( JitRegType<WT>::Val_t ) , 
+			r.getReg( JitRegType<WT>::Val_t ) );
+    return tmp;
   }
 
-  // Sub
-  //template<>
-  template<class T0,class T1, class T2>
-  inline void
-  subRep(const WordJIT<T0>& dest, const WordJIT<T1>& l, const WordJIT<T2>& r)
+  template<class T1, class T2>
+  inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpSubtract>::Type_t
+  operator-(const WordJIT<T1>& l, const WordJIT<T2>& r)
   {
-    dest.func().asm_sub( dest.getReg( JitRegType<T0>::Val_t ) , 
-			    l.getReg( JitRegType<T0>::Val_t ) , 
-			    r.getReg( JitRegType<T0>::Val_t ) );
+    typedef typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpSubtract>::Type_t Ret_t;
+    typedef typename WordType<Ret_t>::Type_t WT;
+    Ret_t tmp(l.func());
+    tmp.func().asm_sub( tmp.getReg( JitRegType<WT>::Val_t ) , 
+			l.getReg( JitRegType<WT>::Val_t ) , 
+			r.getReg( JitRegType<WT>::Val_t ) );
+    return tmp;
   }
 
-
-  // Multiply
-  // I can't use BinaryReturn since this might be mixed precision words
-  template<class T0,class T1, class T2>
-  inline void
-  mulRep(const WordJIT<T0>& dest,const WordJIT<T1>& l, const WordJIT<T2>& r)
+  template<class T1, class T2>
+  inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpMultiply>::Type_t
+  operator*(const WordJIT<T1>& l, const WordJIT<T2>& r)
   {
-    dest.func().asm_mul( dest.getReg( JitRegType<T0>::Val_t ) , 
-			    l.getReg( JitRegType<T0>::Val_t ) , 
-			    r.getReg( JitRegType<T0>::Val_t ) );
+    typedef typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpMultiply>::Type_t Ret_t;
+    typedef typename WordType<Ret_t>::Type_t WT;
+    Ret_t tmp(l.func());
+    tmp.func().asm_mul( tmp.getReg( JitRegType<WT>::Val_t ) , 
+			l.getReg( JitRegType<WT>::Val_t ) , 
+			r.getReg( JitRegType<WT>::Val_t ) );
+    std::cout << " tmp=" << tmp.mapReg.size() << "\n";
+    return tmp;
   }
 
-
-  // FMA
-  template<class T0,class T1,class T2,class T3>
-  inline void
-  fmaRep( const WordJIT<T0>& dest, const WordJIT<T1>& l, const WordJIT<T2>& r, const WordJIT<T3>& add )
+  template<class T1>
+  inline typename UnaryReturn<WordJIT<T1>, OpUnaryMinus>::Type_t
+  operator-(const WordJIT<T1>& l)
   {
-    dest.func().asm_fma( dest.getReg( JitRegType<T0>::Val_t ) , 
-			    l.getReg( JitRegType<T0>::Val_t ) , 
-			    r.getReg( JitRegType<T0>::Val_t ) , 
-			    add.getReg( JitRegType<T0>::Val_t ) );
-  }
+    typedef typename UnaryReturn<WordJIT<T1>, OpUnaryMinus>::Type_t  Ret_t;
+    typedef typename WordType<Ret_t>::Type_t WT;
+    Ret_t tmp(l.func());
 
-  // neg
-  template<class T0,class T1>
-  inline void
-  negRep( const WordJIT<T0>& dest, const WordJIT<T1>& src )
-  {
-    dest.func().asm_neg( dest.getReg( JitRegType<T0>::Val_t ) , 
-			    src.getReg( JitRegType<T0>::Val_t ) );
-  }
-
-  // identity
-  template<class T0,class T1>
-  inline void
-  idRep( const WordJIT<T0>& dest, const WordJIT<T1>& src )
-  {
-    dest.func().asm_mov( dest.getReg( JitRegType<T0>::Val_t ) , 
-			    src.getReg( JitRegType<T0>::Val_t ) );
+    tmp.func().asm_neg( tmp.getReg( JitRegType<WT>::Val_t ) , 
+			l.getReg( JitRegType<WT>::Val_t ) );
+    return tmp;
   }
 
 
 
-template<class T1, class T2 >
-struct BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpGT > {
-  typedef WordJIT<typename BinaryReturn<T1, T2, OpGT>::Type_t>  Type_t;
-};
 
-template<class T1, class T2>
-inline void
-opGTRep(const typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpGT>::Type_t& d,const WordJIT<T1>& l, const WordJIT<T2>& r)
-{
-  //return l.elem() > r.elem();
-}
 
 
 } // namespace QDP

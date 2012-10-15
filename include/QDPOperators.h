@@ -29,11 +29,7 @@ struct FnAdjoint
   inline typename UnaryReturn<T, FnAdjoint >::Type_t
   operator()(const T &a) const
   {
-    
-    typedef typename UnaryReturn<T, FnAdjoint>::Type_t  Ret_t;
-    Ret_t dest(a.func());
-    adjRep(dest, a);
-    return dest;
+    return (adj(a));
   }
 };
 

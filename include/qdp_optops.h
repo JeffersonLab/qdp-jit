@@ -38,12 +38,7 @@ struct OpMultiplyAdj
   {
 //  cerr << "multiplyAdj" << endl;
 //  return (a*adj(b));
-//    return multiplyAdj(a,b);
-    typedef typename BinaryReturn<T1, T2, OpMultiplyAdj >::Type_t  Ret_t;
-    Ret_t dest(a.func());
-    multiplyAdjRep(dest, a, b);
-    return dest;
-
+    return multiplyAdj(a,b);
   }
 };
 

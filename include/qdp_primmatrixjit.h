@@ -345,7 +345,7 @@ template<class T1, int N, template<class,int> class C>
 inline typename UnaryReturn<PMatrixJIT<T1,N,C>, OpUnaryPlus>::Type_t
 operator+(const PMatrixJIT<T1,N,C>& l)
 {
-  typename UnaryReturn<PMatrixJIT<T1,N,C>, OpUnaryPlus>::Type_t  d;
+  typename UnaryReturn<PMatrixJIT<T1,N,C>, OpUnaryPlus>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -365,7 +365,7 @@ template<class T1, int N, template<class,int> class C>
 inline typename UnaryReturn<PMatrixJIT<T1,N,C>, OpUnaryMinus>::Type_t
 operator-(const PMatrixJIT<T1,N,C>& l)
 {
-  typename UnaryReturn<PMatrixJIT<T1,N,C>, OpUnaryMinus>::Type_t  d;
+  typename UnaryReturn<PMatrixJIT<T1,N,C>, OpUnaryMinus>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -382,27 +382,19 @@ struct BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpAdd> {
 };
 
 
-// template<class T1, class T2, int N, template<class,int> class C>
-// inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpAdd>::Type_t
-// operator+(const PMatrixJIT<T1,N,C>& l, const PMatrixJIT<T2,N,C>& r)
-// {
-//   typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpAdd>::Type_t  d;
-
-//   for(int i=0; i < N; ++i)
-//     for(int j=0; j < N; ++j)
-//       d.elem(i,j) = l.elem(i,j) + r.elem(i,j);
-
-//   return d;
-// }
-
 template<class T1, class T2, int N, template<class,int> class C>
-inline void
-addRep(const typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpAdd>::Type_t& dest, const PMatrixJIT<T1,N,C>& l, const PMatrixJIT<T2,N,C>& r)
+inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpAdd>::Type_t
+operator+(const PMatrixJIT<T1,N,C>& l, const PMatrixJIT<T2,N,C>& r)
 {
+  typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpAdd>::Type_t  d(l.func());
+
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
-      addRep( dest.elem(i,j) , l.elem(i,j) , r.elem(i,j) );
+      d.elem(i,j) = l.elem(i,j) + r.elem(i,j);
+
+  return d;
 }
+
 
 // PMatrixJIT = PMatrixJIT + PScalarJIT
 template<class T1, class T2, int N, template<class,int> class C>
@@ -414,7 +406,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, OpAdd>::Type_t
 operator+(const PMatrixJIT<T1,N,C>& l, const PScalarJIT<T2>& r)
 {
-  typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, OpAdd>::Type_t  d;
+  typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, OpAdd>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -433,7 +425,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, OpAdd>::Type_t
 operator+(const PScalarJIT<T1>& l, const PMatrixJIT<T2,N,C>& r)
 {
-  typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, OpAdd>::Type_t  d;
+  typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, OpAdd>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -453,7 +445,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpSubtract>::Type_t
 operator-(const PMatrixJIT<T1,N,C>& l, const PMatrixJIT<T2,N,C>& r)
 {
-  typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpSubtract>::Type_t  d;
+  typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpSubtract>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -472,7 +464,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, OpSubtract>::Type_t
 operator-(const PMatrixJIT<T1,N,C>& l, const PScalarJIT<T2>& r)
 {
-  typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, OpSubtract>::Type_t  d;
+  typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, OpSubtract>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -491,7 +483,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, OpSubtract>::Type_t
 operator-(const PScalarJIT<T1>& l, const PMatrixJIT<T2,N,C>& r)
 {
-  typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, OpSubtract>::Type_t  d;
+  typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, OpSubtract>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -511,7 +503,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, OpMultiply>::Type_t
 operator*(const PMatrixJIT<T1,N,C>& l, const PScalarJIT<T2>& r)
 {
-  typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, OpMultiply>::Type_t  d;
+  typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, OpMultiply>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -529,7 +521,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, OpAdjMultiply>::Type_t
 adjMultiply(const PMatrixJIT<T1,N,C>& l, const PScalarJIT<T2>& r)
 {
-  typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, OpAdjMultiply>::Type_t  d;
+  typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, OpAdjMultiply>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -547,7 +539,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, OpMultiplyAdj>::Type_t
 multiplyAdj(const PMatrixJIT<T1,N,C>& l, const PScalarJIT<T2>& r)
 {
-  typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, OpMultiplyAdj>::Type_t  d;
+  typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, OpMultiplyAdj>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -565,7 +557,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, OpAdjMultiplyAdj>::Type_t
 adjMultiplyAdj(const PMatrixJIT<T1,N,C>& l, const PScalarJIT<T2>& r)
 {
-  typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, OpAdjMultiplyAdj>::Type_t  d;
+  typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, OpAdjMultiplyAdj>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -585,7 +577,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, OpMultiply>::Type_t
 operator*(const PScalarJIT<T1>& l, const PMatrixJIT<T2,N,C>& r)
 {
-  typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, OpMultiply>::Type_t  d;
+  typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, OpMultiply>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -603,7 +595,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, OpAdjMultiply>::Type_t
 adjMultiply(const PScalarJIT<T1>& l, const PMatrixJIT<T2,N,C>& r)
 {
-  typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, OpAdjMultiply>::Type_t  d;
+  typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, OpAdjMultiply>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -621,7 +613,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, OpMultiplyAdj>::Type_t
 multiplyAdj(const PScalarJIT<T1>& l, const PMatrixJIT<T2,N,C>& r)
 {
-  typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, OpMultiplyAdj>::Type_t  d;
+  typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, OpMultiplyAdj>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -639,7 +631,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, OpAdjMultiplyAdj>::Type_t
 adjMultiplyAdj(const PScalarJIT<T1>& l, const PMatrixJIT<T2,N,C>& r)
 {
-  typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, OpAdjMultiplyAdj>::Type_t  d;
+  typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, OpAdjMultiplyAdj>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -655,41 +647,24 @@ struct BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiply> {
 };
 
 
-// template<class T1, class T2, int N, template<class,int> class C>
-// inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiply>::Type_t
-// operator*(const PMatrixJIT<T1,N,C>& l, const PMatrixJIT<T2,N,C>& r)
-// {
-//   typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiply>::Type_t  d;
-
-//   for(int i=0; i < N; ++i)
-//     for(int j=0; j < N; ++j)
-//     {
-//       d.elem(i,j) = l.elem(i,0) * r.elem(0,j);
-//       for(int k=1; k < N; ++k)
-// 	d.elem(i,j) += l.elem(i,k) * r.elem(k,j);
-//     }
-
-//   return d;
-// }
-
-
 template<class T1, class T2, int N, template<class,int> class C>
-inline void
-mulRep(const typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiply>::Type_t& dest,
-       const PMatrixJIT<T1,N,C>& l, const PMatrixJIT<T2,N,C>& r)
+inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiply>::Type_t
+operator*(const PMatrixJIT<T1,N,C>& l, const PMatrixJIT<T2,N,C>& r)
 {
-  typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiply>::Type_t& dd = const_cast<typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiply>::Type_t&>(dest);
+  typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiply>::Type_t  d(l.func());
+
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
     {
-      mulRep( dest.elem(i,j) , l.elem(i,0) , r.elem(0,j) );
-      for(int k=1; k < N; ++k) {
-	typename BinaryReturn<T1,T2,OpMultiply>::Type_t tmp(dest.func());
-	mulRep( tmp , l.elem(i,k) , r.elem(k,j) ); 
-	dd.elem(i,j) += tmp;
-      }
+      d.elem(i,j) = l.elem(i,0) * r.elem(0,j);
+      for(int k=1; k < N; ++k)
+	d.elem(i,j) += l.elem(i,k) * r.elem(k,j);
     }
+
+  return d;
 }
+
+
 
 // Optimized  PMatrixJIT = adj(PMatrixJIT)*PMatrixJIT
 template<class T1, class T2, int N, template<class,int> class C>
@@ -701,7 +676,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpAdjMultiply>::Type_t
 adjMultiply(const PMatrixJIT<T1,N,C>& l, const PMatrixJIT<T2,N,C>& r)
 {
-  typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpAdjMultiply>::Type_t  d;
+  typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpAdjMultiply>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -720,38 +695,23 @@ struct BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiplyAdj> {
   typedef C<typename BinaryReturn<T1, T2, OpMultiplyAdj>::Type_t, N>  Type_t;
 };
 
-// template<class T1, class T2, int N, template<class,int> class C>
-// inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiplyAdj>::Type_t
-// multiplyAdj(const PMatrixJIT<T1,N,C>& l, const PMatrixJIT<T2,N,C>& r)
-// {
-//   typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiplyAdj>::Type_t  d;
-
-//   for(int i=0; i < N; ++i)
-//     for(int j=0; j < N; ++j)
-//     {
-//       d.elem(i,j) = multiplyAdj(l.elem(i,0), r.elem(j,0));
-//       for(int k=1; k < N; ++k)
-// 	d.elem(i,j) += multiplyAdj(l.elem(i,k), r.elem(j,k));
-//     }
-
-//   return d;
-// }
 template<class T1, class T2, int N, template<class,int> class C>
-void
-multiplyAdjRep(const typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiplyAdj>::Type_t& d, const PMatrixJIT<T1,N,C>& l, const PMatrixJIT<T2,N,C>& r)
+inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiplyAdj>::Type_t
+multiplyAdj(const PMatrixJIT<T1,N,C>& l, const PMatrixJIT<T2,N,C>& r)
 {
-  typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiplyAdj>::Type_t& dd = const_cast<typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiplyAdj>::Type_t&>(d);
+  typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpMultiplyAdj>::Type_t  d(l.func());
+
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
     {
-      multiplyAdjRep(dd.elem(i,j), l.elem(i,0), r.elem(j,0));
-      for(int k=1; k < N; ++k) {
-	typename BinaryReturn<T1,T2,OpMultiplyAdj>::Type_t tmp(d.func());
-	multiplyAdjRep( tmp , l.elem(i,k), r.elem(j,k));
-	dd.elem(i,j) += tmp;
-      }
+      d.elem(i,j) = multiplyAdj(l.elem(i,0), r.elem(j,0));
+      for(int k=1; k < N; ++k)
+	d.elem(i,j) += multiplyAdj(l.elem(i,k), r.elem(j,k));
     }
+
+  return d;
 }
+
 
 // Optimized  PMatrixJIT = adj(PMatrixJIT)*adj(PMatrixJIT)
 template<class T1, class T2, int N, template<class,int> class C>
@@ -763,7 +723,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpAdjMultiplyAdj>::Type_t
 adjMultiplyAdj(const PMatrixJIT<T1,N,C>& l, const PMatrixJIT<T2,N,C>& r)
 {
-  typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpAdjMultiplyAdj>::Type_t  d;
+  typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, OpAdjMultiplyAdj>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -787,7 +747,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, OpDivide>::Type_t
 operator/(const PMatrixJIT<T1,N,C>& l, const PScalarJIT<T2>& r)
 {
-  typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, OpDivide>::Type_t  d;
+  typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, OpDivide>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -810,7 +770,7 @@ template<class T1, int N, template<class,int> class C>
 inline typename UnaryReturn<PMatrixJIT<T1,N,C>, FnAdjoint>::Type_t
 adj(const PMatrixJIT<T1,N,C>& l)
 {
-  typename UnaryReturn<PMatrixJIT<T1,N,C>, FnAdjoint>::Type_t  d;
+  typename UnaryReturn<PMatrixJIT<T1,N,C>, FnAdjoint>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -830,7 +790,7 @@ template<class T1, int N, template<class,int> class C>
 inline typename UnaryReturn<PMatrixJIT<T1,N,C>, FnConjugate>::Type_t
 conj(const PMatrixJIT<T1,N,C>& l)
 {
-  typename UnaryReturn<PMatrixJIT<T1,N,C>, FnConjugate>::Type_t  d;
+  typename UnaryReturn<PMatrixJIT<T1,N,C>, FnConjugate>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -850,7 +810,7 @@ template<class T1, int N, template<class,int> class C>
 inline typename UnaryReturn<PMatrixJIT<T1,N,C>, FnTranspose>::Type_t
 transpose(const PMatrixJIT<T1,N,C>& l)
 {
-  typename UnaryReturn<PMatrixJIT<T1,N,C>, FnTranspose>::Type_t  d;
+  typename UnaryReturn<PMatrixJIT<T1,N,C>, FnTranspose>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -871,7 +831,7 @@ template<class T, int N, template<class,int> class C>
 inline typename UnaryReturn<PMatrixJIT<T,N,C>, FnTrace>::Type_t
 trace(const PMatrixJIT<T,N,C>& s1)
 {
-  typename UnaryReturn<PMatrixJIT<T,N,C>, FnTrace>::Type_t  d;
+  typename UnaryReturn<PMatrixJIT<T,N,C>, FnTrace>::Type_t  d(s1.func());
 
   d.elem() = trace(s1.elem(0,0));
   for(int i=1; i < N; ++i)
@@ -891,7 +851,7 @@ template<class T1, int N, template<class,int> class C>
 inline typename UnaryReturn<PMatrixJIT<T1,N,C>, FnRealTrace>::Type_t
 realTrace(const PMatrixJIT<T1,N,C>& s1)
 {
-  typename UnaryReturn<PMatrixJIT<T1,N,C>, FnRealTrace>::Type_t  d;
+  typename UnaryReturn<PMatrixJIT<T1,N,C>, FnRealTrace>::Type_t  d(s1.func());
 
   d.elem() = realTrace(s1.elem(0,0));
   for(int i=1; i < N; ++i)
@@ -911,7 +871,7 @@ template<class T1, int N, template<class,int> class C>
 inline typename UnaryReturn<PMatrixJIT<T1,N,C>, FnImagTrace>::Type_t
 imagTrace(const PMatrixJIT<T1,N,C>& s1)
 {
-  typename UnaryReturn<PMatrixJIT<T1,N,C>, FnImagTrace>::Type_t  d;
+  typename UnaryReturn<PMatrixJIT<T1,N,C>, FnImagTrace>::Type_t  d(s1.func());
 
   d.elem() = imagTrace(s1.elem(0,0));
   for(int i=1; i < N; ++i)
@@ -931,7 +891,7 @@ template<class T, int N, template<class,int> class C>
 inline typename UnaryReturn<PMatrixJIT<T,N,C>, FnTraceColor>::Type_t
 traceColor(const PMatrixJIT<T,N,C>& s1)
 {
-  typename UnaryReturn<PMatrixJIT<T,N,C>, FnTraceColor>::Type_t  d;
+  typename UnaryReturn<PMatrixJIT<T,N,C>, FnTraceColor>::Type_t  d(s1.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -951,7 +911,7 @@ template<class T, int N, template<class,int> class C>
 inline typename UnaryReturn<PMatrixJIT<T,N,C>, FnTraceSpin>::Type_t
 traceSpin(const PMatrixJIT<T,N,C>& s1)
 {
-  typename UnaryReturn<PMatrixJIT<T,N,C>, FnTraceSpin>::Type_t  d;
+  typename UnaryReturn<PMatrixJIT<T,N,C>, FnTraceSpin>::Type_t  d(s1.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -974,7 +934,7 @@ template<class T, int N, template<class,int> class C>
 inline typename UnaryReturn<PMatrixJIT<T,N,C>, FnTransposeColor>::Type_t
 transposeColor(const PMatrixJIT<T,N,C>& s1)
 { 
-  typename UnaryReturn<PMatrixJIT<T,N,C>, FnTransposeColor>::Type_t d;
+  typename UnaryReturn<PMatrixJIT<T,N,C>, FnTransposeColor>::Type_t d(s1.func());
   for(int i=0; i < N; ++i) {
     for(int j=0; j < N; ++j) {
       d.elem(i,j) = transposeColor(s1.elem(i,j));
@@ -998,7 +958,7 @@ template<class T, int N, template<class,int> class C>
 inline typename UnaryReturn<PMatrixJIT<T,N,C>, FnTransposeSpin>::Type_t
 transposeSpin(const PMatrixJIT<T,N,C>& s1)
 { 
-  typename UnaryReturn<PMatrixJIT<T,N,C>, FnTransposeSpin>::Type_t d;
+  typename UnaryReturn<PMatrixJIT<T,N,C>, FnTransposeSpin>::Type_t d(s1.func());
   for(int i=0; i < N; ++i) {
     for(int j=0; j < N; ++j) {
       d.elem(i,j) = transposeSpin(s1.elem(i,j));
@@ -1019,7 +979,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, FnTraceMultiply>::Type_t
 traceMultiply(const PMatrixJIT<T1,N,C>& l, const PMatrixJIT<T2,N,C>& r)
 {
-  typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, FnTraceMultiply>::Type_t  d;
+  typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, FnTraceMultiply>::Type_t  d(l.func());
 
   d.elem() = traceMultiply(l.elem(0,0), r.elem(0,0));
   for(int k=1; k < N; ++k)
@@ -1042,7 +1002,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, FnTraceMultiply>::Type_t
 traceMultiply(const PMatrixJIT<T1,N,C>& l, const PScalarJIT<T2>& r)
 {
-  typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, FnTraceMultiply>::Type_t  d;
+  typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, FnTraceMultiply>::Type_t  d(l.func());
 
   d.elem() = traceMultiply(l.elem(0,0), r.elem());
   for(int k=1; k < N; ++k)
@@ -1061,7 +1021,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, FnTraceMultiply>::Type_t
 traceMultiply(const PScalarJIT<T1>& l, const PMatrixJIT<T2,N,C>& r)
 {
-  typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, FnTraceMultiply>::Type_t  d;
+  typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, FnTraceMultiply>::Type_t  d(l.func());
 
   d.elem() = traceMultiply(l.elem(), r.elem(0,0));
   for(int k=1; k < N; ++k)
@@ -1082,7 +1042,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, FnTraceColorMultiply>::Type_t
 traceColorMultiply(const PMatrixJIT<T1,N,C>& l, const PMatrixJIT<T2,N,C>& r)
 {
-  typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, FnTraceColorMultiply>::Type_t  d;
+  typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, FnTraceColorMultiply>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -1105,7 +1065,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, FnTraceColorMultiply>::Type_t
 traceColorMultiply(const PMatrixJIT<T1,N,C>& l, const PScalarJIT<T2>& r)
 {
-  typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, FnTraceColorMultiply>::Type_t  d;
+  typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, FnTraceColorMultiply>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -1124,7 +1084,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, FnTraceColorMultiply>::Type_t
 traceColorMultiply(const PScalarJIT<T1>& l, const PMatrixJIT<T2,N,C>& r)
 {
-  typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, FnTraceColorMultiply>::Type_t  d;
+  typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, FnTraceColorMultiply>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -1144,7 +1104,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, FnTraceSpinMultiply>::Type_t
 traceSpinMultiply(const PMatrixJIT<T1,N,C>& l, const PMatrixJIT<T2,N,C>& r)
 {
-  typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, FnTraceSpinMultiply>::Type_t  d;
+  typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, FnTraceSpinMultiply>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -1167,7 +1127,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, FnTraceSpinMultiply>::Type_t
 traceSpinMultiply(const PMatrixJIT<T1,N,C>& l, const PScalarJIT<T2>& r)
 {
-  typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, FnTraceSpinMultiply>::Type_t  d;
+  typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, FnTraceSpinMultiply>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -1186,7 +1146,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, FnTraceSpinMultiply>::Type_t
 traceSpinMultiply(const PScalarJIT<T1>& l, const PMatrixJIT<T2,N,C>& r)
 {
-  typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, FnTraceSpinMultiply>::Type_t  d;
+  typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, FnTraceSpinMultiply>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -1206,7 +1166,7 @@ template<class T, int N, template<class,int> class C>
 inline typename UnaryReturn<PMatrixJIT<T,N,C>, FnReal>::Type_t
 real(const PMatrixJIT<T,N,C>& s1)
 {
-  typename UnaryReturn<PMatrixJIT<T,N,C>, FnReal>::Type_t  d;
+  typename UnaryReturn<PMatrixJIT<T,N,C>, FnReal>::Type_t  d(s1.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -1226,7 +1186,7 @@ template<class T, int N, template<class,int> class C>
 inline typename UnaryReturn<PMatrixJIT<T,N,C>, FnImag>::Type_t
 imag(const PMatrixJIT<T,N,C>& s1)
 {
-  typename UnaryReturn<PMatrixJIT<T,N,C>, FnImag>::Type_t  d;
+  typename UnaryReturn<PMatrixJIT<T,N,C>, FnImag>::Type_t  d(s1.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -1241,7 +1201,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, FnCmplx>::Type_t
 cmplx(const PMatrixJIT<T1,N,C>& s1, const PMatrixJIT<T2,N,C>& s2)
 {
-  typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, FnCmplx>::Type_t  d;
+  typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, FnCmplx>::Type_t  d(s1.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -1264,7 +1224,7 @@ template<class T, int N, template<class,int> class C>
 inline typename UnaryReturn<PMatrixJIT<T,N,C>, FnTimesI>::Type_t
 timesI(const PMatrixJIT<T,N,C>& s1)
 {
-  typename UnaryReturn<PMatrixJIT<T,N,C>, FnTimesI>::Type_t  d;
+  typename UnaryReturn<PMatrixJIT<T,N,C>, FnTimesI>::Type_t  d(s1.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -1283,7 +1243,7 @@ template<class T, int N, template<class,int> class C>
 inline typename UnaryReturn<PMatrixJIT<T,N,C>, FnTimesMinusI>::Type_t
 timesMinusI(const PMatrixJIT<T,N,C>& s1)
 {
-  typename UnaryReturn<PMatrixJIT<T,N,C>, FnTimesMinusI>::Type_t  d;
+  typename UnaryReturn<PMatrixJIT<T,N,C>, FnTimesMinusI>::Type_t  d(s1.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -1303,7 +1263,7 @@ template<class T, int N, template<class,int> class C>
 inline typename UnaryReturn<PMatrixJIT<T,N,C>, FnGetSite>::Type_t
 getSite(const PMatrixJIT<T,N,C>& s1, int innersite)
 { 
-  typename UnaryReturn<PMatrixJIT<T,N,C>, FnGetSite>::Type_t  d;
+  typename UnaryReturn<PMatrixJIT<T,N,C>, FnGetSite>::Type_t  d(s1.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -1323,7 +1283,7 @@ template<class T, int N, template<class,int> class C>
 inline typename UnaryReturn<PMatrixJIT<T,N,C>, FnPeekColorVector>::Type_t
 peekColor(const PMatrixJIT<T,N,C>& l, int row)
 {
-  typename UnaryReturn<PMatrixJIT<T,N,C>, FnPeekColorVector>::Type_t  d;
+  typename UnaryReturn<PMatrixJIT<T,N,C>, FnPeekColorVector>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -1342,7 +1302,7 @@ template<class T, int N, template<class,int> class C>
 inline typename UnaryReturn<PMatrixJIT<T,N,C>, FnPeekColorMatrix>::Type_t
 peekColor(const PMatrixJIT<T,N,C>& l, int row, int col)
 {
-  typename UnaryReturn<PMatrixJIT<T,N,C>, FnPeekColorMatrix>::Type_t  d;
+  typename UnaryReturn<PMatrixJIT<T,N,C>, FnPeekColorMatrix>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -1361,7 +1321,7 @@ template<class T, int N, template<class,int> class C>
 inline typename UnaryReturn<PMatrixJIT<T,N,C>, FnPeekSpinVector>::Type_t
 peekSpin(const PMatrixJIT<T,N,C>& l, int row)
 {
-  typename UnaryReturn<PMatrixJIT<T,N,C>, FnPeekSpinVector>::Type_t  d;
+  typename UnaryReturn<PMatrixJIT<T,N,C>, FnPeekSpinVector>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -1380,7 +1340,7 @@ template<class T, int N, template<class,int> class C>
 inline typename UnaryReturn<PMatrixJIT<T,N,C>, FnPeekSpinMatrix>::Type_t
 peekSpin(const PMatrixJIT<T,N,C>& l, int row, int col)
 {
-  typename UnaryReturn<PMatrixJIT<T,N,C>, FnPeekSpinMatrix>::Type_t  d;
+  typename UnaryReturn<PMatrixJIT<T,N,C>, FnPeekSpinMatrix>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -1552,7 +1512,7 @@ template<class T, int N, template<class,int> class C>
 inline typename UnaryReturn<PMatrixJIT<T,N,C>, FnSum>::Type_t
 sum(const PMatrixJIT<T,N,C>& s1)
 {
-  typename UnaryReturn<PMatrixJIT<T,N,C>, FnSum>::Type_t  d;
+  typename UnaryReturn<PMatrixJIT<T,N,C>, FnSum>::Type_t  d(s1.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -1578,7 +1538,7 @@ template<class T, int N, template<class,int> class C>
 inline typename UnaryReturn<PMatrixJIT<T,N,C>, FnLocalNorm2>::Type_t
 localNorm2(const PMatrixJIT<T,N,C>& s1)
 {
-  typename UnaryReturn<PMatrixJIT<T,N,C>, FnLocalNorm2>::Type_t  d;
+  typename UnaryReturn<PMatrixJIT<T,N,C>, FnLocalNorm2>::Type_t  d(s1.func());
 
   d.elem() = localNorm2(s1.elem(0,0));
   for(int j=1; j < N; ++j)
@@ -1608,7 +1568,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, FnLocalInnerProduct>::Type_t
 localInnerProduct(const PMatrixJIT<T1,N,C>& s1, const PMatrixJIT<T2,N,C>& s2)
 {
-  typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, FnLocalInnerProduct>::Type_t  d;
+  typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, FnLocalInnerProduct>::Type_t  d(s1.func());
 
   d.elem() = localInnerProduct(s1.elem(0,0), s2.elem(0,0));
   for(int k=1; k < N; ++k)
@@ -1631,7 +1591,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, FnLocalInnerProduct>::Type_t
 localInnerProduct(const PMatrixJIT<T1,N,C>& s1, const PScalarJIT<T2>& s2)
 {
-  typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, FnLocalInnerProduct>::Type_t  d;
+  typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, FnLocalInnerProduct>::Type_t  d(s1.func());
 
   d.elem() = localInnerProduct(s1.elem(0,0), s2.elem());
   for(int k=1; k < N; ++k)
@@ -1650,7 +1610,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, FnLocalInnerProduct>::Type_t
 localInnerProduct(const PScalarJIT<T1>& s1, const PMatrixJIT<T2,N,C>& s2)
 {
-  typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, FnLocalInnerProduct>::Type_t  d;
+  typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, FnLocalInnerProduct>::Type_t  d(s1.func());
 
   d.elem() = localInnerProduct(s1.elem(), s2.elem(0,0));
   for(int k=1; k < N; ++k)
@@ -1679,7 +1639,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, FnLocalInnerProductReal>::Type_t
 localInnerProductReal(const PMatrixJIT<T1,N,C>& s1, const PMatrixJIT<T2,N,C>& s2)
 {
-  typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, FnLocalInnerProductReal>::Type_t  d;
+  typename BinaryReturn<PMatrixJIT<T1,N,C>, PMatrixJIT<T2,N,C>, FnLocalInnerProductReal>::Type_t  d(s1.func());
 
   d.elem() = localInnerProductReal(s1.elem(0,0), s2.elem(0,0));
   for(int k=1; k < N; ++k)
@@ -1702,7 +1662,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, FnLocalInnerProductReal>::Type_t
 localInnerProductReal(const PMatrixJIT<T1,N,C>& s1, const PScalarJIT<T2>& s2)
 {
-  typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, FnLocalInnerProductReal>::Type_t  d;
+  typename BinaryReturn<PMatrixJIT<T1,N,C>, PScalarJIT<T2>, FnLocalInnerProductReal>::Type_t  d(s1.func());
 
   d.elem() = localInnerProductReal(s1.elem(0,0), s2.elem());
   for(int k=1; k < N; ++k)
@@ -1721,7 +1681,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, FnLocalInnerProductReal>::Type_t
 localInnerProductReal(const PScalarJIT<T1>& s1, const PMatrixJIT<T2,N,C>& s2)
 {
-  typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, FnLocalInnerProductReal>::Type_t  d;
+  typename BinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, FnLocalInnerProductReal>::Type_t  d(s1.func());
 
   d.elem() = localInnerProductReal(s1.elem(), s2.elem(0,0));
   for(int k=1; k < N; ++k)
@@ -1745,7 +1705,7 @@ template<class T1, class T2, class T3, int N, template<class,int> class C>
 inline typename TrinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, PMatrixJIT<T3,N,C>, FnWhere>::Type_t
 where(const PScalarJIT<T1>& a, const PMatrixJIT<T2,N,C>& b, const PMatrixJIT<T3,N,C>& c)
 {
-  typename TrinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, PMatrixJIT<T3,N,C>, FnWhere>::Type_t  d;
+  typename TrinaryReturn<PScalarJIT<T1>, PMatrixJIT<T2,N,C>, PMatrixJIT<T3,N,C>, FnWhere>::Type_t  d(a.func());
 
   // Not optimal - want to have where outside assignment
   for(int i=0; i < N; ++i)

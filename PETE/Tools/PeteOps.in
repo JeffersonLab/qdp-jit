@@ -163,11 +163,7 @@ binaryOps
 -----
   TAG = "OpAdd"
   FUNCTION = "operator+"
-  EXPR = "
-    typedef typename BinaryReturn<T1, T2, OpAdd>::Type_t  Ret_t;
-    Ret_t dest(a.func());
-    addRep(dest, a, b);
-    return dest;"
+  EXPR = "return (a + b);"
   COMMENTA = "//! Binary addition"
   COMMENTB = "/*! 
   @return (a+b)
@@ -185,11 +181,7 @@ binaryOps
 -----
   TAG = "OpMultiply"
   FUNCTION = "operator*"
-  EXPR = "
-    typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t  Ret_t;
-    Ret_t dest(a.func());
-    mulRep(dest, a, b);
-    return dest;"
+  EXPR = "return (a * b);"
   COMMENTA = ""
   COMMENTB = ""
 -----

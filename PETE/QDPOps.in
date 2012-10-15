@@ -2,11 +2,7 @@ unaryOps
 -----
   TAG = "FnAdjoint"
   FUNCTION = "adj"
-  EXPR = "
-    typedef typename UnaryReturn<T, FnAdjoint>::Type_t  Ret_t;
-    Ret_t dest(a.func());
-    adjRep(dest, a);
-    return dest;"
+  EXPR = "return (adj(a));"
   COMMENTA = "//! Hermitian adjoint"
   COMMENTB = "/*! @ingroup group1
   @relates QDPType */"
