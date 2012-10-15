@@ -30,7 +30,7 @@ namespace QDP {
    * an inner lattice so the type could be represented as an length 4
    * array of lattice integers
    */
-template <class T> class PSeedJIT : public JV<T,4>
+  template <class T> class PSeedJIT : public JV<T,4>
 {
 public:
 

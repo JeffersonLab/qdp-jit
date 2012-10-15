@@ -21,7 +21,7 @@ namespace QDP {
 
 //! Primitive Scalar
 /*! Placeholder for no primitive structure */
-template<class T> class PScalarJIT : public JV<T,1>
+  template<class T> class PScalarJIT : public JV<T,1>
 {
 public:
 
@@ -162,8 +162,8 @@ public:
   // Compiler generated copy constructor calls the copy constructor
   // of the base class.
 #if 0
-  PScalarJIT(const PScalarJIT& a) : JV<T,1>::JV(a) {
-    std::cout << "PScalarJIT copy c-tor " << (void*)this << "\n";
+  PScalarJIT(const PScalarJIT& a) : JV<T,1>::JV(a.elem()) {
+    std::cout << __PRETTY_FUNCTION__ << "\n";
   }
 #endif
   

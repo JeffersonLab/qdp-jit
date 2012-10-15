@@ -118,6 +118,18 @@ namespace QDP {
 	}
       }
     }
+#if 0
+    WordJIT(const WordJIT& a):
+      global_state(a.global_state),
+      jit(a.jit),
+      r_addr(a.r_addr),
+      offset_full(a.offset_full),
+      offset_level(a.offset_level)
+    {
+      mapReg.insert(a.mapReg.begin(), a.mapReg.end());
+      std::cout << __PRETTY_FUNCTION__ << " mapReg.size()=" << mapReg.size() << "\n";
+    }
+#endif
 
     Jit& func() const {return jit;}
 

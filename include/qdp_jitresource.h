@@ -24,15 +24,18 @@ struct build_indices<0, Is...> : indices<Is...> {};
 
 
 
-template<class T,int N>
+  template<class T,int N>
 class JV {
 public:
+
   enum { ThisSize = N };                 // Size in T's
   enum { Size_t = ThisSize * T::Size_t}; // Size in registers
 
+#if 0
   JV(const JV& a): JV( a.jit , a.r_addr , a.off_full , a.off_level ) {
     //std::cout << "JV::JV() copy ctor " << __PRETTY_FUNCTION__ << " " << (void*)this << " " << (void*)&a.jit << "\n";
   }
+#endif
 
 
   JV(Jit& j) : JV(j, build_indices<N>{}) {}
@@ -42,12 +45,21 @@ public:
     //std::cout << "JV::JV() new regs " << (void*)this << " " << (void*)&j << "\n";
   }
 
+
   JV(const T& t0,const T& t1) : jit(t0.func()), F{{t0,t1}} {
     std::cout << __PRETTY_FUNCTION__ << "\n";
   }
   JV(const T& t0) : jit(t0.func()), F{{t0}} {
     std::cout << __PRETTY_FUNCTION__ << "\n";
   }
+#if 0
+    JV(const C<T>& c) : jit(c.func()), F(c.getF()) {
+      std::cout << __PRETTY_FUNCTION__ << "\n";
+    }
+    JV(const C<T,N>& c) : jit(c.func()), F(c.getF()) {
+      std::cout << __PRETTY_FUNCTION__ << "\n";
+    }
+#endif
 
 
   JV(Jit& j, int r , int of , int ol): JV(j,r,of,ol,build_indices<N>{}) {}

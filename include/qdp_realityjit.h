@@ -151,8 +151,8 @@ public:
     }
 
 #if 0
-  RScalarJIT(const RScalarJIT& a) : JV<T,1>::JV(a) {
-    std::cout << "RScalarJIT copy c-tor " << (void*)this << "\n";
+  RScalarJIT(const RScalarJIT& a) : JV<T,1>::JV(a.elem()) {
+    std::cout << __PRETTY_FUNCTION__ << "\n";
   }
 #endif
 

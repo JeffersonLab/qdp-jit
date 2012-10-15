@@ -28,7 +28,7 @@ namespace QDP {
  * portion is a part of the generic class, hence it is called a domain
  * and not a category
  */
-template <class T, int N, template<class,int> class C> class PMatrixJIT : public JV<T,N*N>
+  template <class T, int N, template<class,int> class C> class PMatrixJIT : public JV<T,N*N>
 {
 public:
   typedef C<T,N>  CC;
