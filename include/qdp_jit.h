@@ -14,7 +14,7 @@ namespace QDP {
   class Jit {
   public:
     enum { RegTypeShift = 24 };
-    enum RegType { f32=0,f64=1,u16=2,u32=3,u64=4,s16=5,s32=6,s64=7,u8=8,b32=9 };
+    enum RegType { f32=0,f64=1,u16=2,u32=3,u64=4,s16=5,s32=6,s64=7,u8=8,b32=9,pred=10 };
 
     // Specify the PTX register type to use when doing logical operations.
     // C++ bool is 1 bytes. PTX can't operate on 8 bits types. Must cast each access.
@@ -33,7 +33,10 @@ namespace QDP {
     void asm_mul(int dest,int lhs,int rhs);
     void asm_fma(int dest,int lhs,int rhs,int add);
     void asm_neg(int dest,int src);
+    void asm_not(int dest,int src);
     void asm_cvt(int dest,int src);
+    void asm_pred_to_01(int dest,int pred);
+    void asm_01_to_pred(int pred,int src);
 
     std::string getName(int id) const;
     int getRegs(RegType type,int count);
@@ -79,7 +82,7 @@ namespace QDP {
   template <> struct JitRegType<double>       { static const Jit::RegType Val_t = Jit::f64; };
   template <> struct JitRegType<int>          { static const Jit::RegType Val_t = Jit::s32; };
   template <> struct JitRegType<unsigned int> { static const Jit::RegType Val_t = Jit::u32; };
-  template <> struct JitRegType<bool>         { static const Jit::RegType Val_t = Jit::u32; }; // 
+  template <> struct JitRegType<bool>         { static const Jit::RegType Val_t = Jit::pred; };
 
 #if 0
   template<int BoolSize> struct BoolReg {};

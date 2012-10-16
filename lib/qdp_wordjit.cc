@@ -32,9 +32,14 @@ namespace QDP {
 	std::cout << "We don't have the value in a register. Need to load it " << (void*)this << " " << (void*)&jit << "\n";
 	Jit::RegType myType = JitRegType<bool>::Val_t;
 	mapReg.insert( std::make_pair( myType , jit.getRegs( JitRegType<bool>::Val_t , 1 ) ) );
-	int loadU8 = jit.getRegs( Jit::u8 , 1 );
-	jit.asm_ld( loadU8 , r_addr , offset_level * WordSize<bool>::Size );
-	jit.asm_cvt( mapReg.at( myType) , loadU8 );
+
+	int load_u8 = jit.getRegs( Jit::u8 , 1 );
+	jit.asm_ld( load_u8 , r_addr , offset_level * WordSize<bool>::Size );
+
+	int load_u32 = jit.getRegs( Jit::u32 , 1 );
+	jit.asm_cvt( load_u32 , load_u8 );
+
+	jit.asm_01_to_pred( mapReg.at( myType) , load_u32 );
 	return getReg(type);
       }
     }

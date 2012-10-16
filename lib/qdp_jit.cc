@@ -34,6 +34,7 @@ Jit::Jit(const std::string& _filename , const std::string& _funcname ) :
   nreg[s64]=0;
   nreg[u8]=0;
   nreg[b32]=0;
+  nreg[pred]=0;
   regprefix[f32]="f";
   regprefix[f64]="d";
   regprefix[u16]="h";
@@ -44,6 +45,7 @@ Jit::Jit(const std::string& _filename , const std::string& _funcname ) :
   regprefix[s64]="l";
   regprefix[u8]="s";
   regprefix[b32]="x";
+  regprefix[pred]="p";
   regptx[f32]="f32";
   regptx[f64]="f64";
   regptx[u16]="u16";
@@ -54,6 +56,7 @@ Jit::Jit(const std::string& _filename , const std::string& _funcname ) :
   regptx[s64]="s64";
   regptx[u8]="u8";
   regptx[b32]="b32";
+  regptx[pred]="pred";
 
   int r_ctaid = getRegs( u16 , 1 );
   int r_ntid = getRegs( u16 , 1 );
@@ -69,7 +72,7 @@ Jit::Jit(const std::string& _filename , const std::string& _funcname ) :
   // mapCVT[to][from]
   mapCVT[f32][f64]="rz.";
 
-  mapBitType[u32]=b32;
+  mapBitType[pred]=pred;
 }
 
 
@@ -110,6 +113,24 @@ void Jit::asm_add(int dest,int lhs,int rhs)
   oss_prg << "add." << regptx[getRegType(dest)] << " " << getName(dest) << "," << getName(lhs) << "," << getName(rhs) << ";\n";
 }
 
+  void Jit::asm_pred_to_01(int dest,int pred)
+  {
+    if ( getRegType(pred) != Jit::pred ) {
+      std::cout << "JIT::asm_selp: type mismatch " << getRegType(dest) << " " << getRegType(pred) << "\n";
+    exit(1);
+  }
+    oss_prg << "selp." << regptx[getRegType(dest)] << " " << getName(dest) << ",1,0," << getName(pred) << ";\n";
+  }
+
+  void Jit::asm_01_to_pred(int dest,int src)
+  {
+    if ( getRegType(dest) != Jit::pred ) {
+      std::cout << "JIT::asm_setp: type mismatch " << getRegType(dest) << " " << getRegType(src) << "\n";
+    exit(1);
+  }
+    oss_prg << "setp.ne." << regptx[getRegType(src)] << " " << getName(dest) << "," << getName(src) << ",0;\n";
+  }
+
 void Jit::asm_and(int dest,int lhs,int rhs)
 {
   if ( getRegType(dest) != getRegType(rhs) || getRegType(dest) != getRegType(lhs) ) {
@@ -117,6 +138,17 @@ void Jit::asm_and(int dest,int lhs,int rhs)
     exit(1);
   }
   oss_prg << "and." << regptx[ mapBitType.at( getRegType(dest) ) ]  << " " << getName(dest) << "," << getName(lhs) << "," << getName(rhs) << ";\n";
+}
+
+void Jit::asm_not(int dest,int src)
+{
+  if ( getRegType(dest) != getRegType(src) ) {
+    std::cout << "JIT::asm_mul: trying to add different types " 
+	      << getRegType(dest) << " " 
+	      << getRegType(src) << "\n";
+    exit(1);
+  }
+  oss_prg << "not." << regptx[ mapBitType.at( getRegType(dest) ) ] << " " << getName(dest) << "," << getName(src) << ";\n";
 }
 
 void Jit::asm_sub(int dest,int lhs,int rhs)
@@ -160,6 +192,7 @@ void Jit::asm_neg(int dest,int src)
   }
   oss_prg << "neg." << regptx[getRegType(dest)] << " " << getName(dest) << "," << getName(src) << ";\n";
 }
+
 
 void Jit::asm_cvt(int dest,int src)
 {
@@ -210,6 +243,8 @@ void Jit::dumpVarDef()
   dumpVarDefType(s32);
   dumpVarDefType(s64);
   dumpVarDefType(u8);
+  dumpVarDefType(b32);
+  dumpVarDefType(pred);
 }
 
 void Jit::dumpParam() 
