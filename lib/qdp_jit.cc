@@ -251,6 +251,17 @@ namespace QDP {
     oss_prg << "neg." << regptx[getRegType(dest)] << " " << getName(dest) << "," << getName(src) << ";\n";
   }
 
+  void Jit::asm_abs(int dest,int src)
+  {
+    if ( getRegType(dest) != getRegType(src) ) {
+      std::cout << "JIT::asm_abs: trying to add different types " 
+		<< getRegType(dest) << " " 
+		<< getRegType(src) << "\n";
+      exit(1);
+    }
+    oss_prg << "abs." << regptx[getRegType(dest)] << " " << getName(dest) << "," << getName(src) << ";\n";
+  }
+
   void Jit::asm_cos(int dest,int src)
   {
     if ( getRegType(dest) != getRegType(src) || getRegType(src) != Jit::f32 ) {
@@ -271,6 +282,28 @@ namespace QDP {
       exit(1);
     }
     oss_prg << "sin.approx." << regptx[getRegType(dest)] << " " << getName(dest) << "," << getName(src) << ";\n";
+  }
+
+  void Jit::asm_exp(int dest,int src)
+  {
+    if ( getRegType(dest) != getRegType(src) || getRegType(src) != Jit::f32 ) {
+      std::cout << "JIT::asm_exp: type mismatch " 
+		<< getRegType(dest) << " " 
+		<< getRegType(src) << "\n";
+      exit(1);
+    }
+    oss_prg << "ex2.approx." << regptx[getRegType(dest)] << " " << getName(dest) << "," << getName(src) << ";\n";
+  }
+
+  void Jit::asm_log(int dest,int src)
+  {
+    if ( getRegType(dest) != getRegType(src) || getRegType(src) != Jit::f32 ) {
+      std::cout << "JIT::asm_log: type mismatch " 
+		<< getRegType(dest) << " " 
+		<< getRegType(src) << "\n";
+      exit(1);
+    }
+    oss_prg << "lg2.approx." << regptx[getRegType(dest)] << " " << getName(dest) << "," << getName(src) << ";\n";
   }
 
   void Jit::asm_sqrt(int dest,int src)

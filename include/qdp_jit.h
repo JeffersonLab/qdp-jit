@@ -36,6 +36,7 @@ namespace QDP {
     void asm_div(int dest,int lhs,int rhs);
     void asm_fma(int dest,int lhs,int rhs,int add);
     void asm_neg(int dest,int src);
+    void asm_abs(int dest,int src);
     void asm_not(int dest,int src);
     void asm_cvt(int dest,int src);
     void asm_pred_to_01(int dest,int pred);
@@ -43,6 +44,8 @@ namespace QDP {
     void asm_cmp(CmpOp op,int dest,int lhs,int rhs);
     void asm_cos(int dest,int src);
     void asm_sin(int dest,int src);
+    void asm_exp(int dest,int src);
+    void asm_log(int dest,int src);
     void asm_sqrt(int dest,int src);
 
     std::string getName(int id) const;

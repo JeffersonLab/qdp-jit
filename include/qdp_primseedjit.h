@@ -257,10 +257,10 @@ template<class T1, class T2>
 inline typename BinaryReturn<PSeedJIT<T1>, PSeedJIT<T2>, OpMultiply>::Type_t
 operator*(const PSeedJIT<T1>& s1, const PSeedJIT<T2>& s2)
 {
-  typename BinaryReturn<PSeedJIT<T1>, PSeedJIT<T2>, OpMultiply>::Type_t  d;
+  typename BinaryReturn<PSeedJIT<T1>, PSeedJIT<T2>, OpMultiply>::Type_t  d(s1.func());
   typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t  T;
   typedef typename InternalScalar<T>::Type_t  S;
-  T  i0, i1, i2, i3;
+  T  i0(s1.func()), i1(s1.func()), i2(s1.func()), i3(s1.func());
 
   /* i3 = s1(3)*s2(0) + s1(2)*s2(1) + s1(1)*s2(2) + s1(0)*s2(3) */
   i3  = s1.elem(3) * s2.elem(0);
@@ -313,7 +313,7 @@ template<class T1, class T2>
 inline typename BinaryReturn<PSeedJIT<T1>, PSeedJIT<T2>, OpBitwiseOr>::Type_t
 operator|(const PSeedJIT<T1>& l, const PSeedJIT<T2>& r)
 {
-  typename BinaryReturn<PSeedJIT<T1>, PSeedJIT<T2>, OpBitwiseOr>::Type_t  d;
+  typename BinaryReturn<PSeedJIT<T1>, PSeedJIT<T2>, OpBitwiseOr>::Type_t  d(l.func());
 
   d.elem(0) = l.elem(0) | r.elem(0);
   d.elem(1) = l.elem(1) | r.elem(1);
@@ -337,7 +337,7 @@ operator|(const PSeedJIT<T1>& l, const PScalarJIT<T2>& r)
 {
   // Lazy implementation
 
-  PSeedJIT<T2>  d;
+  PSeedJIT<T2>  d(l.func());
   d = r;
 
   return (l | d);
@@ -358,7 +358,7 @@ template<class T1, class T2>
 inline typename BinaryReturn<PSeedJIT<T1>, PScalarJIT<T2>, OpLeftShift>::Type_t
 operator<<(const PSeedJIT<T1>& s1, const PScalarJIT<T2>& s2)
 {
-  typename BinaryReturn<PSeedJIT<T1>, PScalarJIT<T2>, OpLeftShift>::Type_t  d;
+  typename BinaryReturn<PSeedJIT<T1>, PScalarJIT<T2>, OpLeftShift>::Type_t  d(s1.func());
   typedef typename BinaryReturn<T1, T2, OpLeftShift>::Type_t  T;
   typedef typename InternalScalar<T>::Type_t  S;
   T  i0, i1, i2, i3;
@@ -393,7 +393,7 @@ template<class T>
 inline typename UnaryReturn<PSeedJIT<T>, FnSeedToFloat>::Type_t
 seedToFloat(const PSeedJIT<T>& s1)
 {
-  typename UnaryReturn<PSeedJIT<T>, FnSeedToFloat>::Type_t  d;
+  typename UnaryReturn<PSeedJIT<T>, FnSeedToFloat>::Type_t  d(s1.func());
   typedef typename RealScalar<T>::Type_t  S;
 
   S  twom11(1.0 / 2048.0);
@@ -434,7 +434,7 @@ template<class T>
 inline typename UnaryReturn<PSeedJIT<T>, FnGetSite>::Type_t
 getSite(const PSeedJIT<T>& s1, int innersite)
 { 
-  typename UnaryReturn<PSeedJIT<T>, FnGetSite>::Type_t  d;
+  typename UnaryReturn<PSeedJIT<T>, FnGetSite>::Type_t  d(s1.func());
 
   for(int i=0; i < 4; ++i)
     d.elem(i) = getSite(s1.elem(i), innersite);

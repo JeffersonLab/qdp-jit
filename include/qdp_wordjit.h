@@ -16,6 +16,9 @@ namespace QDP {
     //! Size (in number of registers) of the underlying object
     enum {Size_t = 1};
 
+    // explicit WordJIT( int i ) : jit(NULL), literal(true) {
+    //   litVal = i;
+    // }
 
     //! View of an object from global state space
     WordJIT(Jit& j , int r_addr_ , int offset_full_ , int offset_level_ ) : 
@@ -124,6 +127,8 @@ namespace QDP {
   public:
     typedef std::map< Jit::RegType , int > MapRegType;
     bool global_state;
+    // bool literal;
+    // int litVal;
     Jit&  jit;
     mutable MapRegType mapReg;
     int r_addr;
@@ -167,6 +172,10 @@ namespace QDP {
   };
 
 
+  template<class T>
+  struct InternalScalar<WordJIT<T> > {
+    typedef WordJIT<typename InternalScalar<T>::Type_t>  Type_t;
+  };
 
 
 
@@ -785,7 +794,8 @@ template<class T1>
 inline typename UnaryReturn<WordJIT<T1>, FnArcCos>::Type_t
 acos(const WordJIT<T1>& s1)
 {
-  return acos(s1.elem());
+  QDP_error_exit("acos not implemented");
+  //  return acos(s1.elem());
 }
 
 // ArcSin
@@ -793,7 +803,8 @@ template<class T1>
 inline typename UnaryReturn<WordJIT<T1>, FnArcSin>::Type_t
 asin(const WordJIT<T1>& s1)
 {
-  return asin(s1.elem());
+  QDP_error_exit("asin not implemented");
+  //  return asin(s1.elem());
 }
 
 // ArcTan
@@ -801,7 +812,8 @@ template<class T1>
 inline typename UnaryReturn<WordJIT<T1>, FnArcTan>::Type_t
 atan(const WordJIT<T1>& s1)
 {
-  return atan(s1.elem());
+  QDP_error_exit("atan not implemented");
+  //return atan(s1.elem());
 }
 
 // Ceil(ing)
@@ -809,7 +821,8 @@ template<class T1>
 inline typename UnaryReturn<WordJIT<T1>, FnCeil>::Type_t
 ceil(const WordJIT<T1>& s1)
 {
-  return ceil(s1.elem());
+  QDP_error_exit("ceil not implemented");
+  //return ceil(s1.elem());
 }
 
 // Cos
@@ -831,7 +844,8 @@ template<class T1>
 inline typename UnaryReturn<WordJIT<T1>, FnHypCos>::Type_t
 cosh(const WordJIT<T1>& s1)
 {
-  return cosh(s1.elem());
+  QDP_error_exit("cosh not implemented");
+  //return cosh(s1.elem());
 }
 
 // Exp
@@ -839,7 +853,14 @@ template<class T1>
 inline typename UnaryReturn<WordJIT<T1>, FnExp>::Type_t
 exp(const WordJIT<T1>& s1)
 {
-  return exp(s1.elem());
+  typedef typename UnaryReturn<WordJIT<T1>, FnExp>::Type_t Ret_t;
+  typedef typename WordType<Ret_t>::Type_t WT;
+  Ret_t tmp(s1.func());
+  tmp.func().asm_exp( tmp.getReg( Jit::f32 ) , 
+		      s1.getReg( Jit::f32 ) );
+  std::cout << " tmp=" << tmp.mapReg.size() << "\n";
+  return tmp;
+  //return exp(s1.elem());
 }
 
 // Fabs
@@ -847,7 +868,12 @@ template<class T1>
 inline typename UnaryReturn<WordJIT<T1>, FnFabs>::Type_t
 fabs(const WordJIT<T1>& s1)
 {
-  return fabs(s1.elem());
+  typedef typename UnaryReturn<WordJIT<T1>, FnFabs>::Type_t Ret_t;
+  typedef typename WordType<Ret_t>::Type_t WT;
+  Ret_t tmp(s1.func());
+  tmp.func().asm_abs( tmp.getReg( JitRegType<WT>::Val_t ) , 
+		      s1.getReg( JitRegType<WT>::Val_t ) );
+  return tmp;
 }
 
 // Floor
@@ -855,7 +881,8 @@ template<class T1>
 inline typename UnaryReturn<WordJIT<T1>, FnFloor>::Type_t
 floor(const WordJIT<T1>& s1)
 {
-  return floor(s1.elem());
+  QDP_error_exit("floor not implemented");
+  //return floor(s1.elem());
 }
 
 // Log
@@ -863,7 +890,13 @@ template<class T1>
 inline typename UnaryReturn<WordJIT<T1>, FnLog>::Type_t
 log(const WordJIT<T1>& s1)
 {
-  return log(s1.elem());
+  typedef typename UnaryReturn<WordJIT<T1>, FnLog>::Type_t Ret_t;
+  typedef typename WordType<Ret_t>::Type_t WT;
+  Ret_t tmp(s1.func());
+  tmp.func().asm_log( tmp.getReg( Jit::f32 ) , 
+		      s1.getReg( Jit::f32 ) );
+  std::cout << " tmp=" << tmp.mapReg.size() << "\n";
+  return tmp;
 }
 
 // Log10
@@ -871,7 +904,8 @@ template<class T1>
 inline typename UnaryReturn<WordJIT<T1>, FnLog10>::Type_t
 log10(const WordJIT<T1>& s1)
 {
-  return log10(s1.elem());
+  QDP_error_exit("log10 not implemented");
+  //  return log10(s1.elem());
 }
 
 // Sin
@@ -894,7 +928,8 @@ template<class T1>
 inline typename UnaryReturn<WordJIT<T1>, FnHypSin>::Type_t
 sinh(const WordJIT<T1>& s1)
 {
-  return sinh(s1.elem());
+  QDP_error_exit("sinh not implemented");
+  //  return sinh(s1.elem());
 }
 
 // Sqrt
@@ -917,7 +952,8 @@ template<class T1>
 inline typename UnaryReturn<WordJIT<T1>, FnTan>::Type_t
 tan(const WordJIT<T1>& s1)
 {
-  return tan(s1.elem());
+  QDP_error_exit("tan not implemented");
+  //return tan(s1.elem());
 }
 
 // Tanh
@@ -925,7 +961,8 @@ template<class T1>
 inline typename UnaryReturn<WordJIT<T1>, FnHypTan>::Type_t
 tanh(const WordJIT<T1>& s1)
 {
-  return tanh(s1.elem());
+  QDP_error_exit("tanh not implemented");
+  //  return tanh(s1.elem());
 }
 
 
@@ -935,7 +972,8 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, FnPow>::Type_t
 pow(const WordJIT<T1>& s1, const WordJIT<T2>& s2)
 {
-  return pow(s1.elem(), s2.elem());
+  QDP_error_exit("pow not implemented");
+  //  return pow(s1.elem(), s2.elem());
 }
 
 //! WordJIT<T> = atan2(WordJIT<T> , WordJIT<T>)
@@ -943,45 +981,11 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, FnArcTan2>::Type_t
 atan2(const WordJIT<T1>& s1, const WordJIT<T2>& s2)
 {
-  return atan2(s1.elem(), s2.elem());
+  QDP_error_exit("atan2 not implemented");
+  //return atan2(s1.elem(), s2.elem());
 }
 
 
-//! WordJIT<T> = (WordJIT<T> , WordJIT<T>)
-template<class T1, class T2>
-inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, FnCmplx>::Type_t
-cmplx(const WordJIT<T1>& s1, const WordJIT<T2>& s2)
-{
-  return cmplx(s1.elem(), s2.elem());
-}
-
-
-
-// Global Functions
-// WordJIT = i * WordJIT
-template<class T>
-inline typename UnaryReturn<WordJIT<T>, FnTimesI>::Type_t
-timesI(const WordJIT<T>& s1)
-{
-  return timesI(s1.elem());
-}
-
-// WordJIT = -i * WordJIT
-template<class T>
-inline typename UnaryReturn<WordJIT<T>, FnTimesMinusI>::Type_t
-timesMinusI(const WordJIT<T>& s1)
-{
-  return timesMinusI(s1.elem());
-}
-
-
-//! dest [float type] = source [seed type]
-template<class T>
-inline typename UnaryReturn<WordJIT<T>, FnSeedToFloat>::Type_t
-seedToFloat(const WordJIT<T>& s1)
-{
-  return seedToFloat(s1.elem());
-}
 
 
 //! dest [some type] = source [some type]
