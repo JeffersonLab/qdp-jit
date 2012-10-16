@@ -16,6 +16,7 @@ namespace QDP {
     //! Size (in number of registers) of the underlying object
     enum {Size_t = 1};
 
+
     //! View of an object from global state space
     WordJIT(Jit& j , int r_addr_ , int offset_full_ , int offset_level_ ) : 
       jit(j), 
@@ -41,9 +42,10 @@ namespace QDP {
 	jit.asm_st( r_addr , offset_level * WordSize<T>::Size , s1.getReg( JitRegType<T>::Val_t ) );
       }
       else {
-	std::cout << " WordJIT& assign reg \n";
+	std::cout << " +++++++++++++++++++++++++ WordJIT& assign reg \n";
 	jit.asm_mov( getReg( JitRegType<T>::Val_t ) , s1.getReg( JitRegType<T>::Val_t ) );
       }
+      
       std::cout << " WordJIT& assign finished \n";
       return *this;
     }
@@ -145,6 +147,28 @@ namespace QDP {
   };
 
 
+  template<>
+  template<typename T1>
+  WordJIT<bool>& WordJIT<bool>::assign(const WordJIT<T1>& s1) 
+  {
+    std::cout << "********************** WordJIT SPECIAL ASSIGN\n";
+    if (global_state) {
+      std::cout << " WordJIT& assign global " << s1.mapReg.size() << "\n";
+      int cvtU8 = jit.getRegs( Jit::u8 , 1 );
+      jit.asm_cvt( cvtU8 , s1.getReg( JitRegType<bool>::Val_t )  );
+      jit.asm_st( r_addr , offset_level * WordSize<bool>::Size , cvtU8 );
+    }
+    else {
+      std::cout << " +++++++++++++++++++++++++ WordJIT& assign reg \n";
+      jit.asm_mov( getReg( JitRegType<bool>::Val_t ) , s1.getReg( JitRegType<bool>::Val_t ) );
+    }
+  }
+
+  template<>
+  int WordJIT<bool>::getReg( Jit::RegType type ) const;
+
+
+
 template<class T> 
 struct WordType<WordJIT<T> >
 {
@@ -153,11 +177,12 @@ struct WordType<WordJIT<T> >
 
 
   // Default binary(WordJIT,WordJIT) -> WordJIT
+#if 1
   template<class T1, class T2, class Op>
   struct BinaryReturn<WordJIT<T1>, WordJIT<T2>, Op> {
     typedef WordJIT<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
   };
-
+#endif
 
   template<class T1, class T2>
   inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpAdd>::Type_t
@@ -213,6 +238,24 @@ struct WordType<WordJIT<T> >
   }
 
 
+template<class T1, class T2>
+struct BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpAnd > {
+  typedef WordJIT<typename BinaryReturn<T1, T2, OpAnd>::Type_t>  Type_t;
+};
+
+template<class T1, class T2>
+inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpAnd>::Type_t
+operator&&(const WordJIT<T1>& l, const WordJIT<T2>& r)
+{
+  typedef typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpAnd>::Type_t Ret_t;
+  typedef typename WordType<Ret_t>::Type_t WT;
+  Ret_t tmp(l.func());
+
+  tmp.func().asm_and( tmp.getReg( JitRegType<WT>::Val_t ) , 
+		      l.getReg( JitRegType<WT>::Val_t ), r.getReg( JitRegType<WT>::Val_t ) );
+
+  return tmp;
+}
 
 
 

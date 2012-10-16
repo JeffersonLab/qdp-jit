@@ -14,7 +14,13 @@ namespace QDP {
   class Jit {
   public:
     enum { RegTypeShift = 24 };
-    enum RegType { f32=0,f64=1,u16=2,u32=3,u64=4,s16=5,s32=6,s64=7 };
+    enum RegType { f32=0,f64=1,u16=2,u32=3,u64=4,s16=5,s32=6,s64=7,u8=8,b32=9 };
+
+    // Specify the PTX register type to use when doing logical operations.
+    // C++ bool is 1 bytes. PTX can't operate on 8 bits types. Must cast each access.
+    //typedef unsigned int PTX_Bool_C_equiv;
+    //static const Jit::RegType PTX_Bool = u32;
+    //static const std::string PTX_Bool_OP;//{"b32"};   // and.b32  PTX can only do logical on bittypes
 
     Jit(const std::string& _filename , const std::string& _funcname );
 
@@ -22,6 +28,7 @@ namespace QDP {
     void asm_st(int base,int offset,int src);
     void asm_ld(int dest,int base,int offset);
     void asm_add(int dest,int lhs,int rhs);
+    void asm_and(int dest,int lhs,int rhs);
     void asm_sub(int dest,int lhs,int rhs);
     void asm_mul(int dest,int lhs,int rhs);
     void asm_fma(int dest,int lhs,int rhs,int add);
@@ -62,14 +69,25 @@ namespace QDP {
     mutable std::ostringstream oss_param;
     mutable std::string param_prefix;
     mutable std::map< int , std::map< int , std::string > > mapCVT;
+    mutable std::map< RegType , RegType > mapBitType;
   };
 
 
   template <class T> struct JitRegType {};
 
-  template <> struct JitRegType<float>  { static const Jit::RegType Val_t = Jit::f32; };
-  template <> struct JitRegType<double> { static const Jit::RegType Val_t = Jit::f64; };
-  template <> struct JitRegType<int>    { static const Jit::RegType Val_t = Jit::s32; };
+  template <> struct JitRegType<float>        { static const Jit::RegType Val_t = Jit::f32; };
+  template <> struct JitRegType<double>       { static const Jit::RegType Val_t = Jit::f64; };
+  template <> struct JitRegType<int>          { static const Jit::RegType Val_t = Jit::s32; };
+  template <> struct JitRegType<unsigned int> { static const Jit::RegType Val_t = Jit::u32; };
+  template <> struct JitRegType<bool>         { static const Jit::RegType Val_t = Jit::u32; }; // 
+
+#if 0
+  template<int BoolSize> struct BoolReg {};
+  template<> struct BoolReg<1> { static const Jit::RegType Val_t = Jit::u8; };
+  template<> struct BoolReg<2> { static const Jit::RegType Val_t = Jit::u16; };
+  template<> struct BoolReg<4> { static const Jit::RegType Val_t = Jit::u32; };
+  template <> struct JitRegType<bool>         { static const Jit::RegType Val_t = BoolReg< sizeof(bool) >::Val_t; }; // 
+#endif
 
 }
 

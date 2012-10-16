@@ -18,6 +18,7 @@ template<class T,int N> struct GetLimit;
 template<> struct WordSize< float > { enum { Size = sizeof(float) }; };
 template<> struct WordSize< double > { enum { Size = sizeof(double) }; };
 template<> struct WordSize< int > { enum { Size = sizeof(int) }; };
+template<> struct WordSize< unsigned int > { enum { Size = sizeof(unsigned int) }; };
 template<> struct WordSize< bool > { enum { Size = sizeof(bool) }; };
 
   // GetLimit extracts the size of the specified QDP type level

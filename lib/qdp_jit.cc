@@ -5,6 +5,20 @@ namespace QDP {
 const Jit::RegType JitRegType<float>::Val_t;
 const Jit::RegType JitRegType<double>::Val_t;
 const Jit::RegType JitRegType<int>::Val_t;
+const Jit::RegType JitRegType<unsigned int>::Val_t;
+const Jit::RegType JitRegType<bool>::Val_t;
+
+#if 0
+const Jit::RegType BoolReg<1>::Val_t;
+const Jit::RegType BoolReg<2>::Val_t;
+const Jit::RegType BoolReg<4>::Val_t;
+#endif
+
+
+  //  const Jit::RegType Jit::PTX_Bool;
+  //  const std::string Jit::PTX_Bool_OP = "b32";
+
+  //    static const std::string PTX_Bool_OP;{"b32"};   // and.b32  PTX can only do logical on bittypes
 
 Jit::Jit(const std::string& _filename , const std::string& _funcname ) :
     filename(_filename) , funcname(_funcname)
@@ -18,6 +32,8 @@ Jit::Jit(const std::string& _filename , const std::string& _funcname ) :
   nreg[s16]=0;
   nreg[s32]=0;
   nreg[s64]=0;
+  nreg[u8]=0;
+  nreg[b32]=0;
   regprefix[f32]="f";
   regprefix[f64]="d";
   regprefix[u16]="h";
@@ -26,6 +42,8 @@ Jit::Jit(const std::string& _filename , const std::string& _funcname ) :
   regprefix[s16]="q";
   regprefix[s32]="i";
   regprefix[s64]="l";
+  regprefix[u8]="s";
+  regprefix[b32]="x";
   regptx[f32]="f32";
   regptx[f64]="f64";
   regptx[u16]="u16";
@@ -34,6 +52,8 @@ Jit::Jit(const std::string& _filename , const std::string& _funcname ) :
   regptx[s16]="s16";
   regptx[s32]="s32";
   regptx[s64]="s64";
+  regptx[u8]="u8";
+  regptx[b32]="b32";
 
   int r_ctaid = getRegs( u16 , 1 );
   int r_ntid = getRegs( u16 , 1 );
@@ -48,6 +68,8 @@ Jit::Jit(const std::string& _filename , const std::string& _funcname ) :
 
   // mapCVT[to][from]
   mapCVT[f32][f64]="rz.";
+
+  mapBitType[u32]=b32;
 }
 
 
@@ -86,6 +108,15 @@ void Jit::asm_add(int dest,int lhs,int rhs)
     exit(1);
   }
   oss_prg << "add." << regptx[getRegType(dest)] << " " << getName(dest) << "," << getName(lhs) << "," << getName(rhs) << ";\n";
+}
+
+void Jit::asm_and(int dest,int lhs,int rhs)
+{
+  if ( getRegType(dest) != getRegType(rhs) || getRegType(dest) != getRegType(lhs) ) {
+    std::cout << "JIT::asm_and: trying to add different types " << getRegType(dest) << " " << getRegType(lhs) << " " << getRegType(rhs) << "\n";
+    exit(1);
+  }
+  oss_prg << "and." << regptx[ mapBitType.at( getRegType(dest) ) ]  << " " << getName(dest) << "," << getName(lhs) << "," << getName(rhs) << ";\n";
 }
 
 void Jit::asm_sub(int dest,int lhs,int rhs)
@@ -178,6 +209,7 @@ void Jit::dumpVarDef()
   dumpVarDefType(s16);
   dumpVarDefType(s32);
   dumpVarDefType(s64);
+  dumpVarDefType(u8);
 }
 
 void Jit::dumpParam() 
