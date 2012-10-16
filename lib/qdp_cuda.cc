@@ -43,6 +43,11 @@ namespace QDP {
     return data;
   }
 
+  void CudaGetSM(int* maj,int* min) {
+    CUresult ret;
+    ret = cuDeviceComputeCapability( maj , min , cuDevice );
+    CudaRes("cuDeviceComputeCapability",ret);
+  }
 
   void CudaInit() {
     std::cout << "cuda init\n";

@@ -28,6 +28,7 @@ template<class T> class RScalar
 public:
   typedef T Sub_t;
   enum { ThisSize = 1 };
+  // enum { Size = ThisSize * WordSize<T>::Size };
 
   RScalar() {}
   ~RScalar() {}

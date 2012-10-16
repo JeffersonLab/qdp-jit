@@ -2,7 +2,7 @@
 
 namespace QDP {
 
-  kernel_geom_t getGeom(int numSites , int threadsPerBlock) 
+  kernel_geom_t getGeom(int numSites , int threadsPerBlock)
   {
     kernel_geom_t geom_host;
 
@@ -34,15 +34,25 @@ namespace QDP {
     max_blockx = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X ) );
     max_blocky = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y ) );
     max_blockz = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Z ) );
-    QDP_info_primary("unified addr   = %d",unifiedAddressing ? 1 : 0);
-    QDP_info_primary("asyncTransfers = %d",asyncTransfers ? 1 : 0);
-    QDP_info_primary("smem           = %d",smem);
-    QDP_info_primary("max_gridx      = %d",max_gridx);
-    QDP_info_primary("max_gridy      = %d",max_gridy);
-    QDP_info_primary("max_gridz      = %d",max_gridz);
-    QDP_info_primary("max_blockx     = %d",max_blockx);
-    QDP_info_primary("max_blocky     = %d",max_blocky);
-    QDP_info_primary("max_blockz     = %d",max_blockz);
+
+    int major;
+    int minor;
+    CudaGetSM(&major,&minor);
+    divRnd = major >= 2;
+
+    QDP_info_primary("Compute capability (major)              = %d",major);
+    QDP_info_primary("Compute capability (minor)              = %d",minor);
+    QDP_info_primary("Divide with IEEE 754 compliant rounding = %d",divRnd);
+    QDP_info_primary("Sqrt with IEEE 754 compliant rounding   = %d",divRnd);
+    QDP_info_primary("unified addr                            = %d",unifiedAddressing ? 1 : 0);
+    QDP_info_primary("asyncTransfers                          = %d",asyncTransfers ? 1 : 0);
+    QDP_info_primary("smem                                    = %d",smem);
+    QDP_info_primary("max_gridx                               = %d",max_gridx);
+    QDP_info_primary("max_gridy                               = %d",max_gridy);
+    QDP_info_primary("max_gridz                               = %d",max_gridz);
+    QDP_info_primary("max_blockx                              = %d",max_blockx);
+    QDP_info_primary("max_blocky                              = %d",max_blocky);
+    QDP_info_primary("max_blockz                              = %d",max_blockz);
   }
 
   void DeviceParams::setCC(int sm) {

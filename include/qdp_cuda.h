@@ -9,6 +9,7 @@ namespace QDP {
   void CudaInit();
   //int CudaGetConfig(CUdevice_attribute what);
   int CudaGetConfig(int what);
+  void CudaGetSM(int* maj,int* min);
 
   bool CudaHostRegister(void * ptr , size_t size);
   void CudaHostUnregister(void * ptr );

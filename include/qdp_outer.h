@@ -539,7 +539,7 @@ struct LeafFunctor<OScalar<T>, ParamLeaf>
   inline static
   Type_t apply(const OScalar<T>& do_not_use, const ParamLeaf& p) 
   {
-    return Type_t( p.getFunc() , p.getParamScalar( WordSize<T>::Size ) );
+    return Type_t( p.getFunc() , p.getParamScalar() );
   }
 };
 

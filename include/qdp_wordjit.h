@@ -306,7 +306,7 @@ template<class T1>
 inline typename UnaryReturn<WordJIT<T1>, OpUnaryPlus>::Type_t
 operator+(const WordJIT<T1>& l)
 {
-  return +l.elem();
+  return l;
 }
 
 // - WordJIT
@@ -375,7 +375,7 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpAdjMultiply>::Type_t
 adjMultiply(const WordJIT<T1>& l, const WordJIT<T2>& r)
 {
-  return adjMultiply(l.elem(), r.elem());
+  return l * r;
 }
 
 // Optimized  PMatrix*adj(PMatrix)
@@ -383,15 +383,7 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpMultiplyAdj>::Type_t
 multiplyAdj(const WordJIT<T1>& l, const WordJIT<T2>& r)
 {
-  return multiplyAdj(l.elem(), r.elem());
-}
-
-// Optimized  PMatrix*adj(PMatrix)
-template<class T1, class T2>
-inline typename BinaryReturn<WordJIT<T1>, PSpinVector<T2,4>, OpMultiplyAdj>::Type_t
-multiplyAdj(const WordJIT<T1>& l, const PSpinVector<T2,4>& r)
-{
-  return multiplyAdj(l.elem(), r.elem());
+  return l * r;
 }
 
 // Optimized  adj(PMatrix)*adj(PMatrix)
@@ -399,7 +391,7 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpAdjMultiplyAdj>::Type_t
 adjMultiplyAdj(const WordJIT<T1>& l, const WordJIT<T2>& r)
 {
-  return adjMultiplyAdj(l.elem(), r.elem());
+  return l * r;
 }
 
 // WordJIT / WordJIT
@@ -407,7 +399,14 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpDivide>::Type_t
 operator/(const WordJIT<T1>& l, const WordJIT<T2>& r)
 {
-  return l.elem() / r.elem();
+  typedef typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpDivide>::Type_t Ret_t;
+  typedef typename WordType<Ret_t>::Type_t WT;
+  Ret_t tmp(l.func());
+  tmp.func().asm_div( tmp.getReg( JitRegType<WT>::Val_t ) , 
+		      l.getReg( JitRegType<WT>::Val_t ) , 
+		      r.getReg( JitRegType<WT>::Val_t ) );
+  std::cout << " tmp=" << tmp.mapReg.size() << "\n";
+  return tmp;
 }
 
 
@@ -421,7 +420,7 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpLeftShift>::Type_t
 operator<<(const WordJIT<T1>& l, const WordJIT<T2>& r)
 {
-  return l.elem() << r.elem();
+  QDP_error_exit("operator<< not implemented");
 }
 
 // WordJIT >> WordJIT
@@ -434,7 +433,7 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpRightShift>::Type_t
 operator>>(const WordJIT<T1>& l, const WordJIT<T2>& r)
 {
-  return l.elem() >> r.elem();
+  QDP_error_exit("operator>> not implemented");
 }
 
 // WordJIT % WordJIT
@@ -442,7 +441,7 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpMod>::Type_t
 operator%(const WordJIT<T1>& l, const WordJIT<T2>& r)
 {
-  return l.elem() % r.elem();
+  QDP_error_exit("operator% not implemented");
 }
 
 // WordJIT ^ WordJIT
@@ -450,7 +449,7 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpBitwiseXor>::Type_t
 operator^(const WordJIT<T1>& l, const WordJIT<T2>& r)
 {
-  return l.elem() ^ r.elem();
+  QDP_error_exit("operator^ not implemented");
 }
 
 // WordJIT & WordJIT
@@ -458,7 +457,7 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpBitwiseAnd>::Type_t
 operator&(const WordJIT<T1>& l, const WordJIT<T2>& r)
 {
-  return l.elem() & r.elem();
+  QDP_error_exit("operator& not implemented");
 }
 
 // WordJIT | WordJIT
@@ -466,7 +465,7 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpBitwiseOr>::Type_t
 operator|(const WordJIT<T1>& l, const WordJIT<T2>& r)
 {
-  return l.elem() | r.elem();
+  QDP_error_exit("operator| not implemented");
 }
 
 
@@ -480,7 +479,15 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpLT>::Type_t
 operator<(const WordJIT<T1>& l, const WordJIT<T2>& r)
 {
-  return l.elem() < r.elem();
+  typedef typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpLT>::Type_t Ret_t;
+  typedef typename WordType<Ret_t>::Type_t WT;
+  Ret_t tmp(l.func());
+  tmp.func().asm_cmp( Jit::lt, 
+		      tmp.getReg( JitRegType<WT>::Val_t ) , 
+		      l.getReg( JitRegType<T1>::Val_t ) , 
+		      r.getReg( JitRegType<T1>::Val_t ) );
+  std::cout << " tmp=" << tmp.mapReg.size() << "\n";
+  return tmp;
 }
 
 
@@ -493,7 +500,15 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpLE>::Type_t
 operator<=(const WordJIT<T1>& l, const WordJIT<T2>& r)
 {
-  return l.elem() <= r.elem();
+  typedef typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpLE>::Type_t Ret_t;
+  typedef typename WordType<Ret_t>::Type_t WT;
+  Ret_t tmp(l.func());
+  tmp.func().asm_cmp( Jit::le, 
+		      tmp.getReg( JitRegType<WT>::Val_t ) , 
+		      l.getReg( JitRegType<T1>::Val_t ) , 
+		      r.getReg( JitRegType<T1>::Val_t ) );
+  std::cout << " tmp=" << tmp.mapReg.size() << "\n";
+  return tmp;
 }
 
 
@@ -506,7 +521,16 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpGT>::Type_t
 operator>(const WordJIT<T1>& l, const WordJIT<T2>& r)
 {
-  return l.elem() > r.elem();
+  typedef typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpGT>::Type_t Ret_t;
+  typedef typename WordType<Ret_t>::Type_t WT;
+  Ret_t tmp(l.func());
+  tmp.func().asm_cmp( Jit::gt, 
+		      tmp.getReg( JitRegType<WT>::Val_t ) , 
+		      l.getReg( JitRegType<T1>::Val_t ) , 
+		      r.getReg( JitRegType<T1>::Val_t ) );
+  std::cout << " tmp=" << tmp.mapReg.size() << "\n";
+  return tmp;
+  //  return l.elem() > r.elem();
 }
 
 
@@ -519,7 +543,16 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpGE>::Type_t
 operator>=(const WordJIT<T1>& l, const WordJIT<T2>& r)
 {
-  return l.elem() >= r.elem();
+  typedef typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpGE>::Type_t Ret_t;
+  typedef typename WordType<Ret_t>::Type_t WT;
+  Ret_t tmp(l.func());
+  tmp.func().asm_cmp( Jit::ge, 
+		      tmp.getReg( JitRegType<WT>::Val_t ) , 
+		      l.getReg( JitRegType<T1>::Val_t ) , 
+		      r.getReg( JitRegType<T1>::Val_t ) );
+  std::cout << " tmp=" << tmp.mapReg.size() << "\n";
+  return tmp;
+  //  return l.elem() >= r.elem();
 }
 
 
@@ -532,7 +565,16 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpEQ>::Type_t
 operator==(const WordJIT<T1>& l, const WordJIT<T2>& r)
 {
-  return l.elem() == r.elem();
+  typedef typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpEQ>::Type_t Ret_t;
+  typedef typename WordType<Ret_t>::Type_t WT;
+  Ret_t tmp(l.func());
+  tmp.func().asm_cmp( Jit::eq, 
+		      tmp.getReg( JitRegType<WT>::Val_t ) , 
+		      l.getReg( JitRegType<T1>::Val_t ) , 
+		      r.getReg( JitRegType<T1>::Val_t ) );
+  std::cout << " tmp=" << tmp.mapReg.size() << "\n";
+  return tmp;
+  //  return l.elem() == r.elem();
 }
 
 
@@ -545,7 +587,16 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpNE>::Type_t
 operator!=(const WordJIT<T1>& l, const WordJIT<T2>& r)
 {
-  return l.elem() != r.elem();
+  typedef typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpNE>::Type_t Ret_t;
+  typedef typename WordType<Ret_t>::Type_t WT;
+  Ret_t tmp(l.func());
+  tmp.func().asm_cmp( Jit::ne, 
+		      tmp.getReg( JitRegType<WT>::Val_t ) , 
+		      l.getReg( JitRegType<T1>::Val_t ) , 
+		      r.getReg( JitRegType<T1>::Val_t ) );
+  std::cout << " tmp=" << tmp.mapReg.size() << "\n";
+  return tmp;
+  //  return l.elem() != r.elem();
 }
 
 
@@ -561,10 +612,8 @@ operator&&(const WordJIT<T1>& l, const WordJIT<T2>& r)
   typedef typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpAnd>::Type_t Ret_t;
   typedef typename WordType<Ret_t>::Type_t WT;
   Ret_t tmp(l.func());
-
   tmp.func().asm_and( tmp.getReg( JitRegType<WT>::Val_t ) , 
 		      l.getReg( JitRegType<WT>::Val_t ), r.getReg( JitRegType<WT>::Val_t ) );
-
   return tmp;
 }
 
@@ -579,7 +628,13 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpOr>::Type_t
 operator||(const WordJIT<T1>& l, const WordJIT<T2>& r)
 {
-  return l.elem() || r.elem();
+  typedef typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpOr>::Type_t Ret_t;
+  typedef typename WordType<Ret_t>::Type_t WT;
+  Ret_t tmp(l.func());
+  tmp.func().asm_or( tmp.getReg( JitRegType<WT>::Val_t ) , 
+		     l.getReg( JitRegType<WT>::Val_t ), r.getReg( JitRegType<WT>::Val_t ) );
+  return tmp;
+  //  return l.elem() || r.elem();
 }
 
 
@@ -591,7 +646,7 @@ template<class T1>
 inline typename UnaryReturn<WordJIT<T1>, FnAdjoint>::Type_t
 adj(const WordJIT<T1>& s1)
 {
-  return adj(s1.elem());
+  return s1;
 }
 
 
@@ -600,7 +655,7 @@ template<class T1>
 inline typename UnaryReturn<WordJIT<T1>, FnConjugate>::Type_t
 conj(const WordJIT<T1>& s1)
 {
-  return conj(s1.elem());
+  return s1;
 }
 
 
@@ -609,7 +664,7 @@ template<class T1>
 inline typename UnaryReturn<WordJIT<T1>, FnTranspose>::Type_t
 transpose(const WordJIT<T1>& s1)
 {
-  return transpose(s1.elem());
+  return s1;
 }
 
 
@@ -619,7 +674,7 @@ template<class T1>
 inline typename UnaryReturn<WordJIT<T1>, FnTrace>::Type_t
 trace(const WordJIT<T1>& s1)
 {
-  return trace(s1.elem());
+  return s1;
 }
 
 
@@ -628,7 +683,7 @@ template<class T1>
 inline typename UnaryReturn<WordJIT<T1>, FnRealTrace>::Type_t
 realTrace(const WordJIT<T1>& s1)
 {
-  return realTrace(s1.elem());
+  return s1;
 }
 
 
@@ -637,7 +692,7 @@ template<class T1>
 inline typename UnaryReturn<WordJIT<T1>, FnImagTrace>::Type_t
 imagTrace(const WordJIT<T1>& s1)
 {
-  return imagTrace(s1.elem());
+  return s1;
 }
 
 
@@ -646,7 +701,7 @@ template<class T1>
 inline typename UnaryReturn<WordJIT<T1>, FnTraceColor>::Type_t
 traceColor(const WordJIT<T1>& s1)
 {
-  return traceColor(s1.elem());
+  return s1;
 }
 
 
@@ -655,7 +710,7 @@ template<class T1>
 inline typename UnaryReturn<WordJIT<T1>, FnTraceSpin>::Type_t
 traceSpin(const WordJIT<T1>& s1)
 {
-  return traceSpin(s1.elem());
+  return s1;
 }
 
 //! WordJIT = transposeSpin(WordJIT)
@@ -663,7 +718,7 @@ template<class T1>
 inline typename UnaryReturn<WordJIT<T1>, FnTransposeSpin>::Type_t
 transposeSpin(const WordJIT<T1>& s1)
 {
-  return transposeSpin(s1.elem());
+  return s1;
 }
 
 //! WordJIT = trace(WordJIT * WordJIT)
@@ -671,7 +726,7 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, FnTraceMultiply>::Type_t
 traceMultiply(const WordJIT<T1>& l, const WordJIT<T2>& r)
 {
-  return traceMultiply(l.elem(), r.elem());
+  return l * r;
 }
 
 //! WordJIT = traceColor(WordJIT * WordJIT)
@@ -679,7 +734,7 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, FnTraceColorMultiply>::Type_t
 traceColorMultiply(const WordJIT<T1>& l, const WordJIT<T2>& r)
 {
-  return traceMultiply(l.elem(), r.elem());
+  return l * r;
 }
 
 //! WordJIT = traceSpin(WordJIT * WordJIT)
@@ -687,7 +742,7 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, FnTraceSpinMultiply>::Type_t
 traceSpinMultiply(const WordJIT<T1>& l, const WordJIT<T2>& r)
 {
-  return traceMultiply(l.elem(), r.elem());
+  return l * r;
 }
 
 //! WordJIT = traceSpin(outerProduct(WordJIT, WordJIT))
@@ -695,7 +750,7 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, FnTraceSpinOuterProduct>::Type_t
 traceSpinOuterProduct(const WordJIT<T1>& l, const WordJIT<T2>& r)
 {
-  return traceSpinOuterProduct(l.elem(), r.elem());
+  return l * r;
 }
 
 //! WordJIT = outerProduct(WordJIT, WordJIT)
@@ -703,7 +758,7 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, FnOuterProduct>::Type_t
 outerProduct(const WordJIT<T1>& l, const WordJIT<T2>& r)
 {
-  return outerProduct(l.elem(),r.elem());
+  return l * r;
 }
 
 
@@ -712,7 +767,7 @@ template<class T>
 inline typename UnaryReturn<WordJIT<T>, FnReal>::Type_t
 real(const WordJIT<T>& s1)
 {
-  return real(s1.elem());
+  return s1;
 }
 
 
@@ -721,7 +776,7 @@ template<class T>
 inline typename UnaryReturn<WordJIT<T>, FnImag>::Type_t
 imag(const WordJIT<T>& s1)
 {
-  return imag(s1.elem());
+  return s1;
 }
 
 
@@ -762,7 +817,13 @@ template<class T1>
 inline typename UnaryReturn<WordJIT<T1>, FnCos>::Type_t
 cos(const WordJIT<T1>& s1)
 {
-  return cos(s1.elem());
+  typedef typename UnaryReturn<WordJIT<T1>, FnCos>::Type_t Ret_t;
+  typedef typename WordType<Ret_t>::Type_t WT;
+  Ret_t tmp(s1.func());
+  tmp.func().asm_cos( tmp.getReg( Jit::f32 ) , 
+		      s1.getReg( Jit::f32 ) );
+  std::cout << " tmp=" << tmp.mapReg.size() << "\n";
+  return tmp;
 }
 
 // Cosh
@@ -818,7 +879,14 @@ template<class T1>
 inline typename UnaryReturn<WordJIT<T1>, FnSin>::Type_t
 sin(const WordJIT<T1>& s1)
 {
-  return sin(s1.elem());
+  typedef typename UnaryReturn<WordJIT<T1>, FnSin>::Type_t Ret_t;
+  typedef typename WordType<Ret_t>::Type_t WT;
+  Ret_t tmp(s1.func());
+  tmp.func().asm_sin( tmp.getReg( Jit::f32 ) , 
+		      s1.getReg( Jit::f32 ) );
+  std::cout << " tmp=" << tmp.mapReg.size() << "\n";
+  return tmp;
+  //  return sin(s1.elem());
 }
 
 // Sinh
@@ -834,7 +902,14 @@ template<class T1>
 inline typename UnaryReturn<WordJIT<T1>, FnSqrt>::Type_t
 sqrt(const WordJIT<T1>& s1)
 {
-  return sqrt(s1.elem());
+  typedef typename UnaryReturn<WordJIT<T1>, FnSin>::Type_t Ret_t;
+  typedef typename WordType<Ret_t>::Type_t WT;
+  Ret_t tmp(s1.func());
+  tmp.func().asm_sqrt( tmp.getReg( JitRegType<WT>::Val_t ) , 
+		       s1.getReg( JitRegType<WT>::Val_t ) );
+  std::cout << " tmp=" << tmp.mapReg.size() << "\n";
+  return tmp;
+  //return sqrt(s1.elem());
 }
 
 // Tan

@@ -15,6 +15,7 @@ namespace QDP {
   public:
     enum { RegTypeShift = 24 };
     enum RegType { f32=0,f64=1,u16=2,u32=3,u64=4,s16=5,s32=6,s64=7,u8=8,b32=9,pred=10 };
+    enum CmpOp { eq, ne, lt, le, gt, ge, lo, ls, hi, hs , equ, neu, ltu, leu, gtu, geu, num, nan };
 
     // Specify the PTX register type to use when doing logical operations.
     // C++ bool is 1 bytes. PTX can't operate on 8 bits types. Must cast each access.
@@ -29,14 +30,20 @@ namespace QDP {
     void asm_ld(int dest,int base,int offset);
     void asm_add(int dest,int lhs,int rhs);
     void asm_and(int dest,int lhs,int rhs);
+    void asm_or(int dest,int lhs,int rhs);
     void asm_sub(int dest,int lhs,int rhs);
     void asm_mul(int dest,int lhs,int rhs);
+    void asm_div(int dest,int lhs,int rhs);
     void asm_fma(int dest,int lhs,int rhs,int add);
     void asm_neg(int dest,int src);
     void asm_not(int dest,int src);
     void asm_cvt(int dest,int src);
     void asm_pred_to_01(int dest,int pred);
     void asm_01_to_pred(int pred,int src);
+    void asm_cmp(CmpOp op,int dest,int lhs,int rhs);
+    void asm_cos(int dest,int src);
+    void asm_sin(int dest,int src);
+    void asm_sqrt(int dest,int src);
 
     std::string getName(int id) const;
     int getRegs(RegType type,int count);
@@ -72,7 +79,9 @@ namespace QDP {
     mutable std::ostringstream oss_param;
     mutable std::string param_prefix;
     mutable std::map< int , std::map< int , std::string > > mapCVT;
-    mutable std::map< RegType , RegType > mapBitType;
+    mutable std::map< RegType , std::string > mapDivRnd;
+    mutable std::map< RegType , std::string > mapSqrtRnd;
+    mutable std::map< CmpOp , std::string > mapCmpOp;
   };
 
 

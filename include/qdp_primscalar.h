@@ -26,7 +26,7 @@ template<class T> class PScalar
 public:
   typedef T Sub_t;
   enum { ThisSize = 1 };
-  //enum { Size = ThisSize * WordSize<T>::Size };
+  // enum { Size = ThisSize * WordSize<T>::Size };
 
   PScalar() {}
   ~PScalar() {}

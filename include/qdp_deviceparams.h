@@ -39,6 +39,7 @@ namespace QDP {
     int getMaxSMem() const {return smem;}
     int getDefaultSMem() const {return smem_default;}
 
+    bool getDivRnd() { return divRnd; }
     bool getSyncDevice() { return syncDevice; }
     void setSyncDevice(bool sync) { 
       QDP_info_primary("Setting device sync = %u",sync);
@@ -62,6 +63,7 @@ namespace QDP {
     bool syncDevice;
     bool asyncTransfers;
     bool unifiedAddressing;
+    bool divRnd;
     int maxKernelArg;
 
     int smem;

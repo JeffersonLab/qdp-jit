@@ -19,6 +19,7 @@ namespace QDP {
 template<class T> class Word
 {
 public:
+  //  enum { Size = 1 };
   
   Word() {}
 
