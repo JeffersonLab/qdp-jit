@@ -16,21 +16,31 @@ namespace QDP {
     //! Size (in number of registers) of the underlying object
     enum {Size_t = 1};
 
-    // explicit WordJIT( int i ) : jit(NULL), literal(true) {
-    //   litVal = i;
-    // }
+    WordJIT( Jit& j, const T& t ) : 
+      jit(j), 
+      literal(true) 
+    {
+      litVal = t;
+    }
 
     //! View of an object from global state space
     WordJIT(Jit& j , int r_addr_ , int offset_full_ , int offset_level_ ) : 
       jit(j), 
       r_addr(r_addr_),
       offset_full(offset_full_),
-      offset_level(offset_level_) , global_state(true) {
+      offset_level(offset_level_) , 
+      global_state(true) , 
+      literal(false) 
+    {
       std::cout << "WordJIT() global view   " << (void*)this << " " << (void*)&j << "\n";
     }
 
     //! New space 
-    WordJIT(Jit& j ) : jit(j), global_state(false) {
+    WordJIT(Jit& j ) : 
+      jit(j), 
+      global_state(false),
+      literal(false) 
+    {
       int tmp;
       mapReg.insert( std::make_pair( JitRegType<T>::Val_t , tmp = jit.getRegs( JitRegType<T>::Val_t , 1 ) ) );
       std::cout << "WordJIT(Jit& func_ ) new space   regName = " << jit.getName(tmp) << " " << (void*)this << " " << (void*)&jit <<  "\n";
@@ -80,6 +90,14 @@ namespace QDP {
       std::cout << "getReg type=" << type 
       		<< "  mapReg.count(type)=" << mapReg.count(type) 
       		<< "  mapReg.size()=" << mapReg.size() << "\n";
+      if (literal) {
+	std::cout << "WordJIT is literal\n";
+	if (mapReg.count( type ) > 0)
+	  QDP_error_exit("getReg literal: type already requested");
+	mapReg.insert( std::make_pair( type , jit.getRegs( type , 1 ) ) );
+	jit.asm_mov_literal( mapReg.at( type ) , litVal );
+	return mapReg.at( type );
+      }
       if (mapReg.count(type) > 0) {
 	// We already have the value in a register of the type requested
 	std::cout << jit.getName(mapReg.at(type)) << "\n";
@@ -127,8 +145,8 @@ namespace QDP {
   public:
     typedef std::map< Jit::RegType , int > MapRegType;
     bool global_state;
-    // bool literal;
-    // int litVal;
+    bool literal;
+    T litVal;
     Jit&  jit;
     mutable MapRegType mapReg;
     int r_addr;
@@ -429,7 +447,14 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpLeftShift>::Type_t
 operator<<(const WordJIT<T1>& l, const WordJIT<T2>& r)
 {
-  QDP_error_exit("operator<< not implemented");
+  typedef typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpLeftShift>::Type_t Ret_t;
+  typedef typename WordType<Ret_t>::Type_t WT;
+  Ret_t tmp(l.func());
+  tmp.func().asm_shl( tmp.getReg( JitRegType<WT>::Val_t ) , 
+		      l.getReg( JitRegType<WT>::Val_t ) , 
+		      r.getReg( Jit::u32 ) );
+  std::cout << " tmp=" << tmp.mapReg.size() << "\n";
+  return tmp;
 }
 
 // WordJIT >> WordJIT
@@ -442,7 +467,15 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpRightShift>::Type_t
 operator>>(const WordJIT<T1>& l, const WordJIT<T2>& r)
 {
-  QDP_error_exit("operator>> not implemented");
+  typedef typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpRightShift>::Type_t Ret_t;
+  typedef typename WordType<Ret_t>::Type_t WT;
+  Ret_t tmp(l.func());
+  std::cout << " operator>>  ask for " << JitRegType<WT>::Val_t << " " << JitRegType<WT>::Val_t << " " << Jit::u32 << "\n";
+  tmp.func().asm_shr( tmp.getReg( JitRegType<WT>::Val_t ) , 
+		      l.getReg( JitRegType<WT>::Val_t ) , 
+		      r.getReg( Jit::u32 ) );
+  std::cout << " tmp=" << tmp.mapReg.size() << "\n";
+  return tmp;
 }
 
 // WordJIT % WordJIT
@@ -466,7 +499,13 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpBitwiseAnd>::Type_t
 operator&(const WordJIT<T1>& l, const WordJIT<T2>& r)
 {
-  QDP_error_exit("operator& not implemented");
+  typedef typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpBitwiseAnd>::Type_t Ret_t;
+  typedef typename WordType<Ret_t>::Type_t WT;
+  Ret_t tmp(l.func());
+  tmp.func().asm_bitand( tmp.getReg( JitRegType<WT>::Val_t ) , 
+			 l.getReg( JitRegType<WT>::Val_t ) , 
+			 r.getReg( JitRegType<WT>::Val_t ) );
+  return tmp;
 }
 
 // WordJIT | WordJIT
@@ -474,7 +513,13 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpBitwiseOr>::Type_t
 operator|(const WordJIT<T1>& l, const WordJIT<T2>& r)
 {
-  QDP_error_exit("operator| not implemented");
+  typedef typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpBitwiseOr>::Type_t Ret_t;
+  typedef typename WordType<Ret_t>::Type_t WT;
+  Ret_t tmp(l.func());
+  tmp.func().asm_bitor( tmp.getReg( JitRegType<WT>::Val_t ) , 
+			 l.getReg( JitRegType<WT>::Val_t ) , 
+			 r.getReg( JitRegType<WT>::Val_t ) );
+  return tmp;
 }
 
 

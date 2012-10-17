@@ -279,26 +279,26 @@ operator*(const PSeedJIT<T1>& s1, const PSeedJIT<T2>& s2)
 
   /* i0 = s1(0)*s2(0) */
   i0 = s1.elem(0) * s2.elem(0);
-
+  
   /* dest(0) = mod(i0, 4096) */
-  d.elem(0) = i0 & S(4095);
+  d.elem(0) = i0 & S(s1.func(),4095);
 
   /* i1 = i1 + i0/4096 */
-  i1 += i0 >> S(12);
+  i1 += i0 >> S(s1.func(),12);
 
   /* dest(1) = mod(i1, 4096) */
-  d.elem(1) = i1 & S(4095);
+  d.elem(1) = i1 & S(s1.func(),4095);
 
   /* i2 = i2 + i1/4096 */
-  i2 += i1 >> S(12);
+  i2 += i1 >> S(s1.func(),12);
 
   /* dest(2) = mod(i2, 4096) */
-  d.elem(2) = i2 & S(4095);
+  //d.elem(2) = i2 & S(s1.func(),4095);
   /* i3 = i3 + i2/4096 */
-  i3 += i2 >> S(12);
+  i3 += i2 >> S(s1.func(),12);
 
   /* dest(3) = mod(i3, 2048) */
-  d.elem(3) = i3 & S(2047);
+  d.elem(3) = i3 & S(s1.func(),2047);
 
   return d;
 }

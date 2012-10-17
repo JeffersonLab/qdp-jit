@@ -66,6 +66,11 @@ public:
   }
 
 
+  PScalarJIT(Jit& j,const typename WordType<T>::Type_t& w) : JV<T,1>(j,w) {
+    std::cout << "PScalarJIT(Jit&,word)\n";
+  }
+
+
 
 
 
@@ -443,7 +448,16 @@ template<class T1, class T2>
 inline typename BinaryReturn<PScalarJIT<T1>, PScalarJIT<T2>, OpMultiply>::Type_t
 operator*(const PScalarJIT<T1>& l, const PScalarJIT<T2>& r)
 {
+#if 1
   return l.elem() * r.elem();
+#else
+  typename BinaryReturn<PScalarJIT<T1>, PScalarJIT<T2>, OpMultiply>::Type_t ret(l.func());
+  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t  T;
+  typedef typename InternalScalar<T>::Type_t  S;
+  ret = l.elem() * S(l.func(),12);
+  return ret;
+
+#endif
 }
 
 

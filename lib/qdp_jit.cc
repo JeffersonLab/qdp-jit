@@ -33,7 +33,9 @@ namespace QDP {
     nreg[s32]=0;
     nreg[s64]=0;
     nreg[u8]=0;
+    nreg[b16]=0;
     nreg[b32]=0;
+    nreg[b64]=0;
     nreg[pred]=0;
     regprefix[f32]="f";
     regprefix[f64]="d";
@@ -44,7 +46,9 @@ namespace QDP {
     regprefix[s32]="i";
     regprefix[s64]="l";
     regprefix[u8]="s";
-    regprefix[b32]="x";
+    regprefix[b16]="x";
+    regprefix[b32]="y";
+    regprefix[b64]="z";
     regprefix[pred]="p";
     regptx[f32]="f32";
     regptx[f64]="f64";
@@ -55,7 +59,9 @@ namespace QDP {
     regptx[s32]="s32";
     regptx[s64]="s64";
     regptx[u8]="u8";
+    regptx[b16]="b16";
     regptx[b32]="b32";
+    regptx[b64]="b64";
     regptx[pred]="pred";
 
     int r_ctaid = getRegs( u16 , 1 );
@@ -90,6 +96,19 @@ namespace QDP {
     mapCmpOp[Jit::geu]="geu";
     mapCmpOp[Jit::num]="num";
     mapCmpOp[Jit::nan]="nan";
+
+    mapIntMul[Jit::s32]="lo.";
+
+    
+    mapBitType[f32]=b32;
+    mapBitType[f64]=b64;
+    mapBitType[u16]=b16;
+    mapBitType[u32]=b32;
+    mapBitType[u64]=b64;
+    mapBitType[s16]=b16;
+    mapBitType[s32]=b32;
+    mapBitType[s64]=b64;
+    mapBitType[b32]=b32;
 
 
     if (DeviceParams::Instance().getDivRnd()) {
@@ -191,7 +210,7 @@ namespace QDP {
   void Jit::asm_not(int dest,int src)
   {
     if ( getRegType(dest) != getRegType(src) ) {
-      std::cout << "JIT::asm_mul: trying to add different types " 
+      std::cout << "JIT::asm_not: trying to add different types " 
 		<< getRegType(dest) << " " 
 		<< getRegType(src) << "\n";
       exit(1);
@@ -214,7 +233,47 @@ namespace QDP {
       std::cout << "JIT::asm_mul: trying to add different types " << getRegType(dest) << " " << getRegType(lhs) << " " << getRegType(rhs) << "\n";
       exit(1);
     }
-    oss_prg << "mul." << regptx[getRegType(dest)] << " " << getName(dest) << "," << getName(lhs) << "," << getName(rhs) << ";\n";
+    oss_prg << "mul." << mapIntMul[getRegType(dest)] << regptx[getRegType(dest)] << " " << getName(dest) << "," << getName(lhs) << "," << getName(rhs) << ";\n";
+  }
+
+  void Jit::asm_shl(int dest,int src,int bits)
+  {
+    if ( mapBitType.at(getRegType(dest)) != mapBitType.at(getRegType(src)) || getRegType(bits) != Jit::u32 ) {
+      std::cout << "JIT::asm_shl: type mismatch " << getRegType(dest) << " " << getRegType(src) << " " << getRegType(bits) << "\n";
+      exit(1);
+    }
+    oss_prg << "shl." << regptx.at(mapBitType.at(getRegType(src))) << " " << getName(dest) << "," << getName(src) << "," << getName(bits) << ";\n";
+  }
+
+  void Jit::asm_shr(int dest,int src,int bits)
+  {
+    if ( mapBitType.at(getRegType(dest)) != mapBitType.at(getRegType(src)) || getRegType(bits) != Jit::u32 ) {
+      std::cout << "JIT::asm_shr: type mismatch " << getRegType(dest) << " " << getRegType(src) << " " << getRegType(bits) << "\n";
+      exit(1);
+    }
+    oss_prg << "shr." << regptx.at(mapBitType.at(getRegType(src))) << " " << getName(dest) << "," << getName(src) << "," << getName(bits) << ";\n";
+  }
+
+
+  void Jit::asm_bitand(int dest,int lhs,int rhs)
+  {
+    if ( mapBitType.at(getRegType(dest)) != mapBitType.at(getRegType(lhs)) || 
+	 mapBitType.at(getRegType(dest)) != mapBitType.at(getRegType(rhs)) ) {
+      std::cout << "JIT::asm_bitand: type mismatch " << getRegType(dest) << " " << getRegType(lhs) << " " << getRegType(rhs) << "\n";
+      exit(1);
+    }
+    oss_prg << "and." << regptx.at(mapBitType.at(getRegType(dest))) << " " << getName(dest) << "," << getName(lhs) << "," << getName(rhs) << ";\n";
+  }
+
+
+  void Jit::asm_bitor(int dest,int lhs,int rhs)
+  {
+    if ( mapBitType.at(getRegType(dest)) != mapBitType.at(getRegType(lhs)) || 
+	 mapBitType.at(getRegType(dest)) != mapBitType.at(getRegType(rhs)) ) {
+      std::cout << "JIT::asm_bitor: type mismatch " << getRegType(dest) << " " << getRegType(lhs) << " " << getRegType(rhs) << "\n";
+      exit(1);
+    }
+    oss_prg << "or." << regptx.at(mapBitType.at(getRegType(dest))) << " " << getName(dest) << "," << getName(lhs) << "," << getName(rhs) << ";\n";
   }
 
 
@@ -367,7 +426,9 @@ namespace QDP {
     dumpVarDefType(s32);
     dumpVarDefType(s64);
     dumpVarDefType(u8);
+    dumpVarDefType(b16);
     dumpVarDefType(b32);
+    dumpVarDefType(b64);
     dumpVarDefType(pred);
   }
 
