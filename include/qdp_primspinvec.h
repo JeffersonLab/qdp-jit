@@ -194,6 +194,20 @@ XMLWriter& operator<<(XMLWriter& xml, const PSpinVector<T,N>& d)
 
 
 
+  template<class T, int N> 
+  struct WordSize< PSpinVector<T,N> >
+  {
+    enum { Size = WordSize<T>::Size };
+  };
+
+
+  template<class T, int N> 
+  struct JITContainerType<PSpinVector<T,N> >
+  {
+    typedef PSpinVectorJIT<typename JITContainerType<T>::Type_t,N>  Type_t;
+  };
+
+
  
 
 

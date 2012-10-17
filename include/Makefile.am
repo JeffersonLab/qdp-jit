@@ -152,7 +152,8 @@ CUDA_HDRS = qdp_cuda.h \
 	    qdp_jitfunction.h qdp_pete_visitors.h qdp_qdptypejit.h \
 	    qdp_outerjit.h qdp_realityjit.h qdp_primscalarjit.h \
 	    qdp_primmatrixjit.h qdp_primcolormatjit.h qdp_primspinmatjit.h qdp_jitresource.h \
-            qdp_primseedjit.h
+            qdp_primseedjit.h \
+            qdp_primvectorjit.h qdp_primspinvecjit.h qdp_primcolorvecjit.h 
 
 # All the include files - avoid flattening of dirs by using nobase
 nobase_include_HEADERS = \

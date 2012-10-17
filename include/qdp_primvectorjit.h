@@ -5,8 +5,8 @@
  */
 
 
-#ifndef QDP_PRIMVECTOR_H
-#define QDP_PRIMVECTOR_H
+#ifndef QDP_PRIMVECTORJIT_H
+#define QDP_PRIMVECTORJIT_H
 
 namespace QDP {
 
@@ -27,19 +27,17 @@ namespace QDP {
  * portion is a part of the generic class, hence it is called a domain
  * and not a category
  */
-template <class T, int N, template<class,int> class C> class PVector
+template <class T, int N, template<class,int> class C> class PVectorJIT: public JV<T,N>
 {
 public:
-  typedef T Sub_t;
-  enum { ThisSize = N };
-
-  PVector() { }
-  ~PVector() { }
-
   typedef C<T,N>  CC;
 
-  //! PVector = PVector
-  /*! Set equal to another PVector */
+  PVectorJIT(Jit& j,int r , int of , int ol): JV<T,N>(j,r,of,ol) {}
+  PVectorJIT(Jit& j): JV<T,N>(j) {}
+
+
+  //! PVectorJIT = PVectorJIT
+  /*! Set equal to another PVectorJIT */
   template<class T1>
   inline
   CC& assign(const C<T1,N>& rhs) 
@@ -50,8 +48,8 @@ public:
       return static_cast<CC&>(*this);
     }
 
-  //! PVector = PVector
-  /*! Set equal to another PVector */
+  //! PVectorJIT = PVectorJIT
+  /*! Set equal to another PVectorJIT */
   template<class T1>
   inline
   CC& operator=(const C<T1,N>& rhs) 
@@ -59,7 +57,7 @@ public:
       return assign(rhs);
     }
 
-  //! PVector += PVector
+  //! PVectorJIT += PVectorJIT
   template<class T1>
   inline
   CC& operator+=(const C<T1,N>& rhs) 
@@ -70,7 +68,7 @@ public:
       return static_cast<CC&>(*this);
     }
 
-  //! PVector -= PVector
+  //! PVectorJIT -= PVectorJIT
   template<class T1>
   inline
   CC& operator-=(const C<T1,N>& rhs) 
@@ -81,10 +79,10 @@ public:
       return static_cast<CC&>(*this);
     }
 
-  //! PVector *= PScalar
+  //! PVectorJIT *= PScalarJIT
   template<class T1>
   inline
-  CC& operator*=(const PScalar<T1>& rhs) 
+  CC& operator*=(const PScalarJIT<T1>& rhs) 
     {
       for(int i=0; i < N; ++i)
 	elem(i) *= rhs.elem();
@@ -92,10 +90,10 @@ public:
       return static_cast<CC&>(*this);
     }
 
-  //! PVector /= PScalar
+  //! PVectorJIT /= PScalarJIT
   template<class T1>
   inline
-  CC& operator/=(const PScalar<T1>& rhs) 
+  CC& operator/=(const PScalarJIT<T1>& rhs) 
     {
       for(int i=0; i < N; ++i)
 	elem(i) /= rhs.elem();
@@ -112,10 +110,10 @@ public:
 
   //! Deep copy constructor
 #if defined(QDP_USE_ARRAY_INITIALIZER)
-  PVector(const PVector& a) : F(a.F) {}
+  PVectorJIT(const PVectorJIT& a) : F(a.F) {}
 #else
   /*! This is a copy form - legal but not necessarily efficient */
-  PVector(const PVector& a)
+  PVectorJIT(const PVectorJIT& a)
     {
      
       for(int i=0; i < N; ++i)
@@ -126,107 +124,12 @@ public:
 
 
 public:
-  T& elem(int i) {return F[i];}
-  const T& elem(int i) const {return F[i];}
-
-private:
-  T F[N];
+  T& elem(int i) {return JV<T,N>::getF()[i];}
+  const T& elem(int i) const {return JV<T,N>::getF()[i];}
  
 };
 
 
-//! Stream input
-template<class T, int N, template<class,int> class C>  
-inline
-istream& operator>>(istream& s, PVector<T,N,C>& d)
-{
-  for(int i=0; i < N; ++i)
-    s >> d.elem(i);
-
-  return s;
-}
-
-template<class T, int N, template<class,int> class C>  
-inline
-StandardInputStream& operator>>(StandardInputStream& s, PVector<T,N,C>& d)
-{
-  for(int i=0; i < N; ++i)
-    s >> d.elem(i);
-
-  return s;
-}
-
-//! Stream output
-template<class T, int N, template<class,int> class C>  
-inline
-ostream& operator<<(ostream& s, const PVector<T,N,C>& d)
-{
-  for(int i=0; i < N; ++i)
-    s << d.elem(i);
-
-  return s;
-}
-
-//! Stream output
-template<class T, int N, template<class,int> class C>  
-inline
-StandardOutputStream& operator<<(StandardOutputStream& s, const PVector<T,N,C>& d)
-{
-  for(int i=0; i < N; ++i)
-    s << d.elem(i);
-
-  return s;
-}
-
-
-//! Text input
-template<class T, int N, template<class,int> class C>  
-inline
-TextReader& operator>>(TextReader& txt, PVector<T,N,C>& d)
-{
-  for(int i=0; i < N; ++i)
-    txt >> d.elem(i);
-
-  return txt;
-}
-
-//! Text output
-template<class T, int N, template<class,int> class C>  
-inline
-TextWriter& operator<<(TextWriter& txt, const PVector<T,N,C>& d)
-{
-  for(int i=0; i < N; ++i)
-    txt << d.elem(i);
-
-  return txt;
-}
-
-#ifndef QDP_NO_LIBXML2
-//! XML output
-template<class T, int N, template<class,int> class C> 
-inline
-XMLWriter& operator<<(XMLWriter& xml, const PVector<T,N,C>& d)
-{
-  xml.openTag("Vector");
-
-  XMLWriterAPI::AttributeList alist;
-
-  // Copy into another array first
-  for(int i=0; i < N; ++i)
-  {
-    alist.clear();
-    alist.push_back(XMLWriterAPI::Attribute("row", i));
-
-    xml.openTag("elem", alist);
-    xml << d.elem(i);
-    xml.closeTag();
-  }
-
-  xml.closeTag();  // Vector
-  return xml;
-}
-#endif
-/*! @} */  // end of group primvector
 
 
 //-----------------------------------------------------------------------------
@@ -235,38 +138,38 @@ XMLWriter& operator<<(XMLWriter& xml, const PVector<T,N,C>& d)
 
 // Underlying word type
 template<class T1, int N, template<class,int> class C>
-struct WordType<PVector<T1,N,C> > 
+struct WordType<PVectorJIT<T1,N,C> > 
 {
   typedef typename WordType<T1>::Type_t  Type_t;
 };
 
 template<class T1, int N, template<class, int> class C> 
-struct SinglePrecType< PVector<T1,N,C> >
+struct SinglePrecType< PVectorJIT<T1,N,C> >
 {
-  typedef PVector< typename SinglePrecType<T1>::Type_t, N, C> Type_t;
+  typedef PVectorJIT< typename SinglePrecType<T1>::Type_t, N, C> Type_t;
 };
 
 template<class T1, int N, template<class, int> class C> 
-struct DoublePrecType< PVector<T1,N,C> >
+struct DoublePrecType< PVectorJIT<T1,N,C> >
 {
-  typedef PVector< typename DoublePrecType<T1>::Type_t, N, C> Type_t;
+  typedef PVectorJIT< typename DoublePrecType<T1>::Type_t, N, C> Type_t;
 };
 
 // Internally used scalars
 template<class T, int N, template<class,int> class C>
-struct InternalScalar<PVector<T,N,C> > {
-  typedef PScalar<typename InternalScalar<T>::Type_t>  Type_t;
+struct InternalScalar<PVectorJIT<T,N,C> > {
+  typedef PScalarJIT<typename InternalScalar<T>::Type_t>  Type_t;
 };
 
 // Makes a primitive scalar leaving grid alone
 template<class T, int N, template<class,int> class C>
-struct PrimitiveScalar<PVector<T,N,C> > {
-  typedef PScalar<typename PrimitiveScalar<T>::Type_t>  Type_t;
+struct PrimitiveScalar<PVectorJIT<T,N,C> > {
+  typedef PScalarJIT<typename PrimitiveScalar<T>::Type_t>  Type_t;
 };
 
 // Makes a lattice scalar leaving primitive indices alone
 template<class T, int N, template<class,int> class C>
-struct LatticeScalar<PVector<T,N,C> > {
+struct LatticeScalar<PVectorJIT<T,N,C> > {
   typedef C<typename LatticeScalar<T>::Type_t, N>  Type_t;
 };
 
@@ -274,41 +177,41 @@ struct LatticeScalar<PVector<T,N,C> > {
 // Traits classes to support return types
 //-----------------------------------------------------------------------------
 
-// Default unary(PVector) -> PVector
+// Default unary(PVectorJIT) -> PVectorJIT
 template<class T1, int N, template<class,int> class C, class Op>
-struct UnaryReturn<PVector<T1,N,C>, Op> {
+struct UnaryReturn<PVectorJIT<T1,N,C>, Op> {
   typedef C<typename UnaryReturn<T1, Op>::Type_t, N>  Type_t;
 };
-// Default binary(PScalar,PVector) -> PVector
+// Default binary(PScalarJIT,PVectorJIT) -> PVectorJIT
 template<class T1, class T2, int N, template<class,int> class C, class Op>
-struct BinaryReturn<PScalar<T1>, PVector<T2,N,C>, Op> {
+struct BinaryReturn<PScalarJIT<T1>, PVectorJIT<T2,N,C>, Op> {
   typedef C<typename BinaryReturn<T1, T2, Op>::Type_t, N>  Type_t;
 };
 
-// Default binary(PMatrix,PVector) -> PVector
+// Default binary(PMatrixJIT,PVectorJIT) -> PVectorJIT
 template<class T1, class T2, int N, template<class,int> class C1, 
   template<class,int> class C2, class Op>
-struct BinaryReturn<PMatrix<T1,N,C1>, PVector<T2,N,C2>, Op> {
+struct BinaryReturn<PMatrixJIT<T1,N,C1>, PVectorJIT<T2,N,C2>, Op> {
   typedef C2<typename BinaryReturn<T1, T2, Op>::Type_t, N>  Type_t;
 };
 
-// Default binary(PVector,PScalar) -> PVector
+// Default binary(PVectorJIT,PScalarJIT) -> PVectorJIT
 template<class T1, class T2, int N, template<class,int> class C, class Op>
-struct BinaryReturn<PVector<T1,N,C>, PScalar<T2>, Op> {
+struct BinaryReturn<PVectorJIT<T1,N,C>, PScalarJIT<T2>, Op> {
   typedef C<typename BinaryReturn<T1, T2, Op>::Type_t, N>  Type_t;
 };
 
-// Default binary(PVector,PVector) -> PVector
+// Default binary(PVectorJIT,PVectorJIT) -> PVectorJIT
 template<class T1, class T2, int N, template<class,int> class C, class Op>
-struct BinaryReturn<PVector<T1,N,C>, PVector<T2,N,C>, Op> {
+struct BinaryReturn<PVectorJIT<T1,N,C>, PVectorJIT<T2,N,C>, Op> {
   typedef C<typename BinaryReturn<T1, T2, Op>::Type_t, N>  Type_t;
 };
 
 
 #if 0
 template<class T1, class T2>
-struct UnaryReturn<PScalar<T2>, OpCast<T1> > {
-  typedef PScalar<typename UnaryReturn<T, OpCast>::Type_t>  Type_t;
+struct UnaryReturn<PScalarJIT<T2>, OpCast<T1> > {
+  typedef PScalarJIT<typename UnaryReturn<T, OpCast>::Type_t>  Type_t;
 //  typedef T1 Type_t;
 };
 #endif
@@ -316,27 +219,27 @@ struct UnaryReturn<PScalar<T2>, OpCast<T1> > {
 
 // Assignment is different
 template<class T1, class T2, int N, template<class,int> class C>
-struct BinaryReturn<PVector<T1,N,C>, PVector<T2,N,C>, OpAssign > {
+struct BinaryReturn<PVectorJIT<T1,N,C>, PVectorJIT<T2,N,C>, OpAssign > {
   typedef C<T1,N> &Type_t;
 };
  
 template<class T1, class T2, int N, template<class,int> class C>
-struct BinaryReturn<PVector<T1,N,C>, PVector<T2,N,C>, OpAddAssign > {
+struct BinaryReturn<PVectorJIT<T1,N,C>, PVectorJIT<T2,N,C>, OpAddAssign > {
   typedef C<T1,N> &Type_t;
 };
  
 template<class T1, class T2, int N, template<class,int> class C>
-struct BinaryReturn<PVector<T1,N,C>, PVector<T2,N,C>, OpSubtractAssign > {
+struct BinaryReturn<PVectorJIT<T1,N,C>, PVectorJIT<T2,N,C>, OpSubtractAssign > {
   typedef C<T1,N> &Type_t;
 };
  
 template<class T1, class T2, int N, template<class,int> class C>
-struct BinaryReturn<PVector<T1,N,C>, PScalar<T2>, OpMultiplyAssign > {
+struct BinaryReturn<PVectorJIT<T1,N,C>, PScalarJIT<T2>, OpMultiplyAssign > {
   typedef C<T1,N> &Type_t;
 };
  
 template<class T1, class T2, int N, template<class,int> class C>
-struct BinaryReturn<PVector<T1,N,C>, PScalar<T2>, OpDivideAssign > {
+struct BinaryReturn<PVectorJIT<T1,N,C>, PScalarJIT<T2>, OpDivideAssign > {
   typedef C<T1,N> &Type_t;
 };
  
@@ -353,10 +256,10 @@ struct BinaryReturn<PVector<T1,N,C>, PScalar<T2>, OpDivideAssign > {
 // Primitive Vectors
 
 template<class T1, int N, template<class,int> class C>
-inline typename UnaryReturn<PVector<T1,N,C>, OpUnaryPlus>::Type_t
-operator+(const PVector<T1,N,C>& l)
+inline typename UnaryReturn<PVectorJIT<T1,N,C>, OpUnaryPlus>::Type_t
+operator+(const PVectorJIT<T1,N,C>& l)
 {
-  typename UnaryReturn<PVector<T1,N,C>, OpUnaryPlus>::Type_t  d;
+  typename UnaryReturn<PVectorJIT<T1,N,C>, OpUnaryPlus>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     d.elem(i) = +l.elem(i);
@@ -365,10 +268,10 @@ operator+(const PVector<T1,N,C>& l)
 
 
 template<class T1, int N, template<class,int> class C>
-inline typename UnaryReturn<PVector<T1,N,C>, OpUnaryMinus>::Type_t
-operator-(const PVector<T1,N,C>& l)
+inline typename UnaryReturn<PVectorJIT<T1,N,C>, OpUnaryMinus>::Type_t
+operator-(const PVectorJIT<T1,N,C>& l)
 {
-  typename UnaryReturn<PVector<T1,N,C>, OpUnaryMinus>::Type_t  d;
+  typename UnaryReturn<PVectorJIT<T1,N,C>, OpUnaryMinus>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     d.elem(i) = -l.elem(i);
@@ -377,10 +280,10 @@ operator-(const PVector<T1,N,C>& l)
 
 
 template<class T1, class T2, int N, template<class,int> class C>
-inline typename BinaryReturn<PVector<T1,N,C>, PVector<T2,N,C>, OpAdd>::Type_t
-operator+(const PVector<T1,N,C>& l, const PVector<T2,N,C>& r)
+inline typename BinaryReturn<PVectorJIT<T1,N,C>, PVectorJIT<T2,N,C>, OpAdd>::Type_t
+operator+(const PVectorJIT<T1,N,C>& l, const PVectorJIT<T2,N,C>& r)
 {
-  typename BinaryReturn<PVector<T1,N,C>, PVector<T2,N,C>, OpAdd>::Type_t  d;
+  typename BinaryReturn<PVectorJIT<T1,N,C>, PVectorJIT<T2,N,C>, OpAdd>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     d.elem(i) = l.elem(i) + r.elem(i);
@@ -389,10 +292,10 @@ operator+(const PVector<T1,N,C>& l, const PVector<T2,N,C>& r)
 
 
 template<class T1, class T2, int N, template<class,int> class C>
-inline typename BinaryReturn<PVector<T1,N,C>, PVector<T2,N,C>, OpSubtract>::Type_t
-operator-(const PVector<T1,N,C>& l, const PVector<T2,N,C>& r)
+inline typename BinaryReturn<PVectorJIT<T1,N,C>, PVectorJIT<T2,N,C>, OpSubtract>::Type_t
+operator-(const PVectorJIT<T1,N,C>& l, const PVectorJIT<T2,N,C>& r)
 {
-  typename BinaryReturn<PVector<T1,N,C>, PVector<T2,N,C>, OpSubtract>::Type_t  d;
+  typename BinaryReturn<PVectorJIT<T1,N,C>, PVectorJIT<T2,N,C>, OpSubtract>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     d.elem(i) = l.elem(i) - r.elem(i);
@@ -400,24 +303,24 @@ operator-(const PVector<T1,N,C>& l, const PVector<T2,N,C>& r)
 }
 
 
-// PVector * PScalar
+// PVectorJIT * PScalarJIT
 template<class T1, class T2, int N, template<class,int> class C>
-inline typename BinaryReturn<PVector<T1,N,C>, PScalar<T2>, OpMultiply>::Type_t
-operator*(const PVector<T1,N,C>& l, const PScalar<T2>& r)
+inline typename BinaryReturn<PVectorJIT<T1,N,C>, PScalarJIT<T2>, OpMultiply>::Type_t
+operator*(const PVectorJIT<T1,N,C>& l, const PScalarJIT<T2>& r)
 {
-  typename BinaryReturn<PVector<T1,N,C>, PScalar<T2>, OpMultiply>::Type_t  d;
+  typename BinaryReturn<PVectorJIT<T1,N,C>, PScalarJIT<T2>, OpMultiply>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     d.elem(i) = l.elem(i) * r.elem();
   return d;
 }
 
-// Optimized  PVector * adj(PScalar)
+// Optimized  PVectorJIT * adj(PScalarJIT)
 template<class T1, class T2, int N, template<class,int> class C>
-inline typename BinaryReturn<PVector<T1,N,C>, PScalar<T2>, OpMultiplyAdj>::Type_t
-multiplyAdj(const PVector<T1,N,C>& l, const PScalar<T2>& r)
+inline typename BinaryReturn<PVectorJIT<T1,N,C>, PScalarJIT<T2>, OpMultiplyAdj>::Type_t
+multiplyAdj(const PVectorJIT<T1,N,C>& l, const PScalarJIT<T2>& r)
 {
-  typename BinaryReturn<PVector<T1,N,C>, PScalar<T2>, OpMultiplyAdj>::Type_t  d;
+  typename BinaryReturn<PVectorJIT<T1,N,C>, PScalarJIT<T2>, OpMultiplyAdj>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     d.elem(i) = multiplyAdj(l.elem(i), r.elem());
@@ -425,24 +328,24 @@ multiplyAdj(const PVector<T1,N,C>& l, const PScalar<T2>& r)
 }
 
 
-// PScalar * PVector
+// PScalarJIT * PVectorJIT
 template<class T1, class T2, int N, template<class,int> class C>
-inline typename BinaryReturn<PScalar<T1>, PVector<T2,N,C>, OpMultiply>::Type_t
-operator*(const PScalar<T1>& l, const PVector<T2,N,C>& r)
+inline typename BinaryReturn<PScalarJIT<T1>, PVectorJIT<T2,N,C>, OpMultiply>::Type_t
+operator*(const PScalarJIT<T1>& l, const PVectorJIT<T2,N,C>& r)
 {
-  typename BinaryReturn<PScalar<T1>, PVector<T2,N,C>, OpMultiply>::Type_t  d;
+  typename BinaryReturn<PScalarJIT<T1>, PVectorJIT<T2,N,C>, OpMultiply>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     d.elem(i) = l.elem() * r.elem(i);
   return d;
 }
 
-// Optimized  adj(PScalar) * PVector
+// Optimized  adj(PScalarJIT) * PVectorJIT
 template<class T1, class T2, int N, template<class,int> class C>
-inline typename BinaryReturn<PScalar<T1>, PVector<T2,N,C>, OpAdjMultiply>::Type_t
-adjMultiply(const PScalar<T1>& l, const PVector<T2,N,C>& r)
+inline typename BinaryReturn<PScalarJIT<T1>, PVectorJIT<T2,N,C>, OpAdjMultiply>::Type_t
+adjMultiply(const PScalarJIT<T1>& l, const PVectorJIT<T2,N,C>& r)
 {
-  typename BinaryReturn<PScalar<T1>, PVector<T2,N,C>, OpAdjMultiply>::Type_t  d;
+  typename BinaryReturn<PScalarJIT<T1>, PVectorJIT<T2,N,C>, OpAdjMultiply>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     d.elem(i) = adjMultiply(l.elem(), r.elem(i));
@@ -450,12 +353,12 @@ adjMultiply(const PScalar<T1>& l, const PVector<T2,N,C>& r)
 }
 
 
-// PMatrix * PVector
+// PMatrixJIT * PVectorJIT
 template<class T1, class T2, int N, template<class,int> class C1, template<class,int> class C2>
-inline typename BinaryReturn<PMatrix<T1,N,C1>, PVector<T2,N,C2>, OpMultiply>::Type_t
-operator*(const PMatrix<T1,N,C1>& l, const PVector<T2,N,C2>& r)
+inline typename BinaryReturn<PMatrixJIT<T1,N,C1>, PVectorJIT<T2,N,C2>, OpMultiply>::Type_t
+operator*(const PMatrixJIT<T1,N,C1>& l, const PVectorJIT<T2,N,C2>& r)
 {
-  typename BinaryReturn<PMatrix<T1,N,C1>, PVector<T2,N,C2>, OpMultiply>::Type_t  d;
+  typename BinaryReturn<PMatrixJIT<T1,N,C1>, PVectorJIT<T2,N,C2>, OpMultiply>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
   {
@@ -467,12 +370,12 @@ operator*(const PMatrix<T1,N,C1>& l, const PVector<T2,N,C2>& r)
   return d;
 }
 
-// Optimized  adj(PMatrix)*PVector
+// Optimized  adj(PMatrixJIT)*PVectorJIT
 template<class T1, class T2, int N, template<class,int> class C1, template<class,int> class C2>
-inline typename BinaryReturn<PMatrix<T1,N,C1>, PVector<T2,N,C2>, OpAdjMultiply>::Type_t
-adjMultiply(const PMatrix<T1,N,C1>& l, const PVector<T2,N,C2>& r)
+inline typename BinaryReturn<PMatrixJIT<T1,N,C1>, PVectorJIT<T2,N,C2>, OpAdjMultiply>::Type_t
+adjMultiply(const PMatrixJIT<T1,N,C1>& l, const PVectorJIT<T2,N,C2>& r)
 {
-  typename BinaryReturn<PMatrix<T1,N,C1>, PVector<T2,N,C2>, OpAdjMultiply>::Type_t  d;
+  typename BinaryReturn<PMatrixJIT<T1,N,C1>, PVectorJIT<T2,N,C2>, OpAdjMultiply>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
   {
@@ -486,10 +389,10 @@ adjMultiply(const PMatrix<T1,N,C1>& l, const PVector<T2,N,C2>& r)
 
 
 template<class T1, class T2, int N, template<class,int> class C>
-inline typename BinaryReturn<PVector<T1,N,C>, PScalar<T2>, OpDivide>::Type_t
-operator/(const PVector<T1,N,C>& l, const PScalar<T2>& r)
+inline typename BinaryReturn<PVectorJIT<T1,N,C>, PScalarJIT<T2>, OpDivide>::Type_t
+operator/(const PVectorJIT<T1,N,C>& l, const PScalarJIT<T2>& r)
 {
-  typename BinaryReturn<PVector<T1,N,C>, PScalar<T2>, OpDivide>::Type_t  d;
+  typename BinaryReturn<PVectorJIT<T1,N,C>, PScalarJIT<T2>, OpDivide>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     d.elem(i) = l.elem(i) / r.elem();
@@ -498,12 +401,12 @@ operator/(const PVector<T1,N,C>& l, const PScalar<T2>& r)
 
 
 
-//! PVector = Re(PVector)
+//! PVectorJIT = Re(PVectorJIT)
 template<class T, int N, template<class,int> class C>
-inline typename UnaryReturn<PVector<T,N,C>, FnReal>::Type_t
-real(const PVector<T,N,C>& s1)
+inline typename UnaryReturn<PVectorJIT<T,N,C>, FnReal>::Type_t
+real(const PVectorJIT<T,N,C>& s1)
 {
-  typename UnaryReturn<PVector<T,N,C>, FnReal>::Type_t  d;
+  typename UnaryReturn<PVectorJIT<T,N,C>, FnReal>::Type_t  d(s1.func());
 
   for(int i=0; i < N; ++i)
     d.elem(i) = real(s1.elem(i));
@@ -512,12 +415,12 @@ real(const PVector<T,N,C>& s1)
 }
 
 
-//! PVector = Im(PVector)
+//! PVectorJIT = Im(PVectorJIT)
 template<class T, int N, template<class,int> class C>
-inline typename UnaryReturn<PVector<T,N,C>, FnImag>::Type_t
-imag(const PVector<T,N,C>& s1)
+inline typename UnaryReturn<PVectorJIT<T,N,C>, FnImag>::Type_t
+imag(const PVectorJIT<T,N,C>& s1)
 {
-  typename UnaryReturn<PVector<T,N,C>, FnImag>::Type_t  d;
+  typename UnaryReturn<PVectorJIT<T,N,C>, FnImag>::Type_t  d(s1.func());
 
   for(int i=0; i < N; ++i)
     d.elem(i) = imag(s1.elem(i));
@@ -526,12 +429,12 @@ imag(const PVector<T,N,C>& s1)
 }
 
 
-//! PVector<T> = (PVector<T> , PVector<T>)
+//! PVectorJIT<T> = (PVectorJIT<T> , PVectorJIT<T>)
 template<class T1, class T2, int N, template<class,int> class C>
-inline typename BinaryReturn<PVector<T1,N,C>, PVector<T2,N,C>, FnCmplx>::Type_t
-cmplx(const PVector<T1,N,C>& s1, const PVector<T2,N,C>& s2)
+inline typename BinaryReturn<PVectorJIT<T1,N,C>, PVectorJIT<T2,N,C>, FnCmplx>::Type_t
+cmplx(const PVectorJIT<T1,N,C>& s1, const PVectorJIT<T2,N,C>& s2)
 {
-  typename BinaryReturn<PVector<T1,N,C>, PVector<T2,N,C>, FnCmplx>::Type_t  d;
+  typename BinaryReturn<PVectorJIT<T1,N,C>, PVectorJIT<T2,N,C>, FnCmplx>::Type_t  d(s1.func());
 
   for(int i=0; i < N; ++i)
     d.elem(i) = cmplx(s1.elem(i), s2.elem(i));
@@ -544,10 +447,10 @@ cmplx(const PVector<T1,N,C>& s1, const PVector<T2,N,C>& s2)
 // Functions
 // Conjugate
 template<class T1, int N, template<class,int> class C>
-inline typename UnaryReturn<PVector<T1,N,C>, FnConjugate>::Type_t
-conj(const PVector<T1,N,C>& l)
+inline typename UnaryReturn<PVectorJIT<T1,N,C>, FnConjugate>::Type_t
+conj(const PVectorJIT<T1,N,C>& l)
 {
-  typename UnaryReturn<PVector<T1,N,C>, FnConjugate>::Type_t  d;
+  typename UnaryReturn<PVectorJIT<T1,N,C>, FnConjugate>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     d.elem(i) = conj(l.elem(i));
@@ -555,12 +458,12 @@ conj(const PVector<T1,N,C>& l)
   return d;
 }
 
-//! PVector = i * PVector
+//! PVectorJIT = i * PVectorJIT
 template<class T, int N, template<class,int> class C>
-inline typename UnaryReturn<PVector<T,N,C>, FnTimesI>::Type_t
-timesI(const PVector<T,N,C>& s1)
+inline typename UnaryReturn<PVectorJIT<T,N,C>, FnTimesI>::Type_t
+timesI(const PVectorJIT<T,N,C>& s1)
 {
-  typename UnaryReturn<PVector<T,N,C>, FnTimesI>::Type_t  d;
+  typename UnaryReturn<PVectorJIT<T,N,C>, FnTimesI>::Type_t  d(s1.func());
 
   for(int i=0; i < N; ++i)
     d.elem(i) = timesI(s1.elem(i));
@@ -568,12 +471,12 @@ timesI(const PVector<T,N,C>& s1)
   return d;
 }
 
-//! PVector = -i * PVector
+//! PVectorJIT = -i * PVectorJIT
 template<class T, int N, template<class,int> class C>
-inline typename UnaryReturn<PVector<T,N,C>, FnTimesMinusI>::Type_t
-timesMinusI(const PVector<T,N,C>& s1)
+inline typename UnaryReturn<PVectorJIT<T,N,C>, FnTimesMinusI>::Type_t
+timesMinusI(const PVectorJIT<T,N,C>& s1)
 {
-  typename UnaryReturn<PVector<T,N,C>, FnTimesMinusI>::Type_t  d;
+  typename UnaryReturn<PVectorJIT<T,N,C>, FnTimesMinusI>::Type_t  d(s1.func());
 
   for(int i=0; i < N; ++i)
     d.elem(i) = timesMinusI(s1.elem(i));
@@ -585,10 +488,10 @@ timesMinusI(const PVector<T,N,C>& s1)
 //! dest [some type] = source [some type]
 /*! Portable (internal) way of returning a single site */
 template<class T, int N, template<class,int> class C>
-inline typename UnaryReturn<PVector<T,N,C>, FnGetSite>::Type_t
-getSite(const PVector<T,N,C>& s1, int innersite)
+inline typename UnaryReturn<PVectorJIT<T,N,C>, FnGetSite>::Type_t
+getSite(const PVectorJIT<T,N,C>& s1, int innersite)
 { 
-  typename UnaryReturn<PVector<T,N,C>, FnGetSite>::Type_t  d;
+  typename UnaryReturn<PVectorJIT<T,N,C>, FnGetSite>::Type_t  d(s1.func());
 
   for(int i=0; i < N; ++i)
     d.elem(i) = getSite(s1.elem(i), innersite);
@@ -599,10 +502,10 @@ getSite(const PVector<T,N,C>& s1, int innersite)
 //! Extract color vector components 
 /*! Generically, this is an identity operation. Defined differently under color */
 template<class T, int N, template<class,int> class C>
-inline typename UnaryReturn<PVector<T,N,C>, FnPeekColorVector>::Type_t
-peekColor(const PVector<T,N,C>& l, int row)
+inline typename UnaryReturn<PVectorJIT<T,N,C>, FnPeekColorVector>::Type_t
+peekColor(const PVectorJIT<T,N,C>& l, int row)
 {
-  typename UnaryReturn<PVector<T,N,C>, FnPeekColorVector>::Type_t  d;
+  typename UnaryReturn<PVectorJIT<T,N,C>, FnPeekColorVector>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     d.elem(i) = peekColor(l.elem(i),row);
@@ -612,10 +515,10 @@ peekColor(const PVector<T,N,C>& l, int row)
 //! Extract color matrix components 
 /*! Generically, this is an identity operation. Defined differently under color */
 template<class T, int N, template<class,int> class C>
-inline typename UnaryReturn<PVector<T,N,C>, FnPeekColorMatrix>::Type_t
-peekColor(const PVector<T,N,C>& l, int row, int col)
+inline typename UnaryReturn<PVectorJIT<T,N,C>, FnPeekColorMatrix>::Type_t
+peekColor(const PVectorJIT<T,N,C>& l, int row, int col)
 {
-  typename UnaryReturn<PVector<T,N,C>, FnPeekColorMatrix>::Type_t  d;
+  typename UnaryReturn<PVectorJIT<T,N,C>, FnPeekColorMatrix>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     d.elem(i) = peekColor(l.elem(i),row,col);
@@ -625,10 +528,10 @@ peekColor(const PVector<T,N,C>& l, int row, int col)
 //! Extract spin vector components 
 /*! Generically, this is an identity operation. Defined differently under spin */
 template<class T, int N, template<class,int> class C>
-inline typename UnaryReturn<PVector<T,N,C>, FnPeekSpinVector>::Type_t
-peekSpin(const PVector<T,N,C>& l, int row)
+inline typename UnaryReturn<PVectorJIT<T,N,C>, FnPeekSpinVector>::Type_t
+peekSpin(const PVectorJIT<T,N,C>& l, int row)
 {
-  typename UnaryReturn<PVector<T,N,C>, FnPeekSpinVector>::Type_t  d;
+  typename UnaryReturn<PVectorJIT<T,N,C>, FnPeekSpinVector>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     d.elem(i) = peekSpin(l.elem(i),row);
@@ -638,10 +541,10 @@ peekSpin(const PVector<T,N,C>& l, int row)
 //! Extract spin matrix components 
 /*! Generically, this is an identity operation. Defined differently under spin */
 template<class T, int N, template<class,int> class C>
-inline typename UnaryReturn<PVector<T,N,C>, FnPeekSpinMatrix>::Type_t
-peekSpin(const PVector<T,N,C>& l, int row, int col)
+inline typename UnaryReturn<PVectorJIT<T,N,C>, FnPeekSpinMatrix>::Type_t
+peekSpin(const PVectorJIT<T,N,C>& l, int row, int col)
 {
-  typename UnaryReturn<PVector<T,N,C>, FnPeekSpinMatrix>::Type_t  d;
+  typename UnaryReturn<PVectorJIT<T,N,C>, FnPeekSpinMatrix>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     d.elem(i) = peekSpin(l.elem(i),row,col);
@@ -651,10 +554,10 @@ peekSpin(const PVector<T,N,C>& l, int row, int col)
 //! Insert color vector components 
 /*! Generically, this is an identity operation. Defined differently under color */
 template<class T1, class T2, int N, template<class,int> class C>
-inline typename UnaryReturn<PVector<T1,N,C>, FnPokeColorVector>::Type_t&
-pokeColor(PVector<T1,N,C>& l, const PVector<T2,N,C>& r, int row)
+inline typename UnaryReturn<PVectorJIT<T1,N,C>, FnPokeColorVector>::Type_t&
+pokeColor(PVectorJIT<T1,N,C>& l, const PVectorJIT<T2,N,C>& r, int row)
 {
-  typedef typename UnaryReturn<PVector<T1,N,C>, FnPokeColorVector>::Type_t  Return_t;
+  typedef typename UnaryReturn<PVectorJIT<T1,N,C>, FnPokeColorVector>::Type_t  Return_t;
 
   for(int i=0; i < N; ++i)
     pokeColor(l.elem(i),r.elem(i),row);
@@ -664,10 +567,10 @@ pokeColor(PVector<T1,N,C>& l, const PVector<T2,N,C>& r, int row)
 //! Insert color matrix components 
 /*! Generically, this is an identity operation. Defined differently under color */
 template<class T1, class T2, int N, template<class,int> class C>
-inline typename UnaryReturn<PVector<T1,N,C>, FnPokeColorVector>::Type_t&
-pokeColor(PVector<T1,N,C>& l, const PVector<T2,N,C>& r, int row, int col)
+inline typename UnaryReturn<PVectorJIT<T1,N,C>, FnPokeColorVector>::Type_t&
+pokeColor(PVectorJIT<T1,N,C>& l, const PVectorJIT<T2,N,C>& r, int row, int col)
 {
-  typedef typename UnaryReturn<PVector<T1,N,C>, FnPokeColorVector>::Type_t  Return_t;
+  typedef typename UnaryReturn<PVectorJIT<T1,N,C>, FnPokeColorVector>::Type_t  Return_t;
 
   for(int i=0; i < N; ++i)
     pokeColor(l.elem(i),r.elem(i),row,col);
@@ -677,10 +580,10 @@ pokeColor(PVector<T1,N,C>& l, const PVector<T2,N,C>& r, int row, int col)
 //! Insert spin vector components 
 /*! Generically, this is an identity operation. Defined differently under spin */
 template<class T1, class T2, int N, template<class,int> class C>
-inline typename UnaryReturn<PVector<T1,N,C>, FnPokeSpinVector>::Type_t&
-pokeSpin(PVector<T1,N,C>& l, const PVector<T2,N,C>& r, int row)
+inline typename UnaryReturn<PVectorJIT<T1,N,C>, FnPokeSpinVector>::Type_t&
+pokeSpin(PVectorJIT<T1,N,C>& l, const PVectorJIT<T2,N,C>& r, int row)
 {
-  typedef typename UnaryReturn<PVector<T1,N,C>, FnPokeSpinVector>::Type_t  Return_t;
+  typedef typename UnaryReturn<PVectorJIT<T1,N,C>, FnPokeSpinVector>::Type_t  Return_t;
 
   for(int i=0; i < N; ++i)
     pokeSpin(l.elem(i),r.elem(i),row);
@@ -690,10 +593,10 @@ pokeSpin(PVector<T1,N,C>& l, const PVector<T2,N,C>& r, int row)
 //! Insert spin matrix components 
 /*! Generically, this is an identity operation. Defined differently under spin */
 template<class T1, class T2, int N, template<class,int> class C>
-inline typename UnaryReturn<PVector<T1,N,C>, FnPokeSpinVector>::Type_t&
-pokeSpin(PVector<T1,N,C>& l, const PVector<T2,N,C>& r, int row, int col)
+inline typename UnaryReturn<PVectorJIT<T1,N,C>, FnPokeSpinVector>::Type_t&
+pokeSpin(PVectorJIT<T1,N,C>& l, const PVectorJIT<T2,N,C>& r, int row, int col)
 {
-  typedef typename UnaryReturn<PVector<T1,N,C>, FnPokeSpinVector>::Type_t  Return_t;
+  typedef typename UnaryReturn<PVectorJIT<T1,N,C>, FnPokeSpinVector>::Type_t  Return_t;
 
   for(int i=0; i < N; ++i)
     pokeSpin(l.elem(i),r.elem(i),row,col);
@@ -704,7 +607,7 @@ pokeSpin(PVector<T1,N,C>& l, const PVector<T2,N,C>& r, int row, int col)
 //! dest = 0
 template<class T, int N, template<class,int> class C> 
 inline void 
-zero_rep(PVector<T,N,C>& dest) 
+zero_rep(PVectorJIT<T,N,C>& dest) 
 {
   for(int i=0; i < N; ++i)
     zero_rep(dest.elem(i));
@@ -713,7 +616,7 @@ zero_rep(PVector<T,N,C>& dest)
 //! dest = (mask) ? s1 : dest
 template<class T, class T1, int N, template<class,int> class C> 
 inline void 
-copymask(PVector<T,N,C>& d, const PScalar<T1>& mask, const PVector<T,N,C>& s1) 
+copymask(PVectorJIT<T,N,C>& d, const PScalarJIT<T1>& mask, const PVectorJIT<T,N,C>& s1) 
 {
   for(int i=0; i < N; ++i)
     copymask(d.elem(i),mask.elem(),s1.elem(i));
@@ -723,7 +626,7 @@ copymask(PVector<T,N,C>& d, const PScalar<T1>& mask, const PVector<T,N,C>& s1)
 //! dest [some type] = source [some type]
 template<class T, class T1, int N, template<class,int> class C>
 inline void 
-copy_site(PVector<T,N,C>& d, int isite, const PVector<T1,N,C>& s1)
+copy_site(PVectorJIT<T,N,C>& d, int isite, const PVectorJIT<T1,N,C>& s1)
 {
   for(int i=0; i < N; ++i)
     copy_site(d.elem(i), isite, s1.elem(i));
@@ -732,7 +635,7 @@ copy_site(PVector<T,N,C>& d, int isite, const PVector<T1,N,C>& s1)
 //! dest [some type] = source [some type]
 template<class T, class T1, int N, template<class,int> class C>
 inline void 
-copy_site(PVector<T,N,C>& d, int isite, const PScalar<T1>& s1)
+copy_site(PVectorJIT<T,N,C>& d, int isite, const PScalarJIT<T1>& s1)
 {
   for(int i=0; i < N; ++i)
     copy_site(d.elem(i), isite, s1.elem());
@@ -742,11 +645,11 @@ copy_site(PVector<T,N,C>& d, int isite, const PScalar<T1>& s1)
 //! gather several inner sites together
 template<class T, class T1, int N, template<class,int> class C>
 inline void 
-gather_sites(PVector<T,N,C>& d, 
-	     const PVector<T1,N,C>& s0, int i0, 
-	     const PVector<T1,N,C>& s1, int i1,
-	     const PVector<T1,N,C>& s2, int i2,
-	     const PVector<T1,N,C>& s3, int i3)
+gather_sites(PVectorJIT<T,N,C>& d, 
+	     const PVectorJIT<T1,N,C>& s0, int i0, 
+	     const PVectorJIT<T1,N,C>& s1, int i1,
+	     const PVectorJIT<T1,N,C>& s2, int i2,
+	     const PVectorJIT<T1,N,C>& s3, int i3)
 {
   for(int i=0; i < N; ++i)
     gather_sites(d.elem(i), 
@@ -760,7 +663,7 @@ gather_sites(PVector<T,N,C>& d,
 //! dest  = random  
 template<class T, int N, template<class,int> class C, class T1, class T2>
 inline void
-fill_random(PVector<T,N,C>& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
+fill_random(PVectorJIT<T,N,C>& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
 {
   // Loop over rows the slowest
   for(int i=0; i < N; ++i)
@@ -771,7 +674,7 @@ fill_random(PVector<T,N,C>& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
 //! dest  = gaussian
 template<class T, int N, template<class,int> class C>
 inline void
-fill_gaussian(PVector<T,N,C>& d, PVector<T,N,C>& r1, PVector<T,N,C>& r2)
+fill_gaussian(PVectorJIT<T,N,C>& d, PVectorJIT<T,N,C>& r1, PVectorJIT<T,N,C>& r2)
 {
   for(int i=0; i < N; ++i)
     fill_gaussian(d.elem(i), r1.elem(i), r2.elem(i));
@@ -781,15 +684,15 @@ fill_gaussian(PVector<T,N,C>& d, PVector<T,N,C>& r1, PVector<T,N,C>& r2)
 #if 0
 // Global sum over site indices only
 template<class T, int N, template<class,int> class C>
-struct UnaryReturn<PVector<T,N,C>, FnSum > {
+struct UnaryReturn<PVectorJIT<T,N,C>, FnSum > {
   typedef C<typename UnaryReturn<T, FnSum>::Type_t, N>  Type_t;
 };
 
 template<class T, int N, template<class,int> class C>
-inline typename UnaryReturn<PVector<T,N,C>, FnSum>::Type_t
-sum(const PVector<T,N,C>& s1)
+inline typename UnaryReturn<PVectorJIT<T,N,C>, FnSum>::Type_t
+sum(const PVectorJIT<T,N,C>& s1)
 {
-  typename UnaryReturn<PVector<T,N,C>, FnSum>::Type_t  d;
+  typename UnaryReturn<PVectorJIT<T,N,C>, FnSum>::Type_t  d(s1.func());
 
   for(int i=0; i < N; ++i)
     d.elem(i) = sum(s1.elem(i));
@@ -801,20 +704,20 @@ sum(const PVector<T,N,C>& s1)
 
 // InnerProduct (norm-seq) global sum = sum(tr(adj(s1)*s1))
 template<class T, int N, template<class,int> class C>
-struct UnaryReturn<PVector<T,N,C>, FnNorm2 > {
-  typedef PScalar<typename UnaryReturn<T, FnNorm2>::Type_t>  Type_t;
+struct UnaryReturn<PVectorJIT<T,N,C>, FnNorm2 > {
+  typedef PScalarJIT<typename UnaryReturn<T, FnNorm2>::Type_t>  Type_t;
 };
 
 template<class T, int N, template<class,int> class C>
-struct UnaryReturn<PVector<T,N,C>, FnLocalNorm2 > {
-  typedef PScalar<typename UnaryReturn<T, FnLocalNorm2>::Type_t>  Type_t;
+struct UnaryReturn<PVectorJIT<T,N,C>, FnLocalNorm2 > {
+  typedef PScalarJIT<typename UnaryReturn<T, FnLocalNorm2>::Type_t>  Type_t;
 };
 
 template<class T, int N, template<class,int> class C>
-inline typename UnaryReturn<PVector<T,N,C>, FnLocalNorm2>::Type_t
-localNorm2(const PVector<T,N,C>& s1)
+inline typename UnaryReturn<PVectorJIT<T,N,C>, FnLocalNorm2>::Type_t
+localNorm2(const PVectorJIT<T,N,C>& s1)
 {
-  typename UnaryReturn<PVector<T,N,C>, FnLocalNorm2>::Type_t  d;
+  typename UnaryReturn<PVectorJIT<T,N,C>, FnLocalNorm2>::Type_t  d(s1.func());
 
   d.elem() = localNorm2(s1.elem(0));
   for(int i=1; i < N; ++i)
@@ -824,22 +727,22 @@ localNorm2(const PVector<T,N,C>& s1)
 }
 
 
-//! PScalar<T> = InnerProduct(adj(PVector<T1>)*PVector<T1>)
+//! PScalarJIT<T> = InnerProduct(adj(PVectorJIT<T1>)*PVectorJIT<T1>)
 template<class T1, class T2, int N, template<class,int> class C>
-struct BinaryReturn<PVector<T1,N,C>, PVector<T2,N,C>, FnInnerProduct > {
-  typedef PScalar<typename BinaryReturn<T1, T2, FnInnerProduct>::Type_t>  Type_t;
+struct BinaryReturn<PVectorJIT<T1,N,C>, PVectorJIT<T2,N,C>, FnInnerProduct > {
+  typedef PScalarJIT<typename BinaryReturn<T1, T2, FnInnerProduct>::Type_t>  Type_t;
 };
 
 template<class T1, class T2, int N, template<class,int> class C>
-struct BinaryReturn<PVector<T1,N,C>, PVector<T2,N,C>, FnLocalInnerProduct > {
-  typedef PScalar<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>  Type_t;
+struct BinaryReturn<PVectorJIT<T1,N,C>, PVectorJIT<T2,N,C>, FnLocalInnerProduct > {
+  typedef PScalarJIT<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>  Type_t;
 };
 
 template<class T1, class T2, int N, template<class,int> class C>
-inline PScalar<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>
-localInnerProduct(const PVector<T1,N,C>& s1, const PVector<T2,N,C>& s2)
+inline PScalarJIT<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>
+localInnerProduct(const PVectorJIT<T1,N,C>& s1, const PVectorJIT<T2,N,C>& s2)
 {
-  PScalar<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>  d;
+  PScalarJIT<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>  d(s1.func());
 
   d.elem() = localInnerProduct(s1.elem(0), s2.elem(0));
   for(int i=1; i < N; ++i)
@@ -849,25 +752,25 @@ localInnerProduct(const PVector<T1,N,C>& s1, const PVector<T2,N,C>& s2)
 }
 
 
-//! PScalar<T> = InnerProductReal(adj(PVector<T1>)*PVector<T1>)
+//! PScalarJIT<T> = InnerProductReal(adj(PVectorJIT<T1>)*PVectorJIT<T1>)
 /*!
  * return  realpart of InnerProduct(adj(s1)*s2)
  */
 template<class T1, class T2, int N, template<class,int> class C>
-struct BinaryReturn<PVector<T1,N,C>, PVector<T2,N,C>, FnInnerProductReal > {
-  typedef PScalar<typename BinaryReturn<T1, T2, FnInnerProductReal>::Type_t>  Type_t;
+struct BinaryReturn<PVectorJIT<T1,N,C>, PVectorJIT<T2,N,C>, FnInnerProductReal > {
+  typedef PScalarJIT<typename BinaryReturn<T1, T2, FnInnerProductReal>::Type_t>  Type_t;
 };
 
 template<class T1, class T2, int N, template<class,int> class C>
-struct BinaryReturn<PVector<T1,N,C>, PVector<T2,N,C>, FnLocalInnerProductReal > {
-  typedef PScalar<typename BinaryReturn<T1, T2, FnLocalInnerProductReal>::Type_t>  Type_t;
+struct BinaryReturn<PVectorJIT<T1,N,C>, PVectorJIT<T2,N,C>, FnLocalInnerProductReal > {
+  typedef PScalarJIT<typename BinaryReturn<T1, T2, FnLocalInnerProductReal>::Type_t>  Type_t;
 };
 
 template<class T1, class T2, int N, template<class,int> class C>
-inline PScalar<typename BinaryReturn<T1, T2, FnLocalInnerProductReal>::Type_t>
-localInnerProductReal(const PVector<T1,N,C>& s1, const PVector<T2,N,C>& s2)
+inline PScalarJIT<typename BinaryReturn<T1, T2, FnLocalInnerProductReal>::Type_t>
+localInnerProductReal(const PVectorJIT<T1,N,C>& s1, const PVectorJIT<T2,N,C>& s2)
 {
-  PScalar<typename BinaryReturn<T1,T2, FnLocalInnerProductReal>::Type_t>  d;
+  PScalarJIT<typename BinaryReturn<T1,T2, FnLocalInnerProductReal>::Type_t>  d(s1.func());
 
   d.elem() = localInnerProductReal(s1.elem(0), s2.elem(0));
   for(int i=1; i < N; ++i)
@@ -877,24 +780,24 @@ localInnerProductReal(const PVector<T1,N,C>& s1, const PVector<T2,N,C>& s2)
 }
 
 
-// This PVector<T1,N,C> stuff versus PSpinVector<T1,N> is causing problems. 
+// This PVectorJIT<T1,N,C> stuff versus PSpinVector<T1,N> is causing problems. 
 // When searching for type matching functions, the language does not allow
 // for varying template arguments to match a function. We should just move
-// away from PVector to use PSpinVector and PColorVector. However, have to
+// away from PVectorJIT to use PSpinVector and PColorVector. However, have to
 // replicate all the functions. Uggh - another day...
 
 //
-////! PVector<T> = localInnerProduct(adj(PScalar<T1>)*PVector<T1>)
+////! PVectorJIT<T> = localInnerProduct(adj(PScalarJIT<T1>)*PVectorJIT<T1>)
 //template<class T1, class T2, int N, template<class,int> class C>
-//struct BinaryReturn<PScalar<T1>, PVector<T2,N,C>, FnLocalInnerProduct> {
-//  typedef PVector<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t, N, C>  Type_t;
+//struct BinaryReturn<PScalarJIT<T1>, PVectorJIT<T2,N,C>, FnLocalInnerProduct> {
+//  typedef PVectorJIT<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t, N, C>  Type_t;
 //};
 //
 //template<class T1, class T2, int N, template<class,int> class C>
-//inline PVector<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t,N,C>
-//localInnerProduct(const PScalar<T1>& s1, const PVector<T2,N,C>& s2)
+//inline PVectorJIT<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t,N,C>
+//localInnerProduct(const PScalarJIT<T1>& s1, const PVectorJIT<T2,N,C>& s2)
 //{
-//  typename BinaryReturn<PScalar<T1>, PVector<T2,N,C>, FnLocalInnerProduct>::Type_t  d;
+//  typename BinaryReturn<PScalarJIT<T1>, PVectorJIT<T2,N,C>, FnLocalInnerProduct>::Type_t  d;
 //
 //  for(int i=0; i < N; ++i)
 //    d.elem(i) = localInnerProduct(s1.elem(0), s2.elem(i));
@@ -903,20 +806,20 @@ localInnerProductReal(const PVector<T1,N,C>& s1, const PVector<T2,N,C>& s2)
 //}
 //
 //
-////! PScalar<T> = InnerProductReal(adj(PScalar<T1>)*PVector<T1>)
+////! PScalarJIT<T> = InnerProductReal(adj(PScalarJIT<T1>)*PVectorJIT<T1>)
 ///*!
 // * return  realpart of InnerProduct(adj(s1)*s2)
 // */
 //template<class T1, class T2, int N, template<class,int> class C>
-//struct BinaryReturn<PScalar<T1>, PVector<T2,N,C>, FnLocalInnerProductReal > {
-//  typedef PVector<typename BinaryReturn<T1, T2, FnLocalInnerProductReal>::Type_t, N,C>  Type_t;
+//struct BinaryReturn<PScalarJIT<T1>, PVectorJIT<T2,N,C>, FnLocalInnerProductReal > {
+//  typedef PVectorJIT<typename BinaryReturn<T1, T2, FnLocalInnerProductReal>::Type_t, N,C>  Type_t;
 //};
 //
 //template<class T1, class T2, int N, template<class,int> class C>
-//inline PVector<typename BinaryReturn<T1, T2, FnLocalInnerProductReal>::Type_t,N,C>
-//localInnerProductReal(const PScalar<T1>& s1, const PVector<T2,N,C>& s2)
+//inline PVectorJIT<typename BinaryReturn<T1, T2, FnLocalInnerProductReal>::Type_t,N,C>
+//localInnerProductReal(const PScalarJIT<T1>& s1, const PVectorJIT<T2,N,C>& s2)
 //{
-//  typename BinaryReturn<PScalar<T1>, PVector<T2,N,C>, FnLocalInnerProductReal>::Type_t  d;
+//  typename BinaryReturn<PScalarJIT<T1>, PVectorJIT<T2,N,C>, FnLocalInnerProductReal>::Type_t  d;
 //
 //  for(int i=0; i < N; ++i)
 //    d.elem(i) = localInnerProductReal(s1.elem(), s2.elem(i));
@@ -925,21 +828,21 @@ localInnerProductReal(const PVector<T1,N,C>& s1, const PVector<T2,N,C>& s2)
 //}
 
 
-//! PVector<T> = where(PScalar, PVector, PVector)
+//! PVectorJIT<T> = where(PScalarJIT, PVectorJIT, PVectorJIT)
 /*!
  * Where is the ? operation
  * returns  (a) ? b : c;
  */
 template<class T1, class T2, class T3, int N, template<class,int> class C>
-struct TrinaryReturn<PScalar<T1>, PVector<T2,N,C>, PVector<T3,N,C>, FnWhere> {
+struct TrinaryReturn<PScalarJIT<T1>, PVectorJIT<T2,N,C>, PVectorJIT<T3,N,C>, FnWhere> {
   typedef C<typename TrinaryReturn<T1, T2, T3, FnWhere>::Type_t, N>  Type_t;
 };
 
 template<class T1, class T2, class T3, int N, template<class,int> class C>
-inline typename TrinaryReturn<PScalar<T1>, PVector<T2,N,C>, PVector<T3,N,C>, FnWhere>::Type_t
-where(const PScalar<T1>& a, const PVector<T2,N,C>& b, const PVector<T3,N,C>& c)
+inline typename TrinaryReturn<PScalarJIT<T1>, PVectorJIT<T2,N,C>, PVectorJIT<T3,N,C>, FnWhere>::Type_t
+where(const PScalarJIT<T1>& a, const PVectorJIT<T2,N,C>& b, const PVectorJIT<T3,N,C>& c)
 {
-  typename TrinaryReturn<PScalar<T1>, PVector<T2,N,C>, PVector<T3,N,C>, FnWhere>::Type_t  d;
+  typename TrinaryReturn<PScalarJIT<T1>, PVectorJIT<T2,N,C>, PVectorJIT<T3,N,C>, FnWhere>::Type_t  d(a.func());
 
   // Not optimal - want to have where outside assignment
   for(int i=0; i < N; ++i)

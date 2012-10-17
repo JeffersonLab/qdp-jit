@@ -16,6 +16,21 @@ namespace QDP {
     //! Size (in number of registers) of the underlying object
     enum {Size_t = 1};
 
+    template<class T1>
+    WordJIT(const WordJIT<T1>& a): WordJIT(a.jit)
+      // global_state(a.global_state),
+      // jit(a.jit),
+      // r_addr(a.r_addr),
+      // offset_full(a.offset_full),
+      // offset_level(a.offset_level),
+      // literal(a.literal),
+      // litVal(a.litVal)
+    {
+      assign(a);
+    }
+
+
+
     WordJIT( Jit& j, const T& t ) : 
       jit(j), 
       literal(true) 
@@ -1494,7 +1509,8 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, FnLocalInnerProduct>::Type_t
 localInnerProduct(const WordJIT<T1>& s1, const WordJIT<T2>& s2)
 {
-  return localInnerProduct(s1.elem(), s2.elem());
+  typedef typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, FnLocalInnerProduct>::Type_t Ret_t;
+  return Ret_t(s1 * s2);
 }
 
 

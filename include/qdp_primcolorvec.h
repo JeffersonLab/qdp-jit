@@ -41,6 +41,20 @@ public:
 // Traits classes 
 //-----------------------------------------------------------------------------
 
+  template<class T, int N> 
+  struct WordSize< PColorVector<T,N> >
+  {
+    enum { Size = WordSize<T>::Size };
+  };
+
+
+  template<class T, int N> 
+  struct JITContainerType<PColorVector<T,N> >
+  {
+    typedef PColorVectorJIT<typename JITContainerType<T>::Type_t,N>  Type_t;
+  };
+
+
 // Underlying word type
 template<class T1, int N>
 struct WordType<PColorVector<T1,N> > 
