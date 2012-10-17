@@ -32,6 +32,9 @@ namespace QDP {
 template <class T, int N> class PSpinVector
 {
 public:
+  typedef T Sub_t;
+  enum { ThisSize = N };
+
   PSpinVector() { }
   ~PSpinVector() {} 
 

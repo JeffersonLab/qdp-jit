@@ -37,6 +37,8 @@ private:
 };
 
 
+
+
 //-------------------------------------------------------------------------------------
 //! Gamma matrices
 //! Simple interface for gamma matrices. These are run-time constructable
@@ -79,6 +81,93 @@ template<int N, int m> class GammaConst
 template<int N, int m> class GammaConstDP
 {
 };
+
+
+template<int N, int m>
+struct LeafFunctor<GammaConst<N,m>, ParamLeaf>
+{
+  //typedef typename JITContainerType< OScalar<T> >::Type_t  TypeA_t;
+  typedef GammaConst<N,m> TypeA_t;
+  typedef TypeA_t  Type_t;
+  inline static
+  Type_t apply(const GammaConst<N,m>& do_not_use, const ParamLeaf& p) 
+  {
+    return Type_t();
+  }
+};
+
+
+template<int N, int m>
+struct LeafFunctor<GammaConst<N,m>, ViewLeaf>
+{
+  //typedef typename JITContainerType< OScalar<T> >::Type_t  TypeA_t;
+  typedef GammaConst<N,m> TypeA_t;
+  typedef TypeA_t  Type_t;
+  inline static
+  Type_t apply(const GammaConst<N,m>& do_not_use, const ViewLeaf& p) 
+  {
+    return Type_t();
+  }
+};
+
+
+
+template<int N, int m>
+struct LeafFunctor<GammaConst<N,m>, AddressLeaf>
+{
+  typedef int Type_t;
+  inline static
+  Type_t apply(const GammaConst<N,m>& s, const AddressLeaf& p) 
+  {
+    return 0;
+  }
+};
+
+
+
+
+
+template<int N, int m>
+struct LeafFunctor<GammaConstDP<N,m>, ParamLeaf>
+{
+  //typedef typename JITContainerType< OScalar<T> >::Type_t  TypeA_t;
+  typedef GammaConstDP<N,m> TypeA_t;
+  typedef TypeA_t  Type_t;
+  inline static
+  Type_t apply(const GammaConstDP<N,m>& do_not_use, const ParamLeaf& p) 
+  {
+    return Type_t();
+  }
+};
+
+
+template<int N, int m>
+struct LeafFunctor<GammaConstDP<N,m>, ViewLeaf>
+{
+  //typedef typename JITContainerType< OScalar<T> >::Type_t  TypeA_t;
+  typedef GammaConstDP<N,m> TypeA_t;
+  typedef TypeA_t  Type_t;
+  inline static
+  Type_t apply(const GammaConstDP<N,m>& do_not_use, const ViewLeaf& p) 
+  {
+    return Type_t();
+  }
+};
+
+
+
+template<int N, int m>
+struct LeafFunctor<GammaConstDP<N,m>, AddressLeaf>
+{
+  typedef int Type_t;
+  inline static
+  Type_t apply(const GammaConstDP<N,m>& s, const AddressLeaf& p) 
+  {
+    return 0;
+  }
+};
+
+
 
 
 //-----------------------------------------------------------------------------
