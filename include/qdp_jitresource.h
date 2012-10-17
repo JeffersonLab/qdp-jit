@@ -45,7 +45,14 @@ public:
     //std::cout << "JV::JV() new regs " << (void*)this << " " << (void*)&j << "\n";
   }
 
-    JV(Jit& j,const typename WordType<T>::Type_t& w) : jit(j), F{{T(j,w)}} {
+    JV(Jit& j,const typename WordType<T>::Type_t& w) : jit(j), F{{T(j,w)}} 
+    {
+      std::cout << __PRETTY_FUNCTION__ << "\n";
+    }
+    JV(Jit& j,
+       const typename WordType<T>::Type_t& re,
+       const typename WordType<T>::Type_t& im) : jit(j), F{{T(j,re),T(j,im)}} 
+    {
       std::cout << __PRETTY_FUNCTION__ << "\n";
     }
 

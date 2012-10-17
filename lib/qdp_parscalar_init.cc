@@ -27,6 +27,7 @@ namespace QDP {
   //! Private flag for status
   static bool isInit = false;
 
+#if 0
   SpinMatrix gammas[Ns*Ns];
 
   extern SpinMatrix& Gamma(int i) {
@@ -36,7 +37,7 @@ namespace QDP {
     }
     return gammas[i];
   }
-
+#endif
 
   //! Public flag for using the GPU or not
   bool QDPuseGPU = false;
@@ -78,12 +79,14 @@ namespace QDP {
 			QDP_abort(1);
 		}
 
+#if 0
 		for (int s=0;s<Ns;s++) {
 		  for (int s2=0;s2<Ns;s2++) {
 		    gammas[0].elem().elem(s,s2).elem().real() = 0;
 		    gammas[0].elem().elem(s,s2).elem().imag() = 0;
 		  }
 		}
+#endif
 
 		CudaInit();
 		bool setPoolSize = false;

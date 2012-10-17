@@ -5,6 +5,10 @@
 
 namespace QDP {
 
+  template<class T>
+  void printme() {
+    std::cout << __PRETTY_FUNCTION__ << "\n";
+  }
 
 template<class T, class T1, class Op, class RHS>
 CUfunction
@@ -28,13 +32,7 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
   View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
-  // Automatically build the function
-  // This is where the site loop would go. This version completely unrolls it.
-  // Instead, want a jit generated loop
-
-  // The site loop is implemented as CUDA thread parallelization
-
-  //printme(rhs_view);
+  printme<View_t>();
 
   op(dest_jit.elem(0), forEach(rhs_view, ViewLeaf(0), OpCombine()));
 
@@ -59,6 +57,7 @@ template<class T, class T1, class Op, class RHS>
 void 
 function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs)
 {
+#if 1
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   AddressLeaf addr_leaf;
@@ -71,10 +70,10 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
   std::vector<void*> addr;
   for(int i=0; i < addr_leaf.addr.size(); ++i) {
     addr.push_back( &addr_leaf.addr[i] );
-    //std::cout << "addr=" << addr_leaf.addr[i] << "\n";
+    std::cout << "addr=" << addr_leaf.addr[i] << "\n";
   }
 
-  static int threadsPerBlock = 0;
+  static int threadsPerBlock = 1;
 
   if (!threadsPerBlock) {
     // Auto tuning
@@ -132,7 +131,7 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
     //QDPCache::Instance().printLockSets();
 
   } else {
-    //QDP_info_primary("Previous auto-tuning result = %d",threadsPerBlock);
+    QDP_info_primary("Previous auto-tuning result = %d",threadsPerBlock);
   }
 
   kernel_geom_t now = getGeom( Layout::sitesOnNode() , threadsPerBlock );
@@ -143,7 +142,7 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
     QDP_info_primary("Pulling the brakes: device sync after kernel launch!");
     CudaDeviceSynchronize();
   }
-
+#endif
 }
 
 

@@ -16,6 +16,11 @@ public:
   //! Type of the container class
   typedef C Container_t;
 
+#if 0
+  // This must go !!!
+  QDPTypeJIT(Jit& func_) : function(func_) {}
+#endif
+
   QDPTypeJIT(Jit& func_, int addr_) : function(func_), r_addr(addr_) {}
 
   //! Copy constructor

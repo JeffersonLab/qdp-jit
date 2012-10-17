@@ -267,8 +267,10 @@ public:
 #endif
 
   //! Construct from two scalars
-  template<class T1, class T2>
-  RComplexJIT(const T1& _re, const T2& _im): JV<T,2>(_re,_im) {}
+  RComplexJIT(Jit& j,const typename WordType<T>::Type_t& re, const typename WordType<T>::Type_t& im): JV<T,2>(j,re,im) {}
+
+  
+  RComplexJIT(const T& re,const T& im): JV<T,2>(re,im) {}
 
 
 
