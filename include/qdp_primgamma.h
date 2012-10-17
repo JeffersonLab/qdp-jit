@@ -412,6 +412,17 @@ inline T OpMultiplyGammaTypeDP::operator()(const T &a, const GammaTypeDP<N>& b) 
   return s[b.elem()](a);
 }
 
+
+extern SpinMatrix gammas[Ns*Ns];
+extern SpinMatrix& Gamma(int i);
+
+
+
+
+
+
+
+
 } // namespace QDP
 
 #endif

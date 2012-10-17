@@ -21,12 +21,13 @@ namespace QDP {
 #include <qdp_config.h>
 #include "qdp_precision.h"
 
-//----------------------------------------------------------------------
-//! Gamma matrices are conveniently defined for this Ns
+#if 0
 typedef GammaType<Ns> Gamma;
+#endif
 
-//! Gamma matrices are conveniently defined for this Ns
 typedef GammaTypeDP<Ns> GammaDP;
+
+
 
 
 // Aliases for a scalar architecture

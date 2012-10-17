@@ -12,6 +12,7 @@
 
 namespace QDP {
 
+
 //-----------------------------------------------------------------------------
 // IO routine solely for debugging. Only defined here
   template<class T>
