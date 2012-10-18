@@ -70,10 +70,10 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
   std::vector<void*> addr;
   for(int i=0; i < addr_leaf.addr.size(); ++i) {
     addr.push_back( &addr_leaf.addr[i] );
-    std::cout << "addr=" << addr_leaf.addr[i] << "\n";
+    //std::cout << "addr=" << addr_leaf.addr[i] << "\n";
   }
 
-  static int threadsPerBlock = 1;
+  static int threadsPerBlock = 0;
 
   if (!threadsPerBlock) {
     // Auto tuning
@@ -131,7 +131,7 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
     //QDPCache::Instance().printLockSets();
 
   } else {
-    QDP_info_primary("Previous auto-tuning result = %d",threadsPerBlock);
+    //QDP_info_primary("Previous auto-tuning result = %d",threadsPerBlock);
   }
 
   kernel_geom_t now = getGeom( Layout::sitesOnNode() , threadsPerBlock );
