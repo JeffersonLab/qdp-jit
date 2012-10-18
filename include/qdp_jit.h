@@ -14,7 +14,7 @@ namespace QDP {
   class Jit {
   public:
     enum { RegTypeShift = 24 };
-    enum RegType { f32=0,f64=1,u16=2,u32=3,u64=4,s16=5,s32=6,s64=7,u8=8,b16=9,b32=10,b64=11,pred=11 };
+    enum RegType { f32=0,f64=1,u16=2,u32=3,u64=4,s16=5,s32=6,s64=7,u8=8,b16=9,b32=10,b64=11,pred=12 };
     enum CmpOp { eq, ne, lt, le, gt, ge, lo, ls, hi, hs , equ, neu, ltu, leu, gtu, geu, num, nan };
 
     // Specify the PTX register type to use when doing logical operations.
