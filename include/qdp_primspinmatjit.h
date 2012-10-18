@@ -568,7 +568,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,0>, PSpinMatrixJIT<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,0>&, const PSpinMatrixJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,0>, PSpinMatrixJIT<T2,4>, OpGammaConstMultiply>::Type_t  d;
+  typename BinaryReturn<GammaConst<4,0>, PSpinMatrixJIT<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
   
   for(int i=0; i < 4; ++i)
   {

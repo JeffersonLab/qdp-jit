@@ -79,6 +79,7 @@ private:
 
 //{ p.getFunc() , 0 }
 
+#if 0
   template<class A>
   struct ForEach<BinaryNode<OpGammaTypeMultiply,GammaType<4>, A>, ParamLeaf , TreeCombine>
   {
@@ -93,7 +94,7 @@ private:
       return Type_t( OpMultiply() , OScalarJIT<PSpinMatrixJIT<PScalarJIT<RComplexJIT<WordJIT<float> > >,4> >(p.getFunc(),PSpinMatrixJIT<PScalarJIT<RComplexJIT<WordJIT<float> > >,4> > (PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)),PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)),PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)),PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)),PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)),PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)),PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)),PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)),PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)),PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)),PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)),PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)),PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)),PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)),PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)),PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)) ) , ForEach<A, ParamLeaf, TreeCombine>::apply(expr.right(), p, c) );
     }
   };
-
+#endif
 
 
 //-------------------------------------------------------------------------------------
@@ -454,7 +455,7 @@ inline T OpMultiplyGammaTypeDP::operator()(const T &a, const GammaTypeDP<N>& b) 
 }
 
 
-#if 0
+#if 1
 extern SpinMatrix gammas[Ns*Ns];
 extern SpinMatrix& Gamma(int i);
 #endif

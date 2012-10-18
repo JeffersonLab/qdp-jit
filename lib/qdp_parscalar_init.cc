@@ -27,7 +27,7 @@ namespace QDP {
   //! Private flag for status
   static bool isInit = false;
 
-#if 0
+#if 1
   SpinMatrix gammas[Ns*Ns];
 
   extern SpinMatrix& Gamma(int i) {
@@ -79,7 +79,7 @@ namespace QDP {
 			QDP_abort(1);
 		}
 
-#if 0
+#if 1
 		for (int s=0;s<Ns;s++) {
 		  for (int s2=0;s2<Ns;s2++) {
 		    gammas[0].elem().elem(s,s2).elem().real() = 0;
