@@ -28,16 +28,46 @@ namespace QDP {
   static bool isInit = false;
 
 #if 1
-  SpinMatrix gammas[Ns*Ns];
+  int gamma_degrand_rossi[5][4][4][2] = 
+    { { {{0,0}, {0,0}, {0,0},{0,-1}},
+	{{0,0}, {0,0}, {0,-1},{0,0}},
+	{{0,0}, {0,1},{0,0},{0,0}},
+	{{0,1},{0,0}, {0,0},{0,0}} },
+
+      { {{0,0}, {0,0}, {0,0},{-1,0}},
+	{{0,0}, {0,0}, {1,0},{0,0}},
+	{{0,0}, {1,0}, {0,0},{0,0}},
+	{{-1,0},{0,0}, {0,0},{0,0}} },
+
+      { {{0,0}, {0,0}, {0,-1},{0,0}},
+	{{0,0}, {0,0}, {0,0},{0,1}},
+	{{0,1}, {0,0}, {0,0},{0,0}},
+	{{0,0}, {0,-1}, {0,0},{0,0}} },
+
+      { {{0,0}, {0,0}, {1,0},{0,0}},
+	{{0,0}, {0,0}, {0,0},{1,0}},
+	{{1,0}, {0,0}, {0,0},{0,0}},
+	{{0,0}, {1,0}, {0,0},{0,0}} },
+
+      { {{1,0}, {0,0}, {0,0},{0,0}},
+	{{0,0}, {1,0}, {0,0},{0,0}},
+	{{0,0}, {0,0}, {1,0},{0,0}},
+	{{0,0}, {0,0}, {0,0},{1,0}} } };
+
+
+
+  SpinMatrix QDP_Gamma_values[Ns*Ns];
 
   extern SpinMatrix& Gamma(int i) {
+    if (i<0 || i>15)
+      QDP_error_exit("Gamma(%d) value out of range",i);
     if (!isInit) {
       std::cerr << "Gamma() used before QDP_init\n";
       exit(1);
     }
-    QDP_info("++++ returning gammas[%d]",i);
-    std::cout << gammas[i] << "\n";
-    return gammas[i];
+    //QDP_info("++++ returning gammas[%d]",i);
+    //std::cout << gammas[i] << "\n";
+    return QDP_Gamma_values[i];
   }
 #endif
 
@@ -82,11 +112,33 @@ namespace QDP {
 		}
 
 #if 1
-		for (int s=0;s<Ns;s++) {
-		  for (int s2=0;s2<Ns;s2++) {
-		    gammas[0].elem().elem(s,s2).elem().real() = s == s2 ? 1 : 0;
-		    gammas[0].elem().elem(s,s2).elem().imag() = 0;
+		SpinMatrix dgr[5];
+		for (int i=0;i<5;i++) {
+		  for (int s=0;s<4;s++) {
+		    for (int s2=0;s2<4;s2++) {
+		      dgr[i].elem().elem(s,s2).elem().real() = (float)gamma_degrand_rossi[i][s2][s][0];
+		      dgr[i].elem().elem(s,s2).elem().imag() = (float)gamma_degrand_rossi[i][s2][s][1];
+		    }
 		  }
+		  //std::cout << i << "\n" << dgr[i] << "\n";
+		}
+		QDP_Gamma_values[0]=dgr[4]; // Unity
+		for (int i=1;i<16;i++) {
+		  zero_rep(QDP_Gamma_values[i]);
+		  bool first=true;
+		  //std::cout << "gamma value " << i << " ";
+		  for (int q=0;q<4;q++) {
+		    if (i&(1<<q)) {
+		      //std::cout << q << " ";
+		      if (first)
+			QDP_Gamma_values[i]=dgr[q];
+		      else
+			QDP_Gamma_values[i]=QDP_Gamma_values[i]*dgr[q];
+		      first = false;
+		    }
+		  }
+		  //std::cout << "\n" << QDP_Gamma_values[i] << "\n";
+		  
 		}
 #endif
 
