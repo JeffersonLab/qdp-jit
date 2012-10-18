@@ -55,16 +55,6 @@ public:
 
 /*! @} */   // end of group primspinmatrix
 
-#if 0
-//! Specialization of primitive spin Matrix class for 4 spin components
-/*! 
- * Spin matrix class support gamma matrix algebra for 4 spin components
- */
-template <class T> class PSpinMatrix<T,4> : public PMatrix<T,4, PSpinMatrix>
-{
-public:
-};
-#endif
 
 
   template<class T, int N> 

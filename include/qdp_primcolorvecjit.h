@@ -110,9 +110,9 @@ struct BinaryReturn<PScalarJIT<T1>, PColorVectorJIT<T2,N>, Op> {
   typedef PColorVectorJIT<typename BinaryReturn<T1, T2, Op>::Type_t, N>  Type_t;
 };
 
-// Default binary(PColorMatrix,PColorVectorJIT) -> PColorVectorJIT
+// Default binary(PColorMatrixJIT,PColorVectorJIT) -> PColorVectorJIT
 template<class T1, class T2, int N, class Op>
-struct BinaryReturn<PColorMatrix<T1,N>, PColorVectorJIT<T2,N>, Op> {
+struct BinaryReturn<PColorMatrixJIT<T1,N>, PColorVectorJIT<T2,N>, Op> {
   typedef PColorVectorJIT<typename BinaryReturn<T1, T2, Op>::Type_t, N>  Type_t;
 };
 

@@ -670,6 +670,7 @@ template<class T1, int N, class Op>
 struct UnaryReturn<PSpinVectorJIT<T1,N>, Op> {
   typedef PSpinVectorJIT<typename UnaryReturn<T1, Op>::Type_t, N>  Type_t;
 };
+
 // Default binary(PScalarJIT,PSpinVectorJIT) -> PSpinVectorJIT
 template<class T1, class T2, int N, class Op>
 struct BinaryReturn<PScalarJIT<T1>, PSpinVectorJIT<T2,N>, Op> {
