@@ -152,9 +152,47 @@ namespace QDP {
 
   private:
 
+    void static changeLayout(bool toDev,void * outPtr,void * inPtr)
+    {
+      std::cout << __PRETTY_FUNCTION__ << "\n";
+      if (toDev)
+	std::cout << "changing scalar data layout to device format\n";
+      else
+	std::cout << "changing scalar data layout  to host format\n";
+
+      typename WordType<T>::Type_t * in_data  = (typename WordType<T>::Type_t *)inPtr;
+      typename WordType<T>::Type_t * out_data = (typename WordType<T>::Type_t *)outPtr;
+
+      int lim_rea = GetLimit<T,2>::Limit_v; //T::ThisSize;
+      int lim_col = GetLimit<T,1>::Limit_v; //T::ThisSize;
+      int lim_spi = GetLimit<T,0>::Limit_v; //T::ThisSize;
+
+
+      for ( int reality = 0 ; reality < lim_rea ; reality++ ) {
+	for ( int color = 0 ; color < lim_col ; color++ ) {
+	  for ( int spin = 0 ; spin < lim_spi ; spin++ ) {
+	    int hst_idx = 
+	      reality + 
+	      lim_rea * color +
+	      lim_rea * lim_col * spin;
+	    int dev_idx = 
+	      spin +
+	      lim_spi * color +
+	      lim_spi * lim_col * reality;
+	    if (toDev)
+	      out_data[dev_idx] = in_data[hst_idx];
+	    else {
+	      //std::cout << hst_idx  << " <= " << dev_idx << "\n";
+	      out_data[hst_idx] = in_data[dev_idx];
+	    }
+	  }
+	}
+      }
+    }
+
 
     inline void alloc_mem() {
-      myId = QDPCache::Instance().registrate( sizeof(T) , 0 , NULL );
+      myId = QDPCache::Instance().registrate( sizeof(T) , 0 , &changeLayout );
     }
     inline void free_mem() {
       QDPCache::Instance().signoff( myId );

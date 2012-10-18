@@ -35,6 +35,8 @@ namespace QDP {
       std::cerr << "Gamma() used before QDP_init\n";
       exit(1);
     }
+    QDP_info("++++ returning gammas[%d]",i);
+    std::cout << gammas[i] << "\n";
     return gammas[i];
   }
 #endif
@@ -82,7 +84,7 @@ namespace QDP {
 #if 1
 		for (int s=0;s<Ns;s++) {
 		  for (int s2=0;s2<Ns;s2++) {
-		    gammas[0].elem().elem(s,s2).elem().real() = 0;
+		    gammas[0].elem().elem(s,s2).elem().real() = s == s2 ? 1 : 0;
 		    gammas[0].elem().elem(s,s2).elem().imag() = 0;
 		  }
 		}
