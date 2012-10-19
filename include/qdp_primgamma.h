@@ -211,6 +211,36 @@ struct LeafFunctor<GammaConstDP<N,m>, AddressLeaf>
 
 
 
+template<int N>
+struct LeafFunctor<GammaType<N>, ShiftPhase1>
+{
+  typedef int Type_t;
+  static int apply(const GammaType<N> &s, const ShiftPhase1 &f) { return 0; }
+};
+
+template<int N, int m>
+struct LeafFunctor<GammaConst<N,m>, ShiftPhase1>
+{
+  typedef int Type_t;
+  static int apply(const GammaConst<N,m> &s, const ShiftPhase1 &f) { return 0; }
+};
+
+template<int N>
+struct LeafFunctor<GammaType<N>, ShiftPhase2>
+{
+  typedef int Type_t;
+  static int apply(const GammaType<N> &s, const ShiftPhase2 &f) { return 0; }
+};
+
+template<int N, int m>
+struct LeafFunctor<GammaConst<N,m>, ShiftPhase2>
+{
+  typedef int Type_t;
+  static int apply(const GammaConst<N,m> &s, const ShiftPhase2 &f) { return 0; }
+};
+
+
+
 
 //-----------------------------------------------------------------------------
 // Traits classes to support return types

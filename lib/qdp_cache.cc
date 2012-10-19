@@ -245,7 +245,7 @@ namespace QDP
 
 
 
-  int QDPCache::registrateOwnHostMem( size_t size, void* ptr)
+  int QDPCache::registrateOwnHostMem( size_t size, void* ptr, LayoutFptr func)
   {
     if (stackFree.size() == 0) {
       enlargeStack();
@@ -265,6 +265,7 @@ namespace QDP
 #endif
 
     e.Id        = Id;
+    e.fptr      = func;
     e.size      = size;
     e.flags     = 2;
     e.hstPtr    = ptr;
@@ -478,8 +479,12 @@ namespace QDP
       }
     }
 
+    // This might be a stupid sanity check
+    // We have registrateOwnHostMemory !
+#if 0
 #ifdef SANITY_CHECKS_CACHE
     if (e.hstPtr) QDP_error_exit("assureDevice: We still have a host pointer");
+#endif
 #endif
 
     vecLockSet[currLS].push_back(e.Id);
@@ -499,9 +504,10 @@ namespace QDP
 
     if (e.lockCount > 0) {
 #ifdef GPU_DEBUG_DEEP
-      QDP_debug_deep("cache assure on host. obj in current calculation. will sync with kernel stream");
+      QDP_debug_deep("cache assure on host. obj in current calculation. will sync device");
 #endif
-      CudaSyncKernelStream();
+      CudaDeviceSynchronize();
+      //CudaSyncKernelStream();
       releasePrevLockSet();
       beginNewLockSet();
 #ifdef SANITY_CHECKS_CACHE

@@ -43,7 +43,7 @@ namespace QDP {
     const int my_node = Layout::nodeNumber();
 
     // Loop over the sites on this node
-    for(int linear=0; linear < nodeSites; ++linear)
+    for(int linear=0, ri=0; linear < nodeSites; ++linear)
     {
       // Get the true lattice coord of this linear site index
       multi1d<int> coord = Layout::siteCoords(my_node, linear);
@@ -59,11 +59,23 @@ namespace QDP {
       int bnode = Layout::nodeNumber(bcoord);
 
       // Source linear site and node
-      goffsets[linear] = Layout::linearSiteIndex(fcoord);
       srcnode[linear]  = fnode;
-
       // Destination node
       dstnode[linear]  = bnode;
+
+      if (srcnode[linear] == my_node)
+	{
+	  goffsets[linear] = Layout::linearSiteIndex(fcoord);
+	}
+      else
+	{
+	  // if destptr < 0 it contains the receive_buffer index
+	  // additional '-1' to make sure its negative,
+	  // not the best style, but higher performance
+	  // than using another buffer
+	  goffsets[linear] = -(ri++)-1;
+	}
+
 
 #if QDP_DEBUG >= 3
       QDP_info("linear=%d  coord=%d %d %d %d   fcoord=%d %d %d %d   bcoord=%d %d %d %d   goffsets=%d", 
@@ -115,7 +127,10 @@ namespace QDP {
 
     // If no srce/dest nodes, then we know no off-node communications
     offnodeP = (cnt_srcenodes > 0) ? true : false;
-  
+
+    goffsetsId = QDPCache::Instance().registrateOwnHostMem( sizeof(int)*goffsets.size() , (void*)goffsets.slice() , NULL );
+    QDP_info_primary("Map::make goffsetsId=%d",goffsetsId);
+
     //
     // The rest of the routine is devoted to supporting off-node communications
     // If there is not any communications, then return
@@ -211,10 +226,13 @@ namespace QDP {
     // If we allow multiple dest nodes, then soffsets here needs to be
     // an array of arrays
     soffsets.resize(destnodes_num[0]);
+
+    roffsets.resize(srcenodes_num[0]);
   
     // Loop through sites on my *destination* node - here I assume all nodes have
     // the same number of sites. Mimic the gather pattern needed on that node and
     // set my scatter array to scatter into the correct site order
+    int ri=0;
     for(int i=0, si=0; i < nodeSites; ++i) 
     {
       // Get the true lattice coord of this linear site index
@@ -225,19 +243,33 @@ namespace QDP {
 
       if (fnode == my_node)
 	soffsets[si++] = fline;
+
+      if (srcnode[i] != my_node)
+	roffsets[ri++] = i;
     }
 
-#if QDP_DEBUG >= 3
-    // Debugging
-    for(int i=0; i < soffsets.size(); ++i)
-      QDP_info("soffsets(%d) = %d",i,soffsets(i));
-#endif
+    if ( ri != srcenodes_num[0] )
+      QDP_error_exit("internal error: ri != srcenodes_num[0]");
+
+    if (roffsets.size()==0)
+      QDP_error_exit("rsoffsets empty");
+    if (soffsets.size()==0)
+      QDP_error_exit("ssoffsets empty");
+    if (goffsets.size()==0)
+      QDP_error_exit("gsoffsets empty");
+
+    roffsetsId = QDPCache::Instance().registrateOwnHostMem( sizeof(int)*roffsets.size() , (void*)roffsets.slice() , NULL );
+    soffsetsId = QDPCache::Instance().registrateOwnHostMem( sizeof(int)*soffsets.size() , (void*)soffsets.slice() , NULL );
 
 
 #if QDP_DEBUG >= 3
     QDP_info("exiting Map::make");
 #endif
+
+    myId = MasterMap::Instance().registrate(*this);
   }
+
+
 
 
 //------------------------------------------------------------------------

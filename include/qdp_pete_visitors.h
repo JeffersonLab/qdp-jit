@@ -5,6 +5,16 @@
 namespace QDP {
 
 
+struct ShiftPhase1
+{
+};
+
+struct ShiftPhase2
+{
+};
+
+
+
 struct ViewLeaf
 {
   int i1_m;
@@ -18,18 +28,24 @@ struct ViewLeaf
 struct ParamLeaf
 {
   Jit& func;  // Function we are building
+  int r_idx;
 
   //mutable int cnt;      // parameter count
   //ParamLeaf(const Jit& func_, int cnt_) : func(func_), cnt(cnt_) { }
 
-  ParamLeaf(Jit& func_) : func(func_) {}
+  ParamLeaf(Jit& func_,int r_idx) : func(func_),r_idx(r_idx) {}
 
   Jit& getFunc() const {return func;}
+  int getRegIdx() const {return r_idx;}
+
   int getParamLattice( int wordSize ) const {
-    return func.addParamLatticeBaseAddr( wordSize );
+    return func.addParamLatticeBaseAddr( r_idx , wordSize );
   }
   int getParamScalar() const {
     return func.addParamScalarBaseAddr();
+  }
+  int getParamIndexField() const {
+    return func.addParamIndexField();
   }
 };
 
@@ -44,6 +60,7 @@ struct AddressLeaf
 
   mutable std::vector<void*> addr;
   void setAddr(void* p) const {
+    //std::cout << "AddressLeaf::setAddr " << p << "\n";
     addr.push_back(p);
   }
 };

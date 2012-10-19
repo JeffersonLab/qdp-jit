@@ -501,6 +501,30 @@ struct LeafFunctor<QDPType<T,C>, AddressLeaf>
 };
 
 
+
+template<class T, class C>
+struct LeafFunctor<QDPType<T,C>, ShiftPhase1>
+{
+  typedef int Type_t;
+  static int apply(const QDPType<T,C> &s, const ShiftPhase1 &f) {
+    return 0;
+  }
+};
+
+
+
+template<class T, class C>
+struct LeafFunctor<QDPType<T,C>, ShiftPhase2>
+{
+  typedef int Type_t;
+  static int apply(const QDPType<T,C> &s, const ShiftPhase2 &f) {
+    return 0;
+  }
+};
+
+
+
+
 } // namespace QDP
 
 #endif

@@ -84,11 +84,13 @@ namespace QDP {
   }
 
   void CudaSyncKernelStream() {
-    cuStreamSynchronize(QDPcudastreams[KERNEL]);
+    CUresult ret = cuStreamSynchronize(QDPcudastreams[KERNEL]);
+    CudaRes("cuStreamSynchronize",ret);    
   }
 
   void CudaSyncTransferStream() {
-    cuStreamSynchronize(QDPcudastreams[TRANSFER]);
+    CUresult ret = cuStreamSynchronize(QDPcudastreams[TRANSFER]);
+    CudaRes("cuStreamSynchronize",ret);    
   }
 
   void CudaRecordAndWaitEvent() {
@@ -251,7 +253,7 @@ namespace QDP {
     QDP_debug_deep("CudaMemcpyD2H dest=%p src=%p size=%d" ,  dest , src , size );
 #endif
     ret = cuMemcpyDtoH( dest, (CUdeviceptr)const_cast<void*>(src), size);
-    CudaRes("cuMemcpyH2D",ret);
+    CudaRes("cuMemcpyD2H",ret);
   }
 
 
@@ -289,7 +291,8 @@ namespace QDP {
 #ifdef GPU_DEBUG_DEEP
     QDP_debug_deep( "cudaDeviceSynchronize" );
 #endif
-    cuCtxSynchronize();
+    CUresult ret = cuCtxSynchronize();
+    CudaRes("cuCtxSynchronize",ret);
   }
 
 }

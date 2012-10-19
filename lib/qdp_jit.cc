@@ -67,13 +67,15 @@ namespace QDP {
     int r_ctaid = getRegs( u16 , 1 );
     int r_ntid = getRegs( u16 , 1 );
     int r_mul = getRegs( u32 , 2 );
-    r_threadId_u32 = getRegs( u32 , 1 );
+    int r_threadId_u32 = getRegs( u32 , 1 );
+    r_threadId_s32 = getRegs( s32 , 1 );
 
     oss_tidcalc <<  "mov.u16 " << getName(r_ctaid) << ",%ctaid.x;\n";
     oss_tidcalc <<  "mov.u16 " << getName(r_ntid) << ",%ntid.x;\n";
     oss_tidcalc <<  "mul.wide.u16 " << getName(r_mul) << "," << getName(r_ntid) << "," << getName(r_ctaid) << ";\n";
     oss_tidcalc <<  "cvt.u32.u16 " << getName(r_mul + 1) << ",%tid.x;\n";
     oss_tidcalc <<  "add.u32 " << getName(r_threadId_u32) << "," << getName(r_mul + 1)  << "," << getName(r_mul) << ";\n";
+    oss_tidcalc <<  "cvt.s32.u32 " << getName(r_threadId_s32) << "," << getName(r_threadId_u32) << ";\n";
 
     // mapCVT[to][from]
     mapCVT[f32][f64]="rz.";
@@ -459,7 +461,47 @@ namespace QDP {
     return r_ret;
   }
 
-  int Jit::addParamLatticeBaseAddr(int wordSize) 
+// cvt.u32,s32 u3,s2;         // convert because current index type is "s32"
+// mul.wide.u32 w2,u2,4;      // (int*) mul with sizeof(int)
+// ld.param.u64 w5,[param2];  // w5 = goffset[]
+// add.u64 w6,w5,w2;          // w6 = &goffset[idx]
+// ld.param.s32 s0,[w6];      // s0 = goffset[idx],   s0 is the new thread idx, i.e. 'u2'
+
+  int Jit::getRegIdx()
+  {
+    return r_threadId_s32;
+  }
+
+  int Jit::addParamIndexField()
+  {
+    if (paramtype.size() != nparam) {
+      std::cout << "error paramtype.size() != nparam\n";
+      exit(1);
+    }
+    int idx_u32 = getRegs( u32 , 1 );
+    int idx_u32_mul_4 = getRegs( u64 , 1 );
+    oss_idx <<  "cvt.u32.s32 " << getName(idx_u32) << "," << getName(r_threadId_s32) << ";\n";
+    oss_idx <<  "mul.wide.u32 " << getName(idx_u32_mul_4) << "," << getName(idx_u32) << ",4;\n";
+
+    paramtype.push_back(u64);
+    std::ostringstream tmp;
+    tmp << ".param .u64 param" << nparam;
+    param.push_back(tmp.str());
+
+    int r_param = getRegs( u64 , 1 );
+    oss_idx << "ld.param.u64 " << getName(r_param) << ",[param" << nparam << "];\n";    
+    nparam++;
+
+    int r_param_p_idx = getRegs( u64 , 1 );
+    oss_idx << "add.u64 " << getName(r_param_p_idx) << "," << getName(r_param) << "," << getName(idx_u32_mul_4) << ";\n";
+
+    r_threadId_s32 = getRegs( s32 , 1 );
+    oss_idx << "ld.global.s32 " << getName(r_threadId_s32) << ",[" << getName(r_param_p_idx) << "];\n";
+
+    return r_threadId_s32;
+  }
+
+  int Jit::addParamLatticeBaseAddr(int r_idx,int wordSize) 
   {
     if (paramtype.size() != nparam) {
       std::cout << "error paramtype.size() != nparam\n";
@@ -472,7 +514,7 @@ namespace QDP {
     int r_param = getRegs( u64 , 1 );
     int r_ret = getRegs( u64 , 1 );
     oss_baseaddr << "ld.param.u64 " << getName(r_param) << ",[param" << nparam << "];\n";
-    oss_baseaddr << "add.u64 " << getName(r_ret) << "," << getName(r_param) << "," << getName( getThreadIdMultiplied(wordSize) ) << ";\n";
+    oss_baseaddr << "add.u64 " << getName(r_ret) << "," << getName(r_param) << "," << getName( getThreadIdMultiplied(r_idx,wordSize) ) << ";\n";
     nparam++;
     return r_ret;
   }
@@ -493,16 +535,26 @@ namespace QDP {
     return r_param;
   }
 
-  int Jit::getThreadIdMultiplied(int wordSize) 
+  int Jit::getThreadIdMultiplied(int r_idx,int wordSize)
   {
-    //std::cout << "getThreadIdMultiplied count = " << threadIdMultiplied.count(wordSize) << "\n";
-    if (threadIdMultiplied.count(wordSize) < 1) {
+    if (mapRegMul.count(r_idx) < 1) {
       int tmp = getRegs( u64 , 1 );
-      oss_tidmulti << "mul.wide.u32 " << getName(tmp) << "," << getName(r_threadId_u32) << "," << wordSize << ";\n";
-      threadIdMultiplied[wordSize]=tmp;
+      int r_idx_u32 = getRegs( u32 , 1 );
+      oss_tidmulti << "cvt.u32.s32 " << getName(r_idx_u32) << "," << getName(r_idx) << ";\n";
+      oss_tidmulti << "mul.wide.u32 " << getName(tmp) << "," << getName(r_idx_u32) << "," << wordSize << ";\n";
+      mapRegMul[r_idx][wordSize]=tmp;
       return tmp;
     } else {
-      return threadIdMultiplied[wordSize];
+      if (mapRegMul.at(r_idx).count(wordSize) < 1) {
+	int tmp = getRegs( u64 , 1 );
+	int r_idx_u32 = getRegs( u32 , 1 );
+	oss_tidmulti << "cvt.u32.s32 " << getName(r_idx_u32) << "," << getName(r_idx) << ";\n";
+	oss_tidmulti << "mul.wide.u32 " << getName(tmp) << "," << getName(r_idx_u32) << "," << wordSize << ";\n";
+	mapRegMul.at(r_idx)[wordSize]=tmp;
+	return tmp;
+      } else {
+	return mapRegMul.at(r_idx).at(wordSize);
+      }
     }
   }
 
@@ -519,9 +571,15 @@ namespace QDP {
       oss_param.str() << ")\n" <<
       "{\n" <<
       oss_vardef.str() <<
+      "//\n// Thread ID calculation\n" <<
       oss_tidcalc.str() <<
+      "//\n// Index calculation (Map)\n" <<
+      oss_idx.str() <<
+      "//\n// Thread ID multiplication\n" <<
       oss_tidmulti.str() <<
+      "//\n// Base addresses\n" <<
       oss_baseaddr.str() <<
+      "//\n// Main body\n" <<
       oss_prg.str() <<
       "}\n";
 #else
@@ -533,6 +591,7 @@ namespace QDP {
       "{\n" <<
       oss_vardef.str() <<
       oss_tidcalc.str() <<
+      oss_idx.str() <<
       oss_tidmulti.str() <<
       oss_baseaddr.str() <<
       oss_prg.str() <<

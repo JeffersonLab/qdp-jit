@@ -533,6 +533,45 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
   };
 
 
+template<class T>
+struct LeafFunctor<OScalar<T>, ShiftPhase1>
+{
+  typedef int Type_t;
+  inline static Type_t apply(const OScalar<T> &a, const ShiftPhase1 &f) {
+    return 0;
+  }
+};
+
+template<class T>
+struct LeafFunctor<OLattice<T>, ShiftPhase1>
+{
+  typedef int Type_t;
+  inline static Type_t apply(const OLattice<T> &a, const ShiftPhase1 &f) {
+    return 0;
+  }
+};
+
+
+template<class T>
+struct LeafFunctor<OScalar<T>, ShiftPhase2>
+{
+  typedef int Type_t;
+  inline static Type_t apply(const OScalar<T> &a, const ShiftPhase2 &f) {
+    return 0;
+  }
+};
+
+template<class T>
+struct LeafFunctor<OLattice<T>, ShiftPhase2>
+{
+  typedef int Type_t;
+  inline static Type_t apply(const OLattice<T> &a, const ShiftPhase2 &f) {
+    return 0;
+  }
+};
+
+
+
 template<class T> 
 struct WordSize< OLattice<T> >
 {

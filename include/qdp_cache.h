@@ -37,7 +37,7 @@ namespace QDP
     bool onDevice(int id) const;    
     void enlargeStack();
     int registrate( size_t size, unsigned flags, LayoutFptr func );
-    int registrateOwnHostMem( size_t size, void* ptr);
+    int registrateOwnHostMem( size_t size, void* ptr , LayoutFptr func );
     void signoff(int id);
     void * getDevicePtr(int id);
     void getHostPtr(void ** ptr , int id);

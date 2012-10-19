@@ -16,13 +16,28 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 {
   std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
+
+  ShiftPhase1 phase1;
+  int maps_involved = forEach(rhs, phase1 , BitOrCombine());
+
+  QDP_info("maps_involved=%d",maps_involved);
+
+  if (maps_involved > 0) {
+
+    int innerId = MasterMap::Instance().getIdInner(maps_involved);
+    int innerCount = MasterMap::Instance().getCountInner(maps_involved);
+    int faceId = MasterMap::Instance().getIdFace(maps_involved);
+    int faceCount = MasterMap::Instance().getCountFace(maps_involved);
+  }
+
+
   CUfunction func;
 
   Jit function("ptxtest.ptx","func");
 
   std::cout << "function = " << (void*)&function <<"\n";
 
-  ParamLeaf param_leaf(function);
+  ParamLeaf param_leaf(function,function.getRegIdx());
 
   // Destination
   typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
@@ -62,7 +77,9 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
 
   AddressLeaf addr_leaf;
 
+  //QDP_info("address leaf now: dest");
   int junk_dst = forEach(dest, addr_leaf, NullCombine());
+  //QDP_info("address leaf now: RHS");
   int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
 
   //QDPCache::Instance().printLockSets();
