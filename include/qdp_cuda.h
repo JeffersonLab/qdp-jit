@@ -28,8 +28,10 @@ namespace QDP {
   void CudaSetDevice(int dev);
   void CudaGetDeviceCount(int * count);
 
+#if 0
   void CudaMemcpy(const void * dest ,  const void * src , size_t size);
   void CudaMemcpyAsync(const void * dest ,  const void * src , size_t size );
+#endif
   void CudaMemcpyH2DAsync( void * dest , const void * src , size_t size );
   void CudaMemcpyD2HAsync( void * dest , const void * src , size_t size );
   void CudaMemcpyH2D( void * dest , const void * src , size_t size );

@@ -240,9 +240,10 @@ struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
 	const FnMapRsrc& rRSrc = fnmap.getCached();
 	int rcvId = rRSrc.getRcvId();
 	void * rcvBufDev = QDPCache::Instance().getDevicePtr( rcvId );
-	posRcvBuf = f.getJitArgs().addPtr( rcvBufDev );
+	
+	//posRcvBuf = f.getJitArgs().addPtr( rcvBufDev );
       } else {
-	posRcvBuf = f.getJitArgs().addPtr( NULL );
+	//posRcvBuf = f.getJitArgs().addPtr( NULL );
       }
 #endif
 

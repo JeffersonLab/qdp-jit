@@ -94,7 +94,7 @@ namespace QDP
   }
 
 
-
+#if 0
   void QDPCache::backupOnHost() {
 #ifdef SANITY_CHECKS_CACHE
     // SANITY
@@ -166,6 +166,7 @@ namespace QDP
       }
     }
   }
+#endif
 
   void QDPCache::sayHi () {
     CUDADevicePoolAllocator::Instance().sayHi();

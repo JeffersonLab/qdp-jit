@@ -211,7 +211,7 @@ namespace QDP {
 
 
 
-
+#if 0
   void CudaMemcpy( const void * dest , const void * src , size_t size)
   {
     CUresult ret;
@@ -225,7 +225,6 @@ namespace QDP {
 
     CudaRes("cuMemcpy",ret);
   }
-
 
   void CudaMemcpyAsync( const void * dest , const void * src , size_t size )
   {
@@ -247,6 +246,7 @@ namespace QDP {
 
     CudaRes("cuMemcpyAsync",ret);
   }
+#endif
 
   
   void CudaMemcpyH2DAsync( void * dest , const void * src , size_t size )

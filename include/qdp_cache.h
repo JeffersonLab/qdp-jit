@@ -31,8 +31,10 @@ namespace QDP
     void printLockSets();
     bool allocate_device_static( void** ptr, size_t n_bytes );
     void free_device_static( void* ptr );
+#if 0
     void backupOnHost();
     void restoreFromHost();
+#endif
     void sayHi();
     bool onDevice(int id) const;    
     void enlargeStack();

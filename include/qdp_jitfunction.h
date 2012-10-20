@@ -51,7 +51,10 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 
   op(dest_jit.elem(0), forEach(rhs_view, ViewLeaf(0), OpCombine()));
 
-  function.write();
+  if (Layout::primaryNode())
+    function.write();
+      
+  QMP_barrier();
 
   CUresult ret;
   CUmodule cuModule;
@@ -113,7 +116,12 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
 
   OpAssign()(dest_jit.elem(0), forEach(rhs_view, ViewLeaf(0), OpCombine()));
 
-  function.write();
+#if 1
+  if (Layout::primaryNode())
+    function.write();
+#endif
+
+  QMP_barrier();
 
   CUresult ret;
   CUmodule cuModule;
@@ -134,30 +142,44 @@ void
 function_gather_exec( CUfunction function, void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs )
 {
 #if 1
-  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   AddressLeaf addr_leaf;
 
   int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
 
-  //QDPCache::Instance().printLockSets();
+  QDPCache::Instance().printLockSets();
 
   // lo <= idx < hi
   int lo = 0;
   int hi = map.soffset().size();
   QDP_info("gather sites into send_buf lo=%d hi=%d",lo,hi);
 
+  int goffsetsId = map.getGoffsetsId();
+  void * goffsetsDev = QDPCache::Instance().getDevicePtr( goffsetsId );
+
+  QDPCache::Instance().printLockSets();
+
   std::vector<void*> addr;
+
   addr.push_back( &lo );
   std::cout << "addr lo =" << addr[0] << "\n";
+
   addr.push_back( &hi );
   std::cout << "addr hi =" << addr[1] << "\n";
-  addr.push_back( send_buf );
-  std::cout << "addr send_buf =" << addr[2] << "\n";
+
+  addr.push_back( &goffsetsDev );
+  std::cout << "addr goffsetsDev =" << addr[2] << "\n";
+
+  addr.push_back( &send_buf );
+  std::cout << "addr send_buf =" << addr[3] << "\n";
+
   for(int i=0; i < addr_leaf.addr.size(); ++i) {
     addr.push_back( &addr_leaf.addr[i] );
-    std::cout << "addr rhs =" << addr_leaf.addr[i] << "\n";
+    std::cout << "addr rhs =" << addr[addr.size()-1] << " " << addr_leaf.addr[i] << "\n";
   }
+
+
 
   static int threadsPerBlock = 0;
 
@@ -168,7 +190,7 @@ function_gather_exec( CUfunction function, void* send_buf , const Map& map , con
     int best_cfg=-1;
     bool first=true;
     for ( int cfg = 1 ; cfg <= DeviceParams::Instance().getMaxBlockX(); cfg *= 2 ) {
-      kernel_geom_t now = getGeom( Layout::sitesOnNode() , cfg );
+      kernel_geom_t now = getGeom( hi-lo , cfg );
 
       StopWatch w;
       CUresult result = CUDA_SUCCESS;
@@ -207,7 +229,7 @@ function_gather_exec( CUfunction function, void* send_buf , const Map& map , con
     //QDP_info_primary("Previous auto-tuning result = %d",threadsPerBlock);
   }
 
-  kernel_geom_t now = getGeom( Layout::sitesOnNode() , threadsPerBlock );
+  kernel_geom_t now = getGeom( hi-lo , threadsPerBlock );
   CUresult result = CUDA_SUCCESS;
   result = cuLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
 
@@ -267,7 +289,7 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
     int best_cfg=-1;
     bool first=true;
     for ( int cfg = 1 ; cfg <= DeviceParams::Instance().getMaxBlockX(); cfg *= 2 ) {
-      kernel_geom_t now = getGeom( Layout::sitesOnNode() , cfg );
+      kernel_geom_t now = getGeom( hi-lo , cfg );
 
       StopWatch w;
       CUresult result = CUDA_SUCCESS;
@@ -312,7 +334,7 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
     //QDP_info_primary("Previous auto-tuning result = %d",threadsPerBlock);
   }
 
-  kernel_geom_t now = getGeom( Layout::sitesOnNode() , threadsPerBlock );
+  kernel_geom_t now = getGeom( hi-lo , threadsPerBlock );
   CUresult result = CUDA_SUCCESS;
   result = cuLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
 

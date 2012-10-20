@@ -96,7 +96,7 @@ namespace QDP {
 #ifdef GPU_DEBUG_DEEP
     QDP_info("H2D %d bytes receive buffer",srcnum);
 #endif
-    CudaMemcpy( QDPCache::Instance().getDevicePtr( srcId ) , recv_buf , srcnum );
+    CudaMemcpyH2D( QDPCache::Instance().getDevicePtr( srcId ) , recv_buf , srcnum );
 
 #if QDP_DEBUG >= 3
     QDP_info("Map: calling free msgs");
@@ -128,7 +128,7 @@ namespace QDP {
 #ifdef GPU_DEBUG_DEEP
     QDP_info("D2H %d bytes receive buffer",dstnum);
 #endif
-    CudaMemcpy( send_buf , QDPCache::Instance().getDevicePtr( dstId ) , dstnum );
+    CudaMemcpyD2H( send_buf , QDPCache::Instance().getDevicePtr( dstId ) , dstnum );
 
     // Launch the faces
     if ((err = QMP_start(mh)) != QMP_SUCCESS)
