@@ -147,10 +147,13 @@ namespace QDP {
 
 #include "qdp_newops.h"
 #include "qdp_optops.h"
+#include "qdp_mastermap.h"
+
 
 #include "qdp_mapresource.h"
 #include "qdp_handle.h"
 #include "qdp_map.h"
+#include "qdp_jitfunction.h"
 
 #include "qdp_profile.h"
 #include "qdp_simpleword.h"
@@ -164,7 +167,6 @@ namespace QDP {
 #include "qdp_outer.h"
 #include "qdp_outersubtype.h"
 
-#include "qdp_mastermap.h"
 
 // Replaces previous ifdef structure. Structure moved into the header file
 #include "qdp_defs.h"
@@ -181,7 +183,6 @@ namespace ThreadReductions {
  
 }
 
-#include "qdp_jitfunction.h"
 
 #if defined(ARCH_SCALAR)
 // Architectural specific code to a single node/single proc box

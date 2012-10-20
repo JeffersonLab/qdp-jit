@@ -70,6 +70,7 @@ namespace QDP {
     int getRegIdx();
 
   private:
+    int addParamImmediate(std::ostream& oss,RegType type);
     int getRegId(int id) const;
     RegType getRegType(int id) const;
 

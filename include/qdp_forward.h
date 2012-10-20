@@ -122,6 +122,9 @@ namespace QDP
   struct FnMap;
   class ArrayBiDirectionalMap;
 
+  template<class T, class T1, class RHS>
+  CUfunction
+  function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs );
 
 } // namespace QDP
 

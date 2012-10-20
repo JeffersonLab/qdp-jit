@@ -75,7 +75,16 @@ namespace QDP {
     oss_tidcalc <<  "mul.wide.u16 " << getName(r_mul) << "," << getName(r_ntid) << "," << getName(r_ctaid) << ";\n";
     oss_tidcalc <<  "cvt.u32.u16 " << getName(r_mul + 1) << ",%tid.x;\n";
     oss_tidcalc <<  "add.u32 " << getName(r_threadId_u32) << "," << getName(r_mul + 1)  << "," << getName(r_mul) << ";\n";
+
+    int r_lo = addParamImmediate(oss_tidcalc,Jit::s32);
+    int r_hi = addParamImmediate(oss_tidcalc,Jit::s32);
+
     oss_tidcalc <<  "cvt.s32.u32 " << getName(r_threadId_s32) << "," << getName(r_threadId_u32) << ";\n";
+    oss_tidcalc <<  "add.s32 " << getName(r_threadId_s32) << "," << getName(r_threadId_s32) << "," << getName(r_lo) << ";\n";
+
+    int r_out_of_range = getRegs( Jit::pred , 1 );
+    oss_tidcalc <<  "setp.ge.s32 " << getName(r_out_of_range) << "," << getName(r_threadId_s32) << "," << getName(r_hi) << ";\n";
+    oss_tidcalc <<  "@" << getName(r_out_of_range) << " exit;\n";
 
     // mapCVT[to][from]
     mapCVT[f32][f64]="rz.";
@@ -124,6 +133,21 @@ namespace QDP {
       mapSqrtRnd[f32]="approx."; // rn
       mapSqrtRnd[f64]="approx.";
     }
+  }
+
+  int Jit::addParamImmediate(std::ostream& oss,RegType type){
+    if (paramtype.size() != nparam) {
+      std::cout << "error paramtype.size() != nparam\n";
+      exit(1);
+    }
+    paramtype.push_back(type);
+    std::ostringstream tmp;
+    tmp << ".param ." << regptx[type] << " param" << nparam;
+    param.push_back(tmp.str());
+    int r_ret = getRegs( type , 1 );
+    oss << "ld.param." << regptx[type] << " " << getName(r_ret) << ",[param" << nparam << "];\n";
+    nparam++;
+    return r_ret;
   }
 
 

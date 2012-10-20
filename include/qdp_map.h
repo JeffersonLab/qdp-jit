@@ -355,23 +355,41 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
 	  forEach(subexpr, phase2 , NullCombine());
 	}
 
-#if 0
-	map.soffsets.size();
-	QDPCache::Instance().getDevicePtr( map.getSoffsetsId() );
-	typename InnerType_t; // type on 1 site
-	subexpr; //
-	rRSrc.getSendBufDevPtr(); // send buffer
+#if 1
+	// map.soffsets.size();
+	// QDPCache::Instance().getDevicePtr( map.getSoffsetsId() );
+	// typename InnerType_t; // type on 1 site
+	// subexpr; //
+	// rRSrc.getSendBufDevPtr(); // send buffer
 
 	// Gather subexpr evaluated on soffset[] into send buffer
+	static CUfunction function;
+
+	// Build the function
+	if (function == NULL)
+	  {
+	    std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
+	    function = function_gather_build<InnerType_t>( rRSrc.getSendBufDevPtr() , map , subexpr );
+	    std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
+	  }
+	else
+	  {
+	    std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
+	  }
+
+	// Execute the function
+	function_gather_exec(function, rRSrc.getSendBufDevPtr() , map , subexpr );
 
 	rRSrc.send_receive();
 	
 	returnVal = maps_involved | map.getId();
 #endif
-      } else {
-      QDP_info("Map: no off-node comms");
-      returnVal = ForEach<A, ShiftPhase1, BitOrCombine>::apply(expr.child(), f, c);
-    }
+      } 
+    else 
+      {
+	QDP_info("Map: no off-node comms");
+	returnVal = ForEach<A, ShiftPhase1, BitOrCombine>::apply(expr.child(), f, c);
+      }
     return returnVal;
   }
 };
