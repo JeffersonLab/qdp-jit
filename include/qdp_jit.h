@@ -17,6 +17,12 @@ namespace QDP {
     enum RegType { f32=0,f64=1,u16=2,u32=3,u64=4,s16=5,s32=6,s64=7,u8=8,b16=9,b32=10,b64=11,pred=12 };
     enum CmpOp { eq, ne, lt, le, gt, ge, lo, ls, hi, hs , equ, neu, ltu, leu, gtu, geu, num, nan };
 
+    struct IndexRet {
+      int r_newidx;
+      int r_pred_gez;
+      int r_rcvbuf;
+    };
+
     // Specify the PTX register type to use when doing logical operations.
     // C++ bool is 1 bytes. PTX can't operate on 8 bits types. Must cast each access.
     //typedef unsigned int PTX_Bool_C_equiv;
@@ -65,6 +71,9 @@ namespace QDP {
     int addParamLatticeBaseAddr(int r_idx,int wordSize);
     int addParamScalarBaseAddr();
     int addParamIndexField();
+    IndexRet addParamIndexFieldRcvBuf();
+    void addCondBranch(IndexRet i);
+    void addCondBranch2();
     int getThreadIdMultiplied(int r_idx,int wordSize);
     void write();
     int getRegIdx();

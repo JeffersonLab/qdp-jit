@@ -525,6 +525,59 @@ namespace QDP {
     return r_threadId_s32;
   }
 
+
+  Jit::IndexRet Jit::addParamIndexFieldRcvBuf()
+  {
+    if (paramtype.size() != nparam) {
+      std::cout << "error paramtype.size() != nparam\n";
+      exit(1);
+    }
+    int idx_u32 = getRegs( u32 , 1 );
+    int idx_u32_mul_4 = getRegs( u64 , 1 );
+    oss_idx <<  "cvt.u32.s32 " << getName(idx_u32) << "," << getName(r_threadId_s32) << ";\n";
+    oss_idx <<  "mul.wide.u32 " << getName(idx_u32_mul_4) << "," << getName(idx_u32) << ",4;\n";
+
+    paramtype.push_back(u64);
+    std::ostringstream tmp;
+    tmp << ".param .u64 param" << nparam;
+    param.push_back(tmp.str());
+    int r_param_goff = getRegs( u64 , 1 );
+    oss_idx << "ld.param.u64 " << getName(r_param_goff) << ",[param" << nparam << "];\n";    
+    nparam++;
+
+    int r_param_goff_p_idx = getRegs( u64 , 1 );
+    oss_idx << "add.u64 " << getName(r_param_goff_p_idx) << "," << getName(r_param_goff) << "," << getName(idx_u32_mul_4) << ";\n";
+
+    r_threadId_s32 = getRegs( s32 , 1 );
+    oss_idx << "ld.global.s32 " << getName(r_threadId_s32) << ",[" << getName(r_param_goff_p_idx) << "]; // new_idx\n";
+
+    int r_pred_gez = getRegs( pred , 1 );
+    oss_idx << "setp.ge.s32 " << getName(r_pred_gez) << "," << getName(r_threadId_s32) << ",0; // on local node ?\n";
+
+    oss_idx << "@" << getName(r_pred_gez) << "  neg.s32 " << getName(r_threadId_s32) << "," << getName(r_threadId_s32) << "; // rcv buf index\n";
+    oss_idx << "@" << getName(r_pred_gez) << "  sub.s32 " << getName(r_threadId_s32) << "," << getName(r_threadId_s32) << ",1; // rcv buf index\n";
+
+
+    paramtype.push_back(u64);
+    tmp.str(std::string());
+    tmp << ".param .u64 param" << nparam;
+    param.push_back(tmp.str());
+    int r_param_rcv_buf = getRegs( u64 , 1 );
+    oss_idx << "ld.param.u64 " << getName(r_param_rcv_buf) << ",[param" << nparam << "];   // recv buf base addr\n";    
+    nparam++;
+
+    
+
+
+    IndexRet ret;
+    ret.r_newidx = r_threadId_s32;
+    ret.r_pred_gez = r_pred_gez;
+    ret.r_rcvbuf = r_param_rcv_buf;
+
+
+    return ret;
+  }
+
   int Jit::addParamLatticeBaseAddr(int r_idx,int wordSize) 
   {
     if (paramtype.size() != nparam) {
@@ -557,6 +610,32 @@ namespace QDP {
     oss_baseaddr << "ld.param.u64 " << getName(r_param) << ",[param" << nparam << "];\n";
     nparam++;
     return r_param;
+  }
+
+  static int branchNum = 0;
+
+  std::string pushTarget() 
+  {
+    std::ostringstream tmp;
+    tmp << "Branch" << branchNum;
+    return tmp.str();
+  }
+
+  std::string getTarget() 
+  {
+    std::ostringstream tmp;
+    tmp << "Branch" << branchNum;
+    return tmp.str();
+  }
+
+  void Jit::addCondBranch(IndexRet i)
+  {
+    oss_prg << "@!" << getName(i.r_pred_gez) << "  bra " << pushTarget() << ";\n";
+  }
+
+  void Jit::addCondBranch2()
+  {
+    oss_prg << getTarget() << ":\n";
   }
 
   int Jit::getThreadIdMultiplied(int r_idx,int wordSize)

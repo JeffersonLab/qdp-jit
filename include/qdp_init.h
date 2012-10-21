@@ -57,6 +57,17 @@ void QDP_resume();
 //! Suspends QDP communications
 void QDP_suspend();
 
+
+  template<class T>
+  void printme() {
+    std::cout << __PRETTY_FUNCTION__ << "\n";
+  }
+  template<class T>
+  void printme(const std::string& txt) {
+    std::cout << txt << " " << __PRETTY_FUNCTION__ << "\n";
+  }
+
+
 }
 
 #endif

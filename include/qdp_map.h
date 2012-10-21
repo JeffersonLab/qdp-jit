@@ -189,6 +189,26 @@ public:
 };
 
 
+struct FnMapJIT 
+{
+public:
+  Jit& jit;
+  Jit::IndexRet index;
+  const Map& map;
+  QDPHandle::Handle<RsrcWrapper> pRsrc;
+
+  FnMapJIT(const FnMap& fnmap,const Jit::IndexRet& i,Jit& j): map(fnmap.map), pRsrc(fnmap.pRsrc), index(i), jit(j) {}
+  FnMapJIT(const FnMapJIT& f) : map(f.map) , pRsrc(f.pRsrc), index(f.index), jit(f.jit) {}
+
+public:
+  template<class T>
+  inline typename UnaryReturn<T, FnMapJIT>::Type_t
+  operator()(const T &a) const
+  {
+    return (a);
+  }
+};
+
 
 
 #if defined(QDP_USE_PROFILING)   
@@ -213,6 +233,42 @@ struct TagVisitor<FnMap, PrintTag> : public ParenPrinter<FnMap>
 
 
 
+
+#if 1
+template<class A>
+struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
+  {
+    typedef typename ForEach< UnaryNode<FnMapJIT, A> , ParamLeaf, TreeCombine>::Type_t Type_t;
+    inline
+    static Type_t apply(const UnaryNode<FnMap, A>& expr, const ParamLeaf &p, const TreeCombine &c)
+    {
+      const Map& map = expr.operation().map;
+      FnMap& fnmap = const_cast<FnMap&>(expr.operation());
+
+      Jit::IndexRet index = p.getFunc().addParamIndexFieldRcvBuf();
+
+      ParamLeaf pp( p.getFunc() , index.r_newidx );
+
+      return Type_t( FnMapJIT( expr.operation() , index , p.getFunc() ) , 
+		     ForEach< A, ParamLeaf, TreeCombine >::apply( expr.child() , pp , c ) );
+
+      //ForEach< UnaryNode<FnMapJIT, A>, ParamLeaf, TreeCombine>::apply(expr.child() , pp , c );
+
+
+      // TypeA_t A_val  = ForEachA_t::apply(expr.child(), pp, t);
+      // Type_t val = Combiner_t::combine(A_val, expr.operation(), c);
+
+      //ParseTag ff( f.getJitArgs() , newIdx.str() );
+      //TypeA_t A_val  = ForEachA_t::apply(expr.child(), ff, ff, c);
+      //Type_t val = Combiner_t::combine(A_val, expr.operation(), c);
+      //f.ossCode << ff.ossCode.str();
+
+      //return val;
+    }
+  };
+
+#else
+
 template<class A>
 struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
   {
@@ -230,22 +286,15 @@ struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
       // void * goffsetsDev = QDPCache::Instance().getDevicePtr( goffsetsId );
       // int posGoff = f.getJitArgs().addPtr( goffsetsDev );
 
-      int r_newidx = p.getFunc().addParamIndexField();
 
       // get receive buffer on device and NULL otherwise
       //
-      int posRcvBuf;
+
+      Jit::IndexRet index = p.getFunc().addParamIndexFieldRcvBuf();
+
 #if 0
-      if (map.hasOffnode()) {
-	const FnMapRsrc& rRSrc = fnmap.getCached();
-	int rcvId = rRSrc.getRcvId();
-	void * rcvBufDev = QDPCache::Instance().getDevicePtr( rcvId );
-	
-	//posRcvBuf = f.getJitArgs().addPtr( rcvBufDev );
-      } else {
-	//posRcvBuf = f.getJitArgs().addPtr( NULL );
-      }
 #endif
+
 
       // string codeTypeA;
       // typedef InnerTypeBB_t TTT;
@@ -255,7 +304,7 @@ struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
       // ostringstream newIdx;
       // newIdx << "((int*)(" << f.getJitArgs().getPtrName() << "[ " << posGoff  << " ].ptr))" << "[" << f.getIndex() << "]";
 
-      ParamLeaf pp( p.getFunc() , r_newidx );
+      ParamLeaf pp( p.getFunc() , index.r_newidx );
       return Type_t( ForEach<A, ParamLeaf, TreeCombine>::apply(expr.child() , pp , c ) );
 
       // TypeA_t A_val  = ForEachA_t::apply(expr.child(), pp, t);
@@ -283,6 +332,58 @@ struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
     }
   };
 
+#endif
+
+
+
+
+template<class A>
+struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
+  {
+    //typedef typename ForEach< UnaryNode<FnMapJIT, A> , ParamLeaf, TreeCombine>::Type_t Type_t;
+    typedef typename ForEach<A, ViewLeaf, OpCombine>::Type_t TypeA_t;
+    typedef typename Combine1<TypeA_t, FnMapJIT , OpCombine>::Type_t Type_t;
+    inline
+    static Type_t apply(const UnaryNode<FnMapJIT, A>& expr, const ViewLeaf &v, const OpCombine &o)
+    {
+      //const Map& map = expr.operation().map;
+      //FnMap& fnmap = const_cast<FnMap&>(expr.operation());
+
+      Jit::IndexRet index = expr.operation().index;
+
+      Jit& func = expr.operation().jit;
+      
+      Type_t ret(func);
+      func.addCondBranch(index);
+
+      ret = Combine1<TypeA_t, FnMapJIT , OpCombine>::combine(ForEach<A, ViewLeaf, OpCombine>::apply(expr.child(), v, o),
+								    expr.operation(), o);
+
+      func.addCondBranch2();
+      printme<Type_t>("FnMapJIT ViewLeaf");
+      Type_t recv_buf(func);
+      ret = recv_buf;
+
+      return ret;
+
+      // return Type_t( FnMapJIT(expr.operation(),index) , ForEach<A, ParamLeaf, TreeCombine>::apply(expr.child() , pp , c ) );
+
+      //ForEach< UnaryNode<FnMapJIT, A>, ParamLeaf, TreeCombine>::apply(expr.child() , pp , c );
+
+
+      // TypeA_t A_val  = ForEachA_t::apply(expr.child(), pp, t);
+      // Type_t val = Combiner_t::combine(A_val, expr.operation(), c);
+
+      //ParseTag ff( f.getJitArgs() , newIdx.str() );
+      //TypeA_t A_val  = ForEachA_t::apply(expr.child(), ff, ff, c);
+      //Type_t val = Combiner_t::combine(A_val, expr.operation(), c);
+      //f.ossCode << ff.ossCode.str();
+
+      //return val;
+    }
+  };
+
+
 
 
 
@@ -303,8 +404,21 @@ struct ForEach<UnaryNode<FnMap, A>, AddressLeaf, NullCombine>
       //QDP_info("ForEach 1 %d",goffsetsId);
       void * goffsetsDev = QDPCache::Instance().getDevicePtr( goffsetsId );
       //QDP_info("ForEach 2 %p",goffsetsDev);
+      QDP_info("Map:AddressLeaf: add goffset p=%p",goffsetsDev);
       a.setAddr(goffsetsDev);
       //QDP_info("ForEach 3");
+
+      void * rcvBufDev;
+      if (map.hasOffnode()) {
+	const FnMapRsrc& rRSrc = fnmap.getCached();
+	int rcvId = rRSrc.getRcvId();
+	rcvBufDev = QDPCache::Instance().getDevicePtr( rcvId );
+      } else {
+	rcvBufDev = NULL;
+      }
+      QDP_info("Map:AddressLeaf: add recv buf p=%p",rcvBufDev);
+      a.setAddr(rcvBufDev);
+
 
       return Type_t( ForEach<A, AddressLeaf, NullCombine>::apply( expr.child() , a , n ) );
     }

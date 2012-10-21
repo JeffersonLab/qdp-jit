@@ -5,10 +5,6 @@
 
 namespace QDP {
 
-  template<class T>
-  void printme() {
-    std::cout << __PRETTY_FUNCTION__ << "\n";
-  }
 
 template<class T, class T1, class Op, class RHS>
 CUfunction
@@ -264,13 +260,13 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
   int hi = Layout::sitesOnNode();
   std::vector<void*> addr;
   addr.push_back( &lo );
-  //std::cout << "addr=" << addr[0] << "\n";
+  std::cout << "addr=" << addr[0] << "\n";
   addr.push_back( &hi );
-  //std::cout << "addr=" << addr[1] << "\n";
+  std::cout << "addr=" << addr[1] << "\n";
   int addr_dest=addr.size();
   for(int i=0; i < addr_leaf.addr.size(); ++i) {
     addr.push_back( &addr_leaf.addr[i] );
-    //std::cout << "addr=" << addr_leaf.addr[i] << "\n";
+    std::cout << "addr=" << addr_leaf.addr[i] << "\n";
   }
 
   static int threadsPerBlock = 0;
