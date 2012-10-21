@@ -19,7 +19,7 @@ namespace QDP {
 
     struct IndexRet {
       int r_newidx;
-      int r_pred_gez;
+      int r_pred_in_buf;
       int r_rcvbuf;
     };
 
@@ -71,9 +71,10 @@ namespace QDP {
     int addParamLatticeBaseAddr(int r_idx,int wordSize);
     int addParamScalarBaseAddr();
     int addParamIndexField();
-    IndexRet addParamIndexFieldRcvBuf();
+    IndexRet addParamIndexFieldRcvBuf(int wordSize);
     void addCondBranch(IndexRet i);
     void addCondBranch2();
+    void addCondBranch3();
     int getThreadIdMultiplied(int r_idx,int wordSize);
     void write();
     int getRegIdx();

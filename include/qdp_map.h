@@ -234,10 +234,11 @@ struct TagVisitor<FnMap, PrintTag> : public ParenPrinter<FnMap>
 
 
 
-#if 1
+
 template<class A>
 struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
   {
+    //typedef typename ForEach<A, ViewLeaf, OpCombine>::Type_t AInnerTypeA_t;
     typedef typename ForEach< UnaryNode<FnMapJIT, A> , ParamLeaf, TreeCombine>::Type_t Type_t;
     inline
     static Type_t apply(const UnaryNode<FnMap, A>& expr, const ParamLeaf &p, const TreeCombine &c)
@@ -245,7 +246,9 @@ struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
       const Map& map = expr.operation().map;
       FnMap& fnmap = const_cast<FnMap&>(expr.operation());
 
-      Jit::IndexRet index = p.getFunc().addParamIndexFieldRcvBuf();
+      // I need dereferencing here since in case A is not a sub-expression
+      // but a QDPType, EvalLeaf1 will return a reference, i.e. wrong word type (always 64 bit)
+      Jit::IndexRet index = p.getFunc().addParamIndexFieldRcvBuf( sizeof(typename WordType<typename DeReference<typename ForEach<A, EvalLeaf1, OpCombine>::Type_t>::Type_t>::Type_t) ); 
 
       ParamLeaf pp( p.getFunc() , index.r_newidx );
 
@@ -267,72 +270,6 @@ struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
     }
   };
 
-#else
-
-template<class A>
-struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
-  {
-    typedef typename ForEach< A , ParamLeaf, TreeCombine>::Type_t TypeA_t;
-    typedef TypeA_t Type_t;
-    inline
-    static Type_t apply(const UnaryNode<FnMap, A>& expr, const ParamLeaf &p, const TreeCombine &c)
-    {
-      const Map& map = expr.operation().map;
-      FnMap& fnmap = const_cast<FnMap&>(expr.operation());
-
-      // This moves to AddressLeaf Functor !
-      //
-      // int goffsetsId = expr.operation().map.getGoffsetsId();
-      // void * goffsetsDev = QDPCache::Instance().getDevicePtr( goffsetsId );
-      // int posGoff = f.getJitArgs().addPtr( goffsetsDev );
-
-
-      // get receive buffer on device and NULL otherwise
-      //
-
-      Jit::IndexRet index = p.getFunc().addParamIndexFieldRcvBuf();
-
-#if 0
-#endif
-
-
-      // string codeTypeA;
-      // typedef InnerTypeBB_t TTT;
-      // TTT ttt;
-      // getTypeStringT<TTT>( codeTypeA , f.getJitArgs() );
-
-      // ostringstream newIdx;
-      // newIdx << "((int*)(" << f.getJitArgs().getPtrName() << "[ " << posGoff  << " ].ptr))" << "[" << f.getIndex() << "]";
-
-      ParamLeaf pp( p.getFunc() , index.r_newidx );
-      return Type_t( ForEach<A, ParamLeaf, TreeCombine>::apply(expr.child() , pp , c ) );
-
-      // TypeA_t A_val  = ForEachA_t::apply(expr.child(), pp, t);
-      // Type_t val = Combiner_t::combine(A_val, expr.operation(), c);
-
-#if 0
-      ostringstream code;
-      code << newIdx.str() << " < 0 ? " <<
-	"(" <<
-	"((" << codeTypeA << "*)(" << f.getJitArgs().getPtrName() << 
-	"[ " << posRcvBuf  << " ].ptr))" << "[-" << newIdx.str() << "-1]" << 
-	"):(" <<
-	ff.ossCode.str() <<
-	")";
-
-      f.ossCode << code.str();
-#endif
-
-      //ParseTag ff( f.getJitArgs() , newIdx.str() );
-      //TypeA_t A_val  = ForEachA_t::apply(expr.child(), ff, ff, c);
-      //Type_t val = Combiner_t::combine(A_val, expr.operation(), c);
-      //f.ossCode << ff.ossCode.str();
-
-      //return val;
-    }
-  };
-
-#endif
 
 
 
@@ -360,9 +297,17 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
 								    expr.operation(), o);
 
       func.addCondBranch2();
-      printme<Type_t>("FnMapJIT ViewLeaf");
-      Type_t recv_buf(func);
-      ret = recv_buf;
+      printme<Type_t>("--- FnMapJIT ViewLeaf");
+      //.addParamLatticeBaseAddr( r_idx , wordSize );
+
+      OLatticeJIT<Type_t> recv_buf( func , index.r_rcvbuf );
+
+      //Type_t recv_buf0(func);
+      //ret = Combine1<OLatticeJIT<Type_t>, FnMapJIT , OpCombine>::combine(ForEach<OLatticeJIT<Type_t>, ViewLeaf, OpCombine>::apply( recv_buf , v, o), expr.operation(), o);
+
+      ret = recv_buf.elem(0);
+
+      func.addCondBranch3();
 
       return ret;
 
@@ -526,6 +471,7 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase2 , CTag>
     FnMap& fnmap = const_cast<FnMap&>(expr.operation());
     if (map.offnodeP) {
       const FnMapRsrc& rRSrc = fnmap.getCached();
+      QDP_info("ShiftPhase2: FnMap");
       rRSrc.qmp_wait();
     }
     ForEach<A, ShiftPhase2, CTag>::apply(expr.child(), f, c);

@@ -81,6 +81,15 @@ struct WordType
   typedef T  Type_t;
 };
 
+  // template<>
+  // template<class T>
+  // struct WordType<Reference<T> >
+  // {
+  //   typedef typename WordType<T>::Type_t  Type_t;
+  // };
+
+
+
 
 //-----------------------------------------------------------------------------
 // Traits Classes to support getting fixed precision versions of floating 

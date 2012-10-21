@@ -526,7 +526,7 @@ namespace QDP {
   }
 
 
-  Jit::IndexRet Jit::addParamIndexFieldRcvBuf()
+  Jit::IndexRet Jit::addParamIndexFieldRcvBuf(int wordSize)
   {
     if (paramtype.size() != nparam) {
       std::cout << "error paramtype.size() != nparam\n";
@@ -551,19 +551,21 @@ namespace QDP {
     r_threadId_s32 = getRegs( s32 , 1 );
     oss_idx << "ld.global.s32 " << getName(r_threadId_s32) << ",[" << getName(r_param_goff_p_idx) << "]; // new_idx\n";
 
-    int r_pred_gez = getRegs( pred , 1 );
-    oss_idx << "setp.ge.s32 " << getName(r_pred_gez) << "," << getName(r_threadId_s32) << ",0; // on local node ?\n";
+    int r_pred_in_buf = getRegs( pred , 1 );
+    oss_idx << "setp.lt.s32 " << getName(r_pred_in_buf) << "," << getName(r_threadId_s32) << ",0; // in rcv buffer ?\n";
 
-    oss_idx << "@" << getName(r_pred_gez) << "  neg.s32 " << getName(r_threadId_s32) << "," << getName(r_threadId_s32) << "; // rcv buf index\n";
-    oss_idx << "@" << getName(r_pred_gez) << "  sub.s32 " << getName(r_threadId_s32) << "," << getName(r_threadId_s32) << ",1; // rcv buf index\n";
+    oss_idx << "@" << getName(r_pred_in_buf) << "  neg.s32 " << getName(r_threadId_s32) << "," << getName(r_threadId_s32) << "; // rcv buf index\n";
+    oss_idx << "@" << getName(r_pred_in_buf) << "  sub.s32 " << getName(r_threadId_s32) << "," << getName(r_threadId_s32) << ",1; // rcv buf index\n";
 
 
     paramtype.push_back(u64);
     tmp.str(std::string());
     tmp << ".param .u64 param" << nparam;
     param.push_back(tmp.str());
-    int r_param_rcv_buf = getRegs( u64 , 1 );
-    oss_idx << "ld.param.u64 " << getName(r_param_rcv_buf) << ",[param" << nparam << "];   // recv buf base addr\n";    
+    int r_param_rcv_buf_base = getRegs( u64 , 1 );
+    int r_param_rcv_buf_idx = getRegs( u64 , 1 );
+    oss_baseaddr << "ld.param.u64 " << getName(r_param_rcv_buf_base) << ",[param" << nparam << "];   // recv buf base addr\n";    
+    oss_baseaddr << "add.u64 " << getName(r_param_rcv_buf_idx) << "," << getName(r_param_rcv_buf_base) << "," << getName( getThreadIdMultiplied(r_threadId_s32,wordSize) ) << ";\n";
     nparam++;
 
     
@@ -571,8 +573,8 @@ namespace QDP {
 
     IndexRet ret;
     ret.r_newidx = r_threadId_s32;
-    ret.r_pred_gez = r_pred_gez;
-    ret.r_rcvbuf = r_param_rcv_buf;
+    ret.r_pred_in_buf = r_pred_in_buf;
+    ret.r_rcvbuf = r_param_rcv_buf_idx;
 
 
     return ret;
@@ -630,12 +632,18 @@ namespace QDP {
 
   void Jit::addCondBranch(IndexRet i)
   {
-    oss_prg << "@!" << getName(i.r_pred_gez) << "  bra " << pushTarget() << ";\n";
+    oss_prg << "@" << getName(i.r_pred_in_buf) << "  bra " << pushTarget() << ";\n";
   }
 
   void Jit::addCondBranch2()
   {
+    oss_prg << "bra " << getTarget() << "_DONE;\n";
     oss_prg << getTarget() << ":\n";
+  }
+
+  void Jit::addCondBranch3()
+  {
+    oss_prg << getTarget() << "_DONE:\n";
   }
 
   int Jit::getThreadIdMultiplied(int r_idx,int wordSize)

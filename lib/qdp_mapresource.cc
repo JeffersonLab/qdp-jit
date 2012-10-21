@@ -93,10 +93,13 @@ namespace QDP {
     if ((err = QMP_wait(mh)) != QMP_SUCCESS)
       QDP_error_exit(QMP_error_string(err));
     
+    void * rcv_buf_dev = QDPCache::Instance().getDevicePtr( srcId );
 #ifdef GPU_DEBUG_DEEP
-    QDP_info("H2D %d bytes receive buffer",srcnum);
 #endif
-    CudaMemcpyH2D( QDPCache::Instance().getDevicePtr( srcId ) , recv_buf , srcnum );
+    QDP_info("H2D %d bytes receive buffer p = %p",srcnum,rcv_buf_dev);
+    for (int i=0;i<srcnum/4;i++)
+      ((float*)recv_buf)[i]=-1.0;
+    CudaMemcpyH2D( rcv_buf_dev , recv_buf , srcnum );
 
 #if QDP_DEBUG >= 3
     QDP_info("Map: calling free msgs");
