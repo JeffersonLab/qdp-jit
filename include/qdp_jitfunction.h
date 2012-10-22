@@ -31,7 +31,7 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 
   printme<View_t>();
 
-  op(dest_jit.elem( Jit::LatticeLayout::COAL , 0 ), forEach(rhs_view, ViewLeaf( Jit::LatticeLayout::COAL , 0 ), OpCombine()));
+  op(dest_jit.elem( 0 ), forEach(rhs_view, ViewLeaf( 0 ), OpCombine()));
 
   if (Layout::primaryNode())
     function.write();
@@ -86,7 +86,9 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
   // Destination
   typedef typename JITContainerType< OLattice<T> >::Type_t DestView_t;
   QDP_info("------------ %d",JITContainerType<T>::Type_t::Size_t * WordSize<T>::Size);
-  DestView_t dest_jit( function , param_leaf_0.getParamLattice( JITContainerType<T>::Type_t::Size_t * WordSize<T>::Size ) );
+  DestView_t dest_jit( function , 
+		       param_leaf_0.getParamLattice( JITContainerType<T>::Type_t::Size_t * WordSize<T>::Size ) ,
+		       Jit::LatticeLayout::SCAL );
 
   // typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
   // FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
@@ -97,7 +99,7 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
 
   printme<View_t>();
 
-  OpAssign()( dest_jit.elem( Jit::LatticeLayout::SCAL , 0 ) , forEach(rhs_view, ViewLeaf( Jit::LatticeLayout::COAL , 0 ) , OpCombine() ) );
+  OpAssign()( dest_jit.elem( 0 ) , forEach(rhs_view, ViewLeaf( 0 ) , OpCombine() ) );
 
 #if 1
   if (Layout::primaryNode())

@@ -18,10 +18,8 @@ struct ShiftPhase2
 struct ViewLeaf
 {
   int i1_m;
-  Jit::LatticeLayout layout_m;
-  inline ViewLeaf(Jit::LatticeLayout l,int i1) : i1_m(i1), layout_m(l) { }
+  inline ViewLeaf(int i1) : i1_m(i1) { }
   inline int val1() const { return i1_m; }
-  inline Jit::LatticeLayout layout() const { return layout_m; }
 };
   
 
@@ -38,9 +36,13 @@ struct ParamLeaf
 
   ParamLeaf(Jit& func_,int r_idx,Jit::LatticeLayout lay) : func(func_),r_idx(r_idx),layout(lay) {}
 
+#if 1
   bool isCoal() const {
     return layout == Jit::LatticeLayout::COAL; 
   }
+#endif
+
+  Jit::LatticeLayout getLayout() const { return layout; }
 
   Jit& getFunc() const {return func;}
   int getRegIdx() const {return r_idx;}

@@ -469,7 +469,11 @@ struct LeafFunctor<QDPType<T,OLattice<T> >, ParamLeaf>
   typedef TypeA_t  Type_t;
   inline static Type_t apply(const QDPType<T,OLattice<T> > &a, const ParamLeaf& p)
   {
-    return Type_t( p.getFunc() , p.getParamLattice( WordSize<T>::Size ) );
+    if (p.isCoal())
+      return Type_t( p.getFunc() , p.getParamLattice( WordSize<T>::Size ) , p.getLayout() );
+    else
+      return Type_t( p.getFunc() , p.getParamLattice( JITContainerType<T>::Type_t::Size_t * WordSize<T>::Size ) , p.getLayout() );
+    //    return Type_t( p.getFunc() , p.getParamLattice( WordSize<T>::Size ) , p.getLayout() );
   }
 };
 

@@ -300,12 +300,12 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
       printme<Type_t>("--- FnMapJIT ViewLeaf");
       //.addParamLatticeBaseAddr( r_idx , wordSize );
 
-      OLatticeJIT<Type_t> recv_buf( func , index.r_rcvbuf );
+      OLatticeJIT<Type_t> recv_buf( func , index.r_rcvbuf , Jit::LatticeLayout::SCAL );
 
       //Type_t recv_buf0(func);
       //ret = Combine1<OLatticeJIT<Type_t>, FnMapJIT , OpCombine>::combine(ForEach<OLatticeJIT<Type_t>, ViewLeaf, OpCombine>::apply( recv_buf , v, o), expr.operation(), o);
 
-      ret = recv_buf.elem( Jit::LatticeLayout::SCAL , 0 );
+      ret = recv_buf.elem( 0 );
 
       func.addCondBranch_fi();
 

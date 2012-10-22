@@ -605,9 +605,9 @@ struct LeafFunctor<OLattice<T>, ParamLeaf>
   Type_t apply(const OLattice<T>& do_not_use, const ParamLeaf& p) 
   {
     if (p.isCoal())
-      return Type_t( p.getFunc() , p.getParamLattice( WordSize<T>::Size ) );
+      return Type_t( p.getFunc() , p.getParamLattice( WordSize<T>::Size ) , p.getLayout() );
     else
-      return Type_t( p.getFunc() , p.getParamLattice( JITContainerType<T>::Type_t::Size_t * WordSize<T>::Size ) );
+      return Type_t( p.getFunc() , p.getParamLattice( JITContainerType<T>::Type_t::Size_t * WordSize<T>::Size ) , p.getLayout() );
   }
 };
 

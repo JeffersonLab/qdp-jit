@@ -23,8 +23,8 @@ namespace QDP {
 #endif
 
 
-    OLatticeJIT(Jit& func_, int addr_) : 
-      QDPTypeJIT<T, OLatticeJIT<T> >(func_,addr_)
+    OLatticeJIT(Jit& func_, int addr_, Jit::LatticeLayout lay ) : 
+      QDPTypeJIT<T, OLatticeJIT<T> >(func_,addr_,lay)
     {
       //std::cout << "OLatJIT() constr " << (void*)this << " " << (void*)&func_ << "\n";
     }
@@ -36,28 +36,19 @@ namespace QDP {
 
 
   public:
-    inline T elem(Jit::LatticeLayout lay, unsigned site) {
+    inline T elem(unsigned site) {
       //std::cout << "OLatJIT elem() \n";
-      if (lay == Jit::LatticeLayout::COAL)
-	return T( curry_t( QDPTypeJIT<T, OLatticeJIT<T> >::getFunc() , 
-			   QDPTypeJIT<T, OLatticeJIT<T> >::getAddr(), 
-			   Layout::sitesOnNode() , site , lay ) );
-      else
-	return T( curry_t( QDPTypeJIT<T, OLatticeJIT<T> >::getFunc() , 
-			   QDPTypeJIT<T, OLatticeJIT<T> >::getAddr(), 
-			   1 , site , lay ) );
-
+      return T( curry_t( QDPTypeJIT<T, OLatticeJIT<T> >::getFunc() , 
+			 QDPTypeJIT<T, OLatticeJIT<T> >::getAddr(), 
+			 QDPTypeJIT<T, OLatticeJIT<T> >::innerSites(), 
+			 site ) );
     }
-    inline const T elem(Jit::LatticeLayout lay, unsigned site) const {
+    inline const T elem(unsigned site) const {
       //std::cout << "OLatJIT elem() \n";
-      if (lay == Jit::LatticeLayout::COAL)
-	return T( curry_t( QDPTypeJIT<T, OLatticeJIT<T> >::getFunc() , 
-			   QDPTypeJIT<T, OLatticeJIT<T> >::getAddr(), 
-			   Layout::sitesOnNode() , site , lay ) );
-      else
-	return T( curry_t( QDPTypeJIT<T, OLatticeJIT<T> >::getFunc() , 
-			   QDPTypeJIT<T, OLatticeJIT<T> >::getAddr(), 
-			   1 , site , lay ) );
+      return T( curry_t( QDPTypeJIT<T, OLatticeJIT<T> >::getFunc() , 
+			 QDPTypeJIT<T, OLatticeJIT<T> >::getAddr(), 
+			 QDPTypeJIT<T, OLatticeJIT<T> >::innerSites(), 
+			 site ) );
     }
     
   };
@@ -70,7 +61,8 @@ namespace QDP {
   class OScalarJIT: public QDPTypeJIT<T, OScalarJIT<T> >
   {
   public:
-    OScalarJIT(Jit& func_, int addr_) : QDPTypeJIT<T, OScalarJIT<T> >(func_,addr_) {}
+    OScalarJIT(Jit& func_, int addr_) : 
+      QDPTypeJIT<T, OScalarJIT<T> >(func_,addr_,Jit::LatticeLayout::SCAL) {}
 
   private:
     // These are not working yet
@@ -82,27 +74,27 @@ namespace QDP {
       //return T(QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 1,0 );
       return T( curry_t( QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), 
 			 QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 
-			 1 , 0 , Jit::LatticeLayout::COAL ) );
+			 QDPTypeJIT<T, OScalarJIT<T> >::innerSites() , 0 ) );
     }
     inline const T elem(unsigned site) const {
       std::cout << "OScaJIT elem(int) \n";
       //return T(QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 1,0 );
       return T( curry_t( QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), 
 			 QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 
-			 1 , 0 , Jit::LatticeLayout::COAL ) );
+			 QDPTypeJIT<T, OScalarJIT<T> >::innerSites() , 0 ) );
     }
     inline T elem() {
       std::cout << "OScaJIT elem() \n";
       //return T(QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 1,0 );
       return T( curry_t( QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), 
 			 QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 
-			 1 , 0 , Jit::LatticeLayout::COAL ) );
+			 QDPTypeJIT<T, OScalarJIT<T> >::innerSites() , 0 ) );
     }
     inline const T elem() const {
       std::cout << "OScaJIT elem() \n";
       return T( curry_t( QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), 
 			 QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 
-			 1 , 0 , Jit::LatticeLayout::COAL ) );
+			 QDPTypeJIT<T, OScalarJIT<T> >::innerSites() , 0 ) );
     }
 
 
@@ -127,7 +119,7 @@ namespace QDP {
     inline static
     Type_t apply(const OLatticeJIT<T>& s, const ViewLeaf& v)
     { 
-      return s.elem( v.layout() , v.val1() );
+      return s.elem( v.val1() );
     }
   };
 

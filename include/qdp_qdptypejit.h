@@ -16,24 +16,19 @@ public:
   //! Type of the container class
   typedef C Container_t;
 
-#if 0
-  // This must go !!!
-  QDPTypeJIT(Jit& func_) : function(func_) {}
-#endif
-
-  QDPTypeJIT(Jit& func_, int addr_) : function(func_), r_addr(addr_) {}
+  QDPTypeJIT(Jit& func_, int addr_,Jit::LatticeLayout lay) : function(func_), r_addr(addr_),layout(lay) {}
 
   //! Copy constructor
-  QDPTypeJIT(const QDPTypeJIT& a) : function(a.function), r_addr(a.r_addr) {}
+  QDPTypeJIT(const QDPTypeJIT& a) : function(a.function), r_addr(a.r_addr), layout(a.layout) {}
 
   //! Destructor
   ~QDPTypeJIT(){}
 
 
 public:
-  T elem(Jit::LatticeLayout inner,int i) {return static_cast<const C*>(this)->elem(inner,i);}
+  T elem(int i) {return static_cast<const C*>(this)->elem(i);}
 
-  const T elem(Jit::LatticeLayout inner,int i) const {return static_cast<const C*>(this)->elem(inner,i);}
+  const T elem(int i) const {return static_cast<const C*>(this)->elem(i);}
 
   T elem() {return static_cast<const C*>(this)->elem();}
 
@@ -41,11 +36,12 @@ public:
 
   Jit& getFunc() const { return function; }
   int getAddr() const { return r_addr; }
+  int innerSites() const { return layout == Jit::LatticeLayout::COAL ? Layout::sitesOnNode() : 1; }
 
   private:
-    Jit& function;
-    int  r_addr;
-
+  Jit& function;
+  int  r_addr;
+  Jit::LatticeLayout layout;
 };
 
 
@@ -165,7 +161,7 @@ struct LeafFunctor<QDPTypeJIT<T,C>, ViewLeaf>
   inline static
   Type_t apply(const QDPTypeJIT<T,C>& s, const ViewLeaf& v)
   { 
-    return s.elem( v.layout() , v.val1() );
+    return s.elem( v.val1() );
   }
 };
 

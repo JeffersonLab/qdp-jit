@@ -7,11 +7,10 @@ namespace QDP {
 
 
   struct curry_t {
-    curry_t(Jit& j,int r,int fu,int le,Jit::LatticeLayout lay): jit(j),r_addr(r),ful(fu),lev(le),layout(lay) {}
+    curry_t(Jit& j,int r,int fu,int le): jit(j),r_addr(r),ful(fu),lev(le) {}
     Jit& jit;
     int r_addr;
     int ful,lev;
-    Jit::LatticeLayout layout;
   };
 
   struct newspace_t {
@@ -80,8 +79,7 @@ class JV {
 	r_addr(c.r_addr), 
 	off_full(c.ful), 
 	off_level(c.lev),
-	layout(c.layout),
-	F { { {curry_t( c.jit , c.r_addr , c.ful * N , c.lev + c.ful * Indices , c.layout )}... } }
+	F { { {curry_t( c.jit , c.r_addr , c.ful * N , c.lev + c.ful * Indices )}... } }
     {}
 
 
@@ -99,7 +97,6 @@ class JV {
     int off_full;
     int off_level;
     int r_addr;
-    Jit::LatticeLayout layout;
     std::array<T,N> F;
   };
 
