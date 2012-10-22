@@ -33,8 +33,8 @@ template <class T, int N> class PSpinVectorJIT: public JV<T,N>
 {
 public:
 
-  PSpinVectorJIT(Jit& j,int r , int of , int ol): JV<T,N>(j,r,of,ol) {}
-  PSpinVectorJIT(Jit& j): JV<T,N>(j) {}
+  PSpinVectorJIT(curry_t c): JV<T,N>(c) {}
+  PSpinVectorJIT(newspace_t n): JV<T,N>(n) {}
 
   template<class T1>
   inline

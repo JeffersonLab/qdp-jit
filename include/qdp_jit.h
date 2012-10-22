@@ -13,6 +13,7 @@ namespace QDP {
 
   class Jit {
   public:
+    enum LatticeLayout { COAL=0,SCAL=1 };
     enum { RegTypeShift = 24 };
     enum RegType { f32=0,f64=1,u16=2,u32=3,u64=4,s16=5,s32=6,s64=7,u8=8,b16=9,b32=10,b64=11,pred=12 };
     enum CmpOp { eq, ne, lt, le, gt, ge, lo, ls, hi, hs , equ, neu, ltu, leu, gtu, geu, num, nan };
@@ -68,13 +69,13 @@ namespace QDP {
     void dumpVarDef();
     void dumpParam();
     int addParam(RegType type);
-    int addParamLatticeBaseAddr(int r_idx,int wordSize);
+    int addParamLatticeBaseAddr(int r_idx,int idx_multiplier);
     int addParamScalarBaseAddr();
     int addParamIndexField();
     IndexRet addParamIndexFieldRcvBuf(int wordSize);
-    void addCondBranch(IndexRet i);
-    void addCondBranch2();
-    void addCondBranch3();
+    void addCondBranch_if(IndexRet i);
+    void addCondBranch_else();
+    void addCondBranch_fi();
     int getThreadIdMultiplied(int r_idx,int wordSize);
     void write();
     int getRegIdx();

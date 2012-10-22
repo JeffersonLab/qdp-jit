@@ -156,11 +156,13 @@ namespace QDP {
   int MasterMap::getCountInner(int bitmask) const {
     if ( bitmask < 0 || bitmask > powerSet.size()-1 )
       QDP_error_exit("internal error: get count inner");
+    if (bitmask == 0) return Layout::sitesOnNode();
     return powerSetC[bitmask]->size(); 
   }
   int MasterMap::getCountFace(int bitmask) const {
     if ( bitmask < 0 || bitmask > powerSetC.size()-1 )
       QDP_error_exit("internal error: get count face");
+    if (bitmask == 0) return 0;
     return powerSet[bitmask]->size(); 
   }
 

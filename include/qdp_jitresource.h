@@ -6,6 +6,20 @@
 namespace QDP {
 
 
+  struct curry_t {
+    curry_t(Jit& j,int r,int fu,int le,Jit::LatticeLayout lay): jit(j),r_addr(r),ful(fu),lev(le),layout(lay) {}
+    Jit& jit;
+    int r_addr;
+    int ful,lev;
+    Jit::LatticeLayout layout;
+  };
+
+  struct newspace_t {
+    newspace_t(Jit& j): jit(j) {}
+    Jit& jit;
+  };
+
+
 
 template <int... Is>
 struct indices {};
@@ -26,25 +40,19 @@ struct build_indices<0, Is...> : indices<Is...> {};
 
   template<class T,int N>
 class JV {
-public:
+  public:
 
-  enum { ThisSize = N };                 // Size in T's
-  enum { Size_t = ThisSize * T::Size_t}; // Size in registers
-
-#if 0
-  JV(const JV& a): JV( a.jit , a.r_addr , a.off_full , a.off_level ) {
-    //std::cout << "JV::JV() copy ctor " << __PRETTY_FUNCTION__ << " " << (void*)this << " " << (void*)&a.jit << "\n";
-  }
-#endif
+    enum { ThisSize = N };                 // Size in T's
+    enum { Size_t = ThisSize * T::Size_t}; // Size in registers
 
 
-  JV(Jit& j) : JV(j, build_indices<N>{}) {}
-  template<int... Is>
-  JV(Jit& j ,  indices<Is...>) : 
-    jit(j),  F{{(void(Is),j)...}} {
-    //std::cout << "JV::JV() new regs " << (void*)this << " " << (void*)&j << "\n";
-  }
+    JV(newspace_t n) : JV(n, build_indices<N>{}) {}
+    template<int... Is>
+    JV(newspace_t n, indices<Is...>) : 
+      jit(n.jit),  F{{(void(Is),n)...}} {}
 
+
+#if 1
     JV(Jit& j,const typename WordType<T>::Type_t& w) : jit(j), F{{T(j,w)}} 
     {
       std::cout << __PRETTY_FUNCTION__ << "\n";
@@ -56,46 +64,44 @@ public:
       std::cout << __PRETTY_FUNCTION__ << "\n";
     }
 
-  JV(const T& t0,const T& t1) : jit(t0.func()), F{{t0,t1}} {
-    std::cout << __PRETTY_FUNCTION__ << "\n";
-  }
-  JV(const T& t0) : jit(t0.func()), F{{t0}} {
-    std::cout << __PRETTY_FUNCTION__ << "\n";
-  }
-#if 0
-    JV(const C<T>& c) : jit(c.func()), F(c.getF()) {
+    JV(const T& t0,const T& t1) : jit(t0.func()), F{{t0,t1}} {
       std::cout << __PRETTY_FUNCTION__ << "\n";
     }
-    JV(const C<T,N>& c) : jit(c.func()), F(c.getF()) {
+    JV(const T& t0) : jit(t0.func()), F{{t0}} {
       std::cout << __PRETTY_FUNCTION__ << "\n";
     }
 #endif
 
 
-  JV(Jit& j, int r , int of , int ol): JV(j,r,of,ol,build_indices<N>{}) {}
-  template<int... Indices>
-  JV(Jit& j, int r , int of , int ol, indices<Indices...>)
-    : jit(j), r_addr(r), off_full(of), off_level(ol), F { { {j,r,of*N,ol+of*Indices}... } }
-  {
-    //std::cout << "JV::JV() global view " << (void*)this << " " << (void*)&j << "\n";
-  }
+    JV(curry_t c): JV(c,build_indices<N>{}) {}
+    template<int... Indices>
+    JV(curry_t c, indices<Indices...>)
+      : jit(c.jit), 
+	r_addr(c.r_addr), 
+	off_full(c.ful), 
+	off_level(c.lev),
+	layout(c.layout),
+	F { { {curry_t( c.jit , c.r_addr , c.ful * N , c.lev + c.ful * Indices , c.layout )}... } }
+    {}
 
-  Jit& func() const {
-    //std::cout << "JV::func() " << (void*)this << " returns=" << (void*)&jit << "\n";
 
-    return jit;
-  }
 
-  const std::array<T,N>& getF() const { return F; }
-  std::array<T,N>& getF() { return F; }
+    Jit& func() const {
+      //std::cout << "JV::func() " << (void*)this << " returns=" << (void*)&jit << "\n";
+      return jit;
+    }
+
+    const std::array<T,N>& getF() const { return F; }
+    std::array<T,N>& getF() { return F; }
  
-private:
-  Jit& jit;
-  int off_full;
-  int off_level;
-  int r_addr;
-  std::array<T,N> F;
-};
+  private:
+    Jit& jit;
+    int off_full;
+    int off_level;
+    int r_addr;
+    Jit::LatticeLayout layout;
+    std::array<T,N> F;
+  };
 
 
 

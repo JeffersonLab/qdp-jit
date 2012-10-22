@@ -28,9 +28,17 @@ namespace QDP {
       powerSet[0] = new multi1d<int>;
       idInner.resize(1);
       idFace.resize(1);
+
+      identityMap = new int[ Layout::sitesOnNode() ];
+      for (int i = 0 ; i < Layout::sitesOnNode() ; i++ )
+	identityMap[i]=i;
+
+      idInner[0] = QDPCache::Instance().registrateOwnHostMem( Layout::sitesOnNode() * sizeof(int) , (void*)identityMap , NULL );
+
       ////QDPIO::cout << "powerSet[0] size = " << powerSet[0]->size() << "\n";
     }
 
+    int * identityMap;
     std::vector<const Map*> vecPMap;
     std::vector< multi1d<int>* > powerSet; // Power set of roffsets
     std::vector< multi1d<int>* > powerSetC; // Power set of complements

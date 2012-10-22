@@ -34,8 +34,8 @@ namespace QDP {
 {
 public:
 
-  PSeedJIT(Jit& j,int r , int of , int ol): JV<T,4>(j,r,of,ol) {}
-  PSeedJIT(Jit& j): JV<T,4>(j) {}
+  PSeedJIT(curry_t c): JV<T,4>(c) {}
+  PSeedJIT(newspace_t n): JV<T,4>(n) {}
 
   //! construct dest = const
   template<class T1>

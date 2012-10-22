@@ -20,9 +20,12 @@ class RScalarJIT : public JV<T,1>
 {
 public:
 
+  RScalarJIT(curry_t c): JV<T,1>(c) {}
+  RScalarJIT(newspace_t n): JV<T,1>(n) {}
+#if 0
   RScalarJIT(Jit& j,int r , int of , int ol): JV<T,1>(j,r,of,ol) {}
   RScalarJIT(Jit& j): JV<T,1>(j) {}
-
+#endif
 
   template<class T1>
   RScalarJIT& operator=( const RScalarJIT<T1>& rhs) {
@@ -50,10 +53,18 @@ public:
 
 #endif
   //! construct dest = rhs
+
+#if 0
   template<class T1>
   RScalarJIT(const T1& rhs) : JV<T,1>(rhs) {
     std::cout << "RScalarJIT(const T1& rhs)\n";
   }
+#endif
+
+  RScalarJIT(const T& rhs) : JV<T,1>(rhs) {
+    std::cout << "RScalarJIT(const T& rhs)\n";
+  }
+
 
   RScalarJIT(Jit& j,const typename WordType<T>::Type_t& w) : JV<T,1>(j,w) {
     std::cout << "RScalarJIT(Jit&,word)\n";
@@ -254,8 +265,8 @@ class RComplexJIT: public JV<T,2>
 {
 public:
 
-  RComplexJIT(Jit& j,int r , int of , int ol): JV<T,2>(j,r,of,ol) {}
-  RComplexJIT(Jit& j): JV<T,2>(j) {}
+  RComplexJIT(curry_t c): JV<T,2>(c) {}
+  RComplexJIT(newspace_t n): JV<T,2>(n) {}
 
 #if 0
   RComplexJIT() {}

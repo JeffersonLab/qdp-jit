@@ -39,20 +39,20 @@ namespace QDP {
     }
 
     //! View of an object from global state space
-    WordJIT(Jit& j , int r_addr_ , int offset_full_ , int offset_level_ ) : 
-      jit(j), 
-      r_addr(r_addr_),
-      offset_full(offset_full_),
-      offset_level(offset_level_) , 
+    WordJIT(curry_t c) : 
+      jit(c.jit), 
+      r_addr(c.r_addr),
+      offset_full(c.ful),
+      offset_level(c.lev) , 
       global_state(true) , 
       literal(false) 
     {
-      std::cout << "WordJIT() global view   " << (void*)this << " " << (void*)&j << "\n";
+      std::cout << "WordJIT() global view   " << (void*)this << " " << (void*)&jit << "\n";
     }
 
     //! New space 
-    WordJIT(Jit& j ) : 
-      jit(j), 
+    WordJIT(newspace_t n ) : 
+      jit(n.jit), 
       global_state(false),
       literal(false) 
     {

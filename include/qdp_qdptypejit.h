@@ -31,9 +31,9 @@ public:
 
 
 public:
-  T elem(int i) {return static_cast<const C*>(this)->elem(i);}
+  T elem(Jit::LatticeLayout inner,int i) {return static_cast<const C*>(this)->elem(inner,i);}
 
-  const T elem(int i) const {return static_cast<const C*>(this)->elem(i);}
+  const T elem(Jit::LatticeLayout inner,int i) const {return static_cast<const C*>(this)->elem(inner,i);}
 
   T elem() {return static_cast<const C*>(this)->elem();}
 
@@ -165,7 +165,7 @@ struct LeafFunctor<QDPTypeJIT<T,C>, ViewLeaf>
   inline static
   Type_t apply(const QDPTypeJIT<T,C>& s, const ViewLeaf& v)
   { 
-    return s.elem(v.val1());
+    return s.elem( v.layout() , v.val1() );
   }
 };
 

@@ -25,8 +25,9 @@ namespace QDP {
 {
 public:
 
-  PScalarJIT(Jit& j,int r , int of , int ol): JV<T,1>(j,r,of,ol) {}
-  PScalarJIT(Jit& j): JV<T,1>(j) {}
+  PScalarJIT(curry_t c): JV<T,1>(c) {}
+  PScalarJIT(newspace_t n): JV<T,1>(n) {}
+
 
   //PScalarJIT(const PScalarJIT& a): JV<T,1>(a) {}
 
@@ -60,9 +61,15 @@ public:
 #endif
 
 
+#if 0
   template<class T1>
   PScalarJIT(const T1& rhs) : JV<T,1>(rhs) {
     std::cout << "PScalarJIT(const T1& rhs)\n";
+  }
+#endif
+
+  PScalarJIT(const T& rhs) : JV<T,1>(rhs) {
+    std::cout << "PScalarJIT(const T& rhs)\n";
   }
 
 

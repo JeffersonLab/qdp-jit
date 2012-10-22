@@ -374,7 +374,7 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
     }
 
   // Execute the function
-  function_exec(function, dest, op, rhs);
+  function_exec(function, dest, op, rhs, s);
 
 
 #if defined(QDP_USE_PROFILING)   

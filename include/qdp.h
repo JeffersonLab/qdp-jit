@@ -153,6 +153,7 @@ namespace QDP {
 #include "qdp_mapresource.h"
 #include "qdp_handle.h"
 #include "qdp_map.h"
+#include "qdp_autotuning.h"
 #include "qdp_jitfunction.h"
 
 #include "qdp_profile.h"

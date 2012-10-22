@@ -33,8 +33,8 @@ namespace QDP {
 public:
   typedef C<T,N>  CC;
 
-  PMatrixJIT(Jit& j,int r , int of , int ol): JV<T,N*N>(j,r,of,ol) {}
-  PMatrixJIT(Jit& j): JV<T,N*N>(j) {}
+  PMatrixJIT(curry_t c): JV<T,N*N>(c) {}
+  PMatrixJIT(newspace_t n): JV<T,N*N>(n) {}
 
 
   //! PMatrixJIT = PScalarJIT

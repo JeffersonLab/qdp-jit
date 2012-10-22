@@ -32,9 +32,8 @@ template <class T, int N> class PSpinMatrixJIT : public PMatrixJIT<T, N, PSpinMa
 {
 public:
 
-  PSpinMatrixJIT(Jit& j,int r , int of , int ol): PMatrixJIT<T, N, PSpinMatrixJIT>(j,r,of,ol) {}
-  PSpinMatrixJIT(Jit& j): PMatrixJIT<T, N, PSpinMatrixJIT>(j) {}
-
+  PSpinMatrixJIT(curry_t c): PMatrixJIT<T, N, PSpinMatrixJIT>(c) {}
+  PSpinMatrixJIT(newspace_t n): PMatrixJIT<T, N, PSpinMatrixJIT>(n) {}
 
   //! PSpinMatrixJIT = PScalarJIT
   /*! Fill with primitive scalar */

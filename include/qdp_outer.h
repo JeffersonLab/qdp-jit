@@ -604,7 +604,10 @@ struct LeafFunctor<OLattice<T>, ParamLeaf>
   inline static
   Type_t apply(const OLattice<T>& do_not_use, const ParamLeaf& p) 
   {
-    return Type_t( p.getFunc() , p.getParamLattice( WordSize<T>::Size ) );
+    if (p.isCoal())
+      return Type_t( p.getFunc() , p.getParamLattice( WordSize<T>::Size ) );
+    else
+      return Type_t( p.getFunc() , p.getParamLattice( JITContainerType<T>::Type_t::Size_t * WordSize<T>::Size ) );
   }
 };
 

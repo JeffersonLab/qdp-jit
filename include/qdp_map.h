@@ -250,7 +250,7 @@ struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
       // but a QDPType, EvalLeaf1 will return a reference, i.e. wrong word type (always 64 bit)
       Jit::IndexRet index = p.getFunc().addParamIndexFieldRcvBuf( sizeof(typename WordType<typename DeReference<typename ForEach<A, EvalLeaf1, OpCombine>::Type_t>::Type_t>::Type_t) ); 
 
-      ParamLeaf pp( p.getFunc() , index.r_newidx );
+      ParamLeaf pp( p.getFunc() , index.r_newidx , Jit::LatticeLayout::COAL );
 
       return Type_t( FnMapJIT( expr.operation() , index , p.getFunc() ) , 
 		     ForEach< A, ParamLeaf, TreeCombine >::apply( expr.child() , pp , c ) );
@@ -291,12 +291,12 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
       Jit& func = expr.operation().jit;
       
       Type_t ret(func);
-      func.addCondBranch(index);
+      func.addCondBranch_if(index);
 
       ret = Combine1<TypeA_t, FnMapJIT , OpCombine>::combine(ForEach<A, ViewLeaf, OpCombine>::apply(expr.child(), v, o),
 								    expr.operation(), o);
 
-      func.addCondBranch2();
+      func.addCondBranch_else();
       printme<Type_t>("--- FnMapJIT ViewLeaf");
       //.addParamLatticeBaseAddr( r_idx , wordSize );
 
@@ -305,9 +305,9 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
       //Type_t recv_buf0(func);
       //ret = Combine1<OLatticeJIT<Type_t>, FnMapJIT , OpCombine>::combine(ForEach<OLatticeJIT<Type_t>, ViewLeaf, OpCombine>::apply( recv_buf , v, o), expr.operation(), o);
 
-      ret = recv_buf.elem(0);
+      ret = recv_buf.elem( Jit::LatticeLayout::SCAL , 0 );
 
-      func.addCondBranch3();
+      func.addCondBranch_fi();
 
       return ret;
 

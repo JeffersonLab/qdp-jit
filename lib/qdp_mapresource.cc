@@ -98,7 +98,7 @@ namespace QDP {
 #endif
     QDP_info("H2D %d bytes receive buffer p = %p",srcnum,rcv_buf_dev);
     for (int i=0;i<srcnum/4;i++)
-      ((float*)recv_buf)[i]=-1.0;
+      ((float*)recv_buf)[i]=-1.11;
     CudaMemcpyH2D( rcv_buf_dev , recv_buf , srcnum );
 
 #if QDP_DEBUG >= 3

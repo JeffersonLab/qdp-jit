@@ -32,8 +32,8 @@ template <class T, int N, template<class,int> class C> class PVectorJIT: public 
 public:
   typedef C<T,N>  CC;
 
-  PVectorJIT(Jit& j,int r , int of , int ol): JV<T,N>(j,r,of,ol) {}
-  PVectorJIT(Jit& j): JV<T,N>(j) {}
+  PVectorJIT(curry_t c): JV<T,N>(c) {}
+  PVectorJIT(newspace_t n): JV<T,N>(n) {}
 
 
   //! PVectorJIT = PVectorJIT

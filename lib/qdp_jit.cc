@@ -580,7 +580,7 @@ namespace QDP {
     return ret;
   }
 
-  int Jit::addParamLatticeBaseAddr(int r_idx,int wordSize) 
+  int Jit::addParamLatticeBaseAddr(int r_idx,int idx_multiplier)
   {
     if (paramtype.size() != nparam) {
       std::cout << "error paramtype.size() != nparam\n";
@@ -593,7 +593,7 @@ namespace QDP {
     int r_param = getRegs( u64 , 1 );
     int r_ret = getRegs( u64 , 1 );
     oss_baseaddr << "ld.param.u64 " << getName(r_param) << ",[param" << nparam << "];\n";
-    oss_baseaddr << "add.u64 " << getName(r_ret) << "," << getName(r_param) << "," << getName( getThreadIdMultiplied(r_idx,wordSize) ) << ";\n";
+    oss_baseaddr << "add.u64 " << getName(r_ret) << "," << getName(r_param) << "," << getName( getThreadIdMultiplied(r_idx,idx_multiplier) ) << ";\n";
     nparam++;
     return r_ret;
   }
@@ -615,35 +615,46 @@ namespace QDP {
   }
 
   static int branchNum = 0;
+  static std::vector<int> vecBranch;
 
-  std::string pushTarget() 
+  std::string pushTarget()
   {
     std::ostringstream tmp;
-    tmp << "Branch" << branchNum;
+    tmp << "B" << branchNum;
+    vecBranch.push_back(branchNum);
+    branchNum++;
+    return tmp.str();
+  }
+
+  std::string popTarget()
+  {
+    std::ostringstream tmp;
+    tmp << "B" << vecBranch.back();
+    vecBranch.pop_back();
     return tmp.str();
   }
 
   std::string getTarget() 
   {
     std::ostringstream tmp;
-    tmp << "Branch" << branchNum;
+    tmp << "B" << vecBranch.back();
     return tmp.str();
   }
 
-  void Jit::addCondBranch(IndexRet i)
+  void Jit::addCondBranch_if(IndexRet i)
   {
     oss_prg << "@" << getName(i.r_pred_in_buf) << "  bra " << pushTarget() << ";\n";
   }
 
-  void Jit::addCondBranch2()
+  void Jit::addCondBranch_else()
   {
-    oss_prg << "bra " << getTarget() << "_DONE;\n";
+    oss_prg << "bra " << getTarget() << "D;\n";
     oss_prg << getTarget() << ":\n";
   }
 
-  void Jit::addCondBranch3()
+  void Jit::addCondBranch_fi()
   {
-    oss_prg << getTarget() << "_DONE:\n";
+    oss_prg << popTarget() << "D:\n";
   }
 
   int Jit::getThreadIdMultiplied(int r_idx,int wordSize)
@@ -675,7 +686,7 @@ namespace QDP {
     dumpVarDef();
     dumpParam();
     std::ofstream out(filename.c_str());
-#if 1
+#if 0
     out << ".version 1.4\n" <<
       ".target sm_12\n" <<
       ".entry " << funcname << " (" <<
@@ -701,10 +712,15 @@ namespace QDP {
       oss_param.str() << ")\n" <<
       "{\n" <<
       oss_vardef.str() <<
+      "//\n// Thread ID calculation\n" <<
       oss_tidcalc.str() <<
+      "//\n// Index calculation (Map)\n" <<
       oss_idx.str() <<
+      "//\n// Thread ID multiplication\n" <<
       oss_tidmulti.str() <<
+      "//\n// Base addresses\n" <<
       oss_baseaddr.str() <<
+      "//\n// Main body\n" <<
       oss_prg.str() <<
       "}\n";
 #endif
