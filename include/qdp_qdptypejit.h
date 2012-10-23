@@ -35,6 +35,7 @@ public:
   const T elem() const {return static_cast<const C*>(this)->elem();}
 
   Jit& getFunc() const { return function; }
+  Jit& func() const { return function; }
   int getAddr() const { return r_addr; }
   int innerSites() const { return layout == Jit::LatticeLayout::COAL ? Layout::sitesOnNode() : 1; }
 

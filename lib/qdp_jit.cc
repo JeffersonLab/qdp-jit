@@ -91,7 +91,12 @@ namespace QDP {
     oss_tidcalc <<  "@" << getName(r_out_of_range) << " exit;\n";
 
     // mapCVT[to][from]
-    mapCVT[f32][f64]="rz.";
+    mapCVT[s32][f32]="rni."; // float-to-int
+    mapCVT[s32][f64]="rni."; // float-to-int
+    mapCVT[f32][f64]="rn.";  // loss of precision
+    mapCVT[f32][s32]="rn.";  // int-to-float
+    mapCVT[f64][s32]="rn.";  // int-to-float
+
 
     mapCmpOp[Jit::eq]="eq";
     mapCmpOp[Jit::ne]="ne";

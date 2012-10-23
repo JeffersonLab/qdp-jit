@@ -12,14 +12,33 @@ namespace QDP {
 
 namespace RNG
 {
-#if 0
-  void setrn(const Seed& lseed);
-  void savern(Seed& lseed);
-  void sranf(float* d, int N, Seed& seed, ILatticeSeed&, const Seed&);
-#endif
-  float sranf(typename JITContainerType<Seed>::Type_t& seed, 
-	      typename JITContainerType<Seed>::Type_t& skewed_seed, 
-	      const typename JITContainerType<Seed>::Type_t& seed_mult);
+
+  // WordJIT<T> sranf(typename JITContainerType<Seed>::Type_t& seed, 
+  // 		   typename JITContainerType<Seed>::Type_t& skewed_seed, 
+  // 		   const typename JITContainerType<Seed>::Type_t& seed_mult)
+
+  template<class T>
+  WordJIT<T> sranf(OScalarJIT<PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > >& seed, 
+		   OScalarJIT<PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > >& skewed_seed, 
+		   const OScalarJIT<PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > >& seed_mult)
+  {
+    std::cout << __PRETTY_FUNCTION__ << "\n";
+
+    PScalarJIT<PScalarJIT<RScalarJIT<WordJIT<float> > > > _sranf(seed.func());
+    _sranf = seedToFloat(skewed_seed.elem());                                // this is to be returned!!
+
+    PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > ran_tmp(seed.func());
+
+    ran_tmp = seed.elem() * seed_mult.elem();
+    seed.elem() = ran_tmp;
+
+    ran_tmp = skewed_seed.elem() * seed_mult.elem();
+    skewed_seed.elem() = ran_tmp;
+
+    return _sranf.elem().elem().elem();
+  }
+
+
 }
 
 

@@ -46,12 +46,12 @@ public:
   //---------------------------------------------------------
   //! construct dest = const
   RScalarJIT(const typename WordType<T>::Type_t& rhs) : F(rhs) {}
+#endif
 
   //! construct dest = rhs
   template<class T1>
-  RScalarJIT(const RScalarJIT<T1>& rhs) : F(rhs.elem()) {}
+  RScalarJIT(const RScalarJIT<T1>& rhs) : JV<T,1>(rhs.elem()) {}
 
-#endif
   //! construct dest = rhs
 
 #if 0
@@ -1702,7 +1702,7 @@ gather_sites(RComplexJIT<T>& d,
 //! dest  = random  
 template<class T, class T1, class T2>
 inline void
-fill_random(RScalarJIT<T>& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
+fill_random(const RScalarJIT<T>& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
 {
   fill_random(d.elem(), seed, skewed_seed, seed_mult);
 }

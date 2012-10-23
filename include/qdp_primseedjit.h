@@ -396,9 +396,9 @@ seedToFloat(const PSeedJIT<T>& s1)
   typename UnaryReturn<PSeedJIT<T>, FnSeedToFloat>::Type_t  d(s1.func());
   typedef typename RealScalar<T>::Type_t  S;
 
-  S  twom11(1.0 / 2048.0);
-  S  twom12(1.0 / 4096.0);
-  S  fs1, fs2;
+  S  twom11(s1.func(),1.0 / 2048.0);
+  S  twom12(s1.func(),1.0 / 4096.0);
+  S  fs1(s1.func()), fs2(s1.func());
 
 //  recast_rep(fs1, s1.elem(0));
   fs1 = S(s1.elem(0));

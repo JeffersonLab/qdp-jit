@@ -55,28 +55,6 @@ namespace RNG
    * It is linear congruential with modulus m = 2**47, increment c = 0,
    * and multiplier a = (2**36)*m3 + (2**24)*m2 + (2**12)*m1 + m0.  
    */
-  float sranf(typename JITContainerType<Seed>::Type_t& seed, 
-	      typename JITContainerType<Seed>::Type_t& skewed_seed, 
-	      const typename JITContainerType<Seed>::Type_t& seed_mult)
-  {
-    std::cout << __PRETTY_FUNCTION__ << "\n";
-#if 0
-    Real _sranf;
-    float _ssranf;
-    Seed ran_tmp;
-
-    _sranf = seedToFloat(skewed_seed);
-    cast_rep(_ssranf, _sranf);
-
-    ran_tmp = seed * seed_mult;
-    seed = ran_tmp;
-
-    ran_tmp = skewed_seed * seed_mult;
-    skewed_seed = ran_tmp;
-
-    return _ssranf;
-#endif
-  }
 
 #if 0
   //! Scalar random number generator. Done on the front end. */

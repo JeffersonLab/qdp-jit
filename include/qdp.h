@@ -176,8 +176,8 @@ namespace QDP {
 #include "qdp_specializations.h"
 
 //#include "qdp_special.h"
-#include "qdp_random.h"
 #include "qdp_randomjit.h"
+#include "qdp_random.h"
 
 #include "qdp_jitfunction.h"
 

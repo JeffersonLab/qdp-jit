@@ -446,11 +446,14 @@ random(OLattice<T>& d, const Subset& s)
 {
   static CUfunction function;
 
+  Seed seed;
+  Seed skewed_seed;
+
   // Build the function
   if (function == NULL)
     {
       std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
-      function = function_random_build(d);
+      function = function_random_build( d , seed , skewed_seed );
       std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
     }
   else
@@ -459,7 +462,7 @@ random(OLattice<T>& d, const Subset& s)
     }
 
   // Execute the function
-  function_random_exec(function, d, s);
+  function_random_exec(function, d, s , seed , skewed_seed );
 
 #if 0
   Seed seed;

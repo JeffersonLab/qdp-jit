@@ -108,7 +108,7 @@ namespace QDP {
       if (literal) {
 	std::cout << "WordJIT is literal\n";
 	if (mapReg.count( type ) > 0)
-	  QDP_error_exit("getReg literal: type already requested");
+	  QDP_info_primary("getReg literal: type already requested");
 	mapReg.insert( std::make_pair( type , jit.getRegs( type , 1 ) ) );
 	jit.asm_mov_literal( mapReg.at( type ) , litVal );
 	return mapReg.at( type );
@@ -231,6 +231,11 @@ namespace QDP {
   // ---------------------------------------------------------------------------------------------
   // ---------------------------------------------------------------------------------------------
 
+
+template<class T>
+struct RealScalar<WordJIT<T> > {
+  typedef WordJIT<typename RealScalar<T>::Type_t>  Type_t;
+};
 
 
 
@@ -1417,9 +1422,9 @@ copymask(WordJIT<T>& d, const WordJIT<T1>& mask, const WordJIT<T>& s1)
 //! dest  = random  
 template<class T, class T1, class T2>
 inline void
-fill_random(WordJIT<T>& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
+fill_random(const WordJIT<T>& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
 {
-  fill_random(d.elem(), seed, skewed_seed, seed_mult);
+  const_cast<WordJIT<T>&>(d) = RNG::sranf<T>(seed, skewed_seed, seed_mult);
 }
 
 

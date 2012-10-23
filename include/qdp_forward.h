@@ -36,11 +36,6 @@ namespace QDP
   fill_random(double* d, T1& seed, T2& skewed_seed, const T1& seed_mult);
 
 
-  namespace RNG 
-  {
-//  float sranf(Seed&, Seed&, const Seed&);
-  }
-
   
   // Inner
   template<class T> class IScalar;
@@ -125,6 +120,18 @@ namespace QDP
   template<class T, class T1, class RHS>
   CUfunction
   function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs );
+
+  namespace RNG 
+  {
+//  float sranf(Seed&, Seed&, const Seed&);
+  template<class T>
+  WordJIT<T> sranf(OScalarJIT<PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > >& seed, 
+		   OScalarJIT<PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > >& skewed_seed, 
+		   const OScalarJIT<PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > >& seed_mult);
+  }
+
+
+
 
 } // namespace QDP
 
