@@ -53,8 +53,8 @@ struct ParamLeaf
   int getParamScalar() const {
     return func.addParamScalarBaseAddr();
   }
-  int getParamIndexField() const {
-    return func.addParamIndexField();
+  int getParamIndexFieldAndOption() const {
+    return func.addParamIndexFieldAndOption();
   }
 };
 

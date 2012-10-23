@@ -71,7 +71,7 @@ namespace QDP {
     int addParam(RegType type);
     int addParamLatticeBaseAddr(int r_idx,int idx_multiplier);
     int addParamScalarBaseAddr();
-    int addParamIndexField();
+    int addParamIndexFieldAndOption();
     IndexRet addParamIndexFieldRcvBuf(int wordSize);
     void addCondBranch_if(IndexRet i);
     void addCondBranch_else();

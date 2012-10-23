@@ -19,7 +19,7 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   std::cout << "function = " << (void*)&function <<"\n";
 
   ParamLeaf param_leaf(function,function.getRegIdx() , Jit::LatticeLayout::COAL );
-  ParamLeaf param_leaf_indexed( function , param_leaf.getParamIndexField() , Jit::LatticeLayout::COAL);
+  ParamLeaf param_leaf_indexed( function , param_leaf.getParamIndexFieldAndOption() , Jit::LatticeLayout::COAL);
 
   // Destination
   typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
@@ -81,7 +81,7 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
   std::cout << "function = " << (void*)&function <<"\n";
 
   ParamLeaf param_leaf_0( function , function.getRegIdx() , Jit::LatticeLayout::SCAL );
-  ParamLeaf param_leaf_soffset( function , param_leaf_0.getParamIndexField() , Jit::LatticeLayout::COAL );
+  ParamLeaf param_leaf_soffset( function , param_leaf_0.getParamIndexFieldAndOption() , Jit::LatticeLayout::COAL );
 
   // Destination
   typedef typename JITContainerType< OLattice<T> >::Type_t DestView_t;
@@ -133,12 +133,14 @@ function_gather_exec( CUfunction function, void* send_buf , const Map& map , con
 
   int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
 
-  QDPCache::Instance().printLockSets();
+  //QDPCache::Instance().printLockSets();
 
   // lo <= idx < hi
   int lo = 0;
   int hi = map.soffset().size();
-  QDP_info("gather sites into send_buf lo=%d hi=%d",lo,hi);
+  int do_soffset_index = 1;
+
+  //QDP_info("gather sites into send_buf lo=%d hi=%d",lo,hi);
 
   int soffsetsId = map.getSoffsetsId();
   void * soffsetsDev = QDPCache::Instance().getDevicePtr( soffsetsId );
@@ -160,20 +162,23 @@ function_gather_exec( CUfunction function, void* send_buf , const Map& map , con
   std::vector<void*> addr;
 
   addr.push_back( &lo );
-  std::cout << "addr lo =" << addr[0] << "\n";
+  //std::cout << "addr lo =" << addr[0] << "\n";
 
   addr.push_back( &hi );
-  std::cout << "addr hi =" << addr[1] << "\n";
+  //std::cout << "addr hi =" << addr[1] << "\n";
+
+  addr.push_back( &do_soffset_index );
+  //std::cout << "addr do_soffset_index =" << addr[2] << " " << do_soffset_index << "\n";
 
   addr.push_back( &soffsetsDev );
-  std::cout << "addr goffsetsDev =" << addr[2] << " " << soffsetsDev << "\n";
+  //std::cout << "addr soffsetsDev =" << addr[3] << " " << soffsetsDev << "\n";
 
   addr.push_back( &send_buf );
-  std::cout << "addr send_buf =" << addr[3] << " " << send_buf << "\n";
+  //std::cout << "addr send_buf =" << addr[4] << " " << send_buf << "\n";
 
   for(int i=0; i < addr_leaf.addr.size(); ++i) {
     addr.push_back( &addr_leaf.addr[i] );
-    std::cout << "addr rhs =" << addr[addr.size()-1] << " " << addr_leaf.addr[i] << "\n";
+    //std::cout << "addr rhs =" << addr[addr.size()-1] << " " << addr_leaf.addr[i] << "\n";
   }
 
 
@@ -227,6 +232,7 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
   // lo <= idx < hi
   int lo = 0;
   int hi = innerCount;
+  int do_soffset_index = (int)(offnode_maps > 0);
 
   std::vector<void*> addr;
 
@@ -236,8 +242,11 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
   addr.push_back( &hi );
   //std::cout << "addr hi = " << addr[1] << " hi=" << hi << "\n";
 
+  addr.push_back( &do_soffset_index );
+  //std::cout << "addr do_soffset_index =" << addr[2] << " " << do_soffset_index << "\n";
+
   addr.push_back( &idx_inner_dev );
-  //std::cout << "addr idx_inner_dev = " << addr[2] << " " << idx_inner_dev << "\n";
+  //std::cout << "addr idx_inner_dev = " << addr[3] << " " << idx_inner_dev << "\n";
 
   int addr_dest=addr.size();
   for(int i=0; i < addr_leaf.addr.size(); ++i) {

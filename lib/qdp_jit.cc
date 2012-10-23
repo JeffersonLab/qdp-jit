@@ -76,6 +76,10 @@ namespace QDP {
     oss_tidcalc <<  "cvt.u32.u16 " << getName(r_mul + 1) << ",%tid.x;\n";
     oss_tidcalc <<  "add.u32 " << getName(r_threadId_u32) << "," << getName(r_mul + 1)  << "," << getName(r_mul) << ";\n";
 
+    //
+    // Check for thread Id boundaries LO <= idx < HI
+    //
+
     int r_lo = addParamImmediate(oss_tidcalc,Jit::s32);
     int r_hi = addParamImmediate(oss_tidcalc,Jit::s32);
 
@@ -496,31 +500,54 @@ namespace QDP {
     return r_threadId_s32;
   }
 
-  int Jit::addParamIndexField()
+  int Jit::addParamIndexFieldAndOption()
   {
     if (paramtype.size() != nparam) {
       std::cout << "error paramtype.size() != nparam\n";
       exit(1);
     }
+
+    //
+    // Adds a bool (as Jit::s32) to bypass this first index
+    // Useful when the "inner" sites are actually the whole local volume
+    //
+    paramtype.push_back(s32);
+    std::ostringstream tmp;
+    tmp << ".param .s32 param" << nparam;
+    param.push_back(tmp.str());
+    int r_do_first_idx = getRegs( s32 , 1 );
+    oss_idx << "ld.param.s32 " << getName(r_do_first_idx) << ",[param" << nparam << "];\n";
+    nparam++;
+
+    int pred_first_idx = getRegs( pred , 1 );
+    oss_idx <<  "setp.ne.s32 " << getName(pred_first_idx) << "," << getName(r_do_first_idx) << ",0;\n";
+
+    
+
     int idx_u32 = getRegs( u32 , 1 );
     int idx_u32_mul_4 = getRegs( u64 , 1 );
-    oss_idx <<  "cvt.u32.s32 " << getName(idx_u32) << "," << getName(r_threadId_s32) << ";\n";
-    oss_idx <<  "mul.wide.u32 " << getName(idx_u32_mul_4) << "," << getName(idx_u32) << ",4;\n";
+    oss_idx << "@" << getName(pred_first_idx) << "  " <<  "cvt.u32.s32 " << getName(idx_u32) << "," << getName(r_threadId_s32) << ";\n";
+    oss_idx << "@" << getName(pred_first_idx) << "  " <<  "mul.wide.u32 " << getName(idx_u32_mul_4) << "," << getName(idx_u32) << ",4;\n";
 
     paramtype.push_back(u64);
-    std::ostringstream tmp;
+    tmp.str("");
     tmp << ".param .u64 param" << nparam;
     param.push_back(tmp.str());
-
     int r_param = getRegs( u64 , 1 );
-    oss_idx << "ld.param.u64 " << getName(r_param) << ",[param" << nparam << "];\n";    
+    oss_idx << "@" << getName(pred_first_idx) << "  " << "ld.param.u64 " << getName(r_param) << ",[param" << nparam << "];\n";    
     nparam++;
 
     int r_param_p_idx = getRegs( u64 , 1 );
-    oss_idx << "add.u64 " << getName(r_param_p_idx) << "," << getName(r_param) << "," << getName(idx_u32_mul_4) << ";\n";
+    oss_idx << "@" << getName(pred_first_idx) << "  " << "add.u64 " << getName(r_param_p_idx) << "," << getName(r_param) << "," << getName(idx_u32_mul_4) << ";\n";
 
+    int old_r_threadId_s32 = r_threadId_s32;
     r_threadId_s32 = getRegs( s32 , 1 );
-    oss_idx << "ld.global.s32 " << getName(r_threadId_s32) << ",[" << getName(r_param_p_idx) << "];\n";
+    oss_idx << "@" << getName(pred_first_idx) << "  " << "ld.global.s32 " << getName(r_threadId_s32) << ",[" << getName(r_param_p_idx) << "];\n";
+
+    //
+    // In case we don't do the first index just copy the old index
+    //
+    oss_idx << "@!" << getName(pred_first_idx) << "  " << "mov.s32 " << getName(r_threadId_s32) << "," << getName(old_r_threadId_s32) << ";\n";
 
     return r_threadId_s32;
   }

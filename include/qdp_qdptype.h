@@ -485,7 +485,7 @@ struct LeafFunctor<QDPType<T,OScalar<T> >, ParamLeaf>
   typedef TypeA_t  Type_t;
   inline static Type_t apply(const QDPType<T,OScalar<T> > &a, const ParamLeaf& p)
   {
-    return Type_t( p.getFunc() , p.getParamScalar() );
+    return Type_t( p.getFunc() , p.getParamScalar() , p.getLayout() );
   }
 };
 
