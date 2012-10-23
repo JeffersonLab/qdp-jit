@@ -69,6 +69,9 @@ void Set::make(const SetFunc& fun)
   // Create the array holding the array of sitetable info
   sitetables.resize(nsubset_indices);
 
+  // Create the array holding the array of membertable info
+  membertables.resize(nsubset_indices);
+
   // Loop over linear sites determining their color
   for(int linear=0; linear < nodeSites; ++linear)
   {
@@ -97,6 +100,10 @@ void Set::make(const SetFunc& fun)
   }
 
 
+  largest_subset = 0;
+  enableGPU = true;
+
+
   /*
    * Loop over the lexicographic sites.
    * This implementation of the Set will always use a
@@ -106,11 +113,18 @@ void Set::make(const SetFunc& fun)
   {
     // Always construct the sitetables. 
 
+    multi1d<bool>& membertable = membertables[cb];
+    membertable.resize(nodeSites);
+
     // First loop and see how many sites are needed
     int num_sitetable = 0;
     for(int linear=0; linear < nodeSites; ++linear)
-      if (lat_color[linear] == cb)
+      if (lat_color[linear] == cb) {
 	++num_sitetable;
+	membertable[linear] = true;
+      } else {
+	membertable[linear] = false;
+      }
 
     // Now take the inverse of the lattice coloring to produce
     // the site list
@@ -160,12 +174,94 @@ void Set::make(const SetFunc& fun)
       start = end = -1;
     }
 
-    sub[cb].make(ordRep, start, end, &(sitetables[cb]), cb, this);
+    sub[cb].make(ordRep, start, end, &(sitetables[cb]), cb, this, &(membertables[cb]) );
+
+
+    if (largest_subset < sitetables[cb].size()) {
+      if (largest_subset > 0) {
+	QDP_error("Warning: Set found with changing subset sizes. This will cause problems when using with CUDA! Disable device calculation for this set.");
+	enableGPU = false;
+      }
+      largest_subset = sitetables[cb].size();
+    }
+
 
 #if QDP_DEBUG >= 2
     QDP_info("Subset(%d)",cb);
 #endif
   }
+
+
+  QDP_debug("Building strided sitetables...");
+
+  int ss_size = sitetables[0].size();
+
+  int strided=0;
+  sitetables_strided.resize( largest_subset * sitetables.size() );
+  bool first=true;
+  bool hill0=false;
+  bool valley0=false;
+  bool hill1=false;
+
+  nonEmptySubsetsOnNode = 0;
+
+  for (int n = 0 ; n < sitetables.size() ; n++) {
+
+    if ((ss_size > 0) && 
+	(sitetables[n].size() > 0) && 
+	(sitetables[n].size() != ss_size)) {
+      QDP_error("Warning: Set found with subset sizes changing accross nodes. This will cause problems with sumMulti on GPUs. Disable device calculation for this specific set.");
+      enableGPU = false;
+    }
+
+    if (sitetables[n].size() > 0) {
+      if (first) {
+	first = false;
+	stride_offset=n;
+	hill0=true;
+	QDP_debug("hill0");
+      }
+      nonEmptySubsetsOnNode++;
+      if (valley0) {
+	QDP_error("Warning: Set found with at least two separate junctions. This will cause problems when using with CUDA! Disable device calculation for this set.");
+	enableGPU = false;
+      }
+      ss_size=sitetables[0].size();
+    } else {
+      if (hill0) { valley0=true;  QDP_debug_deep("hill0 valley0"); }
+
+    }
+
+    for (int i=0 ; i < sitetables[n].size() ; i++ ) {
+      sitetables_strided[strided++]=sitetables[n][i];
+    }
+  }
+
+  unsigned dsize = sitetables_strided.size() * sizeof(int);
+
+  QDP_debug("Set::make: Strided:  Will register memory now...");
+
+  if (registered) {
+    QDP_info("Set::~Set: Strided:  Already registered, will sign off the old memory ...");
+    QDPCache::Instance().signoff( idStrided );
+  }
+
+  idStrided = QDPCache::Instance().registrateOwnHostMem( dsize , (void*)sitetables_strided.slice() , NULL );
+  registered=true;
+
+  QDP_debug("nonEmptySubsetsOnNode  = %d" , nonEmptySubsetsOnNode );  
+  QDP_debug("stride_offset = %d" , stride_offset );
+
+#if 0
+  // Now check across nodes
+  Integer yo = enableGPU ? 1 : 0;
+  QDPInternal::globalSum(yo);
+  if ( yo.elem().elem().elem().elem() < Layout::numNodes() ) {
+    QDP_info_primary("Disabling 1 particular Set for sumMulti on GPUs");
+    enableGPU=false;
+  }
+#endif
+
 }
 	  
 

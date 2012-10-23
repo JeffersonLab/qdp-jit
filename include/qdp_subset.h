@@ -39,19 +39,29 @@ class Subset
 {
 public:
   //! There can be an empty constructor
-  Subset() {}
+  Subset();
 
   //! Copy constructor
-  Subset(const Subset& s):
-    ordRep(s.ordRep), startSite(s.startSite), endSite(s.endSite), 
-    sub_index(s.sub_index), sitetable(s.sitetable), set(s.set)
-    {}
+  Subset(const Subset& s);
+
 
   // Simple constructor
   void make(const Subset& s);
 
   //! Destructor for a subset
-  virtual ~Subset() {}
+  ~Subset();
+
+  int getId() const {
+    if (!registered) 
+      return -1;
+    else
+      return idSiteTable;
+  }
+  int getIdMemberTable() const {
+    if (!registered) 
+      QDP_error_exit("Subset not registered");
+    return idMemberTable;
+  }
 
   //! The = operator
   Subset& operator=(const Subset& s);
@@ -59,9 +69,13 @@ public:
   //! Access the coloring for this subset
   int color() const {return sub_index;}
 
+  multi1d<bool>& getIsElement() const       { return *membertable; }
+  bool           isElement(int index) const { return (*membertable)[index]; }
+
+
 protected:
   // Simple constructor
-  void make(bool rep, int start, int end, multi1d<int>* ind, int cb, Set* set);
+  void make(bool rep, int start, int end, multi1d<int>* ind, int cb, Set* set, multi1d<bool>* memb);
 
 private:
   bool ordRep;
@@ -72,8 +86,18 @@ private:
   //! Site lookup table
   multi1d<int>* sitetable;
 
+
+  // Cache registered
+  int idSiteTable;
+  int idMemberTable;
+  bool registered;
+
+
   //! Original set
   Set *set;
+
+  // Constant time to know whether linear index in this subset
+  multi1d<bool>* membertable;
 
 public:
   inline bool hasOrderedRep() const {return ordRep;}
@@ -96,10 +120,10 @@ class Set
 {
 public:
   //! There can be an empty constructor
-  Set() {}
+  Set();
 
   //! Constructor from a function object
-  Set(const SetFunc& fn) {make(fn);}
+  Set(const SetFunc& fn);
 
   //! Constructor from a function object
   void make(const SetFunc& fn);
@@ -111,10 +135,18 @@ public:
   int numSubsets() const {return sub.size();}
 
   //! Destructor for a set
-  virtual ~Set() {}
+  ~Set();
 
   //! The = operator
   Set& operator=(const Set& s);
+
+
+  int getIdStrided() const {
+    if (!registered)
+      QDP_error_exit("You are trying to use a Set which was not set up properly.");
+    return idStrided;
+  }
+
 
 protected:
   //! A set is composed of an array of subsets
@@ -126,9 +158,31 @@ protected:
   //! Array of sitetable arrays
   multi1d<multi1d<int> > sitetables;
 
+  //! Array of sitetable arrays
+  multi1d<multi1d<bool> > membertables;
+
+
+  //! This is part of an attempt to port sumMulti to GPUs -- really not made for them
+  multi1d<int> sitetables_strided;
+
+  // Cache registered
+  int idStrided;
+  bool registered;
+
+
+
+
+
 public:
   //! The coloring of the lattice sites
   const multi1d<int>& latticeColoring() const {return lat_color;}
+
+
+  int stride_offset;
+  int nonEmptySubsetsOnNode;
+  int largest_subset;
+  bool enableGPU;
+
 };
 
 

@@ -500,6 +500,34 @@ namespace QDP {
     return r_threadId_s32;
   }
 
+  int Jit::addParamMemberArray(int r_index)
+  {
+    //
+    // Add a parameter for the member table (array of bool)
+    //
+    paramtype.push_back(u64);
+    std::ostringstream tmp;
+    tmp << ".param .u64 param" << nparam;
+    param.push_back(tmp.str());
+    int r_member_addr = getRegs( u64 , 1 );
+    int r_member_offs = getRegs( u64 , 1 );
+    int r_member = getRegs( u8 , 1 );
+    int r_member_u32 = getRegs( u32 , 1 );
+    int r_isMember = getRegs( pred , 1 );
+    oss_baseaddr << "ld.param.u64 " << getName(r_member_addr) << ",[param" << nparam << "];  // member array\n";
+    oss_baseaddr << "add.u64 " << getName(r_member_offs) << "," << getName(r_member_addr) << "," << getName( getThreadIdMultiplied(r_index,1) ) << ";\n";
+    nparam++;
+
+    oss_prg << "//\n// Is this site a member of the subset ?\n";
+    oss_prg << "ld.global.u8 " << getName(r_member) << ",[" << getName(r_member_offs) << "];\n";
+    oss_prg << "cvt.u32.u8 " << getName(r_member_u32) << "," << getName(r_member) << ";\n";
+    oss_prg << "setp.ne.u32 " << getName(r_isMember) << "," << getName(r_member_u32) << ",0;\n";
+    oss_prg <<  "@!" << getName(r_isMember) << " exit;\n";
+    oss_prg << "//\n";
+
+  }
+
+
   int Jit::addParamIndexFieldAndOption()
   {
     if (paramtype.size() != nparam) {
@@ -529,6 +557,9 @@ namespace QDP {
     oss_idx << "@" << getName(pred_first_idx) << "  " <<  "cvt.u32.s32 " << getName(idx_u32) << "," << getName(r_threadId_s32) << ";\n";
     oss_idx << "@" << getName(pred_first_idx) << "  " <<  "mul.wide.u32 " << getName(idx_u32_mul_4) << "," << getName(idx_u32) << ",4;\n";
 
+    //
+    // Now add the parameter to the index field (in case needed)
+    //
     paramtype.push_back(u64);
     tmp.str("");
     tmp << ".param .u64 param" << nparam;
@@ -619,7 +650,7 @@ namespace QDP {
     param.push_back(tmp.str());
     int r_param = getRegs( u64 , 1 );
     int r_ret = getRegs( u64 , 1 );
-    oss_baseaddr << "ld.param.u64 " << getName(r_param) << ",[param" << nparam << "];\n";
+    oss_baseaddr << "ld.param.u64 " << getName(r_param) << ",[param" << nparam << "];  // lattice type\n";
     oss_baseaddr << "add.u64 " << getName(r_ret) << "," << getName(r_param) << "," << getName( getThreadIdMultiplied(r_idx,idx_multiplier) ) << ";\n";
     nparam++;
     return r_ret;
@@ -636,7 +667,7 @@ namespace QDP {
     tmp << ".param .u64 param" << nparam;
     param.push_back(tmp.str());
     int r_param = getRegs( u64 , 1 );
-    oss_baseaddr << "ld.param.u64 " << getName(r_param) << ",[param" << nparam << "];\n";
+    oss_baseaddr << "ld.param.u64 " << getName(r_param) << ",[param" << nparam << "];  // scalar type\n";
     nparam++;
     return r_param;
   }

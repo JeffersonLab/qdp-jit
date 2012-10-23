@@ -28,7 +28,7 @@ struct ViewLeaf
 struct ParamLeaf
 {
   Jit& func;  // Function we are building
-  int r_idx;
+  mutable int r_idx;
   Jit::LatticeLayout layout;
 
   //mutable int cnt;      // parameter count
@@ -54,7 +54,7 @@ struct ParamLeaf
     return func.addParamScalarBaseAddr();
   }
   int getParamIndexFieldAndOption() const {
-    return func.addParamIndexFieldAndOption();
+    return r_idx = func.addParamIndexFieldAndOption();
   }
 };
 

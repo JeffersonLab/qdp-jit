@@ -20,6 +20,7 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 
   ParamLeaf param_leaf(function,function.getRegIdx() , Jit::LatticeLayout::COAL );
   ParamLeaf param_leaf_indexed( function , param_leaf.getParamIndexFieldAndOption() , Jit::LatticeLayout::COAL);
+  function.addParamMemberArray( param_leaf.r_idx );
 
   // Destination
   typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
@@ -222,7 +223,7 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
 
   void * idx_inner_dev = QDPCache::Instance().getDevicePtr( innerId );
   void * idx_face_dev = QDPCache::Instance().getDevicePtr( faceId );
-  // void * subset_member = QDPCache::Instance().getDevicePtr( s.getIdMemberTable() );
+  void * subset_member = QDPCache::Instance().getDevicePtr( s.getIdMemberTable() );
 
   AddressLeaf addr_leaf;
 
@@ -246,6 +247,9 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
   //std::cout << "addr do_soffset_index =" << addr[2] << " " << do_soffset_index << "\n";
 
   addr.push_back( &idx_inner_dev );
+  //std::cout << "addr idx_inner_dev = " << addr[3] << " " << idx_inner_dev << "\n";
+
+  addr.push_back( &subset_member );
   //std::cout << "addr idx_inner_dev = " << addr[3] << " " << idx_inner_dev << "\n";
 
   int addr_dest=addr.size();
@@ -276,6 +280,8 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
   } else {
     //QDP_info_primary("Previous auto-tuning result = %d",threadsPerBlock);
   }
+
+  //QDP_info("Launching kernel with %d threads",hi-lo);
 
   kernel_geom_t now = getGeom( hi-lo , threadsPerBlock );
   CUresult result = CUDA_SUCCESS;
