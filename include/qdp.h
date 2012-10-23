@@ -154,7 +154,7 @@ namespace QDP {
 #include "qdp_handle.h"
 #include "qdp_map.h"
 #include "qdp_autotuning.h"
-#include "qdp_jitfunction.h"
+
 
 #include "qdp_profile.h"
 #include "qdp_simpleword.h"
@@ -169,6 +169,7 @@ namespace QDP {
 #include "qdp_outersubtype.h"
 
 
+
 // Replaces previous ifdef structure. Structure moved into the header file
 #include "qdp_defs.h"
 #include "qdp_globalfuncs.h"
@@ -176,6 +177,9 @@ namespace QDP {
 
 //#include "qdp_special.h"
 #include "qdp_random.h"
+#include "qdp_randomjit.h"
+
+#include "qdp_jitfunction.h"
 
 // Include threading code here if applicable
 #include "qdp_dispatch.h"

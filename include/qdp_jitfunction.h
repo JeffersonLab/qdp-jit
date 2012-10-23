@@ -53,6 +53,71 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 }
 
 
+template<class T>
+CUfunction
+function_random_build(OLattice<T>& dest)
+{
+#if 1
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+
+  CUfunction func;
+
+  Jit function("ptxrandom.ptx","func");
+
+  ParamLeaf param_leaf(function,function.getRegIdx() , Jit::LatticeLayout::COAL );
+  function.addParamMemberArray( param_leaf.r_idx );
+
+  // Destination
+  typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
+  FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
+
+  Seed seed;
+  Seed skewed_seed;
+
+  // RNG::ran_seed
+  typedef typename LeafFunctor<Seed, ParamLeaf>::Type_t  SeedJIT;
+  typedef typename LeafFunctor<LatticeSeed, ParamLeaf>::Type_t  LatticeSeedJIT;
+  SeedJIT ran_seed_jit(forEach(RNG::ran_seed, param_leaf, TreeCombine()));
+  SeedJIT seed_jit(forEach(seed, param_leaf, TreeCombine()));
+  SeedJIT skewed_seed_jit(forEach(skewed_seed, param_leaf, TreeCombine()));
+  SeedJIT ran_mult_n_jit(forEach(RNG::ran_mult_n, param_leaf, TreeCombine()));
+  LatticeSeedJIT lattice_ran_mult_jit(forEach( *RNG::lattice_ran_mult , param_leaf, TreeCombine()));
+
+  //  printme<View_t>();
+
+  seed_jit.elem() = ran_seed_jit.elem();
+  skewed_seed_jit.elem() = ran_seed_jit.elem() * lattice_ran_mult_jit.elem(0);
+  fill_random(dest_jit.elem(0), seed_jit, skewed_seed_jit, ran_mult_n_jit);
+
+
+  RNG::ran_seed = seed;  // The seed from any site is the same as the new global seed
+
+
+  //  op(dest_jit.elem( 0 ), forEach(rhs_view, ViewLeaf( 0 ), OpCombine()));
+
+  if (Layout::primaryNode())
+    function.write();
+      
+  QMP_barrier();
+
+  CUresult ret;
+  CUmodule cuModule;
+  ret = cuModuleLoad(&cuModule, "ptxrandom.ptx");
+  if (ret) { std::cout << "Error loading CUDA module\n"; exit(1); }
+
+  ret = cuModuleGetFunction(&func, cuModule, "func");
+  if (ret) { std::cout << "Error getting function\n"; exit(1); }
+
+  std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
+
+  return func;
+#endif
+
+#if 0
+#endif
+}
+
+
 
 template<class T, class T1, class RHS>
 CUfunction
@@ -312,6 +377,116 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
   }
 
 
+}
+
+
+
+template<class T>
+void 
+function_random_exec(CUfunction function, OLattice<T>& dest, const Subset& s)
+{
+#if 0
+  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+
+  ShiftPhase1 phase1;
+  int offnode_maps = forEach(rhs, phase1 , BitOrCombine());
+  //QDP_info("offnode_maps = %d",offnode_maps);
+
+  int innerId = MasterMap::Instance().getIdInner(offnode_maps);
+  int innerCount = MasterMap::Instance().getCountInner(offnode_maps);
+  int faceId = MasterMap::Instance().getIdFace(offnode_maps);
+  int faceCount = MasterMap::Instance().getCountFace(offnode_maps);
+
+  void * idx_inner_dev = QDPCache::Instance().getDevicePtr( innerId );
+  void * idx_face_dev = QDPCache::Instance().getDevicePtr( faceId );
+  void * subset_member = QDPCache::Instance().getDevicePtr( s.getIdMemberTable() );
+
+  AddressLeaf addr_leaf;
+
+  int junk_dest = forEach(dest, addr_leaf, NullCombine());
+  int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
+
+  // lo <= idx < hi
+  int lo = 0;
+  int hi = innerCount;
+  int do_soffset_index = (int)(offnode_maps > 0);
+
+  std::vector<void*> addr;
+
+  addr.push_back( &lo );
+  //std::cout << "addr lo = " << addr[0] << " lo=" << lo << "\n";
+
+  addr.push_back( &hi );
+  //std::cout << "addr hi = " << addr[1] << " hi=" << hi << "\n";
+
+  addr.push_back( &do_soffset_index );
+  //std::cout << "addr do_soffset_index =" << addr[2] << " " << do_soffset_index << "\n";
+
+  addr.push_back( &idx_inner_dev );
+  //std::cout << "addr idx_inner_dev = " << addr[3] << " " << idx_inner_dev << "\n";
+
+  addr.push_back( &subset_member );
+  //std::cout << "addr idx_inner_dev = " << addr[3] << " " << idx_inner_dev << "\n";
+
+  int addr_dest=addr.size();
+  for(int i=0; i < addr_leaf.addr.size(); ++i) {
+    addr.push_back( &addr_leaf.addr[i] );
+    //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
+  }
+
+  static int threadsPerBlock = 0;
+
+  if (!threadsPerBlock) {
+    // Auto tuning
+
+    // Fist get a data field of the same size as "dest" where we can play on
+    // (in case the final operator is an OpAddAssign, etc.)
+    int tmpId = QDPCache::Instance().registrate( QDPCache::Instance().getSize( dest.getId() ) , 1 , NULL );
+    void * devPtr = QDPCache::Instance().getDevicePtr( tmpId );
+    //QDPCache::Instance().printLockSets();
+    addr[addr_dest] = &devPtr;
+
+    threadsPerBlock = jit_autotuning(function,lo,hi,&addr[0]);
+
+    // Restore original "dest" device address
+    addr[addr_dest] = &addr_leaf.addr[0];
+    QDPCache::Instance().signoff( tmpId );
+    //QDPCache::Instance().printLockSets();
+
+  } else {
+    //QDP_info_primary("Previous auto-tuning result = %d",threadsPerBlock);
+  }
+
+  //QDP_info("Launching kernel with %d threads",hi-lo);
+
+  kernel_geom_t now = getGeom( hi-lo , threadsPerBlock );
+  CUresult result = CUDA_SUCCESS;
+  result = cuLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
+
+  if (DeviceParams::Instance().getSyncDevice()) {  
+    QDP_info_primary("Pulling the brakes: device sync after kernel launch!");
+    CudaDeviceSynchronize();
+  }
+
+  if (offnode_maps > 0) {
+    //QDP_info_primary("PHASE2");
+    ShiftPhase2 phase2;
+    forEach(rhs, phase2 , NullCombine());
+
+    hi = faceCount;
+    idx_inner_dev = idx_face_dev;
+
+    //QDP_info_primary("PHASE2 launch");
+    now = getGeom( hi-lo , threadsPerBlock );
+    result = CUDA_SUCCESS;
+    result = cuLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
+
+    if (DeviceParams::Instance().getSyncDevice()) {  
+      QDP_info_primary("Pulling the brakes: device sync after kernel launch!");
+      CudaDeviceSynchronize();
+    }
+  }
+#endif
 }
 
 

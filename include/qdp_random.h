@@ -9,6 +9,15 @@
 
 namespace QDP {
 
+  namespace RNG
+  {
+    extern Seed ran_seed;
+    extern Seed ran_mult;
+    extern Seed ran_mult_n;
+    extern LatticeSeed *lattice_ran_mult;
+  }
+
+
 
 //! Random number generator namespace
 /*!

@@ -411,6 +411,7 @@ void copymask(OLattice<T2>& dest, const OLattice<T1>& mask, const OLattice<T2>& 
 }
 
 
+#if 0
 //-----------------------------------------------------------------------------
 // Random numbers
 namespace RNG
@@ -420,6 +421,7 @@ namespace RNG
   extern Seed ran_mult_n;
   extern LatticeSeed *lattice_ran_mult;
 }
+#endif
 
 
 //! dest  = random  
@@ -442,6 +444,24 @@ template<class T>
 void 
 random(OLattice<T>& d, const Subset& s)
 {
+  static CUfunction function;
+
+  // Build the function
+  if (function == NULL)
+    {
+      std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
+      function = function_random_build(d);
+      std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
+    }
+  else
+    {
+      //std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
+    }
+
+  // Execute the function
+  function_random_exec(function, d, s);
+
+#if 0
   Seed seed;
   Seed skewed_seed;
 
@@ -455,6 +475,7 @@ random(OLattice<T>& d, const Subset& s)
   }
 
   RNG::ran_seed = seed;  // The seed from any site is the same as the new global seed
+#endif
 }
 
 
