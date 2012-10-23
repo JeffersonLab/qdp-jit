@@ -16,7 +16,7 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 
   Jit function("ptxtest.ptx","func");
 
-  std::cout << "function = " << (void*)&function <<"\n";
+  //std::cout << "function = " << (void*)&function <<"\n";
 
   ParamLeaf param_leaf(function,function.getRegIdx() , Jit::LatticeLayout::COAL );
   ParamLeaf param_leaf_indexed( function , param_leaf.getParamIndexFieldAndOption() , Jit::LatticeLayout::COAL);
@@ -78,14 +78,14 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
 
   Jit function("ptxgather.ptx","func");
 
-  std::cout << "function = " << (void*)&function <<"\n";
-
+  //std::cout << "function = " << (void*)&function <<"\n";
+  
   ParamLeaf param_leaf_0( function , function.getRegIdx() , Jit::LatticeLayout::SCAL );
   ParamLeaf param_leaf_soffset( function , param_leaf_0.getParamIndexFieldAndOption() , Jit::LatticeLayout::COAL );
 
   // Destination
   typedef typename JITContainerType< OLattice<T> >::Type_t DestView_t;
-  QDP_info("------------ %d",JITContainerType<T>::Type_t::Size_t * WordSize<T>::Size);
+  //QDP_info("------------ %d",JITContainerType<T>::Type_t::Size_t * WordSize<T>::Size);
   DestView_t dest_jit( function , 
 		       param_leaf_0.getParamLattice( JITContainerType<T>::Type_t::Size_t * WordSize<T>::Size ) ,
 		       Jit::LatticeLayout::SCAL );
@@ -97,7 +97,7 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
   typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
   View_t rhs_view( forEach( rhs , param_leaf_soffset , TreeCombine() ) );
 
-  printme<View_t>();
+  //printme<View_t>();
 
   OpAssign()( dest_jit.elem( 0 ) , forEach(rhs_view, ViewLeaf( 0 ) , OpCombine() ) );
 
@@ -127,7 +127,7 @@ void
 function_gather_exec( CUfunction function, void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs )
 {
 #if 1
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   AddressLeaf addr_leaf;
 
@@ -157,7 +157,7 @@ function_gather_exec( CUfunction function, void* send_buf , const Map& map , con
   delete[] soff_host;
 #endif
 
-  QDPCache::Instance().printLockSets();
+  //QDPCache::Instance().printLockSets();
 
   std::vector<void*> addr;
 
