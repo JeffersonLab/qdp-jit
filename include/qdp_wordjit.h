@@ -1424,7 +1424,8 @@ template<class T, class T1, class T2>
 inline void
 fill_random(const WordJIT<T>& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
 {
-  const_cast<WordJIT<T>&>(d) = RNG::sranf<T>(seed, skewed_seed, seed_mult);
+  //const_cast<WordJIT<T>&>(d) = RNG::sranf<T>(seed, skewed_seed, seed_mult);
+  RNG::sranf(const_cast<WordJIT<T>&>(d),seed, skewed_seed, seed_mult);
 }
 
 

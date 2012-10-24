@@ -15,6 +15,9 @@ namespace QDP {
     extern Seed ran_mult;
     extern Seed ran_mult_n;
     extern LatticeSeed *lattice_ran_mult;
+
+    extern LatticeSeed *lat_ran_seed;
+    extern LatticeSeed *lat_ran_mult_n;
   }
 
 

@@ -446,8 +446,8 @@ random(OLattice<T>& d, const Subset& s)
 {
   static CUfunction function;
 
-  Seed seed;
-  Seed skewed_seed;
+  LatticeSeed seed;
+  LatticeSeed skewed_seed;
 
   // Build the function
   if (function == NULL)
@@ -463,6 +463,8 @@ random(OLattice<T>& d, const Subset& s)
 
   // Execute the function
   function_random_exec(function, d, s , seed , skewed_seed );
+
+  *RNG::lat_ran_seed = seed;
 
 #if 0
   Seed seed;

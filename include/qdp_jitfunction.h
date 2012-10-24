@@ -55,7 +55,7 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 
 template<class T>
 CUfunction
-function_random_build(OLattice<T>& dest, Seed& seed, Seed& skewed_seed)
+function_random_build(OLattice<T>& dest, LatticeSeed& seed, LatticeSeed& skewed_seed)
 {
 #if 1
   std::cout << __PRETTY_FUNCTION__ << ": entering\n";
@@ -72,23 +72,26 @@ function_random_build(OLattice<T>& dest, Seed& seed, Seed& skewed_seed)
   FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
 
   // RNG::ran_seed
-  typedef typename LeafFunctor<Seed, ParamLeaf>::Type_t  SeedJIT;
+  //typedef typename LeafFunctor<Seed, ParamLeaf>::Type_t  SeedJIT;
   typedef typename LeafFunctor<LatticeSeed, ParamLeaf>::Type_t  LatticeSeedJIT;
 
-  SeedJIT ran_seed_jit(forEach(RNG::ran_seed, param_leaf, TreeCombine()));
-  SeedJIT seed_jit(forEach(seed, param_leaf, TreeCombine()));
-  SeedJIT skewed_seed_jit(forEach(skewed_seed, param_leaf, TreeCombine()));
-  SeedJIT ran_mult_n_jit(forEach(RNG::ran_mult_n, param_leaf, TreeCombine()));
+  LatticeSeedJIT ran_seed_jit(forEach(*RNG::lat_ran_seed, param_leaf, TreeCombine()));
+  LatticeSeedJIT seed_jit(forEach(seed, param_leaf, TreeCombine()));
+  LatticeSeedJIT skewed_seed_jit(forEach(skewed_seed, param_leaf, TreeCombine()));
+  LatticeSeedJIT ran_mult_n_jit(forEach(*RNG::lat_ran_mult_n, param_leaf, TreeCombine()));
   LatticeSeedJIT lattice_ran_mult_jit(forEach( *RNG::lattice_ran_mult , param_leaf, TreeCombine()));
 
   //  printme<View_t>();
 
-  seed_jit.elem() = ran_seed_jit.elem();
-  skewed_seed_jit.elem() = ran_seed_jit.elem() * lattice_ran_mult_jit.elem(0);
-  fill_random(dest_jit.elem(0), seed_jit, skewed_seed_jit, ran_mult_n_jit);
+  seed_jit.elem(0)        = ran_seed_jit.elem(0);
+  skewed_seed_jit.elem(0) = ran_seed_jit.elem(0) * lattice_ran_mult_jit.elem(0);
+
+  fill_random( dest_jit.elem(0) , seed_jit , skewed_seed_jit , ran_mult_n_jit );
+
+  //  fill_random( dest_jit.elem(0) , seed_jit , skewed_seed_jit , ran_mult_n_jit );
 
 
-  RNG::ran_seed = seed;  // The seed from any site is the same as the new global seed
+  //RNG::ran_seed = seed;  // The seed from any site is the same as the new global seed
 
 
   //  op(dest_jit.elem( 0 ), forEach(rhs_view, ViewLeaf( 0 ), OpCombine()));
@@ -378,7 +381,7 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
 
 template<class T>
 void 
-function_random_exec(CUfunction function, OLattice<T>& dest, const Subset& s, Seed& seed, Seed& skewed_seed )
+function_random_exec(CUfunction function, OLattice<T>& dest, const Subset& s, LatticeSeed& seed, LatticeSeed& skewed_seed )
 {
 #if 1
   std::cout << __PRETTY_FUNCTION__ << ": entering\n";
@@ -387,13 +390,11 @@ function_random_exec(CUfunction function, OLattice<T>& dest, const Subset& s, Se
 
   int junk_0 = forEach(dest, addr_leaf, NullCombine());
 
-  int junk_1 = forEach(RNG::ran_seed, addr_leaf, NullCombine());
+  int junk_1 = forEach(*RNG::lat_ran_seed, addr_leaf, NullCombine());
   int junk_2 = forEach(seed, addr_leaf, NullCombine());
   int junk_3 = forEach(skewed_seed, addr_leaf, NullCombine());
-  int junk_4 = forEach(RNG::ran_mult_n, addr_leaf, NullCombine());
+  int junk_4 = forEach(*RNG::lat_ran_mult_n, addr_leaf, NullCombine());
   int junk_5 = forEach(*RNG::lattice_ran_mult, addr_leaf, NullCombine());
-
-
 
   // lo <= idx < hi
   int lo = 0;
@@ -409,12 +410,6 @@ function_random_exec(CUfunction function, OLattice<T>& dest, const Subset& s, Se
 
   addr.push_back( &hi );
   std::cout << "addr hi = " << addr[1] << " hi=" << hi << "\n";
-
-  addr.push_back( &do_soffset_index );
-  std::cout << "addr do_soffset_index =" << addr[2] << " " << do_soffset_index << "\n";
-
-  addr.push_back( &dummy );
-  std::cout << "addr dummy = " << addr[3] << "\n";
 
   addr.push_back( &subset_member );
   std::cout << "addr subset_member = " << addr[3] << " " << subset_member << "\n";
