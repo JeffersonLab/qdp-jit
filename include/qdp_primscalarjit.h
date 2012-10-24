@@ -1510,6 +1510,7 @@ template<class T>
 inline void 
 zero_rep(PScalarJIT<T>& dest) 
 {
+  std::cout << __PRETTY_FUNCTION__ << "\n";
   zero_rep(dest.elem());
 }
 

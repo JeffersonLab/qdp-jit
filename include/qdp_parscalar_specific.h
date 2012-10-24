@@ -550,12 +550,30 @@ template<class T>
 inline
 void zero_rep(OLattice<T>& dest, const Subset& s) 
 {
+#if 0
+  std::cout << __PRETTY_FUNCTION__ << "\n";
+  static CUfunction function;
+
+  if (function == NULL)
+    {
+      std::cout << "building \n";
+      function = function_zero_rep_build( dest );
+    }
+  else
+    {
+      //std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
+    }
+
+  function_zero_rep_exec( function , dest , s );
+
+#else
   const int *tab = s.siteTable().slice();
   for(int j=0; j < s.numSiteTable(); ++j) 
   {
     int i = tab[j];
     zero_rep(dest.elem(i));
   }
+#endif
 }
 
 
@@ -575,9 +593,11 @@ template<class T>
 void zero_rep(OLattice<T>& dest) 
 
 {
-  const int nodeSites = Layout::sitesOnNode();
-  for(int i=0; i < nodeSites; ++i) 
-    zero_rep(dest.elem(i));
+  std::cout << __PRETTY_FUNCTION__ << "\n";
+  zero_rep(dest,all);
+  // const int nodeSites = Layout::sitesOnNode();
+  // for(int i=0; i < nodeSites; ++i) 
+  //   zero_rep(dest.elem(i));
 }
 
 

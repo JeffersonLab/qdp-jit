@@ -1606,7 +1606,8 @@ template<class T>
 inline void 
 zero_rep(WordJIT<T>& dest) 
 {
-  zero_rep(dest.elem());
+  std::cout << __PRETTY_FUNCTION__ << "\n";
+  dest.func().asm_mov_literal( dest.getReg( JitRegType<T>::Val_t ) , 0 );
 }
 
 //! dest [some type] = source [some type]
