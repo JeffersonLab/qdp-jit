@@ -16,23 +16,25 @@ public:
   //! Type of the container class
   typedef C Container_t;
 
-  QDPTypeJIT(Jit& func_, int addr_,Jit::LatticeLayout lay) : function(func_), r_addr(addr_),layout(lay) {}
+  QDPTypeJIT(Jit& func_, int addr_,Jit::LatticeLayout lay) : 
+    function(func_), 
+    r_addr(addr_),
+    layout(lay),
+    F( curry_t( func_ , addr_ , innerSites(), 0 ) )
+  {}
 
   //! Copy constructor
-  QDPTypeJIT(const QDPTypeJIT& a) : function(a.function), r_addr(a.r_addr), layout(a.layout) {}
+  QDPTypeJIT(const QDPTypeJIT& a) : function(a.function), r_addr(a.r_addr), layout(a.layout), F(a.F) {}
 
   //! Destructor
   ~QDPTypeJIT(){}
 
 
 public:
-  T elem(int i) {return static_cast<const C*>(this)->elem(i);}
-
-  const T elem(int i) const {return static_cast<const C*>(this)->elem(i);}
-
-  T elem() {return static_cast<const C*>(this)->elem();}
-
-  const T elem() const {return static_cast<const C*>(this)->elem();}
+  T& elem(int i)             {return F;}
+  const T& elem(int i) const {return F;}
+  T& elem()                  {return F;}
+  const T& elem() const      {return F;}
 
   Jit& getFunc() const { return function; }
   Jit& func() const { return function; }
@@ -40,9 +42,10 @@ public:
   int innerSites() const { return layout == Jit::LatticeLayout::COAL ? Layout::sitesOnNode() : 1; }
 
   private:
+  Jit::LatticeLayout layout;
   Jit& function;
   int  r_addr;
-  Jit::LatticeLayout layout;
+  T F;
 };
 
 

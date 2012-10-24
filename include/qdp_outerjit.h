@@ -36,20 +36,20 @@ namespace QDP {
 
 
   public:
-    inline T elem(unsigned site) {
-      //std::cout << "OLatJIT elem() \n";
-      return T( curry_t( QDPTypeJIT<T, OLatticeJIT<T> >::getFunc() , 
-			 QDPTypeJIT<T, OLatticeJIT<T> >::getAddr(), 
-			 QDPTypeJIT<T, OLatticeJIT<T> >::innerSites(), 
-			 site ) );
-    }
-    inline const T elem(unsigned site) const {
-      //std::cout << "OLatJIT elem() \n";
-      return T( curry_t( QDPTypeJIT<T, OLatticeJIT<T> >::getFunc() , 
-			 QDPTypeJIT<T, OLatticeJIT<T> >::getAddr(), 
-			 QDPTypeJIT<T, OLatticeJIT<T> >::innerSites(), 
-			 site ) );
-    }
+    // inline T elem(unsigned site) {
+    //   //std::cout << "OLatJIT elem() \n";
+    //   return T( curry_t( QDPTypeJIT<T, OLatticeJIT<T> >::getFunc() , 
+    // 			 QDPTypeJIT<T, OLatticeJIT<T> >::getAddr(), 
+    // 			 QDPTypeJIT<T, OLatticeJIT<T> >::innerSites(), 
+    // 			 site ) );
+    // }
+    // inline const T elem(unsigned site) const {
+    //   //std::cout << "OLatJIT elem() \n";
+    //   return T( curry_t( QDPTypeJIT<T, OLatticeJIT<T> >::getFunc() , 
+    // 			 QDPTypeJIT<T, OLatticeJIT<T> >::getAddr(), 
+    // 			 QDPTypeJIT<T, OLatticeJIT<T> >::innerSites(), 
+    // 			 site ) );
+    // }
     
   };
 
@@ -69,33 +69,33 @@ namespace QDP {
     void operator=(const OScalarJIT& a) {}
 
   public:
-    inline T elem(unsigned site) {
-      std::cout << "OScaJIT elem(int) \n";
-      //return T(QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 1,0 );
-      return T( curry_t( QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), 
-			 QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 
-			 QDPTypeJIT<T, OScalarJIT<T> >::innerSites() , 0 ) );
-    }
-    inline const T elem(unsigned site) const {
-      std::cout << "OScaJIT elem(int) \n";
-      //return T(QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 1,0 );
-      return T( curry_t( QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), 
-			 QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 
-			 QDPTypeJIT<T, OScalarJIT<T> >::innerSites() , 0 ) );
-    }
-    inline T elem() {
-      std::cout << "OScaJIT elem() \n";
-      //return T(QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 1,0 );
-      return T( curry_t( QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), 
-			 QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 
-			 QDPTypeJIT<T, OScalarJIT<T> >::innerSites() , 0 ) );
-    }
-    inline const T elem() const {
-      std::cout << "OScaJIT elem() \n";
-      return T( curry_t( QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), 
-			 QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 
-			 QDPTypeJIT<T, OScalarJIT<T> >::innerSites() , 0 ) );
-    }
+    // inline T elem(unsigned site) {
+    //   std::cout << "OScaJIT elem(int) \n";
+    //   //return T(QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 1,0 );
+    //   return T( curry_t( QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), 
+    // 			 QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 
+    // 			 QDPTypeJIT<T, OScalarJIT<T> >::innerSites() , 0 ) );
+    // }
+    // inline const T elem(unsigned site) const {
+    //   std::cout << "OScaJIT elem(int) \n";
+    //   //return T(QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 1,0 );
+    //   return T( curry_t( QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), 
+    // 			 QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 
+    // 			 QDPTypeJIT<T, OScalarJIT<T> >::innerSites() , 0 ) );
+    // }
+    // inline T elem() {
+    //   std::cout << "OScaJIT elem() \n";
+    //   //return T(QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 1,0 );
+    //   return T( curry_t( QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), 
+    // 			 QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 
+    // 			 QDPTypeJIT<T, OScalarJIT<T> >::innerSites() , 0 ) );
+    // }
+    // inline const T elem() const {
+    //   std::cout << "OScaJIT elem() \n";
+    //   return T( curry_t( QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), 
+    // 			 QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 
+    // 			 QDPTypeJIT<T, OScalarJIT<T> >::innerSites() , 0 ) );
+    // }
 
 
   };

@@ -132,6 +132,7 @@ namespace QDP {
 
 #include "qdp_traits.h"
 #include "qdp_qdpexpr.h"
+#include "qdp_jitresource.h"
 #include "qdp_qdptypejit.h"
 #include "qdp_qdptype.h"
 #include "qdp_qdpsubtype.h"
@@ -143,7 +144,7 @@ namespace QDP {
 // Include the allocator stuff here, before QDP_outer
 #include "qdp_allocator.h"
 
-#include "qdp_jitresource.h"
+
 
 #include "qdp_newops.h"
 #include "qdp_optops.h"
