@@ -922,7 +922,7 @@ struct UnaryReturn<PSpinVectorJIT<T,N>, FnSpinReconstructDir3Minus > {
 //! dest  = random  
 template<class T, int N,  class T1, class T2>
 inline void
-fill_random(PSpinVectorJIT<T,N>& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
+fill_random(const PSpinVectorJIT<T,N>& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
 {
   // Loop over rows the slowest
   for(int i=0; i < N; ++i)
@@ -933,7 +933,7 @@ fill_random(PSpinVectorJIT<T,N>& d, T1& seed, T2& skewed_seed, const T1& seed_mu
 //! dest  = gaussian
 template<class T, int N>
 inline void
-fill_gaussian(PSpinVectorJIT<T,N>& d, PSpinVectorJIT<T,N>& r1, PSpinVectorJIT<T,N>& r2)
+fill_gaussian(const PSpinVectorJIT<T,N>& d, PSpinVectorJIT<T,N>& r1, PSpinVectorJIT<T,N>& r2)
 {
   for(int i=0; i < N; ++i)
     fill_gaussian(d.elem(i), r1.elem(i), r2.elem(i));

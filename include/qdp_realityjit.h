@@ -1713,7 +1713,7 @@ fill_random(const RScalarJIT<T>& d, T1& seed, T2& skewed_seed, const T1& seed_mu
 /*! Real form of complex polar method */
 template<class T>
 inline void
-fill_gaussian(RScalarJIT<T>& d, RScalarJIT<T>& r1, RScalarJIT<T>& r2)
+fill_gaussian(const RScalarJIT<T>& d, RScalarJIT<T>& r1, RScalarJIT<T>& r2)
 {
   typedef typename InternalScalar<T>::Type_t  S;
 
@@ -2405,7 +2405,7 @@ void zero_rep(RComplexJIT<T>& dest)
 //! dest  = random  
 template<class T, class T1, class T2>
 inline void
-fill_random(RComplexJIT<T>& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
+fill_random(const RComplexJIT<T>& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
 {
   fill_random(d.real(), seed, skewed_seed, seed_mult);
   fill_random(d.imag(), seed, skewed_seed, seed_mult);
@@ -2416,7 +2416,7 @@ fill_random(RComplexJIT<T>& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
 /*! RComplexJIT polar method */
 template<class T>
 inline void
-fill_gaussian(RComplexJIT<T>& d, RComplexJIT<T>& r1, RComplexJIT<T>& r2)
+fill_gaussian(const RComplexJIT<T>& d, RComplexJIT<T>& r1, RComplexJIT<T>& r2)
 {
   typedef typename InternalScalar<T>::Type_t  S;
 

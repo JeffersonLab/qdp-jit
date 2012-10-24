@@ -1378,7 +1378,7 @@ fill_random(const PScalarJIT<T>& d, T1& seed, T2& skewed_seed, const T1& seed_mu
 //! dest  = gaussian  
 template<class T>
 inline void
-fill_gaussian(PScalarJIT<T>& d, PScalarJIT<T>& r1, PScalarJIT<T>& r2)
+fill_gaussian(const PScalarJIT<T>& d, PScalarJIT<T>& r1, PScalarJIT<T>& r2)
 {
   fill_gaussian(d.elem(), r1.elem(), r2.elem());
 }
