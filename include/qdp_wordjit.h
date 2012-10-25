@@ -1604,7 +1604,9 @@ inline void
 zero_rep(WordJIT<T>& dest) 
 {
   std::cout << __PRETTY_FUNCTION__ << "\n";
-  dest.func().asm_mov_literal( dest.getReg( JitRegType<T>::Val_t ) , 0 );
+  //dest.func().asm_mov_literal( dest.getReg( JitRegType<T>::Val_t ) , (T)0 );
+  WordJIT<T> z0(dest.func(),(T)0);
+  dest = z0;
 }
 
 //! dest [some type] = source [some type]

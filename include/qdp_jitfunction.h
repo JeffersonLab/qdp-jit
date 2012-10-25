@@ -114,7 +114,7 @@ CUfunction
 function_zero_rep_build(OLattice<T>& dest)
 {
 #if 1
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   CUfunction func;
 
@@ -142,7 +142,7 @@ function_zero_rep_build(OLattice<T>& dest)
   ret = cuModuleGetFunction(&func, cuModule, "func");
   if (ret) { std::cout << "Error getting function\n"; exit(1); }
 
-  std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
+  //std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
 
   return func;
 #endif
@@ -495,18 +495,18 @@ function_zero_rep_exec(CUfunction function, OLattice<T>& dest, const Subset& s )
   std::vector<void*> addr;
 
   addr.push_back( &lo );
-  std::cout << "addr lo = " << addr[0] << " lo=" << lo << "\n";
+  //std::cout << "addr lo = " << addr[0] << " lo=" << lo << "\n";
 
   addr.push_back( &hi );
-  std::cout << "addr hi = " << addr[1] << " hi=" << hi << "\n";
+  //std::cout << "addr hi = " << addr[1] << " hi=" << hi << "\n";
 
   addr.push_back( &subset_member );
-  std::cout << "addr subset_member = " << addr[3] << " " << subset_member << "\n";
+  //std::cout << "addr subset_member = " << addr[3] << " " << subset_member << "\n";
 
   int addr_dest=addr.size();
   for(int i=0; i < addr_leaf.addr.size(); ++i) {
     addr.push_back( &addr_leaf.addr[i] );
-    std::cout << "addr = " << addr_leaf.addr[i] << "\n";
+    //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
   }
 
   static int threadsPerBlock = 0;

@@ -550,7 +550,7 @@ template<class T>
 inline
 void zero_rep(OLattice<T>& dest, const Subset& s) 
 {
-#if 0
+#if 1
   std::cout << __PRETTY_FUNCTION__ << "\n";
   static CUfunction function;
 
