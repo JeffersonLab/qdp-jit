@@ -345,7 +345,7 @@ public:
   inline
   RComplexJIT& operator*=(const RComplexJIT<T1>& rhs) 
     {
-      RComplexJIT<T> d;
+      RComplexJIT<T> d(rhs.func());
       d = *this * rhs;
 
       real() = d.real();
@@ -358,7 +358,7 @@ public:
   inline
   RComplexJIT& operator/=(const RComplexJIT<T1>& rhs) 
     {
-      RComplexJIT<T> d;
+      RComplexJIT<T> d(rhs.func());
       d = *this / rhs;
 
       real() = d.real();
@@ -1921,7 +1921,7 @@ operator/(const RComplexJIT<T1>& l, const RComplexJIT<T2>& r)
 {
   typedef typename BinaryReturn<RComplexJIT<T1>, RComplexJIT<T2>, OpDivide>::Type_t  Ret_t;
 
-  T2 tmp = T2(1.0) / (r.real()*r.real() + r.imag()*r.imag());
+  T2 tmp = T2(l.func(),1.0) / (r.real()*r.real() + r.imag()*r.imag());
 
   return Ret_t((l.real()*r.real() + l.imag()*r.imag()) * tmp,
 	       (l.imag()*r.real() - l.real()*r.imag()) * tmp);
@@ -1934,7 +1934,7 @@ operator/(const RComplexJIT<T1>& l, const RScalarJIT<T2>& r)
 {
   typedef typename BinaryReturn<RComplexJIT<T1>, RScalarJIT<T2>, OpDivide>::Type_t  Ret_t;
 
-  T2 tmp = T2(1.0) / r.elem();
+  T2 tmp = T2(l.func(),1.0) / r.elem();
 
   return Ret_t(l.real() * tmp, 
 	       l.imag() * tmp);
@@ -1947,7 +1947,7 @@ operator/(const RScalarJIT<T1>& l, const RComplexJIT<T2>& r)
 {
   typedef typename BinaryReturn<RScalarJIT<T1>, RComplexJIT<T2>, OpDivide>::Type_t  Ret_t;
 
-  T2 tmp = T2(1.0) / (r.real()*r.real() + r.imag()*r.imag());
+  T2 tmp = T2(l.func(),1.0) / (r.real()*r.real() + r.imag()*r.imag());
 
   return Ret_t(l.elem() * r.real() * tmp,
 	       -l.elem() * r.imag() * tmp);

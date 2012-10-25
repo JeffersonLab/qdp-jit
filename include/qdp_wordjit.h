@@ -110,10 +110,59 @@ namespace QDP {
     }
 
     template<class T1>
+    WordJIT& operator/=(const WordJIT<T1>& rhs) {
+      *this = *this / rhs;
+      return *this;
+    }
+
+    template<class T1>
+    WordJIT& operator*=(const WordJIT<T1>& rhs) {
+      *this = *this * rhs;
+      return *this;
+    }
+
+    template<class T1>
     WordJIT& operator-=(const WordJIT<T1>& rhs) {
       *this = *this - rhs;
       return *this;
     }
+
+    template<class T1>
+    WordJIT& operator%=(const WordJIT<T1>& rhs) {
+      *this = *this % rhs;
+      return *this;
+    }
+
+    template<class T1>
+    WordJIT& operator&=(const WordJIT<T1>& rhs) {
+      *this = *this & rhs;
+      return *this;
+    }
+
+    template<class T1>
+    WordJIT& operator|=(const WordJIT<T1>& rhs) {
+      *this = *this | rhs;
+      return *this;
+    }
+
+    template<class T1>
+    WordJIT& operator^=(const WordJIT<T1>& rhs) {
+      *this = *this ^ rhs;
+      return *this;
+    }
+
+    template<class T1>
+    WordJIT& operator<<=(const WordJIT<T1>& rhs) {
+      *this = *this << rhs;
+      return *this;
+    }
+
+    template<class T1>
+    WordJIT& operator>>=(const WordJIT<T1>& rhs) {
+      *this = *this >> rhs;
+      return *this;
+    }
+
 
 
     int getReg( Jit::RegType type , Load load = DoLoad ) const {
@@ -1443,7 +1492,10 @@ template<class T>
 inline typename UnaryReturn<WordJIT<T>, FnLocalNorm2>::Type_t
 localNorm2(const WordJIT<T>& s1)
 {
-  return localNorm2(s1.elem());
+  typename UnaryReturn<WordJIT<T>, FnLocalNorm2>::Type_t d(s1.func());
+  d = s1 * s1;
+  return d;
+  //  return localNorm2(s1.elem());
 }
 
 // Global max

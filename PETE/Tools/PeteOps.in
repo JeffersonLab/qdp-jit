@@ -480,7 +480,7 @@ trinaryOps
 -----
   TAG = "FnWhere"
   FUNCTION = "where"
-  EXPR = "if (a) return b; else return c;"
+  EXPR = "return do_where(a,b,c);"
   COMMENTA = "//! The C ? operator"
   COMMENTB = "/*! The where statement is similar to the C ? operator.
   @return (if (a) return b; else return c;)

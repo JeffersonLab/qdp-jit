@@ -307,7 +307,7 @@ template<class T, int N>
 inline typename UnaryReturn<PColorMatrixJIT<T,N>, FnTraceColor>::Type_t
 traceColor(const PColorMatrixJIT<T,N>& s1)
 {
-  typename UnaryReturn<PColorMatrixJIT<T,N>, FnTraceColor>::Type_t  d;
+  typename UnaryReturn<PColorMatrixJIT<T,N>, FnTraceColor>::Type_t  d(s1.func());
 
   // Since the color index is eaten, do not need to pass on function by
   // calling trace(...) again
@@ -329,7 +329,7 @@ template<class T1, class T2, int N>
 inline typename BinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, FnTraceColorMultiply>::Type_t
 traceColorMultiply(const PColorMatrixJIT<T1,N>& l, const PColorMatrixJIT<T2,N>& r)
 {
-  typename BinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, FnTraceColorMultiply>::Type_t  d;
+  typename BinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, FnTraceColorMultiply>::Type_t  d(l.func());
 
   // The traceColor is eaten here
   d.elem() = l.elem(0,0) * r.elem(0,0);
@@ -353,7 +353,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename BinaryReturn<PColorMatrixJIT<T1,N>, PScalarJIT<T2>, FnTraceColorMultiply>::Type_t
 traceColorMultiply(const PColorMatrixJIT<T1,N>& l, const PScalarJIT<T2>& r)
 {
-  typename BinaryReturn<PColorMatrixJIT<T1,N>, PScalarJIT<T2>, FnTraceColorMultiply>::Type_t  d;
+  typename BinaryReturn<PColorMatrixJIT<T1,N>, PScalarJIT<T2>, FnTraceColorMultiply>::Type_t  d(l.func());
 
   // The traceColor is eaten here
   d.elem() = l.elem(0,0) * r.elem();
@@ -373,7 +373,7 @@ template<class T1, class T2, int N>
 inline typename BinaryReturn<PScalarJIT<T1>, PColorMatrixJIT<T2,N>, FnTraceColorMultiply>::Type_t
 traceColorMultiply(const PScalarJIT<T1>& l, const PColorMatrixJIT<T2,N>& r)
 {
-  typename BinaryReturn<PScalarJIT<T1>, PColorMatrixJIT<T2,N>, FnTraceColorMultiply>::Type_t  d;
+  typename BinaryReturn<PScalarJIT<T1>, PColorMatrixJIT<T2,N>, FnTraceColorMultiply>::Type_t  d(l.func());
 
   // The traceColor is eaten here
   d.elem() = l.elem() * r.elem(0,0);
@@ -396,7 +396,7 @@ template<class T, int N>
 inline typename UnaryReturn<PColorMatrixJIT<T,N>, FnTransposeColor >::Type_t
 transposeColor(const PColorMatrixJIT<T,N>& s1)
 {
-  typename UnaryReturn<PColorMatrixJIT<T,N>, FnTransposeColor>::Type_t d;
+  typename UnaryReturn<PColorMatrixJIT<T,N>, FnTransposeColor>::Type_t d(s1.func());;
  
   for(int i=0; i < N; i++) { 
     for(int j=0; j < N; j++) { 
@@ -423,7 +423,7 @@ template<class T1, class T2, int N>
 inline typename BinaryReturn<PColorVectorJIT<T1,N>, PColorVectorJIT<T2,N>, FnOuterProduct>::Type_t
 outerProduct(const PColorVectorJIT<T1,N>& l, const PColorVectorJIT<T2,N>& r)
 {
-  typename BinaryReturn<PColorVectorJIT<T1,N>, PColorVectorJIT<T2,N>, FnOuterProduct>::Type_t  d;
+  typename BinaryReturn<PColorVectorJIT<T1,N>, PColorVectorJIT<T2,N>, FnOuterProduct>::Type_t  d(l.func());
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -446,7 +446,7 @@ template<class T, int N>
 inline typename UnaryReturn<PColorMatrixJIT<T,N>, FnPeekColorMatrix>::Type_t
 peekColor(const PColorMatrixJIT<T,N>& l, int row, int col)
 {
-  typename UnaryReturn<PColorMatrixJIT<T,N>, FnPeekColorMatrix>::Type_t  d;
+  typename UnaryReturn<PColorMatrixJIT<T,N>, FnPeekColorMatrix>::Type_t  d(l.func());
 
   // Note, do not need to propagate down since the function is eaten at this level
   d.elem() = l.elem(row,col);
@@ -483,7 +483,7 @@ template<class T1, class T2, class T3>
 inline typename TrinaryReturn<PColorMatrixJIT<T1,3>, PColorMatrixJIT<T2,3>, PColorMatrixJIT<T3,3>, FnColorContract>::Type_t
 colorContract(const PColorMatrixJIT<T1,3>& s1, const PColorMatrixJIT<T2,3>& s2, const PColorMatrixJIT<T3,3>& s3)
 {
-  typename TrinaryReturn<PColorMatrixJIT<T1,3>, PColorMatrixJIT<T2,3>, PColorMatrixJIT<T3,3>, FnColorContract>::Type_t  d;
+  typename TrinaryReturn<PColorMatrixJIT<T1,3>, PColorMatrixJIT<T2,3>, PColorMatrixJIT<T3,3>, FnColorContract>::Type_t  d(s1.func());
 
   // Permutations: +(0,1,2)+(1,2,0)+(2,0,1)-(1,0,2)-(0,2,1)-(2,1,0)
 
@@ -546,7 +546,7 @@ template<class T1, class T2, class T3>
 inline typename TrinaryReturn<PColorMatrixJIT<T1,1>, PColorMatrixJIT<T2,1>, PColorMatrixJIT<T3,1>, FnColorContract>::Type_t
 colorContract(const PColorMatrixJIT<T1,1>& s1, const PColorMatrixJIT<T2,1>& s2, const PColorMatrixJIT<T3,1>& s3)
 {
-  typename TrinaryReturn<PColorMatrixJIT<T1,1>, PColorMatrixJIT<T2,1>, PColorMatrixJIT<T3,1>, FnColorContract>::Type_t  d;
+  typename TrinaryReturn<PColorMatrixJIT<T1,1>, PColorMatrixJIT<T2,1>, PColorMatrixJIT<T3,1>, FnColorContract>::Type_t  d(s1.func());
 
   // not written 
   QDPIO::cerr << __func__ << ": not written for Nc=1" << endl;
@@ -570,7 +570,7 @@ template<class T1, class T2, class T3>
 inline typename TrinaryReturn<PColorMatrixJIT<T1,2>, PColorMatrixJIT<T2,2>, PColorMatrixJIT<T3,2>, FnColorContract>::Type_t
 colorContract(const PColorMatrixJIT<T1,2>& s1, const PColorMatrixJIT<T2,2>& s2, const PColorMatrixJIT<T3,2>& s3)
 {
-  typename TrinaryReturn<PColorMatrixJIT<T1,2>, PColorMatrixJIT<T2,2>, PColorMatrixJIT<T3,2>, FnColorContract>::Type_t  d;
+  typename TrinaryReturn<PColorMatrixJIT<T1,2>, PColorMatrixJIT<T2,2>, PColorMatrixJIT<T3,2>, FnColorContract>::Type_t  d(s1.func());
 
   // not written 
   QDPIO::cerr << __func__ << ": not written for Nc=2" << endl;
@@ -594,7 +594,7 @@ template<class T1, class T2, class T3>
 inline typename TrinaryReturn<PColorMatrixJIT<T1,4>, PColorMatrixJIT<T2,4>, PColorMatrixJIT<T3,4>, FnColorContract>::Type_t
 colorContract(const PColorMatrixJIT<T1,4>& s1, const PColorMatrixJIT<T2,4>& s2, const PColorMatrixJIT<T3,4>& s3)
 {
-  typename TrinaryReturn<PColorMatrixJIT<T1,4>, PColorMatrixJIT<T2,4>, PColorMatrixJIT<T3,4>, FnColorContract>::Type_t  d;
+  typename TrinaryReturn<PColorMatrixJIT<T1,4>, PColorMatrixJIT<T2,4>, PColorMatrixJIT<T3,4>, FnColorContract>::Type_t  d(s1.func());
 
   // not written 
   QDPIO::cerr << __func__ << ": not written for Nc=4" << endl;
@@ -618,7 +618,7 @@ template<class T1, class T2>
 inline typename BinaryReturn<PColorMatrixJIT<T1,3>, PColorMatrixJIT<T2,3>, FnQuarkContractXX>::Type_t
 quarkContractXX(const PColorMatrixJIT<T1,3>& s1, const PColorMatrixJIT<T2,3>& s2)
 {
-  typename BinaryReturn<PColorMatrixJIT<T1,3>, PColorMatrixJIT<T2,3>, FnQuarkContractXX>::Type_t  d;
+  typename BinaryReturn<PColorMatrixJIT<T1,3>, PColorMatrixJIT<T2,3>, FnQuarkContractXX>::Type_t  d(s1.func());
 
   // Permutations: +(0,1,2)+(1,2,0)+(2,0,1)-(1,0,2)-(0,2,1)-(2,1,0)
 
@@ -714,7 +714,7 @@ template<class T1, class T2>
 inline typename BinaryReturn<PColorMatrixJIT<T1,1>, PColorMatrixJIT<T2,1>, FnQuarkContractXX>::Type_t
 quarkContractXX(const PColorMatrixJIT<T1,1>& s1, const PColorMatrixJIT<T2,1>& s2)
 {
-  typename BinaryReturn<PColorMatrixJIT<T1,1>, PColorMatrixJIT<T2,1>, FnQuarkContractXX>::Type_t  d;
+  typename BinaryReturn<PColorMatrixJIT<T1,1>, PColorMatrixJIT<T2,1>, FnQuarkContractXX>::Type_t  d(s1.func());
 
   // not yet written 
   QDPIO::cerr << __func__ << ": not written for Nc=1" << endl;
@@ -740,7 +740,7 @@ template<class T1, class T2>
 inline typename BinaryReturn<PColorMatrixJIT<T1,2>, PColorMatrixJIT<T2,2>, FnQuarkContractXX>::Type_t
 quarkContractXX(const PColorMatrixJIT<T1,2>& s1, const PColorMatrixJIT<T2,2>& s2)
 {
-  typename BinaryReturn<PColorMatrixJIT<T1,2>, PColorMatrixJIT<T2,2>, FnQuarkContractXX>::Type_t  d;
+  typename BinaryReturn<PColorMatrixJIT<T1,2>, PColorMatrixJIT<T2,2>, FnQuarkContractXX>::Type_t  d(s1.func());
 
   // not yet written 
   QDPIO::cerr << __func__ << ": not written for Nc=2" << endl;
@@ -766,7 +766,7 @@ template<class T1, class T2>
 inline typename BinaryReturn<PColorMatrixJIT<T1,4>, PColorMatrixJIT<T2,4>, FnQuarkContractXX>::Type_t
 quarkContractXX(const PColorMatrixJIT<T1,4>& s1, const PColorMatrixJIT<T2,4>& s2)
 {
-  typename BinaryReturn<PColorMatrixJIT<T1,4>, PColorMatrixJIT<T2,4>, FnQuarkContractXX>::Type_t  d;
+  typename BinaryReturn<PColorMatrixJIT<T1,4>, PColorMatrixJIT<T2,4>, FnQuarkContractXX>::Type_t  d(s1.func());
 
   // not yet written 
   QDPIO::cerr << __func__ << ": not written for Nc=4" << endl;

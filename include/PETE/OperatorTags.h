@@ -733,10 +733,7 @@ struct FnWhere
   ::Type_t
   operator()(const T1 &a, const T2 &b, const T3 &c) const
   {
-    //if (a) return b; else return c;
-
     return do_where(a,b,c);
-
   }
 };
 
