@@ -7,6 +7,7 @@
 #include<map>
 #include<vector>
 #include<string>
+#include<functional>
 #include<stdlib.h>
 
 namespace QDP {
@@ -31,6 +32,11 @@ namespace QDP {
     //static const std::string PTX_Bool_OP;//{"b32"};   // and.b32  PTX can only do logical on bittypes
 
     Jit(const std::string& _filename , const std::string& _funcname );
+
+    template<class T>
+    void regStoring( WordJIT<T>* wj ) {
+      vecStoring.push_back( wj );
+    }
 
     void asm_mov(int dest,int src);
     template<class T>
@@ -112,6 +118,8 @@ namespace QDP {
     mutable std::map< CmpOp , std::string > mapCmpOp;
     mutable std::map< RegType , std::string > mapIntMul;
     mutable std::map< RegType , RegType > mapBitType;
+
+    std::vector< BASEWordJIT* > vecStoring;
   };
 
 

@@ -88,14 +88,6 @@ function_random_build(OLattice<T>& dest, LatticeSeed& seed, LatticeSeed& skewed_
 
   fill_random( dest_jit.elem(0) , seed_jit , skewed_seed_jit , ran_mult_n_jit );
 
-  //  fill_random( dest_jit.elem(0) , seed_jit , skewed_seed_jit , ran_mult_n_jit );
-
-
-  //RNG::ran_seed = seed;  // The seed from any site is the same as the new global seed
-
-
-  //  op(dest_jit.elem( 0 ), forEach(rhs_view, ViewLeaf( 0 ), OpCombine()));
-
   if (Layout::primaryNode())
     function.write();
       
@@ -425,7 +417,7 @@ void
 function_random_exec(CUfunction function, OLattice<T>& dest, const Subset& s, LatticeSeed& seed, LatticeSeed& skewed_seed )
 {
 #if 1
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   AddressLeaf addr_leaf;
 
@@ -445,22 +437,19 @@ function_random_exec(CUfunction function, OLattice<T>& dest, const Subset& s, La
   std::vector<void*> addr;
 
   addr.push_back( &lo );
-  std::cout << "addr lo = " << addr[0] << " lo=" << lo << "\n";
+  //std::cout << "addr lo = " << addr[0] << " lo=" << lo << "\n";
 
   addr.push_back( &hi );
-  std::cout << "addr hi = " << addr[1] << " hi=" << hi << "\n";
+  //std::cout << "addr hi = " << addr[1] << " hi=" << hi << "\n";
 
   addr.push_back( &subset_member );
-  std::cout << "addr subset_member = " << addr[3] << " " << subset_member << "\n";
+  //std::cout << "addr subset_member = " << addr[3] << " " << subset_member << "\n";
 
   int addr_dest=addr.size();
   for(int i=0; i < addr_leaf.addr.size(); ++i) {
     addr.push_back( &addr_leaf.addr[i] );
-    std::cout << "addr = " << addr_leaf.addr[i] << "\n";
+    //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
   }
-
-
-
 
   static int threadsPerBlock = 0;
 
@@ -492,7 +481,7 @@ void
 function_zero_rep_exec(CUfunction function, OLattice<T>& dest, const Subset& s )
 {
 #if 1
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   AddressLeaf addr_leaf;
 

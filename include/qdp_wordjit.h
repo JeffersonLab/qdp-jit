@@ -10,11 +10,12 @@ namespace QDP {
 
 
   template<class T>
-  class WordJIT
+  class WordJIT: public BASEWordJIT
   {
   public:
     //! Size (in number of registers) of the underlying object
     enum {Size_t = 1};
+    enum Load { DoLoad, DoNotLoad };
 
     template<class T1>
     WordJIT(const WordJIT<T1>& a): WordJIT(a.jit)
@@ -47,7 +48,7 @@ namespace QDP {
       global_state(true) , 
       literal(false) 
     {
-      std::cout << "WordJIT() global view   " << (void*)this << " " << (void*)&jit << "\n";
+      std::cout << "WordJIT() global view   " << __PRETTY_FUNCTION__ << (void*)this << " " << (void*)&jit << "\n";
     }
 
     //! New space 
@@ -62,17 +63,33 @@ namespace QDP {
     }
 
 
+    virtual void store() override {
+      if (needsStoring) {
+	if (!global_state)
+	  QDP_error_exit("WordJIT store, but no global state");
+	QDP_info("WordJIT inserting store asm instruction");
+	jit.asm_st( r_addr , offset_level * WordSize<T>::Size , getReg( JitRegType<T>::Val_t , DoNotLoad ) );
+	needsStoring = false;
+      }
+    }
+
+
     template <class T1>
     WordJIT& assign(const WordJIT<T1>& s1) {
       if (global_state) {
-	std::cout << " WordJIT& assign global " << s1.mapReg.size() << "\n";
-	jit.asm_st( r_addr , offset_level * WordSize<T>::Size , s1.getReg( JitRegType<T>::Val_t ) );
+	// Invalidate all other representations
+	mapReg.clear();
+	int myReg = getReg( JitRegType<T>::Val_t , DoNotLoad );
+	jit.asm_mov( myReg , s1.getReg( JitRegType<T>::Val_t ) );
+	if (!needsStoring) { 
+	  needsStoring = true;
+	  jit.regStoring(this);
+	}
+      } else {
+	// Invalidate all other representations
+	mapReg.clear();
+	jit.asm_mov( getReg( JitRegType<T>::Val_t , DoNotLoad ) , s1.getReg( JitRegType<T>::Val_t ) );
       }
-      else {
-	std::cout << " +++++++++++++++++++++++++ WordJIT& assign reg \n";
-	jit.asm_mov( getReg( JitRegType<T>::Val_t ) , s1.getReg( JitRegType<T>::Val_t ) );
-      }
-      std::cout << " WordJIT& assign finished \n";
       return *this;
     }
 
@@ -101,7 +118,7 @@ namespace QDP {
     }
 
 
-    int getReg( Jit::RegType type ) const {
+    int getReg( Jit::RegType type , Load load = DoLoad ) const {
       std::cout << "getReg type=" << type 
       		<< "  mapReg.count(type)=" << mapReg.count(type) 
       		<< "  mapReg.size()=" << mapReg.size() << "\n";
@@ -137,7 +154,8 @@ namespace QDP {
 	  std::cout << "We don't have the value in a register. Need to load it " << (void*)this << " " << (void*)&jit << "\n";
 	  Jit::RegType myType = JitRegType<T>::Val_t;
 	  mapReg.insert( std::make_pair( myType , jit.getRegs( JitRegType<T>::Val_t , 1 ) ) );
-	  jit.asm_ld( mapReg.at( myType ) , r_addr , offset_level * WordSize<T>::Size );
+	  if (load != DoNotLoad)
+	    jit.asm_ld( mapReg.at( myType ) , r_addr , offset_level * WordSize<T>::Size );
 	  return getReg(type);
 	}
       }
@@ -159,8 +177,10 @@ namespace QDP {
 
   public:
     typedef std::map< Jit::RegType , int > MapRegType;
+    // std::vector< int > vecMovReg;
     bool global_state;
     bool literal;
+    bool needsStoring = false;
     T litVal;
     Jit&  jit;
     mutable MapRegType mapReg;
@@ -169,31 +189,8 @@ namespace QDP {
     int offset_level;
   };
 
-
-  template<>
-  template<typename T1>
-  WordJIT<bool>& WordJIT<bool>::assign(const WordJIT<T1>& s1) 
-  {
-    std::cout << "********************** WordJIT SPECIAL ASSIGN\n";
-    if (global_state) {
-      std::cout << " WordJIT& assign global " << s1.mapReg.size() << "\n";
-
-      int s1_u32 = jit.getRegs( Jit::u32 , 1 );
-      jit.asm_pred_to_01( s1_u32 , s1.getReg( JitRegType<bool>::Val_t )  );
-      int s1_u8 = jit.getRegs( Jit::u8 , 1 );
-      jit.asm_cvt( s1_u8 , s1_u32 );
-      
-      jit.asm_st( r_addr , offset_level * WordSize<bool>::Size , s1_u8 );
-    }
-    else {
-      std::cout << " +++++++++++++++++++++++++ WordJIT& assign reg \n";
-      jit.asm_mov( getReg( JitRegType<bool>::Val_t ) , s1.getReg( JitRegType<bool>::Val_t ) );
-    }
-    return *this;
-  }
-
-  template<>
-  int WordJIT<bool>::getReg( Jit::RegType type ) const;
+  template<> void WordJIT<bool>::store();
+  template<>  int WordJIT<bool>::getReg( Jit::RegType type , WordJIT<bool>::Load load ) const;
 
 
 

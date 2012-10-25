@@ -106,9 +106,12 @@ namespace QDP {
 #include "qdp_cuda_allocator.h"
 #include "qdp_pool_allocator.h"
 #include "qdp_cache.h"
-#include "qdp_jit.h"
 
 #include "qdp_forward.h"
+#include "qdp_wordjitbase.h"
+
+#include "qdp_jit.h"
+
 #include "qdp_multi.h"
 #include "qdp_arrays.h"
 

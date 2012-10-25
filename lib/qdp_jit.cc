@@ -746,8 +746,15 @@ namespace QDP {
 
   void Jit::write() 
   {
+
+    for (auto& toStore : vecStoring) {
+      QDP_info("storing...");
+      toStore->store();
+    }
+
     dumpVarDef();
     dumpParam();
+
     std::ofstream out(filename.c_str());
 #if 0
     out << ".version 1.4\n" <<

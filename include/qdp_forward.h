@@ -44,6 +44,7 @@ namespace QDP
   // Word
   template<class T> class Word;
   template<class T> class WordJIT;
+  class BASEWordJIT;
 
   // Reality
   template<class T> class RScalar;
