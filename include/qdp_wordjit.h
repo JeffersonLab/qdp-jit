@@ -86,8 +86,6 @@ namespace QDP {
 	  jit.regStoring(this);
 	}
       } else {
-	// Invalidate all other representations
-	mapReg.clear();
 	jit.asm_mov( getReg( JitRegType<T>::Val_t , DoNotLoad ) , s1.getReg( JitRegType<T>::Val_t ) );
       }
       return *this;
@@ -1419,10 +1417,9 @@ copymask(WordJIT<T>& d, const WordJIT<T1>& mask, const WordJIT<T>& s1)
 //! dest  = random  
 template<class T, class T1, class T2>
 inline void
-fill_random(const WordJIT<T>& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
+fill_random(WordJIT<T>& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
 {
-  //const_cast<WordJIT<T>&>(d) = RNG::sranf<T>(seed, skewed_seed, seed_mult);
-  RNG::sranf(const_cast<WordJIT<T>&>(d),seed, skewed_seed, seed_mult);
+  RNG::sranf( d , seed , skewed_seed , seed_mult );
 }
 
 
