@@ -10,7 +10,7 @@ template<class T, class T1, class Op, class RHS>
 CUfunction
 function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs)
 {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   CUfunction func;
 
@@ -30,7 +30,7 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
   View_t rhs_view(forEach(rhs, param_leaf_indexed, TreeCombine()));
 
-  printme<View_t>();
+  //printme<View_t>();
 
   op(dest_jit.elem( 0 ), forEach(rhs_view, ViewLeaf( 0 ), OpCombine()));
 
@@ -47,7 +47,7 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   ret = cuModuleGetFunction(&func, cuModule, "func");
   if (ret) { std::cout << "Error getting function\n"; exit(1); }
 
-  std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
+  //std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
 
   return func;
 }
@@ -58,7 +58,7 @@ CUfunction
 function_random_build(OLattice<T>& dest, LatticeSeed& seed, LatticeSeed& skewed_seed)
 {
 #if 1
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   CUfunction func;
 
@@ -101,7 +101,7 @@ function_random_build(OLattice<T>& dest, LatticeSeed& seed, LatticeSeed& skewed_
   ret = cuModuleGetFunction(&func, cuModule, "func");
   if (ret) { std::cout << "Error getting function\n"; exit(1); }
 
-  std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
+  //std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
 
   return func;
 #endif
@@ -154,23 +154,6 @@ template<class T, class T1, class RHS>
 CUfunction
 function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs )
 {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-
-  // void * soffsetDev = QDPCache::Instance().getDevicePtr( map.getSoffsetsId() );
-  // QDP_info("soffsetDev = %p",soffsetDev);
-
-  // ShiftPhase1 phase1;
-  // int maps_involved = forEach(rhs, phase1 , BitOrCombine());
-
-  // QDP_info("maps_involved=%d",maps_involved);
-
-  // if (maps_involved > 0) {
-  //   int innerId = MasterMap::Instance().getIdInner(maps_involved);
-  //   int innerCount = MasterMap::Instance().getCountInner(maps_involved);
-  //   int faceId = MasterMap::Instance().getIdFace(maps_involved);
-  //   int faceCount = MasterMap::Instance().getCountFace(maps_involved);
-  // }
-
   CUfunction func;
 
   Jit function("ptxgather.ptx","func");
@@ -182,7 +165,7 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
 
   // Destination
   typedef typename JITContainerType< OLattice<T> >::Type_t DestView_t;
-  //QDP_info("------------ %d",JITContainerType<T>::Type_t::Size_t * WordSize<T>::Size);
+
   DestView_t dest_jit( function , 
 		       param_leaf_0.getParamLattice( JITContainerType<T>::Type_t::Size_t * WordSize<T>::Size ) ,
 		       Jit::LatticeLayout::SCAL );
@@ -198,10 +181,8 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
 
   OpAssign()( dest_jit.elem( 0 ) , forEach(rhs_view, ViewLeaf( 0 ) , OpCombine() ) );
 
-#if 1
   if (Layout::primaryNode())
     function.write();
-#endif
 
   QMP_barrier();
 
@@ -213,7 +194,7 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
   ret = cuModuleGetFunction(&func, cuModule, "func");
   if (ret) { std::cout << "Error getting function\n"; exit(1); }
 
-  std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
+  //  std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
 
   return func;
 }
@@ -223,9 +204,6 @@ template<class T1, class RHS>
 void
 function_gather_exec( CUfunction function, void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs )
 {
-#if 1
-  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-
   AddressLeaf addr_leaf;
 
   int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
@@ -279,7 +257,6 @@ function_gather_exec( CUfunction function, void* send_buf , const Map& map , con
   }
 
 
-
   static int threadsPerBlock = 0;
 
   if (!threadsPerBlock) {
@@ -296,7 +273,7 @@ function_gather_exec( CUfunction function, void* send_buf , const Map& map , con
     QDP_info_primary("Pulling the brakes: device sync after kernel launch!");
     CudaDeviceSynchronize();
   }
-#endif
+
 }
 
 

@@ -297,8 +297,6 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
 								    expr.operation(), o);
 
       func.addCondBranch_else();
-      printme<Type_t>("--- FnMapJIT ViewLeaf");
-      //.addParamLatticeBaseAddr( r_idx , wordSize );
 
       OLatticeJIT<Type_t> recv_buf( func , index.r_rcvbuf , Jit::LatticeLayout::SCAL );
 
@@ -344,14 +342,10 @@ struct ForEach<UnaryNode<FnMap, A>, AddressLeaf, NullCombine>
       const Map& map = expr.operation().map;
       FnMap& fnmap = const_cast<FnMap&>(expr.operation());
 
-      //QDP_info("ForEach 0");
       int goffsetsId = expr.operation().map.getGoffsetsId();
-      //QDP_info("ForEach 1 %d",goffsetsId);
       void * goffsetsDev = QDPCache::Instance().getDevicePtr( goffsetsId );
-      //QDP_info("ForEach 2 %p",goffsetsDev);
-      QDP_info("Map:AddressLeaf: add goffset p=%p",goffsetsDev);
+      //QDP_info("Map:AddressLeaf: add goffset p=%p",goffsetsDev);
       a.setAddr(goffsetsDev);
-      //QDP_info("ForEach 3");
 
       void * rcvBufDev;
       if (map.hasOffnode()) {
@@ -361,7 +355,7 @@ struct ForEach<UnaryNode<FnMap, A>, AddressLeaf, NullCombine>
       } else {
 	rcvBufDev = NULL;
       }
-      QDP_info("Map:AddressLeaf: add recv buf p=%p",rcvBufDev);
+      //QDP_info("Map:AddressLeaf: add recv buf p=%p",rcvBufDev);
       a.setAddr(rcvBufDev);
 
 
@@ -447,7 +441,6 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
       } 
     else 
       {
-	QDP_info("Map: no off-node comms");
 	returnVal = ForEach<A, ShiftPhase1, BitOrCombine>::apply(expr.child(), f, c);
       }
     return returnVal;

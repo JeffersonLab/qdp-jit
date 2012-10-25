@@ -23,23 +23,18 @@ namespace QDP {
   template<>
   int WordJIT<bool>::getReg( Jit::RegType type ,  WordJIT<bool>::Load load ) const 
   {
-    std::cout << "BOOL SPECIAL getReg type=" << type 
-	      << "  mapReg.count(type)=" << mapReg.count(type) 
-	      << "  load = " << load 
-	      << "  mapReg.size()=" << mapReg.size() << "\n";
+    //std::cout << "BOOL SPECIAL getReg type=" << type << "  mapReg.count(type)=" << mapReg.count(type) << "  load = " << load << "  mapReg.size()=" << mapReg.size() << "\n";
     if (mapReg.count(type) > 0) {
       // We already have the value in a register of the type requested
-      std::cout << jit.getName(mapReg.at(type)) << "\n";
+      //std::cout << jit.getName(mapReg.at(type)) << "\n";
       return mapReg.at(type);
     } else {
       if (mapReg.size() > 0) {
 	// SANITY
-	if (mapReg.size() > 1) {
-	  std::cout << "getReg: We already have the value in 2 different types. Now a 3rd one ??\n";
-	  exit(1);
-	}
+	if (mapReg.size() > 1)
+	  QDP_error_exit("getReg: We already have the value in 2 different types. Now a 3rd one ??");
 	// We have the value in a register, but not with the requested type 
-	std::cout << "SPECIAL We have the value in a register, but not with the requested type\n";
+	//std::cout << "SPECIAL We have the value in a register, but not with the requested type\n";
 	MapRegType::iterator loaded = mapReg.begin();
 	Jit::RegType loadedType = loaded->first;
 	int loadedId = loaded->second;
@@ -48,7 +43,7 @@ namespace QDP {
 	return mapReg.at(type);
       } else {
 	// We don't have the value in a register. Need to load it.
-	std::cout << "SPECIAL We don't have the value in a register. Need to load it " << (void*)this << " " << (void*)&jit << "\n";
+	//std::cout << "SPECIAL We don't have the value in a register. Need to load it " << (void*)this << " " << (void*)&jit << "\n";
 	Jit::RegType myType = JitRegType<bool>::Val_t;
 	mapReg.insert( std::make_pair( myType , jit.getRegs( JitRegType<bool>::Val_t , 1 ) ) );
 

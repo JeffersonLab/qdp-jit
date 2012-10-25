@@ -364,9 +364,9 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
   // Build the function
   if (function == NULL)
     {
-      std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
+      //std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
       function = function_build(dest, op, rhs);
-      std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
+      //std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
     }
   else
     {
@@ -452,9 +452,9 @@ random(OLattice<T>& d, const Subset& s)
   // Build the function
   if (function == NULL)
     {
-      std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
+      //std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
       function = function_random_build( d , seed , skewed_seed );
-      std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
+      //std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
     }
   else
     {
@@ -551,12 +551,10 @@ inline
 void zero_rep(OLattice<T>& dest, const Subset& s) 
 {
 #if 1
-  std::cout << __PRETTY_FUNCTION__ << "\n";
   static CUfunction function;
 
   if (function == NULL)
     {
-      std::cout << "building \n";
       function = function_zero_rep_build( dest );
     }
   else
@@ -593,11 +591,7 @@ template<class T>
 void zero_rep(OLattice<T>& dest) 
 
 {
-  std::cout << __PRETTY_FUNCTION__ << "\n";
   zero_rep(dest,all);
-  // const int nodeSites = Layout::sitesOnNode();
-  // for(int i=0; i < nodeSites; ++i) 
-  //   zero_rep(dest.elem(i));
 }
 
 

@@ -8,17 +8,6 @@ namespace QDP {
   const Jit::RegType JitRegType<unsigned int>::Val_t;
   const Jit::RegType JitRegType<bool>::Val_t;
 
-#if 0
-  const Jit::RegType BoolReg<1>::Val_t;
-  const Jit::RegType BoolReg<2>::Val_t;
-  const Jit::RegType BoolReg<4>::Val_t;
-#endif
-
-
-  //  const Jit::RegType Jit::PTX_Bool;
-  //  const std::string Jit::PTX_Bool_OP = "b32";
-
-  //    static const std::string PTX_Bool_OP;{"b32"};   // and.b32  PTX can only do logical on bittypes
 
   Jit::Jit(const std::string& _filename , const std::string& _funcname ) :
     filename(_filename) , funcname(_funcname)
@@ -421,13 +410,11 @@ namespace QDP {
       exit(1);
     }
     oss_prg << "cvt." << mapCVT[getRegType(dest)][getRegType(src)] << regptx[getRegType(dest)] << "." << regptx[getRegType(src)] << " " << getName(dest) << "," << getName(src) << ";\n";
-    //  oss_prg << "cvt." << mapCVT[getRegType(dest)][getRegType(src)] << regptx[getRegType(dest)] << "." << regptx[getRegType(src)] << " " << getName(dest) << "," << getName(src) << ";\n";
   }
 
 
   std::string Jit::getName(int id) const 
   {
-    //std::cout << "getName:  type=" << type << "  reg=" << reg << "\n";
     RegType type = getRegType(id);
     int reg = getRegId(id);
     std::ostringstream tmp;
@@ -438,7 +425,6 @@ namespace QDP {
 
   int Jit::getRegs(RegType type,int count) 
   {
-    //std::cout << "register: type=" << type << "  count=" << count << "\n";
     int reg = nreg[type];
     nreg[type] += count;
     return  reg | (type << RegTypeShift);
@@ -748,7 +734,6 @@ namespace QDP {
   {
 
     for (auto& toStore : vecStoring) {
-      QDP_info("storing...");
       toStore->store();
     }
 

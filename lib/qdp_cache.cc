@@ -465,13 +465,13 @@ namespace QDP
 	//	CudaMemcpyAsync( e.devPtr , e.hstPtr , e.size );
 	if (e.fptr) {
 	  char * tmp = new char[e.size];
-	  std::cout << "call layout changer\n";
+	  //std::cout << "call layout changer\n";
 	  e.fptr(true,tmp,e.hstPtr);
-	  std::cout << "copy data to device\n";
+	  //std::cout << "copy data to device\n";
 	  CudaMemcpyH2D( e.devPtr , tmp , e.size );
 	  delete[] tmp;
 	} else {
-	  std::cout << "copy data to device (no layout change)\n";
+	  //std::cout << "copy data to device (no layout change)\n";
 	  CudaMemcpyH2D( e.devPtr , e.hstPtr , e.size );
 	}
 	CudaSyncTransferStream();
@@ -532,13 +532,13 @@ namespace QDP
 	  //CudaMemcpyD2HAsync( e.hstPtr , e.devPtr , e.size );
 	  if (e.fptr) {
 	    char * tmp = new char[e.size];
-	    std::cout << "copy data to host\n";
+	    //std::cout << "copy data to host\n";
 	    CudaMemcpyD2H( tmp , e.devPtr , e.size );
-	    std::cout << "call layout changer\n";
+	    //std::cout << "call layout changer\n";
 	    e.fptr(false,e.hstPtr,tmp);
 	    delete[] tmp;
 	  } else {
-	    std::cout << "copy data to host (no layout change)\n";
+	    //std::cout << "copy data to host (no layout change)\n";
 	    CudaMemcpyH2D( e.hstPtr , e.devPtr , e.size );
 	  }
 

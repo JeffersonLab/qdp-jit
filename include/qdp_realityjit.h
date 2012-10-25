@@ -57,17 +57,14 @@ public:
 #if 0
   template<class T1>
   RScalarJIT(const T1& rhs) : JV<T,1>(rhs) {
-    std::cout << "RScalarJIT(const T1& rhs)\n";
   }
 #endif
 
   RScalarJIT(const T& rhs) : JV<T,1>(rhs) {
-    std::cout << "RScalarJIT(const T& rhs)\n";
   }
 
 
   RScalarJIT(Jit& j,const typename WordType<T>::Type_t& w) : JV<T,1>(j,w) {
-    std::cout << "RScalarJIT(Jit&,word)\n";
   }
 
 
@@ -166,7 +163,7 @@ public:
 
 #if 0
   RScalarJIT(const RScalarJIT& a) : JV<T,1>::JV(a.elem()) {
-    std::cout << __PRETTY_FUNCTION__ << "\n";
+    //std::cout << __PRETTY_FUNCTION__ << "\n";
   }
 #endif
 
@@ -914,20 +911,9 @@ template<class T1, class T2>
 inline typename BinaryReturn<RScalarJIT<T1>, RScalarJIT<T2>, OpMultiply>::Type_t
 operator*(const RScalarJIT<T1>& l, const RScalarJIT<T2>& r)
 {
-#if 1
   typename BinaryReturn<RScalarJIT<T1>, RScalarJIT<T2>, OpMultiply>::Type_t ret(l.func());
   ret = l.elem() * r.elem();
-  std::cout << " ret=" << ret.elem().mapReg.size() << "\n";
   return ret;
-#else
-  typename BinaryReturn<RScalarJIT<T1>, RScalarJIT<T2>, OpMultiply>::Type_t ret(l.func());
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t  T;
-  typedef typename InternalScalar<T>::Type_t  S;
-  ret = l.elem() * S(l.func(),12.);
-  std::cout << " ret=" << ret.elem().mapReg.size() << "\n";
-  return ret;
-#endif
-
 }
 
 
@@ -2397,7 +2383,7 @@ template<class T>
 inline
 void zero_rep(RComplexJIT<T>& dest) 
 {
-  std::cout << __PRETTY_FUNCTION__ << "\n";
+  //std::cout << __PRETTY_FUNCTION__ << "\n";
   zero_rep(dest.real());
   zero_rep(dest.imag());
 }

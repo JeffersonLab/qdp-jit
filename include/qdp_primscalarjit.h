@@ -64,17 +64,14 @@ public:
 #if 0
   template<class T1>
   PScalarJIT(const T1& rhs) : JV<T,1>(rhs) {
-    std::cout << "PScalarJIT(const T1& rhs)\n";
   }
 #endif
 
   PScalarJIT(const T& rhs) : JV<T,1>(rhs) {
-    std::cout << "PScalarJIT(const T& rhs)\n";
   }
 
 
   PScalarJIT(Jit& j,const typename WordType<T>::Type_t& w) : JV<T,1>(j,w) {
-    std::cout << "PScalarJIT(Jit&,word)\n";
   }
 
 
@@ -1510,7 +1507,6 @@ template<class T>
 inline void 
 zero_rep(PScalarJIT<T>& dest) 
 {
-  std::cout << __PRETTY_FUNCTION__ << "\n";
   zero_rep(dest.elem());
 }
 

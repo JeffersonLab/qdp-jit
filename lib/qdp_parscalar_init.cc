@@ -105,6 +105,12 @@ namespace QDP {
 	//! Turn on the machine
 	void QDP_initialize(int *argc, char ***argv)
 	{
+	  if (sizeof(bool) != 1)
+	    {
+	      QDPIO::cerr << "Error: sizeof(bool) == " << sizeof(bool) << "   (1 is required)" << endl;
+	      QDP_abort(1);
+	    }
+
 		if (isInit)
 		{
 			QDPIO::cerr << "QDP already inited" << endl;

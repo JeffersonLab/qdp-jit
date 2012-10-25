@@ -54,20 +54,20 @@ class JV {
 #if 1
     JV(Jit& j,const typename WordType<T>::Type_t& w) : jit(j), F{{T(j,w)}} 
     {
-      std::cout << __PRETTY_FUNCTION__ << "\n";
+      //std::cout << __PRETTY_FUNCTION__ << "\n";
     }
     JV(Jit& j,
        const typename WordType<T>::Type_t& re,
        const typename WordType<T>::Type_t& im) : jit(j), F{{T(j,re),T(j,im)}} 
     {
-      std::cout << __PRETTY_FUNCTION__ << "\n";
+      //std::cout << __PRETTY_FUNCTION__ << "\n";
     }
 
     JV(const T& t0,const T& t1) : jit(t0.func()), F{{t0,t1}} {
-      std::cout << __PRETTY_FUNCTION__ << "\n";
+      //std::cout << __PRETTY_FUNCTION__ << "\n";
     }
     JV(const T& t0) : jit(t0.func()), F{{t0}} {
-      std::cout << __PRETTY_FUNCTION__ << "\n";
+      //std::cout << __PRETTY_FUNCTION__ << "\n";
     }
 #endif
 

@@ -1421,7 +1421,6 @@ template<class T, int N, template<class,int> class C>
 inline void 
 zero_rep(PMatrixJIT<T,N,C>& dest) 
 {
-  std::cout << __PRETTY_FUNCTION__ << "\n";
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
       zero_rep(dest.elem(i,j));

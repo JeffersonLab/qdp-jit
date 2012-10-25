@@ -154,11 +154,7 @@ namespace QDP {
 
     void static changeLayout(bool toDev,void * outPtr,void * inPtr)
     {
-      std::cout << __PRETTY_FUNCTION__ << "\n";
-      if (toDev)
-	std::cout << "changing scalar data layout to device format\n";
-      else
-	std::cout << "changing scalar data layout  to host format\n";
+      QDP_info_primary("changing scalar data layout to %s format" , toDev? "device" : "host");
 
       typename WordType<T>::Type_t * in_data  = (typename WordType<T>::Type_t *)inPtr;
       typename WordType<T>::Type_t * out_data = (typename WordType<T>::Type_t *)outPtr;
@@ -465,11 +461,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 
     void static changeLayout(bool toDev,void * outPtr,void * inPtr)
     {
-      std::cout << __PRETTY_FUNCTION__ << "\n";
-      if (toDev)
-	std::cout << "changing data layout to device format\n";
-      else
-	std::cout << "changing data layout  to host format\n";
+      QDP_info_primary("changing data layout to %s format" , toDev? "device" : "host");
 
       typename WordType<T>::Type_t * in_data  = (typename WordType<T>::Type_t *)inPtr;
       typename WordType<T>::Type_t * out_data = (typename WordType<T>::Type_t *)outPtr;

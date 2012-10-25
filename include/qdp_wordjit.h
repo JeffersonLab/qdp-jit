@@ -48,7 +48,7 @@ namespace QDP {
       global_state(true) , 
       literal(false) 
     {
-      std::cout << "WordJIT() global view   " << __PRETTY_FUNCTION__ << (void*)this << " " << (void*)&jit << "\n";
+      //std::cout << "WordJIT() global view   " << __PRETTY_FUNCTION__ << (void*)this << " " << (void*)&jit << "\n";
     }
 
     //! New space 
@@ -59,7 +59,7 @@ namespace QDP {
     {
       int tmp;
       mapReg.insert( std::make_pair( JitRegType<T>::Val_t , tmp = jit.getRegs( JitRegType<T>::Val_t , 1 ) ) );
-      std::cout << "WordJIT(Jit& func_ ) new space   regName = " << jit.getName(tmp) << " " << (void*)this << " " << (void*)&jit <<  "\n";
+      //std::cout << "WordJIT(Jit& func_ ) new space   regName = " << jit.getName(tmp) << " " << (void*)this << " " << (void*)&jit <<  "\n";
     }
 
 
@@ -67,7 +67,7 @@ namespace QDP {
       if (needsStoring) {
 	if (!global_state)
 	  QDP_error_exit("WordJIT store, but no global state");
-	QDP_info("WordJIT inserting store asm instruction");
+	//QDP_info("WordJIT inserting store asm instruction");
 	jit.asm_st( r_addr , offset_level * WordSize<T>::Size , getReg( JitRegType<T>::Val_t , DoNotLoad ) );
 	needsStoring = false;
       }
@@ -94,12 +94,12 @@ namespace QDP {
     //---------------------------------------------------------
     template <class T1>
     WordJIT& operator=(const WordJIT<T1>& s1) {
-      std::cout << " WordJIT& op= \n";
+      //std::cout << " WordJIT& op= \n";
       return assign(s1);
     }
 
     WordJIT& operator=(const WordJIT& s1) {
-      std::cout << " WordJIT& op=copy \n";
+      //std::cout << " WordJIT& op=copy \n";
       return assign(s1);
     }
 
@@ -117,30 +117,28 @@ namespace QDP {
 
 
     int getReg( Jit::RegType type , Load load = DoLoad ) const {
-      std::cout << "getReg type=" << type 
-      		<< "  mapReg.count(type)=" << mapReg.count(type) 
-      		<< "  mapReg.size()=" << mapReg.size() << "\n";
+      //std::cout << "getReg type=" << type << "  mapReg.count(type)=" << mapReg.count(type) << "  mapReg.size()=" << mapReg.size() << "\n";
       if (literal) {
-	std::cout << "WordJIT is literal\n";
+	//std::cout << "WordJIT is literal\n";
+#if 0
 	if (mapReg.count( type ) > 0)
 	  QDP_info_primary("getReg literal: type already requested");
+#endif
 	mapReg.insert( std::make_pair( type , jit.getRegs( type , 1 ) ) );
 	jit.asm_mov_literal( mapReg.at( type ) , litVal );
 	return mapReg.at( type );
       }
       if (mapReg.count(type) > 0) {
 	// We already have the value in a register of the type requested
-	std::cout << jit.getName(mapReg.at(type)) << "\n";
+	//std::cout << jit.getName(mapReg.at(type)) << "\n";
 	return mapReg.at(type);
       } else {
 	if (mapReg.size() > 0) {
 	  // SANITY
-	  if (mapReg.size() > 1) {
-	    std::cout << "getReg: We already have the value in 2 different types. Now a 3rd one ??\n";
-	    exit(1);
-	  }
+	  if (mapReg.size() > 1) 
+	    QDP_error_exit("getReg: We already have the value in 2 different types. Now a 3rd one ??");
 	  // We have the value in a register, but not with the requested type 
-	  std::cout << "We have the value in a register, but not with the requested type\n";
+	  //std::cout << "We have the value in a register, but not with the requested type\n";
 	  MapRegType::iterator loaded = mapReg.begin();
 	  Jit::RegType loadedType = loaded->first;
 	  int loadedId = loaded->second;
@@ -149,7 +147,7 @@ namespace QDP {
 	  return mapReg.at(type);
 	} else {
 	  // We don't have the value in a register. Need to load it.
-	  std::cout << "We don't have the value in a register. Need to load it " << (void*)this << " " << (void*)&jit << "\n";
+	  //std::cout << "We don't have the value in a register. Need to load it " << (void*)this << " " << (void*)&jit << "\n";
 	  Jit::RegType myType = JitRegType<T>::Val_t;
 	  mapReg.insert( std::make_pair( myType , jit.getRegs( JitRegType<T>::Val_t , 1 ) ) );
 	  if (load != DoNotLoad)
@@ -204,18 +202,6 @@ namespace QDP {
   struct InternalScalar<WordJIT<T> > {
     typedef WordJIT<typename InternalScalar<T>::Type_t>  Type_t;
   };
-
-
-
-
-
-
-
-
-// template<class T1, class T2>
-// struct BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpAnd > {
-//   typedef WordJIT<typename BinaryReturn<T1, T2, OpAnd>::Type_t>  Type_t;
-// };
 
 
 
@@ -408,7 +394,6 @@ operator+(const WordJIT<T1>& l)
     tmp.func().asm_mul( tmp.getReg( JitRegType<WT>::Val_t ) , 
 			l.getReg( JitRegType<WT>::Val_t ) , 
 			r.getReg( JitRegType<WT>::Val_t ) );
-    std::cout << " tmp=" << tmp.mapReg.size() << "\n";
     return tmp;
   }
 
@@ -447,7 +432,6 @@ operator/(const WordJIT<T1>& l, const WordJIT<T2>& r)
   tmp.func().asm_div( tmp.getReg( JitRegType<WT>::Val_t ) , 
 		      l.getReg( JitRegType<WT>::Val_t ) , 
 		      r.getReg( JitRegType<WT>::Val_t ) );
-  std::cout << " tmp=" << tmp.mapReg.size() << "\n";
   return tmp;
 }
 
@@ -468,7 +452,7 @@ operator<<(const WordJIT<T1>& l, const WordJIT<T2>& r)
   tmp.func().asm_shl( tmp.getReg( JitRegType<WT>::Val_t ) , 
 		      l.getReg( JitRegType<WT>::Val_t ) , 
 		      r.getReg( Jit::u32 ) );
-  std::cout << " tmp=" << tmp.mapReg.size() << "\n";
+  
   return tmp;
 }
 
@@ -485,11 +469,9 @@ operator>>(const WordJIT<T1>& l, const WordJIT<T2>& r)
   typedef typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, OpRightShift>::Type_t Ret_t;
   typedef typename WordType<Ret_t>::Type_t WT;
   Ret_t tmp(l.func());
-  std::cout << " operator>>  ask for " << JitRegType<WT>::Val_t << " " << JitRegType<WT>::Val_t << " " << Jit::u32 << "\n";
   tmp.func().asm_shr( tmp.getReg( JitRegType<WT>::Val_t ) , 
 		      l.getReg( JitRegType<WT>::Val_t ) , 
 		      r.getReg( Jit::u32 ) );
-  std::cout << " tmp=" << tmp.mapReg.size() << "\n";
   return tmp;
 }
 
@@ -555,7 +537,6 @@ operator<(const WordJIT<T1>& l, const WordJIT<T2>& r)
 		      tmp.getReg( JitRegType<WT>::Val_t ) , 
 		      l.getReg( JitRegType<T1>::Val_t ) , 
 		      r.getReg( JitRegType<T1>::Val_t ) );
-  std::cout << " tmp=" << tmp.mapReg.size() << "\n";
   return tmp;
 }
 
@@ -576,7 +557,6 @@ operator<=(const WordJIT<T1>& l, const WordJIT<T2>& r)
 		      tmp.getReg( JitRegType<WT>::Val_t ) , 
 		      l.getReg( JitRegType<T1>::Val_t ) , 
 		      r.getReg( JitRegType<T1>::Val_t ) );
-  std::cout << " tmp=" << tmp.mapReg.size() << "\n";
   return tmp;
 }
 
@@ -597,7 +577,6 @@ operator>(const WordJIT<T1>& l, const WordJIT<T2>& r)
 		      tmp.getReg( JitRegType<WT>::Val_t ) , 
 		      l.getReg( JitRegType<T1>::Val_t ) , 
 		      r.getReg( JitRegType<T1>::Val_t ) );
-  std::cout << " tmp=" << tmp.mapReg.size() << "\n";
   return tmp;
   //  return l.elem() > r.elem();
 }
@@ -619,7 +598,6 @@ operator>=(const WordJIT<T1>& l, const WordJIT<T2>& r)
 		      tmp.getReg( JitRegType<WT>::Val_t ) , 
 		      l.getReg( JitRegType<T1>::Val_t ) , 
 		      r.getReg( JitRegType<T1>::Val_t ) );
-  std::cout << " tmp=" << tmp.mapReg.size() << "\n";
   return tmp;
   //  return l.elem() >= r.elem();
 }
@@ -641,7 +619,6 @@ operator==(const WordJIT<T1>& l, const WordJIT<T2>& r)
 		      tmp.getReg( JitRegType<WT>::Val_t ) , 
 		      l.getReg( JitRegType<T1>::Val_t ) , 
 		      r.getReg( JitRegType<T1>::Val_t ) );
-  std::cout << " tmp=" << tmp.mapReg.size() << "\n";
   return tmp;
   //  return l.elem() == r.elem();
 }
@@ -663,7 +640,6 @@ operator!=(const WordJIT<T1>& l, const WordJIT<T2>& r)
 		      tmp.getReg( JitRegType<WT>::Val_t ) , 
 		      l.getReg( JitRegType<T1>::Val_t ) , 
 		      r.getReg( JitRegType<T1>::Val_t ) );
-  std::cout << " tmp=" << tmp.mapReg.size() << "\n";
   return tmp;
   //  return l.elem() != r.elem();
 }
@@ -895,7 +871,6 @@ cos(const WordJIT<T1>& s1)
   Ret_t tmp(s1.func());
   tmp.func().asm_cos( tmp.getReg( Jit::f32 ) , 
 		      s1.getReg( Jit::f32 ) );
-  std::cout << " tmp=" << tmp.mapReg.size() << "\n";
   return tmp;
 }
 
@@ -918,7 +893,6 @@ exp(const WordJIT<T1>& s1)
   Ret_t tmp(s1.func());
   tmp.func().asm_exp( tmp.getReg( Jit::f32 ) , 
 		      s1.getReg( Jit::f32 ) );
-  std::cout << " tmp=" << tmp.mapReg.size() << "\n";
   return tmp;
   //return exp(s1.elem());
 }
@@ -955,7 +929,6 @@ log(const WordJIT<T1>& s1)
   Ret_t tmp(s1.func());
   tmp.func().asm_log( tmp.getReg( Jit::f32 ) , 
 		      s1.getReg( Jit::f32 ) );
-  std::cout << " tmp=" << tmp.mapReg.size() << "\n";
   return tmp;
 }
 
@@ -978,7 +951,6 @@ sin(const WordJIT<T1>& s1)
   Ret_t tmp(s1.func());
   tmp.func().asm_sin( tmp.getReg( Jit::f32 ) , 
 		      s1.getReg( Jit::f32 ) );
-  std::cout << " tmp=" << tmp.mapReg.size() << "\n";
   return tmp;
   //  return sin(s1.elem());
 }
@@ -1002,7 +974,6 @@ sqrt(const WordJIT<T1>& s1)
   Ret_t tmp(s1.func());
   tmp.func().asm_sqrt( tmp.getReg( JitRegType<WT>::Val_t ) , 
 		       s1.getReg( JitRegType<WT>::Val_t ) );
-  std::cout << " tmp=" << tmp.mapReg.size() << "\n";
   return tmp;
   //return sqrt(s1.elem());
 }
@@ -1600,9 +1571,7 @@ template<class T>
 inline void 
 zero_rep(WordJIT<T>& dest) 
 {
-  std::cout << __PRETTY_FUNCTION__ << "\n";
-  //dest.func().asm_mov_literal( dest.getReg( JitRegType<T>::Val_t ) , (T)0 );
-  WordJIT<T> z0(dest.func(),(T)0);
+  WordJIT<T> z0(dest.func(),(T)0); // this creates a literal
   dest = z0;
 }
 
