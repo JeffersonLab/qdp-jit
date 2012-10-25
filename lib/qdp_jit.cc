@@ -706,6 +706,22 @@ namespace QDP {
     oss_prg << popTarget() << "D:\n";
   }
 
+  void Jit::addCondBranchPred_if(int pred)
+  {
+    oss_prg << "@" << getName(pred) << "  bra " << pushTarget() << ";\n";
+  }
+
+  void Jit::addCondBranchPred_else()
+  {
+    oss_prg << "bra " << getTarget() << "D;\n";
+    oss_prg << getTarget() << ":\n";
+  }
+
+  void Jit::addCondBranchPred_fi()
+  {
+    oss_prg << popTarget() << "D:\n";
+  }
+
   int Jit::getThreadIdMultiplied(int r_idx,int wordSize)
   {
     if (mapRegMul.count(r_idx) < 1) {

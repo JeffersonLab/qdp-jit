@@ -1394,6 +1394,15 @@ fill_random(WordJIT<T>& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
 }
 
 
+template<class T>
+inline void
+get_pred(int& pred, const WordJIT<T>& d)
+{
+  pred = d.getReg( JitRegType<bool>::Val_t );
+}
+
+
+
 //! dest  = gaussian  
 template<class T>
 inline void

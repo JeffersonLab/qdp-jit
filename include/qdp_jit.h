@@ -83,6 +83,9 @@ namespace QDP {
     void addCondBranch_if(IndexRet i);
     void addCondBranch_else();
     void addCondBranch_fi();
+    void addCondBranchPred_if(int pred);
+    void addCondBranchPred_else();
+    void addCondBranchPred_fi();
     int getThreadIdMultiplied(int r_idx,int wordSize);
     void write();
     int getRegIdx();

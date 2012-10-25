@@ -1367,6 +1367,16 @@ fill_gaussian(PScalar<T>& d, PScalar<T>& r1, PScalar<T>& r2)
 }
 
 
+template<class T1, class T2, class T3>
+inline typename TrinaryReturn<PScalar<T1>, PScalar<T2>, PScalar<T3>, FnWhere >::Type_t
+do_where(const PScalar<T1> &a, const PScalar<T2> &b, const PScalar<T3> &c)
+{
+  if (toBool(a)) return b; else return c;
+}
+
+
+
+
 #if 1
 // Global sum over site indices only
 template<class T>

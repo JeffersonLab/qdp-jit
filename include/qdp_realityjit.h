@@ -2399,6 +2399,15 @@ fill_random(RComplexJIT<T>& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
 }
 
 
+template<class T>
+inline void
+get_pred(int& pred, const RScalarJIT<T>& d)
+{
+  get_pred(pred , d.elem() );
+}
+
+
+
 //! dest  = gaussian
 /*! RComplexJIT polar method */
 template<class T>

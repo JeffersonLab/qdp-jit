@@ -1372,6 +1372,34 @@ fill_random(PScalarJIT<T>& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
 }
 
 
+template<class T>
+inline void
+get_pred(int& pred, const PScalarJIT<T>& d)
+{
+  get_pred(pred , d.elem() );
+}
+
+
+
+template<class T1, class T2, class T3>
+inline typename TrinaryReturn<PScalarJIT<T1>, PScalarJIT<T2>, PScalarJIT<T3>, FnWhere >::Type_t
+do_where(const PScalarJIT<T1> &a, const PScalarJIT<T2> &b, const PScalarJIT<T3> &c)
+{
+  int pred;
+  get_pred( pred , a );
+
+  typename TrinaryReturn<PScalarJIT<T1>, PScalarJIT<T2>, PScalarJIT<T3>, FnWhere >::Type_t ret(a.func());
+
+  a.func().addCondBranchPred_if( pred );
+  ret = b;
+  a.func().addCondBranchPred_else();
+  ret = c;
+  a.func().addCondBranchPred_fi();
+
+  return ret;
+}
+
+
 //! dest  = gaussian  
 template<class T>
 inline void
