@@ -1022,6 +1022,16 @@ peekSpin(const Word<T>& l, int row, int col)
 
 
 
+template<class T, class T1, class T2>
+inline void
+fill_random(Word<T>& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
+{
+  fill_random(d.elem(), seed, skewed_seed, seed_mult);
+}
+
+
+
+
 //-----------------------------------------------------------------------------
 //! QDP Int to int primitive in conversion routine
 template<class T> 

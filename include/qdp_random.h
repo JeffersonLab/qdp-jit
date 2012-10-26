@@ -62,7 +62,7 @@ namespace RNG
 //! dest  = random
 template<class T1, class T2>
 inline void
-fill_random(const float& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
+fill_random( float& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
 {
   const_cast<float&>(d) = float(RNG::sranf(seed, skewed_seed, seed_mult));
 }
@@ -70,7 +70,7 @@ fill_random(const float& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
 //! dest  = random
 template<class T1, class T2>
 inline void
-fill_random(const double& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
+fill_random( double& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
 {
   const_cast<double&>(d) = double(RNG::sranf(seed, skewed_seed, seed_mult));
 }

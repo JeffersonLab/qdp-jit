@@ -1750,7 +1750,7 @@ gather_sites(RComplex<T>& d,
 }
 
 
-//! dest  = random  
+//! dest  = random 
 template<class T, class T1, class T2>
 inline void
 fill_random(RScalar<T>& d, T1& seed, T2& skewed_seed, const T1& seed_mult)

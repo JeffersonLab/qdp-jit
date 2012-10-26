@@ -14,7 +14,8 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 
   CUfunction func;
 
-  Jit function("ptxtest.ptx","func");
+  std::string fname("ptxtest.ptx");
+  Jit function(fname.c_str(),"func");
 
   //std::cout << "function = " << (void*)&function <<"\n";
 
@@ -41,8 +42,8 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 
   CUresult ret;
   CUmodule cuModule;
-  ret = cuModuleLoad(&cuModule, "ptxtest.ptx");
-  if (ret) { std::cout << "Error loading CUDA module\n"; exit(1); }
+  ret = cuModuleLoad(&cuModule, fname.c_str() );
+  if (ret) QDP_error_exit("Error loading CUDA module '%s'",fname.c_str());
 
   ret = cuModuleGetFunction(&func, cuModule, "func");
   if (ret) { std::cout << "Error getting function\n"; exit(1); }
@@ -62,7 +63,8 @@ function_random_build(OLattice<T>& dest, LatticeSeed& seed, LatticeSeed& skewed_
 
   CUfunction func;
 
-  Jit function("ptxrandom.ptx","func");
+  std::string fname("ptxrandom.ptx");
+  Jit function(fname.c_str(),"func");
 
   ParamLeaf param_leaf(function,function.getRegIdx() , Jit::LatticeLayout::COAL );
   function.addParamMemberArray( param_leaf.r_idx );
@@ -95,8 +97,8 @@ function_random_build(OLattice<T>& dest, LatticeSeed& seed, LatticeSeed& skewed_
 
   CUresult ret;
   CUmodule cuModule;
-  ret = cuModuleLoad(&cuModule, "ptxrandom.ptx");
-  if (ret) { std::cout << "Error loading CUDA module\n"; exit(1); }
+  ret = cuModuleLoad(&cuModule, fname.c_str());
+  if (ret) QDP_error_exit("Error loading CUDA module '%s'",fname.c_str());
 
   ret = cuModuleGetFunction(&func, cuModule, "func");
   if (ret) { std::cout << "Error getting function\n"; exit(1); }
@@ -118,7 +120,8 @@ function_zero_rep_build(OLattice<T>& dest)
 
   CUfunction func;
 
-  Jit function("ptx_zero_rep.ptx","func");
+  std::string fname("ptx_zero_rep.ptx");
+  Jit function(fname.c_str(),"func");
 
   ParamLeaf param_leaf(function,function.getRegIdx() , Jit::LatticeLayout::COAL );
   function.addParamMemberArray( param_leaf.r_idx );
@@ -136,8 +139,8 @@ function_zero_rep_build(OLattice<T>& dest)
 
   CUresult ret;
   CUmodule cuModule;
-  ret = cuModuleLoad(&cuModule, "ptx_zero_rep.ptx");
-  if (ret) { std::cout << "Error loading CUDA module\n"; exit(1); }
+  ret = cuModuleLoad(&cuModule, fname.c_str());
+  if (ret) QDP_error_exit("Error loading CUDA module '%s'",fname.c_str());
 
   ret = cuModuleGetFunction(&func, cuModule, "func");
   if (ret) { std::cout << "Error getting function\n"; exit(1); }
@@ -156,7 +159,8 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
 {
   CUfunction func;
 
-  Jit function("ptxgather.ptx","func");
+  std::string fname("ptxgather.ptx");
+  Jit function(fname.c_str(),"func");
 
   //std::cout << "function = " << (void*)&function <<"\n";
   
@@ -188,8 +192,8 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
 
   CUresult ret;
   CUmodule cuModule;
-  ret = cuModuleLoad(&cuModule, "ptxgather.ptx");
-  if (ret) { std::cout << "Error loading CUDA module\n"; exit(1); }
+  ret = cuModuleLoad(&cuModule, fname.c_str());
+  if (ret) QDP_error_exit("Error loading CUDA module '%s'",fname.c_str());
 
   ret = cuModuleGetFunction(&func, cuModule, "func");
   if (ret) { std::cout << "Error getting function\n"; exit(1); }

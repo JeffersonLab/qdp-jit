@@ -708,7 +708,7 @@ namespace QDP {
 
   void Jit::addCondBranchPred_if(int pred)
   {
-    oss_prg << "@" << getName(pred) << "  bra " << pushTarget() << ";\n";
+    oss_prg << "@!" << getName(pred) << "  bra " << pushTarget() << ";\n";
   }
 
   void Jit::addCondBranchPred_else()
@@ -757,7 +757,7 @@ namespace QDP {
     dumpParam();
 
     std::ofstream out(filename.c_str());
-#if 0
+#if 1
     out << ".version 1.4\n" <<
       ".target sm_12\n" <<
       ".entry " << funcname << " (" <<
