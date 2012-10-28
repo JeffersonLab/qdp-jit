@@ -660,38 +660,17 @@ sum(const QDPExpr<RHS,OScalar<T> >& s1)
  * Allow a global sum that sums over the lattice, but returns an object
  * of the same primitive type. E.g., contract only over lattice indices
  */
+
 template<class RHS, class T>
 typename UnaryReturn<OLattice<T>, FnSum>::Type_t
 sum(const QDPExpr<RHS,OLattice<T> >& s1, const Subset& s)
 {
-  typename UnaryReturn<OLattice<T>, FnSum>::Type_t  d;
-
-#if defined(QDP_USE_PROFILING)   
-  static QDPProfile_t prof(d, OpAssign(), FnSum(), s1);
-  prof.time -= getClockTime();
-#endif
-
-  // Must initialize to zero since we do not know if the loop will be entered
-  zero_rep(d.elem());
-
-  const int *tab = s.siteTable().slice();
-  for(int j=0; j < s.numSiteTable(); ++j) 
-  {
-    int i = tab[j];
-    d.elem() += forEach(s1, EvalLeaf1(i), OpCombine());
-  }
-
-  // Do a global sum on the result
-  QDPInternal::globalSum(d);
-
-#if defined(QDP_USE_PROFILING)   
-  prof.time += getClockTime();
-  prof.count++;
-  prof.print();
-#endif
-
-  return d;
+  QDP_info("sum(Expr,Subset)");
+  OLattice<T> l;
+  l[s]=s1;
+  return sum(l,s);
 }
+
 
 
 //! OScalar = sum(OLattice)

@@ -18,6 +18,7 @@ namespace QDP {
     enum { RegTypeShift = 24 };
     enum RegType { f32=0,f64=1,u16=2,u32=3,u64=4,s16=5,s32=6,s64=7,u8=8,b16=9,b32=10,b64=11,pred=12 };
     enum CmpOp { eq, ne, lt, le, gt, ge, lo, ls, hi, hs , equ, neu, ltu, leu, gtu, geu, num, nan };
+    enum StateSpace { GLOBAL=0,SHARED=1 };
 
     struct IndexRet {
       int r_newidx;
@@ -43,6 +44,7 @@ namespace QDP {
     void asm_mov_literal(int dest,T lit) {
       oss_prg << "mov." << regptx[getRegType(dest)] << " " << getName(dest) << "," << std::scientific << lit << ";\n";
     }
+    int getTID();
     void asm_st(int base,int offset,int src);
     void asm_ld(int dest,int base,int offset);
     void asm_add(int dest,int lhs,int rhs);
@@ -76,6 +78,7 @@ namespace QDP {
     void dumpParam();
     int addParam(RegType type);
     int addParamLatticeBaseAddr(int r_idx,int idx_multiplier);
+    int addSharedMemLatticeBaseAddr(int r_idx,int idx_multiplier);
     int addParamScalarBaseAddr();
     int addParamIndexFieldAndOption();
     int addParamMemberArray(int r_index);
@@ -87,6 +90,8 @@ namespace QDP {
     void addCondBranchPred_else();
     void addCondBranchPred_fi();
     int getThreadIdMultiplied(int r_idx,int wordSize);
+    int getSDATA();
+    void set_state_space( int reg , StateSpace st );
     void write();
     int getRegIdx();
 
@@ -98,6 +103,7 @@ namespace QDP {
     //
     mutable std::string filename,funcname;
     mutable int r_threadId_s32;
+    mutable int r_tid;
     //    mutable std::map<int,int> threadIdMultiplied;
     mutable std::map<int,std::map<int,int> > mapRegMul;
     mutable int nparam;
@@ -119,10 +125,13 @@ namespace QDP {
     mutable std::map< RegType , std::string > mapDivRnd;
     mutable std::map< RegType , std::string > mapSqrtRnd;
     mutable std::map< CmpOp , std::string > mapCmpOp;
-    mutable std::map< RegType , std::string > mapIntMul;
+    mutable std::map< RegType , std::map< RegType , std::string > > mapIntMul;
     mutable std::map< RegType , RegType > mapBitType;
+    mutable std::map< int , StateSpace >  mapStateSpace;
+    mutable std::map< StateSpace , std::string >  mapStateSpace2String;
 
     std::vector< BASEWordJIT* > vecStoring;
+    bool usesSharedMem = false;
   };
 
 

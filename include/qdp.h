@@ -217,6 +217,7 @@ namespace ThreadReductions {
 #elif defined(ARCH_PARSCALAR)
 // Architectural specific code to a parallel/single proc box
 #warning "Using parallel scalar architecture"
+#include "qdp_sum.h"
 #include "qdp_parscalar_specific.h"
 
 // Include optimized code here if applicable

@@ -58,11 +58,13 @@ namespace QDP {
     int r_mul = getRegs( u32 , 2 );
     int r_threadId_u32 = getRegs( u32 , 1 );
     r_threadId_s32 = getRegs( s32 , 1 );
+    r_tid = getRegs( s32 , 1 );
 
     oss_tidcalc <<  "mov.u16 " << getName(r_ctaid) << ",%ctaid.x;\n";
     oss_tidcalc <<  "mov.u16 " << getName(r_ntid) << ",%ntid.x;\n";
     oss_tidcalc <<  "mul.wide.u16 " << getName(r_mul) << "," << getName(r_ntid) << "," << getName(r_ctaid) << ";\n";
     oss_tidcalc <<  "cvt.u32.u16 " << getName(r_mul + 1) << ",%tid.x;\n";
+    oss_tidcalc <<  "cvt.s32.u32 " << getName(r_tid) << "," << getName(r_mul + 1) << ";\n";
     oss_tidcalc <<  "add.u32 " << getName(r_threadId_u32) << "," << getName(r_mul + 1)  << "," << getName(r_mul) << ";\n";
 
     //
@@ -106,7 +108,14 @@ namespace QDP {
     mapCmpOp[Jit::num]="num";
     mapCmpOp[Jit::nan]="nan";
 
-    mapIntMul[Jit::s32]="lo.";
+    // [to] [from] 
+    mapIntMul[Jit::s64][Jit::s32]="wide.";
+    mapIntMul[Jit::s64][Jit::s64]="lo.";
+    mapIntMul[Jit::s32][Jit::s32]="lo.";
+
+    mapIntMul[Jit::u64][Jit::u32]="wide.";
+    mapIntMul[Jit::u64][Jit::u64]="lo.";
+    mapIntMul[Jit::u32][Jit::u32]="lo.";
 
     
     mapBitType[f32]=b32;
@@ -119,6 +128,8 @@ namespace QDP {
     mapBitType[s64]=b64;
     mapBitType[b32]=b32;
 
+    mapStateSpace2String[ Jit::GLOBAL ] = "global.";
+    mapStateSpace2String[ Jit::SHARED ] = "shared.";
 
     if (DeviceParams::Instance().getDivRnd()) {
       mapDivRnd[f32]="rn."; // rn
@@ -131,6 +142,16 @@ namespace QDP {
       mapSqrtRnd[f32]="approx."; // rn
       mapSqrtRnd[f64]="approx.";
     }
+  }
+
+
+  int Jit::getTID() {
+    return r_tid;
+  }
+
+  void Jit::set_state_space( int reg , StateSpace st )
+  {
+    mapStateSpace[reg]=st;
   }
 
   int Jit::addParamImmediate(std::ostream& oss,RegType type){
@@ -169,12 +190,16 @@ namespace QDP {
 
   void Jit::asm_st(int base,int offset,int src)
   {
-    oss_prg << "st.global." << regptx[getRegType(src)] << " [" << getName(base) << "+" << offset << "]," << getName(src) << ";\n";
+    if (mapStateSpace.count(base) < 1)
+      QDP_error_exit("Jit::asm_st: No state space information");
+    oss_prg << "st." << mapStateSpace2String.at( mapStateSpace.at(base) ) << regptx[getRegType(src)] << " [" << getName(base) << "+" << offset << "]," << getName(src) << ";\n";
   }
 
   void Jit::asm_ld(int dest,int base,int offset)
   {
-    oss_prg << "ld.global." << regptx[getRegType(dest)] << " " << getName(dest) << ",[" << getName(base) << "+" << offset << "];\n";
+    if (mapStateSpace.count(base) < 1)
+      QDP_error_exit("Jit::asm_ld: No state space information dest_type=%d offset=%d",getRegType(dest),offset);
+    oss_prg << "ld." << mapStateSpace2String.at( mapStateSpace.at(base) ) << regptx[getRegType(dest)] << " " << getName(dest) << ",[" << getName(base) << "+" << offset << "];\n";
   }
 
   void Jit::asm_add(int dest,int lhs,int rhs)
@@ -253,11 +278,14 @@ namespace QDP {
 
   void Jit::asm_mul(int dest,int lhs,int rhs)
   {
-    if ( getRegType(dest) != getRegType(rhs) || getRegType(dest) != getRegType(lhs) ) {
-      std::cout << "JIT::asm_mul: trying to add different types " << getRegType(dest) << " " << getRegType(lhs) << " " << getRegType(rhs) << "\n";
+    if (!(
+      ( getRegType(dest) == Jit::u64 && getRegType(rhs) == Jit::u32 && getRegType(lhs) == Jit::u32 ) ||
+      ( getRegType(dest) == Jit::s64 && getRegType(rhs) == Jit::s32 && getRegType(lhs) == Jit::s32 ) ||
+      ( getRegType(dest) == getRegType(rhs) && getRegType(dest) == getRegType(lhs) ) )) {
+      std::cout << "JIT::asm_mul: you are tryiong to multiply with a weird combination of types " << getRegType(dest) << " " << getRegType(lhs) << " " << getRegType(rhs) << "\n";
       exit(1);
     }
-    oss_prg << "mul." << mapIntMul[getRegType(dest)] << regptx[getRegType(dest)] << " " << getName(dest) << "," << getName(lhs) << "," << getName(rhs) << ";\n";
+    oss_prg << "mul." << mapIntMul[getRegType(dest)][getRegType(lhs)] << regptx[getRegType(lhs)] << " " << getName(dest) << "," << getName(lhs) << "," << getName(rhs) << ";\n";
   }
 
   void Jit::asm_shl(int dest,int src,int bits)
@@ -575,6 +603,27 @@ namespace QDP {
   }
 
 
+  int Jit::getSDATA()
+  {
+    static int r_sdata = -1;
+    if (r_sdata == -1) {
+      r_sdata = getRegs( u64 , 1 );
+      oss_baseaddr << "mov.u64 " << getName(r_sdata) << ",sdata;  // shared memory\n";
+    }
+    return r_sdata;
+  }
+
+
+  int Jit::addSharedMemLatticeBaseAddr(int r_idx,int idx_multiplier)
+  {
+    usesSharedMem = true;
+    int r_ret = getRegs( u64 , 1 );
+    oss_baseaddr << "add.u64 " << getName(r_ret) << "," << getName( getSDATA() ) << "," << getName( getThreadIdMultiplied(r_idx,idx_multiplier) ) << ";\n";
+    mapStateSpace[r_ret] = Jit::SHARED;
+    return r_ret;
+  }
+
+
   Jit::IndexRet Jit::addParamIndexFieldRcvBuf(int wordSize)
   {
     if (paramtype.size() != nparam) {
@@ -625,6 +674,7 @@ namespace QDP {
     ret.r_pred_in_buf = r_pred_in_buf;
     ret.r_rcvbuf = r_param_rcv_buf_idx;
 
+    mapStateSpace[ret.r_rcvbuf] = Jit::GLOBAL;
 
     return ret;
   }
@@ -644,6 +694,7 @@ namespace QDP {
     oss_baseaddr << "ld.param.u64 " << getName(r_param) << ",[param" << nparam << "];  // lattice type\n";
     oss_baseaddr << "add.u64 " << getName(r_ret) << "," << getName(r_param) << "," << getName( getThreadIdMultiplied(r_idx,idx_multiplier) ) << ";\n";
     nparam++;
+    mapStateSpace[r_ret] = Jit::GLOBAL;
     return r_ret;
   }
 
@@ -660,6 +711,7 @@ namespace QDP {
     int r_param = getRegs( u64 , 1 );
     oss_baseaddr << "ld.param.u64 " << getName(r_param) << ",[param" << nparam << "];  // scalar type\n";
     nparam++;
+    mapStateSpace[r_param] = Jit::GLOBAL;
     return r_param;
   }
 
@@ -759,8 +811,10 @@ namespace QDP {
     std::ofstream out(filename.c_str());
 #if 1
     out << ".version 1.4\n" <<
-      ".target sm_12\n" <<
-      ".entry " << funcname << " (" <<
+      ".target sm_12\n";
+    if (usesSharedMem)
+      out << ".extern .shared .align 4 .b8 sdata[];\n";
+    out << ".entry " << funcname << " (" <<
       oss_param.str() << ")\n" <<
       "{\n" <<
       oss_vardef.str() <<
@@ -777,9 +831,11 @@ namespace QDP {
       "}\n";
 #else
     out << ".version 2.3\n" <<
-      ".target sm_20\n" <<
       ".address_size 64\n" <<
-      ".entry " << funcname << " (" <<
+      ".target sm_20\n";
+    if (usesSharedMem)
+      out << ".extern .shared .align 4 .b8 sdata[];\n";
+    out << ".entry " << funcname << " (" <<
       oss_param.str() << ")\n" <<
       "{\n" <<
       oss_vardef.str() <<
