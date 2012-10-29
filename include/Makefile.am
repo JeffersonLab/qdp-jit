@@ -148,7 +148,7 @@ CUDA_HDRS = qdp_cuda.h \
 	    qdp_cuda_allocator.h \
 	    qdp_deviceparams.h \
 	    qdp_jit.h \
-	    qdp_word.h qdp_wordjit.h qdp_wordjitbase.h \
+	    qdp_word.h qdp_wordjit.h \
 	    qdp_jitfunction.h qdp_pete_visitors.h qdp_qdptypejit.h \
 	    qdp_outerjit.h qdp_realityjit.h qdp_primscalarjit.h \
 	    qdp_primmatrixjit.h qdp_primcolormatjit.h qdp_primspinmatjit.h qdp_jitresource.h \

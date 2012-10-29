@@ -855,11 +855,6 @@ namespace QDP {
 
   void Jit::write() 
   {
-
-    for (auto& toStore : vecStoring) {
-      toStore->store();
-    }
-
     dumpVarDef();
     dumpParam();
 

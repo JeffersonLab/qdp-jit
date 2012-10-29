@@ -2,6 +2,7 @@
 
 namespace QDP {
 
+#if 0
   template<>
   void WordJIT<bool>::store() {
     if (needsStoring) {
@@ -18,10 +19,11 @@ namespace QDP {
       needsStoring = false;
     }
   }
+#endif
 
 
   template<>
-  int WordJIT<bool>::getReg( Jit::RegType type ,  WordJIT<bool>::Load load ) const 
+  int WordJIT<bool>::getReg( Jit::RegType type ) const 
   {
     //std::cout << "BOOL SPECIAL getReg type=" << type << "  mapReg.count(type)=" << mapReg.count(type) << "  load = " << load << "  mapReg.size()=" << mapReg.size() << "\n";
     if (mapReg.count(type) > 0) {
@@ -47,16 +49,15 @@ namespace QDP {
 	Jit::RegType myType = JitRegType<bool>::Val_t;
 	mapReg.insert( std::make_pair( myType , jit.getRegs( JitRegType<bool>::Val_t , 1 ) ) );
 
-	if (load != DoNotLoad) {
-	  std::cout << "insert u8 ld/cvt instructions\n";
-	  int load_u8 = jit.getRegs( Jit::u8 , 1 );
-	  jit.asm_ld( load_u8 , r_addr , offset_level * WordSize<bool>::Size );
+	std::cout << "insert u8 ld/cvt instructions\n";
+	int load_u8 = jit.getRegs( Jit::u8 , 1 );
+	jit.asm_ld( load_u8 , r_addr , offset_level * WordSize<bool>::Size );
 
-	  int load_u32 = jit.getRegs( Jit::u32 , 1 );
-	  jit.asm_cvt( load_u32 , load_u8 );
+	int load_u32 = jit.getRegs( Jit::u32 , 1 );
+	jit.asm_cvt( load_u32 , load_u8 );
 
-	  jit.asm_01_to_pred( mapReg.at( myType) , load_u32 );
-	}
+	jit.asm_01_to_pred( mapReg.at( myType) , load_u32 );
+
 	return getReg(type);
       }
     }

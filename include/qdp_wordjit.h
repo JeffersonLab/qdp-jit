@@ -10,7 +10,7 @@ namespace QDP {
 
 
   template<class T>
-  class WordJIT: public BASEWordJIT
+  class WordJIT
   {
   public:
     //! Size (in number of registers) of the underlying object
@@ -63,34 +63,15 @@ namespace QDP {
     }
 
 
-    virtual void store() override {
-      if (needsStoring) {
-	if (!global_state)
-	  QDP_error_exit("WordJIT store, but no global state");
-	//QDP_info("WordJIT inserting store asm instruction");
-	if (condStoring >= 0) {
-	  jit.asm_cond_st( condStoring , r_addr , offset_level * WordSize<T>::Size , getReg( JitRegType<T>::Val_t , DoNotLoad ) );
-	} else {
-	  jit.asm_st( r_addr , offset_level * WordSize<T>::Size , getReg( JitRegType<T>::Val_t , DoNotLoad ) );
-	}
-	needsStoring = false;
-      }
-    }
 
 
     template <class T1>
     WordJIT& assign(const WordJIT<T1>& s1) {
       if (global_state) {
-	// Invalidate all other representations
-	mapReg.clear();
-	int myReg = getReg( JitRegType<T>::Val_t , DoNotLoad );
-	jit.asm_mov( myReg , s1.getReg( JitRegType<T>::Val_t ) );
-	if (!needsStoring) { 
-	  needsStoring = true;
-	  jit.regStoring(this);
-	}
+	jit.asm_st( r_addr , offset_level * WordSize<T>::Size , s1.getReg( JitRegType<T>::Val_t ) );
       } else {
-	jit.asm_mov( getReg( JitRegType<T>::Val_t , DoNotLoad ) , s1.getReg( JitRegType<T>::Val_t ) );
+	//QDP_error_exit("WordJIT assigning to a non-global view ??");
+	jit.asm_mov( getReg( JitRegType<T>::Val_t ) , s1.getReg( JitRegType<T>::Val_t ) );
       }
       return *this;
     }
@@ -98,17 +79,10 @@ namespace QDP {
     template <class T1>
     WordJIT& cond_assign(int pred,const WordJIT<T1>& s1) {
       if (global_state) {
-	// Invalidate all other representations
-	mapReg.clear();
-	int myReg = getReg( JitRegType<T>::Val_t , DoNotLoad );
-	jit.asm_mov( myReg , s1.getReg( JitRegType<T>::Val_t ) );
-	if (!needsStoring) { 
-	  condStoring = pred;
-	  needsStoring = true;
-	  jit.regStoring(this);
-	}
+	jit.asm_cond_st( pred , r_addr , offset_level * WordSize<T>::Size , s1.getReg( JitRegType<T>::Val_t ) );
       } else {
-	jit.asm_mov( getReg( JitRegType<T>::Val_t , DoNotLoad ) , s1.getReg( JitRegType<T>::Val_t ) );
+	QDP_error_exit("WordJIT cond_assigning to a non-global view ??");
+	jit.asm_mov( getReg( JitRegType<T>::Val_t ) , s1.getReg( JitRegType<T>::Val_t ) );
       }
       return *this;
     }
@@ -187,7 +161,7 @@ namespace QDP {
 
 
 
-    int getReg( Jit::RegType type , Load load = DoLoad ) const {
+    int getReg( Jit::RegType type  ) const {
       //std::cout << "getReg type=" << type << "  mapReg.count(type)=" << mapReg.count(type) << "  mapReg.size()=" << mapReg.size() << "\n";
       if (literal) {
 	//std::cout << "WordJIT is literal\n";
@@ -221,8 +195,7 @@ namespace QDP {
 	  //std::cout << "We don't have the value in a register. Need to load it " << (void*)this << " " << (void*)&jit << "\n";
 	  Jit::RegType myType = JitRegType<T>::Val_t;
 	  mapReg.insert( std::make_pair( myType , jit.getRegs( JitRegType<T>::Val_t , 1 ) ) );
-	  if (load != DoNotLoad)
-	    jit.asm_ld( mapReg.at( myType ) , r_addr , offset_level * WordSize<T>::Size );
+	  jit.asm_ld( mapReg.at( myType ) , r_addr , offset_level * WordSize<T>::Size );
 	  return getReg(type);
 	}
       }
@@ -257,9 +230,22 @@ namespace QDP {
     int condStoring = -1;
   };
 
-  template<> void WordJIT<bool>::store();
-  template<>  int WordJIT<bool>::getReg( Jit::RegType type , WordJIT<bool>::Load load ) const;
+  template<>  int WordJIT<bool>::getReg( Jit::RegType type ) const;
 
+
+  template<>
+  template <class T1>
+  WordJIT<bool>& WordJIT<bool>::assign(const WordJIT<T1>& s1) {
+    if (global_state) {
+      int u32 = jit.getRegs( Jit::u32 , 1 );
+      jit.asm_pred_to_01( u32 , s1.getReg( JitRegType<bool>::Val_t ) );
+      int u8 = jit.getRegs( Jit::u8 , 1 );
+      jit.asm_cvt( u8 , u32 );
+      jit.asm_st( r_addr , offset_level * WordSize<bool>::Size , u8 );
+    } else {
+      jit.asm_mov( this->getReg( JitRegType<bool>::Val_t ) , s1.getReg( JitRegType<bool>::Val_t ) );
+    }
+  }
 
 
 

@@ -108,7 +108,6 @@ namespace QDP {
 #include "qdp_cache.h"
 
 #include "qdp_forward.h"
-#include "qdp_wordjitbase.h"
 
 #include "qdp_jit.h"
 
