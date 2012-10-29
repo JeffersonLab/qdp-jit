@@ -167,7 +167,9 @@ namespace RNG
       QDP_error_exit("Unable to allocate lat_run_seed\n");
     }
 
-    *lat_ran_seed = ran_seed;
+    lat_ran_seed->elem(0) = ran_seed.elem();
+    for( int i = 1 ; i < Layout::sitesOnNode() ; i++ )    
+      lat_ran_seed->elem(i) = lat_ran_seed->elem(i-1) * ran_mult_n.elem();
 
     lat_ran_mult_n = new LatticeSeed;
     if( lat_ran_mult_n == 0x0 ) { 

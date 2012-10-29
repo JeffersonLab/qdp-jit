@@ -40,12 +40,14 @@ namespace QDP {
     }
 
     void asm_mov(int dest,int src);
+    void asm_cond_mov(int pred,int dest,int src);
     template<class T>
     void asm_mov_literal(int dest,T lit) {
       oss_prg << "mov." << regptx[getRegType(dest)] << " " << getName(dest) << "," << std::scientific << lit << ";\n";
     }
     int getTID();
     void asm_st(int base,int offset,int src);
+    void asm_cond_st(int pred,int base,int offset,int src);
     void asm_ld(int dest,int base,int offset);
     void asm_add(int dest,int lhs,int rhs);
     void asm_and(int dest,int lhs,int rhs);
@@ -94,6 +96,7 @@ namespace QDP {
     void set_state_space( int reg , StateSpace st );
     void write();
     int getRegIdx();
+    void setPrettyFunction(const std::string& p);
 
   private:
     int addParamImmediate(std::ostream& oss,RegType type);
@@ -132,6 +135,7 @@ namespace QDP {
 
     std::vector< BASEWordJIT* > vecStoring;
     bool usesSharedMem = false;
+    std::string prettyFunction;
   };
 
 

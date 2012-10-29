@@ -84,9 +84,17 @@ namespace QDP {
     // mapCVT[to][from]
     mapCVT[s32][f32]="rni."; // float-to-int
     mapCVT[s32][f64]="rni."; // float-to-int
+
     mapCVT[f32][f64]="rn.";  // loss of precision
+
     mapCVT[f32][s32]="rn.";  // int-to-float
     mapCVT[f64][s32]="rn.";  // int-to-float
+    mapCVT[f32][u32]="rn.";  // int-to-float
+    mapCVT[f64][u32]="rn.";  // int-to-float
+    mapCVT[f32][s64]="rn.";  // int-to-float
+    mapCVT[f64][s64]="rn.";  // int-to-float
+    mapCVT[f32][u64]="rn.";  // int-to-float
+    mapCVT[f64][u64]="rn.";  // int-to-float
 
 
     mapCmpOp[Jit::eq]="eq";
@@ -188,11 +196,29 @@ namespace QDP {
     oss_prg << "mov." << regptx[getRegType(dest)] << " " << getName(dest) << "," << getName(src) << ";\n";
   }
 
+  void Jit::asm_cond_mov(int pred,int dest,int src)
+  {
+    if ( getRegType(dest) != getRegType(src) || getRegType(pred) != Jit::pred ) {
+      std::cout << "JIT::asm_cond_mov type mismatch " << getRegType(dest) << " " << getRegType(pred) << " " << getRegType(src) << "\n";
+      exit(1);
+    }
+    oss_prg << "@" << getName(pred) << " mov." << regptx[getRegType(dest)] << " " << getName(dest) << "," << getName(src) << ";\n";
+  }
+
   void Jit::asm_st(int base,int offset,int src)
   {
     if (mapStateSpace.count(base) < 1)
       QDP_error_exit("Jit::asm_st: No state space information");
     oss_prg << "st." << mapStateSpace2String.at( mapStateSpace.at(base) ) << regptx[getRegType(src)] << " [" << getName(base) << "+" << offset << "]," << getName(src) << ";\n";
+  }
+
+  void Jit::asm_cond_st(int pred,int base,int offset,int src)
+  {
+    if ( getRegType(pred) != Jit::pred )
+      QDP_error_exit("Jit::asm_cond_st not pred type");
+    if (mapStateSpace.count(base) < 1)
+      QDP_error_exit("Jit::asm_st: No state space information");
+    oss_prg << "@" << getName(pred) << " st." << mapStateSpace2String.at( mapStateSpace.at(base) ) << regptx[getRegType(src)] << " [" << getName(base) << "+" << offset << "]," << getName(src) << ";\n";
   }
 
   void Jit::asm_ld(int dest,int base,int offset)
@@ -437,7 +463,13 @@ namespace QDP {
 		<< getRegType(src) << "\n";
       exit(1);
     }
-    oss_prg << "cvt." << mapCVT[getRegType(dest)][getRegType(src)] << regptx[getRegType(dest)] << "." << regptx[getRegType(src)] << " " << getName(dest) << "," << getName(src) << ";\n";
+    if (getRegType(dest) != Jit::pred  &&  getRegType(src) == Jit::pred) {
+      int u32 = getRegs( Jit::u32 , 1 );
+      asm_pred_to_01( u32 , src );
+      oss_prg << "cvt." << mapCVT[getRegType(dest)][getRegType(u32)] << regptx[getRegType(dest)] << "." << regptx[getRegType(u32)] << " " << getName(dest) << "," << getName(u32) << ";\n";
+    } else {
+      oss_prg << "cvt." << mapCVT[getRegType(dest)][getRegType(src)] << regptx[getRegType(dest)] << "." << regptx[getRegType(src)] << " " << getName(dest) << "," << getName(src) << ";\n";
+    }
   }
 
 
@@ -798,6 +830,12 @@ namespace QDP {
   }
 
 
+  void Jit::setPrettyFunction(const std::string& p) 
+  {
+    prettyFunction = p;    
+  }
+
+
   void Jit::write() 
   {
 
@@ -809,7 +847,8 @@ namespace QDP {
     dumpParam();
 
     std::ofstream out(filename.c_str());
-#if 1
+    out << "// " << prettyFunction << "\n";
+#if 0
     out << ".version 1.4\n" <<
       ".target sm_12\n";
     if (usesSharedMem)
@@ -831,7 +870,6 @@ namespace QDP {
       "}\n";
 #else
     out << ".version 2.3\n" <<
-      ".address_size 64\n" <<
       ".target sm_20\n";
     if (usesSharedMem)
       out << ".extern .shared .align 4 .b8 sdata[];\n";

@@ -68,7 +68,11 @@ namespace QDP {
 	if (!global_state)
 	  QDP_error_exit("WordJIT store, but no global state");
 	//QDP_info("WordJIT inserting store asm instruction");
-	jit.asm_st( r_addr , offset_level * WordSize<T>::Size , getReg( JitRegType<T>::Val_t , DoNotLoad ) );
+	if (condStoring >= 0) {
+	  jit.asm_cond_st( condStoring , r_addr , offset_level * WordSize<T>::Size , getReg( JitRegType<T>::Val_t , DoNotLoad ) );
+	} else {
+	  jit.asm_st( r_addr , offset_level * WordSize<T>::Size , getReg( JitRegType<T>::Val_t , DoNotLoad ) );
+	}
 	needsStoring = false;
       }
     }
@@ -82,6 +86,24 @@ namespace QDP {
 	int myReg = getReg( JitRegType<T>::Val_t , DoNotLoad );
 	jit.asm_mov( myReg , s1.getReg( JitRegType<T>::Val_t ) );
 	if (!needsStoring) { 
+	  needsStoring = true;
+	  jit.regStoring(this);
+	}
+      } else {
+	jit.asm_mov( getReg( JitRegType<T>::Val_t , DoNotLoad ) , s1.getReg( JitRegType<T>::Val_t ) );
+      }
+      return *this;
+    }
+
+    template <class T1>
+    WordJIT& cond_assign(int pred,const WordJIT<T1>& s1) {
+      if (global_state) {
+	// Invalidate all other representations
+	mapReg.clear();
+	int myReg = getReg( JitRegType<T>::Val_t , DoNotLoad );
+	jit.asm_mov( myReg , s1.getReg( JitRegType<T>::Val_t ) );
+	if (!needsStoring) { 
+	  condStoring = pred;
 	  needsStoring = true;
 	  jit.regStoring(this);
 	}
@@ -232,6 +254,7 @@ namespace QDP {
     int r_addr;
     int offset_full;
     int offset_level;
+    int condStoring = -1;
   };
 
   template<> void WordJIT<bool>::store();
@@ -1431,7 +1454,9 @@ template<class T, class T1>
 inline void 
 copymask(WordJIT<T>& d, const WordJIT<T1>& mask, const WordJIT<T>& s1) 
 {
-  copymask(d.elem(),mask.elem(),s1.elem());
+  int pred = d.func().getRegs(Jit::pred,1);
+  get_pred( pred , mask );
+  d.cond_assign( pred , s1 );
 }
 
 //! dest  = random  

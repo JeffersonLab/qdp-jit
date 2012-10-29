@@ -76,6 +76,8 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   std::string fname("ptxtest.ptx");
   Jit function(fname.c_str(),"func");
 
+  function.setPrettyFunction(__PRETTY_FUNCTION__);
+
   //std::cout << "function = " << (void*)&function <<"\n";
 
   ParamLeaf param_leaf(function,function.getRegIdx() , Jit::LatticeLayout::COAL );
