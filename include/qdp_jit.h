@@ -100,6 +100,10 @@ namespace QDP {
     void set_state_space( int reg , StateSpace st );
     void write();
     int getRegIdx();
+    int getRegIdxNoIndex();
+    int getRegHi();
+    int getBlockDimX();
+    void asm_bar_sync(int barrier);
     void setPrettyFunction(const std::string& p);
 
   private:
@@ -110,7 +114,11 @@ namespace QDP {
     //
     mutable std::string filename,funcname;
     mutable int r_threadId_s32;
+    mutable int r_threadId_s32_no_index;
     mutable int r_tid;
+    mutable int r_lo;
+    mutable int r_hi;
+    mutable int r_ntidx;
     //    mutable std::map<int,int> threadIdMultiplied;
     mutable std::map<int,std::map<int,int> > mapRegMul;
     mutable int nparam;

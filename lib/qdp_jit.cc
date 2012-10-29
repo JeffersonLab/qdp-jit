@@ -59,9 +59,11 @@ namespace QDP {
     int r_threadId_u32 = getRegs( u32 , 1 );
     r_threadId_s32 = getRegs( s32 , 1 );
     r_tid = getRegs( s32 , 1 );
+    r_ntidx = getRegs( s32 , 1 );
 
     oss_tidcalc <<  "mov.u16 " << getName(r_ctaid) << ",%ctaid.x;\n";
     oss_tidcalc <<  "mov.u16 " << getName(r_ntid) << ",%ntid.x;\n";
+    oss_tidcalc <<  "cvt.s32.u16 " << getName(r_ntidx) << "," << getName(r_ntid) << ";\n";
     oss_tidcalc <<  "mul.wide.u16 " << getName(r_mul) << "," << getName(r_ntid) << "," << getName(r_ctaid) << ";\n";
     oss_tidcalc <<  "cvt.u32.u16 " << getName(r_mul + 1) << ",%tid.x;\n";
     oss_tidcalc <<  "cvt.s32.u32 " << getName(r_tid) << "," << getName(r_mul + 1) << ";\n";
@@ -71,8 +73,8 @@ namespace QDP {
     // Check for thread Id boundaries LO <= idx < HI
     //
 
-    int r_lo = addParamImmediate(oss_tidcalc,Jit::s32);
-    int r_hi = addParamImmediate(oss_tidcalc,Jit::s32);
+    r_lo = addParamImmediate(oss_tidcalc,Jit::s32);
+    r_hi = addParamImmediate(oss_tidcalc,Jit::s32);
 
     oss_tidcalc <<  "cvt.s32.u32 " << getName(r_threadId_s32) << "," << getName(r_threadId_u32) << ";\n";
     oss_tidcalc <<  "add.s32 " << getName(r_threadId_s32) << "," << getName(r_threadId_s32) << "," << getName(r_lo) << ";\n";
@@ -152,6 +154,14 @@ namespace QDP {
     }
   }
 
+  void Jit::asm_bar_sync(int barrier)
+  {
+    oss_prg << "bar.sync " << barrier << ";\n";
+  }
+
+  int Jit::getBlockDimX() {
+    return r_ntidx;
+  }
 
   int Jit::getTID() {
     return r_tid;
@@ -177,6 +187,9 @@ namespace QDP {
     return r_ret;
   }
 
+  int Jit::getRegHi() {
+    return r_hi;
+  }
 
   int Jit::getRegId(int id) const {
     return id & ((1 << RegTypeShift)-1);
@@ -557,6 +570,12 @@ namespace QDP {
     return r_threadId_s32;
   }
 
+  // Needed for global reduction kernel
+  int Jit::getRegIdxNoIndex()
+  {
+    return r_threadId_s32_no_index;
+  }
+
   int Jit::addParamMemberArray(int r_index)
   {
     //
@@ -628,14 +647,14 @@ namespace QDP {
     int r_param_p_idx = getRegs( u64 , 1 );
     oss_idx << "@" << getName(pred_first_idx) << "  " << "add.u64 " << getName(r_param_p_idx) << "," << getName(r_param) << "," << getName(idx_u32_mul_4) << ";\n";
 
-    int old_r_threadId_s32 = r_threadId_s32;
+    r_threadId_s32_no_index = r_threadId_s32;
     r_threadId_s32 = getRegs( s32 , 1 );
     oss_idx << "@" << getName(pred_first_idx) << "  " << "ld.global.s32 " << getName(r_threadId_s32) << ",[" << getName(r_param_p_idx) << "];\n";
 
     //
     // In case we don't do the first index just copy the old index
     //
-    oss_idx << "@!" << getName(pred_first_idx) << "  " << "mov.s32 " << getName(r_threadId_s32) << "," << getName(old_r_threadId_s32) << ";\n";
+    oss_idx << "@!" << getName(pred_first_idx) << "  " << "mov.s32 " << getName(r_threadId_s32) << "," << getName(r_threadId_s32_no_index) << ";\n";
 
     return r_threadId_s32;
   }

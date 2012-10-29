@@ -15,6 +15,14 @@ namespace QDP {
     std::string fname("ptxsum.ptx");
     Jit function(fname.c_str(),"func");
 
+    function.addParamIndexFieldAndOption();
+
+    OLatticeJIT<typename JITContainerType<T1>::Type_t> idata( function , 
+							      function.addParamLatticeBaseAddr( function.getRegIdx() , 
+												JITContainerType<T1>::Type_t::Size_t * WordSize<T1>::Size ),
+							      Jit::LatticeLayout::SCAL );
+
+
     OLatticeJIT<typename JITContainerType<T2>::Type_t> sdata( function , 
 							      function.addSharedMemLatticeBaseAddr( function.getTID() , 
 												    JITContainerType<T2>::Type_t::Size_t * WordSize<T2>::Size ),
@@ -22,16 +30,39 @@ namespace QDP {
 
     //sdata.elem(0) += sdata.elem(0);
 
-    
+    int r_pred_idx = function.getRegs( Jit::pred , 1 );
+    function.asm_cmp( Jit::CmpOp::ge , r_pred_idx , function.getRegIdxNoIndex() , function.getRegHi() );
+    function.addCondBranchPredToLabel( r_pred_idx , "ZERO_REP" );
 
+    sdata.elem(0) = idata.elem(0);
+
+    function.addBranchToLabel( "ZERO_REP_END" );
+    function.insert_label("ZERO_REP");
+
+    zero_rep( sdata.elem(0) );
+
+    function.insert_label("ZERO_REP_END");
+
+    int r_one = function.getRegs( Jit::u32 , 1 );
+    function.asm_mov_literal( r_one , (unsigned)1 );
     int r_s = function.getRegs( Jit::s32 , 1 );
     int r_pred_s = function.getRegs( Jit::pred , 1 );
+    int r_pred_tid = function.getRegs( Jit::pred , 1 );
+    int r_pred_block = function.getRegs( Jit::pred , 1 );
+    int r_pred_pow = function.getRegs( Jit::pred , 1 );
 
     int r_zero = function.getRegs( Jit::s32 , 1 );
     function.asm_mov_literal( r_zero , (int)0 );
 
-    int r_one = function.getRegs( Jit::u32 , 1 );
-    function.asm_mov_literal( r_one , (unsigned)1 );
+    function.asm_mov_literal( r_s , (int)1 );
+
+    // Next power of 2 of blockDimX
+    function.insert_label("POWER_START");
+    function.asm_cmp( Jit::CmpOp::ge , r_pred_pow , r_s , function.getBlockDimX() );
+    function.addCondBranchPredToLabel( r_pred_pow , "POWER_END" );
+    function.asm_shl( r_s , r_s , r_one );
+    function.addBranchToLabel( "POWER_START" );
+    function.insert_label("POWER_END");
 
 
     function.insert_label("LOOP_S");
@@ -40,10 +71,16 @@ namespace QDP {
 
     function.addCondBranchPredToLabel( r_pred_s , "LOOP_S_END" );
 
+    function.asm_cmp( Jit::CmpOp::ge , r_pred_tid , function.getTID() , r_s );
+
+    function.addCondBranchPredToLabel( r_pred_tid , "SYNC" );
 
     int r_s_p_tid = function.getRegs( Jit::s32 , 1 );
     function.asm_add( r_s_p_tid , function.getTID() , r_s );
 
+    function.asm_cmp( Jit::CmpOp::ge , r_pred_block , r_s_p_tid , function.getBlockDimX() );
+
+    function.addCondBranchPredToLabel( r_pred_block , "SYNC" );
 
     int r_s_p_tid_u32 = function.getRegs( Jit::u32 , 1 );
     function.asm_cvt( r_s_p_tid_u32 , r_s_p_tid );
@@ -61,6 +98,11 @@ namespace QDP {
     //sdata.elem(0) = sdata.elem(0) + sdata.elem(0);
 
     function.asm_shr( r_s , r_s , r_one );
+
+    function.insert_label("SYNC");
+
+    function.asm_bar_sync(1);
+
     function.addBranchToLabel( "LOOP_S" );
     function.insert_label("LOOP_S_END");
 
