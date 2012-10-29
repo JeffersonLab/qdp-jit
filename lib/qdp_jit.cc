@@ -255,13 +255,19 @@ namespace QDP {
     oss_prg << "setp.ne." << regptx[getRegType(src)] << " " << getName(dest) << "," << getName(src) << ",0;\n";
   }
 
-  void Jit::asm_cmp(CmpOp op,int dest,int lhs,int rhs)
+  void Jit::insert_label(const std::string& lab)
   {
-    if ( getRegType(dest) != Jit::pred || getRegType(lhs) != getRegType(rhs) ) {
-      std::cout << "JIT::asm_lt: type mismatch " << getRegType(dest) << " " << getRegType(lhs) << "\n";
+    oss_prg << lab << ":\n";
+  }
+
+
+  void Jit::asm_cmp(CmpOp op,int pred,int lhs,int rhs)
+  {
+    if ( getRegType(pred) != Jit::pred || getRegType(lhs) != getRegType(rhs) ) {
+      std::cout << "JIT::asm_cmp: type mismatch " << getRegType(pred) << " " << getRegType(lhs) << " " << getRegType(rhs) << "\n";
       exit(1);
     }
-    oss_prg << "setp." << mapCmpOp.at(op) << "." << regptx[getRegType(lhs)] << " " << getName(dest) << "," << getName(lhs) << "," << getName(rhs) << ";\n";
+    oss_prg << "setp." << mapCmpOp.at(op) << "." << regptx[getRegType(lhs)] << " " << getName(pred) << "," << getName(lhs) << "," << getName(rhs) << ";\n";
   }
 
   void Jit::asm_and(int dest,int lhs,int rhs)
@@ -773,6 +779,17 @@ namespace QDP {
     tmp << "B" << vecBranch.back();
     return tmp.str();
   }
+
+  void Jit::addCondBranchPredToLabel(int pred,const std::string& lab)
+  {
+    oss_prg << "@" << getName(pred) << "  bra " << lab << ";\n";
+  }
+
+  void Jit::addBranchToLabel(const std::string& lab)
+  {
+    oss_prg << "bra " << lab << ";\n";
+  }
+
 
   void Jit::addCondBranch_if(IndexRet i)
   {

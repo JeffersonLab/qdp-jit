@@ -118,7 +118,7 @@ void reduce_convert_indirection(int size, int threads, int blocks,
 
 
 
-#if 0
+#if 1
   template<class T1>
   typename UnaryReturn<OLattice<T1>, FnSum>::Type_t
   sum(const OLattice<T1>& s1, const Subset& s)

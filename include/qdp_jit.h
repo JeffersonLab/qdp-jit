@@ -39,6 +39,10 @@ namespace QDP {
       vecStoring.push_back( wj );
     }
 
+    void addCondBranchPredToLabel(int pred,const std::string& lab);
+    void addBranchToLabel(const std::string& lab);
+    void insert_label(const std::string& lab);
+
     void asm_mov(int dest,int src);
     void asm_cond_mov(int pred,int dest,int src);
     template<class T>
@@ -66,7 +70,7 @@ namespace QDP {
     void asm_cvt(int dest,int src);
     void asm_pred_to_01(int dest,int pred);
     void asm_01_to_pred(int pred,int src);
-    void asm_cmp(CmpOp op,int dest,int lhs,int rhs);
+    void asm_cmp(CmpOp op,int pred,int lhs,int rhs);
     void asm_cos(int dest,int src);
     void asm_sin(int dest,int src);
     void asm_exp(int dest,int src);
