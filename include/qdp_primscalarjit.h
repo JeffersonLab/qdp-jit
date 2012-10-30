@@ -60,14 +60,28 @@ public:
   PScalarJIT(const PScalarJIT<T1>& rhs) : F(rhs.elem()) {}
 #endif
 
+  template<class T1>
+  PScalarJIT(const PScalarJIT<T1>& a) : JV<T,1>::JV(newspace_t(a.func())) {
+    elem() = a.elem();
+  }
 
+  PScalarJIT(const PScalarJIT& a) : JV<T,1>::JV(newspace_t(a.func())) {
+    elem() = a.elem();
+  }
+
+
+
+
+  // I keep this deactivated. Takes too much.
 #if 0
   template<class T1>
-  PScalarJIT(const T1& rhs) : JV<T,1>(rhs) {
+  PScalarJIT(const T1& rhs) : JV<T,1>(newspace_t(rhs.func())) {
+      elem() = rhs;
   }
 #endif
 
-  PScalarJIT(const T& rhs) : JV<T,1>(rhs) {
+  PScalarJIT(const T& rhs) : JV<T,1>(newspace_t(rhs.func())) {
+      elem() = rhs;
   }
 
 
@@ -168,13 +182,6 @@ public:
       return *this;
     }
 
-  // Compiler generated copy constructor calls the copy constructor
-  // of the base class.
-#if 0
-  PScalarJIT(const PScalarJIT& a) : JV<T,1>::JV(a.elem()) {
-    std::cout << __PRETTY_FUNCTION__ << "\n";
-  }
-#endif
   
 public:
   inline       T& elem()       { return JV<T,1>::getF()[0]; }

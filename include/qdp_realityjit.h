@@ -22,10 +22,6 @@ public:
 
   RScalarJIT(curry_t c): JV<T,1>(c) {}
   RScalarJIT(newspace_t n): JV<T,1>(n) {}
-#if 0
-  RScalarJIT(Jit& j,int r , int of , int ol): JV<T,1>(j,r,of,ol) {}
-  RScalarJIT(Jit& j): JV<T,1>(j) {}
-#endif
 
   template<class T1>
   RScalarJIT& operator=( const RScalarJIT<T1>& rhs) {
@@ -50,22 +46,28 @@ public:
 
   //! construct dest = rhs
   template<class T1>
-  RScalarJIT(const RScalarJIT<T1>& rhs) : JV<T,1>(rhs.elem()) {}
+  RScalarJIT(const RScalarJIT<T1>& rhs) : JV<T,1>(newspace_t(rhs.func())) {
+    elem() = rhs.elem();
+  }
 
-  //! construct dest = rhs
+  RScalarJIT(const RScalarJIT& rhs) : JV<T,1>(newspace_t(rhs.func())) {
+    elem() = rhs.elem();
+  }
 
+  // I keep this deactivated. Takes too much.
 #if 0
   template<class T1>
-  RScalarJIT(const T1& rhs) : JV<T,1>(rhs) {
+  RScalarJIT(const T1& rhs) : JV<T,1>(newspace_t(rhs.func())) {
+    elem() = rhs;
   }
 #endif
 
-  RScalarJIT(const T& rhs) : JV<T,1>(rhs) {
+  RScalarJIT(const T& rhs) : JV<T,1>(newspace_t(rhs.func())) {
+    elem() = rhs;
   }
 
 
-  RScalarJIT(Jit& j,const typename WordType<T>::Type_t& w) : JV<T,1>(j,w) {
-  }
+  RScalarJIT(Jit& j,const typename WordType<T>::Type_t& w) : JV<T,1>(j,w) {}
 
 
 
@@ -160,12 +162,6 @@ public:
       elem() >>= rhs.elem();
       return *this;
     }
-
-#if 0
-  RScalarJIT(const RScalarJIT& a) : JV<T,1>::JV(a.elem()) {
-    //std::cout << __PRETTY_FUNCTION__ << "\n";
-  }
-#endif
 
 
 public:
@@ -277,14 +273,22 @@ public:
   //! Construct from two scalars
   RComplexJIT(Jit& j,const typename WordType<T>::Type_t& re, const typename WordType<T>::Type_t& im): JV<T,2>(j,re,im) {}
 
-#if 1
+
   RComplexJIT(const T& re,const T& im): JV<T,2>(newspace_t(re.func())) {
     real() = re;
     imag() = im;
   }
-#else
-  RComplexJIT(const T& re,const T& im): JV<T,2>(re,im) {}
-#endif
+
+  template<class T1>
+  RComplexJIT(const RComplexJIT<T1>& a) : JV<T,2>::JV(newspace_t(a.func())) {
+    real() = a.real();
+    imag() = a.imag();
+  }
+
+  RComplexJIT(const RComplexJIT& a) : JV<T,2>::JV(newspace_t(a.func())) {
+    real() = a.real();
+    imag() = a.imag();
+  }
 
 
   //! RComplexJIT += RScalarJIT
@@ -396,11 +400,6 @@ public:
       return *this;
     }
 
-#if 0
-  RComplexJIT(const RComplexJIT& a) : JV<T,2>::JV(a) {
-    std::cout << "RComplexJIT copy c-tor " << (void*)this << "\n";
-  }
-#endif
 
 public:
   inline       T& real()       { return JV<T,2>::getF()[0]; }

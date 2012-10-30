@@ -63,12 +63,12 @@ class JV {
       //std::cout << __PRETTY_FUNCTION__ << "\n";
     }
 
-    JV(const T& t0,const T& t1) : jit(t0.func()), F{{t0,t1}} {
-      //std::cout << __PRETTY_FUNCTION__ << "\n";
-    }
-    JV(const T& t0) : jit(t0.func()), F{{t0}} {
-      //std::cout << __PRETTY_FUNCTION__ << "\n";
-    }
+    // JV(const T& t0,const T& t1) : jit(t0.func()), F{{t0,t1}} {
+    //   //std::cout << __PRETTY_FUNCTION__ << "\n";
+    // }
+    // JV(const T& t0) : jit(t0.func()), F{{t0}} {
+    //   //std::cout << __PRETTY_FUNCTION__ << "\n";
+    // }
 #endif
 
 

@@ -886,7 +886,7 @@ namespace QDP {
 
     std::ofstream out(filename.c_str());
     out << "// " << prettyFunction << "\n";
-#if 0
+#if 1
     out << ".version 1.4\n" <<
       ".target sm_12\n";
     if (usesSharedMem)
