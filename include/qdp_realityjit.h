@@ -277,9 +277,14 @@ public:
   //! Construct from two scalars
   RComplexJIT(Jit& j,const typename WordType<T>::Type_t& re, const typename WordType<T>::Type_t& im): JV<T,2>(j,re,im) {}
 
-  
+#if 1
+  RComplexJIT(const T& re,const T& im): JV<T,2>(newspace_t(re.func())) {
+    real() = re;
+    imag() = im;
+  }
+#else
   RComplexJIT(const T& re,const T& im): JV<T,2>(re,im) {}
-
+#endif
 
 
   //! RComplexJIT += RScalarJIT
@@ -1832,10 +1837,17 @@ template<class T1, class T2>
 inline typename BinaryReturn<RComplexJIT<T1>, RComplexJIT<T2>, OpMultiply>::Type_t
 operator*(const RComplexJIT<T1>& l, const RComplexJIT<T2>& r) 
 {
+#if 1
   typedef typename BinaryReturn<RComplexJIT<T1>, RComplexJIT<T2>, OpMultiply>::Type_t  Ret_t;
 
   return Ret_t(l.real()*r.real() - l.imag()*r.imag(),
 	       l.real()*r.imag() + l.imag()*r.real());
+#else
+  typename BinaryReturn<RComplexJIT<T1>, RComplexJIT<T2>, OpMultiply>::Type_t ret(l.func());
+  ret.real() = l.real()*r.real() - l.imag()*r.imag();
+  ret.imag() = l.real()*r.imag() + l.imag()*r.real();
+  return ret;
+#endif
 }
 
 
