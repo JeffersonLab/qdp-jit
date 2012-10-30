@@ -60,8 +60,11 @@ namespace QDP {
     r_threadId_s32 = getRegs( s32 , 1 );
     r_tid = getRegs( s32 , 1 );
     r_ntidx = getRegs( s32 , 1 );
+    r_ctaid_s32 = getRegs( s32 , 1 );
+    r_threadId_s32_no_index = r_threadId_s32;
 
     oss_tidcalc <<  "mov.u16 " << getName(r_ctaid) << ",%ctaid.x;\n";
+    oss_tidcalc <<  "cvt.s32.u16 " << getName(r_ctaid_s32) << "," << getName(r_ctaid) << ";\n";
     oss_tidcalc <<  "mov.u16 " << getName(r_ntid) << ",%ntid.x;\n";
     oss_tidcalc <<  "cvt.s32.u16 " << getName(r_ntidx) << "," << getName(r_ntid) << ";\n";
     oss_tidcalc <<  "mul.wide.u16 " << getName(r_mul) << "," << getName(r_ntid) << "," << getName(r_ctaid) << ";\n";
@@ -576,6 +579,11 @@ namespace QDP {
     return r_threadId_s32_no_index;
   }
 
+  int Jit::getRegBlockIdx()
+  {
+    return r_ctaid_s32;
+  }
+
   int Jit::addParamMemberArray(int r_index)
   {
     //
@@ -662,7 +670,6 @@ namespace QDP {
 
   int Jit::getSDATA()
   {
-    static int r_sdata = -1;
     if (r_sdata == -1) {
       r_sdata = getRegs( u64 , 1 );
       oss_baseaddr << "mov.u64 " << getName(r_sdata) << ",sdata;  // shared memory\n";

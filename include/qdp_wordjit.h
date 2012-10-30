@@ -68,10 +68,28 @@ namespace QDP {
     template <class T1>
     WordJIT& assign(const WordJIT<T1>& s1) {
       if (global_state) {
+	mapReg.clear();
 	jit.asm_st( r_addr , offset_level * WordSize<T>::Size , s1.getReg( JitRegType<T>::Val_t ) );
       } else {
 	//QDP_error_exit("WordJIT assigning to a non-global view ??");
+	//mapReg.clear();
 	jit.asm_mov( getReg( JitRegType<T>::Val_t ) , s1.getReg( JitRegType<T>::Val_t ) );
+
+#if 0
+	auto map_it = mapReg.begin();
+	while(map_it != mapReg.end())
+	  {
+	    if (map_it->second != JitRegType<T>::Val_t )
+	      {
+		mapReg.erase(map_it++);
+	      }
+	    else
+	      {
+		++map_it;
+	      }
+	  }
+#endif
+
       }
       return *this;
     }

@@ -279,13 +279,8 @@ function_gather_exec( CUfunction function, void* send_buf , const Map& map , con
   }
 
   kernel_geom_t now = getGeom( hi-lo , threadsPerBlock );
-  CUresult result = CUDA_SUCCESS;
-  result = cuLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
 
-  if (DeviceParams::Instance().getSyncDevice()) {  
-    QDP_info_primary("Pulling the brakes: device sync after kernel launch!");
-    CudaDeviceSynchronize();
-  }
+  CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
 
 }
 
@@ -370,13 +365,8 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
   //QDP_info("Launching kernel with %d threads",hi-lo);
 
   kernel_geom_t now = getGeom( hi-lo , threadsPerBlock );
-  CUresult result = CUDA_SUCCESS;
-  result = cuLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
 
-  if (DeviceParams::Instance().getSyncDevice()) {  
-    QDP_info_primary("Pulling the brakes: device sync after kernel launch!");
-    CudaDeviceSynchronize();
-  }
+  CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
 
   if (offnode_maps > 0) {
     //QDP_info_primary("PHASE2");
@@ -388,13 +378,7 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
 
     //QDP_info_primary("PHASE2 launch");
     now = getGeom( hi-lo , threadsPerBlock );
-    result = CUDA_SUCCESS;
-    result = cuLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
-
-    if (DeviceParams::Instance().getSyncDevice()) {  
-      QDP_info_primary("Pulling the brakes: device sync after kernel launch!");
-      CudaDeviceSynchronize();
-    }
+    CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
   }
 
 
@@ -453,13 +437,8 @@ function_random_exec(CUfunction function, OLattice<T>& dest, const Subset& s, La
   //QDP_info("Launching kernel with %d threads",hi-lo);
 
   kernel_geom_t now = getGeom( hi-lo , threadsPerBlock );
-  CUresult result = CUDA_SUCCESS;
-  result = cuLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
 
-  if (DeviceParams::Instance().getSyncDevice()) {  
-    QDP_info_primary("Pulling the brakes: device sync after kernel launch!");
-    CudaDeviceSynchronize();
-  }
+  CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
 
 #endif
 }
@@ -511,13 +490,7 @@ function_zero_rep_exec(CUfunction function, OLattice<T>& dest, const Subset& s )
   //QDP_info("Launching kernel with %d threads",hi-lo);
 
   kernel_geom_t now = getGeom( hi-lo , threadsPerBlock );
-  CUresult result = CUDA_SUCCESS;
-  result = cuLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
-
-  if (DeviceParams::Instance().getSyncDevice()) {  
-    QDP_info_primary("Pulling the brakes: device sync after kernel launch!");
-    CudaDeviceSynchronize();
-  }
+  CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
 
 #endif
 }

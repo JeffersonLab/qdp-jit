@@ -27,7 +27,7 @@ libqdp_a_SOURCES = qdp_map.cc qdp_subset.cc qdp_random.cc qdp.cc \
         qdp_rannyu.cc \
 	qdp_cuda.cc qdp_cache.cc qdp_deviceparams.cc qdp_mapresource.cc \
 	qdp_jit.cc qdp_wordjit.cc qdp_mastermap.cc qdp_autotuning.cc \
-        qdp_randomjit.cc
+        qdp_randomjit.cc qdp_jitf_sum.cc
 
 if QDP_USE_LIBXML2
 libqdp_a_SOURCES += qdp_xmlio.cc qdp_iogauge.cc qdp_qdpio.cc qdp_qio_strings.cc qdp_map_obj_disk.cc

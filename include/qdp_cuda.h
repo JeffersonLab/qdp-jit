@@ -11,6 +11,12 @@ namespace QDP {
   int CudaGetConfig(int what);
   void CudaGetSM(int* maj,int* min);
 
+  void CudaLaunchKernel( CUfunction f, 
+			 unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
+			 unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
+			 unsigned int  sharedMemBytes, CUstream hStream, void** kernelParams, void** extra );
+
+
   bool CudaHostRegister(void * ptr , size_t size);
   void CudaHostUnregister(void * ptr );
   void CudaMemGetInfo(size_t *free,size_t *total);

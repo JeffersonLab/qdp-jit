@@ -83,13 +83,8 @@ namespace QDP {
     //QDP_info("Launching kernel with %d threads",hi-lo);
 
     kernel_geom_t now = getGeom( hi-lo , threadsPerBlock );
-    CUresult result = CUDA_SUCCESS;
-    result = cuLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
 
-    if (DeviceParams::Instance().getSyncDevice()) {  
-      QDP_info_primary("Pulling the brakes: device sync after kernel launch!");
-      CudaDeviceSynchronize();
-    }
+    CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
   }
 
 }

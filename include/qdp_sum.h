@@ -4,11 +4,9 @@
 namespace QDP {
 
 
-
-template <class T1,class T2>
-void reduce_convert_indirection(int size, int threads, int blocks,
-				T1 *d_idata, T2 *d_odata,
-				bool indirection,int * siteTable)
+template <class T2>
+void reduce_convert(int size, int threads, int blocks, int shared_mem_usage,
+		    T2 *d_idata, T2 *d_odata )
 {
   static CUfunction function;
 
@@ -16,7 +14,31 @@ void reduce_convert_indirection(int size, int threads, int blocks,
   if (function == NULL)
     {
       //std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
-      function = function_sum_build<T1,T2>();
+      function = function_sum_build<T2>();
+      //std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
+    }
+  else
+    {
+      //std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
+    }
+
+  function_sum_exec(function, size, threads, blocks, shared_mem_usage, (void*)d_idata, (void*)d_odata );
+
+  //  exit(1);
+}
+
+
+template <class T1,class T2>
+void reduce_convert_indirection_coal(int size, int threads, int blocks, int shared_mem_usage,
+				     T1 *d_idata, T2 *d_odata, int * siteTable)
+{
+  static CUfunction function;
+
+  // Build the function
+  if (function == NULL)
+    {
+      //std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
+      function = function_sum_ind_coal_build<T1,T2>();
       //std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
     }
   else
@@ -25,7 +47,9 @@ void reduce_convert_indirection(int size, int threads, int blocks,
     }
 
   // Execute the function
-  //function_sum_exec(function, );
+  function_sum_ind_coal_exec(function, size, threads, blocks, shared_mem_usage, (void*)d_idata, (void*)d_odata, (void*)siteTable );
+
+  //exit(1);
 
 
 
@@ -98,16 +122,14 @@ void reduce_convert_indirection(int size, int threads, int blocks,
 
   string prg = sprg.str();
 
-#ifdef GPU_DEBUG_DEEP
-  cout << "Cuda kernel code = " << endl << prg << endl << endl;
-#endif
-
   static QDPJit::SharedLibEntry sharedLibEntry;
   if (!QDPJit::Instance().jitFixedGeom( strId , prg , cudaArgs.getDevPtr() , 
 					  size , sharedLibEntry , threads, blocks , smemSize )) {
     QDP_error("reduce_convert_indirection() call to cuda jitter failed");
   }
 #endif
+  
+  QDP_info("leaving reduce_convert<T1,T2>");
 }
 
 
@@ -147,8 +169,8 @@ void reduce_convert_indirection(int size, int threads, int blocks,
 	break;
       }
 
-
-      QDP_info("sum(Lat,subset): using %d threads per block, %d blocks, shared mem=%d" , numThreads , numBlocks , numThreads*sizeof(T2) );
+      int shared_mem_usage = numThreads*sizeof(T2);
+      QDP_info("sum(Lat,subset): using %d threads per block, %d blocks, shared mem=%d" , numThreads , numBlocks , shared_mem_usage );
 
 
       if (first) {
@@ -162,43 +184,39 @@ void reduce_convert_indirection(int size, int threads, int blocks,
 
 #if 1
       if (numBlocks == 1) {
-	if (first)
-	  reduce_convert_indirection<T1,T2>(actsize, numThreads, numBlocks,  
-					    (T1*)QDPCache::Instance().getDevicePtr( s1.getId() ),
-					    (T2*)QDPCache::Instance().getDevicePtr( d.getId() )
-					    , true , 
-					    (int*)QDPCache::Instance().getDevicePtr( s.getId()) );
-	else
-	  reduce_convert_indirection<T2,T2>(actsize, numThreads, numBlocks,  
-					    in_dev, 
-					    (T2*)QDPCache::Instance().getDevicePtr( d.getId() ), 
-					    false , NULL );
+	if (first) {
+	  reduce_convert_indirection_coal<T1,T2>(actsize, numThreads, numBlocks, shared_mem_usage ,  
+						 (T1*)QDPCache::Instance().getDevicePtr( s1.getId() ),
+						 (T2*)QDPCache::Instance().getDevicePtr( d.getId() ),
+						 (int*)QDPCache::Instance().getDevicePtr( s.getId()) );
+	}
+	else {
+	  reduce_convert<T2>( actsize , numThreads , numBlocks, shared_mem_usage , 
+			      in_dev , (T2*)QDPCache::Instance().getDevicePtr( d.getId() ) );
+	}
       } else {
-	if (first)
-	  reduce_convert_indirection<T1,T2>(actsize, numThreads, numBlocks,
-					    (T1*)QDPCache::Instance().getDevicePtr( s1.getId() ),
-					    out_dev , 
-					    true , (int*)QDPCache::Instance().getDevicePtr(s.getId()) );
+	if (first) {
+	  reduce_convert_indirection_coal<T1,T2>(actsize, numThreads, numBlocks, shared_mem_usage,
+						 (T1*)QDPCache::Instance().getDevicePtr( s1.getId() ),
+						 out_dev , (int*)QDPCache::Instance().getDevicePtr(s.getId()) );
+	}
 	else
-	  reduce_convert_indirection<T2,T2>(actsize, numThreads, numBlocks, 
-					    in_dev , out_dev , false , NULL );
+	  reduce_convert<T2>( actsize , numThreads , numBlocks , shared_mem_usage , in_dev , out_dev );
 
       }
 #else
       if (numBlocks == 1) {
 	if (first)
 	  reduce_convert_indirection<T1,T2>(actsize, numThreads, numBlocks,  
-					    (T1*)s1.getFdev() , (T2*)d.getFdev(), true , (int*)QDPCache::Instance().getDevicePtr(s.getId()) );
+					    (T1*)s1.getFdev() , (T2*)d.getFdev() , (int*)QDPCache::Instance().getDevicePtr(s.getId()) );
 	else
-	  reduce_convert_indirection<T2,T2>(actsize, numThreads, numBlocks,  
-					    in_dev, (T2*)d.getFdev(), false , NULL );
+	  reduce_convert_indirection<T2,T2>(actsize, numThreads, numBlocks, in_dev, (T2*)d.getFdev() );
       } else {
 	if (first)
 	  reduce_convert_indirection<T1,T2>(actsize, numThreads, numBlocks,  
-					    (T1*)s1.getFdev(), out_dev , true , (int*)QDPCache::Instance().getDevicePtr(s.getId()) );
+					    (T1*)s1.getFdev(), out_dev , (int*)QDPCache::Instance().getDevicePtr(s.getId()) );
 	else
-	  reduce_convert_indirection<T2,T2>(actsize, numThreads, numBlocks, 
-					    in_dev , out_dev , false , NULL );
+	  reduce_convert_indirection<T2,T2>(actsize, numThreads, numBlocks, in_dev , out_dev );
 
       }
 #endif
@@ -213,12 +231,15 @@ void reduce_convert_indirection(int size, int threads, int blocks,
       T2 * tmp = in_dev;
       in_dev = out_dev;
       out_dev = tmp;
+
+
+
     }
 
     QDPCache::Instance().free_device_static( in_dev );
     QDPCache::Instance().free_device_static( out_dev );
 
-    //QDPInternal::globalSum(d);
+    QDPInternal::globalSum(d);
 
     return d;
   }

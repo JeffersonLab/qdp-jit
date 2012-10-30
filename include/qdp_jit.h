@@ -101,6 +101,7 @@ namespace QDP {
     void write();
     int getRegIdx();
     int getRegIdxNoIndex();
+    int getRegBlockIdx();
     int getRegHi();
     int getBlockDimX();
     void asm_bar_sync(int barrier);
@@ -116,9 +117,12 @@ namespace QDP {
     mutable int r_threadId_s32;
     mutable int r_threadId_s32_no_index;
     mutable int r_tid;
+    mutable int r_ctaid_s32;
     mutable int r_lo;
     mutable int r_hi;
     mutable int r_ntidx;
+    mutable int r_sdata = -1;
+   
     //    mutable std::map<int,int> threadIdMultiplied;
     mutable std::map<int,std::map<int,int> > mapRegMul;
     mutable int nparam;

@@ -5,10 +5,11 @@
 
 #include "qdp_config_internal.h" 
 
-#include "qdp_init.h"
-#include "qdp_deviceparams.h"
-#include "qdp_cuda.h"
-#include "cuda.h"
+#include "qdp.h"
+// #include "qdp_init.h"
+// #include "qdp_deviceparams.h"
+// #include "qdp_cuda.h"
+// #include "cuda.h"
 #include <map>
 #include <string>
 
@@ -76,6 +77,26 @@ namespace QDP {
     {CUDA_ERROR_HOST_MEMORY_NOT_REGISTERED,"CUDA_ERROR_HOST_MEMORY_NOT_REGISTERED"},
     {CUDA_ERROR_UNKNOWN,"CUDA_ERROR_UNKNOWN"}};
 
+
+
+  void CudaLaunchKernel( CUfunction f, 
+			 unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
+			 unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
+			 unsigned int  sharedMemBytes, CUstream hStream, void** kernelParams, void** extra )
+  {
+    // This call is async
+    cuLaunchKernel(f, gridDimX, gridDimY, gridDimZ, 
+		   blockDimX, blockDimY, blockDimZ, 
+		   sharedMemBytes, hStream, kernelParams, extra);
+
+    QDPCache::Instance().releasePrevLockSet();
+    QDPCache::Instance().beginNewLockSet();
+
+    if (DeviceParams::Instance().getSyncDevice()) {  
+      QDP_info_primary("Pulling the brakes: device sync after kernel launch!");
+      CudaDeviceSynchronize();
+    }
+  }
 
   void CudaRes(const std::string& s,CUresult ret) {
     if (ret != CUDA_SUCCESS) {

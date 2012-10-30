@@ -62,11 +62,6 @@ struct ParamLeaf
 
 struct AddressLeaf
 {
-  ~AddressLeaf() {
-    QDPCache::Instance().releasePrevLockSet();
-    QDPCache::Instance().beginNewLockSet();
-  }
-
   mutable std::vector<void*> addr;
   void setAddr(void* p) const {
     //std::cout << "AddressLeaf::setAddr " << p << "\n";

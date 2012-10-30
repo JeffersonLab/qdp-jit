@@ -182,6 +182,7 @@ namespace QDP {
 #include "qdp_randomjit.h"
 #include "qdp_random.h"
 
+#include "qdp_internal.h"
 #include "qdp_jitfunction.h"
 #include "qdp_jitf_copymask.h"
 #include "qdp_jitf_sum.h"
