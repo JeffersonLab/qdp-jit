@@ -121,6 +121,8 @@ template<class T, class T1, class Op, class RHS>
 void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs,
 	      const Subset& s)
 {
+  std::cout << __PRETTY_FUNCTION__ << "\n";
+
 // cerr << "In evaluateSubset(olattice,oscalar)\n";
 
 #if defined(QDP_USE_PROFILING)   
@@ -336,6 +338,8 @@ void random(OLattice<T>& d)
 template<class T>
 void gaussian(OLattice<T>& d, const Subset& s)
 {
+  std::cout << __PRETTY_FUNCTION__ << "\n";
+
   OLattice<T>  r1, r2;
 
   random(r1,s);
@@ -538,10 +542,22 @@ sum(const QDPExpr<RHS,OLattice<T> >& s1, const Subset& s)
  * Allow a global sum that sums over the lattice, but returns an object
  * of the same primitive type. E.g., contract only over lattice indices
  */
+#if 1
 template<class RHS, class T>
 typename UnaryReturn<OLattice<T>, FnSum>::Type_t
 sum(const QDPExpr<RHS,OLattice<T> >& s1)
 {
+  OLattice<T> l;
+  l=s1;
+  return sum(l,all);
+}
+#else
+template<class RHS, class T>
+typename UnaryReturn<OLattice<T>, FnSum>::Type_t
+sum(const QDPExpr<RHS,OLattice<T> >& s1)
+{
+  std::cout << __PRETTY_FUNCTION__ << "\n";
+
   typename UnaryReturn<OLattice<T>, FnSum>::Type_t  d;
 
 #if defined(QDP_USE_PROFILING)   
@@ -567,7 +583,7 @@ sum(const QDPExpr<RHS,OLattice<T> >& s1)
 
   return d;
 }
-
+#endif
 
 //-----------------------------------------------------------------------------
 // Multiple global sums 
@@ -618,6 +634,8 @@ template<class RHS, class T>
 typename UnaryReturn<OLattice<T>, FnSumMulti>::Type_t
 sumMulti(const QDPExpr<RHS,OLattice<T> >& s1, const Set& ss)
 {
+  std::cout << __PRETTY_FUNCTION__ << "\n";
+
   typename UnaryReturn<OLattice<T>, FnSumMulti>::Type_t  dest(ss.numSubsets());
 
 #if defined(QDP_USE_PROFILING)   
@@ -752,6 +770,8 @@ template<class T>
 inline typename UnaryReturn<OScalar<T>, FnNorm2>::Type_t
 norm2(const multi1d< OScalar<T> >& s1)
 {
+  std::cout << __PRETTY_FUNCTION__ << "\n";
+
   typename UnaryReturn<OScalar<T>, FnNorm2>::Type_t  d;
 
 #if defined(QDP_USE_PROFILING)   
@@ -798,6 +818,8 @@ template<class T>
 inline typename UnaryReturn<OLattice<T>, FnNorm2>::Type_t
 norm2(const multi1d< OLattice<T> >& s1, const Subset& s)
 {
+  std::cout << __PRETTY_FUNCTION__ << "\n";
+
   typename UnaryReturn<OLattice<T>, FnNorm2>::Type_t  d;
 
 #if defined(QDP_USE_PROFILING)   
@@ -860,6 +882,8 @@ template<class T1, class T2>
 inline typename BinaryReturn<OScalar<T1>, OScalar<T2>, FnInnerProduct>::Type_t
 innerProduct(const multi1d< OScalar<T1> >& s1, const multi1d< OScalar<T2> >& s2)
 {
+  std::cout << __PRETTY_FUNCTION__ << "\n";
+
   typename BinaryReturn<OScalar<T1>, OScalar<T2>, FnInnerProduct>::Type_t  d;
 
 #if defined(QDP_USE_PROFILING)   
@@ -910,6 +934,8 @@ inline typename BinaryReturn<OLattice<T1>, OLattice<T2>, FnInnerProduct>::Type_t
 innerProduct(const multi1d< OLattice<T1> >& s1, const multi1d< OLattice<T2> >& s2,
 	     const Subset& s)
 {
+  std::cout << __PRETTY_FUNCTION__ << "\n";
+
   typename BinaryReturn<OLattice<T1>, OLattice<T2>, FnInnerProduct>::Type_t  d;
 
 #if defined(QDP_USE_PROFILING)   
@@ -973,6 +999,8 @@ template<class T1, class T2>
 inline typename BinaryReturn<OScalar<T1>, OScalar<T2>, FnInnerProductReal>::Type_t
 innerProductReal(const multi1d< OScalar<T1> >& s1, const multi1d< OScalar<T2> >& s2)
 {
+  std::cout << __PRETTY_FUNCTION__ << "\n";
+
   typename BinaryReturn<OScalar<T1>, OScalar<T2>, FnInnerProductReal>::Type_t  d;
 
 #if defined(QDP_USE_PROFILING)   
@@ -1023,6 +1051,8 @@ inline typename BinaryReturn<OLattice<T1>, OLattice<T2>, FnInnerProductReal>::Ty
 innerProductReal(const multi1d< OLattice<T1> >& s1, const multi1d< OLattice<T2> >& s2,
 		 const Subset& s)
 {
+  std::cout << __PRETTY_FUNCTION__ << "\n";
+
   typename BinaryReturn<OLattice<T1>, OLattice<T2>, FnInnerProductReal>::Type_t  d;
 
 #if defined(QDP_USE_PROFILING)   
@@ -1087,6 +1117,8 @@ template<class RHS, class T>
 typename UnaryReturn<OScalar<T>, FnGlobalMax>::Type_t
 globalMax(const QDPExpr<RHS,OScalar<T> >& s1)
 {
+  std::cout << __PRETTY_FUNCTION__ << "\n";
+
   typename UnaryReturn<OScalar<T>, FnGlobalMax>::Type_t  d;
 
 #if defined(QDP_USE_PROFILING)   
@@ -1114,6 +1146,8 @@ template<class RHS, class T>
 typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t
 globalMax(const QDPExpr<RHS,OLattice<T> >& s1)
 {
+  std::cout << __PRETTY_FUNCTION__ << "\n";
+
   typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t  d;
 
 #if defined(QDP_USE_PROFILING)   
@@ -1155,6 +1189,8 @@ template<class RHS, class T>
 typename UnaryReturn<OScalar<T>, FnGlobalMin>::Type_t
 globalMin(const QDPExpr<RHS,OScalar<T> >& s1)
 {
+  std::cout << __PRETTY_FUNCTION__ << "\n";
+
   typename UnaryReturn<OScalar<T>, FnGlobalMin>::Type_t  d;
 
 #if defined(QDP_USE_PROFILING)   
@@ -1182,6 +1218,8 @@ template<class RHS, class T>
 typename UnaryReturn<OLattice<T>, FnGlobalMin>::Type_t
 globalMin(const QDPExpr<RHS,OLattice<T> >& s1)
 {
+  std::cout << __PRETTY_FUNCTION__ << "\n";
+
   typename UnaryReturn<OLattice<T>, FnGlobalMin>::Type_t  d;
 
 #if defined(QDP_USE_PROFILING)   

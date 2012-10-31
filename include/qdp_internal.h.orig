@@ -25,13 +25,13 @@ namespace QDPInternal
   void sendToPrimaryNode(T& dest, int srcnode)
   {
     if (srcnode != 0)
-    {
-      if (Layout::primaryNode())
-	recvFromWait((void *)&dest, srcnode, sizeof(T));
+      {
+	if (Layout::primaryNode())
+	  recvFromWait((void *)&dest, srcnode, sizeof(T));
 
-      if (Layout::nodeNumber() == srcnode)
-	sendToWait((void *)&dest, 0, sizeof(T));
-    }
+	if (Layout::nodeNumber() == srcnode)
+	  sendToWait((void *)&dest, 0, sizeof(T));
+      }
   }
 
   //! Unsigned accumulate
@@ -66,8 +66,6 @@ namespace QDPInternal
     QMP_sum_double_array(dest, len);
   }
 
-  ///////////////////////////////////
-#if 0
   //! Global sum on a multi1d
   template<class T>
   inline void globalSumArray(multi1d<T>& dest)
@@ -76,35 +74,12 @@ namespace QDPInternal
     // tightly in memory - no padding
     typedef typename WordType<T>::Type_t  W;   // find the machine word type
 
-#if 1
+#if 0
     QDPIO::cout << "sizeof(T) = " << sizeof(T) << endl;
     QDPIO::cout << "sizeof(W) = " << sizeof(W) << endl;
     QDPIO::cout << "Calling multi1d global sum array with length " << dest.size()*sizeof(T)/sizeof(W) << endl;
 #endif
     globalSumArray((W *)dest.slice(), dest.size()*sizeof(T)/sizeof(W)); // call appropriate hook
-  }
-#endif
-  //////////////////////////////////
-
-  //! Global sum on a multi1d
-  template<class T>
-  inline void globalSumArray(multi1d<T>& dest)
-  {
-    // The implementation here is relying on the structure being packed
-    // tightly in memory - no padding
-    typedef typename WordType<T>::Type_t  W;   // find the machine word type
-    typedef typename T::SubType_t         P;   // Primitive type
-
-#if 0
-    QDPIO::cout << "sizeof(P) = " << sizeof(P) << endl;
-    QDPIO::cout << "sizeof(W) = " << sizeof(W) << endl;
-    QDPIO::cout << "Calling multi1d global sum array with length " << sizeof(P)/sizeof(W) << endl;
-#endif
-
-    for (int i = 0 ; i < dest.size() ; ++i )
-      globalSumArray( (W *)dest[i].getF(), sizeof(P)/sizeof(W)); // call appropriate hook
-
-    //globalSumArray((W *)dest.slice(), dest.size()*sizeof(T)/sizeof(W)); // call appropriate hook
   }
 
   //! Global sum on a multi2d
@@ -137,26 +112,7 @@ namespace QDPInternal
     QDPIO::cout << "sizeof(W) = " << sizeof(W) << endl;
     QDPIO::cout << "Calling global sum array with length " << sizeof(T)/sizeof(W) << endl;
 #endif
-    globalSumArray((W *)dest, int(sizeof(T)/sizeof(W))); // call appropriate hook
-  }
-
-  template<class T>
-  inline void globalSum(OScalar<T>& dest)
-  {
-    // The implementation here is relying on the structure being packed
-    // tightly in memory - no padding
-    typedef typename WordType<T>::Type_t  W;   // find the machine word type
-
-#if 0 
-    QDPIO::cout << "sizeof(T) = " << sizeof(T) << endl;
-    QDPIO::cout << "sizeof(W) = " << sizeof(W) << endl;
-    QDPIO::cout << "Calling global sum array with length " << sizeof(T)/sizeof(W) << endl;
-#endif
-    if (QMP_get_number_of_nodes() > 1) {
-      globalSumArray((W *)dest.getF(), int(sizeof(T)/sizeof(W))); // call appropriate hook
-    } else {
-      QDP_debug("global sum: no MPI reduction");
-    }
+    globalSumArray((W *)&dest, int(sizeof(T)/sizeof(W))); // call appropriate hook
   }
 
   template<>
@@ -187,11 +143,7 @@ namespace QDPInternal
   {
     typedef typename WordType<T>::Type_t  W;   // find the machine word type
 
-    if (QMP_get_number_of_nodes() > 1) {
-      globalMaxValue((W *)dest.getF());
-    } else {
-      QDP_debug("global max: no MPI reduction");
-    }
+    globalMaxValue((W *)&dest);
   }
 
 
@@ -213,7 +165,7 @@ namespace QDPInternal
   {
     typedef typename WordType<T>::Type_t  W;   // find the machine word type
 
-    globalMinValue((W *)dest.getF());
+    globalMinValue((W *)&dest);
   }
 
 
@@ -224,7 +176,7 @@ namespace QDPInternal
     QMP_broadcast((void *)&dest, sizeof(T));
   }
 
-  //! Broadcast from primary node to all other nodes
+  //! Broadcast a string from primary node to all other nodes
   void broadcast_str(std::string& dest);
 
   //! Broadcast from primary node to all other nodes
