@@ -407,14 +407,8 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
   int faceId = MasterMap::Instance().getIdFace(offnode_maps);
   int faceCount = MasterMap::Instance().getCountFace(offnode_maps);
 
-  //QDP_info("innerId = %d, innerCount = %d, faceId = %d, faceCount = %d  memberId = %d",innerId,innerCount,faceId,faceCount,s.getIdMemberTable());
-
-  void * idx_inner_dev;
-  void * idx_face_dev;
-  if (offnode_maps > 0) {
-    idx_inner_dev = QDPCache::Instance().getDevicePtr( innerId );
-    idx_face_dev = QDPCache::Instance().getDevicePtr( faceId );
-  }
+  void * idx_inner_dev = QDPCache::Instance().getDevicePtr( innerId );
+  void * idx_face_dev = QDPCache::Instance().getDevicePtr( faceId );
   void * subset_member = QDPCache::Instance().getDevicePtr( s.getIdMemberTable() );
 
   AddressLeaf addr_leaf;
