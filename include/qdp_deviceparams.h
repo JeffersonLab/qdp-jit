@@ -47,6 +47,8 @@ namespace QDP {
     };
 
     int& getMaxKernelArg() { return maxKernelArg; }
+    int getMajor() { return major; }
+    int getMinor() { return minor; }
 
     bool getAsyncTransfers() { return asyncTransfers; }
 
@@ -76,6 +78,10 @@ namespace QDP {
     int max_blockx;
     int max_blocky;
     int max_blockz;
+
+    int major;
+    int minor;
+
   };
 
 

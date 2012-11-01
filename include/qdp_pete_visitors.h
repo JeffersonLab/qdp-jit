@@ -62,10 +62,44 @@ struct ParamLeaf
 
 struct AddressLeaf
 {
-  mutable std::vector<void*> addr;
+  union Types {
+    void * ptr;
+    float  fl;
+    int    in;
+    double db;
+    bool   bl;
+  };
+
+  mutable std::vector<Types> addr;
   void setAddr(void* p) const {
     //std::cout << "AddressLeaf::setAddr " << p << "\n";
-    addr.push_back(p);
+    Types t;
+    t.ptr = p;
+    addr.push_back(t);
+  }
+  void setLit( float f ) const {
+    //std::cout << "AddressLeaf::setLit float " << f << "\n";
+    Types t;
+    t.fl = f;
+    addr.push_back(t);
+  }
+  void setLit( double d ) const {
+    //std::cout << "AddressLeaf::setLit double " << d << "\n";
+    Types t;
+    t.db = d;
+    addr.push_back(t);
+  }
+  void setLit( int i ) const {
+    //std::cout << "AddressLeaf::setLit int " << i << "\n";
+    Types t;
+    t.in = i;
+    addr.push_back(t);
+  }
+  void setLit( bool b ) const {
+    //std::cout << "AddressLeaf::setLit bool " << b << "\n";
+    Types t;
+    t.bl = b;
+    addr.push_back(t);
   }
 };
 

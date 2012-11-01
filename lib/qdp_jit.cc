@@ -886,29 +886,10 @@ namespace QDP {
 
     std::ofstream out(filename.c_str());
     out << "// " << prettyFunction << "\n";
-#if 0
-    out << ".version 1.4\n" <<
-      ".target sm_12\n";
-    if (usesSharedMem)
-      out << ".extern .shared .align 4 .b8 sdata[];\n";
-    out << ".entry " << funcname << " (" <<
-      oss_param.str() << ")\n" <<
-      "{\n" <<
-      oss_vardef.str() <<
-      "//\n// Thread ID calculation\n" <<
-      oss_tidcalc.str() <<
-      "//\n// Index calculation (Map)\n" <<
-      oss_idx.str() <<
-      "//\n// Thread ID multiplication\n" <<
-      oss_tidmulti.str() <<
-      "//\n// Base addresses\n" <<
-      oss_baseaddr.str() <<
-      "//\n// Main body\n" <<
-      oss_prg.str() <<
-      "}\n";
-#else
     out << ".version 2.3\n" <<
-      ".target sm_20\n";
+      ".target sm_" << 
+      DeviceParams::Instance().getMajor() <<
+      DeviceParams::Instance().getMinor() << "\n";
     if (usesSharedMem)
       out << ".extern .shared .align 4 .b8 sdata[];\n";
     out << ".entry " << funcname << " (" <<
@@ -926,7 +907,6 @@ namespace QDP {
       "//\n// Main body\n" <<
       oss_prg.str() <<
       "}\n";
-#endif
     out.close();
   } 
 

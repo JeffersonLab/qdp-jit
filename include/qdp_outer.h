@@ -49,7 +49,6 @@ namespace QDP {
 
     OScalar(const typename WordType<T>::Type_t& rhs)
     {
-      std::cout << __PRETTY_FUNCTION__ << "\n";
       QDPCache::Instance().sayHi();
       alloc_mem();
       typedef typename InternalScalar<T>::Type_t  Scalar_t;
@@ -59,7 +58,6 @@ namespace QDP {
 
     OScalar(const Zero& rhs)
     {
-      std::cout << __PRETTY_FUNCTION__ << "\n";
       QDPCache::Instance().sayHi();
       alloc_mem();
       this->assign(rhs);
@@ -69,7 +67,6 @@ namespace QDP {
     template<class T1>
     OScalar(const OScalar<T1>& rhs)
     {
-      std::cout << __PRETTY_FUNCTION__ << "\n";
       QDPCache::Instance().sayHi();
       alloc_mem();
       this->assign(rhs);
@@ -79,7 +76,6 @@ namespace QDP {
     template<class RHS, class T1>
     OScalar(const QDPExpr<RHS, OScalar<T1> >& rhs)
     {
-      std::cout << __PRETTY_FUNCTION__ << "\n";
       QDPCache::Instance().sayHi();
       alloc_mem();
       this->assign(rhs);
@@ -308,7 +304,6 @@ inline
 void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs,
 	      const Subset& s)
 {
-  std::cout << __PRETTY_FUNCTION__ << "\n";
   // Subset is not used at this level. It may be needed, though, within an inner operation
   op(dest.elem(), forEach(rhs, ElemLeaf(), OpCombine()));
 }

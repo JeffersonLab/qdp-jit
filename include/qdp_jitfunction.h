@@ -61,6 +61,111 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 }
 
 
+template<class T, class T1, class Op, class RHS>
+CUfunction
+function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
+{
+  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+
+  CUfunction func;
+
+  std::string fname("ptx_lat_sca.ptx");
+  Jit function(fname.c_str(),"func");
+
+  function.setPrettyFunction(__PRETTY_FUNCTION__);
+
+  //std::cout << "function = " << (void*)&function <<"\n";
+
+  ParamLeaf param_leaf(function,function.getRegIdx() , Jit::LatticeLayout::COAL );
+  //ParamLeaf param_leaf_indexed( function , param_leaf.getParamIndexFieldAndOption() , Jit::LatticeLayout::COAL);
+  function.addParamMemberArray( param_leaf.r_idx );
+
+  // Destination
+  typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
+  FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
+
+  // Now the arguments for the rhs
+  typedef typename ForEach<QDPExpr<RHS,OScalar<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
+  View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
+
+  //printme<View_t>();
+
+  op(dest_jit.elem( 0 ), forEach(rhs_view, ViewLeaf(0), OpCombine()));
+
+#if 1
+  if (Layout::primaryNode())
+    function.write();
+#endif     
+ 
+  QMP_barrier();
+
+  CUresult ret;
+  CUmodule cuModule;
+  ret = cuModuleLoad(&cuModule, fname.c_str() );
+  if (ret) QDP_error_exit("Error loading CUDA module '%s'",fname.c_str());
+
+  ret = cuModuleGetFunction(&func, cuModule, "func");
+  if (ret) { std::cout << "Error getting function\n"; exit(1); }
+
+  //std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
+
+  return func;
+}
+
+
+
+template<class T, class T1, class Op, class RHS>
+CUfunction
+function_sca_sca_build(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
+{
+  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+
+  CUfunction func;
+
+  std::string fname("ptx_sca_sca.ptx");
+  Jit function(fname.c_str(),"func");
+
+  function.setPrettyFunction(__PRETTY_FUNCTION__);
+
+  //std::cout << "function = " << (void*)&function <<"\n";
+
+  ParamLeaf param_leaf(function,function.getRegIdx() , Jit::LatticeLayout::SCAL );
+  //ParamLeaf param_leaf_indexed( function , param_leaf.getParamIndexFieldAndOption() , Jit::LatticeLayout::COAL);
+  //function.addParamMemberArray( param_leaf.r_idx );
+
+  // Destination
+  typedef typename LeafFunctor<OScalar<T>, ParamLeaf>::Type_t  FuncRet_t;
+  FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
+
+  // Now the arguments for the rhs
+  typedef typename ForEach<QDPExpr<RHS,OScalar<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
+  View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
+
+  //printme<View_t>();
+
+  op(dest_jit.elem( 0 ), forEach(rhs_view, ViewLeaf(0), OpCombine()));
+
+#if 1
+  if (Layout::primaryNode())
+    function.write();
+#endif     
+ 
+  QMP_barrier();
+
+  CUresult ret;
+  CUmodule cuModule;
+  ret = cuModuleLoad(&cuModule, fname.c_str() );
+  if (ret) QDP_error_exit("Error loading CUDA module '%s'",fname.c_str());
+
+  ret = cuModuleGetFunction(&func, cuModule, "func");
+  if (ret) { std::cout << "Error getting function\n"; exit(1); }
+
+  //std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
+
+  return func;
+}
+
+
 template<class T>
 CUfunction
 function_random_build(OLattice<T>& dest, LatticeSeed& seed, LatticeSeed& skewed_seed)
@@ -302,8 +407,14 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
   int faceId = MasterMap::Instance().getIdFace(offnode_maps);
   int faceCount = MasterMap::Instance().getCountFace(offnode_maps);
 
-  void * idx_inner_dev = QDPCache::Instance().getDevicePtr( innerId );
-  void * idx_face_dev = QDPCache::Instance().getDevicePtr( faceId );
+  //QDP_info("innerId = %d, innerCount = %d, faceId = %d, faceCount = %d  memberId = %d",innerId,innerCount,faceId,faceCount,s.getIdMemberTable());
+
+  void * idx_inner_dev;
+  void * idx_face_dev;
+  if (offnode_maps > 0) {
+    idx_inner_dev = QDPCache::Instance().getDevicePtr( innerId );
+    idx_face_dev = QDPCache::Instance().getDevicePtr( faceId );
+  }
   void * subset_member = QDPCache::Instance().getDevicePtr( s.getIdMemberTable() );
 
   AddressLeaf addr_leaf;
@@ -381,6 +492,107 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
     CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
   }
 
+
+}
+
+
+
+
+template<class T, class T1, class Op, class RHS>
+void 
+function_lat_sca_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs, const Subset& s)
+{
+  AddressLeaf addr_leaf;
+
+  int junk_dest = forEach(dest, addr_leaf, NullCombine());
+  int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
+
+  // lo <= idx < hi
+  int lo = 0;
+  int hi = Layout::sitesOnNode();
+  void * subset_member = QDPCache::Instance().getDevicePtr( s.getIdMemberTable() );
+
+  std::vector<void*> addr;
+
+  addr.push_back( &lo );
+  //std::cout << "addr lo = " << addr[0] << " lo=" << lo << "\n";
+
+  addr.push_back( &hi );
+  //std::cout << "addr hi = " << addr[1] << " hi=" << hi << "\n";
+
+  addr.push_back( &subset_member );
+  //std::cout << "addr idx_inner_dev = " << addr[3] << " " << idx_inner_dev << "\n";
+
+  int addr_dest=addr.size();
+  for(int i=0; i < addr_leaf.addr.size(); ++i) {
+    addr.push_back( &addr_leaf.addr[i] );
+    //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
+  }
+
+  static int threadsPerBlock = 0;
+
+  if (!threadsPerBlock) {
+    // Auto tuning
+
+    // Fist get a data field of the same size as "dest" where we can play on
+    // (in case the final operator is an OpAddAssign, etc.)
+    int tmpId = QDPCache::Instance().registrate( QDPCache::Instance().getSize( dest.getId() ) , 1 , NULL );
+    void * devPtr = QDPCache::Instance().getDevicePtr( tmpId );
+    //QDPCache::Instance().printLockSets();
+    addr[addr_dest] = &devPtr;
+
+    threadsPerBlock = jit_autotuning(function,lo,hi,&addr[0]);
+
+    // Restore original "dest" device address
+    addr[addr_dest] = &addr_leaf.addr[0];
+    QDPCache::Instance().signoff( tmpId );
+    //QDPCache::Instance().printLockSets();
+
+  } else {
+    //QDP_info_primary("Previous auto-tuning result = %d",threadsPerBlock);
+  }
+
+  //QDP_info("Launching kernel with %d threads",hi-lo);
+
+  kernel_geom_t now = getGeom( hi-lo , threadsPerBlock );
+
+  CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
+
+}
+
+
+
+
+template<class T, class T1, class Op, class RHS>
+void 
+function_sca_sca_exec(CUfunction function, OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
+{
+  AddressLeaf addr_leaf;
+
+  int junk_dest = forEach(dest, addr_leaf, NullCombine());
+  int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
+
+  // lo <= idx < hi
+  int lo = 0;
+  int hi = 1;
+
+  std::vector<void*> addr;
+
+  addr.push_back( &lo );
+  //std::cout << "addr lo = " << addr[0] << " lo=" << lo << "\n";
+
+  addr.push_back( &hi );
+  //std::cout << "addr hi = " << addr[1] << " hi=" << hi << "\n";
+
+  int addr_dest=addr.size();
+  for(int i=0; i < addr_leaf.addr.size(); ++i) {
+    addr.push_back( &addr_leaf.addr[i] );
+    //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
+  }
+
+  kernel_geom_t now = getGeom( hi-lo , 1 );
+
+  CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    1,1,1,    0, 0, &addr[0] , 0);
 
 }
 

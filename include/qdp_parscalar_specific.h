@@ -121,7 +121,7 @@ template<class T, class T1, class Op, class RHS>
 void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs,
 	      const Subset& s)
 {
-  std::cout << __PRETTY_FUNCTION__ << "\n";
+  //std::cout << __PRETTY_FUNCTION__ << "\n";
 
 // cerr << "In evaluateSubset(olattice,oscalar)\n";
 
@@ -130,11 +130,27 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& 
   prof.time -= getClockTime();
 #endif
 
-  int numSiteTable = s.numSiteTable();
-  
-  u_arg<T,T1,Op,RHS> a(dest, rhs, op, s.siteTable().slice());
+  static CUfunction function;
 
-  dispatch_to_threads< u_arg<T,T1,Op,RHS> >(numSiteTable, a, ev_userfunc);
+  // Build the function
+  if (function == NULL)
+    {
+      //std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
+      function = function_lat_sca_build(dest, op, rhs);
+      //std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
+    }
+  else
+    {
+      //std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
+    }
+
+  // Execute the function
+  function_lat_sca_exec(function, dest, op, rhs, s);
+
+
+  // int numSiteTable = s.numSiteTable();
+  // u_arg<T,T1,Op,RHS> a(dest, rhs, op, s.siteTable().slice());
+  // dispatch_to_threads< u_arg<T,T1,Op,RHS> >(numSiteTable, a, ev_userfunc);
 
   ///////////////////
   // Original code

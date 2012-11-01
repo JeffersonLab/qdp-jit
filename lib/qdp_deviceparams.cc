@@ -35,8 +35,6 @@ namespace QDP {
     max_blocky = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y ) );
     max_blockz = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Z ) );
 
-    int major;
-    int minor;
     CudaGetSM(&major,&minor);
     divRnd = major >= 2;
 

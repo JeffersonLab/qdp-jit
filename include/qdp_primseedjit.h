@@ -53,9 +53,9 @@ public:
     {
       typedef typename InternalScalar<T1>::Type_t  S;
 
-      elem(0) = rhs.elem() & S(4095);
-      elem(1) = (rhs.elem() >> S(12)) & S(4095);
-      elem(2) = (rhs.elem() >> S(24)) & S(4095);
+      elem(0) = rhs.elem() & S(rhs.func(),4095);
+      elem(1) = (rhs.elem() >> S(rhs.func(),12)) & S(rhs.func(),4095);
+      elem(2) = (rhs.elem() >> S(rhs.func(),24)) & S(rhs.func(),4095);
 //      elem(3) = (rhs.elem() >> S(36)) & S(2047);  // This probably will never be nonzero
       zero_rep(elem(3));    // assumes 32 bit integers
 
