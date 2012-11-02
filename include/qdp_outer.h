@@ -155,7 +155,7 @@ namespace QDP {
 
     void static changeLayout(bool toDev,void * outPtr,void * inPtr)
     {
-      QDP_info_primary("changing scalar data layout to %s format" , toDev? "device" : "host");
+      //QDP_info_primary("changing scalar data layout to %s format" , toDev? "device" : "host");
 
       typename WordType<T>::Type_t * in_data  = (typename WordType<T>::Type_t *)inPtr;
       typename WordType<T>::Type_t * out_data = (typename WordType<T>::Type_t *)outPtr;
