@@ -84,6 +84,7 @@ namespace QDP {
 			 unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
 			 unsigned int  sharedMemBytes, CUstream hStream, void** kernelParams, void** extra )
   {
+    CudaSyncTransferStream();
     // This call is async
     cuLaunchKernel(f, gridDimX, gridDimY, gridDimZ, 
 		   blockDimX, blockDimY, blockDimZ, 

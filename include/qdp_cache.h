@@ -41,6 +41,7 @@ namespace QDP
     int registrate( size_t size, unsigned flags, LayoutFptr func );
     int registrateOwnHostMem( size_t size, void* ptr , LayoutFptr func );
     void signoff(int id);
+    void lockId(int id);
     void * getDevicePtr(int id);
     void getHostPtr(void ** ptr , int id);
     void freeHostMemory(Entry& e);

@@ -94,79 +94,6 @@ namespace QDP
   }
 
 
-#if 0
-  void QDPCache::backupOnHost() {
-#ifdef SANITY_CHECKS_CACHE
-    // SANITY
-    if (vecLockSet[0].size() + vecLockSet[1].size() == 0)
-      QDP_error_exit("cache backup: Nothing locked! Really what you intend to do?");
-    if (vecLockSet[currLS].size() == 0)
-      QDP_error_exit("cache backup: current lock set is empty! Really what you intend to do?");
-#endif
-
-    for ( int ls = 0 ; ls < 2 ; ls++ ) {
-      for (vector<int>::iterator i = vecLockSet[ls].begin() ; i != vecLockSet[ls].end() ; ++i ) {
-
-	Entry& e = vecEntry[*i];
-
-#ifdef SANITY_CHECKS_CACHE
-	// SANITY
-	if(!e.devPtr) 
-	  QDP_error_exit("cache backup: Object has no device pointer");
-#endif
-	// Don't backup object which registrated with its own host memory
-	// since it might already be destructed, and its host memory
-	if ( e.flags != 2 ) {
-
-	  listBackup.push_back( new char[e.size] );
-
-	  // For backup/restore we use sync transfers
-#ifdef GPU_DEBUG_DEEP
-	  QDP_debug_deep("backup: D2H %p <- %p , %u" , listBackup.back() , e.devPtr , (unsigned)e.size);
-#endif
-	  CudaMemcpy( listBackup.back() , e.devPtr , e.size );
-	}
-      }
-    }
-  }
-
-  void QDPCache::restoreFromHost() {
-#ifdef SANITY_CHECKS_CACHE
-    // SANITY
-    if (vecLockSet[0].size() + vecLockSet[1].size() == 0)
-      QDP_error_exit("cache backup: Nothing locked! Really what you intend to do?");
-    if (vecLockSet[currLS].size() == 0)
-      QDP_error_exit("cache backup: current lock set is empty! Really what you intend to do?");
-#endif
-
-    for ( int ls = 0 ; ls < 2 ; ls++ ) {
-      for (vector<int>::iterator i = vecLockSet[ls].begin() ; i != vecLockSet[ls].end() ; ++i ) {
-	Entry& e = vecEntry[*i];
-
-#ifdef SANITY_CHECKS_CACHE
-	// SANITY
-	if(!e.devPtr) 
-	  QDP_error_exit("cache backup: Object has no device pointer");
-	if(!e.hstPtr) 
-	  QDP_error_exit("cache backup: Object has no host pointer");
-#endif
-
-	// Don't restore object which registrated with its own host memory
-	// since it might already be destructed, and its host memory
-	if ( e.flags != 2 ) {
-
-	  // For backup/restore we use sync transfers
-#ifdef GPU_DEBUG_DEEP
-	  QDP_debug_deep("restore: H2D %p -> %p , %u", listBackup.front() , e.devPtr , (unsigned)e.size);
-#endif
-	  CudaMemcpy( e.devPtr , listBackup.front() , e.size );
-	  delete[] listBackup.front();
-	  listBackup.pop_front();
-	}
-      }
-    }
-  }
-#endif
 
   void QDPCache::sayHi () {
     CUDADevicePoolAllocator::Instance().sayHi();
@@ -464,12 +391,18 @@ namespace QDP
       if (e.hstPtr) {
 	//	CudaMemcpyAsync( e.devPtr , e.hstPtr , e.size );
 	if (e.fptr) {
-	  char * tmp = new char[e.size];
+	  
+	  int tmp = registrate( e.size , 0 , NULL );
+	  void * hstptr;
+	  getHostPtr( &hstptr , tmp );
+	  lockId(tmp);
+
 	  //std::cout << "call layout changer\n";
-	  e.fptr(true,tmp,e.hstPtr);
+	  e.fptr(true,hstptr,e.hstPtr);
 	  //std::cout << "copy data to device\n";
-	  CudaMemcpyH2D( e.devPtr , tmp , e.size );
-	  delete[] tmp;
+	  CudaMemcpyH2DAsync( e.devPtr , hstptr , e.size );
+	  signoff(tmp);
+
 	} else {
 	  //std::cout << "copy data to device (no layout change)\n";
 	  CudaMemcpyH2D( e.devPtr , e.hstPtr , e.size );
@@ -491,6 +424,21 @@ namespace QDP
     vecLockSet[currLS].push_back(e.Id);
     e.lockCount++;
   }
+
+
+  void QDPCache::lockId(int id) {
+#ifdef GPU_DEBUG_DEEP
+    QDP_debug_deep("cache: lockId = %d",id);
+#endif    
+    Entry& e = vecEntry[id];
+    vecLockSet[currLS].push_back(e.Id);
+    e.lockCount++;
+#ifdef GPU_DEBUG_DEEP
+    QDPCache::printLockSets();
+#endif
+  }
+
+
 
 
   bool QDPCache::assureHost(Entry& e) {
