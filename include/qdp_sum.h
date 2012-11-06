@@ -129,7 +129,7 @@ void reduce_convert_indirection_coal(int size, int threads, int blocks, int shar
   }
 #endif
   
-  QDP_info("leaving reduce_convert<T1,T2>");
+  //QDP_info("leaving reduce_convert<T1,T2>");
 }
 
 
@@ -169,7 +169,7 @@ void reduce_convert_indirection_coal(int size, int threads, int blocks, int shar
       }
 
       int shared_mem_usage = numThreads*sizeof(T2);
-      QDP_info("sum(Lat,subset): using %d threads per block, %d blocks, shared mem=%d" , numThreads , numBlocks , shared_mem_usage );
+      //QDP_info("sum(Lat,subset): using %d threads per block, %d blocks, shared mem=%d" , numThreads , numBlocks , shared_mem_usage );
 
 
       if (first) {

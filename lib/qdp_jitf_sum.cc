@@ -8,8 +8,7 @@ function_sum_ind_coal_exec( CUfunction function,
 			    int size, int threads, int blocks, int shared_mem_usage,
 			    void *d_idata, void *d_odata, void *siteTable)
 {
-  QDP_info("function_sum_ind_coal_exec size=%d threads=%d blocks=%d shared_mem=%d idata=%p odata=%p siteTable=%p",
-	   size,threads,blocks,shared_mem_usage,d_idata,d_odata,siteTable);
+  //  QDP_info("function_sum_ind_coal_exec size=%d threads=%d blocks=%d shared_mem=%d idata=%p odata=%p siteTable=%p",	   size,threads,blocks,shared_mem_usage,d_idata,d_odata,siteTable);
 
   // lo <= idx < hi
   int lo = 0;
@@ -52,8 +51,7 @@ function_sum_exec( CUfunction function,
 		   int size, int threads, int blocks, int shared_mem_usage,
 		   void *d_idata, void *d_odata)
 {
-  QDP_info("function_sum_ind_coal_exec size=%d threads=%d blocks=%d shared_mem=%d idata=%p odata=%p ",
-	   size,threads,blocks,shared_mem_usage,d_idata,d_odata);
+  //  QDP_info("function_sum_ind_coal_exec size=%d threads=%d blocks=%d shared_mem=%d idata=%p odata=%p ",	   size,threads,blocks,shared_mem_usage,d_idata,d_odata);
 
   // lo <= idx < hi
   int lo = 0;
