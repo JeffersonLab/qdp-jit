@@ -210,8 +210,6 @@ namespace QDP {
     inline void free_mem() {
       if (myId >= 0)
 	QDPCache::Instance().signoff( myId );
-      else
-	QDP_info("OScalar: myId < 0, resource moved");
     }
     inline void assert_on_host() const {
       // Here or somewhere we sould make sure that 

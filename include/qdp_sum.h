@@ -146,8 +146,8 @@ void reduce_convert_indirection_coal(int size, int threads, int blocks, int shar
   sum(const OLattice<T1>& s1, const Subset& s)
   {
     typedef typename UnaryReturn<OLattice<T1>, FnSum>::Type_t::SubType_t T2;
-
-    QDP_info("sum(lat,subset) dev");
+    
+    //QDP_info("sum(lat,subset) dev");
 
     T2 * out_dev;
     T2 * in_dev;
@@ -165,8 +165,7 @@ void reduce_convert_indirection_coal(int size, int threads, int blocks, int shar
       int numBlocks=(int)ceil(float(actsize)/numThreads);
 
       if (numBlocks > DeviceParams::Instance().getMaxGridX()) {
-	QDP_info( "sum(Lat,subset) numBlocks > %d, continue on host",(int)DeviceParams::Instance().getMaxGridX());
-	break;
+	QDP_error_exit( "sum(Lat,subset) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)DeviceParams::Instance().getMaxGridX());
       }
 
       int shared_mem_usage = numThreads*sizeof(T2);

@@ -17,7 +17,7 @@ void function_sum_exec( CUfunction function,
   CUfunction 
   function_sum_ind_coal_build()
   {
-    std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+    //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
     CUfunction func;
 
@@ -142,7 +142,7 @@ void function_sum_exec( CUfunction function,
     ret = cuModuleGetFunction(&func, cuModule, "func");
     if (ret) { std::cout << "Error getting function\n"; exit(1); }
 
-    std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
+    //std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
 
     return func;
   }
@@ -154,7 +154,7 @@ void function_sum_exec( CUfunction function,
   CUfunction 
   function_sum_build()
   {
-    std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+    //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
     CUfunction func;
 
@@ -288,7 +288,7 @@ void function_sum_exec( CUfunction function,
       exit(1);
     }
 
-    std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
+    //std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
 
     return func;
   }

@@ -513,7 +513,7 @@ template<class RHS, class T>
 typename UnaryReturn<OLattice<T>, FnSum>::Type_t
 sum(const QDPExpr<RHS,OLattice<T> >& s1, const Subset& s)
 {
-  QDP_info("sum(Expr,Subset)");
+  //QDP_info("sum(Expr,Subset)");
   OLattice<T> l;
   l[s]=s1;
   return sum(l,s);

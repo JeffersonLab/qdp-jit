@@ -39,7 +39,7 @@ function_sum_ind_coal_exec( CUfunction function,
 
   kernel_geom_t now = getGeom( hi-lo , threads );
 
-  QDP_info("launing block=(%d,1,1)  grid=(%d,%d,1)",threads,now.Nblock_x,now.Nblock_y);
+  //QDP_info("launing block=(%d,1,1)  grid=(%d,%d,1)",threads,now.Nblock_x,now.Nblock_y);
 
   CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threads,1,1,    shared_mem_usage, 0, &addr[0] , 0);
 
@@ -83,7 +83,7 @@ function_sum_exec( CUfunction function,
 
   kernel_geom_t now = getGeom( hi-lo , threads );
 
-  QDP_info("launing block=(%d,1,1)  grid=(%d,%d,1)",threads,now.Nblock_x,now.Nblock_y);
+  //QDP_info("launing block=(%d,1,1)  grid=(%d,%d,1)",threads,now.Nblock_x,now.Nblock_y);
 
   CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threads,1,1,    shared_mem_usage, 0, &addr[0] , 0);
 
