@@ -49,7 +49,7 @@ namespace QDP {
 	Jit::RegType myType = JitRegType<bool>::Val_t;
 	mapReg.insert( std::make_pair( myType , jit.getRegs( JitRegType<bool>::Val_t , 1 ) ) );
 
-	std::cout << "insert u8 ld/cvt instructions\n";
+	//std::cout << "insert u8 ld/cvt instructions\n";
 	int load_u8 = jit.getRegs( Jit::u8 , 1 );
 	jit.asm_ld( load_u8 , r_addr , offset_level * WordSize<bool>::Size );
 

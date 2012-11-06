@@ -293,7 +293,7 @@ operator*(const PSeedJIT<T1>& s1, const PSeedJIT<T2>& s2)
   i2 += i1 >> S(s1.func(),12);
 
   /* dest(2) = mod(i2, 4096) */
-  //d.elem(2) = i2 & S(s1.func(),4095);
+  d.elem(2) = i2 & S(s1.func(),4095);
   /* i3 = i3 + i2/4096 */
   i3 += i2 >> S(s1.func(),12);
 

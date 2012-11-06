@@ -118,6 +118,7 @@ namespace RNG
       lbit = (lexoc & 1) > 0;
 
       laamult = lattice_ran_mult_tmp * laa;
+
       copymask(lattice_ran_mult_tmp,lbit,laamult);
 
       lexoc >>= 1;
