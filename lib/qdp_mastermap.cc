@@ -144,25 +144,23 @@ namespace QDP {
   }
 
   int MasterMap::getIdInner(int bitmask) const {
-    if ( bitmask < 0 || bitmask > powerSetC.size()-1 )
-      QDP_error_exit("internal error: get id inner");
+    if ( bitmask < 1 || bitmask > powerSetC.size()-1 )
+      QDP_error_exit("internal error: get id inner %d",bitmask);
     return idInner[bitmask]; 
   }
   int MasterMap::getIdFace(int bitmask) const {
-    if ( bitmask < 0 || bitmask > powerSetC.size()-1 )
-      QDP_error_exit("internal error: get id face");
+    if ( bitmask < 1 || bitmask > powerSetC.size()-1 )
+      QDP_error_exit("internal error: get id face %d",bitmask);
     return idFace[bitmask];
   }
   int MasterMap::getCountInner(int bitmask) const {
-    if ( bitmask < 0 || bitmask > powerSet.size()-1 )
-      QDP_error_exit("internal error: get count inner");
-    if (bitmask == 0) return Layout::sitesOnNode();
+    if ( bitmask < 1 || bitmask > powerSetC.size()-1 )
+      QDP_error_exit("internal error: get count inner %d",bitmask);
     return powerSetC[bitmask]->size(); 
   }
   int MasterMap::getCountFace(int bitmask) const {
-    if ( bitmask < 0 || bitmask > powerSetC.size()-1 )
-      QDP_error_exit("internal error: get count face");
-    if (bitmask == 0) return 0;
+    if ( bitmask < 1 || bitmask > powerSet.size()-1 )
+      QDP_error_exit("internal error: get count face %d",bitmask);
     return powerSet[bitmask]->size(); 
   }
 

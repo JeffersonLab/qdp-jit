@@ -396,19 +396,37 @@ template<class T, class T1, class Op, class RHS>
 void 
 function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
 {
-  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   ShiftPhase1 phase1;
   int offnode_maps = forEach(rhs, phase1 , BitOrCombine());
-  //QDP_info("offnode_maps = %d",offnode_maps);
+  QDP_info("offnode_maps = %d",offnode_maps);
 
-  int innerId = MasterMap::Instance().getIdInner(offnode_maps);
-  int innerCount = MasterMap::Instance().getCountInner(offnode_maps);
-  int faceId = MasterMap::Instance().getIdFace(offnode_maps);
-  int faceCount = MasterMap::Instance().getCountFace(offnode_maps);
+  void * idx_inner_dev = NULL;
+  void * idx_face_dev = NULL;
 
-  void * idx_inner_dev = QDPCache::Instance().getDevicePtr( innerId );
-  void * idx_face_dev = QDPCache::Instance().getDevicePtr( faceId );
+  // lo <= idx < hi
+  int lo = 0;
+  int hi;
+  int do_soffset_index;
+  int faceCount;
+
+  if (offnode_maps > 0) {
+    int innerId, innerCount, faceId;
+    innerId = MasterMap::Instance().getIdInner(offnode_maps);
+    innerCount = MasterMap::Instance().getCountInner(offnode_maps);
+    faceId = MasterMap::Instance().getIdFace(offnode_maps);
+    faceCount = MasterMap::Instance().getCountFace(offnode_maps);
+    idx_inner_dev = QDPCache::Instance().getDevicePtr( innerId );
+    idx_face_dev = QDPCache::Instance().getDevicePtr( faceId );
+    hi = innerCount;
+    do_soffset_index = 1;
+    QDP_info("innerId = %d innerCount = %d faceId = %d  faceCount = %d",innerId,innerCount,faceId,faceCount);
+  } else {
+    hi = Layout::sitesOnNode();
+    do_soffset_index = 0;
+  }
+
   void * subset_member = QDPCache::Instance().getDevicePtr( s.getIdMemberTable() );
 
   AddressLeaf addr_leaf;
@@ -416,10 +434,7 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
   int junk_dest = forEach(dest, addr_leaf, NullCombine());
   int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
 
-  // lo <= idx < hi
-  int lo = 0;
-  int hi = innerCount;
-  int do_soffset_index = (int)(offnode_maps > 0);
+
 
   std::vector<void*> addr;
 
@@ -496,6 +511,8 @@ template<class T, class T1, class Op, class RHS>
 void 
 function_lat_sca_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs, const Subset& s)
 {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+
   AddressLeaf addr_leaf;
 
   int junk_dest = forEach(dest, addr_leaf, NullCombine());

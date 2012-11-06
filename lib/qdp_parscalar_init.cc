@@ -107,8 +107,8 @@ namespace QDP {
 	{
 	  if (sizeof(bool) != 1)
 	    {
-	      QDPIO::cerr << "Error: sizeof(bool) == " << sizeof(bool) << "   (1 is required)" << endl;
-	      QDP_abort(1);
+	      std::cout << "Error: sizeof(bool) == " << sizeof(bool) << "   (1 is required)" << endl;
+	      exit(1);
 	    }
 
 		if (isInit)
@@ -118,6 +118,8 @@ namespace QDP {
 		}
 
 #if 1
+		std::cout << "Setting gamma matrices" << endl;
+
 		SpinMatrix dgr[5];
 		for (int i=0;i<5;i++) {
 		  for (int s=0;s<4;s++) {
@@ -128,6 +130,9 @@ namespace QDP {
 		  }
 		  //std::cout << i << "\n" << dgr[i] << "\n";
 		}
+		std::cout << "Finished setting gamma matrices" << endl;
+		std::cout << "Multiplying gamma matrices" << endl;
+
 		QDP_Gamma_values[0]=dgr[4]; // Unity
 		for (int i=1;i<16;i++) {
 		  zero_rep(QDP_Gamma_values[i]);
@@ -146,6 +151,7 @@ namespace QDP {
 		  //std::cout << "\n" << QDP_Gamma_values[i] << "\n";
 		  
 		}
+		std::cout << "Finished multiplying gamma matrices" << endl;
 #endif
 
 		CudaInit();

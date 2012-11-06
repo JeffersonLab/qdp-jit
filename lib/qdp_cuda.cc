@@ -84,6 +84,10 @@ namespace QDP {
 			 unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
 			 unsigned int  sharedMemBytes, CUstream hStream, void** kernelParams, void** extra )
   {
+#ifdef GPU_DEBUG_DEEP
+    QDP_debug_deep("CudaLaunchKernel ... ");
+#endif
+
     CudaSyncTransferStream();
     // This call is async
     cuLaunchKernel(f, gridDimX, gridDimY, gridDimZ, 
@@ -92,6 +96,10 @@ namespace QDP {
 
     QDPCache::Instance().releasePrevLockSet();
     QDPCache::Instance().beginNewLockSet();
+
+#ifdef GPU_DEBUG_DEEP
+    QDPCache::Instance().printLockSets();
+#endif
 
     if (DeviceParams::Instance().getSyncDevice()) {  
       QDP_info_primary("Pulling the brakes: device sync after kernel launch!");
