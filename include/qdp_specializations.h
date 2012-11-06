@@ -284,7 +284,14 @@ struct CreateLeaf<OScalar<IntReal32> >
 {
   typedef OScalar<IntReal32> Leaf_t;
   inline static
-  Leaf_t make(const OScalar<IntReal32> &a) { return Leaf_t(a); }
+  Leaf_t make(const OScalar<IntReal32> &a) { 
+    return Leaf_t( std::move(a) ); 
+  }
+  inline static
+  Leaf_t make(OScalar<IntReal32> &&a) { 
+    //return std::move( Leaf_t( std::move(a) ) );
+    return std::move(a);
+  }
 };
 
 template<>

@@ -266,13 +266,25 @@ public:
     : left_m(l), right_m(r)
   { }
 
-  //---------------------------------------------------------------------------
+  inline
+  BinaryNode( Left &&l,  const Right &r)
+    : left_m(std::move(l)), right_m(r)
+  {}
+
+
+  //--------------------------------------------------------------------
   // Copy constructor.
 
   inline
   BinaryNode(const BinaryNode<Op, Left, Right> &t)
     : op_m(t.operation()), left_m(t.left()), right_m(t.right())
   { }
+  
+  inline
+  BinaryNode(BinaryNode<Op, Left, Right> &&t)
+    : op_m(std::move(t.op_m)), left_m(std::move(t.left_m)), right_m(std::move(t.right_m))
+  {}
+
 
   //---------------------------------------------------------------------------
   // Constructor using a BinaryNode with a different Left/Right.

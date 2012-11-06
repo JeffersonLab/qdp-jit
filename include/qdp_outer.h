@@ -129,6 +129,22 @@ namespace QDP {
       this->assign(rhs);
     }
 
+#if 1
+    OScalar(const OScalar&& rhs) {
+      QDP_error_exit("OScalar(const OScalar&& rhs)");
+    }
+#endif
+
+    OScalar( OScalar&& rhs) {
+      QDPCache::Instance().sayHi();
+      myId = rhs.myId;
+      F = rhs.F;
+      rhs.myId = -1;
+      //alloc_mem();
+      //this->assign(rhs);
+    }
+
+
 
   public:
 
@@ -192,12 +208,18 @@ namespace QDP {
       myId = QDPCache::Instance().registrate( sizeof(T) , 0 , &changeLayout );
     }
     inline void free_mem() {
-      QDPCache::Instance().signoff( myId );
+      if (myId >= 0)
+	QDPCache::Instance().signoff( myId );
+      else
+	QDP_info("OScalar: myId < 0, resource moved");
     }
     inline void assert_on_host() const {
       // Here or somewhere we sould make sure that 
       // if the pointer is still valid, we do not too much
-      QDPCache::Instance().getHostPtr( (void**)&F , myId );
+      if (myId >= 0)
+	QDPCache::Instance().getHostPtr( (void**)&F , myId );
+      else
+	QDP_error_exit("Oscalar assert on host, but resource moved");
     }
 
 
