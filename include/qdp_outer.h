@@ -171,7 +171,6 @@ namespace QDP {
 
     void static changeLayout(bool toDev,void * outPtr,void * inPtr)
     {
-      //QDP_info_primary("changing scalar data layout to %s format" , toDev? "device" : "host");
 
       typename WordType<T>::Type_t * in_data  = (typename WordType<T>::Type_t *)inPtr;
       typename WordType<T>::Type_t * out_data = (typename WordType<T>::Type_t *)outPtr;
@@ -179,6 +178,8 @@ namespace QDP {
       int lim_rea = GetLimit<T,2>::Limit_v; //T::ThisSize;
       int lim_col = GetLimit<T,1>::Limit_v; //T::ThisSize;
       int lim_spi = GetLimit<T,0>::Limit_v; //T::ThisSize;
+
+      QDP_info_primary("changing scalar data layout to %s format rea=%d col=%d spi=%d" , toDev? "device" : "host",lim_rea,lim_col,lim_spi);
 
 
       for ( int reality = 0 ; reality < lim_rea ; reality++ ) {
@@ -192,6 +193,7 @@ namespace QDP {
 	      spin +
 	      lim_spi * color +
 	      lim_spi * lim_col * reality;
+	    //QDP_info_primary("dev_idx=%d hst_idx=%d",dev_idx,hst_idx);
 	    if (toDev)
 	      out_data[dev_idx] = in_data[hst_idx];
 	    else {
@@ -205,7 +207,17 @@ namespace QDP {
 
 
     inline void alloc_mem() {
-      myId = QDPCache::Instance().registrate( sizeof(T) , 0 , &changeLayout );
+      int lim_rea = GetLimit<T,2>::Limit_v; //T::ThisSize;
+      int lim_col = GetLimit<T,1>::Limit_v; //T::ThisSize;
+      int lim_spi = GetLimit<T,0>::Limit_v; //T::ThisSize;
+      if ( (lim_rea*lim_col == 1) || 
+	   (lim_rea*lim_spi == 1) || 
+	   (lim_col*lim_spi == 1) ) {
+	//QDP_info_primary("OScalar::alloc_mem: no layout change: rea=%d col=%d spi=%d" ,lim_rea,lim_col,lim_spi);
+	myId = QDPCache::Instance().registrate( sizeof(T) , 0 , NULL );
+      }
+      else
+	myId = QDPCache::Instance().registrate( sizeof(T) , 0 , &changeLayout );
     }
     inline void free_mem() {
       if (myId >= 0)
