@@ -61,6 +61,8 @@ namespace QDP {
   class OScalarJIT: public QDPTypeJIT<T, OScalarJIT<T> >
   {
   public:
+    typedef T Subtype_t;
+
     OScalarJIT(Jit& func_, int addr_) : 
       QDPTypeJIT<T, OScalarJIT<T> >(func_,addr_,Jit::LatticeLayout::SCAL) {}
 

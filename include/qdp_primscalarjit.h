@@ -1371,9 +1371,9 @@ copymask(PScalarJIT<T>& d, const PScalarJIT<T1>& mask, const PScalarJIT<T>& s1)
 }
 
 //! dest  = random  
-template<class T, class T1, class T2>
+template<class T, class T1, class T2,class T3>
 inline void
-fill_random(PScalarJIT<T>& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
+fill_random(PScalarJIT<T>& d, T1& seed, T2& skewed_seed, const T3& seed_mult)
 {
   fill_random(d.elem(), seed, skewed_seed, seed_mult);
 }

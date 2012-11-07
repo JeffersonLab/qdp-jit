@@ -19,16 +19,16 @@ namespace RNG
 
   template<class T>
   void sranf(WordJIT<T>& dest,
-	     OLatticeJIT<PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > >& seed, 
-	     OLatticeJIT<PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > >& skewed_seed, 
-	     const OLatticeJIT<PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > >& seed_mult)
+	     PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > & seed, 
+	     PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > >& skewed_seed, 
+	     const OScalarJIT<PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > >& seed_mult)
   {
     //std::cout << __PRETTY_FUNCTION__ << "\n";
 
-    dest = seedToFloat( skewed_seed.elem(0) ).elem().elem().elem();
+    dest = seedToFloat( skewed_seed ).elem().elem().elem();
 
-    seed.elem(0)        = seed.elem(0)        * seed_mult.elem(0);
-    skewed_seed.elem(0) = skewed_seed.elem(0) * seed_mult.elem(0);
+    seed        = seed        * seed_mult.elem(0);
+    skewed_seed = skewed_seed * seed_mult.elem(0);
 
 #if 0
     PScalarJIT<PScalarJIT<RScalarJIT<WordJIT<float> > > > _sranf(seed.func());

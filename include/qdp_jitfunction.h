@@ -168,7 +168,7 @@ function_sca_sca_build(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar
 
 template<class T>
 CUfunction
-function_random_build(OLattice<T>& dest, LatticeSeed& seed, LatticeSeed& skewed_seed)
+function_random_build(OLattice<T>& dest , Seed& seed_tmp)
 {
 #if 1
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
@@ -178,7 +178,8 @@ function_random_build(OLattice<T>& dest, LatticeSeed& seed, LatticeSeed& skewed_
   std::string fname("ptxrandom.ptx");
   Jit function(fname.c_str(),"func");
 
-  ParamLeaf param_leaf(function,function.getRegIdx() , Jit::LatticeLayout::COAL );
+  int r_idx = function.getRegIdx();
+  ParamLeaf param_leaf(function, r_idx , Jit::LatticeLayout::COAL );
   function.addParamMemberArray( param_leaf.r_idx );
 
   // Destination
@@ -186,21 +187,35 @@ function_random_build(OLattice<T>& dest, LatticeSeed& seed, LatticeSeed& skewed_
   FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
 
   // RNG::ran_seed
-  //typedef typename LeafFunctor<Seed, ParamLeaf>::Type_t  SeedJIT;
+  typedef typename LeafFunctor<Seed, ParamLeaf>::Type_t  SeedJIT;
   typedef typename LeafFunctor<LatticeSeed, ParamLeaf>::Type_t  LatticeSeedJIT;
 
-  LatticeSeedJIT ran_seed_jit(forEach(*RNG::lat_ran_seed, param_leaf, TreeCombine()));
-  LatticeSeedJIT seed_jit(forEach(seed, param_leaf, TreeCombine()));
-  LatticeSeedJIT skewed_seed_jit(forEach(skewed_seed, param_leaf, TreeCombine()));
-  LatticeSeedJIT ran_mult_n_jit(forEach(*RNG::lat_ran_mult_n, param_leaf, TreeCombine()));
+  SeedJIT ran_seed_jit(forEach(RNG::ran_seed, param_leaf, TreeCombine()));
+  SeedJIT seed_tmp_jit(forEach(seed_tmp, param_leaf, TreeCombine()));
+  // SeedJIT skewed_seed_jit(forEach(skewed_seed, param_leaf, TreeCombine()));
+  SeedJIT ran_mult_n_jit(forEach(RNG::ran_mult_n, param_leaf, TreeCombine()));
   LatticeSeedJIT lattice_ran_mult_jit(forEach( *RNG::lattice_ran_mult , param_leaf, TreeCombine()));
 
   //  printme<View_t>();
 
-  seed_jit.elem(0)        = ran_seed_jit.elem(0);
-  skewed_seed_jit.elem(0) = ran_seed_jit.elem(0) * lattice_ran_mult_jit.elem(0);
+  typename SeedJIT::Subtype_t seed_jit(function);
+  typename SeedJIT::Subtype_t skewed_seed_jit(function);
+
+  seed_jit        = ran_seed_jit.elem(0);
+  skewed_seed_jit = ran_seed_jit.elem(0) * lattice_ran_mult_jit.elem(0);
 
   fill_random( dest_jit.elem(0) , seed_jit , skewed_seed_jit , ran_mult_n_jit );
+
+  int r_pred_idx0 = function.getRegs( Jit::pred , 1 );
+  int r_s32_zero = function.getRegs( Jit::s32 , 1 );
+  function.asm_mov_literal( r_s32_zero , (int)0 );
+  function.asm_cmp( Jit::CmpOp::eq , r_pred_idx0 , r_idx , r_s32_zero );
+
+  function.addCondBranchPred_if( r_pred_idx0 );
+  seed_tmp_jit.elem(0) = seed_jit;
+  function.addCondBranchPred_else();
+  function.addCondBranchPred_fi();
+
 
   if (Layout::primaryNode())
     function.write();
@@ -611,7 +626,7 @@ function_sca_sca_exec(CUfunction function, OScalar<T>& dest, const Op& op, const
 
 template<class T>
 void 
-function_random_exec(CUfunction function, OLattice<T>& dest, const Subset& s, LatticeSeed& seed, LatticeSeed& skewed_seed )
+function_random_exec(CUfunction function, OLattice<T>& dest, const Subset& s , Seed& seed_tmp)
 {
 #if 1
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
@@ -620,11 +635,10 @@ function_random_exec(CUfunction function, OLattice<T>& dest, const Subset& s, La
 
   int junk_0 = forEach(dest, addr_leaf, NullCombine());
 
-  int junk_1 = forEach(*RNG::lat_ran_seed, addr_leaf, NullCombine());
-  int junk_2 = forEach(seed, addr_leaf, NullCombine());
-  int junk_3 = forEach(skewed_seed, addr_leaf, NullCombine());
-  int junk_4 = forEach(*RNG::lat_ran_mult_n, addr_leaf, NullCombine());
-  int junk_5 = forEach(*RNG::lattice_ran_mult, addr_leaf, NullCombine());
+  int junk_1 = forEach(RNG::ran_seed, addr_leaf, NullCombine());
+  int junk_2 = forEach(seed_tmp, addr_leaf, NullCombine());
+  int junk_3 = forEach(RNG::ran_mult_n, addr_leaf, NullCombine());
+  int junk_4 = forEach(*RNG::lattice_ran_mult, addr_leaf, NullCombine());
 
   // lo <= idx < hi
   int lo = 0;
