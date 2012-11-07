@@ -400,12 +400,12 @@ namespace QDP
 	  //std::cout << "call layout changer\n";
 	  e.fptr(true,hstptr,e.hstPtr);
 	  //std::cout << "copy data to device\n";
-	  CudaMemcpyH2DAsync( e.devPtr , hstptr , e.size );
+	  CudaMemcpyH2D( e.devPtr , hstptr , e.size );
 	  signoff(tmp);
 
 	} else {
 	  //std::cout << "copy data to device (no layout change)\n";
-	  CudaMemcpyH2DAsync( e.devPtr , e.hstPtr , e.size );
+	  CudaMemcpyH2D( e.devPtr , e.hstPtr , e.size );
 	}
 	CudaSyncTransferStream();
 	if (e.flags != 2)

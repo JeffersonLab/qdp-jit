@@ -188,6 +188,14 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
   prof.time -= getClockTime();
 #endif
 
+  OLattice<T> dest0;
+  const int *tab = s.siteTable().slice();
+  for(int j=0; j < s.numSiteTable(); ++j) 
+    {
+      int i = tab[j];
+      OpAssign()( dest0.elem(i) , dest.elem(i) );
+    }
+
   static CUfunction function;
 
   // Build the function
@@ -204,6 +212,34 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
 
   // Execute the function
   function_exec(function, dest, op, rhs, s);
+
+  //const int *tab = s.siteTable().slice();
+  for(int j=0; j < s.numSiteTable(); ++j) 
+    {
+      int i = tab[j];
+      op(dest0.elem(i), forEach(rhs, EvalLeaf1(i), OpCombine()));
+    }
+
+
+  size_t diffs=0;
+  for(int j=0; j < s.numSiteTable(); ++j) {
+    int i = tab[j];
+    typename WordType<T>::Type_t * f_cpu = (typename WordType<T>::Type_t *)&dest0.elem(i);
+    typename WordType<T>::Type_t * f_gpu = (typename WordType<T>::Type_t *)&dest.elem(i);
+    for(int w=0 ; w < sizeof(T)/sizeof(typename WordType<T>::Type_t) ; w++ )
+      if ( fabs(f_cpu[w] - f_gpu[w]) > 0.00001 ) {
+	diffs++;
+	std::cout << "site = " << i << "   cpu = " << f_cpu[w] << "   gpu = " << f_gpu[w] << "    diff = " << f_cpu[w] - f_gpu[w] << "\n";
+      }
+    if (diffs > 10000)
+      break;
+  }
+
+  if (diffs > 0) {
+    std::cout << __PRETTY_FUNCTION__ << " numsitetable = " << s.numSiteTable() << "\n";    
+    QDP_error_exit("Differences!");
+  }
+
 
 
 #if defined(QDP_USE_PROFILING)   

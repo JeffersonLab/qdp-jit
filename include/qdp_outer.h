@@ -180,7 +180,9 @@ namespace QDP {
       int lim_spi = GetLimit<T,0>::Limit_v; //T::ThisSize;
 
       QDP_info_primary("changing scalar data layout to %s format rea=%d col=%d spi=%d" , toDev? "device" : "host",lim_rea,lim_col,lim_spi);
-
+      
+      if (toDev)
+	std::cout << "my value = " << *((T*)(inPtr)) << "\n";
 
       for ( int reality = 0 ; reality < lim_rea ; reality++ ) {
 	for ( int color = 0 ; color < lim_col ; color++ ) {
@@ -210,14 +212,14 @@ namespace QDP {
       int lim_rea = GetLimit<T,2>::Limit_v; //T::ThisSize;
       int lim_col = GetLimit<T,1>::Limit_v; //T::ThisSize;
       int lim_spi = GetLimit<T,0>::Limit_v; //T::ThisSize;
-      if ( (lim_rea*lim_col == 1) || 
-	   (lim_rea*lim_spi == 1) || 
-	   (lim_col*lim_spi == 1) ) {
-	//QDP_info_primary("OScalar::alloc_mem: no layout change: rea=%d col=%d spi=%d" ,lim_rea,lim_col,lim_spi);
-	myId = QDPCache::Instance().registrate( sizeof(T) , 0 , NULL );
-      }
-      else
-	myId = QDPCache::Instance().registrate( sizeof(T) , 0 , &changeLayout );
+      // if ( (lim_rea*lim_col == 1) || 
+      // 	   (lim_rea*lim_spi == 1) || 
+      // 	   (lim_col*lim_spi == 1) ) {
+      // 	//QDP_info_primary("OScalar::alloc_mem: no layout change: rea=%d col=%d spi=%d" ,lim_rea,lim_col,lim_spi);
+      // 	myId = QDPCache::Instance().registrate( sizeof(T) , 0 , NULL );
+      // }
+      // else
+      myId = QDPCache::Instance().registrate( sizeof(T) , 0 , &changeLayout );
     }
     inline void free_mem() {
       if (myId >= 0)
