@@ -188,6 +188,7 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
   prof.time -= getClockTime();
 #endif
 
+#if 0
   OLattice<T> dest0;
   const int *tab = s.siteTable().slice();
   for(int j=0; j < s.numSiteTable(); ++j) 
@@ -202,7 +203,7 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
   if (function == NULL)
     {
       //std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
-      function = function_build(dest, op, rhs);
+      function = function_build(dest0, op, rhs);
       //std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
     }
   else
@@ -211,13 +212,13 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
     }
 
   // Execute the function
-  function_exec(function, dest, op, rhs, s);
+  function_exec(function, dest0, op, rhs, s);
 
   //const int *tab = s.siteTable().slice();
   for(int j=0; j < s.numSiteTable(); ++j) 
     {
       int i = tab[j];
-      op(dest0.elem(i), forEach(rhs, EvalLeaf1(i), OpCombine()));
+      op(dest.elem(i), forEach(rhs, EvalLeaf1(i), OpCombine()));
     }
 
 
@@ -239,7 +240,24 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
     std::cout << __PRETTY_FUNCTION__ << " numsitetable = " << s.numSiteTable() << "\n";    
     QDP_error_exit("Differences!");
   }
+#else
+  static CUfunction function;
 
+  // Build the function
+  if (function == NULL)
+    {
+      //std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
+      function = function_build(dest, op, rhs);
+      //std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
+    }
+  else
+    {
+      //std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
+    }
+
+  // Execute the function
+  function_exec(function, dest, op, rhs, s);
+#endif
 
 
 #if defined(QDP_USE_PROFILING)   
