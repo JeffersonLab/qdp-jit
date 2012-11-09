@@ -91,6 +91,10 @@ class JV {
 
     const std::array<T,N>& getF() const { return F; }
     std::array<T,N>& getF() { return F; }
+
+    int getLevel() const { return off_level; };
+    int getFull() const { return off_full; };
+    int getRegAddr() const { return r_addr; };
  
   private:
     Jit& jit;

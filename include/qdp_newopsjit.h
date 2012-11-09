@@ -14,12 +14,13 @@ struct FnPeekColorMatrixJIT
   inline typename UnaryReturn<T, FnPeekColorMatrixJIT>::Type_t
   operator()(const T &a) const
   {
-    int r_addr = a.func().addGlobalMemory( T::Size_t * sizeof(typename WordType<T>::Type_t) * Layout::sitesOnNode() );
+    int r_addr = a.func().addGlobalMemory( T::Size_t * sizeof(typename WordType<T>::Type_t) * Layout::sitesOnNode() ,
+					   a.func().getRegIdx() , sizeof(typename WordType<T>::Type_t) );
 
     T tmp(curry_t(a.func(),r_addr,Layout::sitesOnNode(),0));
     tmp = a;
 
-    //return (peekColor(tmp,row,col));
+    return (peekColor(tmp,row,col));
 
     typename UnaryReturn<T, FnPeekColorMatrixJIT>::Type_t d(a.func());
     return d;    

@@ -446,9 +446,37 @@ template<class T, int N>
 inline typename UnaryReturn<PColorMatrixJIT<T,N>, FnPeekColorMatrixJIT>::Type_t
 peekColor(const PColorMatrixJIT<T,N>& l, int row, int col)
 {
-  typename UnaryReturn<PColorMatrixJIT<T,N>, FnPeekColorMatrixJIT>::Type_t  d(l.func());
+  int r_base = l.getRegAddr();
+  
+  int r_matidx = l.func().getRegs( Jit::s32 , 1 );
+  int r_N = l.func().getRegs( Jit::s32 , 1 );
+  l.func().asm_mov_literal( r_N , (int)N );
+  l.func().asm_mul( r_matidx , row , r_N );
+  l.func().asm_add( r_matidx , r_matidx , col );
 
-  d.elem() = l.elem(row,col);
+  int r_wordsize = l.func().getRegs( Jit::s32 , 1 );
+  int r_full = l.func().getRegs( Jit::s32 , 1 );
+  l.func().asm_mov_literal( r_wordsize , (int)4 );
+  l.func().asm_mov_literal( r_full , (int)l.getFull() );
+  
+  l.func().asm_mul( r_full , r_wordsize , r_full );
+  l.func().asm_mul( r_full , r_full , r_matidx );
+  int r_full_u64 = l.func().getRegs( Jit::u64 , 1 );
+  l.func().asm_cvt( r_full_u64 , r_full );
+  l.func().asm_add( r_base , r_base , r_full_u64 );
+  
+
+  //typename UnaryReturn<PColorMatrixJIT<T,N>, FnPeekColorMatrixJIT>::Type_t  d(l.func());
+  typename UnaryReturn<PColorMatrixJIT<T,N>, FnPeekColorMatrixJIT>::Type_t  d( curry_t(l.func(),
+										       r_base,
+										       l.getFull()*N*N,
+										       l.getLevel()));
+
+  std::cout << "level = " << l.getLevel() << "   full = " << l.getFull() << "\n";
+
+  
+
+  //d.elem() = l.elem(row,col);
   return d;
 }
 

@@ -536,14 +536,16 @@ namespace QDP {
   }
 
 
-  int Jit::addGlobalMemory( size_t s )
+  int Jit::addGlobalMemory( size_t s , int r_idx , int idx_multiplier )
   {
     oss_vardef << ".global.u8 glob" << n_globalMem << "[" << s << "];\n";
     int r_addr = getRegs( Jit::u64 , 1 );
-    mapStateSpace[r_addr] = Jit::GLOBAL;
-    oss_prg << "mov.u64 " << getName(r_addr) << ",glob" << n_globalMem << ";\n";
+    int r_ret = getRegs( Jit::u64 , 1 );
+    oss_baseaddr << "mov.u64 " << getName(r_addr) << ",glob" << n_globalMem << ";\n";
+    oss_baseaddr << "add.u64 " << getName(r_ret) << "," << getName(r_addr) << "," << getName( getThreadIdMultiplied(r_idx,idx_multiplier) ) << ";\n";
+    mapStateSpace[r_ret] = Jit::GLOBAL;
     n_globalMem++;
-    return r_addr;
+    return r_ret;
   }
 
 
