@@ -150,6 +150,7 @@ namespace QDP {
 
 
 #include "qdp_newops.h"
+#include "qdp_newopsjit.h"
 #include "qdp_optops.h"
 #include "qdp_mastermap.h"
 
@@ -183,6 +184,7 @@ namespace QDP {
 #include "qdp_randomjit.h"
 #include "qdp_random.h"
 
+//#include "qdp_newopsjit.h"
 #include "qdp_internal.h"
 #include "qdp_jitfunction.h"
 #include "qdp_jitf_copymask.h"

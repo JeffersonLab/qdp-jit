@@ -438,17 +438,16 @@ outerProduct(const PColorVectorJIT<T1,N>& l, const PColorVectorJIT<T2,N>& r)
 //! Extract color matrix components 
 /*! Generically, this is an identity operation. Defined differently under color */
 template<class T, int N>
-struct UnaryReturn<PColorMatrixJIT<T,N>, FnPeekColorMatrix > {
-  typedef PScalarJIT<typename UnaryReturn<T, FnPeekColorMatrix>::Type_t>  Type_t;
+struct UnaryReturn<PColorMatrixJIT<T,N>, FnPeekColorMatrixJIT > {
+  typedef PScalarJIT<typename UnaryReturn<T, FnPeekColorMatrixJIT>::Type_t>  Type_t;
 };
 
 template<class T, int N>
-inline typename UnaryReturn<PColorMatrixJIT<T,N>, FnPeekColorMatrix>::Type_t
+inline typename UnaryReturn<PColorMatrixJIT<T,N>, FnPeekColorMatrixJIT>::Type_t
 peekColor(const PColorMatrixJIT<T,N>& l, int row, int col)
 {
-  typename UnaryReturn<PColorMatrixJIT<T,N>, FnPeekColorMatrix>::Type_t  d(l.func());
+  typename UnaryReturn<PColorMatrixJIT<T,N>, FnPeekColorMatrixJIT>::Type_t  d(l.func());
 
-  // Note, do not need to propagate down since the function is eaten at this level
   d.elem() = l.elem(row,col);
   return d;
 }
@@ -459,6 +458,7 @@ inline PColorMatrixJIT<T1,N>&
 pokeColor(PColorMatrixJIT<T1,N>& l, const PScalarJIT<T2>& r, int row, int col)
 {
   // Note, do not need to propagate down since the function is eaten at this level
+  std::cout << __PRETTY_FUNCTION__ << "\n";
   l.elem(row,col) = r.elem();
   return l;
 }

@@ -361,7 +361,8 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
   class OLattice: public QDPType<T, OLattice<T> >
   {
   public:
-    typedef T Subtype;
+    //typedef T Subtype;
+    typedef T SubType_t;
 
     OLattice()
     {

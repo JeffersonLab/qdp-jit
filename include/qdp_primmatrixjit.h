@@ -1373,6 +1373,7 @@ template<class T1, class T2, int N, template<class,int> class C>
 inline typename UnaryReturn<PMatrixJIT<T1,N,C>, FnPokeColorMatrix>::Type_t&
 pokeColor(PMatrixJIT<T1,N,C>& l, const PMatrixJIT<T2,N,C>& r, int row, int col)
 {
+  std::cout << __PRETTY_FUNCTION__ << "\n";
   typedef typename UnaryReturn<PMatrixJIT<T1,N,C>, FnPokeColorMatrix>::Type_t  Return_t;
 
   for(int i=0; i < N; ++i)

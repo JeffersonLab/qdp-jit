@@ -113,6 +113,9 @@ struct FnPeekColorMatrix
     return (peekColor(a,row,col));
   }
 
+  int getRow() const { return row; }
+  int getCol() const { return col; }
+
 private:
   int row, col;
 };
@@ -140,7 +143,7 @@ inline typename MakeReturn<UnaryNode<FnPeekColorMatrix,
   typename CreateLeaf<QDPExpr<T1,C1> >::Leaf_t>, C1>::Expression_t
 peekColor(const QDPExpr<T1,C1> & l, int row, int col)
 {
-  typedef UnaryNode<FnPeekColorMatrix,
+  typedef UnaryNode<FnPeekColorMatrix, 
     typename CreateLeaf<QDPExpr<T1,C1> >::Leaf_t> Tree_t;
   typedef typename UnaryReturn<C1,FnPeekColorMatrix >::Type_t Container_t;
   return MakeReturn<Tree_t,Container_t>::make(Tree_t(FnPeekColorMatrix(row,col),

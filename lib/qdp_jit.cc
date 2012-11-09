@@ -535,7 +535,19 @@ namespace QDP {
     dumpVarDefType(pred);
   }
 
-  void Jit::dumpParam() 
+
+  int Jit::addGlobalMemory( size_t s )
+  {
+    oss_vardef << ".global.u8 glob" << n_globalMem << "[" << s << "];\n";
+    int r_addr = getRegs( Jit::u64 , 1 );
+    mapStateSpace[r_addr] = Jit::GLOBAL;
+    oss_prg << "mov.u64 " << getName(r_addr) << ",glob" << n_globalMem << ";\n";
+    n_globalMem++;
+    return r_addr;
+  }
+
+
+  void Jit::dumpParam()
   {
     for (int i = 0 ; i < param.size() ; i++ ) {
       oss_param << param[i];

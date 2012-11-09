@@ -77,6 +77,8 @@ namespace QDP {
     void asm_log(int dest,int src);
     void asm_sqrt(int dest,int src);
 
+    int addGlobalMemory( size_t s , int r_idx , int idx_multiplier );
+
     std::string getName(int id) const;
     int getRegs(RegType type,int count);
     void dumpVarDefType(RegType type);
@@ -148,6 +150,7 @@ namespace QDP {
     mutable std::map< RegType , RegType > mapBitType;
     mutable std::map< int , StateSpace >  mapStateSpace;
     mutable std::map< StateSpace , std::string >  mapStateSpace2String;
+    mutable int n_globalMem = 0;
 
     std::vector< BASEWordJIT* > vecStoring;
     bool usesSharedMem = false;
