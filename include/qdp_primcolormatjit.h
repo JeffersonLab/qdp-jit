@@ -446,6 +446,15 @@ template<class T, int N>
 inline typename UnaryReturn<PColorMatrixJIT<T,N>, FnPeekColorMatrixJIT>::Type_t
 peekColor(const PColorMatrixJIT<T,N>& l, int row, int col)
 {
+#if 1
+  typename UnaryReturn<PColorMatrixJIT<T,N>, FnPeekColorMatrixJIT>::Type_t  d( l.func() );
+    //d.elem() = l.elem(row,col);
+
+  d.elem() = l.getRegElem(row,col);
+
+  return d;
+
+#else
   int r_base = l.getRegAddr();
   
   int r_matidx = l.func().getRegs( Jit::s32 , 1 );
@@ -474,10 +483,8 @@ peekColor(const PColorMatrixJIT<T,N>& l, int row, int col)
 
   std::cout << "level = " << l.getLevel() << "   full = " << l.getFull() << "\n";
 
-  
-
-  //d.elem() = l.elem(row,col);
   return d;
+#endif
 }
 
 //! Insert color matrix components

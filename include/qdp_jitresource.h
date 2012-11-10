@@ -89,6 +89,26 @@ class JV {
       return jit;
     }
 
+    T getRegElem( int r_idx ) const {
+      int r_base = r_addr;
+  
+      int r_wordsize = jit.getRegs( Jit::s32 , 1 );
+      jit.asm_mov_literal( r_wordsize , (int)4 );
+
+      int r_full = jit.getRegs( Jit::s32 , 1 );
+      jit.asm_mov_literal( r_full , (int)off_full );
+  
+      jit.asm_mul( r_full , r_wordsize , r_full );
+      jit.asm_mul( r_full , r_full , r_idx );
+      int r_full_u64 = jit.getRegs( Jit::u64 , 1 );
+      jit.asm_cvt( r_full_u64 , r_full );
+      jit.asm_add( r_base , r_base , r_full_u64 );
+
+      // only level because ful*Index alreay in r_base
+      T ret( curry_t( jit , r_base , off_full * N , off_level ) );  
+      return ret;
+    }
+
     const std::array<T,N>& getF() const { return F; }
     std::array<T,N>& getF() { return F; }
 

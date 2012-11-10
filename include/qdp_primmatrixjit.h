@@ -155,6 +155,15 @@ public:
 #endif
 
 public:
+  T getRegElem(int row,int col) const {
+    int r_matidx = this->func().getRegs( Jit::s32 , 1 );
+    int r_N = this->func().getRegs( Jit::s32 , 1 );
+    this->func().asm_mov_literal( r_N , (int)N );
+    this->func().asm_mul( r_matidx , row , r_N );
+    this->func().asm_add( r_matidx , r_matidx , col );
+    return JV<T,N*N>::getRegElem( r_matidx );
+  }
+
   T& elem(int i, int j) {return JV<T,N*N>::getF()[j+N*i];}
   const T& elem(int i, int j) const {return JV<T,N*N>::getF()[j+N*i];}
 
