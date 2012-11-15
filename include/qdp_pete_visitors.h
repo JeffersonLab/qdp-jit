@@ -5,6 +5,11 @@
 namespace QDP {
 
 
+
+
+
+
+
 struct ShiftPhase1
 {
 };
@@ -102,6 +107,29 @@ struct AddressLeaf
     addr.push_back(t);
   }
 };
+
+
+  template<class LeafType, class LeafTag>
+  struct AddOpParam
+  { };
+
+  template<class LeafType>
+  struct AddOpParam<LeafType,ParamLeaf>
+  { 
+    static LeafType apply(const LeafType&, const ParamLeaf& p) { return LeafType(); }
+  };
+
+  template<class LeafType, class LeafTag>
+  struct AddOpAddress
+  { };
+
+  template<class LeafType>
+  struct AddOpAddress<LeafType,AddressLeaf>
+  { 
+    static void apply(const LeafType&, const AddressLeaf& p) {}
+  };
+
+
 
   
 }

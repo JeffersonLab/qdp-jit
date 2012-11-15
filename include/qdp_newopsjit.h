@@ -8,71 +8,38 @@ struct FnPeekColorMatrixJIT
 {
   FnPeekColorMatrixJIT(int _row, int _col): row(_row), col(_col) {}
 
-#if 1
   template<class T>
   inline typename UnaryReturn<T, FnPeekColorMatrixJIT>::Type_t
   operator()(const T &a) const
   {
     return (peekColor(a,row,col));
   }
-#else
-  template<class T>
-  inline typename UnaryReturn<T, FnPeekColorMatrixJIT>::Type_t
-  operator()(const T &a) const
-  {
-    int r_addr = a.func().addGlobalMemory( T::Size_t * sizeof(typename WordType<T>::Type_t) * Layout::sitesOnNode() ,
-					   a.func().getRegIdx() , sizeof(typename WordType<T>::Type_t) );
-
-    T tmp(curry_t(a.func(),r_addr,Layout::sitesOnNode(),0));
-    tmp = a;
-
-    return (peekColor(tmp,row,col));
-
-    typename UnaryReturn<T, FnPeekColorMatrixJIT>::Type_t d(a.func());
-    return d;    
-  }
-#endif
 
 private:
-  int row, col;
+  int row, col;   // these are registers
 };
 
 
-
-
-#if 0
-template<class T>
-struct ForEach<UnaryNode<FnPeekColorMatrix, Reference<QDPType< T, OLattice<T> > > >, ParamLeaf, TreeCombine>
+struct FnPokeColorMatrixJIT
 {
-  typedef typename ForEach<Reference<QDPType< T, OLattice<T> > >, ParamLeaf, TreeCombine>::Type_t TypeA_t;
-  typedef typename Combine1<TypeA_t, FnPeekColorMatrixJIT, TreeCombine>::Type_t Type_t;
-  inline static
-  Type_t apply(const UnaryNode<FnPeekColorMatrix, Reference<QDPType< T, OLattice<T> > > > &expr, const ParamLeaf &p, const TreeCombine &c)
+  FnPokeColorMatrixJIT(int _row, int _col): row(_row), col(_col) {}
+  
+  template<class T1, class T2>
+  inline typename BinaryReturn<T1, T2, FnPokeColorMatrixJIT>::Type_t
+  operator()(const T1 &a, const T2 &b) const
   {
-    std::cout << __PRETTY_FUNCTION__ << "\n";
-
-    int r_addr = p.getFunc().addGlobalMemory( sizeof(T) * Layout::sitesOnNode() ,
-					      p.getFunc().getRegIdx() , sizeof(typename WordType<T>::Type_t) );
-    std::cout << "r_addr = " << r_addr << " " << p.getFunc().getName(r_addr) << "\n";
-
-    OLatticeJIT< typename JITContainerType<T>::Type_t > tmp(p.getFunc(),r_addr,Jit::LatticeLayout::COAL);
-    std::cout << "000 \n";
-    typedef ForEach<Reference<QDPType< T, OLattice<T> > > , ParamLeaf, TreeCombine> AJit_t;
-    auto ejit = AJit_t::apply(expr.child(), p, c);
-    std::cout << "001 \n";
-
-    tmp.elem(0) = ejit.elem(0);
-
-    printme<decltype(ejit)>();
-    printme<TypeA_t>();
-
-    //const_cast<decltype(ejit)>(tmp),
-    return Combine1<TypeA_t, FnPeekColorMatrixJIT, TreeCombine>::
-      combine( std::move(tmp) ,
-              FnPeekColorMatrixJIT( p.getFunc().addParam( Jit::s32 ) , p.getFunc().addParam( Jit::s32 ) ) , c);
+    pokeColor(const_cast<T1&>(a),b,row,col);
+    return const_cast<T1&>(a);
   }
+
+private:
+  int row, col;   // these are registers
 };
-#else
+
+
+
+
+
 template<class A>
 struct ForEach<UnaryNode<FnPeekColorMatrix, A>, ParamLeaf, TreeCombine>
 {
@@ -86,7 +53,30 @@ struct ForEach<UnaryNode<FnPeekColorMatrix, A>, ParamLeaf, TreeCombine>
               FnPeekColorMatrixJIT( p.getFunc().addParam( Jit::s32 ) , p.getFunc().addParam( Jit::s32 ) ) , c);
   }
 };
-#endif
+  
+  
+  
+  template<>  
+  struct AddOpParam< FnPokeColorMatrix, ParamLeaf> {
+    static FnPokeColorMatrixJIT apply( const FnPokeColorMatrix& a, const ParamLeaf& p) {
+      std::cout << __PRETTY_FUNCTION__ << "\n";
+      return FnPokeColorMatrixJIT( p.getFunc().addParam( Jit::s32 ) , 
+				   p.getFunc().addParam( Jit::s32 ) );
+    }
+  };
+
+  template<>  
+  struct AddOpAddress< FnPokeColorMatrix, AddressLeaf> {
+    static void apply( const FnPokeColorMatrix& p, const AddressLeaf& a) {
+      std::cout << __PRETTY_FUNCTION__ << "\n";
+      int row = p.getRow();
+      int col = p.getCol();
+      std::cout << "set poke color matrix row,col = " << row << " " << col << "\n";
+      a.setLit( row );
+      a.setLit( col );
+    }
+  };
+
 
 
 template<class A>
@@ -100,6 +90,101 @@ struct ForEach<UnaryNode<FnPeekColorMatrix, A>, AddressLeaf, NullCombine>
       int row = expr.operation().getRow();
       int col = expr.operation().getCol();
       std::cout << "set peek color matrix row,col = " << row << " " << col << "\n";
+      a.setLit( row );
+      a.setLit( col );
+      return Type_t( ForEach<A, AddressLeaf, NullCombine>::apply( expr.child() , a , n ) );
+    }
+};
+
+
+  //////////////////////////////
+
+struct FnPeekSpinMatrixJIT
+{
+  FnPeekSpinMatrixJIT(int _row, int _col): row(_row), col(_col) {}
+
+  template<class T>
+  inline typename UnaryReturn<T, FnPeekSpinMatrixJIT>::Type_t
+  operator()(const T &a) const
+  {
+    return (peekSpin(a,row,col));
+  }
+
+private:
+  int row, col;   // these are registers
+};
+
+
+struct FnPokeSpinMatrixJIT
+{
+  FnPokeSpinMatrixJIT(int _row, int _col): row(_row), col(_col) {}
+  
+  template<class T1, class T2>
+  inline typename BinaryReturn<T1, T2, FnPokeSpinMatrixJIT>::Type_t
+  operator()(const T1 &a, const T2 &b) const
+  {
+    pokeSpin(const_cast<T1&>(a),b,row,col);
+    return const_cast<T1&>(a);
+  }
+
+private:
+  int row, col;   // these are registers
+};
+
+
+
+
+
+template<class A>
+struct ForEach<UnaryNode<FnPeekSpinMatrix, A>, ParamLeaf, TreeCombine>
+{
+  typedef typename ForEach<A, ParamLeaf, TreeCombine>::Type_t TypeA_t;
+  typedef typename Combine1<TypeA_t, FnPeekSpinMatrixJIT, TreeCombine>::Type_t Type_t;
+  inline static
+  Type_t apply(const UnaryNode<FnPeekSpinMatrix, A> &expr, const ParamLeaf &p, const TreeCombine &c)
+  {
+    return Combine1<TypeA_t, FnPeekSpinMatrixJIT, TreeCombine>::
+      combine(ForEach<A, ParamLeaf, TreeCombine>::apply(expr.child(), p, c),
+              FnPeekSpinMatrixJIT( p.getFunc().addParam( Jit::s32 ) , p.getFunc().addParam( Jit::s32 ) ) , c);
+  }
+};
+  
+  
+  
+  template<>  
+  struct AddOpParam< FnPokeSpinMatrix, ParamLeaf> {
+    static FnPokeSpinMatrixJIT apply( const FnPokeSpinMatrix& a, const ParamLeaf& p) {
+      std::cout << __PRETTY_FUNCTION__ << "\n";
+      return FnPokeSpinMatrixJIT( p.getFunc().addParam( Jit::s32 ) , 
+				   p.getFunc().addParam( Jit::s32 ) );
+    }
+  };
+
+  template<>  
+  struct AddOpAddress< FnPokeSpinMatrix, AddressLeaf> {
+    static void apply( const FnPokeSpinMatrix& p, const AddressLeaf& a) {
+      std::cout << __PRETTY_FUNCTION__ << "\n";
+      int row = p.getRow();
+      int col = p.getCol();
+      std::cout << "set poke spin matrix row,col = " << row << " " << col << "\n";
+      a.setLit( row );
+      a.setLit( col );
+    }
+  };
+
+
+
+template<class A>
+struct ForEach<UnaryNode<FnPeekSpinMatrix, A>, AddressLeaf, NullCombine>
+{
+    typedef typename ForEach< A , AddressLeaf, NullCombine>::Type_t TypeA_t;
+    typedef TypeA_t Type_t;
+    inline
+    static Type_t apply(const UnaryNode<FnPeekSpinMatrix, A>& expr, const AddressLeaf &a, const NullCombine &n)
+    {
+      int row = expr.operation().getRow();
+      int col = expr.operation().getCol();
+      std::cout << "set peek spin matrix row,col = " << row << " " << col << "\n";
       a.setLit( row );
       a.setLit( col );
       return Type_t( ForEach<A, AddressLeaf, NullCombine>::apply( expr.child() , a , n ) );

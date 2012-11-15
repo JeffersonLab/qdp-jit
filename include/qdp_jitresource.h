@@ -111,9 +111,7 @@ class JV {
       jit.asm_mul( r_full , r_full , r_idx );
       int r_full_u64 = jit.getRegs( Jit::u64 , 1 );
       jit.asm_cvt( r_full_u64 , r_full );
-      std::cout << "before adding " << "\n";
       jit.asm_add( r_base , r_base , r_full_u64 );
-      std::cout << "after adding " << "\n";
 
       // only level because ful*Index alreay in r_base
       T ret( curry_t( jit , r_base , off_full * N , off_level ) );  

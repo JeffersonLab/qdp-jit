@@ -13,7 +13,7 @@ template<class T, class T1, class Op, class RHS>
 CUfunction
 function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs)
 {
-  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   CUfunction func;
 
@@ -32,13 +32,15 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
   FuncRet_t dest_jit(forEach(dest, param_leaf_indexed, TreeCombine()));
 
+  auto op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
+
   // Now the arguments for the rhs
   typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
   View_t rhs_view(forEach(rhs, param_leaf_indexed, TreeCombine()));
 
   //printme<View_t>();
 
-  op(dest_jit.elem( 0 ), forEach(rhs_view, ViewLeaf( 0 ), OpCombine()));
+  op_jit(dest_jit.elem( 0 ), forEach(rhs_view, ViewLeaf( 0 ), OpCombine()));
 
 #if 1
   if (Layout::primaryNode())
@@ -447,6 +449,7 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
   AddressLeaf addr_leaf;
 
   int junk_dest = forEach(dest, addr_leaf, NullCombine());
+  AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
   int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
 
 

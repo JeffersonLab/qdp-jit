@@ -35,7 +35,7 @@ public:
 
   PMatrixJIT(curry_t c): JV<T,N*N>(c) {}
   PMatrixJIT(newspace_t n): JV<T,N*N>(n) {}
-  PMatrixJIT(newspace_t n,PMatrixJIT* orig): JV<T,N*N>(n,orig) {}
+  PMatrixJIT(newspace_t n,const PMatrixJIT* orig): JV<T,N*N>(n,orig) {}
 
   //! PMatrixJIT = PScalarJIT
   /*! Fill with primitive scalar */

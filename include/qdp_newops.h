@@ -165,6 +165,9 @@ struct FnPeekColorVector
     return (peekColor(a,row));
   }
 
+  int getRow() const { return row; }
+  //int getCol() const { return col; }
+
 private:
   int row;
 };
@@ -214,6 +217,9 @@ struct FnPeekSpinMatrix
     return (peekSpin(a,row,col));
   }
 
+  int getRow() const { return row; }
+  int getCol() const { return col; }
+
 private:
   int row, col;
 };
@@ -261,6 +267,9 @@ struct FnPeekSpinVector
   {
     return (peekSpin(a,row));
   }
+
+  int getRow() const { return row; }
+  //  int getCol() const { return col; }
 
 private:
   int row;
@@ -313,6 +322,9 @@ struct FnPokeColorMatrix
     pokeColor(const_cast<T1&>(a),b,row,col);
     return const_cast<T1&>(a);
   }
+
+  int getRow() const { return row; }
+  int getCol() const { return col; }
 
 private:
   int row, col;
@@ -387,6 +399,9 @@ struct FnPokeColorVector
     return const_cast<T1&>(a);
   }
 
+  int getRow() const { return row; }
+  //  int getCol() const { return col; }
+
 private:
   int row;
 };
@@ -459,6 +474,9 @@ struct FnPokeSpinMatrix
     return const_cast<T1&>(a);
   }
 
+  int getRow() const { return row; }
+  int getCol() const { return col; }
+
 private:
   int row, col;
 };
@@ -530,6 +548,9 @@ struct FnPokeSpinVector
     pokeSpin(const_cast<T1&>(a),b,row);
     return const_cast<T1&>(a);
   }
+
+  int getRow() const { return row; }
+  //  int getCol() const { return col; }
 
 private:
   int row;
