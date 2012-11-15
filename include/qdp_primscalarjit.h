@@ -1017,7 +1017,7 @@ getSite(const PScalarJIT<T>& s1, int innersite)
 //! Extract color vector components 
 /*! Generically, this is an identity operation. Defined differently under color */
 template<class T>
-inline typename UnaryReturn<PScalarJIT<T>, FnPeekColorVector>::Type_t
+inline typename UnaryReturn<PScalarJIT<T>, FnPeekColorVectorJIT>::Type_t
 peekColor(const PScalarJIT<T>& l, int row)
 {
   return peekColor(l.elem(),row);
@@ -1035,7 +1035,7 @@ peekColor(const PScalarJIT<T>& l, int row, int col)
 //! Extract spin vector components 
 /*! Generically, this is an identity operation. Defined differently under spin */
 template<class T>
-inline typename UnaryReturn<PScalarJIT<T>, FnPeekSpinVector>::Type_t
+inline typename UnaryReturn<PScalarJIT<T>, FnPeekSpinVectorJIT>::Type_t
 peekSpin(const PScalarJIT<T>& l, int row)
 {
   return peekSpin(l.elem(),row);
@@ -1044,7 +1044,7 @@ peekSpin(const PScalarJIT<T>& l, int row)
 //! Extract spin matrix components 
 /*! Generically, this is an identity operation. Defined differently under spin */
 template<class T>
-inline typename UnaryReturn<PScalarJIT<T>, FnPeekSpinMatrix>::Type_t
+inline typename UnaryReturn<PScalarJIT<T>, FnPeekSpinMatrixJIT>::Type_t
 peekSpin(const PScalarJIT<T>& l, int row, int col)
 {
   return peekSpin(l.elem(),row,col);
@@ -1068,8 +1068,6 @@ template<class T1, class T2>
 inline PScalarJIT<T1>&
 pokeColor(PScalarJIT<T1>& l, const PScalarJIT<T2>& r, int row, int col)
 {
-  std::cout << __PRETTY_FUNCTION__ << "\n";
-
   pokeColor(l.elem(),r.elem(),row,col);
   return l;
 }
