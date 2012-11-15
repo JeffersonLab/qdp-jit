@@ -112,7 +112,6 @@ struct DeReference
   typedef const T &Return_t;
   typedef T Type_t;
   static inline Return_t apply(const T &a) {       
-    std::cout << __PRETTY_FUNCTION__ << "\n";
     return a; 
   }
 };
@@ -123,7 +122,6 @@ struct DeReference<Reference<T> >
   typedef const T &Return_t;
   typedef T Type_t;
   static inline Return_t apply(const Reference<T> &a) { 
-    std::cout << __PRETTY_FUNCTION__ << "\n";
     return a.reference(); 
   }
 };
@@ -134,7 +132,6 @@ struct DeReference<QDP::QDPTypeJIT< T, QDP::OLatticeJIT<T> > >
   typedef const QDP::QDPTypeJIT< T, QDP::OLatticeJIT<T> > &Return_t;
   typedef QDP::QDPTypeJIT< T, QDP::OLatticeJIT<T> > Type_t;
   static inline Return_t apply(const QDP::QDPTypeJIT< T, QDP::OLatticeJIT<T> > &a) {
-    std::cout << __PRETTY_FUNCTION__ << "\n";
     return a; 
   }
 };
@@ -169,7 +166,6 @@ public:
   inline
   typename DeReference<Child>::Return_t
   child() const { 
-    std::cout << __PRETTY_FUNCTION__ << "\n";
     return DeReference<Child>::apply(child_m); 
   }
 
@@ -179,7 +175,6 @@ public:
   inline
   UnaryNode(const Op &o, const Child &c)
     : op_m(o), child_m(c) { 
-    std::cout << __PRETTY_FUNCTION__ << "\n";
   }
 
   // inline

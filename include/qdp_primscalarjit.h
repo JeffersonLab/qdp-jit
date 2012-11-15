@@ -64,20 +64,12 @@ public:
 
   template<class T1>
   PScalarJIT(const PScalarJIT<T1>& a) : JV<T,1>::JV( newspace_t( a.func() ) ) {
-    std::cout << __PRETTY_FUNCTION__ << "\n";
     elem() = a.elem();
   }
 
   PScalarJIT(const PScalarJIT& a) : JV<T,1>::JV(newspace_t(a.func()), &a ) {
-    std::cout << __PRETTY_FUNCTION__ << "\n";
     elem() = a.elem();
   }
-
-  // PScalarJIT(PScalarJIT&& a) : JV<T,1>::JV(newspace_t(a.func())) {
-  //   std::cout << __PRETTY_FUNCTION__ << "\n";
-  //   elem() = a.elem();
-  // }
-
 
 
 

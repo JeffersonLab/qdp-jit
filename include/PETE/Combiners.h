@@ -177,15 +177,8 @@ struct Combine1<A, Op, TreeCombine >
   inline static
   Type_t combine(const A &a, const Op &op, const TreeCombine &t)
   {
-    std::cout << __PRETTY_FUNCTION__ << "\n";
     return Type_t(op, a);
   }
-  // inline static
-  // Type_t combine(A &&a, const Op &op, const TreeCombine &t)
-  // {
-  //   std::cout << __PRETTY_FUNCTION__ << "\n";
-  //   return Type_t(op, std::move(a) );
-  // }
 };
 
 template<class A, class B, class Op>
@@ -234,7 +227,6 @@ struct Combine1<A, Op, OpCombine>
   typedef typename UnaryReturn<A, Op>::Type_t Type_t;
   inline static
   Type_t combine(const A& a, const Op& op, OpCombine) { 
-    std::cout << __PRETTY_FUNCTION__ << "\n";
     return op(a); 
   }
 };

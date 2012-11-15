@@ -44,14 +44,7 @@ class JV {
     enum { ThisSize = N };                 // Size in T's
     enum { Size_t = ThisSize * T::Size_t}; // Size in registers
 
-    ~JV() {
-      std::cout << __PRETTY_FUNCTION__ << "this=" << (void*)this << "\n";
-    }
-
-    JV(const JV& a): jit(a.jit), F(a.F) {
-      std::cout << __PRETTY_FUNCTION__ << "\n";
-      QDP_error_exit("JV(JV) not implemented");
-    }
+    ~JV() {}
 
     JV(newspace_t n) : JV(n, build_indices<N>{}) {}
     template<int... Is>
@@ -59,18 +52,10 @@ class JV {
       jit(n.jit), F{{(void(Is),n)...}} {}
 
 
-    JV(newspace_t n,const JV<T,N>* ptr) : JV(n,const_cast<JV<T,N>*>(ptr), build_indices<N>{}) {
-      std::cout << __PRETTY_FUNCTION__ << "\n";
-      std::cout << "JV newspace with " 
-		<< "this = " << (void*)this << "  "
-		<< "ptr = " << (void*)ptr << "  "
-		<< "\n";
-    }
+    JV(newspace_t n,const JV<T,N>* ptr) : JV(n,const_cast<JV<T,N>*>(ptr), build_indices<N>{}) {}
     template<int... Is>
     JV(newspace_t n,JV<T,N>* ptr, indices<Is...>) : 
-      jit(n.jit), off_full(ptr->off_full), off_level(ptr->off_level), r_addr(ptr->r_addr), F{{ T( n , &ptr->F[Is] )... }} {
-      std::cout << "set from orig: r_addr " << r_addr << " " << __PRETTY_FUNCTION__ << "\n";
-    }
+      jit(n.jit), off_full(ptr->off_full), off_level(ptr->off_level), r_addr(ptr->r_addr), F{{ T( n , &ptr->F[Is] )... }} {}
 
 
 #if 1
@@ -94,9 +79,7 @@ class JV {
 #endif
 
 
-    JV(curry_t c): JV(c,build_indices<N>{}) {
-      std::cout << __PRETTY_FUNCTION__ << "\n";
-    }
+    JV(curry_t c): JV(c,build_indices<N>{}) {}
     template<int... Indices>
     JV(curry_t c, indices<Indices...>)
       : jit(c.jit), 
@@ -104,9 +87,7 @@ class JV {
 	off_full(c.ful), 
 	off_level(c.lev),
 	F { { {curry_t( c.jit , c.r_addr , c.ful * N , c.lev + c.ful * Indices )}... } }
-    {
-      std::cout << "this = " << (void*)this << " " << __PRETTY_FUNCTION__ << "\n";
-    }
+    {}
 
 
 

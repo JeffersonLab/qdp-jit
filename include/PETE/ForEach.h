@@ -98,7 +98,6 @@ struct ForEach<UnaryNode<Op, A>, FTag, CTag>
   Type_t apply(const UnaryNode<Op, A> &expr, const FTag &f, 
     const CTag &c) 
   {
-    std::cout << __PRETTY_FUNCTION__ << "\n";
     return Combine1<TypeA_t, Op, CTag>::
       combine(ForEach<A, FTag, CTag>::apply(expr.child(), f, c),
               expr.operation(), c);

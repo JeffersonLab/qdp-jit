@@ -28,15 +28,8 @@ public:
 
   PColorMatrixJIT(curry_t c): PMatrixJIT<T, N, PColorMatrixJIT>(c) {}
   PColorMatrixJIT(newspace_t n): PMatrixJIT<T, N, PColorMatrixJIT>(n) {}
-  PColorMatrixJIT(newspace_t n,PColorMatrixJIT* orig): PMatrixJIT<T, N, PColorMatrixJIT>(n,orig) {
-    std::cout << __PRETTY_FUNCTION__ << "orig=" << (void*)orig << "\n";
-  }
+  PColorMatrixJIT(newspace_t n,PColorMatrixJIT* orig): PMatrixJIT<T, N, PColorMatrixJIT>(n,orig) { }
 
-#if 0
-  PColorMatrixJIT(const PColorMatrixJIT* rhs) {
-    std::cout << __PRETTY_FUNCTION__ << "\n";
-  }
-#endif
 
   //! PColorMatrixJIT = PScalarJIT
   /*! Fill with primitive scalar */

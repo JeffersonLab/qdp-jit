@@ -13,9 +13,6 @@ struct FnPeekColorMatrixJIT
   inline typename UnaryReturn<T, FnPeekColorMatrixJIT>::Type_t
   operator()(const T &a) const
   {
-    //return typename UnaryReturn<T, FnPeekColorMatrixJIT>::Type_t(a.func());
-    std::cout << "PeekColorJIT r_addr = " << a.getRegAddr() 
-	      << "\n";
     return (peekColor(a,row,col));
   }
 #else
@@ -84,7 +81,6 @@ struct ForEach<UnaryNode<FnPeekColorMatrix, A>, ParamLeaf, TreeCombine>
   inline static
   Type_t apply(const UnaryNode<FnPeekColorMatrix, A> &expr, const ParamLeaf &p, const TreeCombine &c)
   {
-    std::cout << __PRETTY_FUNCTION__ << "\n";
     return Combine1<TypeA_t, FnPeekColorMatrixJIT, TreeCombine>::
       combine(ForEach<A, ParamLeaf, TreeCombine>::apply(expr.child(), p, c),
               FnPeekColorMatrixJIT( p.getFunc().addParam( Jit::s32 ) , p.getFunc().addParam( Jit::s32 ) ) , c);

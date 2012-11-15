@@ -26,15 +26,6 @@ public:
   //! Copy constructor
   QDPTypeJIT(const QDPTypeJIT& a) : function(a.function), r_addr(a.r_addr), layout(a.layout), F(a.F) { }
 
-  // QDPTypeJIT( QDPTypeJIT&& a) : function(a.function), r_addr(a.r_addr), layout(a.layout), (std::move(a.Tptr)) {
-  //   std::cout << __PRETTY_FUNCTION__ 
-  // 	      << " new Tptr.count = " << Tptr.use_count() 
-  // 	      << " r_addr = " << r_addr 
-  // 	      << " Tptr->getRegAddr = " << Tptr->getRegAddr()
-  // 	      << " T ptr = " << (void*)&(*Tptr)
-  // 	      << "\n";
-  // }
-
   //! Destructor
   ~QDPTypeJIT(){}
 
@@ -174,8 +165,7 @@ struct LeafFunctor<QDPTypeJIT<T,C>, ViewLeaf>
   inline static
   Type_t apply(const QDPTypeJIT<T,C>& s, const ViewLeaf& v)
   { 
-    std::cout << __PRETTY_FUNCTION__ << "\n";
-    return std::move(s.elem( v.val1() ));
+    return s.elem( v.val1() );
   }
 };
 
