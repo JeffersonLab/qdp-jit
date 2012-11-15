@@ -111,7 +111,10 @@ struct DeReference
 {
   typedef const T &Return_t;
   typedef T Type_t;
-  static inline Return_t apply(const T &a) { return a; }
+  static inline Return_t apply(const T &a) {       
+    std::cout << __PRETTY_FUNCTION__ << "\n";
+    return a; 
+  }
 };
 
 template<class T>
@@ -119,8 +122,25 @@ struct DeReference<Reference<T> >
 {
   typedef const T &Return_t;
   typedef T Type_t;
-  static inline Return_t apply(const Reference<T> &a) { return a.reference(); }
+  static inline Return_t apply(const Reference<T> &a) { 
+    std::cout << __PRETTY_FUNCTION__ << "\n";
+    return a.reference(); 
+  }
 };
+
+template<class T>
+struct DeReference<QDP::QDPTypeJIT< T, QDP::OLatticeJIT<T> > >
+{
+  typedef const QDP::QDPTypeJIT< T, QDP::OLatticeJIT<T> > &Return_t;
+  typedef QDP::QDPTypeJIT< T, QDP::OLatticeJIT<T> > Type_t;
+  static inline Return_t apply(const QDP::QDPTypeJIT< T, QDP::OLatticeJIT<T> > &a) {
+    std::cout << __PRETTY_FUNCTION__ << "\n";
+    return a; 
+  }
+};
+
+
+
 
 //-----------------------------------------------------------------------------
 //
@@ -148,14 +168,25 @@ public:
 
   inline
   typename DeReference<Child>::Return_t
-  child() const { return DeReference<Child>::apply(child_m); }
+  child() const { 
+    std::cout << __PRETTY_FUNCTION__ << "\n";
+    return DeReference<Child>::apply(child_m); 
+  }
 
   //---------------------------------------------------------------------------
   // Constructor using both a operation and the child.
 
   inline
   UnaryNode(const Op &o, const Child &c)
-    : op_m(o), child_m(c) { }
+    : op_m(o), child_m(c) { 
+    std::cout << __PRETTY_FUNCTION__ << "\n";
+  }
+
+  // inline
+  // UnaryNode(const Op &o, Child &&c)
+  //   : op_m(o), child_m( std::move(c) ) {
+  //   std::cout << __PRETTY_FUNCTION__ << "\n";
+  // }
 
   //---------------------------------------------------------------------------
   // Constructor using just the child.

@@ -20,11 +20,20 @@ public:
     function(func_), 
     r_addr(addr_),
     layout(lay),
-    F( curry_t( func_ , addr_ , innerSites(), 0 ) )
-  {}
+    F(curry_t( func_ , addr_ , innerSites(), 0 ) )
+  { }
 
   //! Copy constructor
-  QDPTypeJIT(const QDPTypeJIT& a) : function(a.function), r_addr(a.r_addr), layout(a.layout), F(a.F) {}
+  QDPTypeJIT(const QDPTypeJIT& a) : function(a.function), r_addr(a.r_addr), layout(a.layout), F(a.F) { }
+
+  // QDPTypeJIT( QDPTypeJIT&& a) : function(a.function), r_addr(a.r_addr), layout(a.layout), (std::move(a.Tptr)) {
+  //   std::cout << __PRETTY_FUNCTION__ 
+  // 	      << " new Tptr.count = " << Tptr.use_count() 
+  // 	      << " r_addr = " << r_addr 
+  // 	      << " Tptr->getRegAddr = " << Tptr->getRegAddr()
+  // 	      << " T ptr = " << (void*)&(*Tptr)
+  // 	      << "\n";
+  // }
 
   //! Destructor
   ~QDPTypeJIT(){}
@@ -41,7 +50,7 @@ public:
   int getAddr() const { return r_addr; }
   int innerSites() const { return layout == Jit::LatticeLayout::COAL ? Layout::sitesOnNode() : 1; }
 
-  private:
+private:
   Jit::LatticeLayout layout;
   Jit& function;
   int  r_addr;
@@ -165,7 +174,8 @@ struct LeafFunctor<QDPTypeJIT<T,C>, ViewLeaf>
   inline static
   Type_t apply(const QDPTypeJIT<T,C>& s, const ViewLeaf& v)
   { 
-    return s.elem( v.val1() );
+    std::cout << __PRETTY_FUNCTION__ << "\n";
+    return std::move(s.elem( v.val1() ));
   }
 };
 

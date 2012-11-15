@@ -44,11 +44,33 @@ class JV {
     enum { ThisSize = N };                 // Size in T's
     enum { Size_t = ThisSize * T::Size_t}; // Size in registers
 
+    ~JV() {
+      std::cout << __PRETTY_FUNCTION__ << "this=" << (void*)this << "\n";
+    }
+
+    JV(const JV& a): jit(a.jit), F(a.F) {
+      std::cout << __PRETTY_FUNCTION__ << "\n";
+      QDP_error_exit("JV(JV) not implemented");
+    }
 
     JV(newspace_t n) : JV(n, build_indices<N>{}) {}
     template<int... Is>
     JV(newspace_t n, indices<Is...>) : 
-      jit(n.jit),  F{{(void(Is),n)...}} {}
+      jit(n.jit), F{{(void(Is),n)...}} {}
+
+
+    JV(newspace_t n,const JV<T,N>* ptr) : JV(n,const_cast<JV<T,N>*>(ptr), build_indices<N>{}) {
+      std::cout << __PRETTY_FUNCTION__ << "\n";
+      std::cout << "JV newspace with " 
+		<< "this = " << (void*)this << "  "
+		<< "ptr = " << (void*)ptr << "  "
+		<< "\n";
+    }
+    template<int... Is>
+    JV(newspace_t n,JV<T,N>* ptr, indices<Is...>) : 
+      jit(n.jit), off_full(ptr->off_full), off_level(ptr->off_level), r_addr(ptr->r_addr), F{{ T( n , &ptr->F[Is] )... }} {
+      std::cout << "set from orig: r_addr " << r_addr << " " << __PRETTY_FUNCTION__ << "\n";
+    }
 
 
 #if 1
@@ -72,7 +94,9 @@ class JV {
 #endif
 
 
-    JV(curry_t c): JV(c,build_indices<N>{}) {}
+    JV(curry_t c): JV(c,build_indices<N>{}) {
+      std::cout << __PRETTY_FUNCTION__ << "\n";
+    }
     template<int... Indices>
     JV(curry_t c, indices<Indices...>)
       : jit(c.jit), 
@@ -80,7 +104,9 @@ class JV {
 	off_full(c.ful), 
 	off_level(c.lev),
 	F { { {curry_t( c.jit , c.r_addr , c.ful * N , c.lev + c.ful * Indices )}... } }
-    {}
+    {
+      std::cout << "this = " << (void*)this << " " << __PRETTY_FUNCTION__ << "\n";
+    }
 
 
 
@@ -90,6 +116,8 @@ class JV {
     }
 
     T getRegElem( int r_idx ) const {
+      std::cout << __PRETTY_FUNCTION__ << "\n";
+
       int r_base = r_addr;
   
       int r_wordsize = jit.getRegs( Jit::s32 , 1 );
@@ -102,7 +130,9 @@ class JV {
       jit.asm_mul( r_full , r_full , r_idx );
       int r_full_u64 = jit.getRegs( Jit::u64 , 1 );
       jit.asm_cvt( r_full_u64 , r_full );
+      std::cout << "before adding " << "\n";
       jit.asm_add( r_base , r_base , r_full_u64 );
+      std::cout << "after adding " << "\n";
 
       // only level because ful*Index alreay in r_base
       T ret( curry_t( jit , r_base , off_full * N , off_level ) );  
@@ -115,8 +145,11 @@ class JV {
     int getLevel() const { return off_level; };
     int getFull() const { return off_full; };
     int getRegAddr() const { return r_addr; };
+    
+    //JV<T,N>* getOrig() const { return ptr_orig; }
  
   private:
+    //JV<T,N>* ptr_orig;
     Jit& jit;
     int off_full;
     int off_level;

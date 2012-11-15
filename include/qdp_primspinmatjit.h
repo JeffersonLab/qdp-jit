@@ -34,6 +34,9 @@ public:
 
   PSpinMatrixJIT(curry_t c): PMatrixJIT<T, N, PSpinMatrixJIT>(c) {}
   PSpinMatrixJIT(newspace_t n): PMatrixJIT<T, N, PSpinMatrixJIT>(n) {}
+  PSpinMatrixJIT(newspace_t n,PSpinMatrixJIT* orig): PMatrixJIT<T, N, PSpinMatrixJIT>(n,orig) {}
+
+  PSpinMatrixJIT(const PSpinMatrixJIT& a): PMatrixJIT<T, N, PSpinMatrixJIT>(newspace_t(a.func()), &a ) {}
 
   //! PSpinMatrixJIT = PScalarJIT
   /*! Fill with primitive scalar */

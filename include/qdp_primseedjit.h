@@ -36,6 +36,7 @@ public:
 
   PSeedJIT(curry_t c): JV<T,4>(c) {}
   PSeedJIT(newspace_t n): JV<T,4>(n) {}
+  PSeedJIT(newspace_t n,PSeedJIT* orig): JV<T,4>(n,orig) {}
 
   //! construct dest = const
   template<class T1>

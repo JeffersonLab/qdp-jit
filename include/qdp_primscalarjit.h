@@ -27,6 +27,7 @@ public:
 
   PScalarJIT(curry_t c): JV<T,1>(c) {}
   PScalarJIT(newspace_t n): JV<T,1>(n) {}
+  PScalarJIT(newspace_t n,PScalarJIT* orig): JV<T,1>(n,orig) {}
 
 
   //PScalarJIT(const PScalarJIT& a): JV<T,1>(a) {}
@@ -60,14 +61,22 @@ public:
   PScalarJIT(const PScalarJIT<T1>& rhs) : F(rhs.elem()) {}
 #endif
 
+
   template<class T1>
-  PScalarJIT(const PScalarJIT<T1>& a) : JV<T,1>::JV(newspace_t(a.func())) {
+  PScalarJIT(const PScalarJIT<T1>& a) : JV<T,1>::JV( newspace_t( a.func() ) ) {
+    std::cout << __PRETTY_FUNCTION__ << "\n";
     elem() = a.elem();
   }
 
-  PScalarJIT(const PScalarJIT& a) : JV<T,1>::JV(newspace_t(a.func())) {
+  PScalarJIT(const PScalarJIT& a) : JV<T,1>::JV(newspace_t(a.func()), &a ) {
+    std::cout << __PRETTY_FUNCTION__ << "\n";
     elem() = a.elem();
   }
+
+  // PScalarJIT(PScalarJIT&& a) : JV<T,1>::JV(newspace_t(a.func())) {
+  //   std::cout << __PRETTY_FUNCTION__ << "\n";
+  //   elem() = a.elem();
+  // }
 
 
 

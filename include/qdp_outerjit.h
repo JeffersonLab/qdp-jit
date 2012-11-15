@@ -121,6 +121,7 @@ namespace QDP {
     inline static
     Type_t apply(const OLatticeJIT<T>& s, const ViewLeaf& v)
     { 
+      std::cout << __PRETTY_FUNCTION__ << "\n";
       return s.elem( v.val1() );
     }
   };

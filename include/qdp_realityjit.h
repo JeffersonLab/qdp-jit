@@ -22,6 +22,7 @@ public:
 
   RScalarJIT(curry_t c): JV<T,1>(c) {}
   RScalarJIT(newspace_t n): JV<T,1>(n) {}
+  RScalarJIT(newspace_t n,RScalarJIT* orig): JV<T,1>(n,orig) {}
 
   template<class T1>
   RScalarJIT& operator=( const RScalarJIT<T1>& rhs) {
@@ -260,6 +261,7 @@ public:
 
   RComplexJIT(curry_t c): JV<T,2>(c) {}
   RComplexJIT(newspace_t n): JV<T,2>(n) {}
+  RComplexJIT(newspace_t n,RComplexJIT* orig): JV<T,2>(n,orig) {}
 
 #if 0
   RComplexJIT() {}

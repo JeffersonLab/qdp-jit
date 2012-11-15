@@ -62,6 +62,17 @@ namespace QDP {
       //std::cout << "WordJIT(Jit& func_ ) new space   regName = " << jit.getName(tmp) << " " << (void*)this << " " << (void*)&jit <<  "\n";
     }
 
+    //! New space , but copy
+    WordJIT(newspace_t n , WordJIT* orig ) : 
+      jit(n.jit), 
+      global_state(false),
+      literal(false) 
+    {
+      int tmp;
+      mapReg.insert( std::make_pair( JitRegType<T>::Val_t , tmp = jit.getRegs( JitRegType<T>::Val_t , 1 ) ) );
+      //std::cout << "WordJIT(Jit& func_ ) new space   regName = " << jit.getName(tmp) << " " << (void*)this << " " << (void*)&jit <<  "\n";
+    }
+
 
 
 

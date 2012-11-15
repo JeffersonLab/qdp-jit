@@ -35,7 +35,7 @@ public:
 
   PMatrixJIT(curry_t c): JV<T,N*N>(c) {}
   PMatrixJIT(newspace_t n): JV<T,N*N>(n) {}
-
+  PMatrixJIT(newspace_t n,PMatrixJIT* orig): JV<T,N*N>(n,orig) {}
 
   //! PMatrixJIT = PScalarJIT
   /*! Fill with primitive scalar */
@@ -148,19 +148,14 @@ public:
     }
 
 
-#if 0
-  PMatrixJIT(const PMatrixJIT& a) : JV<T,N*N>::JV(a) {
-    std::cout << "PMatrixJIT copy c-tor " << (void*)this << "\n";
-  }
-#endif
 
 public:
   T getRegElem(int row,int col) const {
     int r_matidx = this->func().getRegs( Jit::s32 , 1 );
     int r_N = this->func().getRegs( Jit::s32 , 1 );
     this->func().asm_mov_literal( r_N , (int)N );
-    this->func().asm_mul( r_matidx , row , r_N );
-    this->func().asm_add( r_matidx , r_matidx , col );
+    this->func().asm_mul( r_matidx , col , r_N );
+    this->func().asm_add( r_matidx , r_matidx , row );
     return JV<T,N*N>::getRegElem( r_matidx );
   }
 

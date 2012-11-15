@@ -34,6 +34,7 @@ public:
 
   PVectorJIT(curry_t c): JV<T,N>(c) {}
   PVectorJIT(newspace_t n): JV<T,N>(n) {}
+  PVectorJIT(newspace_t n,PVectorJIT* orig): JV<T,N>(n,orig) {}
 
 
   //! PVectorJIT = PVectorJIT

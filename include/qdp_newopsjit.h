@@ -6,10 +6,19 @@ namespace QDP {
 
 struct FnPeekColorMatrixJIT
 {
-  //PETE_EMPTY_CONSTRUCTORS(FnPeekColorMatrixJIT)
-
   FnPeekColorMatrixJIT(int _row, int _col): row(_row), col(_col) {}
-  
+
+#if 1
+  template<class T>
+  inline typename UnaryReturn<T, FnPeekColorMatrixJIT>::Type_t
+  operator()(const T &a) const
+  {
+    //return typename UnaryReturn<T, FnPeekColorMatrixJIT>::Type_t(a.func());
+    std::cout << "PeekColorJIT r_addr = " << a.getRegAddr() 
+	      << "\n";
+    return (peekColor(a,row,col));
+  }
+#else
   template<class T>
   inline typename UnaryReturn<T, FnPeekColorMatrixJIT>::Type_t
   operator()(const T &a) const
@@ -25,6 +34,7 @@ struct FnPeekColorMatrixJIT
     typename UnaryReturn<T, FnPeekColorMatrixJIT>::Type_t d(a.func());
     return d;    
   }
+#endif
 
 private:
   int row, col;
@@ -33,6 +43,39 @@ private:
 
 
 
+#if 0
+template<class T>
+struct ForEach<UnaryNode<FnPeekColorMatrix, Reference<QDPType< T, OLattice<T> > > >, ParamLeaf, TreeCombine>
+{
+  typedef typename ForEach<Reference<QDPType< T, OLattice<T> > >, ParamLeaf, TreeCombine>::Type_t TypeA_t;
+  typedef typename Combine1<TypeA_t, FnPeekColorMatrixJIT, TreeCombine>::Type_t Type_t;
+  inline static
+  Type_t apply(const UnaryNode<FnPeekColorMatrix, Reference<QDPType< T, OLattice<T> > > > &expr, const ParamLeaf &p, const TreeCombine &c)
+  {
+    std::cout << __PRETTY_FUNCTION__ << "\n";
+
+    int r_addr = p.getFunc().addGlobalMemory( sizeof(T) * Layout::sitesOnNode() ,
+					      p.getFunc().getRegIdx() , sizeof(typename WordType<T>::Type_t) );
+    std::cout << "r_addr = " << r_addr << " " << p.getFunc().getName(r_addr) << "\n";
+
+    OLatticeJIT< typename JITContainerType<T>::Type_t > tmp(p.getFunc(),r_addr,Jit::LatticeLayout::COAL);
+    std::cout << "000 \n";
+    typedef ForEach<Reference<QDPType< T, OLattice<T> > > , ParamLeaf, TreeCombine> AJit_t;
+    auto ejit = AJit_t::apply(expr.child(), p, c);
+    std::cout << "001 \n";
+
+    tmp.elem(0) = ejit.elem(0);
+
+    printme<decltype(ejit)>();
+    printme<TypeA_t>();
+
+    //const_cast<decltype(ejit)>(tmp),
+    return Combine1<TypeA_t, FnPeekColorMatrixJIT, TreeCombine>::
+      combine( std::move(tmp) ,
+              FnPeekColorMatrixJIT( p.getFunc().addParam( Jit::s32 ) , p.getFunc().addParam( Jit::s32 ) ) , c);
+  }
+};
+#else
 template<class A>
 struct ForEach<UnaryNode<FnPeekColorMatrix, A>, ParamLeaf, TreeCombine>
 {
@@ -41,11 +84,13 @@ struct ForEach<UnaryNode<FnPeekColorMatrix, A>, ParamLeaf, TreeCombine>
   inline static
   Type_t apply(const UnaryNode<FnPeekColorMatrix, A> &expr, const ParamLeaf &p, const TreeCombine &c)
   {
+    std::cout << __PRETTY_FUNCTION__ << "\n";
     return Combine1<TypeA_t, FnPeekColorMatrixJIT, TreeCombine>::
       combine(ForEach<A, ParamLeaf, TreeCombine>::apply(expr.child(), p, c),
               FnPeekColorMatrixJIT( p.getFunc().addParam( Jit::s32 ) , p.getFunc().addParam( Jit::s32 ) ) , c);
   }
 };
+#endif
 
 
 template<class A>

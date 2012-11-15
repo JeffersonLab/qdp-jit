@@ -26,6 +26,7 @@ public:
 
   PColorVectorJIT(curry_t c): PVectorJIT<T, N, PColorVectorJIT>(c) {}
   PColorVectorJIT(newspace_t n): PVectorJIT<T, N, PColorVectorJIT>(n) {}
+  PColorVectorJIT(newspace_t n,PColorVectorJIT* orig): PVectorJIT<T, N, PColorVectorJIT>(n,orig) {}
 
 
   //! PColorVectorJIT = PColorVectorJIT
