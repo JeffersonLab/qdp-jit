@@ -90,7 +90,8 @@ namespace QDP {
     int addParamScalarBaseAddr();
     int addParamIndexFieldAndOption();
     int addParamMemberArray(int r_index);
-    IndexRet addParamIndexFieldRcvBuf(int wordSize);
+    //IndexRet addParamIndexFieldRcvBuf(int wordSize);
+    IndexRet addParamIndexFieldRcvBuf(int r_idx,int wordSize);
     void addCondBranch_if(IndexRet i);
     void addCondBranch_else();
     void addCondBranch_fi();

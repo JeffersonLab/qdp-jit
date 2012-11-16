@@ -25,9 +25,13 @@ namespace RNG
   {
     //std::cout << __PRETTY_FUNCTION__ << "\n";
 
+    //dest.func().insert_label("before_seedToFloat");    
     dest = seedToFloat( skewed_seed ).elem().elem().elem();
 
+    //dest.func().insert_label("before_seed");    
     seed        = seed        * seed_mult.elem(0);
+
+    //dest.func().insert_label("before_skewed_seed");    
     skewed_seed = skewed_seed * seed_mult.elem(0);
 
 #if 0

@@ -78,6 +78,13 @@ namespace QDP {
 
     template <class T1>
     WordJIT& assign(const WordJIT<T1>& s1) {
+
+      // Check for self assignment
+      // if (this == &s1) {
+      // 	QDP_info("WordJIT& self assign, do nothing!");
+      // 	return *this;
+      // }
+
       if (global_state) {
 	mapReg.clear();
 	jit.asm_st( r_addr , offset_level * WordSize<T>::Size , s1.getReg( JitRegType<T>::Val_t ) );
@@ -86,11 +93,11 @@ namespace QDP {
 	//mapReg.clear();
 	jit.asm_mov( getReg( JitRegType<T>::Val_t ) , s1.getReg( JitRegType<T>::Val_t ) );
 
-#if 0
+#if 1
 	auto map_it = mapReg.begin();
 	while(map_it != mapReg.end())
 	  {
-	    if (map_it->second != JitRegType<T>::Val_t )
+	    if (map_it->first != JitRegType<T>::Val_t )
 	      {
 		mapReg.erase(map_it++);
 	      }

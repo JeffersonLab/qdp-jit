@@ -248,7 +248,7 @@ struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
 
       // I need dereferencing here since in case A is not a sub-expression
       // but a QDPType, EvalLeaf1 will return a reference, i.e. wrong word type (always 64 bit)
-      Jit::IndexRet index = p.getFunc().addParamIndexFieldRcvBuf( sizeof(typename WordType<typename DeReference<typename ForEach<A, EvalLeaf1, OpCombine>::Type_t>::Type_t>::Type_t) ); 
+      Jit::IndexRet index = p.getFunc().addParamIndexFieldRcvBuf( p.getRegIdx() ,  sizeof(typename WordType<typename DeReference<typename ForEach<A, EvalLeaf1, OpCombine>::Type_t>::Type_t>::Type_t) );
 
       ParamLeaf pp( p.getFunc() , index.r_newidx , Jit::LatticeLayout::COAL );
 

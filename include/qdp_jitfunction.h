@@ -7,8 +7,6 @@ namespace QDP {
 
 
 
-
-
 template<class T, class T1, class Op, class RHS>
 CUfunction
 function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs)
