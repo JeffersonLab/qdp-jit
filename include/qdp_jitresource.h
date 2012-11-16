@@ -97,7 +97,7 @@ class JV {
     }
 
     T getRegElem( int r_idx ) const {
-      std::cout << __PRETTY_FUNCTION__ << "\n";
+      //std::cout << __PRETTY_FUNCTION__ << "\n";
 
       int r_base = r_addr;
   

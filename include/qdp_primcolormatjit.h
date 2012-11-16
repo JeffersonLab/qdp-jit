@@ -459,9 +459,7 @@ inline PColorMatrixJIT<T1,N>&
 pokeColor(PColorMatrixJIT<T1,N>& l, const PScalarJIT<T2>& r, int row, int col)
 {
   // Note, do not need to propagate down since the function is eaten at this level
-  std::cout << __PRETTY_FUNCTION__ << "\n";
   l.getRegElem(row,col) = r.elem();
-  std::cout << "exit pokeColor" << "\n";
   return l;
 }
 
