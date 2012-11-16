@@ -59,7 +59,7 @@ struct ForEach<UnaryNode<FnPeekColorMatrix, A>, ParamLeaf, TreeCombine>
   template<>  
   struct AddOpParam< FnPokeColorMatrix, ParamLeaf> {
     static FnPokeColorMatrixJIT apply( const FnPokeColorMatrix& a, const ParamLeaf& p) {
-      std::cout << __PRETTY_FUNCTION__ << "\n";
+      //std::cout << __PRETTY_FUNCTION__ << "\n";
       return FnPokeColorMatrixJIT( p.getFunc().addParam( Jit::s32 ) , 
 				   p.getFunc().addParam( Jit::s32 ) );
     }
@@ -68,7 +68,7 @@ struct ForEach<UnaryNode<FnPeekColorMatrix, A>, ParamLeaf, TreeCombine>
   template<>  
   struct AddOpAddress< FnPokeColorMatrix, AddressLeaf> {
     static void apply( const FnPokeColorMatrix& p, const AddressLeaf& a) {
-      std::cout << __PRETTY_FUNCTION__ << "\n";
+      //std::cout << __PRETTY_FUNCTION__ << "\n";
       int row = p.getRow();
       int col = p.getCol();
       //std::cout << "set poke color matrix row,col = " << row << " " << col << "\n";
