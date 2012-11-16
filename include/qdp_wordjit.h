@@ -1020,10 +1020,13 @@ log(const WordJIT<T1>& s1)
 {
   typedef typename UnaryReturn<WordJIT<T1>, FnLog>::Type_t Ret_t;
   typedef typename WordType<Ret_t>::Type_t WT;
-  Ret_t tmp(s1.func());
-  tmp.func().asm_log( tmp.getReg( Jit::f32 ) , 
-		      s1.getReg( Jit::f32 ) );
-  return tmp;
+  Ret_t ret(s1.func());
+  Ret_t lg2(s1.func());
+  Ret_t val(s1.func());
+  s1.func().asm_mov_literal( val.getReg( Jit::f32 ) , (float)0.693147 );
+  s1.func().asm_lg2( lg2.getReg( Jit::f32 ) , s1.getReg( Jit::f32 ) );
+  s1.func().asm_mul( ret.getReg( Jit::f32 ) , lg2.getReg( Jit::f32 ) , val.getReg( Jit::f32 ) );
+  return ret;
 }
 
 // Log10

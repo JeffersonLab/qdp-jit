@@ -454,7 +454,7 @@ namespace QDP {
     oss_prg << "ex2.approx." << regptx[getRegType(dest)] << " " << getName(dest) << "," << getName(src) << ";\n";
   }
 
-  void Jit::asm_log(int dest,int src)
+  void Jit::asm_lg2(int dest,int src)
   {
     if ( getRegType(dest) != getRegType(src) || getRegType(src) != Jit::f32 ) {
       std::cout << "JIT::asm_log: type mismatch " 

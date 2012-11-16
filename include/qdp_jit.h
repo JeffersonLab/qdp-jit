@@ -74,7 +74,7 @@ namespace QDP {
     void asm_cos(int dest,int src);
     void asm_sin(int dest,int src);
     void asm_exp(int dest,int src);
-    void asm_log(int dest,int src);
+    void asm_lg2(int dest,int src);
     void asm_sqrt(int dest,int src);
 
     int addGlobalMemory( size_t s , int r_idx , int idx_multiplier );

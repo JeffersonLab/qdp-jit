@@ -680,7 +680,38 @@ private:
 };
 
 
+// Add this code if you need CPU shifts
+#if 1
+template<class A, class CTag>
+struct ForEach<UnaryNode<FnMap, A>, EvalLeaf1, CTag>
+{
+  typedef typename ForEach<A, EvalLeaf1, CTag>::Type_t TypeA_t;
+  typedef typename Combine1<TypeA_t, FnMap, CTag>::Type_t Type_t;
+  inline static
+  Type_t apply(const UnaryNode<FnMap, A> &expr, const EvalLeaf1 &f, const CTag &c)
+  {
+    const Map& map = expr.operation().map;
+    FnMap& fnmap = const_cast<FnMap&>(expr.operation());
+    
+    //     if (map.offnodeP) {
+    //       if (map.goffsets[f.val1()] < 0) {
+    // 	const FnMapRsrc& rRSrc = fnmap.getCached();
+    // 	const Type_t *recv_buf_c = rRSrc.getRecvBufPtr<Type_t>();
+    // 	Type_t* recv_buf = const_cast<Type_t*>(recv_buf_c);
+    // #if QDP_DEBUG >= 3
+    // 	if ( recv_buf == 0x0 ) { 
+    // 	  QDP_error_exit("QMP_get_memory_pointer returned NULL pointer from non NULL QMP_mem_t (recv_buf). Do you use shifts of shifts?"); 
+    // 	}
+    // #endif
+    // 	return recv_buf[-map.goffsets[f.val1()]-1];
+    //       } else {
 
+    EvalLeaf1 ff( map.goffsets[f.val1()] );
+    return Combine1<TypeA_t, FnMap, CTag>::combine(ForEach<A, EvalLeaf1, CTag>::apply(expr.child(), ff, c),expr.operation(), c);
+    //}
+  }
+};
+#endif
 
 
 
