@@ -86,13 +86,15 @@ function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScala
   typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
   FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
 
+  auto op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
+
   // Now the arguments for the rhs
   typedef typename ForEach<QDPExpr<RHS,OScalar<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
   View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
   //printme<View_t>();
 
-  op(dest_jit.elem( 0 ), forEach(rhs_view, ViewLeaf(0), OpCombine()));
+  op_jit(dest_jit.elem( 0 ), forEach(rhs_view, ViewLeaf(0), OpCombine()));
 
 #if 1
   if (Layout::primaryNode())
@@ -534,6 +536,7 @@ function_lat_sca_exec(CUfunction function, OLattice<T>& dest, const Op& op, cons
   AddressLeaf addr_leaf;
 
   int junk_dest = forEach(dest, addr_leaf, NullCombine());
+  AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
   int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
 
   // lo <= idx < hi
