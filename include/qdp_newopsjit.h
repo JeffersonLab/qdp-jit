@@ -71,7 +71,7 @@ struct ForEach<UnaryNode<FnPeekColorMatrix, A>, ParamLeaf, TreeCombine>
       std::cout << __PRETTY_FUNCTION__ << "\n";
       int row = p.getRow();
       int col = p.getCol();
-      std::cout << "set poke color matrix row,col = " << row << " " << col << "\n";
+      //std::cout << "set poke color matrix row,col = " << row << " " << col << "\n";
       a.setLit( row );
       a.setLit( col );
     }
@@ -89,7 +89,7 @@ struct ForEach<UnaryNode<FnPeekColorMatrix, A>, AddressLeaf, NullCombine>
     {
       int row = expr.operation().getRow();
       int col = expr.operation().getCol();
-      std::cout << "set peek color matrix row,col = " << row << " " << col << "\n";
+      //std::cout << "set peek color matrix row,col = " << row << " " << col << "\n";
       a.setLit( row );
       a.setLit( col );
       return Type_t( ForEach<A, AddressLeaf, NullCombine>::apply( expr.child() , a , n ) );
@@ -154,7 +154,7 @@ struct ForEach<UnaryNode<FnPeekSpinMatrix, A>, ParamLeaf, TreeCombine>
   template<>  
   struct AddOpParam< FnPokeSpinMatrix, ParamLeaf> {
     static FnPokeSpinMatrixJIT apply( const FnPokeSpinMatrix& a, const ParamLeaf& p) {
-      std::cout << __PRETTY_FUNCTION__ << "\n";
+      //std::cout << __PRETTY_FUNCTION__ << "\n";
       return FnPokeSpinMatrixJIT( p.getFunc().addParam( Jit::s32 ) , 
 				   p.getFunc().addParam( Jit::s32 ) );
     }
@@ -163,10 +163,10 @@ struct ForEach<UnaryNode<FnPeekSpinMatrix, A>, ParamLeaf, TreeCombine>
   template<>  
   struct AddOpAddress< FnPokeSpinMatrix, AddressLeaf> {
     static void apply( const FnPokeSpinMatrix& p, const AddressLeaf& a) {
-      std::cout << __PRETTY_FUNCTION__ << "\n";
+      //std::cout << __PRETTY_FUNCTION__ << "\n";
       int row = p.getRow();
       int col = p.getCol();
-      std::cout << "set poke spin matrix row,col = " << row << " " << col << "\n";
+      //std::cout << "set poke spin matrix row,col = " << row << " " << col << "\n";
       a.setLit( row );
       a.setLit( col );
     }
@@ -184,7 +184,7 @@ struct ForEach<UnaryNode<FnPeekSpinMatrix, A>, AddressLeaf, NullCombine>
     {
       int row = expr.operation().getRow();
       int col = expr.operation().getCol();
-      std::cout << "set peek spin matrix row,col = " << row << " " << col << "\n";
+      //std::cout << "set peek spin matrix row,col = " << row << " " << col << "\n";
       a.setLit( row );
       a.setLit( col );
       return Type_t( ForEach<A, AddressLeaf, NullCombine>::apply( expr.child() , a , n ) );
@@ -253,7 +253,7 @@ struct ForEach<UnaryNode<FnPeekColorVector, A>, ParamLeaf, TreeCombine>
   template<>  
   struct AddOpParam< FnPokeColorVector, ParamLeaf> {
     static FnPokeColorVectorJIT apply( const FnPokeColorVector& a, const ParamLeaf& p) {
-      std::cout << __PRETTY_FUNCTION__ << "\n";
+      //std::cout << __PRETTY_FUNCTION__ << "\n";
       return FnPokeColorVectorJIT( p.getFunc().addParam( Jit::s32 ) );
     }
   };
@@ -261,9 +261,9 @@ struct ForEach<UnaryNode<FnPeekColorVector, A>, ParamLeaf, TreeCombine>
   template<>  
   struct AddOpAddress< FnPokeColorVector, AddressLeaf> {
     static void apply( const FnPokeColorVector& p, const AddressLeaf& a) {
-      std::cout << __PRETTY_FUNCTION__ << "\n";
+      //std::cout << __PRETTY_FUNCTION__ << "\n";
       int row = p.getRow();
-      std::cout << "set poke color vector row,col = " << row << "\n";
+      //std::cout << "set poke color vector row,col = " << row << "\n";
       a.setLit( row );
     }
   };
@@ -279,7 +279,7 @@ struct ForEach<UnaryNode<FnPeekColorVector, A>, AddressLeaf, NullCombine>
     static Type_t apply(const UnaryNode<FnPeekColorVector, A>& expr, const AddressLeaf &a, const NullCombine &n)
     {
       int row = expr.operation().getRow();
-      std::cout << "set peek color vector row = " << row << "\n";
+      //std::cout << "set peek color vector row = " << row << "\n";
       a.setLit( row );
       return Type_t( ForEach<A, AddressLeaf, NullCombine>::apply( expr.child() , a , n ) );
     }
@@ -343,7 +343,7 @@ struct ForEach<UnaryNode<FnPeekSpinVector, A>, ParamLeaf, TreeCombine>
   template<>  
   struct AddOpParam< FnPokeSpinVector, ParamLeaf> {
     static FnPokeSpinVectorJIT apply( const FnPokeSpinVector& a, const ParamLeaf& p) {
-      std::cout << __PRETTY_FUNCTION__ << "\n";
+      //std::cout << __PRETTY_FUNCTION__ << "\n";
       return FnPokeSpinVectorJIT( p.getFunc().addParam( Jit::s32 ) );
     }
   };
@@ -351,9 +351,9 @@ struct ForEach<UnaryNode<FnPeekSpinVector, A>, ParamLeaf, TreeCombine>
   template<>  
   struct AddOpAddress< FnPokeSpinVector, AddressLeaf> {
     static void apply( const FnPokeSpinVector& p, const AddressLeaf& a) {
-      std::cout << __PRETTY_FUNCTION__ << "\n";
+      //std::cout << __PRETTY_FUNCTION__ << "\n";
       int row = p.getRow();
-      std::cout << "set poke spin vector row = " << row << "\n";
+      //std::cout << "set poke spin vector row = " << row << "\n";
       a.setLit( row );
     }
   };
@@ -369,7 +369,7 @@ struct ForEach<UnaryNode<FnPeekSpinVector, A>, AddressLeaf, NullCombine>
     static Type_t apply(const UnaryNode<FnPeekSpinVector, A>& expr, const AddressLeaf &a, const NullCombine &n)
     {
       int row = expr.operation().getRow();
-      std::cout << "set peek spin vector row = " << row << "\n";
+      //std::cout << "set peek spin vector row = " << row << "\n";
       a.setLit( row );
       return Type_t( ForEach<A, AddressLeaf, NullCombine>::apply( expr.child() , a , n ) );
     }

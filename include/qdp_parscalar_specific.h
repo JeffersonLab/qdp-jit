@@ -1370,6 +1370,8 @@ template<class T1>
 inline OScalar<T1>
 peekSite(const OLattice<T1>& l, const multi1d<int>& coord)
 {
+  std::cout << __PRETTY_FUNCTION__ << "\n";
+
   OScalar<T1> dest;
   int nodenum = Layout::nodeNumber(coord);
 
@@ -1420,6 +1422,8 @@ template<class T1>
 inline OLattice<T1>&
 pokeSite(OLattice<T1>& l, const OScalar<T1>& r, const multi1d<int>& coord)
 {
+  std::cout << __PRETTY_FUNCTION__ << "\n";
+
   if (Layout::nodeNumber() == Layout::nodeNumber(coord))
     l.elem(Layout::linearSiteIndex(coord)) = r.elem();
 
