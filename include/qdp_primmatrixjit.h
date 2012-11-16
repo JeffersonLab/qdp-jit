@@ -1484,9 +1484,9 @@ gather_sites(PMatrixJIT<T,N,C>& d,
 
 
 //! dest  = random  
-template<class T, int N, template<class,int> class C, class T1, class T2>
+template<class T, int N, template<class,int> class C, class T1, class T2, class T3>
 inline void
-fill_random(PMatrixJIT<T,N,C>& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
+fill_random(PMatrixJIT<T,N,C>& d, T1& seed, T2& skewed_seed, const T3& seed_mult)
 {
   // The skewed_seed is the starting seed to use
   for(int i=0; i < N; ++i)
