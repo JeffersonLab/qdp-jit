@@ -443,10 +443,10 @@ namespace QDP {
     oss_prg << "sin.approx." << regptx[getRegType(dest)] << " " << getName(dest) << "," << getName(src) << ";\n";
   }
 
-  void Jit::asm_exp(int dest,int src)
+  void Jit::asm_ex2(int dest,int src)
   {
     if ( getRegType(dest) != getRegType(src) || getRegType(src) != Jit::f32 ) {
-      std::cout << "JIT::asm_exp: type mismatch " 
+      std::cout << "JIT::asm_ex2: type mismatch " 
 		<< getRegType(dest) << " " 
 		<< getRegType(src) << "\n";
       exit(1);
@@ -457,7 +457,7 @@ namespace QDP {
   void Jit::asm_lg2(int dest,int src)
   {
     if ( getRegType(dest) != getRegType(src) || getRegType(src) != Jit::f32 ) {
-      std::cout << "JIT::asm_log: type mismatch " 
+      std::cout << "JIT::asm_lg2: type mismatch " 
 		<< getRegType(dest) << " " 
 		<< getRegType(src) << "\n";
       exit(1);

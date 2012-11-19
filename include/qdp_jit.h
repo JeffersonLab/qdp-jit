@@ -73,7 +73,7 @@ namespace QDP {
     void asm_cmp(CmpOp op,int pred,int lhs,int rhs);
     void asm_cos(int dest,int src);
     void asm_sin(int dest,int src);
-    void asm_exp(int dest,int src);
+    void asm_ex2(int dest,int src);
     void asm_lg2(int dest,int src);
     void asm_sqrt(int dest,int src);
 
