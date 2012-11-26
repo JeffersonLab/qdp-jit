@@ -1549,6 +1549,16 @@ fill_gaussian(PMatrix<T,N,C>& d, PMatrix<T,N,C>& r1, PMatrix<T,N,C>& r2)
       fill_gaussian(d.elem(i,j), r1.elem(i,j), r2.elem(i,j));
 }
 
+#if 0
+template<class T0,class T1,class T2, int N, 
+	 template<class,int> class C1,
+	 template<class,int> class C2>
+inline typename TrinaryReturn<PScalar<T0>, PMatrix<T1,N,C1>, PMatrix<T2,N,C2>, FnWhere >::Type_t
+do_where(const PScalar<T0> &a, const PMatrix<T1,N,C1> &b, const PMatrix<T2,N,C2> &c)
+{
+  if (toBool(a)) return b; else return c;
+}
+#endif
 
 
 #if 0
