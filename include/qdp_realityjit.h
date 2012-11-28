@@ -1705,24 +1705,28 @@ fill_random(RScalarJIT<T>& d, T1& seed, T2& skewed_seed, const T3& seed_mult)
 /*! Real form of complex polar method */
 template<class T>
 inline void
-fill_gaussian(const RScalarJIT<T>& d, RScalarJIT<T>& r1, RScalarJIT<T>& r2)
+fill_gaussian( RScalarJIT<T>& d, RScalarJIT<T>& r1, RScalarJIT<T>& r2)
 {
-  typedef typename InternalScalar<T>::Type_t  S;
+  T w_2pi(d.func());
+  T w_2(d.func());
+  T w_g_r(d.func());
+  T w_r1(d.func());
+  T w_r2(d.func());
 
-  // r1 and r2 are the input random numbers needed
+  w_r1 = r1.elem();
+  w_r2 = r2.elem();
 
-  /* Stage 2: get the cos of the second number  */
-  T  g_r;
+  w_2pi = (float)6.283185307;
+  w_2 = (float)2.0;
 
-  r2.elem() *= S(6.283185307);
-  g_r = cos(r2.elem());
-    
-  /* Stage 4: get  sqrt(-2.0 * log(u1)) */
-  r1.elem() = sqrt(-S(2.0) * log(r1.elem()));
+  w_r2 *= w_2pi;
+  w_g_r = cos(w_r2);
 
-  /* Stage 5:   g_r = sqrt(-2*log(u1))*cos(2*pi*u2) */
-  /* Stage 5:   g_i = sqrt(-2*log(u1))*sin(2*pi*u2) */
-  d.elem() = r1.elem() * g_r;
+  w_r1 = sqrt( -w_2 * log(w_r1) );
+
+  d.elem() = w_r1 * w_g_r;
+
+  //  fill_gaussian(d.elem(), r1.elem(), r2.elem());
 }
 
 /*! @} */   // end of group rscalar
@@ -2427,8 +2431,35 @@ get_pred(int& pred, const RScalarJIT<T>& d)
 /*! RComplexJIT polar method */
 template<class T>
 inline void
-fill_gaussian(const RComplexJIT<T>& d, RComplexJIT<T>& r1, RComplexJIT<T>& r2)
+fill_gaussian(RComplexJIT<T>& d, RComplexJIT<T>& r1, RComplexJIT<T>& r2)
 {
+  T w_2pi(d.func());
+  T w_2(d.func());
+  T w_g_r(d.func());
+  T w_g_i(d.func());
+  T w_r1_r(d.func());
+  T w_r2_r(d.func());
+  //T w_r1_i(d.func());
+  //T w_r2_i(d.func());
+
+  w_r1_r = r1.real();
+  w_r2_r = r2.real();
+  //w_r1_i = r1.imag();
+  //w_r2_i = r2.imag();
+
+  w_2pi = (float)6.283185307;
+  w_2 = (float)2.0;
+
+  w_r2_r *= w_2pi;
+  w_g_r = cos(w_r2_r);
+  w_g_i = sin(w_r2_r);
+
+  w_r1_r = sqrt( -w_2 * log(w_r1_r) );
+
+  d.real() = w_r1_r * w_g_r;
+  d.imag() = w_r1_r * w_g_i;
+
+#if 0
   typedef typename InternalScalar<T>::Type_t  S;
 
   // r1 and r2 are the input random numbers needed
@@ -2447,6 +2478,7 @@ fill_gaussian(const RComplexJIT<T>& d, RComplexJIT<T>& r1, RComplexJIT<T>& r2)
   /* Stage 5:   g_i = sqrt(-2*log(u1))*sin(2*pi*u2) */
   d.real() = r1.real() * g_r;
   d.imag() = r1.real() * g_i;
+#endif
 }
 
 /*! @} */  // end of group rcomplex

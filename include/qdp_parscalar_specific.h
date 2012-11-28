@@ -188,7 +188,7 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
   prof.time -= getClockTime();
 #endif
 
-#if 1
+#if 0
   OLattice<T> dest0;
   const int *tab = s.siteTable().slice();
   for(int j=0; j < s.numSiteTable(); ++j) 
@@ -423,19 +423,36 @@ void random(OLattice<T>& d)
 template<class T>
 void gaussian(OLattice<T>& d, const Subset& s)
 {
-  std::cout << __PRETTY_FUNCTION__ << "\n";
-
   OLattice<T>  r1, r2;
 
   random(r1,s);
   random(r2,s);
 
+  static CUfunction function;
+
+  // Build the function
+  if (function == NULL)
+    {
+      //std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
+      function = function_gaussian_build( d , r1 , r2 );
+      //std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
+    }
+  else
+    {
+      //std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
+    }
+
+  // Execute the function
+  function_gaussian_exec(function, d, r1, r2, s );
+
+#if 0
   const int *tab = s.siteTable().slice();
   for(int j=0; j < s.numSiteTable(); ++j) 
   {
     int i = tab[j];
     fill_gaussian(d.elem(i), r1.elem(i), r2.elem(i));
   }
+#endif
 }
 
 

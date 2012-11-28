@@ -195,7 +195,13 @@ namespace QDP {
       return *this;
     }
 
+    WordJIT& operator=( float rhs ) {
+      func().asm_mov_literal( this->getReg( Jit::f32 ) , rhs );
+    }
 
+    WordJIT& operator=( int rhs ) {
+      func().asm_mov_literal( this->getReg( Jit::s32 ) , rhs );
+    }
 
     int getReg( Jit::RegType type  ) const {
       //std::cout << "getReg type=" << type << "  mapReg.count(type)=" << mapReg.count(type) << "  mapReg.size()=" << mapReg.size() << "\n";
@@ -1504,13 +1510,6 @@ get_pred(int& pred, const WordJIT<T>& d)
 
 
 
-//! dest  = gaussian  
-template<class T>
-inline void
-fill_gaussian(WordJIT<T>& d, WordJIT<T>& r1, WordJIT<T>& r2)
-{
-  fill_gaussian(d.elem(), r1.elem(), r2.elem());
-}
 
 
 #if 1

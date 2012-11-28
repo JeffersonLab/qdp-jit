@@ -1412,7 +1412,7 @@ do_where(const PScalarJIT<T1> &a, const PScalarJIT<T2> &b, const PScalarJIT<T3> 
 //! dest  = gaussian  
 template<class T>
 inline void
-fill_gaussian(const PScalarJIT<T>& d, PScalarJIT<T>& r1, PScalarJIT<T>& r2)
+fill_gaussian(PScalarJIT<T>& d, PScalarJIT<T>& r1, PScalarJIT<T>& r2)
 {
   fill_gaussian(d.elem(), r1.elem(), r2.elem());
 }
