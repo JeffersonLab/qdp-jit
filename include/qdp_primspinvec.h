@@ -1042,6 +1042,18 @@ fill_gaussian(PSpinVector<T,N>& d, PSpinVector<T,N>& r1, PSpinVector<T,N>& r2)
     fill_gaussian(d.elem(i), r1.elem(i), r2.elem(i));
 }
 
+
+
+  template<class T0,class T1,class T2, int N >
+  inline typename TrinaryReturn<PScalar<T0>, PSpinVector<T1,N>, PSpinVector<T2,N>, FnWhere >::Type_t
+  do_where(const PScalar<T0> &a, const PSpinVector<T1,N> &b, const PSpinVector<T2,N> &c)
+{
+  if (toBool(a)) return b; else return c;
+}
+
+
+
+
 //-----------------------------------------------------------------------------
 // Operators
 //-----------------------------------------------------------------------------

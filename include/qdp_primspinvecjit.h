@@ -924,9 +924,9 @@ struct UnaryReturn<PSpinVectorJIT<T,N>, FnSpinReconstructDir3Minus > {
 
 
 //! dest  = random  
-template<class T, int N,  class T1, class T2>
+template<class T, int N,  class T1, class T2, class T3>
 inline void
-fill_random(const PSpinVectorJIT<T,N>& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
+fill_random(PSpinVectorJIT<T,N>& d, T1& seed, T2& skewed_seed, const T3& seed_mult)
 {
   // Loop over rows the slowest
   for(int i=0; i < N; ++i)
@@ -942,6 +942,27 @@ fill_gaussian(const PSpinVectorJIT<T,N>& d, PSpinVectorJIT<T,N>& r1, PSpinVector
   for(int i=0; i < N; ++i)
     fill_gaussian(d.elem(i), r1.elem(i), r2.elem(i));
 }
+
+
+  template<class T0,class T1,class T2, int N >
+  inline typename TrinaryReturn<PScalarJIT<T0>, PSpinVectorJIT<T1,N>, PSpinVectorJIT<T2,N>, FnWhere >::Type_t
+  do_where(const PScalarJIT<T0> &a, const PSpinVectorJIT<T1,N> &b, const PSpinVectorJIT<T2,N> &c)
+{
+  int pred;
+  get_pred( pred , a );
+
+  typename TrinaryReturn<PScalarJIT<T0>, PSpinVectorJIT<T1,N>, PSpinVectorJIT<T2,N>, FnWhere >::Type_t ret(a.func());
+
+  a.func().addCondBranchPred_if( pred );
+  ret = b;
+  a.func().addCondBranchPred_else();
+  ret = c;
+  a.func().addCondBranchPred_fi();
+
+  return ret;
+}
+
+
 
 //-----------------------------------------------------------------------------
 // Operators
