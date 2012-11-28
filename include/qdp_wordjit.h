@@ -1037,6 +1037,26 @@ log(const WordJIT<T1>& s1)
   return ret;
 }
 
+template<class T1>
+inline typename UnaryReturn<WordJIT<T1>, FnLog>::Type_t
+lg2(const WordJIT<T1>& s1)
+{
+  typedef typename UnaryReturn<WordJIT<T1>, FnLog>::Type_t Ret_t;
+  Ret_t ret(s1.func());
+  s1.func().asm_lg2( ret.getReg( Jit::f32 ) , s1.getReg( Jit::f32 ) );
+  return ret;
+}
+
+template<class T1>
+inline typename UnaryReturn<WordJIT<T1>, FnLog>::Type_t
+ex2(const WordJIT<T1>& s1)
+{
+  typedef typename UnaryReturn<WordJIT<T1>, FnLog>::Type_t Ret_t;
+  Ret_t ret(s1.func());
+  s1.func().asm_ex2( ret.getReg( Jit::f32 ) , s1.getReg( Jit::f32 ) );
+  return ret;
+}
+
 // Log10
 template<class T1>
 inline typename UnaryReturn<WordJIT<T1>, FnLog10>::Type_t
@@ -1108,7 +1128,21 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, FnPow>::Type_t
 pow(const WordJIT<T1>& s1, const WordJIT<T2>& s2)
 {
-  QDP_error_exit("pow not implemented");
+  typedef typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, FnPow>::Type_t Ret_t;
+
+        // ld.global.f32   %f1, pow_1;
+        // lg2.approx.f32  %f2, %f1;
+        // mov.f32         %f3, pow_2;
+        // mul.f32         %f4, %f2, %f3;
+        // ex2.approx.f32  %f5, %f4;
+
+  Ret_t ret(s1.func());
+
+  ret = ex2( lg2(s1) * s2 );
+
+  return ret;
+
+  //QDP_error_exit("pow not implemented");
   //  return pow(s1.elem(), s2.elem());
 }
 

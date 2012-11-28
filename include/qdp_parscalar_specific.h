@@ -1244,6 +1244,15 @@ globalMax(const QDPExpr<RHS,OScalar<T> >& s1)
 /*!
  * Find the maximum an object has across the lattice
  */
+#if 0
+template<class RHS, class T>
+typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t
+globalMax(const QDPExpr<RHS,OLattice<T> >& s1)
+{
+  OLattice<T> l(s1);
+  return globalMax(l);
+}
+#else
 template<class RHS, class T>
 typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t
 globalMax(const QDPExpr<RHS,OLattice<T> >& s1)
@@ -1281,6 +1290,7 @@ globalMax(const QDPExpr<RHS,OLattice<T> >& s1)
 
   return d;
 }
+#endif
 
 
 //! OScalar = globalMin(OScalar)
