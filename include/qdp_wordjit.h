@@ -259,17 +259,14 @@ namespace QDP {
 
   public:
     typedef std::map< Jit::RegType , int > MapRegType;
-    // std::vector< int > vecMovReg;
     bool global_state;
     bool literal;
-    bool needsStoring = false;
     T litVal;
     Jit&  jit;
     mutable MapRegType mapReg;
     int r_addr;
     int offset_full;
     int offset_level;
-    int condStoring = -1;
   };
 
   template<>  int WordJIT<bool>::getReg( Jit::RegType type ) const;
@@ -1130,21 +1127,16 @@ pow(const WordJIT<T1>& s1, const WordJIT<T2>& s2)
 {
   typedef typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, FnPow>::Type_t Ret_t;
 
-        // ld.global.f32   %f1, pow_1;
-        // lg2.approx.f32  %f2, %f1;
-        // mov.f32         %f3, pow_2;
-        // mul.f32         %f4, %f2, %f3;
-        // ex2.approx.f32  %f5, %f4;
-
   Ret_t ret(s1.func());
+
+
 
   ret = ex2( lg2(s1) * s2 );
 
   return ret;
-
-  //QDP_error_exit("pow not implemented");
-  //  return pow(s1.elem(), s2.elem());
 }
+
+
 
 //! WordJIT<T> = atan2(WordJIT<T> , WordJIT<T>)
 template<class T1, class T2>
