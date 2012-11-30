@@ -40,10 +40,21 @@ public:
 
   //! construct dest = const
   template<class T1>
-  PSeedJIT(const PScalarJIT<T1>& rhs) 
-    {
-      assign(rhs);
-    }
+  PSeedJIT(const PScalarJIT<T1>& rhs): JV<T,4>(newspace_t(rhs.func()))
+  {
+    assign(rhs);
+  }
+
+  PSeedJIT(const PSeedJIT& a): JV<T,4>(newspace_t(rhs.func()),&a)
+  {
+    assign(a);
+  }
+
+  template<class T1>
+  PSeedJIT(const PSeedJIT<T1>& a): JV<T,4>(newspace_t(rhs.func()))
+  {
+    assign(a);
+  }
 
 
   //! PSeedJIT = PScalarJIT
@@ -105,20 +116,6 @@ public:
       return *this;
     }
 
-#if 0
-  //! Deep copy constructor
-#if defined(QDP_USE_ARRAY_INITIALIZER)
-  /*! This is an array initializer form - may not be strictly legal */
-  PSeedJIT(const PSeedJIT& a) : F(a.F) {}
-#else
-  /*! This is a copy form - legal but not necessarily efficient */
-  PSeedJIT(const PSeedJIT& a)
-    {
-      for(int i=0; i < 4; ++i)
-	F[i] = a.F[i];
-    }
-#endif
-#endif
 
 public:
   T& elem(int i)             {return JV<T,4>::getF()[i]; }

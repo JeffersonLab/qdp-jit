@@ -31,6 +31,7 @@ public:
   PColorMatrixJIT(newspace_t n,PColorMatrixJIT* orig): PMatrixJIT<T, N, PColorMatrixJIT>(n,orig) { }
 
 
+
   //! PColorMatrixJIT = PScalarJIT
   /*! Fill with primitive scalar */
   template<class T1>
