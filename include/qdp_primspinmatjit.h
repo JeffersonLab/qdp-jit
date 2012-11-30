@@ -36,7 +36,16 @@ public:
   PSpinMatrixJIT(newspace_t n): PMatrixJIT<T, N, PSpinMatrixJIT>(n) {}
   PSpinMatrixJIT(newspace_t n,PSpinMatrixJIT* orig): PMatrixJIT<T, N, PSpinMatrixJIT>(n,orig) {}
 
-  PSpinMatrixJIT(const PSpinMatrixJIT& a): PMatrixJIT<T, N, PSpinMatrixJIT>(newspace_t(a.func()), &a ) {}
+  PSpinMatrixJIT(const PSpinMatrixJIT& a): PMatrixJIT<T, N, PSpinMatrixJIT>(newspace_t(a.func()), &a ) 
+  {
+    this->assign(a);
+  }
+
+  template<class T1>
+  PSpinMatrixJIT(const PSpinMatrixJIT<T1,N>& a): PMatrixJIT<T, N, PSpinMatrixJIT>(newspace_t(a.func() ) )
+  {
+    this->assign(a);
+  }
 
   //! PSpinMatrixJIT = PScalarJIT
   /*! Fill with primitive scalar */

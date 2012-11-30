@@ -2407,7 +2407,6 @@ template<class T>
 inline
 void zero_rep(RComplexJIT<T>& dest) 
 {
-  //std::cout << __PRETTY_FUNCTION__ << "\n";
   zero_rep(dest.real());
   zero_rep(dest.imag());
 }

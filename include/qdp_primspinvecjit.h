@@ -38,7 +38,19 @@ public:
   PSpinVectorJIT(newspace_t n,PSpinVectorJIT* orig): JV<T,N>(n,orig) {}
 
 
-  PSpinVectorJIT(const PSpinVectorJIT& a): JV<T,N>(newspace_t(a.func()), &a ) {}
+  template<class T1>
+  PSpinVectorJIT(const PSpinVectorJIT<T1,N>& a): JV<T,N>(newspace_t(a.func() ) )
+  {
+    for(int i=0; i < N; i++) 
+      elem(i) = a.elem(i);
+  }
+
+  PSpinVectorJIT(const PSpinVectorJIT& a): JV<T,N>(newspace_t(a.func()), &a ) 
+  {
+    for(int i=0; i < N; i++) 
+      elem(i) = a.elem(i);
+  }
+
 
   template<class T1>
   inline
