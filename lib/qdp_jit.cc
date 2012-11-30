@@ -221,6 +221,17 @@ namespace QDP {
     oss_prg << "@" << getName(pred) << " mov." << regptx[getRegType(dest)] << " " << getName(dest) << "," << getName(src) << ";\n";
   }
 
+  void Jit::asm_selp(int dest,int r0,int r1,int pred)
+  {
+    if ( getRegType(dest) != getRegType(r0) || getRegType(dest) != getRegType(r1) || getRegType(pred) != Jit::pred ) {
+      std::cout << "JIT::asm_selp type mismatch " << getRegType(dest) << " " << getRegType(r0) << " " << getRegType(r1) << " " << getRegType(pred) << "\n";
+      exit(1);
+    }
+    oss_prg << "selp." << regptx[getRegType(dest)] << " " << getName(dest) << "," << getName(r0) << "," << getName(r1) << "," << getName(pred) << ";\n";
+  }
+
+
+
   void Jit::asm_st(int base,int offset,int src)
   {
     if (mapStateSpace.count(base) < 1)
@@ -253,6 +264,133 @@ namespace QDP {
     oss_prg << "add." << regptx[getRegType(dest)] << " " << getName(dest) << "," << getName(lhs) << "," << getName(rhs) << ";\n";
   }
 
+  void Jit::asm_float_as_int(int dest,int src)
+  {
+    if ( getRegType(dest) != Jit::u32 || getRegType(src) != Jit::f32 ) {
+      std::cout << "JIT::asm_float_as_int: type mismatch " << getRegType(dest) << " " << getRegType(src) << "\n";
+      exit(1);
+    }
+    oss_prg << "mov.b32 " << getName(dest) << "," << getName(src) << ";\n";
+  }
+
+
+  void Jit::internal_asinf_kernel(int dest,int a) {
+    int a2 = getRegs(getRegType(dest),1);
+    int t = getRegs(getRegType(dest),1);
+    int r0 = getRegs(getRegType(dest),1);
+    int r1 = getRegs(getRegType(dest),1);
+    int r2 = getRegs(getRegType(dest),1);
+    int r3 = getRegs(getRegType(dest),1);
+    int r4 = getRegs(getRegType(dest),1);
+    asm_mov_literal(r0,(float)5.175137819e-002f);    
+    asm_mov_literal(r1,(float)1.816697683e-002f);
+    asm_mov_literal(r2,(float)4.675685871e-002f);
+    asm_mov_literal(r3,(float)7.484657646e-002f);
+    asm_mov_literal(r4,(float)1.666701424e-001f);
+    asm_mul(a2,a,a);
+    asm_mov(t,r0);
+    asm_fma(t,t,a2,r1);
+    asm_fma(t,t,a2,r2);
+    asm_fma(t,t,a2,r3);
+    asm_fma(t,t,a2,r4);
+    asm_mul(t,t,a2);
+    asm_fma(a,t,a,a);
+    asm_mov(dest,a);
+  }
+
+  // Code take from CUDA math function:
+#if 0
+  float __internal_asinf_kernel(float a) {
+    float a2, t;
+    a2 = a * a;
+    t =                         5.175137819e-002f;
+    t = __internal_fmad (t, a2, 1.816697683e-002f);
+    t = __internal_fmad (t, a2, 4.675685871e-002f);
+    t = __internal_fmad (t, a2, 7.484657646e-002f);
+    t = __internal_fmad (t, a2, 1.666701424e-001f);
+    t = t * a2;
+    a = __internal_fmad (t, a, a);
+    return a;
+  }
+#endif
+
+
+  void Jit::asm_acos(int dest,int a)
+  {
+    if ( getRegType(dest) != getRegType(a) || getRegType(dest) != Jit::f32 ) {
+      std::cout << "JIT::asm_acos: type mismatch " << getRegType(dest) << " " << getRegType(a) << "\n";
+      exit(1);
+    }
+    int t0 = getRegs(getRegType(dest),1);
+    int t1 = getRegs(getRegType(dest),1);
+    int t2 = getRegs(getRegType(dest),1);
+    int r0 = getRegs( Jit::s32 , 1 );
+    int r1 = getRegs(getRegType(dest),1);
+    int r2 = getRegs(getRegType(dest),1);
+    int r05 = getRegs(getRegType(dest),1);
+    int r057 = getRegs(getRegType(dest),1);
+    int rpi02 = getRegs(getRegType(dest),1);
+    int rpi = getRegs(getRegType(dest),1);
+    int ret0 = getRegs(getRegType(dest),1);
+    int ret1 = getRegs(getRegType(dest),1);
+    int ret2 = getRegs(getRegType(dest),1);
+    int aint = getRegs( Jit::u32 , 1 );
+    int pred = getRegs( Jit::pred , 1 );
+    asm_mov_literal(r0,(int)0.0);
+    asm_mov_literal(r1,(float)1.0);
+    asm_mov_literal(r2,(float)2.0);
+    asm_mov_literal(r05,(float)0.5);
+    asm_mov_literal(r057,(float)0.57);
+    asm_mov_literal(rpi,(float)3.14159);
+    asm_mov_literal(rpi02,(float)3.14159/2.0);
+    asm_abs(t0,a);
+    asm_sub(t2,r1,t0);
+    asm_mul(t2,r05,t2);
+    asm_sqrt(t2,t2);
+    asm_cmp(CmpOp::gt,pred, t0, r057 );
+    asm_selp(t1,t2,t0,pred);
+    internal_asinf_kernel(t1,t1);
+    asm_mul(ret0,r2,t1);
+    asm_sub(ret1,rpi02,t1);
+    asm_selp(t1,ret0,ret1,pred);
+    asm_float_as_int(aint,a);
+    asm_cmp_type(CmpOp::lt,pred, aint, r0 , Jit::s32 );
+    asm_sub(ret2,rpi,t1);
+    asm_cond_mov(pred,t1,ret2);
+    asm_mov(dest,t1);
+
+    // Code take from CUDA math function:
+#if 0
+    float t0, t1, t2;
+
+    t0 = fabsf(a);
+    t2 = 1.0f - t0;
+    t2 = 0.5f * t2;
+    t2 = sqrtf(t2);
+    t1 = t0 > 0.57f ? t2 : t0;
+    t1 = __internal_asinf_kernel(t1);
+    t1 = t0 > 0.57f ? 2.0f * t1 : CUDART_PIO2_F - t1;
+    if (__float_as_int(a) < 0) {
+      t1 = CUDART_PI_F - t1;
+    }
+    return t1;
+#endif
+  }
+
+
+  void Jit::asm_pow(int dest,int s1,int s2)
+  {
+    if ( getRegType(dest) != getRegType(s1) || getRegType(dest) != getRegType(s2) ) {
+      std::cout << "JIT::asm_pow: type mismatch " << getRegType(dest) << " " << getRegType(s1) << " " << getRegType(s2) << "\n";
+      exit(1);
+    }
+    int mul = getRegs(getRegType(dest),1);
+    int lg2 = getRegs(getRegType(dest),1);
+    asm_lg2( lg2 , s1 );
+    asm_mul( mul , lg2 , s2 );
+    asm_ex2( dest , mul );
+  }
+
   void Jit::asm_pred_to_01(int dest,int pred)
   {
     if ( getRegType(pred) != Jit::pred ) {
@@ -279,11 +417,20 @@ namespace QDP {
 
   void Jit::asm_cmp(CmpOp op,int pred,int lhs,int rhs)
   {
-    if ( getRegType(pred) != Jit::pred || getRegType(lhs) != getRegType(rhs) ) {
+    if ( getRegType(pred) != Jit::pred || mapBitType.at(getRegType(lhs)) != mapBitType.at(getRegType(rhs)) ) {
       std::cout << "JIT::asm_cmp: type mismatch " << getRegType(pred) << " " << getRegType(lhs) << " " << getRegType(rhs) << "\n";
       exit(1);
     }
     oss_prg << "setp." << mapCmpOp.at(op) << "." << regptx[getRegType(lhs)] << " " << getName(pred) << "," << getName(lhs) << "," << getName(rhs) << ";\n";
+  }
+
+  void Jit::asm_cmp_type(CmpOp op,int pred,int lhs,int rhs,RegType cmp_as)
+  {
+    if ( getRegType(pred) != Jit::pred || mapBitType.at(getRegType(lhs)) != mapBitType.at(getRegType(rhs)) ) {
+      std::cout << "JIT::asm_cmp_type: type mismatch " << getRegType(pred) << " " << getRegType(lhs) << " " << getRegType(rhs) << " " << cmp_as << "\n";
+      exit(1);
+    }
+    oss_prg << "setp." << mapCmpOp.at(op) << "." << regptx[cmp_as] << " " << getName(pred) << "," << getName(lhs) << "," << getName(rhs) << ";\n";
   }
 
   void Jit::asm_and(int dest,int lhs,int rhs)
@@ -420,6 +567,18 @@ namespace QDP {
     }
     oss_prg << "abs." << regptx[getRegType(dest)] << " " << getName(dest) << "," << getName(src) << ";\n";
   }
+
+#if 0
+  int Jit::getF32(int in) 
+  {
+    int ret = in;
+    if (getRegType(in) != Jit::f32) {
+      ret = getRegs( Jit::f32 , 1 );
+      asm_cvt( ret , in );
+    }
+    return ret;
+  }
+#endif
 
   void Jit::asm_cos(int dest,int src)
   {

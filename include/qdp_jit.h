@@ -50,10 +50,14 @@ namespace QDP {
       oss_prg << "mov." << regptx[getRegType(dest)] << " " << getName(dest) << "," << std::scientific << lit << ";\n";
     }
     int getTID();
+    //int getF32(int in);
+    void asm_selp(int dest,int r0,int r1,int pred);
+    void asm_float_as_int(int dest,int src);
     void asm_st(int base,int offset,int src);
     void asm_cond_st(int pred,int base,int offset,int src);
     void asm_ld(int dest,int base,int offset);
     void asm_add(int dest,int lhs,int rhs);
+    void asm_pow(int dest,int s1,int s2);
     void asm_and(int dest,int lhs,int rhs);
     void asm_or(int dest,int lhs,int rhs);
     void asm_sub(int dest,int lhs,int rhs);
@@ -62,6 +66,7 @@ namespace QDP {
     void asm_bitor(int dest,int lhs,int rhs);
     void asm_div(int dest,int lhs,int rhs);
     void asm_fma(int dest,int lhs,int rhs,int add);
+    void internal_asinf_kernel(int dest,int a);
     void asm_shl(int dest,int src,int bits);
     void asm_shr(int dest,int src,int bits);
     void asm_neg(int dest,int src);
@@ -71,11 +76,14 @@ namespace QDP {
     void asm_pred_to_01(int dest,int pred);
     void asm_01_to_pred(int pred,int src);
     void asm_cmp(CmpOp op,int pred,int lhs,int rhs);
+    void asm_cmp_type(CmpOp op,int pred,int lhs,int rhs,RegType cmp_as);
     void asm_cos(int dest,int src);
+    void asm_acos(int dest,int src);
     void asm_sin(int dest,int src);
     void asm_ex2(int dest,int src);
     void asm_lg2(int dest,int src);
     void asm_sqrt(int dest,int src);
+    void internal_asinf_kernel(int a);
 
     int addGlobalMemory( size_t s , int r_idx , int idx_multiplier );
 

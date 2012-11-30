@@ -927,8 +927,17 @@ template<class T1>
 inline typename UnaryReturn<WordJIT<T1>, FnArcCos>::Type_t
 acos(const WordJIT<T1>& s1)
 {
-  QDP_error_exit("acos not implemented");
-  //  return acos(s1.elem());
+  typedef typename UnaryReturn<WordJIT<T1>, FnArcCos>::Type_t Ret_t;
+  typedef typename WordType<Ret_t>::Type_t WT;
+
+  Ret_t ret(s1.func());
+  WordJIT<float> tmp(s1.func());
+
+  ret.func().asm_acos( tmp.getReg( Jit::f32 ) ,
+		       s1.getReg( Jit::f32 ) );
+  ret = tmp;
+
+  return ret;
 }
 
 // ArcSin
@@ -1126,10 +1135,23 @@ inline typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, FnPow>::Type_t
 pow(const WordJIT<T1>& s1, const WordJIT<T2>& s2)
 {
   typedef typename BinaryReturn<WordJIT<T1>, WordJIT<T2>, FnPow>::Type_t Ret_t;
+  typedef typename WordType<Ret_t>::Type_t WT;
 
   Ret_t ret(s1.func());
+  WordJIT<float> tmp(s1.func());
 
-  ret = ex2( lg2(s1) * s2 );
+#if 0
+  ret.func().asm_pow( ret.getReg( JitRegType<WT>::Val_t ) , 
+		      s1.getReg( JitRegType<WT>::Val_t ) ,
+		      s2.getReg( JitRegType<WT>::Val_t ) );
+#else
+  ret.func().asm_pow( tmp.getReg( Jit::f32 ) ,
+		      s1.getReg( Jit::f32 ) ,
+		      s2.getReg( Jit::f32 ) );
+  ret = tmp;
+#endif
+  
+  //ret = ex2( lg2(s1) * s2 );
 
   return ret;
 }
