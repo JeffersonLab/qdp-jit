@@ -1129,8 +1129,6 @@ pow(const WordJIT<T1>& s1, const WordJIT<T2>& s2)
 
   Ret_t ret(s1.func());
 
-
-
   ret = ex2( lg2(s1) * s2 );
 
   return ret;

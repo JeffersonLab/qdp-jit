@@ -54,9 +54,20 @@ public:
     {
       typedef typename InternalScalar<T1>::Type_t  S;
 
+      // elem(0) = rhs.elem() & S(rhs.func(),4095);
+      // elem(1) = (rhs.elem() >> S(rhs.func(),12)) & S(rhs.func(),4095);
+      // elem(2) = (rhs.elem() >> S(rhs.func(),24)) & S(rhs.func(),4095);
+
+      S s4095(rhs.func());
+      S s12(rhs.func());
+      S s24(rhs.func());
+      s4095 = 4095;
+      s12 = 12;
+      s24 = 24;
+
       elem(0) = rhs.elem() & S(rhs.func(),4095);
-      elem(1) = (rhs.elem() >> S(rhs.func(),12)) & S(rhs.func(),4095);
-      elem(2) = (rhs.elem() >> S(rhs.func(),24)) & S(rhs.func(),4095);
+      elem(1) = (rhs.elem() >> s12) & s4095;
+      elem(2) = (rhs.elem() >> s24) & s4095;
 //      elem(3) = (rhs.elem() >> S(36)) & S(2047);  // This probably will never be nonzero
       zero_rep(elem(3));    // assumes 32 bit integers
 
@@ -263,6 +274,14 @@ operator*(const PSeedJIT<T1>& s1, const PSeedJIT<T2>& s2)
   typedef typename InternalScalar<T>::Type_t  S;
   T  i0(s1.func()), i1(s1.func()), i2(s1.func()), i3(s1.func());
 
+  S s4095(s1.func());
+  S s2047(s1.func());
+  S s12(s1.func());
+  s4095 = 4095;
+  s2047 = 2047;
+  s12 = 12;
+
+
   /* i3 = s1(3)*s2(0) + s1(2)*s2(1) + s1(1)*s2(2) + s1(0)*s2(3) */
   i3  = s1.elem(3) * s2.elem(0);
   i3 += s1.elem(2) * s2.elem(1);
@@ -282,25 +301,32 @@ operator*(const PSeedJIT<T1>& s1, const PSeedJIT<T2>& s2)
   i0 = s1.elem(0) * s2.elem(0);
   
   /* dest(0) = mod(i0, 4096) */
-  d.elem(0) = i0 & S(s1.func(),4095);
+  //  d.elem(0) = i0 & S(s1.func(),4095);
+  d.elem(0) = i0 & s4095;
 
   /* i1 = i1 + i0/4096 */
-  i1 += i0 >> S(s1.func(),12);
+  i1 += i0 >> s12;
+  //i1 += i0 >> S(s1.func(),12);
 
   /* dest(1) = mod(i1, 4096) */
-  d.elem(1) = i1 & S(s1.func(),4095);
+  d.elem(1) = i1 & s4095;
+  //  d.elem(1) = i1 & S(s1.func(),4095);
 
   /* i2 = i2 + i1/4096 */
-  i2 += i1 >> S(s1.func(),12);
+  //  i2 += i1 >> S(s1.func(),12);
+  i2 += i1 >> s12;
 
   /* dest(2) = mod(i2, 4096) */
-  d.elem(2) = i2 & S(s1.func(),4095);
+  d.elem(2) = i2 & s4095;
+  //d.elem(2) = i2 & S(s1.func(),4095);
   /* i3 = i3 + i2/4096 */
-  i3 += i2 >> S(s1.func(),12);
+  i3 += i2 >> s12;
+  //  i3 += i2 >> S(s1.func(),12);
 
   /* dest(3) = mod(i3, 2048) */
-  d.elem(3) = i3 & S(s1.func(),2047);
-
+  d.elem(3) = i3 & s2047;
+  //d.elem(3) = i3 & S(s1.func(),2047);
+  
   return d;
 }
 

@@ -49,7 +49,7 @@ public:
   //! construct dest = const
 #endif
 
-  //RScalarJIT(const typename WordType<T>::Type_t& rhs) : JV<T,1>( NULL , rhs ) {}
+  RScalarJIT(const typename WordType<T>::Type_t& rhs) : JV<T,1>( NULL , rhs ) {}
 
 
   //! construct dest = rhs
