@@ -45,17 +45,18 @@ public:
     assign(rhs);
   }
 
-  PSeedJIT(const PSeedJIT& a): JV<T,4>(newspace_t(rhs.func()),&a)
+#if 0
+  PSeedJIT(const PSeedJIT& a): JV<T,4>(newspace_t(a.func()),&a)
   {
     assign(a);
   }
 
   template<class T1>
-  PSeedJIT(const PSeedJIT<T1>& a): JV<T,4>(newspace_t(rhs.func()))
+  PSeedJIT(const PSeedJIT<T1>& a): JV<T,4>(newspace_t(a.func()))
   {
     assign(a);
   }
-
+#endif
 
   //! PSeedJIT = PScalarJIT
   /*! Set equal to input scalar (an integer) */

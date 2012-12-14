@@ -188,7 +188,7 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
   prof.time -= getClockTime();
 #endif
 
-#if 0
+#if 1
   OLattice<T> dest0;
   const int *tab = s.siteTable().slice();
   for(int j=0; j < s.numSiteTable(); ++j) 
@@ -230,9 +230,9 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
     for(int w=0 ; w < sizeof(T)/sizeof(typename WordType<T>::Type_t) ; w++ ) {
       bool different = false;
       if (f_gpu[w] != 0) {
-	if ( ( fabs(f_gpu[w]) > 1.0e-5 ) &&
-	     ( fabs(f_cpu[w]) > 1.0e-5 ) )
-	  if ( fabs(f_cpu[w]/f_gpu[w]-1.0) > 0.1 ) 
+	if ( ( fabs(f_gpu[w]) > 1.0e-4 ) &&
+	     ( fabs(f_cpu[w]) > 1.0e-4 ) )
+	  if ( fabs(f_cpu[w]/f_gpu[w]-1.0) > 0.15 ) 
 	    different = true;
       } else {
 	if ( fabs(f_cpu[w]) > 1.0e-5 )
