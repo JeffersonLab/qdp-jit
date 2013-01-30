@@ -983,6 +983,7 @@ namespace QDP {
     tmp << ".param .u64 param" << nparam;
     param.push_back(tmp.str());
 
+    int r_param = getRegs( u64 , 1 );
     int r_ret = getRegs( u64 , 1 );
     oss_baseaddr << "ld.param.u64 " << getName(r_param) << ",[param" << nparam << "];  // lattice type\n";
     oss_baseaddr << "add.u64 " << getName(r_ret) << "," << getName(r_param) << "," << getName( getThreadIdMultiplied(r_idx,idx_multiplier) ) << ";\n";
