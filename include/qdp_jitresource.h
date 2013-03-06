@@ -99,15 +99,15 @@ class JV {
     T getRegElem( int r_idx ) const {
       //std::cout << __PRETTY_FUNCTION__ << "\n";
 
-      // The following calculates with the jitter
+      // The following expression is calculated
       //
-      // r_base = r_addr  +  r_idx * off_full * 4 
+      // r_base = r_addr  +  r_idx * off_full * wordsize
       //
 
       int r_base = r_addr;
   
       int r_wordsize = jit.getRegs( Jit::s32 , 1 );
-      jit.asm_mov_literal( r_wordsize , static_cast<int>(sizeof(WordType<T>::Type_t)) );
+      jit.asm_mov_literal( r_wordsize , static_cast<int>(sizeof(typename WordType<T>::Type_t)) );
 
       int r_full = jit.getRegs( Jit::s32 , 1 );
       jit.asm_mov_literal( r_full , (int)off_full );
