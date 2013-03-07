@@ -30,17 +30,13 @@ namespace QDP {
    * an inner lattice so the type could be represented as an length 4
    * array of lattice integers
    */
-  template <class T> class PSeedJIT : public JV<T,4>
+template <class T> class PSeedJIT : public BaseJIT<T,4>
 {
 public:
 
-  PSeedJIT(curry_t c): JV<T,4>(c) {}
-  PSeedJIT(newspace_t n): JV<T,4>(n) {}
-  PSeedJIT(newspace_t n,PSeedJIT* orig): JV<T,4>(n,orig) {}
-
   //! construct dest = const
   template<class T1>
-  PSeedJIT(const PScalarJIT<T1>& rhs): JV<T,4>(newspace_t(rhs.func()))
+  PSeedJIT(const PScalarJIT<T1>& rhs)
   {
     assign(rhs);
   }
@@ -119,10 +115,13 @@ public:
 
 
 public:
-  T& elem(int i)             {return JV<T,4>::getF()[i]; }
-  const T& elem(int i) const {return JV<T,4>::getF()[i]; }
+        T& elem(int i)       {return this->arrayF(i);}
+  const T& elem(int i) const {return this->arrayF(i);}
 
+  // T& elem(int i)             {return JV<T,4>::getF()[i]; }
+  // const T& elem(int i) const {return JV<T,4>::getF()[i]; }
 };
+
 
 
 template<class T> 

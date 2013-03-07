@@ -21,176 +21,179 @@ namespace QDP {
 
 //! Primitive Scalar
 /*! Placeholder for no primitive structure */
-  template<class T> class PScalarJIT : public JV<T,1>
-{
-public:
+  template<class T> class PScalarJIT : public BaseJIT<T,1>
+  {
+  public:
 
-  PScalarJIT(curry_t c): JV<T,1>(c) {}
-  PScalarJIT(newspace_t n): JV<T,1>(n) {}
-  PScalarJIT(newspace_t n,PScalarJIT* orig): JV<T,1>(n,orig) {}
+    // Default constructing should be possible
+    // then there is no need for MPL index when
+    // construction a PMatrix<T,N>
+    PScalarJIT() {}
+    ~PScalarJIT() {}
 
-
-  //PScalarJIT(const PScalarJIT& a): JV<T,1>(a) {}
-
-  //---------------------------------------------------------
-  //! PScalar = PScalar
-  /*! Set equal to another PScalar */
-  template<class T1>
-  PScalarJIT& operator=( const PScalarJIT<T1>& rhs) {
-    elem() = rhs.elem();
-    return *this;
-  }
-
-
-  PScalarJIT& operator=( const PScalarJIT& rhs) {
-    elem() = rhs.elem();
-    return *this;
-  }
+    template<class T1>
+    PScalarJIT& operator=( const PScalarREG<T1>& rhs) {
+      elem() = rhs.elem();
+      return *this;
+    }
 
 
 #if 0
-  PScalarJIT() {}
-  ~PScalarJIT() {}
-
-  //---------------------------------------------------------
-  //! construct dest = const
-  PScalarJIT(const typename WordType<T>::Type_t& rhs) : F(rhs) {}
-
-  //! construct dest = rhs
-  template<class T1>
-  PScalarJIT(const PScalarJIT<T1>& rhs) : F(rhs.elem()) {}
-#endif
+    //---------------------------------------------------------
+    //! PScalar = PScalar
+    /*! Set equal to another PScalar */
+    template<class T1>
+    PScalarJIT& operator=( const PScalarJIT<T1>& rhs) {
+      elem() = rhs.elem();
+      return *this;
+    }
 
 
-  template<class T1>
-  PScalarJIT(const PScalarJIT<T1>& a) : JV<T,1>::JV( newspace_t( a.func() ) ) {
-    elem() = a.elem();
-  }
-
-  PScalarJIT(const PScalarJIT& a) : JV<T,1>::JV(newspace_t(a.func()), &a ) {
-    elem() = a.elem();
-  }
+    PScalarJIT& operator=( const PScalarJIT& rhs) {
+      elem() = rhs.elem();
+      return *this;
+    }
 
 
 
-  // I keep this deactivated. Takes too much.
+    PScalarJIT() {}
+
+
+    //---------------------------------------------------------
+    //! construct dest = const
+    PScalarJIT(const typename WordType<T>::Type_t& rhs) : F(rhs) {}
+
+    //! construct dest = rhs
+    template<class T1>
+    PScalarJIT(const PScalarJIT<T1>& rhs) : F(rhs.elem()) {}
+
+
+    template<class T1>
+    PScalarJIT(const PScalarJIT<T1>& a) : JV<T,1>::JV( newspace_t( a.func() ) ) {
+      elem() = a.elem();
+    }
+
+    PScalarJIT(const PScalarJIT& a) : JV<T,1>::JV(newspace_t(a.func()), &a ) {
+      elem() = a.elem();
+    }
+
+
+
+    // I keep this deactivated. Takes too much.
 #if 0
-  template<class T1>
-  PScalarJIT(const T1& rhs) : JV<T,1>(newspace_t(rhs.func())) {
+    template<class T1>
+    PScalarJIT(const T1& rhs) : JV<T,1>(newspace_t(rhs.func())) {
       elem() = rhs;
-  }
+    }
 #endif
 
-  PScalarJIT(const T& rhs) : JV<T,1>(newspace_t(rhs.func())) {
+    PScalarJIT(const T& rhs) : JV<T,1>(newspace_t(rhs.func())) {
       elem() = rhs;
-  }
+    }
 
 
-  PScalarJIT(Jit& j,const typename WordType<T>::Type_t& w) : JV<T,1>(j,w) {
-  }
+    PScalarJIT(Jit& j,const typename WordType<T>::Type_t& w) : JV<T,1>(j,w) {
+    }
 
 
 
 
 
-  //! PScalarJIT += PScalarJIT
-  template<class T1>
-  inline
-  PScalarJIT& operator+=(const PScalarJIT<T1>& rhs) 
+    //! PScalarJIT += PScalarJIT
+    template<class T1>
+    inline
+    PScalarJIT& operator+=(const PScalarJIT<T1>& rhs) 
     {
       elem() += rhs.elem();
       return *this;
     }
 
-  //! PScalarJIT -= PScalarJIT
-  template<class T1>
-  inline
-  PScalarJIT& operator-=(const PScalarJIT<T1>& rhs) 
+    //! PScalarJIT -= PScalarJIT
+    template<class T1>
+    inline
+    PScalarJIT& operator-=(const PScalarJIT<T1>& rhs) 
     {
       elem() -= rhs.elem();
       return *this;
     }
 
-  //! PScalarJIT *= PScalarJIT
-  template<class T1>
-  inline
-  PScalarJIT& operator*=(const PScalarJIT<T1>& rhs) 
+    //! PScalarJIT *= PScalarJIT
+    template<class T1>
+    inline
+    PScalarJIT& operator*=(const PScalarJIT<T1>& rhs) 
     {
       elem() *= rhs.elem();
       return *this;
     }
 
-  //! PScalarJIT /= PScalarJIT
-  template<class T1>
-  inline
-  PScalarJIT& operator/=(const PScalarJIT<T1>& rhs) 
+    //! PScalarJIT /= PScalarJIT
+    template<class T1>
+    inline
+    PScalarJIT& operator/=(const PScalarJIT<T1>& rhs) 
     {
       elem() /= rhs.elem();
       return *this;
     }
 
-  //! PScalarJIT %= PScalarJIT
-  template<class T1>
-  inline
-  PScalarJIT& operator%=(const PScalarJIT<T1>& rhs) 
+    //! PScalarJIT %= PScalarJIT
+    template<class T1>
+    inline
+    PScalarJIT& operator%=(const PScalarJIT<T1>& rhs) 
     {
       elem() %= rhs.elem();
       return *this;
     }
 
-  //! PScalarJIT |= PScalarJIT
-  template<class T1>
-  inline
-  PScalarJIT& operator|=(const PScalarJIT<T1>& rhs) 
+    //! PScalarJIT |= PScalarJIT
+    template<class T1>
+    inline
+    PScalarJIT& operator|=(const PScalarJIT<T1>& rhs) 
     {
       elem() |= rhs.elem();
       return *this;
     }
 
-  //! PScalarJIT &= PScalarJIT
-  template<class T1>
-  inline
-  PScalarJIT& operator&=(const PScalarJIT<T1>& rhs) 
+    //! PScalarJIT &= PScalarJIT
+    template<class T1>
+    inline
+    PScalarJIT& operator&=(const PScalarJIT<T1>& rhs) 
     {
       elem() &= rhs.elem();
       return *this;
     }
 
-  //! PScalarJIT ^= PScalarJIT
-  template<class T1>
-  inline
-  PScalarJIT& operator^=(const PScalarJIT<T1>& rhs) 
+    //! PScalarJIT ^= PScalarJIT
+    template<class T1>
+    inline
+    PScalarJIT& operator^=(const PScalarJIT<T1>& rhs) 
     {
       elem() ^= rhs.elem();
       return *this;
     }
 
-  //! PScalarJIT <<= PScalarJIT
-  template<class T1>
-  inline
-  PScalarJIT& operator<<=(const PScalarJIT<T1>& rhs) 
+    //! PScalarJIT <<= PScalarJIT
+    template<class T1>
+    inline
+    PScalarJIT& operator<<=(const PScalarJIT<T1>& rhs) 
     {
       elem() <<= rhs.elem();
       return *this;
     }
 
-  //! PScalarJIT >>= PScalarJIT
-  template<class T1>
-  inline
-  PScalarJIT& operator>>=(const PScalarJIT<T1>& rhs) 
+    //! PScalarJIT >>= PScalarJIT
+    template<class T1>
+    inline
+    PScalarJIT& operator>>=(const PScalarJIT<T1>& rhs) 
     {
       elem() >>= rhs.elem();
       return *this;
     }
-
+#endif
   
-public:
-  inline       T& elem()       { return JV<T,1>::getF()[0]; }
-  inline const T& elem() const { return JV<T,1>::getF()[0]; }
-
-private:
-  //PScalarJIT(const PScalarJIT& a);
-};
+  public:
+    inline       T& elem()       { return this->arrayF(0); }
+    inline const T& elem() const { return this->arrayF(0); }
+  };
 
 
 
@@ -269,6 +272,20 @@ void read(XMLReader& xml, const string& path, PScalarJIT<T>& d)
 //-----------------------------------------------------------------------------
 // Traits classes 
 //-----------------------------------------------------------------------------
+
+template<class T> 
+struct WordSize< PScalarJIT<T> >
+{
+  enum { Size = WordSize<T>::Size };
+};
+
+
+template<class T> 
+struct REGType< PScalarJIT<T> >
+{
+  typedef PScalarREG<typename REGType<T>::Type_t>  Type_t;
+};
+
 
 // Underlying word type
 template<class T>
@@ -397,7 +414,7 @@ struct BinaryReturn<PScalarJIT<T1>, PScalarJIT<T2>, OpRightShiftAssign > {
 };
  
 
-
+#if 0
 
 //-----------------------------------------------------------------------------
 // Operators
@@ -1582,6 +1599,8 @@ gather_sites(PScalarJIT<T>& d,
 {
   gather_sites(d.elem(), s0.elem(), i0, s1.elem(), i1, s2.elem(), i2, s3.elem(), i3);
 }
+
+#endif
 
 /*! @} */  // end of group primscalar
 

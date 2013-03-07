@@ -32,17 +32,13 @@ template <class T, int N> class PSpinMatrixJIT : public PMatrixJIT<T, N, PSpinMa
 {
 public:
 
-  PSpinMatrixJIT(curry_t c): PMatrixJIT<T, N, PSpinMatrixJIT>(c) {}
-  PSpinMatrixJIT(newspace_t n): PMatrixJIT<T, N, PSpinMatrixJIT>(n) {}
-  PSpinMatrixJIT(newspace_t n,PSpinMatrixJIT* orig): PMatrixJIT<T, N, PSpinMatrixJIT>(n,orig) {}
-
-  PSpinMatrixJIT(const PSpinMatrixJIT& a): PMatrixJIT<T, N, PSpinMatrixJIT>(newspace_t(a.func()), &a ) 
+  PSpinMatrixJIT(const PSpinMatrixJIT& a)
   {
     this->assign(a);
   }
 
   template<class T1>
-  PSpinMatrixJIT(const PSpinMatrixJIT<T1,N>& a): PMatrixJIT<T, N, PSpinMatrixJIT>(newspace_t(a.func() ) )
+  PSpinMatrixJIT(const PSpinMatrixJIT<T1,N>& a)
   {
     this->assign(a);
   }

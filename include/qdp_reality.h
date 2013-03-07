@@ -419,16 +419,16 @@ struct WordSize< RComplex<T> >
 };
 
 template<class T> 
-struct JITContainerType<RScalar<T> >
+struct JITType<RScalar<T> >
 {
-  typedef RScalarJIT<typename JITContainerType<T>::Type_t>  Type_t;
+  typedef RScalarJIT<typename JITType<T>::Type_t>  Type_t;
 };
 
 
 template<class T> 
-struct JITContainerType<RComplex<T> >
+struct JITType<RComplex<T> >
 {
-  typedef RComplexJIT<typename JITContainerType<T>::Type_t>  Type_t;
+  typedef RComplexJIT<typename JITType<T>::Type_t>  Type_t;
 };
 
 

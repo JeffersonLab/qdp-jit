@@ -610,16 +610,16 @@ struct WordSize< OLattice<T> >
 
 
 template<class T> 
-struct JITContainerType<OLattice<T> >
+struct JITType<OLattice<T> >
 {
-  typedef OLatticeJIT<typename JITContainerType<T>::Type_t>  Type_t;
+  typedef OLatticeJIT<typename JITType<T>::Type_t>  Type_t;
 };
 
 
 template<class T> 
-struct JITContainerType<OScalar<T> >
+struct JITType<OScalar<T> >
 {
-  typedef OScalarJIT<typename JITContainerType<T>::Type_t>  Type_t;
+  typedef OScalarJIT<typename JITType<T>::Type_t>  Type_t;
 };
 
 
@@ -629,27 +629,31 @@ struct JITContainerType<OScalar<T> >
 template<class T>
 struct LeafFunctor<OLattice<T>, ParamLeaf>
 {
-  typedef typename JITContainerType< OLattice<T> >::Type_t  TypeA_t;
+  typedef typename JITType< OLattice<T> >::Type_t  TypeA_t;
   typedef TypeA_t  Type_t;
   inline static
   Type_t apply(const OLattice<T>& do_not_use, const ParamLeaf& p) 
   {
-    if (p.isCoal())
-      return Type_t( p.getFunc() , p.getParamLattice( WordSize<T>::Size ) , p.getLayout() );
-    else
-      return Type_t( p.getFunc() , p.getParamLattice( JITContainerType<T>::Type_t::Size_t * WordSize<T>::Size ) , p.getLayout() );
+    jit_value_t    base_addr = jit_add_param( p.getFunc() , jit_ptx_type::u64 );
+    jit_value_t    index     = p.getRegIdx();
+    jit_function_t function  = p.getFunc();
+    cout << "OLat ParamLeaf 3er\n";
+    return Type_t( function , base_addr , index );
   }
 };
 
 template<class T>
 struct LeafFunctor<OScalar<T>, ParamLeaf>
 {
-  typedef typename JITContainerType< OScalar<T> >::Type_t  TypeA_t;
+  typedef typename JITType< OScalar<T> >::Type_t  TypeA_t;
   typedef TypeA_t  Type_t;
   inline static
   Type_t apply(const OScalar<T>& do_not_use, const ParamLeaf& p) 
   {
-    return Type_t( p.getFunc() , p.getParamScalar() );
+    jit_value_t    base_addr = jit_add_param( p.getFunc() , jit_ptx_type::u64 );
+    jit_function_t function  = p.getFunc();
+    cout << "OScalar ParamLeaf 2er\n";
+    return Type_t( function , base_addr );
   }
 };
 

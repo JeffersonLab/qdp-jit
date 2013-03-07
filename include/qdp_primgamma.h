@@ -116,7 +116,7 @@ template<int N, int m> class GammaConstDP
 template<int N, int m>
 struct LeafFunctor<GammaConst<N,m>, ParamLeaf>
 {
-  //typedef typename JITContainerType< OScalar<T> >::Type_t  TypeA_t;
+  //typedef typename JITType< OScalar<T> >::Type_t  TypeA_t;
   typedef GammaConst<N,m> TypeA_t;
   typedef TypeA_t  Type_t;
   inline static
@@ -130,7 +130,7 @@ struct LeafFunctor<GammaConst<N,m>, ParamLeaf>
 template<int N, int m>
 struct LeafFunctor<GammaConst<N,m>, ViewLeaf>
 {
-  //typedef typename JITContainerType< OScalar<T> >::Type_t  TypeA_t;
+  //typedef typename JITType< OScalar<T> >::Type_t  TypeA_t;
   typedef GammaConst<N,m> TypeA_t;
   typedef TypeA_t  Type_t;
   inline static
@@ -172,7 +172,7 @@ struct LeafFunctor<GammaType<N>, AddressLeaf>
 template<int N, int m>
 struct LeafFunctor<GammaConstDP<N,m>, ParamLeaf>
 {
-  //typedef typename JITContainerType< OScalar<T> >::Type_t  TypeA_t;
+  //typedef typename JITType< OScalar<T> >::Type_t  TypeA_t;
   typedef GammaConstDP<N,m> TypeA_t;
   typedef TypeA_t  Type_t;
   inline static
@@ -186,7 +186,7 @@ struct LeafFunctor<GammaConstDP<N,m>, ParamLeaf>
 template<int N, int m>
 struct LeafFunctor<GammaConstDP<N,m>, ViewLeaf>
 {
-  //typedef typename JITContainerType< OScalar<T> >::Type_t  TypeA_t;
+  //typedef typename JITType< OScalar<T> >::Type_t  TypeA_t;
   typedef GammaConstDP<N,m> TypeA_t;
   typedef TypeA_t  Type_t;
   inline static

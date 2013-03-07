@@ -49,9 +49,9 @@ public:
 
 
   template<class T, int N> 
-  struct JITContainerType<PColorVector<T,N> >
+  struct JITType<PColorVector<T,N> >
   {
-    typedef PColorVectorJIT<typename JITContainerType<T>::Type_t,N>  Type_t;
+    typedef PColorVectorJIT<typename JITType<T>::Type_t,N>  Type_t;
   };
 
 

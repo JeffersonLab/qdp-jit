@@ -63,9 +63,9 @@ public:
 
 
   template<class T, int N> 
-  struct JITContainerType<PColorMatrix<T,N> >
+  struct JITType<PColorMatrix<T,N> >
   {
-    typedef PColorMatrixJIT<typename JITContainerType<T>::Type_t,N>  Type_t;
+    typedef PColorMatrixJIT<typename JITType<T>::Type_t,N>  Type_t;
   };
 
 

@@ -65,9 +65,9 @@ public:
 
 
   template<class T, int N> 
-  struct JITContainerType<PSpinMatrix<T,N> >
+  struct JITType<PSpinMatrix<T,N> >
   {
-    typedef PSpinMatrixJIT<typename JITContainerType<T>::Type_t,N>  Type_t;
+    typedef PSpinMatrixJIT<typename JITType<T>::Type_t,N>  Type_t;
   };
 
 

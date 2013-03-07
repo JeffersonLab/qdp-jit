@@ -27,19 +27,19 @@ void function_global_max_exec( CUfunction function,
 
     function.addParamIndexFieldAndOption();
     
-    OLatticeJIT<typename JITContainerType<T2>::Type_t> idata( function , 
+    OLatticeJIT<typename JITType<T2>::Type_t> idata( function , 
 							      function.addParamLatticeBaseAddr( function.getRegIdx() , 
-												JITContainerType<T2>::Type_t::Size_t * WordSize<T2>::Size ),
+												JITType<T2>::Type_t::Size_t * WordSize<T2>::Size ),
 							      InLayout );
-    OLatticeJIT<typename JITContainerType<T2>::Type_t> odata( function , 
+    OLatticeJIT<typename JITType<T2>::Type_t> odata( function , 
 							      function.addParamLatticeBaseAddr( function.getRegBlockIdx() , 
-												JITContainerType<T2>::Type_t::Size_t * WordSize<T2>::Size ),
+												JITType<T2>::Type_t::Size_t * WordSize<T2>::Size ),
 							      Jit::LatticeLayout::SCAL );
 
 
-    OLatticeJIT<typename JITContainerType<T2>::Type_t> sdata( function , 
+    OLatticeJIT<typename JITType<T2>::Type_t> sdata( function , 
 							      function.addSharedMemLatticeBaseAddr( function.getTID() , 
-												    JITContainerType<T2>::Type_t::Size_t * WordSize<T2>::Size ),
+												    JITType<T2>::Type_t::Size_t * WordSize<T2>::Size ),
 							      Jit::LatticeLayout::SCAL );
 
     //sdata.elem(0) += sdata.elem(0);
@@ -101,14 +101,14 @@ void function_global_max_exec( CUfunction function,
     int r_s_p_tid_u32 = function.getRegs( Jit::u32 , 1 );
     function.asm_cvt( r_s_p_tid_u32 , r_s_p_tid );
     int r_multiplier_u32 = function.getRegs( Jit::u32 , 1 );
-    function.asm_mov_literal( r_multiplier_u32 , (unsigned)JITContainerType<T2>::Type_t::Size_t * WordSize<T2>::Size );
+    function.asm_mov_literal( r_multiplier_u32 , (unsigned)JITType<T2>::Type_t::Size_t * WordSize<T2>::Size );
     int r_offset_u64 = function.getRegs( Jit::u64 , 1 );
     function.asm_mul( r_offset_u64 , r_s_p_tid_u32 , r_multiplier_u32 );
     int r_addr_u64 = function.getRegs( Jit::u64 , 1 );
     function.asm_add( r_addr_u64 , function.getSDATA() , r_offset_u64 );
     function.set_state_space( r_addr_u64 , Jit::SHARED );
 
-    typename JITContainerType<T2>::Type_t sdata_p( curry_t(function,r_addr_u64,1,0) );
+    typename JITType<T2>::Type_t sdata_p( curry_t(function,r_addr_u64,1,0) );
 
     function.asm_cmp( Jit::CmpOp::gt , r_pred_max , r_s , r_zero );
     function.addCondBranchPredToLabel( r_pred_s , "LOOP_S_END" );

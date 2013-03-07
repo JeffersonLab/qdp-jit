@@ -22,9 +22,9 @@ struct ShiftPhase2
 
 struct ViewLeaf
 {
-  int i1_m;
-  inline ViewLeaf(int i1) : i1_m(i1) { }
-  inline int val1() const { return i1_m; }
+  QDPTypeJITBase::DeviceLayout layout_m;
+  inline ViewLeaf(QDPTypeJITBase::DeviceLayout layout) : layout_m(layout) { }
+  inline QDPTypeJITBase::DeviceLayout getLayout() const { return layout_m; }
 };
   
 
@@ -32,36 +32,26 @@ struct ViewLeaf
 
 struct ParamLeaf
 {
-  Jit& func;  // Function we are building
-  mutable int r_idx;
-  Jit::LatticeLayout layout;
+  jit_value_t    index;
+  jit_function_t func;
 
-  //mutable int cnt;      // parameter count
-  //ParamLeaf(const Jit& func_, int cnt_) : func(func_), cnt(cnt_) { }
+  ParamLeaf( jit_function_t func_ , jit_value_t index_ ) : func(func_), index(index_) {}
+  //ParamLeaf(Jit& func_,int r_idx,Jit::LatticeLayout lay) : func(func_),r_idx(r_idx),layout(lay) {}
 
-  ParamLeaf(Jit& func_,int r_idx,Jit::LatticeLayout lay) : func(func_),r_idx(r_idx),layout(lay) {}
-
-#if 1
-  bool isCoal() const {
-    return layout == Jit::LatticeLayout::COAL; 
-  }
-#endif
-
-  Jit::LatticeLayout getLayout() const { return layout; }
-
-  Jit& getFunc() const {return func;}
-  int getRegIdx() const {return r_idx;}
-
-  int getParamLattice( int idx_multiplier ) const {
-    return func.addParamLatticeBaseAddr( r_idx , idx_multiplier );
-  }
-  int getParamScalar() const {
-    return func.addParamScalarBaseAddr();
-  }
-  int getParamIndexFieldAndOption() const {
-    return r_idx = func.addParamIndexFieldAndOption();
-  }
+  jit_value_t getRegIdx() const {return index;}
+  jit_function_t getFunc() const {return func;}
 };
+
+  // int getParamLattice( int idx_multiplier ) const {
+  //   return func.addParamLatticeBaseAddr( r_idx , idx_multiplier );
+  // }
+  // int getParamScalar() const {
+  //   return func.addParamScalarBaseAddr();
+  // }
+  // int getParamIndexFieldAndOption() const {
+  //   return r_idx = func.addParamIndexFieldAndOption();
+  // }
+
 
 
 

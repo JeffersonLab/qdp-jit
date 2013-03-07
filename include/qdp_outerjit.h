@@ -8,49 +8,14 @@ namespace QDP {
   class OLatticeJIT: public QDPTypeJIT<T, OLatticeJIT<T> >
   {
   public:
-    //! Create a view of the lattice object
-    // NOTE: This is the address of the original lattice object. No additional offset. 
+    OLatticeJIT( jit_function_t f_, 
+		 jit_value_t base_,
+		 jit_value_t index_) : QDPTypeJIT<T, OLatticeJIT<T> >(f_,base_,index_) {}
 
-    //OLatticeJIT(Jit& func_, int addr_) : function(func_), r_addr(addr_) {}
-
-#if 0
-    OLatticeJIT(const OLatticeJIT& a): 
-      QDPTypeJIT<T, OLatticeJIT<T> >( a.getFunc() , a.getAddr() ),
-      view( a.getFunc() , a.getAddr() , Layout::sitesOnNode() , 0 ) 
-    {
-      std::cout << "OLatJIT copy ctor " << (void*)this <<"\n";
-    }
-#endif
-
-
-    OLatticeJIT(Jit& func_, int addr_, Jit::LatticeLayout lay ) : 
-      QDPTypeJIT<T, OLatticeJIT<T> >(func_,addr_,lay)
-    {
-      //std::cout << "OLatJIT() constr " << (void*)this << " " << (void*)&func_ << "\n";
-    }
-
+    OLatticeJIT(const OLatticeJIT& rhs) : QDPTypeJIT<T, OLatticeJIT<T> >(rhs) {}
 
   private:
-    // These are not working yet
     void operator=(const OLatticeJIT& a);
-
-
-  public:
-    // inline T elem(unsigned site) {
-    //   //std::cout << "OLatJIT elem() \n";
-    //   return T( curry_t( QDPTypeJIT<T, OLatticeJIT<T> >::getFunc() , 
-    // 			 QDPTypeJIT<T, OLatticeJIT<T> >::getAddr(), 
-    // 			 QDPTypeJIT<T, OLatticeJIT<T> >::innerSites(), 
-    // 			 site ) );
-    // }
-    // inline const T elem(unsigned site) const {
-    //   //std::cout << "OLatJIT elem() \n";
-    //   return T( curry_t( QDPTypeJIT<T, OLatticeJIT<T> >::getFunc() , 
-    // 			 QDPTypeJIT<T, OLatticeJIT<T> >::getAddr(), 
-    // 			 QDPTypeJIT<T, OLatticeJIT<T> >::innerSites(), 
-    // 			 site ) );
-    // }
-    
   };
 
 
@@ -61,71 +26,14 @@ namespace QDP {
   class OScalarJIT: public QDPTypeJIT<T, OScalarJIT<T> >
   {
   public:
-    typedef T Subtype_t;
+    OScalarJIT( jit_function_t f_, 
+		jit_value_t base_ ) : QDPTypeJIT<T, OScalarJIT<T> >(f_,base_) {}
 
-    OScalarJIT(Jit& func_, int addr_) : 
-      QDPTypeJIT<T, OScalarJIT<T> >(func_,addr_,Jit::LatticeLayout::SCAL) {}
+    OScalarJIT(const OScalarJIT& rhs) : QDPTypeJIT<T, OScalarJIT<T> >(rhs) {}
 
   private:
-    // These are not working yet
     void operator=(const OScalarJIT& a) {}
-
-  public:
-    // inline T elem(unsigned site) {
-    //   std::cout << "OScaJIT elem(int) \n";
-    //   //return T(QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 1,0 );
-    //   return T( curry_t( QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), 
-    // 			 QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 
-    // 			 QDPTypeJIT<T, OScalarJIT<T> >::innerSites() , 0 ) );
-    // }
-    // inline const T elem(unsigned site) const {
-    //   std::cout << "OScaJIT elem(int) \n";
-    //   //return T(QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 1,0 );
-    //   return T( curry_t( QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), 
-    // 			 QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 
-    // 			 QDPTypeJIT<T, OScalarJIT<T> >::innerSites() , 0 ) );
-    // }
-    // inline T elem() {
-    //   std::cout << "OScaJIT elem() \n";
-    //   //return T(QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 1,0 );
-    //   return T( curry_t( QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), 
-    // 			 QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 
-    // 			 QDPTypeJIT<T, OScalarJIT<T> >::innerSites() , 0 ) );
-    // }
-    // inline const T elem() const {
-    //   std::cout << "OScaJIT elem() \n";
-    //   return T( curry_t( QDPTypeJIT<T, OScalarJIT<T> >::getFunc(), 
-    // 			 QDPTypeJIT<T, OScalarJIT<T> >::getAddr(), 
-    // 			 QDPTypeJIT<T, OScalarJIT<T> >::innerSites() , 0 ) );
-    // }
-
-
   };
-
-  template<class T>
-  struct LeafFunctor<OScalarJIT<T>, ViewLeaf>
-  {
-    typedef T Type_t;
-    inline static
-    Type_t apply(const OScalarJIT<T>& s, const ViewLeaf& v)
-    { 
-      return s.elem();
-    }
-  };
-
-
-  template<class T>
-  struct LeafFunctor<OLatticeJIT<T>, ViewLeaf>
-  {
-    typedef T Type_t;
-    inline static
-    Type_t apply(const OLatticeJIT<T>& s, const ViewLeaf& v)
-    { 
-      std::cout << __PRETTY_FUNCTION__ << "\n";
-      return s.elem( v.val1() );
-    }
-  };
-
 
 
 

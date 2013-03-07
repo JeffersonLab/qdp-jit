@@ -28,14 +28,11 @@ namespace QDP {
  * portion is a part of the generic class, hence it is called a domain
  * and not a category
  */
-  template <class T, int N, template<class,int> class C> class PMatrixJIT : public JV<T,N*N>
+  template <class T, int N, template<class,int> class C> class PMatrixJIT : public BaseJIT<T,N*N>
 {
 public:
   typedef C<T,N>  CC;
 
-  PMatrixJIT(curry_t c): JV<T,N*N>(c) {}
-  PMatrixJIT(newspace_t n): JV<T,N*N>(n) {}
-  PMatrixJIT(newspace_t n,const PMatrixJIT* orig): JV<T,N*N>(n,orig) {}
 
   //! PMatrixJIT = PScalarJIT
   /*! Fill with primitive scalar */
@@ -151,16 +148,23 @@ public:
 
 public:
   T getRegElem(int row,int col) const {
+    assert(!"ni");
+#if 0
     int r_matidx = this->func().getRegs( Jit::s32 , 1 );
     int r_N = this->func().getRegs( Jit::s32 , 1 );
     this->func().asm_mov_literal( r_N , (int)N );
     this->func().asm_mul( r_matidx , col , r_N );
     this->func().asm_add( r_matidx , r_matidx , row );
     return JV<T,N*N>::getRegElem( r_matidx );
+#endif
   }
 
-  T& elem(int i, int j) {return JV<T,N*N>::getF()[j+N*i];}
-  const T& elem(int i, int j) const {return JV<T,N*N>::getF()[j+N*i];}
+        T& elem(int i, int j)       {return this->arrayF(j+N*i);}
+  const T& elem(int i, int j) const {return this->arrayF(j+N*i);}
+
+
+  // T& elem(int i, int j) {return JV<T,N*N>::getF()[j+N*i];}
+  // const T& elem(int i, int j) const {return JV<T,N*N>::getF()[j+N*i];}
 
 };
 

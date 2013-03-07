@@ -205,9 +205,9 @@ XMLWriter& operator<<(XMLWriter& xml, const PSpinVector<T,N>& d)
 
 
   template<class T, int N> 
-  struct JITContainerType<PSpinVector<T,N> >
+  struct JITType<PSpinVector<T,N> >
   {
-    typedef PSpinVectorJIT<typename JITContainerType<T>::Type_t,N>  Type_t;
+    typedef PSpinVectorJIT<typename JITType<T>::Type_t,N>  Type_t;
   };
 
 

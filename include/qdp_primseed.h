@@ -116,9 +116,9 @@ struct WordSize< PSeed<T> >
 
 
 template<class T> 
-struct JITContainerType<PSeed<T> >
+struct JITType<PSeed<T> >
 {
-  typedef PSeedJIT<typename JITContainerType<T>::Type_t>  Type_t;
+  typedef PSeedJIT<typename JITType<T>::Type_t>  Type_t;
 };
 
 

@@ -34,8 +34,6 @@ public:
   //! Type of the container class
   typedef C Container_t;
 
-  QDPType(Jit& func_, int addr_) : C::C(func_,addr_) {}
-
   //! Main constructor 
   QDPType(){}
 
@@ -464,28 +462,31 @@ struct LeafFunctor<QDPType<T,C>, EvalLeaf1>
 template<class T>
 struct LeafFunctor<QDPType<T,OLattice<T> >, ParamLeaf>
 {
-  typedef QDPTypeJIT<typename JITContainerType<T>::Type_t,typename JITContainerType<OLattice<T> >::Type_t>  TypeA_t;
-  //typedef typename JITContainerType< OLattice<T> >::Type_t  TypeA_t;
+  typedef QDPTypeJIT<typename JITType<T>::Type_t,typename JITType<OLattice<T> >::Type_t>  TypeA_t;
+  //typedef typename JITType< OLattice<T> >::Type_t  TypeA_t;
   typedef TypeA_t  Type_t;
   inline static Type_t apply(const QDPType<T,OLattice<T> > &a, const ParamLeaf& p)
   {
-    if (p.isCoal())
-      return Type_t( p.getFunc() , p.getParamLattice( WordSize<T>::Size ) , p.getLayout() );
-    else
-      return Type_t( p.getFunc() , p.getParamLattice( JITContainerType<T>::Type_t::Size_t * WordSize<T>::Size ) , p.getLayout() );
-    //    return Type_t( p.getFunc() , p.getParamLattice( WordSize<T>::Size ) , p.getLayout() );
+    jit_value_t    base_addr = jit_add_param( p.getFunc() , jit_ptx_type::u64 );
+    jit_value_t    index     = p.getRegIdx();
+    jit_function_t function  = p.getFunc();
+    cout << "QDPTypeOLat ParamLeaf 3er\n";
+    return Type_t( function , base_addr , index );
   }
 };
 
 template<class T>
 struct LeafFunctor<QDPType<T,OScalar<T> >, ParamLeaf>
 {
-  typedef QDPTypeJIT<typename JITContainerType<T>::Type_t,typename JITContainerType<OScalar<T> >::Type_t>  TypeA_t;
-  //typedef typename JITContainerType< OScalar<T> >::Type_t  TypeA_t;
+  typedef QDPTypeJIT<typename JITType<T>::Type_t,typename JITType<OScalar<T> >::Type_t>  TypeA_t;
+  //typedef typename JITType< OScalar<T> >::Type_t  TypeA_t;
   typedef TypeA_t  Type_t;
   inline static Type_t apply(const QDPType<T,OScalar<T> > &a, const ParamLeaf& p)
   {
-    return Type_t( p.getFunc() , p.getParamScalar() , Jit::LatticeLayout::SCAL );
+    jit_value_t    base_addr = jit_add_param( p.getFunc() , jit_ptx_type::u64 );
+    jit_function_t function  = p.getFunc();
+    cout << "QDPTypeOScalar ParamLeaf 2er\n";
+    return Type_t( function , base_addr );
   }
 };
 

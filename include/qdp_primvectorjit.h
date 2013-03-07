@@ -27,15 +27,10 @@ namespace QDP {
  * portion is a part of the generic class, hence it is called a domain
  * and not a category
  */
-template <class T, int N, template<class,int> class C> class PVectorJIT: public JV<T,N>
+template <class T, int N, template<class,int> class C> class PVectorJIT: public BaseJIT<T,N>
 {
 public:
   typedef C<T,N>  CC;
-
-  PVectorJIT(curry_t c): JV<T,N>(c) {}
-  PVectorJIT(newspace_t n): JV<T,N>(n) {}
-  PVectorJIT(newspace_t n,PVectorJIT* orig): JV<T,N>(n,orig) {}
-
 
   //! PVectorJIT = PVectorJIT
   /*! Set equal to another PVectorJIT */
@@ -125,9 +120,11 @@ public:
 
 
 public:
-  T& elem(int i) {return JV<T,N>::getF()[i];}
-  const T& elem(int i) const {return JV<T,N>::getF()[i];}
- 
+        T& elem(int i)       {return this->arrayF(i);}
+  const T& elem(int i) const {return this->arrayF(i);}
+
+  // T& elem(int i) {return JV<T,N>::getF()[i];}
+  // const T& elem(int i) const {return JV<T,N>::getF()[i];}
 };
 
 

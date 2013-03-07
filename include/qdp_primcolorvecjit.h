@@ -24,10 +24,6 @@ template <class T, int N> class PColorVectorJIT : public PVectorJIT<T, N, PColor
 {
 public:
 
-  PColorVectorJIT(curry_t c): PVectorJIT<T, N, PColorVectorJIT>(c) {}
-  PColorVectorJIT(newspace_t n): PVectorJIT<T, N, PColorVectorJIT>(n) {}
-  PColorVectorJIT(newspace_t n,PColorVectorJIT* orig): PVectorJIT<T, N, PColorVectorJIT>(n,orig) {}
-
 
   //! PColorVectorJIT = PColorVectorJIT
   /*! Set equal to another PColorVectorJIT */

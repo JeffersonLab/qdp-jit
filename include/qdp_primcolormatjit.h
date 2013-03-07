@@ -26,12 +26,6 @@ template <class T, int N> class PColorMatrixJIT : public PMatrixJIT<T, N, PColor
 {
 public:
 
-  PColorMatrixJIT(curry_t c): PMatrixJIT<T, N, PColorMatrixJIT>(c) {}
-  PColorMatrixJIT(newspace_t n): PMatrixJIT<T, N, PColorMatrixJIT>(n) {}
-  PColorMatrixJIT(newspace_t n,PColorMatrixJIT* orig): PMatrixJIT<T, N, PColorMatrixJIT>(n,orig) { }
-
-
-
   //! PColorMatrixJIT = PScalarJIT
   /*! Fill with primitive scalar */
   template<class T1>

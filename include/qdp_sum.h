@@ -8,6 +8,8 @@ template <class T2>
 void reduce_convert(int size, int threads, int blocks, int shared_mem_usage,
 		    T2 *d_idata, T2 *d_odata )
 {
+  assert(!"ni");
+#if 0
   static CUfunction function;
 
   // Build the function
@@ -23,6 +25,7 @@ void reduce_convert(int size, int threads, int blocks, int shared_mem_usage,
     }
 
   function_sum_exec(function, size, threads, blocks, shared_mem_usage, (void*)d_idata, (void*)d_odata );
+#endif
 }
 
 
@@ -31,6 +34,8 @@ template <class T1,class T2>
 void reduce_convert_indirection_coal(int size, int threads, int blocks, int shared_mem_usage,
 				     T1 *d_idata, T2 *d_odata, int * siteTable)
 {
+  assert(!"ni");
+#if 0
   static CUfunction function;
 
   // Build the function
@@ -47,6 +52,7 @@ void reduce_convert_indirection_coal(int size, int threads, int blocks, int shar
 
   // Execute the function
   function_sum_ind_coal_exec(function, size, threads, blocks, shared_mem_usage, (void*)d_idata, (void*)d_odata, (void*)siteTable );
+#endif
 }
 
 

@@ -133,11 +133,11 @@ namespace QDP {
 #include "qdp_subset.h"
 #include "qdp_stopwatch.h"
 
+#include "qdp_qdptypejitbase.h"
 #include "qdp_pete_visitors.h"
 
 #include "qdp_traits.h"
 #include "qdp_qdpexpr.h"
-#include "qdp_jitresource.h"
 #include "qdp_qdptypejit.h"
 #include "qdp_qdptype.h"
 #include "qdp_qdpsubtype.h"
@@ -145,6 +145,11 @@ namespace QDP {
 namespace QDP {
 #include "QDPOperators.h"
 }
+
+
+#include "qdp_basejit.h"
+#include "qdp_basereg.h"
+
 
 // Include the allocator stuff here, before QDP_outer
 #include "qdp_allocator.h"
@@ -166,8 +171,10 @@ namespace QDP {
 #include "qdp_profile.h"
 #include "qdp_simpleword.h"
 #include "qdp_wordjit.h"
+#include "qdp_wordreg.h"
 #include "qdp_word.h"
 #include "qdp_realityjit.h"
+#include "qdp_realityreg.h"
 #include "qdp_reality.h"
 #include "qdp_inner.h"
 #include "qdp_primitive.h"
@@ -175,7 +182,7 @@ namespace QDP {
 #include "qdp_outer.h"
 #include "qdp_outersubtype.h"
 
-
+#include "qdp_viewleaf.h"
 
 // Replaces previous ifdef structure. Structure moved into the header file
 #include "qdp_defs.h"
@@ -189,9 +196,9 @@ namespace QDP {
 //#include "qdp_newopsjit.h"
 #include "qdp_internal.h"
 #include "qdp_jitfunction.h"
-#include "qdp_jitf_copymask.h"
-#include "qdp_jitf_sum.h"
-#include "qdp_jitf_gaussian.h"
+//#include "qdp_jitf_copymask.h"
+//#include "qdp_jitf_sum.h"
+//#include "qdp_jitf_gaussian.h"
 
 // Include threading code here if applicable
 #include "qdp_dispatch.h"

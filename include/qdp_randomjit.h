@@ -7,15 +7,16 @@
 #ifndef QDP_RANDOMJIT_H
 #define QDP_RANDOMJIT_H
 
+#if 0
 namespace QDP {
 
 
 namespace RNG
 {
 
-  // WordJIT<T> sranf(typename JITContainerType<Seed>::Type_t& seed, 
-  // 		   typename JITContainerType<Seed>::Type_t& skewed_seed, 
-  // 		   const typename JITContainerType<Seed>::Type_t& seed_mult)
+  // WordJIT<T> sranf(typename JITType<Seed>::Type_t& seed, 
+  // 		   typename JITType<Seed>::Type_t& skewed_seed, 
+  // 		   const typename JITType<Seed>::Type_t& seed_mult)
 
   template<class T>
   void sranf(WordJIT<T>& dest,
@@ -53,7 +54,7 @@ namespace RNG
 
 }
 
-
 } // namespace QDP
+#endif
 
 #endif

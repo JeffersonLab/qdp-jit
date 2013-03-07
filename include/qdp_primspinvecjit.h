@@ -29,23 +29,18 @@ namespace QDP {
  * on the spin vectors.
  */
 
-template <class T, int N> class PSpinVectorJIT: public JV<T,N>
+template <class T, int N> class PSpinVectorJIT: public BaseJIT<T,N>
 {
 public:
 
-  PSpinVectorJIT(curry_t c): JV<T,N>(c) {}
-  PSpinVectorJIT(newspace_t n): JV<T,N>(n) {}
-  PSpinVectorJIT(newspace_t n,PSpinVectorJIT* orig): JV<T,N>(n,orig) {}
-
-
   template<class T1>
-  PSpinVectorJIT(const PSpinVectorJIT<T1,N>& a): JV<T,N>(newspace_t(a.func() ) )
+  PSpinVectorJIT(const PSpinVectorJIT<T1,N>& a)
   {
     for(int i=0; i < N; i++) 
       elem(i) = a.elem(i);
   }
 
-  PSpinVectorJIT(const PSpinVectorJIT& a): JV<T,N>(newspace_t(a.func()), &a ) 
+  PSpinVectorJIT(const PSpinVectorJIT& a)
   {
     for(int i=0; i < N; i++) 
       elem(i) = a.elem(i);
@@ -119,8 +114,11 @@ public:
     }
 
 public:
-  T& elem(int i) {return JV<T,N>::getF()[i];}
-  const T& elem(int i) const {return JV<T,N>::getF()[i];}
+        T& elem(int i)       {return this->arrayF(i);}
+  const T& elem(int i) const {return this->arrayF(i);}
+
+  // T& elem(int i) {return JV<T,N>::getF()[i];}
+  // const T& elem(int i) const {return JV<T,N>::getF()[i];}
 };
 
 

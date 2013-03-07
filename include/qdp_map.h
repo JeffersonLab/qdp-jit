@@ -189,16 +189,17 @@ public:
 };
 
 
-struct FnMapJIT 
+struct FnMapJIT
 {
 public:
-  Jit& jit;
-  Jit::IndexRet index;
+  jit_function_t func;
+  IndexRet index;
   const Map& map;
   QDPHandle::Handle<RsrcWrapper> pRsrc;
 
-  FnMapJIT(const FnMap& fnmap,const Jit::IndexRet& i,Jit& j): map(fnmap.map), pRsrc(fnmap.pRsrc), index(i), jit(j) {}
-  FnMapJIT(const FnMapJIT& f) : map(f.map) , pRsrc(f.pRsrc), index(f.index), jit(f.jit) {}
+  FnMapJIT(const FnMap& fnmap,const IndexRet& i,jit_function_t f): 
+    map(fnmap.map), pRsrc(fnmap.pRsrc), index(i), func(f) {}
+  FnMapJIT(const FnMapJIT& f) : map(f.map) , pRsrc(f.pRsrc), index(f.index), func(f.func) {}
 
 public:
   template<class T>
@@ -248,13 +249,15 @@ struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
 
       // I need dereferencing here since in case A is not a sub-expression
       // but a QDPType, EvalLeaf1 will return a reference, i.e. wrong word type (always 64 bit)
-      Jit::IndexRet index = p.getFunc().addParamIndexFieldRcvBuf( p.getRegIdx() ,  sizeof(typename WordType<typename DeReference<typename ForEach<A, EvalLeaf1, OpCombine>::Type_t>::Type_t>::Type_t) );
+      assert(!"ni");
+#if 0
+      IndexRet index = p.getFunc().addParamIndexFieldRcvBuf( p.getRegIdx() ,  sizeof(typename WordType<typename DeReference<typename ForEach<A, EvalLeaf1, OpCombine>::Type_t>::Type_t>::Type_t) );
 
-      ParamLeaf pp( p.getFunc() , index.r_newidx , Jit::LatticeLayout::COAL );
+      ParamLeaf pp( p.getFunc() , index.r_newidx );
 
       return Type_t( FnMapJIT( expr.operation() , index , p.getFunc() ) , 
 		     ForEach< A, ParamLeaf, TreeCombine >::apply( expr.child() , pp , c ) );
-
+#endif
       //ForEach< UnaryNode<FnMapJIT, A>, ParamLeaf, TreeCombine>::apply(expr.child() , pp , c );
 
 
@@ -286,10 +289,12 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
       //const Map& map = expr.operation().map;
       //FnMap& fnmap = const_cast<FnMap&>(expr.operation());
 
-      Jit::IndexRet index = expr.operation().index;
+      IndexRet index = expr.operation().index;
 
-      Jit& func = expr.operation().jit;
-      
+      jit_function_t func = expr.operation().func;
+
+      assert(!"ni");
+#if 0      
       Type_t ret(func);
       func.addCondBranch_if(index);
 
@@ -308,7 +313,7 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
       func.addCondBranch_fi();
 
       return ret;
-
+#endif
       // return Type_t( FnMapJIT(expr.operation(),index) , ForEach<A, ParamLeaf, TreeCombine>::apply(expr.child() , pp , c ) );
 
       //ForEach< UnaryNode<FnMapJIT, A>, ParamLeaf, TreeCombine>::apply(expr.child() , pp , c );

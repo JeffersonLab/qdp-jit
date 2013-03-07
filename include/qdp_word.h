@@ -173,9 +173,9 @@ template<> struct WordSize< Word<bool> > { enum { Size = sizeof(bool) }; };
 
 
 template<class T> 
-struct JITContainerType<Word<T> >
+struct JITType<Word<T> >
 {
-  typedef WordJIT<typename JITContainerType<T>::Type_t>  Type_t;
+  typedef WordJIT<typename JITType<T>::Type_t>  Type_t;
 };
 
 

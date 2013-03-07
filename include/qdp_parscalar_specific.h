@@ -121,6 +121,8 @@ template<class T, class T1, class Op, class RHS>
 void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs,
 	      const Subset& s)
 {
+  std::cout << "eval_lat_sca host\n";
+#if 0
   //std::cout << __PRETTY_FUNCTION__ << "\n";
 
 // cerr << "In evaluateSubset(olattice,oscalar)\n";
@@ -152,18 +154,19 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& 
   // u_arg<T,T1,Op,RHS> a(dest, rhs, op, s.siteTable().slice());
   // dispatch_to_threads< u_arg<T,T1,Op,RHS> >(numSiteTable, a, ev_userfunc);
 
+#endif
   ///////////////////
   // Original code
   //////////////////
 
-  //const int *tab = s.siteTable().slice();
-  //for(int j=0; j < s.numSiteTable(); ++j) 
-  //{
-  //int i = tab[j];
-//    fprintf(stderr,"eval(olattice,oscalar): site %d\n",i);
-//    op(dest.elem(i), forEach(rhs, ElemLeaf(), OpCombine()));
-  //op(dest.elem(i), forEach(rhs, EvalLeaf1(0), OpCombine()));
-  //}
+  const int *tab = s.siteTable().slice();
+  for(int j=0; j < s.numSiteTable(); ++j) 
+  {
+    int i = tab[j];
+    //fprintf(stderr,"eval(olattice,oscalar): site %d\n",i);
+    op(dest.elem(i), forEach(rhs, ElemLeaf(), OpCombine()));
+    //  op(dest.elem(i), forEach(rhs, EvalLeaf1(0), OpCombine()));
+  }
 
 #if defined(QDP_USE_PROFILING)   
   prof.time += getClockTime();
@@ -188,7 +191,10 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
   prof.time -= getClockTime();
 #endif
 
-#if 1
+  //
+  // Do the cross check with CPU result ?
+  //
+#if 0
   OLattice<T> dest0;
   const int *tab = s.siteTable().slice();
   for(int j=0; j < s.numSiteTable(); ++j) 
@@ -304,6 +310,8 @@ void copymask(OSubLattice<T2> d, const OLattice<T1>& mask, const OLattice<T2>& s
 template<class T1, class T2> 
 void copymask(OLattice<T2>& dest, const OLattice<T1>& mask, const OLattice<T2>& s1) 
 {
+  assert(!"ni");
+#if 0
   //std::cout << __PRETTY_FUNCTION__ << "\n";
   static CUfunction function;
   // Build the function
@@ -324,6 +332,7 @@ void copymask(OLattice<T2>& dest, const OLattice<T1>& mask, const OLattice<T2>& 
   // int nodeSites = Layout::sitesOnNode();
   // for(int i=0; i < nodeSites; ++i) 
   //   copymask(dest.elem(i), mask.elem(i), s1.elem(i));
+#endif
 }
 
 
@@ -360,6 +369,8 @@ template<class T>
 void 
 random(OLattice<T>& d, const Subset& s)
 {
+  assert(!"ni");
+#if 0
   static CUfunction function;
 
   Seed seed_tmp;
@@ -396,6 +407,7 @@ random(OLattice<T>& d, const Subset& s)
 
   RNG::ran_seed = seed;  // The seed from any site is the same as the new global seed
 #endif
+#endif
 }
 
 
@@ -423,6 +435,8 @@ void random(OLattice<T>& d)
 template<class T>
 void gaussian(OLattice<T>& d, const Subset& s)
 {
+  assert(!"ni");
+#if 0
   OLattice<T>  r1, r2;
 
   random(r1,s);
@@ -452,6 +466,7 @@ void gaussian(OLattice<T>& d, const Subset& s)
     int i = tab[j];
     fill_gaussian(d.elem(i), r1.elem(i), r2.elem(i));
   }
+#endif
 #endif
 }
 
@@ -484,7 +499,8 @@ template<class T>
 inline
 void zero_rep(OLattice<T>& dest, const Subset& s) 
 {
-#if 1
+  assert(!"ni");
+#if 0
   static CUfunction function;
 
   if (function == NULL)

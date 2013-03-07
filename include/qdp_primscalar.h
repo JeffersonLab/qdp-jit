@@ -179,9 +179,9 @@ struct WordSize< PScalar<T> >
 
 
 template<class T> 
-struct JITContainerType<PScalar<T> >
+struct JITType<PScalar<T> >
 {
-  typedef PScalarJIT<typename JITContainerType<T>::Type_t>  Type_t;
+  typedef PScalarJIT<typename JITType<T>::Type_t>  Type_t;
 };
 
 

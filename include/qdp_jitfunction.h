@@ -11,56 +11,56 @@ template<class T, class T1, class Op, class RHS>
 CUfunction
 function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs)
 {
-  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   CUfunction func;
 
-  std::string fname("ptxtest.ptx");
-  Jit function(fname.c_str(),"func");
+  const char * fname = "ptx_eval.ptx";
+  jit_function_t function = jit_create_function( fname );
 
-  function.setPrettyFunction(__PRETTY_FUNCTION__);
+  //function.setPrettyFunction(__PRETTY_FUNCTION__);
 
-  //std::cout << "function = " << (void*)&function <<"\n";
-
-  ParamLeaf param_leaf(function,function.getRegIdx() , Jit::LatticeLayout::COAL );
-  ParamLeaf param_leaf_indexed( function , param_leaf.getParamIndexFieldAndOption() , Jit::LatticeLayout::COAL);
-  function.addParamMemberArray( param_leaf.r_idx );
-
+  ParamLeaf param_leaf( function , jit_geom_get_linear_th_idx( function ) );
+  //ParamLeaf param_leaf_indexed( function , param_leaf.getParamIndexFieldAndOption() );  // Optional soffset (inner/face)
+  //function.addParamMemberArray( param_leaf.r_idx ); // Subset member
+  
   // Destination
   typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
-  FuncRet_t dest_jit(forEach(dest, param_leaf_indexed, TreeCombine()));
+  //FuncRet_t dest_jit(forEach(dest, param_leaf_indexed, TreeCombine()));
+  FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
 
   auto op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
 
   // Now the arguments for the rhs
   typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
-  View_t rhs_view(forEach(rhs, param_leaf_indexed, TreeCombine()));
+  //View_t rhs_view(forEach(rhs, param_leaf_indexed, TreeCombine()));
+  View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
   //printme<View_t>();
 
-  op_jit(dest_jit.elem( 0 ), forEach(rhs_view, ViewLeaf( 0 ), OpCombine()));
+  op_jit(dest_jit.elem( QDPTypeJITBase::Coalesced ), forEach(rhs_view, ViewLeaf( QDPTypeJITBase::Coalesced ), OpCombine()));
 
 #if 1
   if (Layout::primaryNode())
-    function.write();
+    function->write();
 #endif     
  
   QMP_barrier();
 
   CUresult ret;
   CUmodule cuModule;
-  ret = cuModuleLoad(&cuModule, fname.c_str() );
-  if (ret) QDP_error_exit("Error loading CUDA module '%s'",fname.c_str());
+  ret = cuModuleLoad( &cuModule , fname );
+  if (ret) QDP_error_exit( "Error loading CUDA module '%s'" , fname );
 
-  ret = cuModuleGetFunction(&func, cuModule, "func");
+  ret = cuModuleGetFunction(&func, cuModule, "function");
   if (ret) { std::cout << "Error getting function\n"; exit(1); }
 
-  //std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
+  std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
 
   return func;
 }
 
-
+#if 0
 template<class T, class T1, class Op, class RHS>
 CUfunction
 function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
@@ -299,10 +299,10 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
   ParamLeaf param_leaf_soffset( function , param_leaf_0.getParamIndexFieldAndOption() , Jit::LatticeLayout::COAL );
 
   // Destination
-  typedef typename JITContainerType< OLattice<T> >::Type_t DestView_t;
+  typedef typename JITType< OLattice<T> >::Type_t DestView_t;
 
   DestView_t dest_jit( function , 
-		       param_leaf_0.getParamLattice( JITContainerType<T>::Type_t::Size_t * WordSize<T>::Size ) ,
+		       param_leaf_0.getParamLattice( JITType<T>::Type_t::Size_t * WordSize<T>::Size ) ,
 		       Jit::LatticeLayout::SCAL );
 
   // typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
@@ -405,7 +405,7 @@ function_gather_exec( CUfunction function, void* send_buf , const Map& map , con
   CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
 
 }
-
+#endif
 
 
 
@@ -456,19 +456,19 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
 
   std::vector<void*> addr;
 
-  addr.push_back( &lo );
+  //addr.push_back( &lo );
   //std::cout << "addr lo = " << addr[0] << " lo=" << lo << "\n";
 
-  addr.push_back( &hi );
+  //addr.push_back( &hi );
   //std::cout << "addr hi = " << addr[1] << " hi=" << hi << "\n";
 
-  addr.push_back( &do_soffset_index );
+  //addr.push_back( &do_soffset_index );
   //std::cout << "addr do_soffset_index =" << addr[2] << " " << do_soffset_index << "\n";
 
-  addr.push_back( &idx_inner_dev );
+  //addr.push_back( &idx_inner_dev );
   //std::cout << "addr idx_inner_dev = " << addr[3] << " " << idx_inner_dev << "\n";
 
-  addr.push_back( &subset_member );
+  //addr.push_back( &subset_member );
   //std::cout << "addr idx_inner_dev = " << addr[3] << " " << idx_inner_dev << "\n";
 
   int addr_dest=addr.size();
@@ -518,13 +518,12 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
     now = getGeom( hi-lo , threadsPerBlock );
     CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
   }
-
-
 }
 
 
 
 
+#if 0
 template<class T, class T1, class Op, class RHS>
 void 
 function_lat_sca_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs, const Subset& s)
@@ -735,7 +734,7 @@ function_zero_rep_exec(CUfunction function, OLattice<T>& dest, const Subset& s )
 
 #endif
 }
-
+#endif
 
 }
 

@@ -16,14 +16,24 @@ namespace QDP {
 
 
 template<class T>
-class RScalarJIT : public JV<T,1>
+class RScalarJIT : public BaseJIT<T,1>
 {
 public:
 
-  RScalarJIT(curry_t c): JV<T,1>(c) {}
-  RScalarJIT(newspace_t n): JV<T,1>(n) {}
-  RScalarJIT(newspace_t n,RScalarJIT* orig): JV<T,1>(n,orig) {}
+  // Default constructing should be possible
+  // then there is no need for MPL index when
+  // construction a PMatrix<T,N>
+  RScalarJIT() {}
+  ~RScalarJIT() {}
 
+  template<class T1>
+  RScalarJIT& operator=( const RScalarREG<T1>& rhs) {
+    elem() = rhs.elem();
+    return *this;
+  }
+
+
+#if 0
   template<class T1>
   RScalarJIT& operator=( const RScalarJIT<T1>& rhs) {
     elem() = rhs.elem();
@@ -39,11 +49,10 @@ public:
     elem() = rhs;
     return *this;
   }
-
+#endif
 
 #if 0
   RScalarJIT() {}
-  ~RScalarJIT() {}
 
   //---------------------------------------------------------
   //! construct dest = const
@@ -51,7 +60,7 @@ public:
 
   //RScalarJIT(const typename WordType<T>::Type_t& rhs) : JV<T,1>( NULL , rhs ) {}
 
-
+#if 0
   //! construct dest = rhs
   template<class T1>
   RScalarJIT(const RScalarJIT<T1>& rhs) : JV<T,1>(newspace_t(rhs.func())) {
@@ -61,6 +70,7 @@ public:
   RScalarJIT(const RScalarJIT& rhs) : JV<T,1>(newspace_t(rhs.func())) {
     elem() = rhs.elem();
   }
+#endif
 
   // I keep this deactivated. Takes too much.
 #if 0
@@ -70,13 +80,9 @@ public:
   }
 #endif
 
-  RScalarJIT(const T& rhs) : JV<T,1>(newspace_t(rhs.func())) {
+  RScalarJIT(const T& rhs) {
     elem() = rhs;
   }
-
-
-  RScalarJIT(Jit& j,const typename WordType<T>::Type_t& w) : JV<T,1>(j,w) {}
-
 
 
 
@@ -84,7 +90,7 @@ public:
   //! RScalarJIT += RScalarJIT
   template<class T1>
   inline
-  RScalarJIT& operator+=(const RScalarJIT<T1>& rhs) 
+  RScalarJIT& operator+=(const RScalarREG<T1>& rhs) 
     {
       elem() += rhs.elem();
       return *this;
@@ -93,7 +99,7 @@ public:
   //! RScalarJIT -= RScalarJIT
   template<class T1>
   inline
-  RScalarJIT& operator-=(const RScalarJIT<T1>& rhs) 
+  RScalarJIT& operator-=(const RScalarREG<T1>& rhs) 
     {
       elem() -= rhs.elem();
       return *this;
@@ -102,7 +108,7 @@ public:
   //! RScalarJIT *= RScalarJIT
   template<class T1>
   inline
-  RScalarJIT& operator*=(const RScalarJIT<T1>& rhs) 
+  RScalarJIT& operator*=(const RScalarREG<T1>& rhs) 
     {
       elem() *= rhs.elem();
       return *this;
@@ -111,7 +117,7 @@ public:
   //! RScalarJIT /= RScalarJIT
   template<class T1>
   inline
-  RScalarJIT& operator/=(const RScalarJIT<T1>& rhs) 
+  RScalarJIT& operator/=(const RScalarREG<T1>& rhs) 
     {
       elem() /= rhs.elem();
       return *this;
@@ -120,7 +126,7 @@ public:
   //! RScalarJIT %= RScalarJIT
   template<class T1>
   inline
-  RScalarJIT& operator%=(const RScalarJIT<T1>& rhs) 
+  RScalarJIT& operator%=(const RScalarREG<T1>& rhs) 
     {
       elem() %= rhs.elem();
       return *this;
@@ -129,7 +135,7 @@ public:
   //! RScalarJIT |= RScalarJIT
   template<class T1>
   inline
-  RScalarJIT& operator|=(const RScalarJIT<T1>& rhs) 
+  RScalarJIT& operator|=(const RScalarREG<T1>& rhs) 
     {
       elem() |= rhs.elem();
       return *this;
@@ -138,7 +144,7 @@ public:
   //! RScalarJIT &= RScalarJIT
   template<class T1>
   inline
-  RScalarJIT& operator&=(const RScalarJIT<T1>& rhs) 
+  RScalarJIT& operator&=(const RScalarREG<T1>& rhs) 
     {
       elem() &= rhs.elem();
       return *this;
@@ -147,7 +153,7 @@ public:
   //! RScalarJIT ^= RScalarJIT
   template<class T1>
   inline
-  RScalarJIT& operator^=(const RScalarJIT<T1>& rhs) 
+  RScalarJIT& operator^=(const RScalarREG<T1>& rhs) 
     {
       elem() ^= rhs.elem();
       return *this;
@@ -156,7 +162,7 @@ public:
   //! RScalarJIT <<= RScalarJIT
   template<class T1>
   inline
-  RScalarJIT& operator<<=(const RScalarJIT<T1>& rhs) 
+  RScalarJIT& operator<<=(const RScalarREG<T1>& rhs) 
     {
       elem() <<= rhs.elem();
       return *this;
@@ -165,7 +171,7 @@ public:
   //! RScalarJIT >>= RScalarJIT
   template<class T1>
   inline
-  RScalarJIT& operator>>=(const RScalarJIT<T1>& rhs) 
+  RScalarJIT& operator>>=(const RScalarREG<T1>& rhs) 
     {
       elem() >>= rhs.elem();
       return *this;
@@ -173,11 +179,8 @@ public:
 
 
 public:
-  inline       T& elem()       { return JV<T,1>::getF()[0]; }
-  inline const T& elem() const { return JV<T,1>::getF()[0]; }
-
-private:
-  //RScalarJIT(const RScalarJIT& a);
+  inline       T& elem()       { return this->arrayF(0); }
+  inline const T& elem() const { return this->arrayF(0); }
 };
 
  
@@ -262,32 +265,32 @@ void read(XMLReader& xml, const string& path, RScalarJIT<T>& d)
  */
 
 template<class T>
-class RComplexJIT: public JV<T,2>
+class RComplexJIT: public BaseJIT<T,2>
 {
 public:
 
-  RComplexJIT(curry_t c): JV<T,2>(c) {}
-  RComplexJIT(newspace_t n): JV<T,2>(n) {}
-  RComplexJIT(newspace_t n,RComplexJIT* orig): JV<T,2>(n,orig) {}
-
-#if 0
+  // Default constructing should be possible
+  // then there is no need for MPL index when
+  // construction a PMatrix<T,N>
   RComplexJIT() {}
   ~RComplexJIT() {}
 
+#if 0
   //! Construct from two reality scalars
   template<class T1, class T2>
   RComplexJIT(const RScalarJIT<T1>& _re, const RScalarJIT<T2>& _im): re(_re.elem()), im(_im.elem()) {}
 #endif
 
   //! Construct from two scalars
-  RComplexJIT(Jit& j,const typename WordType<T>::Type_t& re, const typename WordType<T>::Type_t& im): JV<T,2>(j,re,im) {}
+  //RComplexJIT(Jit& j,const typename WordType<T>::Type_t& re, const typename WordType<T>::Type_t& im): JV<T,2>(j,re,im) {}
 
 
-  RComplexJIT(const T& re,const T& im): JV<T,2>(newspace_t(re.func())) {
+  RComplexJIT(const T& re,const T& im) {
     real() = re;
     imag() = im;
   }
 
+#if 0
   template<class T1>
   RComplexJIT(const RComplexJIT<T1>& a) : JV<T,2>::JV(newspace_t(a.func())) {
     real() = a.real();
@@ -298,12 +301,12 @@ public:
     real() = a.real();
     imag() = a.imag();
   }
-
+#endif
 
   //! RComplexJIT += RScalarJIT
   template<class T1>
   inline
-  RComplexJIT& operator+=(const RScalarJIT<T1>& rhs) 
+  RComplexJIT& operator+=(const RScalarREG<T1>& rhs) 
     {
       real() += rhs.elem();
       return *this;
@@ -312,7 +315,7 @@ public:
   //! RComplexJIT -= RScalarJIT
   template<class T1>
   inline
-  RComplexJIT& operator-=(const RScalarJIT<T1>& rhs) 
+  RComplexJIT& operator-=(const RScalarREG<T1>& rhs) 
     {
       real() -= rhs.elem();
       return *this;
@@ -321,7 +324,7 @@ public:
   //! RComplexJIT *= RScalarJIT
   template<class T1>
   inline
-  RComplexJIT& operator*=(const RScalarJIT<T1>& rhs) 
+  RComplexJIT& operator*=(const RScalarREG<T1>& rhs) 
     {
       real() *= rhs.elem();
       imag() *= rhs.elem();
@@ -331,7 +334,7 @@ public:
   //! RComplexJIT /= RScalarJIT
   template<class T1>
   inline
-  RComplexJIT& operator/=(const RScalarJIT<T1>& rhs) 
+  RComplexJIT& operator/=(const RScalarREG<T1>& rhs) 
     {
       real() /= rhs.elem();
       imag() /= rhs.elem();
@@ -341,7 +344,7 @@ public:
   //! RComplexJIT += RComplexJIT
   template<class T1>
   inline
-  RComplexJIT& operator+=(const RComplexJIT<T1>& rhs) 
+  RComplexJIT& operator+=(const RComplexREG<T1>& rhs) 
     {
       real() += rhs.real();
       imag() += rhs.imag();
@@ -351,7 +354,7 @@ public:
   //! RComplexJIT -= RComplexJIT
   template<class T1>
   inline
-  RComplexJIT& operator-=(const RComplexJIT<T1>& rhs) 
+  RComplexJIT& operator-=(const RComplexREG<T1>& rhs) 
     {
       real() -= rhs.real();
       imag() -= rhs.imag();
@@ -361,48 +364,51 @@ public:
   //! RComplexJIT *= RComplexJIT
   template<class T1>
   inline
-  RComplexJIT& operator*=(const RComplexJIT<T1>& rhs) 
+  RComplexJIT& operator*=(const RComplexREG<T1>& rhs) 
     {
-      RComplexJIT<T> d(rhs.func());
-      d = *this * rhs;
+      assert(!"ni");
+      // RComplexJIT<T> d(rhs.func());
+      // d = *this * rhs;
 
-      real() = d.real();
-      imag() = d.imag();
+      // real() = d.real();
+      // imag() = d.imag();
       return *this;
     }
 
   //! RComplexJIT /= RComplexJIT
   template<class T1>
   inline
-  RComplexJIT& operator/=(const RComplexJIT<T1>& rhs) 
+  RComplexJIT& operator/=(const RComplexREG<T1>& rhs) 
     {
-      RComplexJIT<T> d(rhs.func());
-      d = *this / rhs;
+      assert(!"ni");
+      // RComplexJIT<T> d(rhs.func());
+      // d = *this / rhs;
 
-      real() = d.real();
-      imag() = d.imag();
+      // real() = d.real();
+      // imag() = d.imag();
       return *this;
     }
 
   template<class T1>
-  RComplexJIT& operator=(const RComplexJIT<T1>& rhs) 
+  RComplexJIT& operator=(const RComplexREG<T1>& rhs) 
     {
       real() = rhs.real();
       imag() = rhs.imag();
       return *this;
     }
 
-
-  RComplexJIT& operator=(const RComplexJIT& rhs) 
+#if 0
+  RComplexJIT& operator=(const RComplexREG& rhs) 
     {
       real() = rhs.real();
       imag() = rhs.imag();
       return *this;
     }
+#endif
 
   template<class T1>
   inline
-  RComplexJIT& operator=(const RScalarJIT<T1>& rhs) 
+  RComplexJIT& operator=(const RScalarREG<T1>& rhs) 
     {
       real() = rhs.elem();
       zero_rep(imag());
@@ -411,107 +417,47 @@ public:
 
 
 public:
-  inline       T& real()       { return JV<T,2>::getF()[0]; }
-  inline const T& real() const { return JV<T,2>::getF()[0]; }
+  inline       T& real()       { return this->arrayF(0); }
+  inline const T& real() const { return this->arrayF(0); }
 
-  inline       T& imag()       { return JV<T,2>::getF()[1]; }
-  inline const T& imag() const { return JV<T,2>::getF()[1]; }
+  inline       T& imag()       { return this->arrayF(1); }
+  inline const T& imag() const { return this->arrayF(1); }
 };
 
 
 
-//! Stream output
-template<class T>
-inline
-ostream& operator<<(ostream& s, const RComplexJIT<T>& d)
-{
-  s << "( " << d.real() << " , " << d.imag() << " )";
-  return s;
-}
-
-//! Stream output
-template<class T>
-inline
-StandardOutputStream& operator<<(StandardOutputStream& s, const RComplexJIT<T>& d)
-{
-  s << "( " << d.real() << " , " << d.imag() << " )";
-  return s;
-}
-
-//! Text input
-template<class T>
-inline
-TextReader& operator>>(TextReader& s, RComplexJIT<T>& d)
-{
-  return s >> d.real() >> d.imag();
-}
-
-//! Text output
-template<class T> 
-inline  
-TextWriter& operator<<(TextWriter& s, const RComplexJIT<T>& d)
-{
-  return s << d.real() << d.imag();
-}
-
-#ifndef QDP_NO_LIBXML2
-//! XML output
-template<class T>
-inline
-XMLWriter& operator<<(XMLWriter& xml, const RComplexJIT<T>& d)
-{
-  xml.openTag("re");
-  xml << d.real();
-  xml.closeTag();
-  xml.openTag("im");
-  xml << d.imag();
-  xml.closeTag();
-
-  return xml;
-}
-
-//! XML input
-template<class T>
-inline
-void read(XMLReader& xml, const string& xpath, RComplexJIT<T>& d)
-{
-  std::ostringstream error_message;
-  
-  // XPath for the real part 
-  string path_real = xpath + "/re";
-	
-  // XPath for the imaginary part.
-  string path_imag = xpath + "/im";
-	
-  // Try and recursively get the real part
-  try { 
-    read(xml, path_real, d.real());
-  }
-  catch(const string &e) {
-    error_message << "XPath Query: " << xpath << " Error: "
-		  << "Failed to match real part of RComplexJIT Object with self constructed path: " << path_real;
-    
-    throw error_message.str();
-  }
-	
-  // Try and recursively get the imaginary part
-  try {
-    read(xml, path_imag, d.imag());
-  }
-  catch(const string &e) {
-    error_message << "XPath Query: " << xpath <<" Error:"
-		  <<"Failed to match imaginary part of RComplexJIT Object with self constructed path: " << path_imag;
-    
-    throw error_message.str();
-  }
-}
-#endif
 
 /*! @} */   // end of group rcomplex
 
 //-----------------------------------------------------------------------------
 // Traits classes 
 //-----------------------------------------------------------------------------
+
+template<class T> 
+struct WordSize< RScalarJIT<T> >
+{
+  enum { Size = WordSize<T>::Size };
+};
+
+template<class T> 
+struct WordSize< RComplexJIT<T> >
+{
+  enum { Size = WordSize<T>::Size };
+};
+
+
+template<class T>
+struct REGType< RScalarJIT<T> >
+{
+  typedef RScalarREG<typename REGType<T>::Type_t>  Type_t;
+};
+
+template<class T>
+struct REGType< RComplexJIT<T> >
+{
+  typedef RComplexREG<typename REGType<T>::Type_t>  Type_t;
+};
+
 
 // Underlying word type
 template<class T>
@@ -865,7 +811,7 @@ struct TrinaryReturn<RComplexJIT<T1>, RComplexJIT<T2>, RComplexJIT<T3>, FnColorC
 
 
 
-
+#if 0
 //-----------------------------------------------------------------------------
 // Operators
 //-----------------------------------------------------------------------------
@@ -2486,6 +2432,8 @@ fill_gaussian(RComplexJIT<T>& d, RComplexJIT<T>& r1, RComplexJIT<T>& r2)
   d.imag() = r1.real() * g_i;
 #endif
 }
+
+#endif
 
 /*! @} */  // end of group rcomplex
 

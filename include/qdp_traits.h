@@ -12,7 +12,8 @@
 namespace QDP {
 
   //template<class T>       struct SignedType;
-template<class T>       struct JITContainerType;
+template<class T>       struct JITType;
+template<class T>       struct REGType;
 template<class T>       struct WordSize;
 template<class T,int N> struct GetLimit;
 
@@ -44,10 +45,16 @@ template<> struct WordSize< bool > { enum { Size = sizeof(bool) }; };
 
 
 
-template<> struct JITContainerType<int>  { typedef int  Type_t; };
-template<> struct JITContainerType<float>  { typedef float  Type_t; };
-template<> struct JITContainerType<double> { typedef double  Type_t; };
-template<> struct JITContainerType<bool> { typedef bool  Type_t; };
+template<> struct JITType<int>    { typedef int    Type_t; };
+template<> struct JITType<float>  { typedef float  Type_t; };
+template<> struct JITType<double> { typedef double Type_t; };
+template<> struct JITType<bool>   { typedef bool   Type_t; };
+
+template<> struct REGType<int>    { typedef int    Type_t; };
+template<> struct REGType<float>  { typedef float  Type_t; };
+template<> struct REGType<double> { typedef double Type_t; };
+template<> struct REGType<bool>   { typedef bool   Type_t; };
+
 
 
 // template< template<class> class T, class T2> 

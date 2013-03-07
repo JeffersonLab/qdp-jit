@@ -23,6 +23,7 @@
  */
 
 #include "qdp_primscalarjit.h"
+#include "qdp_primscalarreg.h"
 #include "qdp_primscalar.h"
 #include "qdp_primmatrixjit.h"
 #include "qdp_primmatrix.h"

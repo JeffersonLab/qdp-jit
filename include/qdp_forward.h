@@ -44,13 +44,17 @@ namespace QDP
   // Word
   template<class T> class Word;
   template<class T> class WordJIT;
+  template<class T> class WordREG;
   class BASEWordJIT;
+  class BASEWordREG;
 
   // Reality
   template<class T> class RScalar;
   template<class T> class RComplex;
   template<class T> class RScalarJIT;
   template<class T> class RComplexJIT;
+  template<class T> class RScalarREG;
+  template<class T> class RComplexREG;
 
   // Primitives
   template<class T> class PScalar;
@@ -69,6 +73,14 @@ namespace QDP
   template <class T, int N> class PColorMatrixJIT;
   template <class T, int N> class PSpinMatrixJIT;
   template <class T> class PSeedJIT;
+  template<class T> class PScalarREG;
+  template <class T, int N, template<class,int> class C> class PMatrixREG;
+  template <class T, int N, template<class,int> class C> class PVectorREG;
+  template <class T, int N> class PColorVectorREG;
+  template <class T, int N> class PSpinVectorREG;
+  template <class T, int N> class PColorMatrixREG;
+  template <class T, int N> class PSpinMatrixREG;
+  template <class T> class PSeedREG;
 
   template<int N> class GammaType;
   template<int N, int m> class GammaConst;
@@ -81,6 +93,8 @@ namespace QDP
   template<class T> class OLattice;
   template<class T> class OScalarJIT;
   template<class T> class OLatticeJIT;
+  template<class T> class OScalarREG;
+  template<class T> class OLatticeREG;
 
   // Outer types narrowed to a subset
   template<class T> class OSubScalar;
