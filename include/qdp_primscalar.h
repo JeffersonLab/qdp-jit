@@ -170,13 +170,6 @@ private:
 };
 
 
-template<class T> 
-struct WordSize< PScalar<T> >
-{
-  enum { Size = WordSize<T>::Size };
-};
-
-
 
 template<class T> 
 struct JITType<PScalar<T> >

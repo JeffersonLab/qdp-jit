@@ -503,6 +503,14 @@ void jit_function::write_reg_defs()
   }
 
 
+  jit_value_t jit_ins_or( jit_value_t lhs , jit_value_t rhs ) { assert(!"ni"); }
+  jit_value_t jit_ins_and( jit_value_t lhs , jit_value_t rhs ) { assert(!"ni"); }
+  jit_value_t jit_ins_shl( jit_value_t lhs , jit_value_t rhs ) { assert(!"ni"); }
+  jit_value_t jit_ins_shr( jit_value_t lhs , jit_value_t rhs ) { assert(!"ni"); }
+  jit_value_t jit_ins_xor( jit_value_t lhs , jit_value_t rhs ) { assert(!"ni"); }
+  jit_value_t jit_ins_mod( jit_value_t lhs , jit_value_t rhs ) { assert(!"ni"); }
+
+
 
 
 

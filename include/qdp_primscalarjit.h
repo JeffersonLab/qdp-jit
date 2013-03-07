@@ -23,6 +23,12 @@ namespace QDP {
 /*! Placeholder for no primitive structure */
   template<class T> class PScalarJIT : public BaseJIT<T,1>
   {
+  private:
+    template<class T1>
+    PScalarJIT& operator=( const PScalarJIT<T1>& rhs);
+    PScalarJIT& operator=( const PScalarJIT& rhs);
+    PScalarJIT( const PScalarJIT& rhs);
+
   public:
 
     // Default constructing should be possible
@@ -40,44 +46,8 @@ namespace QDP {
 
 #if 0
     //---------------------------------------------------------
-    //! PScalar = PScalar
-    /*! Set equal to another PScalar */
-    template<class T1>
-    PScalarJIT& operator=( const PScalarJIT<T1>& rhs) {
-      elem() = rhs.elem();
-      return *this;
-    }
-
-
-    PScalarJIT& operator=( const PScalarJIT& rhs) {
-      elem() = rhs.elem();
-      return *this;
-    }
-
-
-
-    PScalarJIT() {}
-
-
-    //---------------------------------------------------------
     //! construct dest = const
     PScalarJIT(const typename WordType<T>::Type_t& rhs) : F(rhs) {}
-
-    //! construct dest = rhs
-    template<class T1>
-    PScalarJIT(const PScalarJIT<T1>& rhs) : F(rhs.elem()) {}
-
-
-    template<class T1>
-    PScalarJIT(const PScalarJIT<T1>& a) : JV<T,1>::JV( newspace_t( a.func() ) ) {
-      elem() = a.elem();
-    }
-
-    PScalarJIT(const PScalarJIT& a) : JV<T,1>::JV(newspace_t(a.func()), &a ) {
-      elem() = a.elem();
-    }
-
-
 
     // I keep this deactivated. Takes too much.
 #if 0
@@ -94,15 +64,14 @@ namespace QDP {
 
     PScalarJIT(Jit& j,const typename WordType<T>::Type_t& w) : JV<T,1>(j,w) {
     }
-
-
+#endif
 
 
 
     //! PScalarJIT += PScalarJIT
     template<class T1>
     inline
-    PScalarJIT& operator+=(const PScalarJIT<T1>& rhs) 
+    PScalarJIT& operator+=(const PScalarREG<T1>& rhs) 
     {
       elem() += rhs.elem();
       return *this;
@@ -111,7 +80,7 @@ namespace QDP {
     //! PScalarJIT -= PScalarJIT
     template<class T1>
     inline
-    PScalarJIT& operator-=(const PScalarJIT<T1>& rhs) 
+    PScalarJIT& operator-=(const PScalarREG<T1>& rhs) 
     {
       elem() -= rhs.elem();
       return *this;
@@ -120,7 +89,7 @@ namespace QDP {
     //! PScalarJIT *= PScalarJIT
     template<class T1>
     inline
-    PScalarJIT& operator*=(const PScalarJIT<T1>& rhs) 
+    PScalarJIT& operator*=(const PScalarREG<T1>& rhs) 
     {
       elem() *= rhs.elem();
       return *this;
@@ -129,7 +98,7 @@ namespace QDP {
     //! PScalarJIT /= PScalarJIT
     template<class T1>
     inline
-    PScalarJIT& operator/=(const PScalarJIT<T1>& rhs) 
+    PScalarJIT& operator/=(const PScalarREG<T1>& rhs) 
     {
       elem() /= rhs.elem();
       return *this;
@@ -138,7 +107,7 @@ namespace QDP {
     //! PScalarJIT %= PScalarJIT
     template<class T1>
     inline
-    PScalarJIT& operator%=(const PScalarJIT<T1>& rhs) 
+    PScalarJIT& operator%=(const PScalarREG<T1>& rhs) 
     {
       elem() %= rhs.elem();
       return *this;
@@ -147,7 +116,7 @@ namespace QDP {
     //! PScalarJIT |= PScalarJIT
     template<class T1>
     inline
-    PScalarJIT& operator|=(const PScalarJIT<T1>& rhs) 
+    PScalarJIT& operator|=(const PScalarREG<T1>& rhs) 
     {
       elem() |= rhs.elem();
       return *this;
@@ -156,7 +125,7 @@ namespace QDP {
     //! PScalarJIT &= PScalarJIT
     template<class T1>
     inline
-    PScalarJIT& operator&=(const PScalarJIT<T1>& rhs) 
+    PScalarJIT& operator&=(const PScalarREG<T1>& rhs) 
     {
       elem() &= rhs.elem();
       return *this;
@@ -165,7 +134,7 @@ namespace QDP {
     //! PScalarJIT ^= PScalarJIT
     template<class T1>
     inline
-    PScalarJIT& operator^=(const PScalarJIT<T1>& rhs) 
+    PScalarJIT& operator^=(const PScalarREG<T1>& rhs) 
     {
       elem() ^= rhs.elem();
       return *this;
@@ -174,7 +143,7 @@ namespace QDP {
     //! PScalarJIT <<= PScalarJIT
     template<class T1>
     inline
-    PScalarJIT& operator<<=(const PScalarJIT<T1>& rhs) 
+    PScalarJIT& operator<<=(const PScalarREG<T1>& rhs) 
     {
       elem() <<= rhs.elem();
       return *this;
@@ -183,12 +152,12 @@ namespace QDP {
     //! PScalarJIT >>= PScalarJIT
     template<class T1>
     inline
-    PScalarJIT& operator>>=(const PScalarJIT<T1>& rhs) 
+    PScalarJIT& operator>>=(const PScalarREG<T1>& rhs) 
     {
       elem() >>= rhs.elem();
       return *this;
     }
-#endif
+
   
   public:
     inline       T& elem()       { return this->arrayF(0); }
@@ -273,11 +242,6 @@ void read(XMLReader& xml, const string& path, PScalarJIT<T>& d)
 // Traits classes 
 //-----------------------------------------------------------------------------
 
-template<class T> 
-struct WordSize< PScalarJIT<T> >
-{
-  enum { Size = WordSize<T>::Size };
-};
 
 
 template<class T> 

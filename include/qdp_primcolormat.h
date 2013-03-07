@@ -56,16 +56,15 @@ public:
 
 
   template<class T, int N> 
-  struct WordSize< PColorMatrix<T,N> >
-  {
-    enum { Size = WordSize<T>::Size };
-  };
-
-
-  template<class T, int N> 
   struct JITType<PColorMatrix<T,N> >
   {
     typedef PColorMatrixJIT<typename JITType<T>::Type_t,N>  Type_t;
+  };
+
+  template<class T, int N> 
+  struct REGType<PColorMatrix<T,N> >
+  {
+    typedef PColorMatrixREG<typename REGType<T>::Type_t,N>  Type_t;
   };
 
 

@@ -57,12 +57,6 @@ public:
 
 
 
-  template<class T, int N> 
-  struct WordSize< PSpinMatrix<T,N> >
-  {
-    enum { Size = WordSize<T>::Size };
-  };
-
 
   template<class T, int N> 
   struct JITType<PSpinMatrix<T,N> >

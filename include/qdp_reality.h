@@ -174,11 +174,11 @@ private:
 };
 
 
-template<class T> 
-struct WordSize< RScalar<T> >
-{
-  enum { Size = WordSize<T>::Size };
-};
+// template<class T> 
+// struct WordSize< RScalar<T> >
+// {
+//   enum { Size = WordSize<T>::Size };
+// };
 
  
 // Input
@@ -412,11 +412,6 @@ private:
 } QDP_ALIGN8;   // possibly force alignment
 
 
-template<class T> 
-struct WordSize< RComplex<T> >
-{
-  enum { Size = WordSize<T>::Size };
-};
 
 template<class T> 
 struct JITType<RScalar<T> >

@@ -151,11 +151,14 @@ CUDA_HDRS = qdp_cuda.h \
 	    qdp_word.h qdp_wordjit.h qdp_wordreg.h \
 	    qdp_jitfunction.h qdp_pete_visitors.h qdp_qdptypejit.h qdp_qdptypejitbase.h \
 	    qdp_outerjit.h qdp_realityjit.h qdp_realityreg.h qdp_primscalarjit.h qdp_primscalarreg.h \
-	    qdp_primmatrixjit.h qdp_primcolormatjit.h qdp_primspinmatjit.h qdp_basejit.h qdp_basereg.h \
+            qdp_basejit.h qdp_basereg.h \
+	    qdp_primmatrixjit.h qdp_primcolormatjit.h qdp_primspinmatjit.h \
+	    qdp_primmatrixreg.h qdp_primcolormatreg.h qdp_primspinmatreg.h \
             qdp_primseedjit.h \
             qdp_primvectorjit.h qdp_primspinvecjit.h qdp_primcolorvecjit.h \
+            qdp_primvectorreg.h qdp_primspinvecreg.h qdp_primcolorvecreg.h \
             qdp_handle.h qdp_mastermap.h qdp_autotuning.h qdp_randomjit.h qdp_sum.h \
-            qdp_jitf_copymask.h qdp_jitf_sum.h qdp_jitf_gaussian.h qdp_internal.h qdp_newopsjit.h
+            qdp_jitf_copymask.h qdp_jitf_sum.h qdp_jitf_gaussian.h qdp_internal.h qdp_newopsreg.h
 
 # All the include files - avoid flattening of dirs by using nobase
 nobase_include_HEADERS = \

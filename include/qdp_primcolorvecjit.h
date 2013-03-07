@@ -29,13 +29,7 @@ public:
   /*! Set equal to another PColorVectorJIT */
   template<class T1>
   inline
-  PColorVectorJIT& operator=(const PColorVectorJIT<T1,N>& rhs) 
-    {
-      this->assign(rhs);
-      return *this;
-    }
-
-  PColorVectorJIT& operator=(const PColorVectorJIT& rhs) 
+  PColorVectorJIT& operator=(const PColorVectorREG<T1,N>& rhs) 
     {
       this->assign(rhs);
       return *this;
@@ -203,30 +197,30 @@ struct BinaryReturn<PColorVectorJIT<T1,N>, PColorVectorJIT<T2,N>, FnLocalInnerPr
 // Peeking and poking
 //! Extract color vector components 
 template<class T, int N>
-struct UnaryReturn<PColorVectorJIT<T,N>, FnPeekColorVectorJIT > {
-  typedef PScalarJIT<typename UnaryReturn<T, FnPeekColorVectorJIT >::Type_t>  Type_t;
+struct UnaryReturn<PColorVectorJIT<T,N>, FnPeekColorVectorREG > {
+  typedef PScalarJIT<typename UnaryReturn<T, FnPeekColorVectorREG >::Type_t>  Type_t;
 };
 
-template<class T, int N>
-inline typename UnaryReturn<PColorVectorJIT<T,N>, FnPeekColorVectorJIT >::Type_t
-peekColor(const PColorVectorJIT<T,N>& l, int row)
-{
-  typename UnaryReturn<PColorVectorJIT<T,N>, FnPeekColorVectorJIT >::Type_t  d(l.func());
+// template<class T, int N>
+// inline typename UnaryReturn<PColorVectorJIT<T,N>, FnPeekColorVectorJIT >::Type_t
+// peekColor(const PColorVectorJIT<T,N>& l, int row)
+// {
+//   typename UnaryReturn<PColorVectorJIT<T,N>, FnPeekColorVectorJIT >::Type_t  d(l.func());
 
-  // Note, do not need to propagate down since the function is eaten at this level
-  d.elem() = l.getRegElem(row);
-  return d;
-}
+//   // Note, do not need to propagate down since the function is eaten at this level
+//   d.elem() = l.getRegElem(row);
+//   return d;
+// }
 
-//! Insert color vector components
-template<class T1, class T2, int N>
-inline PColorVectorJIT<T1,N>&
-pokeColor(PColorVectorJIT<T1,N>& l, const PScalarJIT<T2>& r, int row)
-{
-  // Note, do not need to propagate down since the function is eaten at this level
-  l.getRegElem(row) = r.elem();
-  return l;
-}
+// //! Insert color vector components
+// template<class T1, class T2, int N>
+// inline PColorVectorJIT<T1,N>&
+// pokeColor(PColorVectorJIT<T1,N>& l, const PScalarJIT<T2>& r, int row)
+// {
+//   // Note, do not need to propagate down since the function is eaten at this level
+//   l.getRegElem(row) = r.elem();
+//   return l;
+// }
 
 
 //-----------------------------------------------------------------------------

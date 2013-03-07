@@ -16,9 +16,14 @@ namespace QDP {
 
 
 template<class T>
-class RScalarREG : public BaseREG<T,1,RScalarREG<T> >
+class RScalarREG //: public BaseREG<T,1,RScalarREG<T> >
 {
+  T F;
 public:
+
+  void setup(const RScalarJIT< typename JITType<T>::Type_t >& rhs ) {
+    F.setup( rhs.elem() );
+  }
 
   // Default constructing should be possible
   // then there is no need for MPL index when
@@ -167,8 +172,11 @@ public:
 
 
 public:
-  inline       T& elem()       { return this->arrayF(0); }
-  inline const T& elem() const { return this->arrayF(0); }
+  inline       T& elem()       { return F; }
+  inline const T& elem() const { return F; }
+
+  // inline       T& elem()       { return this->arrayF(0); }
+  // inline const T& elem() const { return this->arrayF(0); }
 };
 
  
@@ -253,9 +261,16 @@ void read(XMLReader& xml, const string& path, RScalarREG<T>& d)
  */
 
 template<class T>
-class RComplexREG: public BaseREG<T,2,RComplexREG<T> >
+class RComplexREG //: public BaseREG<T,2,RComplexREG<T> >
 {
+  T re,im;
 public:
+
+  void setup(const RComplexJIT< typename JITType<T>::Type_t >& rhs ) {
+    re.setup( rhs.real() );
+    im.setup( rhs.imag() );
+  }
+
 
   // Default constructing should be possible
   // then there is no need for MPL index when
@@ -403,11 +418,17 @@ public:
 
 
 public:
-  inline       T& real()       { return this->arrayF(0); }
-  inline const T& real() const { return this->arrayF(0); }
+  inline       T& real()       { return re; }
+  inline const T& real() const { return re; }
 
-  inline       T& imag()       { return this->arrayF(1); }
-  inline const T& imag() const { return this->arrayF(1); }
+  inline       T& imag()       { return im; }
+  inline const T& imag() const { return im; }
+
+  // inline       T& real()       { return this->arrayF(0); }
+  // inline const T& real() const { return this->arrayF(0); }
+
+  // inline       T& imag()       { return this->arrayF(1); }
+  // inline const T& imag() const { return this->arrayF(1); }
 };
 
 

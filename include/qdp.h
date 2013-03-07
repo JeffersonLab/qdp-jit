@@ -148,7 +148,7 @@ namespace QDP {
 
 
 #include "qdp_basejit.h"
-#include "qdp_basereg.h"
+//#include "qdp_basereg.h"
 
 
 // Include the allocator stuff here, before QDP_outer
@@ -157,7 +157,8 @@ namespace QDP {
 
 
 #include "qdp_newops.h"
-#include "qdp_newopsjit.h"
+#include "qdp_newopsreg.h"
+
 #include "qdp_optops.h"
 #include "qdp_mastermap.h"
 

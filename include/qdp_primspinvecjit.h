@@ -31,25 +31,21 @@ namespace QDP {
 
 template <class T, int N> class PSpinVectorJIT: public BaseJIT<T,N>
 {
+  PSpinVectorJIT(const PSpinVectorJIT& a);
 public:
 
   template<class T1>
-  PSpinVectorJIT(const PSpinVectorJIT<T1,N>& a)
+  PSpinVectorJIT(const PSpinVectorREG<T1,N>& a)
   {
     for(int i=0; i < N; i++) 
       elem(i) = a.elem(i);
   }
 
-  PSpinVectorJIT(const PSpinVectorJIT& a)
-  {
-    for(int i=0; i < N; i++) 
-      elem(i) = a.elem(i);
-  }
 
 
   template<class T1>
   inline
-  PSpinVectorJIT& assign(const PSpinVectorJIT<T1, N>& rhs)
+  PSpinVectorJIT& assign(const PSpinVectorREG<T1, N>& rhs)
   {
     for(int i=0; i < N; i++) 
       elem(i) = rhs.elem(i);
@@ -59,21 +55,16 @@ public:
 
   template<class T1> 
   inline 
-  PSpinVectorJIT& operator=(const PSpinVectorJIT<T1,N>& rhs)
+  PSpinVectorJIT& operator=(const PSpinVectorREG<T1,N>& rhs)
   {
     return assign(rhs);
   }
 
-
-  PSpinVectorJIT& operator=(const PSpinVectorJIT& rhs)
-  {
-    return assign(rhs);
-  }
 
   //! PSpinVectorJIT += PSpinVectorJIT
   template<class T1>
   inline
-  PSpinVectorJIT& operator+=(const PSpinVectorJIT<T1,N>& rhs) 
+  PSpinVectorJIT& operator+=(const PSpinVectorREG<T1,N>& rhs) 
     {
       for(int i=0; i < N; ++i)
 	elem(i) += rhs.elem(i);
@@ -84,7 +75,7 @@ public:
 
   template<class T1>
   inline
-  PSpinVectorJIT& operator*=(const PScalarJIT<T1>& rhs) 
+  PSpinVectorJIT& operator*=(const PScalarREG<T1>& rhs) 
     {
       for(int i=0; i < N; ++i)
 	elem(i) *= rhs.elem();
@@ -94,7 +85,7 @@ public:
 
   template<class T1>
   inline
-  PSpinVectorJIT& operator-=(const PSpinVectorJIT<T1,N>& rhs) 
+  PSpinVectorJIT& operator-=(const PSpinVectorREG<T1,N>& rhs) 
     {
       for(int i=0; i < N; ++i)
 	elem(i) -= rhs.elem(i);
@@ -105,7 +96,7 @@ public:
   //! PSpinVectorJIT /= PScalarJIT
   template<class T1>
   inline
-  PSpinVectorJIT& operator/=(const PScalarJIT<T1>& rhs) 
+  PSpinVectorJIT& operator/=(const PScalarREG<T1>& rhs) 
     {
       for(int i=0; i < N; ++i)
 	elem(i) /= rhs.elem();
@@ -404,97 +395,97 @@ getSite(const PSpinVectorJIT<T,N>& s1, int innersite)
   return d;
 }
 
-//! Extract color vector components 
-/*! Generically, this is an identity operation. Defined differently under color */
-template<class T, int N>
-inline typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekColorVectorJIT >::Type_t
-peekColor(const PSpinVectorJIT<T,N>& l, int row)
-{
-  typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekColorVectorJIT >::Type_t  d(l.func());
+// //! Extract color vector components 
+// /*! Generically, this is an identity operation. Defined differently under color */
+// template<class T, int N>
+// inline typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekColorVectorJIT >::Type_t
+// peekColor(const PSpinVectorJIT<T,N>& l, int row)
+// {
+//   typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekColorVectorJIT >::Type_t  d(l.func());
 
-  for(int i=0; i < N; ++i)
-    d.elem(i) = peekColor(l.elem(i),row);
-  return d;
-}
+//   for(int i=0; i < N; ++i)
+//     d.elem(i) = peekColor(l.elem(i),row);
+//   return d;
+// }
 
-//! Extract color matrix components 
-/*! Generically, this is an identity operation. Defined differently under color */
-template<class T, int N>
-inline typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekColorMatrixJIT >::Type_t
-peekColor(const PSpinVectorJIT<T,N>& l, int row, int col)
-{
-  typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekColorMatrixJIT >::Type_t  d(l.func());
+// //! Extract color matrix components 
+// /*! Generically, this is an identity operation. Defined differently under color */
+// template<class T, int N>
+// inline typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekColorMatrixJIT >::Type_t
+// peekColor(const PSpinVectorJIT<T,N>& l, int row, int col)
+// {
+//   typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekColorMatrixJIT >::Type_t  d(l.func());
 
-  for(int i=0; i < N; ++i)
-    d.elem(i) = peekColor(l.elem(i),row,col);
-  return d;
-}
+//   for(int i=0; i < N; ++i)
+//     d.elem(i) = peekColor(l.elem(i),row,col);
+//   return d;
+// }
 
 
-//! Extract spin matrix components 
-/*! Generically, this is an identity operation. Defined differently under spin */
-template<class T, int N>
-inline typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekSpinMatrixJIT>::Type_t
-peekSpin(const PSpinVectorJIT<T,N>& l, int row, int col)
-{
-  typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekSpinMatrixJIT>::Type_t  d(l.func());
+// //! Extract spin matrix components 
+// /*! Generically, this is an identity operation. Defined differently under spin */
+// template<class T, int N>
+// inline typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekSpinMatrixJIT>::Type_t
+// peekSpin(const PSpinVectorJIT<T,N>& l, int row, int col)
+// {
+//   typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekSpinMatrixJIT>::Type_t  d(l.func());
 
-  for(int i=0; i < N; ++i)
-    d.elem(i) = peekSpin(l.elem(i),row,col);
-  return d;
-}
+//   for(int i=0; i < N; ++i)
+//     d.elem(i) = peekSpin(l.elem(i),row,col);
+//   return d;
+// }
 
-//! Insert color vector components 
-/*! Generically, this is an identity operation. Defined differently under color */
-template<class T1, class T2, int N>
-inline typename UnaryReturn<PSpinVectorJIT<T1,N>, FnPokeColorVectorJIT >::Type_t&
-pokeColor(PSpinVectorJIT<T1,N>& l, const PSpinVectorJIT<T2,N>& r, int row)
-{
-  typedef typename UnaryReturn<PSpinVectorJIT<T1,N>, FnPokeColorVectorJIT >::Type_t  Return_t;
+// //! Insert color vector components 
+// /*! Generically, this is an identity operation. Defined differently under color */
+// template<class T1, class T2, int N>
+// inline typename UnaryReturn<PSpinVectorJIT<T1,N>, FnPokeColorVectorJIT >::Type_t&
+// pokeColor(PSpinVectorJIT<T1,N>& l, const PSpinVectorJIT<T2,N>& r, int row)
+// {
+//   typedef typename UnaryReturn<PSpinVectorJIT<T1,N>, FnPokeColorVectorJIT >::Type_t  Return_t;
 
-  for(int i=0; i < N; ++i)
-    pokeColor(l.elem(i),r.elem(i),row);
-  return static_cast<Return_t&>(l);
-}
+//   for(int i=0; i < N; ++i)
+//     pokeColor(l.elem(i),r.elem(i),row);
+//   return static_cast<Return_t&>(l);
+// }
 
-//! Insert color matrix components 
-/*! Generically, this is an identity operation. Defined differently under color */
-template<class T1, class T2, int N>
-inline typename UnaryReturn<PSpinVectorJIT<T1,N>, FnPokeColorVectorJIT>::Type_t&
-pokeColor(PSpinVectorJIT<T1,N>& l, const PSpinVectorJIT<T2,N>& r, int row, int col)
-{
-  typedef typename UnaryReturn<PSpinVectorJIT<T1,N>, FnPokeColorVectorJIT>::Type_t  Return_t;
+// //! Insert color matrix components 
+// /*! Generically, this is an identity operation. Defined differently under color */
+// template<class T1, class T2, int N>
+// inline typename UnaryReturn<PSpinVectorJIT<T1,N>, FnPokeColorVectorJIT>::Type_t&
+// pokeColor(PSpinVectorJIT<T1,N>& l, const PSpinVectorJIT<T2,N>& r, int row, int col)
+// {
+//   typedef typename UnaryReturn<PSpinVectorJIT<T1,N>, FnPokeColorVectorJIT>::Type_t  Return_t;
 
-  for(int i=0; i < N; ++i)
-    pokeColor(l.elem(i),r.elem(i),row,col);
-  return static_cast<Return_t&>(l);
-}
+//   for(int i=0; i < N; ++i)
+//     pokeColor(l.elem(i),r.elem(i),row,col);
+//   return static_cast<Return_t&>(l);
+// }
 
-//! Insert spin vector components 
-/*! Generically, this is an identity operation. Defined differently under spin */
-template<class T1, class T2, int N>
-inline typename UnaryReturn<PSpinVectorJIT<T1,N>, FnPokeSpinVectorJIT>::Type_t&
-pokeSpin(PSpinVectorJIT<T1,N>& l, const PSpinVectorJIT<T2,N>& r, int row)
-{
-  typedef typename UnaryReturn<PSpinVectorJIT<T1,N>, FnPokeSpinVectorJIT>::Type_t  Return_t;
+// //! Insert spin vector components 
+// /*! Generically, this is an identity operation. Defined differently under spin */
+// template<class T1, class T2, int N>
+// inline typename UnaryReturn<PSpinVectorJIT<T1,N>, FnPokeSpinVectorJIT>::Type_t&
+// pokeSpin(PSpinVectorJIT<T1,N>& l, const PSpinVectorJIT<T2,N>& r, int row)
+// {
+//   typedef typename UnaryReturn<PSpinVectorJIT<T1,N>, FnPokeSpinVectorJIT>::Type_t  Return_t;
 
-  for(int i=0; i < N; ++i)
-    pokeSpin(l.elem(i),r.elem(i),row);
-  return static_cast<Return_t&>(l);
-}
+//   for(int i=0; i < N; ++i)
+//     pokeSpin(l.elem(i),r.elem(i),row);
+//   return static_cast<Return_t&>(l);
+// }
 
-//! Insert spin matrix components 
-/*! Generically, this is an identity operation. Defined differently under spin */
-template<class T1, class T2, int N>
-inline typename UnaryReturn<PSpinVectorJIT<T1,N>, FnPokeSpinVectorJIT>::Type_t&
-pokeSpin(PSpinVectorJIT<T1,N>& l, const PSpinVectorJIT<T2,N>& r, int row, int col)
-{
-  typedef typename UnaryReturn<PSpinVectorJIT<T1,N>, FnPokeSpinVectorJIT>::Type_t  Return_t;
+// //! Insert spin matrix components 
+// /*! Generically, this is an identity operation. Defined differently under spin */
+// template<class T1, class T2, int N>
+// inline typename UnaryReturn<PSpinVectorJIT<T1,N>, FnPokeSpinVectorJIT>::Type_t&
+// pokeSpin(PSpinVectorJIT<T1,N>& l, const PSpinVectorJIT<T2,N>& r, int row, int col)
+// {
+//   typedef typename UnaryReturn<PSpinVectorJIT<T1,N>, FnPokeSpinVectorJIT>::Type_t  Return_t;
 
-  for(int i=0; i < N; ++i)
-    pokeSpin(l.elem(i),r.elem(i),row,col);
-  return static_cast<Return_t&>(l);
-}
+//   for(int i=0; i < N; ++i)
+//     pokeSpin(l.elem(i),r.elem(i),row,col);
+//   return static_cast<Return_t&>(l);
+// }
 
 
 //! dest = 0
@@ -984,30 +975,30 @@ fill_gaussian(PSpinVectorJIT<T,N>& d, PSpinVectorJIT<T,N>& r1, PSpinVectorJIT<T,
 // Peeking and poking
 //! Extract spin vector components 
 template<class T, int N>
-struct UnaryReturn<PSpinVectorJIT<T,N>, FnPeekSpinVectorJIT > {
-  typedef PScalarJIT<typename UnaryReturn<T, FnPeekSpinVectorJIT>::Type_t>  Type_t;
+struct UnaryReturn<PSpinVectorJIT<T,N>, FnPeekSpinVectorREG > {
+  typedef PScalarJIT<typename UnaryReturn<T, FnPeekSpinVectorREG>::Type_t>  Type_t;
 };
 
-template<class T, int N>
-inline typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekSpinVectorJIT>::Type_t
-peekSpin(const PSpinVectorJIT<T,N>& l, int row)
-{
-  typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekSpinVectorJIT>::Type_t  d(l.func());
+// template<class T, int N>
+// inline typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekSpinVectorREG>::Type_t
+// peekSpin(const PSpinVectorJIT<T,N>& l, int row)
+// {
+//   typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekSpinVectorREG>::Type_t  d(l.func());
 
-  // Note, do not need to propagate down since the function is eaten at this level
-  d.elem() = l.getRegElem(row);
-  return d;
-}
+//   // Note, do not need to propagate down since the function is eaten at this level
+//   d.elem() = l.getRegElem(row);
+//   return d;
+// }
 
-//! Insert spin vector components
-template<class T1, class T2, int N>
-inline PSpinVectorJIT<T1,N>&
-pokeSpin(PSpinVectorJIT<T1,N>& l, const PScalarJIT<T2>& r, int row)
-{
-  // Note, do not need to propagate down since the function is eaten at this level
-  l.getRegElem(row) = r.elem();
-  return l;
-}
+// //! Insert spin vector components
+// template<class T1, class T2, int N>
+// inline PSpinVectorJIT<T1,N>&
+// pokeSpin(PSpinVectorJIT<T1,N>& l, const PScalarJIT<T2>& r, int row)
+// {
+//   // Note, do not need to propagate down since the function is eaten at this level
+//   l.getRegElem(row) = r.elem();
+//   return l;
+// }
 
 
 

@@ -107,13 +107,6 @@ private:
 };
 
 
-template<class T> 
-struct WordSize< PSeed<T> >
-{
-  enum { Size = WordSize<T>::Size };
-};
-
-
 
 template<class T> 
 struct JITType<PSeed<T> >

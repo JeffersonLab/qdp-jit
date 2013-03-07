@@ -602,12 +602,6 @@ struct LeafFunctor<OLattice<T>, ShiftPhase2>
 
 
 
-template<class T> 
-struct WordSize< OLattice<T> >
-{
-  enum { Size = WordSize<T>::Size };
-};
-
 
 template<class T> 
 struct JITType<OLattice<T> >

@@ -185,9 +185,17 @@ namespace QDP {
   jit_value_t jit_ins_div( jit_value_t lhs , jit_value_t rhs );
   jit_value_t jit_ins_add( jit_value_t lhs , jit_value_t rhs );
   jit_value_t jit_ins_sub( jit_value_t lhs , jit_value_t rhs );
-  jit_value_t jit_ins_load( jit_value_t base , int offset , int type );
   jit_value_t jit_ins_neg( jit_value_t lhs );
-  void jit_ins_store( jit_value_t base , int offset , int type , jit_value_t val );
+
+  jit_value_t jit_ins_or( jit_value_t lhs , jit_value_t rhs );
+  jit_value_t jit_ins_and( jit_value_t lhs , jit_value_t rhs );
+  jit_value_t jit_ins_shl( jit_value_t lhs , jit_value_t rhs );
+  jit_value_t jit_ins_shr( jit_value_t lhs , jit_value_t rhs );
+  jit_value_t jit_ins_xor( jit_value_t lhs , jit_value_t rhs );
+  jit_value_t jit_ins_mod( jit_value_t lhs , jit_value_t rhs );
+
+  jit_value_t jit_ins_load ( jit_value_t base , int offset , int type );
+  void        jit_ins_store( jit_value_t base , int offset , int type , jit_value_t val );
 
   jit_value_t jit_geom_get_linear_th_idx( jit_function_t func );
 

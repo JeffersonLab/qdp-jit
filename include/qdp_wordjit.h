@@ -36,8 +36,121 @@ namespace QDP {
     void operator=(const WordREG<T1>& s1) {
       assert(setup_m);
       std::cout << __PRETTY_FUNCTION__ << "\n";
-      jit_ins_store( r_base , offset_level * WordSize<T>::Size , jit_type<T>::value , s1.get_val() );
+      jit_ins_store( r_base , offset_level * sizeof(typename WordType<T>::Type_t) , jit_type<T>::value , s1.get_val() );
     }
+
+
+  //! WordJIT += WordJIT
+  template<class T1>
+  inline
+  WordJIT& operator+=(const WordREG<T1>& rhs) 
+    {
+      jit_value_t tmp = jit_ins_load( r_base , offset_level * sizeof(typename WordType<T>::Type_t) , jit_type<T>::value );
+      jit_value_t tmp2 = jit_ins_add( tmp , rhs.get_val() );
+      jit_ins_store( r_base , offset_level * sizeof(typename WordType<T>::Type_t) , jit_type<T>::value , tmp2 );
+      return *this;
+    }
+
+  //! WordJIT -= WordJIT
+  template<class T1>
+  inline
+  WordJIT& operator-=(const WordREG<T1>& rhs) 
+    {
+      jit_value_t tmp = jit_ins_load( r_base , offset_level * sizeof(typename WordType<T>::Type_t) , jit_type<T>::value );
+      jit_value_t tmp2 = jit_ins_sub( tmp , rhs.get_val() );
+      jit_ins_store( r_base , offset_level * sizeof(typename WordType<T>::Type_t) , jit_type<T>::value , tmp2 );
+      return *this;
+    }
+
+  //! WordJIT *= WordJIT
+  template<class T1>
+  inline
+  WordJIT& operator*=(const WordREG<T1>& rhs) 
+    {
+      jit_value_t tmp = jit_ins_load( r_base , offset_level * sizeof(typename WordType<T>::Type_t) , jit_type<T>::value );
+      jit_value_t tmp2 = jit_ins_mul( tmp , rhs.get_val() );
+      jit_ins_store( r_base , offset_level * sizeof(typename WordType<T>::Type_t) , jit_type<T>::value , tmp2 );
+      return *this;
+    }
+
+  //! WordJIT /= WordJIT
+  template<class T1>
+  inline
+  WordJIT& operator/=(const WordREG<T1>& rhs) 
+    {
+      jit_value_t tmp = jit_ins_load( r_base , offset_level * sizeof(typename WordType<T>::Type_t) , jit_type<T>::value );
+      jit_value_t tmp2 = jit_ins_div( tmp , rhs.get_val() );
+      jit_ins_store( r_base , offset_level * sizeof(typename WordType<T>::Type_t) , jit_type<T>::value , tmp2 );
+      return *this;
+    }
+
+  //! WordJIT %= WordJIT
+  template<class T1>
+  inline
+  WordJIT& operator%=(const WordREG<T1>& rhs) 
+    {
+      jit_value_t tmp = jit_ins_load( r_base , offset_level * sizeof(typename WordType<T>::Type_t) , jit_type<T>::value );
+      jit_value_t tmp2 = jit_ins_mod( tmp , rhs.get_val() );
+      jit_ins_store( r_base , offset_level * sizeof(typename WordType<T>::Type_t) , jit_type<T>::value , tmp2 );
+      return *this;
+    }
+
+  //! WordJIT |= WordJIT
+  template<class T1>
+  inline
+  WordJIT& operator|=(const WordREG<T1>& rhs) 
+    {
+      jit_value_t tmp = jit_ins_load( r_base , offset_level * sizeof(typename WordType<T>::Type_t) , jit_type<T>::value );
+      jit_value_t tmp2 = jit_ins_or( tmp , rhs.get_val() );
+      jit_ins_store( r_base , offset_level * sizeof(typename WordType<T>::Type_t) , jit_type<T>::value , tmp2 );
+      return *this;
+    }
+
+  //! WordJIT &= WordJIT
+  template<class T1>
+  inline
+  WordJIT& operator&=(const WordREG<T1>& rhs) 
+    {
+      jit_value_t tmp = jit_ins_load( r_base , offset_level * sizeof(typename WordType<T>::Type_t) , jit_type<T>::value );
+      jit_value_t tmp2 = jit_ins_and( tmp , rhs.get_val() );
+      jit_ins_store( r_base , offset_level * sizeof(typename WordType<T>::Type_t) , jit_type<T>::value , tmp2 );
+      return *this;
+    }
+
+  //! WordJIT ^= WordJIT
+  template<class T1>
+  inline
+  WordJIT& operator^=(const WordREG<T1>& rhs) 
+    {
+      jit_value_t tmp = jit_ins_load( r_base , offset_level * sizeof(typename WordType<T>::Type_t) , jit_type<T>::value );
+      jit_value_t tmp2 = jit_ins_xor( tmp , rhs.get_val() );
+      jit_ins_store( r_base , offset_level * sizeof(typename WordType<T>::Type_t) , jit_type<T>::value , tmp2 );
+      return *this;
+    }
+
+  //! WordJIT <<= WordJIT
+  template<class T1>
+  inline
+  WordJIT& operator<<=(const WordREG<T1>& rhs) 
+    {
+      jit_value_t tmp = jit_ins_load( r_base , offset_level * sizeof(typename WordType<T>::Type_t) , jit_type<T>::value );
+      jit_value_t tmp2 = jit_ins_shl( tmp , rhs.get_val() );
+      jit_ins_store( r_base , offset_level * sizeof(typename WordType<T>::Type_t) , jit_type<T>::value , tmp2 );
+      return *this;
+    }
+
+  //! WordJIT >>= WordJIT
+  template<class T1>
+  inline
+  WordJIT& operator>>=(const WordREG<T1>& rhs) 
+    {
+      jit_value_t tmp = jit_ins_load( r_base , offset_level * sizeof(typename WordType<T>::Type_t) , jit_type<T>::value );
+      jit_value_t tmp2 = jit_ins_shr( tmp , rhs.get_val() );
+      jit_ins_store( r_base , offset_level * sizeof(typename WordType<T>::Type_t) , jit_type<T>::value , tmp2 );
+      return *this;
+    }
+
+
 
 
     jit_function_t get_func() const { assert(setup_m); return func;}
@@ -56,13 +169,6 @@ namespace QDP {
     int offset_level;
     bool setup_m=false;
   };
-
-
-  template<> struct WordSize< WordJIT<float> > { enum { Size = sizeof(float) }; };
-  template<> struct WordSize< WordJIT<double> > { enum { Size = sizeof(double) }; };
-  template<> struct WordSize< WordJIT<int> > { enum { Size = sizeof(int) }; };
-  template<> struct WordSize< WordJIT<bool> > { enum { Size = sizeof(bool) }; };
-
 
 
   template<class T>

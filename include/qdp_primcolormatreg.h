@@ -5,8 +5,8 @@
  */
 
 
-#ifndef QDP_PRIMCOLORMATJIT_H
-#define QDP_PRIMCOLORMATJIT_H
+#ifndef QDP_PRIMCOLORMATREG_H
+#define QDP_PRIMCOLORMATREG_H
 
 namespace QDP {
 
@@ -22,25 +22,40 @@ namespace QDP {
 
 
 //! Primitive color Matrix class 
-template <class T, int N> class PColorMatrixJIT : public PMatrixJIT<T, N, PColorMatrixJIT>
+template <class T, int N> class PColorMatrixREG : public PMatrixREG<T, N, PColorMatrixREG>
 {
 public:
 
-  //! PColorMatrixJIT = PScalarJIT
+  void setup( const typename JITType< PColorMatrixREG >::Type_t& j ) {
+    for (int i = 0 ; i < N ; i++ ) 
+      for (int q = 0 ; q < N ; q++ ) 
+	this->elem(i,q).setup( j.elem(i,q) );
+  }
+
+
+  //! PColorMatrixREG = PScalarREG
   /*! Fill with primitive scalar */
   template<class T1>
   inline
-  PColorMatrixJIT& operator=(const PScalarREG<T1>& rhs)
+  PColorMatrixREG& operator=(const PScalarREG<T1>& rhs)
     {
       this->assign(rhs);
       return *this;
     }
 
-  //! PColorMatrixJIT = PColorMatrixJIT
+  //! PColorMatrixREG = PColorMatrixREG
   /*! Set equal to another PMatrix */
   template<class T1>
   inline
-  PColorMatrixJIT& operator=(const PColorMatrixREG<T1,N>& rhs) 
+  PColorMatrixREG& operator=(const PColorMatrixREG<T1,N>& rhs) 
+    {
+      this->assign(rhs);
+      return *this;
+    }
+
+
+
+  PColorMatrixREG& operator=(const PColorMatrixREG& rhs) 
     {
       this->assign(rhs);
       return *this;
@@ -54,231 +69,231 @@ public:
 // Traits classes 
 //-----------------------------------------------------------------------------
 
-
-  template<class T, int N> 
-  struct REGType<PColorMatrixJIT<T,N> >
+  template <class T, int N>
+  struct JITType< PColorMatrixREG<T,N> >
   {
-    typedef PColorMatrixREG<typename REGType<T>::Type_t,N>  Type_t;
+    typedef PColorMatrixJIT< typename JITType<T>::Type_t,N >  Type_t;
   };
+
 
 
 // Underlying word type
 template<class T1, int N>
-struct WordType<PColorMatrixJIT<T1,N> > 
+struct WordType<PColorMatrixREG<T1,N> > 
 {
   typedef typename WordType<T1>::Type_t  Type_t;
 };
 
 // Fixed Precisions
 template<class T1, int N>
-struct SinglePrecType<PColorMatrixJIT<T1,N> >
+struct SinglePrecType<PColorMatrixREG<T1,N> >
 {
-  typedef PColorMatrixJIT<typename SinglePrecType<T1>::Type_t, N> Type_t;
+  typedef PColorMatrixREG<typename SinglePrecType<T1>::Type_t, N> Type_t;
 };
 
 template<class T1, int N>
-struct DoublePrecType<PColorMatrixJIT<T1,N> >
+struct DoublePrecType<PColorMatrixREG<T1,N> >
 {
-  typedef PColorMatrixJIT<typename DoublePrecType<T1>::Type_t, N> Type_t;
+  typedef PColorMatrixREG<typename DoublePrecType<T1>::Type_t, N> Type_t;
 };
 
 
 
 // Internally used scalars
 template<class T, int N>
-struct InternalScalar<PColorMatrixJIT<T,N> > {
-  typedef PScalarJIT<typename InternalScalar<T>::Type_t>  Type_t;
+struct InternalScalar<PColorMatrixREG<T,N> > {
+  typedef PScalarREG<typename InternalScalar<T>::Type_t>  Type_t;
 };
 
 // Makes a primitive into a scalar leaving grid along
 template<class T, int N>
-struct PrimitiveScalar<PColorMatrixJIT<T,N> > {
-  typedef PScalarJIT<typename PrimitiveScalar<T>::Type_t>  Type_t;
+struct PrimitiveScalar<PColorMatrixREG<T,N> > {
+  typedef PScalarREG<typename PrimitiveScalar<T>::Type_t>  Type_t;
 };
 
 // Makes a lattice scalar leaving primitive indices along
 template<class T, int N>
-struct LatticeScalar<PColorMatrixJIT<T,N> > {
-  typedef PColorMatrixJIT<typename LatticeScalar<T>::Type_t, N>  Type_t;
+struct LatticeScalar<PColorMatrixREG<T,N> > {
+  typedef PColorMatrixREG<typename LatticeScalar<T>::Type_t, N>  Type_t;
 };
 
 //-----------------------------------------------------------------------------
 // Traits classes to support return types
 //-----------------------------------------------------------------------------
 
-// Default unary(PColorMatrixJIT) -> PColorMatrixJIT
+// Default unary(PColorMatrixREG) -> PColorMatrixREG
 template<class T1, int N, class Op>
-struct UnaryReturn<PColorMatrixJIT<T1,N>, Op> {
-  typedef PColorMatrixJIT<typename UnaryReturn<T1, Op>::Type_t, N>  Type_t;
+struct UnaryReturn<PColorMatrixREG<T1,N>, Op> {
+  typedef PColorMatrixREG<typename UnaryReturn<T1, Op>::Type_t, N>  Type_t;
 };
 
-// Default binary(PScalarJIT,PColorMatrixJIT) -> PColorMatrixJIT
+// Default binary(PScalarREG,PColorMatrixREG) -> PColorMatrixREG
 template<class T1, class T2, int N, class Op>
-struct BinaryReturn<PScalarJIT<T1>, PColorMatrixJIT<T2,N>, Op> {
-  typedef PColorMatrixJIT<typename BinaryReturn<T1, T2, Op>::Type_t, N>  Type_t;
+struct BinaryReturn<PScalarREG<T1>, PColorMatrixREG<T2,N>, Op> {
+  typedef PColorMatrixREG<typename BinaryReturn<T1, T2, Op>::Type_t, N>  Type_t;
 };
 
-// Default binary(PColorMatrixJIT,PColorMatrixJIT) -> PColorMatrixJIT
+// Default binary(PColorMatrixREG,PColorMatrixREG) -> PColorMatrixREG
 template<class T1, class T2, int N, class Op>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, Op> {
-  typedef PColorMatrixJIT<typename BinaryReturn<T1, T2, Op>::Type_t, N>  Type_t;
+struct BinaryReturn<PColorMatrixREG<T1,N>, PColorMatrixREG<T2,N>, Op> {
+  typedef PColorMatrixREG<typename BinaryReturn<T1, T2, Op>::Type_t, N>  Type_t;
 };
 
-// Default binary(PColorMatrixJIT,PScalarJIT) -> PColorMatrixJIT
+// Default binary(PColorMatrixREG,PScalarREG) -> PColorMatrixREG
 template<class T1, int N, class T2, class Op>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PScalarJIT<T2>, Op> {
-  typedef PColorMatrixJIT<typename BinaryReturn<T1, T2, Op>::Type_t, N>  Type_t;
+struct BinaryReturn<PColorMatrixREG<T1,N>, PScalarREG<T2>, Op> {
+  typedef PColorMatrixREG<typename BinaryReturn<T1, T2, Op>::Type_t, N>  Type_t;
 };
 
 
 // Assignment is different
 template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, OpAssign > {
-  typedef PColorMatrixJIT<T1,N> &Type_t;
+struct BinaryReturn<PColorMatrixREG<T1,N>, PColorMatrixREG<T2,N>, OpAssign > {
+  typedef PColorMatrixREG<T1,N> &Type_t;
 };
 
 template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, OpAddAssign > {
-  typedef PColorMatrixJIT<T1,N> &Type_t;
+struct BinaryReturn<PColorMatrixREG<T1,N>, PColorMatrixREG<T2,N>, OpAddAssign > {
+  typedef PColorMatrixREG<T1,N> &Type_t;
 };
  
 template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, OpSubtractAssign > {
-  typedef PColorMatrixJIT<T1,N> &Type_t;
+struct BinaryReturn<PColorMatrixREG<T1,N>, PColorMatrixREG<T2,N>, OpSubtractAssign > {
+  typedef PColorMatrixREG<T1,N> &Type_t;
 };
  
 template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, OpMultiplyAssign > {
-  typedef PColorMatrixJIT<T1,N> &Type_t;
+struct BinaryReturn<PColorMatrixREG<T1,N>, PColorMatrixREG<T2,N>, OpMultiplyAssign > {
+  typedef PColorMatrixREG<T1,N> &Type_t;
 };
  
 
 template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PScalarJIT<T2>, OpAssign > {
-  typedef PColorMatrixJIT<T1,N> &Type_t;
+struct BinaryReturn<PColorMatrixREG<T1,N>, PScalarREG<T2>, OpAssign > {
+  typedef PColorMatrixREG<T1,N> &Type_t;
 };
 
 template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PScalarJIT<T2>, OpAddAssign > {
-  typedef PColorMatrixJIT<T1,N> &Type_t;
+struct BinaryReturn<PColorMatrixREG<T1,N>, PScalarREG<T2>, OpAddAssign > {
+  typedef PColorMatrixREG<T1,N> &Type_t;
 };
  
 template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PScalarJIT<T2>, OpSubtractAssign > {
-  typedef PColorMatrixJIT<T1,N> &Type_t;
+struct BinaryReturn<PColorMatrixREG<T1,N>, PScalarREG<T2>, OpSubtractAssign > {
+  typedef PColorMatrixREG<T1,N> &Type_t;
 };
  
 template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PScalarJIT<T2>, OpMultiplyAssign > {
-  typedef PColorMatrixJIT<T1,N> &Type_t;
+struct BinaryReturn<PColorMatrixREG<T1,N>, PScalarREG<T2>, OpMultiplyAssign > {
+  typedef PColorMatrixREG<T1,N> &Type_t;
 };
  
 template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PScalarJIT<T2>, OpDivideAssign > {
-  typedef PColorMatrixJIT<T1,N> &Type_t;
+struct BinaryReturn<PColorMatrixREG<T1,N>, PScalarREG<T2>, OpDivideAssign > {
+  typedef PColorMatrixREG<T1,N> &Type_t;
 };
  
 
 
 // ColorMatrix
 template<class T, int N>
-struct UnaryReturn<PColorMatrixJIT<T,N>, FnTrace > {
-  typedef PScalarJIT<typename UnaryReturn<T, FnTrace>::Type_t>  Type_t;
+struct UnaryReturn<PColorMatrixREG<T,N>, FnTrace > {
+  typedef PScalarREG<typename UnaryReturn<T, FnTrace>::Type_t>  Type_t;
 };
 
 template<class T, int N>
-struct UnaryReturn<PColorMatrixJIT<T,N>, FnRealTrace > {
-  typedef PScalarJIT<typename UnaryReturn<T, FnRealTrace>::Type_t>  Type_t;
+struct UnaryReturn<PColorMatrixREG<T,N>, FnRealTrace > {
+  typedef PScalarREG<typename UnaryReturn<T, FnRealTrace>::Type_t>  Type_t;
 };
 
 template<class T, int N>
-struct UnaryReturn<PColorMatrixJIT<T,N>, FnImagTrace > {
-  typedef PScalarJIT<typename UnaryReturn<T, FnImagTrace>::Type_t>  Type_t;
+struct UnaryReturn<PColorMatrixREG<T,N>, FnImagTrace > {
+  typedef PScalarREG<typename UnaryReturn<T, FnImagTrace>::Type_t>  Type_t;
 };
 
 template<class T, int N>
-struct UnaryReturn<PColorMatrixJIT<T,N>, FnNorm2 > {
-  typedef PScalarJIT<typename UnaryReturn<T, FnNorm2>::Type_t>  Type_t;
+struct UnaryReturn<PColorMatrixREG<T,N>, FnNorm2 > {
+  typedef PScalarREG<typename UnaryReturn<T, FnNorm2>::Type_t>  Type_t;
 };
 
 template<class T, int N>
-struct UnaryReturn<PColorMatrixJIT<T,N>, FnLocalNorm2 > {
-  typedef PScalarJIT<typename UnaryReturn<T, FnLocalNorm2>::Type_t>  Type_t;
+struct UnaryReturn<PColorMatrixREG<T,N>, FnLocalNorm2 > {
+  typedef PScalarREG<typename UnaryReturn<T, FnLocalNorm2>::Type_t>  Type_t;
 };
 
 template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, FnTraceMultiply> {
-  typedef PScalarJIT<typename BinaryReturn<T1, T2, FnTraceMultiply>::Type_t>  Type_t;
+struct BinaryReturn<PColorMatrixREG<T1,N>, PColorMatrixREG<T2,N>, FnTraceMultiply> {
+  typedef PScalarREG<typename BinaryReturn<T1, T2, FnTraceMultiply>::Type_t>  Type_t;
 };
 
 template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PScalarJIT<T2>, FnTraceMultiply> {
-  typedef PScalarJIT<typename BinaryReturn<T1, T2, FnTraceMultiply>::Type_t>  Type_t;
+struct BinaryReturn<PColorMatrixREG<T1,N>, PScalarREG<T2>, FnTraceMultiply> {
+  typedef PScalarREG<typename BinaryReturn<T1, T2, FnTraceMultiply>::Type_t>  Type_t;
 };
 
 template<class T1, class T2, int N>
-struct BinaryReturn<PScalarJIT<T1>, PColorMatrixJIT<T2,N>, FnTraceMultiply> {
-  typedef PScalarJIT<typename BinaryReturn<T1, T2, FnTraceMultiply>::Type_t>  Type_t;
+struct BinaryReturn<PScalarREG<T1>, PColorMatrixREG<T2,N>, FnTraceMultiply> {
+  typedef PScalarREG<typename BinaryReturn<T1, T2, FnTraceMultiply>::Type_t>  Type_t;
 };
 
 template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, FnInnerProduct> {
-  typedef PScalarJIT<typename BinaryReturn<T1, T2, FnInnerProduct>::Type_t>  Type_t;
+struct BinaryReturn<PColorMatrixREG<T1,N>, PColorMatrixREG<T2,N>, FnInnerProduct> {
+  typedef PScalarREG<typename BinaryReturn<T1, T2, FnInnerProduct>::Type_t>  Type_t;
 };
 
 template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PScalarJIT<T2>, FnInnerProduct> {
-  typedef PScalarJIT<typename BinaryReturn<T1, T2, FnInnerProduct>::Type_t>  Type_t;
+struct BinaryReturn<PColorMatrixREG<T1,N>, PScalarREG<T2>, FnInnerProduct> {
+  typedef PScalarREG<typename BinaryReturn<T1, T2, FnInnerProduct>::Type_t>  Type_t;
 };
 
 template<class T1, class T2, int N>
-struct BinaryReturn<PScalarJIT<T1>, PColorMatrixJIT<T2,N>, FnInnerProduct> {
-  typedef PScalarJIT<typename BinaryReturn<T1, T2, FnInnerProduct>::Type_t>  Type_t;
+struct BinaryReturn<PScalarREG<T1>, PColorMatrixREG<T2,N>, FnInnerProduct> {
+  typedef PScalarREG<typename BinaryReturn<T1, T2, FnInnerProduct>::Type_t>  Type_t;
 };
 
 template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, FnLocalInnerProduct> {
-  typedef PScalarJIT<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>  Type_t;
+struct BinaryReturn<PColorMatrixREG<T1,N>, PColorMatrixREG<T2,N>, FnLocalInnerProduct> {
+  typedef PScalarREG<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>  Type_t;
 };
 
 template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PScalarJIT<T2>, FnLocalInnerProduct> {
-  typedef PScalarJIT<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>  Type_t;
+struct BinaryReturn<PColorMatrixREG<T1,N>, PScalarREG<T2>, FnLocalInnerProduct> {
+  typedef PScalarREG<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>  Type_t;
 };
 
 template<class T1, class T2, int N>
-struct BinaryReturn<PScalarJIT<T1>, PColorMatrixJIT<T2,N>, FnLocalInnerProduct> {
-  typedef PScalarJIT<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>  Type_t;
+struct BinaryReturn<PScalarREG<T1>, PColorMatrixREG<T2,N>, FnLocalInnerProduct> {
+  typedef PScalarREG<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>  Type_t;
 };
 
 template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, FnInnerProductReal> {
-  typedef PScalarJIT<typename BinaryReturn<T1, T2, FnInnerProductReal>::Type_t>  Type_t;
+struct BinaryReturn<PColorMatrixREG<T1,N>, PColorMatrixREG<T2,N>, FnInnerProductReal> {
+  typedef PScalarREG<typename BinaryReturn<T1, T2, FnInnerProductReal>::Type_t>  Type_t;
 };
 
 template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PScalarJIT<T2>, FnInnerProductReal> {
-  typedef PScalarJIT<typename BinaryReturn<T1, T2, FnInnerProductReal>::Type_t>  Type_t;
+struct BinaryReturn<PColorMatrixREG<T1,N>, PScalarREG<T2>, FnInnerProductReal> {
+  typedef PScalarREG<typename BinaryReturn<T1, T2, FnInnerProductReal>::Type_t>  Type_t;
 };
 
 template<class T1, class T2, int N>
-struct BinaryReturn<PScalarJIT<T1>, PColorMatrixJIT<T2,N>, FnInnerProductReal> {
-  typedef PScalarJIT<typename BinaryReturn<T1, T2, FnInnerProductReal>::Type_t>  Type_t;
+struct BinaryReturn<PScalarREG<T1>, PColorMatrixREG<T2,N>, FnInnerProductReal> {
+  typedef PScalarREG<typename BinaryReturn<T1, T2, FnInnerProductReal>::Type_t>  Type_t;
 };
 
 template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, FnLocalInnerProductReal> {
-  typedef PScalarJIT<typename BinaryReturn<T1, T2, FnLocalInnerProductReal>::Type_t>  Type_t;
+struct BinaryReturn<PColorMatrixREG<T1,N>, PColorMatrixREG<T2,N>, FnLocalInnerProductReal> {
+  typedef PScalarREG<typename BinaryReturn<T1, T2, FnLocalInnerProductReal>::Type_t>  Type_t;
 };
 
 template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PScalarJIT<T2>, FnLocalInnerProductReal> {
-  typedef PScalarJIT<typename BinaryReturn<T1, T2, FnLocalInnerProductReal>::Type_t>  Type_t;
+struct BinaryReturn<PColorMatrixREG<T1,N>, PScalarREG<T2>, FnLocalInnerProductReal> {
+  typedef PScalarREG<typename BinaryReturn<T1, T2, FnLocalInnerProductReal>::Type_t>  Type_t;
 };
 
 template<class T1, class T2, int N>
-struct BinaryReturn<PScalarJIT<T1>, PColorMatrixJIT<T2,N>, FnLocalInnerProductReal> {
-  typedef PScalarJIT<typename BinaryReturn<T1, T2, FnLocalInnerProductReal>::Type_t>  Type_t;
+struct BinaryReturn<PScalarREG<T1>, PColorMatrixREG<T2,N>, FnLocalInnerProductReal> {
+  typedef PScalarREG<typename BinaryReturn<T1, T2, FnLocalInnerProductReal>::Type_t>  Type_t;
 };
 
 
@@ -295,15 +310,15 @@ struct BinaryReturn<PScalarJIT<T1>, PColorMatrixJIT<T2,N>, FnLocalInnerProductRe
 // trace = traceColor(source1)
 /*! This only acts on color indices and is diagonal in all other indices */
 template<class T, int N>
-struct UnaryReturn<PColorMatrixJIT<T,N>, FnTraceColor > {
-  typedef PScalarJIT<typename UnaryReturn<T, FnTraceColor>::Type_t>  Type_t;
+struct UnaryReturn<PColorMatrixREG<T,N>, FnTraceColor > {
+  typedef PScalarREG<typename UnaryReturn<T, FnTraceColor>::Type_t>  Type_t;
 };
 
 template<class T, int N>
-inline typename UnaryReturn<PColorMatrixJIT<T,N>, FnTraceColor>::Type_t
-traceColor(const PColorMatrixJIT<T,N>& s1)
+inline typename UnaryReturn<PColorMatrixREG<T,N>, FnTraceColor>::Type_t
+traceColor(const PColorMatrixREG<T,N>& s1)
 {
-  typename UnaryReturn<PColorMatrixJIT<T,N>, FnTraceColor>::Type_t  d(s1.func());
+  typename UnaryReturn<PColorMatrixREG<T,N>, FnTraceColor>::Type_t  d;
 
   // Since the color index is eaten, do not need to pass on function by
   // calling trace(...) again
@@ -315,17 +330,17 @@ traceColor(const PColorMatrixJIT<T,N>& s1)
 }
 
 
-//! PScalarJIT = traceColorMultiply(PColorMatrixJIT,PColorMatrixJIT)
+//! PScalarREG = traceColorMultiply(PColorMatrixREG,PColorMatrixREG)
 template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, FnTraceColorMultiply> {
-  typedef PScalarJIT<typename BinaryReturn<T1, T2, FnTraceColorMultiply>::Type_t>  Type_t;
+struct BinaryReturn<PColorMatrixREG<T1,N>, PColorMatrixREG<T2,N>, FnTraceColorMultiply> {
+  typedef PScalarREG<typename BinaryReturn<T1, T2, FnTraceColorMultiply>::Type_t>  Type_t;
 };
 
 template<class T1, class T2, int N>
-inline typename BinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, FnTraceColorMultiply>::Type_t
-traceColorMultiply(const PColorMatrixJIT<T1,N>& l, const PColorMatrixJIT<T2,N>& r)
+inline typename BinaryReturn<PColorMatrixREG<T1,N>, PColorMatrixREG<T2,N>, FnTraceColorMultiply>::Type_t
+traceColorMultiply(const PColorMatrixREG<T1,N>& l, const PColorMatrixREG<T2,N>& r)
 {
-  typename BinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, FnTraceColorMultiply>::Type_t  d(l.func());
+  typename BinaryReturn<PColorMatrixREG<T1,N>, PColorMatrixREG<T2,N>, FnTraceColorMultiply>::Type_t  d;
 
   // The traceColor is eaten here
   d.elem() = l.elem(0,0) * r.elem(0,0);
@@ -339,17 +354,17 @@ traceColorMultiply(const PColorMatrixJIT<T1,N>& l, const PColorMatrixJIT<T2,N>& 
   return d;
 }
 
-//! PScalarJIT = traceColorMultiply(PColorMatrixJIT,PScalarJIT)
+//! PScalarREG = traceColorMultiply(PColorMatrixREG,PScalarREG)
 template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PScalarJIT<T2>, FnTraceColorMultiply> {
-  typedef PScalarJIT<typename BinaryReturn<T1, T2, FnTraceColorMultiply>::Type_t>  Type_t;
+struct BinaryReturn<PColorMatrixREG<T1,N>, PScalarREG<T2>, FnTraceColorMultiply> {
+  typedef PScalarREG<typename BinaryReturn<T1, T2, FnTraceColorMultiply>::Type_t>  Type_t;
 };
 
 template<class T1, class T2, int N, template<class,int> class C>
-inline typename BinaryReturn<PColorMatrixJIT<T1,N>, PScalarJIT<T2>, FnTraceColorMultiply>::Type_t
-traceColorMultiply(const PColorMatrixJIT<T1,N>& l, const PScalarJIT<T2>& r)
+inline typename BinaryReturn<PColorMatrixREG<T1,N>, PScalarREG<T2>, FnTraceColorMultiply>::Type_t
+traceColorMultiply(const PColorMatrixREG<T1,N>& l, const PScalarREG<T2>& r)
 {
-  typename BinaryReturn<PColorMatrixJIT<T1,N>, PScalarJIT<T2>, FnTraceColorMultiply>::Type_t  d(l.func());
+  typename BinaryReturn<PColorMatrixREG<T1,N>, PScalarREG<T2>, FnTraceColorMultiply>::Type_t  d;
 
   // The traceColor is eaten here
   d.elem() = l.elem(0,0) * r.elem();
@@ -359,17 +374,17 @@ traceColorMultiply(const PColorMatrixJIT<T1,N>& l, const PScalarJIT<T2>& r)
   return d;
 }
 
-// PScalarJIT = traceColorMultiply(PScalarJIT,PColorMatrixJIT)
+// PScalarREG = traceColorMultiply(PScalarREG,PColorMatrixREG)
 template<class T1, class T2, int N>
-struct BinaryReturn<PScalarJIT<T1>, PColorMatrixJIT<T2,N>, FnTraceColorMultiply> {
-  typedef PScalarJIT<typename BinaryReturn<T1, T2, FnTraceColorMultiply>::Type_t>  Type_t;
+struct BinaryReturn<PScalarREG<T1>, PColorMatrixREG<T2,N>, FnTraceColorMultiply> {
+  typedef PScalarREG<typename BinaryReturn<T1, T2, FnTraceColorMultiply>::Type_t>  Type_t;
 };
 
 template<class T1, class T2, int N>
-inline typename BinaryReturn<PScalarJIT<T1>, PColorMatrixJIT<T2,N>, FnTraceColorMultiply>::Type_t
-traceColorMultiply(const PScalarJIT<T1>& l, const PColorMatrixJIT<T2,N>& r)
+inline typename BinaryReturn<PScalarREG<T1>, PColorMatrixREG<T2,N>, FnTraceColorMultiply>::Type_t
+traceColorMultiply(const PScalarREG<T1>& l, const PColorMatrixREG<T2,N>& r)
 {
-  typename BinaryReturn<PScalarJIT<T1>, PColorMatrixJIT<T2,N>, FnTraceColorMultiply>::Type_t  d(l.func());
+  typename BinaryReturn<PScalarREG<T1>, PColorMatrixREG<T2,N>, FnTraceColorMultiply>::Type_t  d;
 
   // The traceColor is eaten here
   d.elem() = l.elem() * r.elem(0,0);
@@ -382,17 +397,17 @@ traceColorMultiply(const PScalarJIT<T1>& l, const PColorMatrixJIT<T2,N>& r)
 
 /*! Specialise the return type */
 template <class T, int N>
-struct UnaryReturn<PColorMatrixJIT<T,N>, FnTransposeColor > {
-  typedef PColorMatrixJIT<typename UnaryReturn<T, FnTransposeColor>::Type_t, N> Type_t;
+struct UnaryReturn<PColorMatrixREG<T,N>, FnTransposeColor > {
+  typedef PColorMatrixREG<typename UnaryReturn<T, FnTransposeColor>::Type_t, N> Type_t;
 };
 
-//! PColorMatrixJIT = transposeColor(PColorMatrixJIT) 
+//! PColorMatrixREG = transposeColor(PColorMatrixREG) 
 /*! t = transposeColor(source1) - ColorMatrix specialization -- where the work is actually done */
 template<class T, int N>
-inline typename UnaryReturn<PColorMatrixJIT<T,N>, FnTransposeColor >::Type_t
-transposeColor(const PColorMatrixJIT<T,N>& s1)
+inline typename UnaryReturn<PColorMatrixREG<T,N>, FnTransposeColor >::Type_t
+transposeColor(const PColorMatrixREG<T,N>& s1)
 {
-  typename UnaryReturn<PColorMatrixJIT<T,N>, FnTransposeColor>::Type_t d(s1.func());;
+  typename UnaryReturn<PColorMatrixREG<T,N>, FnTransposeColor>::Type_t d;;
  
   for(int i=0; i < N; i++) { 
     for(int j=0; j < N; j++) { 
@@ -407,19 +422,19 @@ transposeColor(const PColorMatrixJIT<T,N>& s1)
 //-----------------------------------------------
 // OuterProduct must be handled specially for each color and spin
 // The problem is the traits class - I have no way to say to PVector's
-//  transform into a PMatrix but downcast the trait to a PColorMatrixJIT or PSpinMatrix
+//  transform into a PMatrix but downcast the trait to a PColorMatrixREG or PSpinMatrix
 
-//! PColorMatrixJIT = outerProduct(PColorVectorJIT, PColorVectorJIT)
+//! PColorMatrixREG = outerProduct(PColorVectorREG, PColorVectorREG)
 template<class T1, class T2, int N>
-struct BinaryReturn<PColorVectorJIT<T1,N>, PColorVectorJIT<T2,N>, FnOuterProduct> {
-  typedef PColorMatrixJIT<typename BinaryReturn<T1, T2, FnOuterProduct>::Type_t, N>  Type_t;
+struct BinaryReturn<PColorVectorREG<T1,N>, PColorVectorREG<T2,N>, FnOuterProduct> {
+  typedef PColorMatrixREG<typename BinaryReturn<T1, T2, FnOuterProduct>::Type_t, N>  Type_t;
 };
 
 template<class T1, class T2, int N>
-inline typename BinaryReturn<PColorVectorJIT<T1,N>, PColorVectorJIT<T2,N>, FnOuterProduct>::Type_t
-outerProduct(const PColorVectorJIT<T1,N>& l, const PColorVectorJIT<T2,N>& r)
+inline typename BinaryReturn<PColorVectorREG<T1,N>, PColorVectorREG<T2,N>, FnOuterProduct>::Type_t
+outerProduct(const PColorVectorREG<T1,N>& l, const PColorVectorREG<T2,N>& r)
 {
-  typename BinaryReturn<PColorVectorJIT<T1,N>, PColorVectorJIT<T2,N>, FnOuterProduct>::Type_t  d(l.func());
+  typename BinaryReturn<PColorVectorREG<T1,N>, PColorVectorREG<T2,N>, FnOuterProduct>::Type_t  d;
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -433,37 +448,37 @@ outerProduct(const PColorVectorJIT<T1,N>& l, const PColorVectorJIT<T2,N>& r)
 // Peeking and poking
 //! Extract color matrix components 
 /*! Generically, this is an identity operation. Defined differently under color */
-// template<class T, int N>
-// struct UnaryReturn<PColorMatrixJIT<T,N>, FnPeekColorMatrixJIT > {
-//   typedef PScalarJIT<typename UnaryReturn<T, FnPeekColorMatrixJIT>::Type_t>  Type_t;
-// };
+template<class T, int N>
+struct UnaryReturn<PColorMatrixREG<T,N>, FnPeekColorMatrixREG > {
+  typedef PScalarREG<typename UnaryReturn<T, FnPeekColorMatrixREG>::Type_t>  Type_t;
+};
 
-// template<class T, int N>
-// inline typename UnaryReturn<PColorMatrixJIT<T,N>, FnPeekColorMatrixJIT>::Type_t
-// peekColor(const PColorMatrixJIT<T,N>& l, int row, int col)
-// {
-//   typename UnaryReturn<PColorMatrixJIT<T,N>, FnPeekColorMatrixJIT>::Type_t  d( l.func() );
-//   d.elem() = l.getRegElem(row,col);
-//   return d;
-// }
+template<class T, int N>
+inline typename UnaryReturn<PColorMatrixREG<T,N>, FnPeekColorMatrixREG>::Type_t
+peekColor(const PColorMatrixREG<T,N>& l, int row, int col)
+{
+  typename UnaryReturn<PColorMatrixREG<T,N>, FnPeekColorMatrixREG>::Type_t  d( l.func() );
+  d.elem() = l.getRegElem(row,col);
+  return d;
+}
 
-// //! Insert color matrix components
-// template<class T1, class T2, int N>
-// inline PColorMatrixJIT<T1,N>&
-// pokeColor(PColorMatrixJIT<T1,N>& l, const PScalarJIT<T2>& r, int row, int col)
-// {
-//   // Note, do not need to propagate down since the function is eaten at this level
-//   l.getRegElem(row,col) = r.elem();
-//   return l;
-// }
+//! Insert color matrix components
+template<class T1, class T2, int N>
+inline PColorMatrixREG<T1,N>&
+pokeColor(PColorMatrixREG<T1,N>& l, const PScalarREG<T2>& r, int row, int col)
+{
+  // Note, do not need to propagate down since the function is eaten at this level
+  l.getRegElem(row,col) = r.elem();
+  return l;
+}
 
 
 //-----------------------------------------------------------------------------
 // Contraction for color matrices
 // colorContract 
 template<class T1, class T2, class T3, int N>
-struct TrinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, PColorMatrixJIT<T3,N>, FnColorContract> {
-  typedef PScalarJIT<typename TrinaryReturn<T1, T2, T3, FnColorContract>::Type_t>  Type_t;
+struct TrinaryReturn<PColorMatrixREG<T1,N>, PColorMatrixREG<T2,N>, PColorMatrixREG<T3,N>, FnColorContract> {
+  typedef PScalarREG<typename TrinaryReturn<T1, T2, T3, FnColorContract>::Type_t>  Type_t;
 };
 
 //! dest  = colorContract(Qprop1,Qprop2,Qprop3)
@@ -474,10 +489,10 @@ struct TrinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, PColorMatrixJ
  * This routine is completely unrolled for 3 colors
  */
 template<class T1, class T2, class T3>
-inline typename TrinaryReturn<PColorMatrixJIT<T1,3>, PColorMatrixJIT<T2,3>, PColorMatrixJIT<T3,3>, FnColorContract>::Type_t
-colorContract(const PColorMatrixJIT<T1,3>& s1, const PColorMatrixJIT<T2,3>& s2, const PColorMatrixJIT<T3,3>& s3)
+inline typename TrinaryReturn<PColorMatrixREG<T1,3>, PColorMatrixREG<T2,3>, PColorMatrixREG<T3,3>, FnColorContract>::Type_t
+colorContract(const PColorMatrixREG<T1,3>& s1, const PColorMatrixREG<T2,3>& s2, const PColorMatrixREG<T3,3>& s3)
 {
-  typename TrinaryReturn<PColorMatrixJIT<T1,3>, PColorMatrixJIT<T2,3>, PColorMatrixJIT<T3,3>, FnColorContract>::Type_t  d(s1.func());
+  typename TrinaryReturn<PColorMatrixREG<T1,3>, PColorMatrixREG<T2,3>, PColorMatrixREG<T3,3>, FnColorContract>::Type_t  d;
 
   // Permutations: +(0,1,2)+(1,2,0)+(2,0,1)-(1,0,2)-(0,2,1)-(2,1,0)
 
@@ -537,10 +552,10 @@ colorContract(const PColorMatrixJIT<T1,3>& s1, const PColorMatrixJIT<T2,3>& s2, 
  *  should be written for every number of colors.
  */
 template<class T1, class T2, class T3>
-inline typename TrinaryReturn<PColorMatrixJIT<T1,1>, PColorMatrixJIT<T2,1>, PColorMatrixJIT<T3,1>, FnColorContract>::Type_t
-colorContract(const PColorMatrixJIT<T1,1>& s1, const PColorMatrixJIT<T2,1>& s2, const PColorMatrixJIT<T3,1>& s3)
+inline typename TrinaryReturn<PColorMatrixREG<T1,1>, PColorMatrixREG<T2,1>, PColorMatrixREG<T3,1>, FnColorContract>::Type_t
+colorContract(const PColorMatrixREG<T1,1>& s1, const PColorMatrixREG<T2,1>& s2, const PColorMatrixREG<T3,1>& s3)
 {
-  typename TrinaryReturn<PColorMatrixJIT<T1,1>, PColorMatrixJIT<T2,1>, PColorMatrixJIT<T3,1>, FnColorContract>::Type_t  d(s1.func());
+  typename TrinaryReturn<PColorMatrixREG<T1,1>, PColorMatrixREG<T2,1>, PColorMatrixREG<T3,1>, FnColorContract>::Type_t  d;
 
   // not written 
   QDPIO::cerr << __func__ << ": not written for Nc=1" << endl;
@@ -561,10 +576,10 @@ colorContract(const PColorMatrixJIT<T1,1>& s1, const PColorMatrixJIT<T2,1>& s2, 
  *  should be written for every number of colors.
  */
 template<class T1, class T2, class T3>
-inline typename TrinaryReturn<PColorMatrixJIT<T1,2>, PColorMatrixJIT<T2,2>, PColorMatrixJIT<T3,2>, FnColorContract>::Type_t
-colorContract(const PColorMatrixJIT<T1,2>& s1, const PColorMatrixJIT<T2,2>& s2, const PColorMatrixJIT<T3,2>& s3)
+inline typename TrinaryReturn<PColorMatrixREG<T1,2>, PColorMatrixREG<T2,2>, PColorMatrixREG<T3,2>, FnColorContract>::Type_t
+colorContract(const PColorMatrixREG<T1,2>& s1, const PColorMatrixREG<T2,2>& s2, const PColorMatrixREG<T3,2>& s3)
 {
-  typename TrinaryReturn<PColorMatrixJIT<T1,2>, PColorMatrixJIT<T2,2>, PColorMatrixJIT<T3,2>, FnColorContract>::Type_t  d(s1.func());
+  typename TrinaryReturn<PColorMatrixREG<T1,2>, PColorMatrixREG<T2,2>, PColorMatrixREG<T3,2>, FnColorContract>::Type_t  d;
 
   // not written 
   QDPIO::cerr << __func__ << ": not written for Nc=2" << endl;
@@ -585,10 +600,10 @@ colorContract(const PColorMatrixJIT<T1,2>& s1, const PColorMatrixJIT<T2,2>& s2, 
  *  should be written for every number of colors.
  */
 template<class T1, class T2, class T3>
-inline typename TrinaryReturn<PColorMatrixJIT<T1,4>, PColorMatrixJIT<T2,4>, PColorMatrixJIT<T3,4>, FnColorContract>::Type_t
-colorContract(const PColorMatrixJIT<T1,4>& s1, const PColorMatrixJIT<T2,4>& s2, const PColorMatrixJIT<T3,4>& s3)
+inline typename TrinaryReturn<PColorMatrixREG<T1,4>, PColorMatrixREG<T2,4>, PColorMatrixREG<T3,4>, FnColorContract>::Type_t
+colorContract(const PColorMatrixREG<T1,4>& s1, const PColorMatrixREG<T2,4>& s2, const PColorMatrixREG<T3,4>& s3)
 {
-  typename TrinaryReturn<PColorMatrixJIT<T1,4>, PColorMatrixJIT<T2,4>, PColorMatrixJIT<T3,4>, FnColorContract>::Type_t  d(s1.func());
+  typename TrinaryReturn<PColorMatrixREG<T1,4>, PColorMatrixREG<T2,4>, PColorMatrixREG<T3,4>, FnColorContract>::Type_t  d;
 
   // not written 
   QDPIO::cerr << __func__ << ": not written for Nc=4" << endl;
@@ -609,10 +624,10 @@ colorContract(const PColorMatrixJIT<T1,4>& s1, const PColorMatrixJIT<T2,4>& s2, 
  * This routine is completely unrolled for 3 colors
  */
 template<class T1, class T2>
-inline typename BinaryReturn<PColorMatrixJIT<T1,3>, PColorMatrixJIT<T2,3>, FnQuarkContractXX>::Type_t
-quarkContractXX(const PColorMatrixJIT<T1,3>& s1, const PColorMatrixJIT<T2,3>& s2)
+inline typename BinaryReturn<PColorMatrixREG<T1,3>, PColorMatrixREG<T2,3>, FnQuarkContractXX>::Type_t
+quarkContractXX(const PColorMatrixREG<T1,3>& s1, const PColorMatrixREG<T2,3>& s2)
 {
-  typename BinaryReturn<PColorMatrixJIT<T1,3>, PColorMatrixJIT<T2,3>, FnQuarkContractXX>::Type_t  d(s1.func());
+  typename BinaryReturn<PColorMatrixREG<T1,3>, PColorMatrixREG<T2,3>, FnQuarkContractXX>::Type_t  d;
 
   // Permutations: +(0,1,2)+(1,2,0)+(2,0,1)-(1,0,2)-(0,2,1)-(2,1,0)
 
@@ -705,10 +720,10 @@ quarkContractXX(const PColorMatrixJIT<T1,3>& s1, const PColorMatrixJIT<T2,3>& s2
  *  should be written for every number of colors.
  */
 template<class T1, class T2>
-inline typename BinaryReturn<PColorMatrixJIT<T1,1>, PColorMatrixJIT<T2,1>, FnQuarkContractXX>::Type_t
-quarkContractXX(const PColorMatrixJIT<T1,1>& s1, const PColorMatrixJIT<T2,1>& s2)
+inline typename BinaryReturn<PColorMatrixREG<T1,1>, PColorMatrixREG<T2,1>, FnQuarkContractXX>::Type_t
+quarkContractXX(const PColorMatrixREG<T1,1>& s1, const PColorMatrixREG<T2,1>& s2)
 {
-  typename BinaryReturn<PColorMatrixJIT<T1,1>, PColorMatrixJIT<T2,1>, FnQuarkContractXX>::Type_t  d(s1.func());
+  typename BinaryReturn<PColorMatrixREG<T1,1>, PColorMatrixREG<T2,1>, FnQuarkContractXX>::Type_t  d;
 
   // not yet written 
   QDPIO::cerr << __func__ << ": not written for Nc=1" << endl;
@@ -731,10 +746,10 @@ quarkContractXX(const PColorMatrixJIT<T1,1>& s1, const PColorMatrixJIT<T2,1>& s2
  *  should be written for every number of colors.
  */
 template<class T1, class T2>
-inline typename BinaryReturn<PColorMatrixJIT<T1,2>, PColorMatrixJIT<T2,2>, FnQuarkContractXX>::Type_t
-quarkContractXX(const PColorMatrixJIT<T1,2>& s1, const PColorMatrixJIT<T2,2>& s2)
+inline typename BinaryReturn<PColorMatrixREG<T1,2>, PColorMatrixREG<T2,2>, FnQuarkContractXX>::Type_t
+quarkContractXX(const PColorMatrixREG<T1,2>& s1, const PColorMatrixREG<T2,2>& s2)
 {
-  typename BinaryReturn<PColorMatrixJIT<T1,2>, PColorMatrixJIT<T2,2>, FnQuarkContractXX>::Type_t  d(s1.func());
+  typename BinaryReturn<PColorMatrixREG<T1,2>, PColorMatrixREG<T2,2>, FnQuarkContractXX>::Type_t  d;
 
   // not yet written 
   QDPIO::cerr << __func__ << ": not written for Nc=2" << endl;
@@ -757,10 +772,10 @@ quarkContractXX(const PColorMatrixJIT<T1,2>& s1, const PColorMatrixJIT<T2,2>& s2
  *  should be written for every number of colors.
  */
 template<class T1, class T2>
-inline typename BinaryReturn<PColorMatrixJIT<T1,4>, PColorMatrixJIT<T2,4>, FnQuarkContractXX>::Type_t
-quarkContractXX(const PColorMatrixJIT<T1,4>& s1, const PColorMatrixJIT<T2,4>& s2)
+inline typename BinaryReturn<PColorMatrixREG<T1,4>, PColorMatrixREG<T2,4>, FnQuarkContractXX>::Type_t
+quarkContractXX(const PColorMatrixREG<T1,4>& s1, const PColorMatrixREG<T2,4>& s2)
 {
-  typename BinaryReturn<PColorMatrixJIT<T1,4>, PColorMatrixJIT<T2,4>, FnQuarkContractXX>::Type_t  d(s1.func());
+  typename BinaryReturn<PColorMatrixREG<T1,4>, PColorMatrixREG<T2,4>, FnQuarkContractXX>::Type_t  d;
 
   // not yet written 
   QDPIO::cerr << __func__ << ": not written for Nc=4" << endl;

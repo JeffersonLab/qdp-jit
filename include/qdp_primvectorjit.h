@@ -36,7 +36,7 @@ public:
   /*! Set equal to another PVectorJIT */
   template<class T1>
   inline
-  CC& assign(const C<T1,N>& rhs) 
+  CC& assign(const typename REGType< C<T1,N> >::Type_t& rhs) 
     {
       for(int i=0; i < N; ++i)
 	elem(i) = rhs.elem(i);
@@ -48,7 +48,7 @@ public:
   /*! Set equal to another PVectorJIT */
   template<class T1>
   inline
-  CC& operator=(const C<T1,N>& rhs) 
+  CC& operator=(const typename REGType< C<T1,N> >::Type_t& rhs) 
     {
       return assign(rhs);
     }
@@ -56,7 +56,7 @@ public:
   //! PVectorJIT += PVectorJIT
   template<class T1>
   inline
-  CC& operator+=(const C<T1,N>& rhs) 
+  CC& operator+=(const typename REGType< C<T1,N> >::Type_t& rhs) 
     {
       for(int i=0; i < N; ++i)
 	elem(i) += rhs.elem(i);
@@ -67,7 +67,7 @@ public:
   //! PVectorJIT -= PVectorJIT
   template<class T1>
   inline
-  CC& operator-=(const C<T1,N>& rhs) 
+  CC& operator-=(const typename REGType< C<T1,N> >::Type_t& rhs) 
     {
       for(int i=0; i < N; ++i)
 	elem(i) -= rhs.elem(i);
@@ -78,7 +78,7 @@ public:
   //! PVectorJIT *= PScalarJIT
   template<class T1>
   inline
-  CC& operator*=(const PScalarJIT<T1>& rhs) 
+  CC& operator*=(const PScalarREG<T1>& rhs) 
     {
       for(int i=0; i < N; ++i)
 	elem(i) *= rhs.elem();
@@ -89,7 +89,7 @@ public:
   //! PVectorJIT /= PScalarJIT
   template<class T1>
   inline
-  CC& operator/=(const PScalarJIT<T1>& rhs) 
+  CC& operator/=(const PScalarREG<T1>& rhs) 
     {
       for(int i=0; i < N; ++i)
 	elem(i) /= rhs.elem();
@@ -497,109 +497,111 @@ getSite(const PVectorJIT<T,N,C>& s1, int innersite)
   return d;
 }
 
-//! Extract color vector components 
-/*! Generically, this is an identity operation. Defined differently under color */
-template<class T, int N, template<class,int> class C>
-inline typename UnaryReturn<PVectorJIT<T,N,C>, FnPeekColorVectorJIT>::Type_t
-peekColor(const PVectorJIT<T,N,C>& l, int row)
-{
-  typename UnaryReturn<PVectorJIT<T,N,C>, FnPeekColorVectorJIT>::Type_t  d(l.func());
+// #if 0
+// //! Extract color vector components 
+// /*! Generically, this is an identity operation. Defined differently under color */
+// template<class T, int N, template<class,int> class C>
+// inline typename UnaryReturn<PVectorJIT<T,N,C>, FnPeekColorVectorJIT>::Type_t
+// peekColor(const PVectorJIT<T,N,C>& l, int row)
+// {
+//   typename UnaryReturn<PVectorJIT<T,N,C>, FnPeekColorVectorJIT>::Type_t  d(l.func());
 
-  for(int i=0; i < N; ++i)
-    d.elem(i) = peekColor(l.elem(i),row);
-  return d;
-}
+//   for(int i=0; i < N; ++i)
+//     d.elem(i) = peekColor(l.elem(i),row);
+//   return d;
+// }
 
-//! Extract color matrix components 
-/*! Generically, this is an identity operation. Defined differently under color */
-template<class T, int N, template<class,int> class C>
-inline typename UnaryReturn<PVectorJIT<T,N,C>, FnPeekColorMatrixJIT>::Type_t
-peekColor(const PVectorJIT<T,N,C>& l, int row, int col)
-{
-  typename UnaryReturn<PVectorJIT<T,N,C>, FnPeekColorMatrixJIT>::Type_t  d(l.func());
+// //! Extract color matrix components 
+// /*! Generically, this is an identity operation. Defined differently under color */
+// template<class T, int N, template<class,int> class C>
+// inline typename UnaryReturn<PVectorJIT<T,N,C>, FnPeekColorMatrixJIT>::Type_t
+// peekColor(const PVectorJIT<T,N,C>& l, int row, int col)
+// {
+//   typename UnaryReturn<PVectorJIT<T,N,C>, FnPeekColorMatrixJIT>::Type_t  d(l.func());
 
-  for(int i=0; i < N; ++i)
-    d.elem(i) = peekColor(l.elem(i),row,col);
-  return d;
-}
+//   for(int i=0; i < N; ++i)
+//     d.elem(i) = peekColor(l.elem(i),row,col);
+//   return d;
+// }
 
-//! Extract spin vector components 
-/*! Generically, this is an identity operation. Defined differently under spin */
-template<class T, int N, template<class,int> class C>
-inline typename UnaryReturn<PVectorJIT<T,N,C>, FnPeekSpinVectorJIT>::Type_t
-peekSpin(const PVectorJIT<T,N,C>& l, int row)
-{
-  typename UnaryReturn<PVectorJIT<T,N,C>, FnPeekSpinVectorJIT>::Type_t  d(l.func());
+// //! Extract spin vector components 
+// /*! Generically, this is an identity operation. Defined differently under spin */
+// template<class T, int N, template<class,int> class C>
+// inline typename UnaryReturn<PVectorJIT<T,N,C>, FnPeekSpinVectorJIT>::Type_t
+// peekSpin(const PVectorJIT<T,N,C>& l, int row)
+// {
+//   typename UnaryReturn<PVectorJIT<T,N,C>, FnPeekSpinVectorJIT>::Type_t  d(l.func());
 
-  for(int i=0; i < N; ++i)
-    d.elem(i) = peekSpin(l.elem(i),row);
-  return d;
-}
+//   for(int i=0; i < N; ++i)
+//     d.elem(i) = peekSpin(l.elem(i),row);
+//   return d;
+// }
 
-//! Extract spin matrix components 
-/*! Generically, this is an identity operation. Defined differently under spin */
-template<class T, int N, template<class,int> class C>
-inline typename UnaryReturn<PVectorJIT<T,N,C>, FnPeekSpinMatrixJIT>::Type_t
-peekSpin(const PVectorJIT<T,N,C>& l, int row, int col)
-{
-  typename UnaryReturn<PVectorJIT<T,N,C>, FnPeekSpinMatrixJIT>::Type_t  d(l.func());
+// //! Extract spin matrix components 
+// /*! Generically, this is an identity operation. Defined differently under spin */
+// template<class T, int N, template<class,int> class C>
+// inline typename UnaryReturn<PVectorJIT<T,N,C>, FnPeekSpinMatrixJIT>::Type_t
+// peekSpin(const PVectorJIT<T,N,C>& l, int row, int col)
+// {
+//   typename UnaryReturn<PVectorJIT<T,N,C>, FnPeekSpinMatrixJIT>::Type_t  d(l.func());
 
-  for(int i=0; i < N; ++i)
-    d.elem(i) = peekSpin(l.elem(i),row,col);
-  return d;
-}
+//   for(int i=0; i < N; ++i)
+//     d.elem(i) = peekSpin(l.elem(i),row,col);
+//   return d;
+// }
 
-//! Insert color vector components 
-/*! Generically, this is an identity operation. Defined differently under color */
-template<class T1, class T2, int N, template<class,int> class C>
-inline typename UnaryReturn<PVectorJIT<T1,N,C>, FnPokeColorVectorJIT>::Type_t&
-pokeColor(PVectorJIT<T1,N,C>& l, const PVectorJIT<T2,N,C>& r, int row)
-{
-  typedef typename UnaryReturn<PVectorJIT<T1,N,C>, FnPokeColorVectorJIT>::Type_t  Return_t;
+// //! Insert color vector components 
+// /*! Generically, this is an identity operation. Defined differently under color */
+// template<class T1, class T2, int N, template<class,int> class C>
+// inline typename UnaryReturn<PVectorJIT<T1,N,C>, FnPokeColorVectorJIT>::Type_t&
+// pokeColor(PVectorJIT<T1,N,C>& l, const PVectorJIT<T2,N,C>& r, int row)
+// {
+//   typedef typename UnaryReturn<PVectorJIT<T1,N,C>, FnPokeColorVectorJIT>::Type_t  Return_t;
 
-  for(int i=0; i < N; ++i)
-    pokeColor(l.elem(i),r.elem(i),row);
-  return static_cast<Return_t&>(l);
-}
+//   for(int i=0; i < N; ++i)
+//     pokeColor(l.elem(i),r.elem(i),row);
+//   return static_cast<Return_t&>(l);
+// }
 
-//! Insert color matrix components 
-/*! Generically, this is an identity operation. Defined differently under color */
-template<class T1, class T2, int N, template<class,int> class C>
-inline typename UnaryReturn<PVectorJIT<T1,N,C>, FnPokeColorVectorJIT>::Type_t&
-pokeColor(PVectorJIT<T1,N,C>& l, const PVectorJIT<T2,N,C>& r, int row, int col)
-{
-  typedef typename UnaryReturn<PVectorJIT<T1,N,C>, FnPokeColorVectorJIT>::Type_t  Return_t;
+// //! Insert color matrix components 
+// /*! Generically, this is an identity operation. Defined differently under color */
+// template<class T1, class T2, int N, template<class,int> class C>
+// inline typename UnaryReturn<PVectorJIT<T1,N,C>, FnPokeColorVectorJIT>::Type_t&
+// pokeColor(PVectorJIT<T1,N,C>& l, const PVectorJIT<T2,N,C>& r, int row, int col)
+// {
+//   typedef typename UnaryReturn<PVectorJIT<T1,N,C>, FnPokeColorVectorJIT>::Type_t  Return_t;
 
-  for(int i=0; i < N; ++i)
-    pokeColor(l.elem(i),r.elem(i),row,col);
-  return static_cast<Return_t&>(l);
-}
+//   for(int i=0; i < N; ++i)
+//     pokeColor(l.elem(i),r.elem(i),row,col);
+//   return static_cast<Return_t&>(l);
+// }
 
-//! Insert spin vector components 
-/*! Generically, this is an identity operation. Defined differently under spin */
-template<class T1, class T2, int N, template<class,int> class C>
-inline typename UnaryReturn<PVectorJIT<T1,N,C>, FnPokeSpinVectorJIT>::Type_t&
-pokeSpin(PVectorJIT<T1,N,C>& l, const PVectorJIT<T2,N,C>& r, int row)
-{
-  typedef typename UnaryReturn<PVectorJIT<T1,N,C>, FnPokeSpinVectorJIT>::Type_t  Return_t;
+// //! Insert spin vector components 
+// /*! Generically, this is an identity operation. Defined differently under spin */
+// template<class T1, class T2, int N, template<class,int> class C>
+// inline typename UnaryReturn<PVectorJIT<T1,N,C>, FnPokeSpinVectorJIT>::Type_t&
+// pokeSpin(PVectorJIT<T1,N,C>& l, const PVectorJIT<T2,N,C>& r, int row)
+// {
+//   typedef typename UnaryReturn<PVectorJIT<T1,N,C>, FnPokeSpinVectorJIT>::Type_t  Return_t;
 
-  for(int i=0; i < N; ++i)
-    pokeSpin(l.elem(i),r.elem(i),row);
-  return static_cast<Return_t&>(l);
-}
+//   for(int i=0; i < N; ++i)
+//     pokeSpin(l.elem(i),r.elem(i),row);
+//   return static_cast<Return_t&>(l);
+// }
 
-//! Insert spin matrix components 
-/*! Generically, this is an identity operation. Defined differently under spin */
-template<class T1, class T2, int N, template<class,int> class C>
-inline typename UnaryReturn<PVectorJIT<T1,N,C>, FnPokeSpinVectorJIT>::Type_t&
-pokeSpin(PVectorJIT<T1,N,C>& l, const PVectorJIT<T2,N,C>& r, int row, int col)
-{
-  typedef typename UnaryReturn<PVectorJIT<T1,N,C>, FnPokeSpinVectorJIT>::Type_t  Return_t;
+// //! Insert spin matrix components 
+// /*! Generically, this is an identity operation. Defined differently under spin */
+// template<class T1, class T2, int N, template<class,int> class C>
+// inline typename UnaryReturn<PVectorJIT<T1,N,C>, FnPokeSpinVectorJIT>::Type_t&
+// pokeSpin(PVectorJIT<T1,N,C>& l, const PVectorJIT<T2,N,C>& r, int row, int col)
+// {
+//   typedef typename UnaryReturn<PVectorJIT<T1,N,C>, FnPokeSpinVectorJIT>::Type_t  Return_t;
 
-  for(int i=0; i < N; ++i)
-    pokeSpin(l.elem(i),r.elem(i),row,col);
-  return static_cast<Return_t&>(l);
-}
+//   for(int i=0; i < N; ++i)
+//     pokeSpin(l.elem(i),r.elem(i),row,col);
+//   return static_cast<Return_t&>(l);
+// }
+// #endif
 
 
 //! dest = 0

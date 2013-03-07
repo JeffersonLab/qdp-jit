@@ -1,15 +1,15 @@
-#ifndef QDP_NEWOPTSJIT_H
-#define QDP_NEWOPTSJIT_H
+#ifndef QDP_NEWOPTSREG_H
+#define QDP_NEWOPTSREG_H
 
 
 namespace QDP {
 
-struct FnPeekColorMatrixJIT
+struct FnPeekColorMatrixREG
 {
-  FnPeekColorMatrixJIT(jit_value_t _row, jit_value_t _col): row(_row), col(_col) {}
+  FnPeekColorMatrixREG(jit_value_t _row, jit_value_t _col): row(_row), col(_col) {}
 
   template<class T>
-  inline typename UnaryReturn<T, FnPeekColorMatrixJIT>::Type_t
+  inline typename UnaryReturn<T, FnPeekColorMatrixREG>::Type_t
   operator()(const T &a) const
   {
     return (peekColor(a,row,col));
@@ -20,12 +20,12 @@ private:
 };
 
 
-struct FnPokeColorMatrixJIT
+struct FnPokeColorMatrixREG
 {
-  FnPokeColorMatrixJIT(jit_value_t _row, jit_value_t _col): row(_row), col(_col) {}
+  FnPokeColorMatrixREG(jit_value_t _row, jit_value_t _col): row(_row), col(_col) {}
   
   template<class T1, class T2>
-  inline typename BinaryReturn<T1, T2, FnPokeColorMatrixJIT>::Type_t
+  inline typename BinaryReturn<T1, T2, FnPokeColorMatrixREG>::Type_t
   operator()(const T1 &a, const T2 &b) const
   {
     pokeColor(const_cast<T1&>(a),b,row,col);
@@ -45,13 +45,13 @@ template<class A>
 struct ForEach<UnaryNode<FnPeekColorMatrix, A>, ParamLeaf, TreeCombine>
 {
   typedef typename ForEach<A, ParamLeaf, TreeCombine>::Type_t TypeA_t;
-  typedef typename Combine1<TypeA_t, FnPeekColorMatrixJIT, TreeCombine>::Type_t Type_t;
+  typedef typename Combine1<TypeA_t, FnPeekColorMatrixREG, TreeCombine>::Type_t Type_t;
   inline static
   Type_t apply(const UnaryNode<FnPeekColorMatrix, A> &expr, const ParamLeaf &p, const TreeCombine &c)
   {
-    return Combine1<TypeA_t, FnPeekColorMatrixJIT, TreeCombine>::
+    return Combine1<TypeA_t, FnPeekColorMatrixREG, TreeCombine>::
       combine(ForEach<A, ParamLeaf, TreeCombine>::apply(expr.child(), p, c),
-              FnPeekColorMatrixJIT( jit_add_param( p.getFunc() , jit_ptx_type::s32 ) , jit_add_param( p.getFunc() , jit_ptx_type::s32 ) ) , c);
+              FnPeekColorMatrixREG( jit_add_param( p.getFunc() , jit_ptx_type::s32 ) , jit_add_param( p.getFunc() , jit_ptx_type::s32 ) ) , c);
   }
 };
   
@@ -59,9 +59,9 @@ struct ForEach<UnaryNode<FnPeekColorMatrix, A>, ParamLeaf, TreeCombine>
   
   template<>  
   struct AddOpParam< FnPokeColorMatrix, ParamLeaf> {
-    static FnPokeColorMatrixJIT apply( const FnPokeColorMatrix& a, const ParamLeaf& p) {
+    static FnPokeColorMatrixREG apply( const FnPokeColorMatrix& a, const ParamLeaf& p) {
       //std::cout << __PRETTY_FUNCTION__ << "\n";
-      return FnPokeColorMatrixJIT( jit_add_param( p.getFunc() , jit_ptx_type::s32 ) , 
+      return FnPokeColorMatrixREG( jit_add_param( p.getFunc() , jit_ptx_type::s32 ) , 
 				   jit_add_param( p.getFunc() , jit_ptx_type::s32 ) );
     }
   };
@@ -100,12 +100,12 @@ struct ForEach<UnaryNode<FnPeekColorMatrix, A>, AddressLeaf, NullCombine>
 
   //////////////////////////////
 
-struct FnPeekSpinMatrixJIT
+struct FnPeekSpinMatrixREG
 {
-  FnPeekSpinMatrixJIT(jit_value_t _row, jit_value_t _col): row(_row), col(_col) {}
+  FnPeekSpinMatrixREG(jit_value_t _row, jit_value_t _col): row(_row), col(_col) {}
 
   template<class T>
-  inline typename UnaryReturn<T, FnPeekSpinMatrixJIT>::Type_t
+  inline typename UnaryReturn<T, FnPeekSpinMatrixREG>::Type_t
   operator()(const T &a) const
   {
     return (peekSpin(a,row,col));
@@ -116,12 +116,12 @@ private:
 };
 
 
-struct FnPokeSpinMatrixJIT
+struct FnPokeSpinMatrixREG
 {
-  FnPokeSpinMatrixJIT(jit_value_t _row, jit_value_t _col): row(_row), col(_col) {}
+  FnPokeSpinMatrixREG(jit_value_t _row, jit_value_t _col): row(_row), col(_col) {}
   
   template<class T1, class T2>
-  inline typename BinaryReturn<T1, T2, FnPokeSpinMatrixJIT>::Type_t
+  inline typename BinaryReturn<T1, T2, FnPokeSpinMatrixREG>::Type_t
   operator()(const T1 &a, const T2 &b) const
   {
     pokeSpin(const_cast<T1&>(a),b,row,col);
@@ -140,13 +140,13 @@ template<class A>
 struct ForEach<UnaryNode<FnPeekSpinMatrix, A>, ParamLeaf, TreeCombine>
 {
   typedef typename ForEach<A, ParamLeaf, TreeCombine>::Type_t TypeA_t;
-  typedef typename Combine1<TypeA_t, FnPeekSpinMatrixJIT, TreeCombine>::Type_t Type_t;
+  typedef typename Combine1<TypeA_t, FnPeekSpinMatrixREG, TreeCombine>::Type_t Type_t;
   inline static
   Type_t apply(const UnaryNode<FnPeekSpinMatrix, A> &expr, const ParamLeaf &p, const TreeCombine &c)
   {
-    return Combine1<TypeA_t, FnPeekSpinMatrixJIT, TreeCombine>::
+    return Combine1<TypeA_t, FnPeekSpinMatrixREG, TreeCombine>::
       combine(ForEach<A, ParamLeaf, TreeCombine>::apply(expr.child(), p, c),
-              FnPeekSpinMatrixJIT( jit_add_param( p.getFunc() , jit_ptx_type::s32 ) , jit_add_param( p.getFunc() , jit_ptx_type::s32 ) ) , c);
+              FnPeekSpinMatrixREG( jit_add_param( p.getFunc() , jit_ptx_type::s32 ) , jit_add_param( p.getFunc() , jit_ptx_type::s32 ) ) , c);
   }
 };
   
@@ -154,9 +154,9 @@ struct ForEach<UnaryNode<FnPeekSpinMatrix, A>, ParamLeaf, TreeCombine>
   
   template<>  
   struct AddOpParam< FnPokeSpinMatrix, ParamLeaf> {
-    static FnPokeSpinMatrixJIT apply( const FnPokeSpinMatrix& a, const ParamLeaf& p) {
+    static FnPokeSpinMatrixREG apply( const FnPokeSpinMatrix& a, const ParamLeaf& p) {
       //std::cout << __PRETTY_FUNCTION__ << "\n";
-      return FnPokeSpinMatrixJIT( jit_add_param( p.getFunc() , jit_ptx_type::s32 ) , 
+      return FnPokeSpinMatrixREG( jit_add_param( p.getFunc() , jit_ptx_type::s32 ) , 
 				   jit_add_param( p.getFunc() , jit_ptx_type::s32 ) );
     }
   };
@@ -199,12 +199,12 @@ struct ForEach<UnaryNode<FnPeekSpinMatrix, A>, AddressLeaf, NullCombine>
   /////////////////////////////////////////////////
 
 
-struct FnPeekColorVectorJIT
+struct FnPeekColorVectorREG
 {
-  FnPeekColorVectorJIT(jit_value_t _row): row(_row) {}
+  FnPeekColorVectorREG(jit_value_t _row): row(_row) {}
 
   template<class T>
-  inline typename UnaryReturn<T, FnPeekColorVectorJIT>::Type_t
+  inline typename UnaryReturn<T, FnPeekColorVectorREG>::Type_t
   operator()(const T &a) const
   {
     return (peekColor(a,row));
@@ -215,12 +215,12 @@ private:
 };
 
 
-struct FnPokeColorVectorJIT
+struct FnPokeColorVectorREG
 {
-  FnPokeColorVectorJIT(jit_value_t _row): row(_row) {}
+  FnPokeColorVectorREG(jit_value_t _row): row(_row) {}
   
   template<class T1, class T2>
-  inline typename BinaryReturn<T1, T2, FnPokeColorVectorJIT>::Type_t
+  inline typename BinaryReturn<T1, T2, FnPokeColorVectorREG>::Type_t
   operator()(const T1 &a, const T2 &b) const
   {
     pokeColor(const_cast<T1&>(a),b,row);
@@ -239,13 +239,13 @@ template<class A>
 struct ForEach<UnaryNode<FnPeekColorVector, A>, ParamLeaf, TreeCombine>
 {
   typedef typename ForEach<A, ParamLeaf, TreeCombine>::Type_t TypeA_t;
-  typedef typename Combine1<TypeA_t, FnPeekColorVectorJIT, TreeCombine>::Type_t Type_t;
+  typedef typename Combine1<TypeA_t, FnPeekColorVectorREG, TreeCombine>::Type_t Type_t;
   inline static
   Type_t apply(const UnaryNode<FnPeekColorVector, A> &expr, const ParamLeaf &p, const TreeCombine &c)
   {
-    return Combine1<TypeA_t, FnPeekColorVectorJIT, TreeCombine>::
+    return Combine1<TypeA_t, FnPeekColorVectorREG, TreeCombine>::
       combine(ForEach<A, ParamLeaf, TreeCombine>::apply(expr.child(), p, c),
-              FnPeekColorVectorJIT( jit_add_param( p.getFunc() , jit_ptx_type::s32 ) ) , c);
+              FnPeekColorVectorREG( jit_add_param( p.getFunc() , jit_ptx_type::s32 ) ) , c);
   }
 };
   
@@ -253,9 +253,9 @@ struct ForEach<UnaryNode<FnPeekColorVector, A>, ParamLeaf, TreeCombine>
   
   template<>  
   struct AddOpParam< FnPokeColorVector, ParamLeaf> {
-    static FnPokeColorVectorJIT apply( const FnPokeColorVector& a, const ParamLeaf& p) {
+    static FnPokeColorVectorREG apply( const FnPokeColorVector& a, const ParamLeaf& p) {
       //std::cout << __PRETTY_FUNCTION__ << "\n";
-      return FnPokeColorVectorJIT( jit_add_param( p.getFunc() , jit_ptx_type::s32 ) );
+      return FnPokeColorVectorREG( jit_add_param( p.getFunc() , jit_ptx_type::s32 ) );
     }
   };
 
@@ -289,12 +289,12 @@ struct ForEach<UnaryNode<FnPeekColorVector, A>, AddressLeaf, NullCombine>
 
   //////////////////////////////
 
-struct FnPeekSpinVectorJIT
+struct FnPeekSpinVectorREG
 {
-  FnPeekSpinVectorJIT(jit_value_t _row): row(_row) {}
+  FnPeekSpinVectorREG(jit_value_t _row): row(_row) {}
 
   template<class T>
-  inline typename UnaryReturn<T, FnPeekSpinVectorJIT>::Type_t
+  inline typename UnaryReturn<T, FnPeekSpinVectorREG>::Type_t
   operator()(const T &a) const
   {
     return (peekSpin(a,row));
@@ -305,12 +305,12 @@ private:
 };
 
 
-struct FnPokeSpinVectorJIT
+struct FnPokeSpinVectorREG
 {
-  FnPokeSpinVectorJIT(jit_value_t _row): row(_row) {}
+  FnPokeSpinVectorREG(jit_value_t _row): row(_row) {}
   
   template<class T1, class T2>
-  inline typename BinaryReturn<T1, T2, FnPokeSpinVectorJIT>::Type_t
+  inline typename BinaryReturn<T1, T2, FnPokeSpinVectorREG>::Type_t
   operator()(const T1 &a, const T2 &b) const
   {
     pokeSpin(const_cast<T1&>(a),b,row);
@@ -329,13 +329,13 @@ template<class A>
 struct ForEach<UnaryNode<FnPeekSpinVector, A>, ParamLeaf, TreeCombine>
 {
   typedef typename ForEach<A, ParamLeaf, TreeCombine>::Type_t TypeA_t;
-  typedef typename Combine1<TypeA_t, FnPeekSpinVectorJIT, TreeCombine>::Type_t Type_t;
+  typedef typename Combine1<TypeA_t, FnPeekSpinVectorREG, TreeCombine>::Type_t Type_t;
   inline static
   Type_t apply(const UnaryNode<FnPeekSpinVector, A> &expr, const ParamLeaf &p, const TreeCombine &c)
   {
-    return Combine1<TypeA_t, FnPeekSpinVectorJIT, TreeCombine>::
+    return Combine1<TypeA_t, FnPeekSpinVectorREG, TreeCombine>::
       combine(ForEach<A, ParamLeaf, TreeCombine>::apply(expr.child(), p, c),
-              FnPeekSpinVectorJIT( jit_add_param( p.getFunc() , jit_ptx_type::s32 ) ) , c);
+              FnPeekSpinVectorREG( jit_add_param( p.getFunc() , jit_ptx_type::s32 ) ) , c);
   }
 };
   
@@ -343,9 +343,9 @@ struct ForEach<UnaryNode<FnPeekSpinVector, A>, ParamLeaf, TreeCombine>
   
   template<>  
   struct AddOpParam< FnPokeSpinVector, ParamLeaf> {
-    static FnPokeSpinVectorJIT apply( const FnPokeSpinVector& a, const ParamLeaf& p) {
+    static FnPokeSpinVectorREG apply( const FnPokeSpinVector& a, const ParamLeaf& p) {
       //std::cout << __PRETTY_FUNCTION__ << "\n";
-      return FnPokeSpinVectorJIT( jit_add_param( p.getFunc() , jit_ptx_type::s32 ) );
+      return FnPokeSpinVectorREG( jit_add_param( p.getFunc() , jit_ptx_type::s32 ) );
     }
   };
 

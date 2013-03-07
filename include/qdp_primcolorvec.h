@@ -41,12 +41,6 @@ public:
 // Traits classes 
 //-----------------------------------------------------------------------------
 
-  template<class T, int N> 
-  struct WordSize< PColorVector<T,N> >
-  {
-    enum { Size = WordSize<T>::Size };
-  };
-
 
   template<class T, int N> 
   struct JITType<PColorVector<T,N> >

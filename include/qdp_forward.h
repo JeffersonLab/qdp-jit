@@ -65,6 +65,7 @@ namespace QDP
   template <class T, int N> class PColorMatrix;
   template <class T, int N> class PSpinMatrix;
   template <class T> class PSeed;
+
   template<class T> class PScalarJIT;
   template <class T, int N, template<class,int> class C> class PMatrixJIT;
   template <class T, int N, template<class,int> class C> class PVectorJIT;
@@ -73,6 +74,7 @@ namespace QDP
   template <class T, int N> class PColorMatrixJIT;
   template <class T, int N> class PSpinMatrixJIT;
   template <class T> class PSeedJIT;
+
   template<class T> class PScalarREG;
   template <class T, int N, template<class,int> class C> class PMatrixREG;
   template <class T, int N, template<class,int> class C> class PVectorREG;

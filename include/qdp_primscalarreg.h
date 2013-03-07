@@ -21,9 +21,15 @@ namespace QDP {
 
 //! Primitive Scalar
 /*! Placeholder for no primitive structure */
-  template<class T> class PScalarREG : public BaseREG<T,1,PScalarREG<T> >
+  template<class T> class PScalarREG //: public BaseREG<T,1,PScalarREG<T> >
   {
+    T F;
   public:
+
+    void setup(const PScalarJIT< typename JITType<T>::Type_t >& rhs ) {
+      F.setup( rhs.elem() );
+    }
+
 
     // Default constructing should be possible
     // then there is no need for MPL index when
@@ -171,8 +177,11 @@ namespace QDP {
     }
 
 
-    inline       T& elem()       { return this->arrayF(0); }
-    inline const T& elem() const { return this->arrayF(0); }
+    inline       T& elem()       { return F; }
+    inline const T& elem() const { return F; }
+
+    // inline       T& elem()       { return this->arrayF(0); }
+    // inline const T& elem() const { return this->arrayF(0); }
   };
 
 

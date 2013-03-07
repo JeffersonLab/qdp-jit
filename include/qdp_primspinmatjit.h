@@ -30,15 +30,12 @@ namespace QDP {
    */
 template <class T, int N> class PSpinMatrixJIT : public PMatrixJIT<T, N, PSpinMatrixJIT>
 {
+  PSpinMatrixJIT(const PSpinMatrixJIT& a);
 public:
 
-  PSpinMatrixJIT(const PSpinMatrixJIT& a)
-  {
-    this->assign(a);
-  }
 
   template<class T1>
-  PSpinMatrixJIT(const PSpinMatrixJIT<T1,N>& a)
+  PSpinMatrixJIT(const PSpinMatrixREG<T1,N>& a)
   {
     this->assign(a);
   }
@@ -47,7 +44,7 @@ public:
   /*! Fill with primitive scalar */
   template<class T1>
   inline
-  PSpinMatrixJIT& operator=(const PScalarJIT<T1>& rhs)
+  PSpinMatrixJIT& operator=(const PScalarREG<T1>& rhs)
     {
       this->assign(rhs);
       return *this;
@@ -57,14 +54,7 @@ public:
   /*! Set equal to another PSpinMatrixJIT */
   template<class T1>
   inline
-  PSpinMatrixJIT& operator=(const PSpinMatrixJIT<T1,N>& rhs) 
-    {
-      this->assign(rhs);
-      return *this;
-    }
-
-
-  PSpinMatrixJIT& operator=(const PSpinMatrixJIT& rhs) 
+  PSpinMatrixJIT& operator=(const PSpinMatrixREG<T1,N>& rhs) 
     {
       this->assign(rhs);
       return *this;
@@ -551,30 +541,30 @@ traceSpinOuterProduct(const PSpinVectorJIT<T1,N>& l, const PSpinVectorJIT<T2,N>&
 //! Extract spin matrix components 
 /*! Generically, this is an identity operation. Defined differently under spin */
 template<class T, int N>
-struct UnaryReturn<PSpinMatrixJIT<T,N>, FnPeekSpinMatrixJIT > {
-  typedef PScalarJIT<typename UnaryReturn<T, FnPeekSpinMatrixJIT >::Type_t>  Type_t;
+struct UnaryReturn<PSpinMatrixJIT<T,N>, FnPeekSpinMatrixREG > {
+  typedef PScalarJIT<typename UnaryReturn<T, FnPeekSpinMatrixREG >::Type_t>  Type_t;
 };
 
-template<class T, int N>
-inline typename UnaryReturn<PSpinMatrixJIT<T,N>, FnPeekSpinMatrixJIT >::Type_t
-peekSpin(const PSpinMatrixJIT<T,N>& l, int row, int col)
-{
-  typename UnaryReturn<PSpinMatrixJIT<T,N>, FnPeekSpinMatrixJIT >::Type_t  d(l.func());
+// template<class T, int N>
+// inline typename UnaryReturn<PSpinMatrixJIT<T,N>, FnPeekSpinMatrixJIT >::Type_t
+// peekSpin(const PSpinMatrixJIT<T,N>& l, int row, int col)
+// {
+//   typename UnaryReturn<PSpinMatrixJIT<T,N>, FnPeekSpinMatrixJIT >::Type_t  d(l.func());
 
-  // Note, do not need to propagate down since the function is eaten at this level
-  d.elem() = l.getRegElem(row,col);
-  return d;
-}
+//   // Note, do not need to propagate down since the function is eaten at this level
+//   d.elem() = l.getRegElem(row,col);
+//   return d;
+// }
 
-//! Insert spin matrix components
-template<class T1, class T2, int N>
-inline PSpinMatrixJIT<T1,N>&
-pokeSpin(PSpinMatrixJIT<T1,N>& l, const PScalarJIT<T2>& r, int row, int col)
-{
-  // Note, do not need to propagate down since the function is eaten at this level
-  l.getRegElem(row,col) = r.elem();
-  return l;
-}
+// //! Insert spin matrix components
+// template<class T1, class T2, int N>
+// inline PSpinMatrixJIT<T1,N>&
+// pokeSpin(PSpinMatrixJIT<T1,N>& l, const PScalarJIT<T2>& r, int row, int col)
+// {
+//   // Note, do not need to propagate down since the function is eaten at this level
+//   l.getRegElem(row,col) = r.elem();
+//   return l;
+// }
 
 
 

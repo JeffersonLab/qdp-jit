@@ -14,7 +14,6 @@ namespace QDP {
   //template<class T>       struct SignedType;
 template<class T>       struct JITType;
 template<class T>       struct REGType;
-template<class T>       struct WordSize;
 template<class T,int N> struct GetLimit;
 
   // template<> struct SignedType<float> { typedef float Type_t; }
@@ -22,11 +21,7 @@ template<class T,int N> struct GetLimit;
   // template<> struct SignedType<unsigned int> { typedef int Type_t; }
   // template<> struct SignedType<bool> { typedef bool Type_t; }
 
-template<> struct WordSize< float > { enum { Size = sizeof(float) }; };
-template<> struct WordSize< double > { enum { Size = sizeof(double) }; };
-template<> struct WordSize< int > { enum { Size = sizeof(int) }; };
-  //template<> struct WordSize< unsigned int > { enum { Size = sizeof(unsigned int) }; };
-template<> struct WordSize< bool > { enum { Size = sizeof(bool) }; };
+
 
   // GetLimit extracts the size of the specified QDP type level
 

@@ -18,6 +18,12 @@ namespace QDP {
 template<class T>
 class RScalarJIT : public BaseJIT<T,1>
 {
+private:
+  template<class T1>
+  RScalarJIT& operator=( const RScalarJIT<T1>& rhs);
+  RScalarJIT& operator=( const RScalarJIT& rhs);
+  RScalarJIT( const RScalarJIT& rhs);
+
 public:
 
   // Default constructing should be possible
@@ -32,33 +38,17 @@ public:
     return *this;
   }
 
+  RScalarJIT(const T& rhs) {
+    elem() = rhs;
+  }
 
 #if 0
-  template<class T1>
-  RScalarJIT& operator=( const RScalarJIT<T1>& rhs) {
-    elem() = rhs.elem();
-    return *this;
-  }
-
-  RScalarJIT& operator=( const RScalarJIT& rhs) {
-    elem() = rhs.elem();
-    return *this;
-  }
-
   RScalarJIT& operator=( typename WordType<T>::Type_t rhs) {
     elem() = rhs;
     return *this;
   }
 #endif
 
-#if 0
-  RScalarJIT() {}
-
-  //---------------------------------------------------------
-  //! construct dest = const
-#endif
-
-  //RScalarJIT(const typename WordType<T>::Type_t& rhs) : JV<T,1>( NULL , rhs ) {}
 
 #if 0
   //! construct dest = rhs
@@ -79,10 +69,6 @@ public:
     elem() = rhs;
   }
 #endif
-
-  RScalarJIT(const T& rhs) {
-    elem() = rhs;
-  }
 
 
 
@@ -176,7 +162,6 @@ public:
       elem() >>= rhs.elem();
       return *this;
     }
-
 
 public:
   inline       T& elem()       { return this->arrayF(0); }
@@ -432,19 +417,6 @@ public:
 //-----------------------------------------------------------------------------
 // Traits classes 
 //-----------------------------------------------------------------------------
-
-template<class T> 
-struct WordSize< RScalarJIT<T> >
-{
-  enum { Size = WordSize<T>::Size };
-};
-
-template<class T> 
-struct WordSize< RComplexJIT<T> >
-{
-  enum { Size = WordSize<T>::Size };
-};
-
 
 template<class T>
 struct REGType< RScalarJIT<T> >

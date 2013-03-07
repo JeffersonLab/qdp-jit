@@ -50,7 +50,7 @@ namespace QDP {
     }
 
     void setup(const WordJIT<T>& wj) {
-      val = jit_ins_load( wj.getBaseReg() , wj.getLevel() * WordSize<T>::Size , jit_type<T>::value );
+      val = jit_ins_load( wj.getBaseReg() , wj.getLevel() * sizeof(typename WordType<T>::Type_t) , jit_type<T>::value );
       setup_m=true;
     }
 
@@ -70,10 +70,102 @@ namespace QDP {
       return *this;
     }
 
+    //! WordREG += WordREG
+    template<class T1>
+    inline
+    WordREG& operator+=(const WordREG<T1>& rhs) 
+    {
+      val = jit_ins_add( val , rhs.get_val() );
+      return *this;
+    }
+
+    //! WordREG -= WordREG
+    template<class T1>
+    inline
+    WordREG& operator-=(const WordREG<T1>& rhs) 
+    {
+      val = jit_ins_sub( val , rhs.get_val() );
+      return *this;
+    }
+
+    //! WordREG *= WordREG
+    template<class T1>
+    inline
+    WordREG& operator*=(const WordREG<T1>& rhs) 
+    {
+      val = jit_ins_mul( val , rhs.get_val() );
+      return *this;
+    }
+
+    //! WordREG /= WordREG
+    template<class T1>
+    inline
+    WordREG& operator/=(const WordREG<T1>& rhs) 
+    {
+      val = jit_ins_div( val , rhs.get_val() );
+      return *this;
+    }
+
+    //! WordREG %= WordREG
+    template<class T1>
+    inline
+    WordREG& operator%=(const WordREG<T1>& rhs) 
+    {
+      val = jit_ins_mod( val , rhs.get_val() );
+      return *this;
+    }
+
+    //! WordREG |= WordREG
+    template<class T1>
+    inline
+    WordREG& operator|=(const WordREG<T1>& rhs) 
+    {
+      val = jit_ins_or( val , rhs.get_val() );
+      return *this;
+    }
+
+    //! WordREG &= WordREG
+    template<class T1>
+    inline
+    WordREG& operator&=(const WordREG<T1>& rhs) 
+    {
+      val = jit_ins_and( val , rhs.get_val() );
+      return *this;
+    }
+
+    //! WordREG ^= WordREG
+    template<class T1>
+    inline
+    WordREG& operator^=(const WordREG<T1>& rhs) 
+    {
+      val = jit_ins_xor( val , rhs.get_val() );
+      return *this;
+    }
+
+    //! WordREG <<= WordREG
+    template<class T1>
+    inline
+    WordREG& operator<<=(const WordREG<T1>& rhs) 
+    {
+      val = jit_ins_shl( val , rhs.get_val() );
+      return *this;
+    }
+
+    //! WordREG >>= WordREG
+    template<class T1>
+    inline
+    WordREG& operator>>=(const WordREG<T1>& rhs) 
+    {
+      val = jit_ins_shr( val , rhs.get_val() );
+      return *this;
+    }
+
   private:
     bool setup_m=false;
     jit_value_t    val;
   };
+
+
 
 
   template<class T> 
