@@ -249,6 +249,21 @@ struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
 
       // I need dereferencing here since in case A is not a sub-expression
       // but a QDPType, EvalLeaf1 will return a reference, i.e. wrong word type (always 64 bit)
+
+      jit_value_t index_x_4         = jit_ins_mul( p.getRegIdx() , jit_val_create_const_int(4) );
+      jit_value_t idx_array_address = jit_add_param( p.getFunc() , jit_ptx_type::u64 );
+      jit_value_t idx_array_adr_off = jit_ins_add( idx_array_address , index_x_4 );
+      jit_value_t new_index         = jit_ins_load ( idx_array_adr_off , 0 , jit_ptx_type::s32 );
+
+      jit_value_t pred_lt0          = jit_ins_lt( new_index , jit_val_create_const_int(0) );
+
+      jit_value_t new_index2        = jit_ins_neg ( new_index );
+
+      IndexRet index;
+      ParamLeaf pp( p.getFunc() , new_index );
+      return Type_t( FnMapJIT( expr.operation() , index , p.getFunc() ) , 
+		     ForEach< A, ParamLeaf, TreeCombine >::apply( expr.child() , pp , c ) );
+
       assert(!"ni");
 #if 0
       IndexRet index = p.getFunc().addParamIndexFieldRcvBuf( p.getRegIdx() ,  sizeof(typename WordType<typename DeReference<typename ForEach<A, EvalLeaf1, OpCombine>::Type_t>::Type_t>::Type_t) );
@@ -292,6 +307,10 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
       IndexRet index = expr.operation().index;
 
       jit_function_t func = expr.operation().func;
+
+      func->write();
+      Type_t ret;
+      return ret;
 
       assert(!"ni");
 #if 0      
@@ -395,6 +414,8 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
 
     if (map.offnodeP)
       {
+	assert(!"ni");
+#if 0
 #if QDP_DEBUG >= 3
 #endif
 	QDP_info("Map: off-node communications required");
@@ -443,7 +464,8 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
 	
 	returnVal = maps_involved | map.getId();
 #endif
-      } 
+#endif
+      }
     else 
       {
 	returnVal = ForEach<A, ShiftPhase1, BitOrCombine>::apply(expr.child(), f, c);

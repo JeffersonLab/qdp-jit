@@ -27,6 +27,7 @@ namespace QDP {
   template<> struct jit_type<int>              { enum { value = jit_ptx_type::s32 }; };
 
   class jit_function;
+  class jit_label;
   class jit_value;
   class jit_value_const;
   class jit_value_const_int;
@@ -38,7 +39,7 @@ namespace QDP {
   typedef std::shared_ptr<jit_value_const>       jit_value_const_t;
   typedef std::shared_ptr<jit_value_const_int>   jit_value_const_int_t;
   typedef std::shared_ptr<jit_value_const_float> jit_value_const_float_t;
-
+  typedef std::shared_ptr<jit_label>             jit_label_t;
 
   struct IndexRet {
     jit_value_t r_newidx;
@@ -78,6 +79,20 @@ namespace QDP {
     int reg_alloc( int type );
     std::ostringstream& get_prg();
     std::ostringstream& get_signature();
+  };
+
+
+
+  class jit_label {
+    static int count;
+    int count_m;
+  public:
+    jit_label() {
+      count_m = count++;
+    }
+    friend std::ostream& operator<< (std::ostream& stream, const jit_label& lab) {
+      stream << "L" << lab.count_m << ":\n";
+    }
   };
 
 
@@ -187,12 +202,15 @@ namespace QDP {
   jit_value_t jit_ins_sub( jit_value_t lhs , jit_value_t rhs );
   jit_value_t jit_ins_neg( jit_value_t lhs );
 
+  jit_value_t jit_ins_lt( jit_value_t lhs , jit_value_t rhs );
+
   jit_value_t jit_ins_or( jit_value_t lhs , jit_value_t rhs );
   jit_value_t jit_ins_and( jit_value_t lhs , jit_value_t rhs );
   jit_value_t jit_ins_shl( jit_value_t lhs , jit_value_t rhs );
   jit_value_t jit_ins_shr( jit_value_t lhs , jit_value_t rhs );
   jit_value_t jit_ins_xor( jit_value_t lhs , jit_value_t rhs );
   jit_value_t jit_ins_mod( jit_value_t lhs , jit_value_t rhs );
+
 
   jit_value_t jit_ins_load ( jit_value_t base , int offset , int type );
   void        jit_ins_store( jit_value_t base , int offset , int type , jit_value_t val );
@@ -286,6 +304,52 @@ namespace QDP {
     virtual float operator()(float f0, float f1) const { return f0*f1; }
     virtual int operator()(int i0, int i1) const { return i0*i1; }
   };
+
+  class JitOpLT: public JitOp {
+  public:
+    JitOpLT( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
+    virtual int getDestType() const {
+      return jit_ptx_type::pred;
+    }
+    virtual std::ostream& writeToStream( std::ostream& stream ) const {
+      stream << "setp.lt."
+	     << jit_get_ptx_type( getArgsType() );
+      return stream;
+    }
+    virtual float operator()(float f0, float f1) const { return 0; }
+    virtual int operator()(int i0, int i1) const { return 0; }
+  };
+
+
+
+
+
+
+  class JitUnaryOp {
+  protected:
+    virtual std::ostream& writeToStream( std::ostream& stream ) const = 0;
+    int type;
+  public:
+    JitUnaryOp( int type_ ): type(type_) {}
+    virtual float operator()(float f0) const = 0;
+    virtual int operator()(int i0) const = 0;
+    friend std::ostream& operator<< (std::ostream& stream, const JitUnaryOp& op) {
+      return op.writeToStream(stream);
+    }
+  };
+
+  class JitUnaryOpNeg: public JitUnaryOp {
+  public:
+    JitUnaryOpNeg( int type_ ): JitUnaryOp(type_) {}
+    virtual std::ostream& writeToStream( std::ostream& stream ) const {
+      stream << "neg."
+	     << jit_get_ptx_type( type );
+      return stream;
+    }
+    virtual float operator()(float f0) const { return -f0; }
+    virtual int operator()(int i0) const { return -i0; }
+  };
+
 
 }
 

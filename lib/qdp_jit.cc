@@ -503,6 +503,11 @@ void jit_function::write_reg_defs()
   }
 
 
+  jit_value_t jit_ins_lt( jit_value_t lhs , jit_value_t rhs ) {
+    return jit_ins_op( lhs , rhs , JitOpLT( lhs->get_type() , rhs->get_type() ) );
+  }
+
+
   jit_value_t jit_ins_or( jit_value_t lhs , jit_value_t rhs ) { assert(!"ni"); }
   jit_value_t jit_ins_and( jit_value_t lhs , jit_value_t rhs ) { assert(!"ni"); }
   jit_value_t jit_ins_shl( jit_value_t lhs , jit_value_t rhs ) { assert(!"ni"); }
@@ -510,6 +515,25 @@ void jit_function::write_reg_defs()
   jit_value_t jit_ins_xor( jit_value_t lhs , jit_value_t rhs ) { assert(!"ni"); }
   jit_value_t jit_ins_mod( jit_value_t lhs , jit_value_t rhs ) { assert(!"ni"); }
 
+
+
+
+
+  jit_value_t jit_ins_unary_op( jit_value_t rhs , const JitUnaryOp& op ) {
+    if (auto reg = get< jit_value_reg >(rhs)) {
+      jit_value_reg_t ret = jit_val_create_new( reg->get_func() , reg->get_type() );
+      reg->get_func()->get_prg() << op << " "
+				 << jit_get_reg_name( ret ) << ","
+				 << jit_get_reg_name( reg ) << ";\n";
+      ret->set_state_space( ret->get_state_space() );
+      return ret;
+    }
+    assert(!"Should never be here");
+  }
+
+  jit_value_t jit_ins_neg( jit_value_t rhs ) {
+    return jit_ins_unary_op( rhs , JitUnaryOpNeg( rhs->get_type() ) );
+  }
 
 
 
