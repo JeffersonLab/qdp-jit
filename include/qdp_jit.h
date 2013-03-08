@@ -42,7 +42,8 @@ namespace QDP {
   typedef std::shared_ptr<jit_label>             jit_label_t;
 
   struct IndexRet {
-    jit_value_t r_newidx;
+    jit_value_t r_newidx_local;
+    jit_value_t r_newidx_buffer;
     jit_value_t r_pred_in_buf;
     jit_value_t r_rcvbuf;
   };
@@ -91,7 +92,8 @@ namespace QDP {
       count_m = count++;
     }
     friend std::ostream& operator<< (std::ostream& stream, const jit_label& lab) {
-      stream << "L" << lab.count_m << ":\n";
+      stream << "L" << lab.count_m;
+      return stream;
     }
   };
 
@@ -171,6 +173,7 @@ namespace QDP {
 
   jit_value::StateSpace jit_propagate_state_space( jit_value::StateSpace ss0 , jit_value::StateSpace ss1 );
 
+  std::string jit_predicate( jit_value_t pred );
 
   int jit_type_promote(int t0,int t1);
   int jit_type_wide_promote(int t0);
@@ -183,10 +186,12 @@ namespace QDP {
 
   std::string jit_get_reg_name( jit_value_t val );
 
+  jit_label_t jit_label_create( jit_function_t func );
+
   jit_value_reg_t jit_val_create_new( jit_function_t func , int type );
-  jit_value_reg_t jit_val_create_from_const( jit_function_t func , int type , int const_val );
-  jit_value_reg_t jit_val_create_convert( jit_function_t func , int type , jit_value_t val );
-  jit_value_t jit_val_create_copy( jit_value_t val );
+  jit_value_reg_t jit_val_create_from_const( jit_function_t func , int type , int const_val , jit_value_t pred=jit_value_t() );
+  jit_value_reg_t jit_val_create_convert( jit_function_t func , int type , jit_value_t val , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_val_create_copy( jit_value_t val , jit_value_t pred=jit_value_t() );
   jit_value_const_t jit_val_create_const_int( int val );
   jit_value_const_t jit_val_create_const_float( float val );
 
@@ -194,16 +199,14 @@ namespace QDP {
   jit_value_t jit_geom_get_ntidx( jit_function_t func );
   jit_value_t jit_geom_get_ctaidx( jit_function_t func );
 
+  // Binary operations
+  jit_value_t jit_ins_mul_wide( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_mul( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_div( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_add( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_sub( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
 
-  jit_value_t jit_ins_mul_wide( jit_value_t lhs , jit_value_t rhs );
-  jit_value_t jit_ins_mul( jit_value_t lhs , jit_value_t rhs );
-  jit_value_t jit_ins_div( jit_value_t lhs , jit_value_t rhs );
-  jit_value_t jit_ins_add( jit_value_t lhs , jit_value_t rhs );
-  jit_value_t jit_ins_sub( jit_value_t lhs , jit_value_t rhs );
-  jit_value_t jit_ins_neg( jit_value_t lhs );
-
-  jit_value_t jit_ins_lt( jit_value_t lhs , jit_value_t rhs );
-
+  // ni
   jit_value_t jit_ins_or( jit_value_t lhs , jit_value_t rhs );
   jit_value_t jit_ins_and( jit_value_t lhs , jit_value_t rhs );
   jit_value_t jit_ins_shl( jit_value_t lhs , jit_value_t rhs );
@@ -211,9 +214,21 @@ namespace QDP {
   jit_value_t jit_ins_xor( jit_value_t lhs , jit_value_t rhs );
   jit_value_t jit_ins_mod( jit_value_t lhs , jit_value_t rhs );
 
+  // Binary operations returning predicate
+  jit_value_t jit_ins_lt( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
 
-  jit_value_t jit_ins_load ( jit_value_t base , int offset , int type );
-  void        jit_ins_store( jit_value_t base , int offset , int type , jit_value_t val );
+  // Unary operations
+  jit_value_t jit_ins_neg( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+
+  void jit_ins_mov_no_create( jit_value_t dest , jit_value_t src , jit_value_t pred=jit_value_t() );
+
+  void jit_ins_branch( jit_function_t func , jit_label_t& label , jit_value_t pred=jit_value_t() );
+  void jit_ins_label(  jit_function_t func , jit_label_t& label );
+  void jit_ins_comment(  jit_function_t func , const char * comment );
+
+
+  jit_value_t jit_ins_load ( jit_value_t base , int offset , int type , jit_value_t pred=jit_value_t() );
+  void        jit_ins_store( jit_value_t base , int offset , int type , jit_value_t val , jit_value_t pred=jit_value_t() );
 
   jit_value_t jit_geom_get_linear_th_idx( jit_function_t func );
 

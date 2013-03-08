@@ -251,20 +251,28 @@ struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
       // but a QDPType, EvalLeaf1 will return a reference, i.e. wrong word type (always 64 bit)
 
       jit_value_t index_x_4         = jit_ins_mul( p.getRegIdx() , jit_val_create_const_int(4) );
+      jit_ins_comment( p.getFunc() , "MAP INDEX" );
       jit_value_t idx_array_address = jit_add_param( p.getFunc() , jit_ptx_type::u64 );
       jit_value_t idx_array_adr_off = jit_ins_add( idx_array_address , index_x_4 );
-      jit_value_t new_index         = jit_ins_load ( idx_array_adr_off , 0 , jit_ptx_type::s32 );
+      jit_value_t new_index_local   = jit_ins_load ( idx_array_adr_off , 0 , jit_ptx_type::s32 );
 
-      jit_value_t pred_lt0          = jit_ins_lt( new_index , jit_val_create_const_int(0) );
+      jit_value_t pred_lt0          = jit_ins_lt( new_index_local , jit_val_create_const_int(0) );
 
-      jit_value_t new_index2        = jit_ins_neg ( new_index );
+      jit_value_t new_index_tmp     = jit_ins_neg ( new_index_local , pred_lt0 );
+      jit_value_t new_index_buffer  = jit_ins_sub ( new_index_tmp , jit_val_create_const_int(1) , pred_lt0 );
 
-      IndexRet index;
-      ParamLeaf pp( p.getFunc() , new_index );
-      return Type_t( FnMapJIT( expr.operation() , index , p.getFunc() ) , 
+      IndexRet index_pack;
+      index_pack.r_newidx_local  = new_index_local;
+      index_pack.r_newidx_buffer = new_index_buffer;
+      index_pack.r_pred_in_buf   = pred_lt0;
+      jit_ins_comment( p.getFunc() , "RECEIVE BUFFER" );
+      index_pack.r_rcvbuf        = jit_add_param( p.getFunc() , jit_ptx_type::u64 );
+      
+      ParamLeaf pp( p.getFunc() , new_index_local );
+      return Type_t( FnMapJIT( expr.operation() , index_pack , p.getFunc() ) , 
 		     ForEach< A, ParamLeaf, TreeCombine >::apply( expr.child() , pp , c ) );
 
-      assert(!"ni");
+      //assert(!"ni");
 #if 0
       IndexRet index = p.getFunc().addParamIndexFieldRcvBuf( p.getRegIdx() ,  sizeof(typename WordType<typename DeReference<typename ForEach<A, EvalLeaf1, OpCombine>::Type_t>::Type_t>::Type_t) );
 
@@ -297,7 +305,8 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
   {
     //typedef typename ForEach< UnaryNode<FnMapJIT, A> , ParamLeaf, TreeCombine>::Type_t Type_t;
     typedef typename ForEach<A, ViewLeaf, OpCombine>::Type_t TypeA_t;
-    typedef typename Combine1<TypeA_t, FnMapJIT , OpCombine>::Type_t Type_t;
+    typedef typename Combine1<TypeA_t, FnMapJIT , OpCombine>::Type_t Type_t; // This is a REG container
+    //typedef typename REGType< Type_t >::Type_t REGType_t;
     inline
     static Type_t apply(const UnaryNode<FnMapJIT, A>& expr, const ViewLeaf &v, const OpCombine &o)
     {
@@ -308,11 +317,33 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
 
       jit_function_t func = expr.operation().func;
 
-      func->write();
-      Type_t ret;
-      return ret;
+      jit_label_t label_in_buffer;
+      jit_label_t label_in_exit;
 
-      assert(!"ni");
+      Type_t ret;
+
+      jit_ins_branch( func , label_in_buffer , index.r_pred_in_buf );
+
+      ret = Combine1<TypeA_t, 
+		     FnMapJIT , 
+		     OpCombine>::combine(ForEach<A, ViewLeaf, OpCombine>::apply(expr.child(), v, o) , 
+					 expr.operation(), o);
+
+      jit_ins_branch( func , label_in_exit );
+      jit_ins_label( func , label_in_buffer );
+
+      OLatticeJIT< typename JITType<Type_t>::Type_t > lattice_recv( func , index.r_rcvbuf , index. r_newidx_buffer );
+
+      Type_t ret_new;
+      ret_new.setup( lattice_recv.elem( QDPTypeJITBase::Scalar ) );
+      ret.replace(ret_new);
+
+      jit_ins_label( func , label_in_exit );
+
+      return ret;
+      //func->write();
+
+      //assert(!"ni");
 #if 0      
       Type_t ret(func);
       func.addCondBranch_if(index);
@@ -414,7 +445,7 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
 
     if (map.offnodeP)
       {
-	assert(!"ni");
+	//assert(!"ni");
 #if 0
 #if QDP_DEBUG >= 3
 #endif

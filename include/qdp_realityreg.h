@@ -25,6 +25,11 @@ public:
     F.setup( rhs.elem() );
   }
 
+  void replace(const RScalarREG& rhs ) {
+    F.replace( rhs.elem() );
+  }
+
+
   // Default constructing should be possible
   // then there is no need for MPL index when
   // construction a PMatrix<T,N>
@@ -269,6 +274,11 @@ public:
   void setup(const RComplexJIT< typename JITType<T>::Type_t >& rhs ) {
     re.setup( rhs.real() );
     im.setup( rhs.imag() );
+  }
+
+  void replace(const RComplexREG& rhs ) {
+    re.replace( rhs.real() );
+    im.replace( rhs.imag() );
   }
 
 

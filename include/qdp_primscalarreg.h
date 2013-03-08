@@ -30,6 +30,10 @@ namespace QDP {
       F.setup( rhs.elem() );
     }
 
+    void replace(const PScalarREG& rhs ) {
+      F.replace( rhs.elem() );
+    }
+
 
     // Default constructing should be possible
     // then there is no need for MPL index when

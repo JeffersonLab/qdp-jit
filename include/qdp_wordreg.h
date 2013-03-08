@@ -54,6 +54,11 @@ namespace QDP {
       setup_m=true;
     }
 
+    void replace(const WordREG& rhs ) {
+      assert(val);
+      jit_ins_mov_no_create( val , rhs.get_val() );
+    }
+
 
     jit_value_t    get_val() const  { 
       assert(setup_m);
