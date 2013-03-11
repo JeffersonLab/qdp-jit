@@ -24,12 +24,24 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   jit_value_t r_hi     = jit_add_param( function , jit_ptx_type::s32 );
   jit_value_t r_member = jit_add_param( function , jit_ptx_type::u64 );  // Subset
 
-  jit_value_t r_idx = jit_geom_get_linear_th_idx( function );  // I can save multiplying with 1
-  jit_value_t r_member_addr = jit_ins_add( r_member , r_idx );
-  jit_value_t r_ismember_u8 = jit_ins_load ( r_member_addr , 0 , jit_ptx_type::u8 );
-  jit_value_t r_ismember_u32 = jit_val_create_convert( function , jit_ptx_type::u32 , r_ismember_u8 );
+  jit_value_t r_idx = jit_geom_get_linear_th_idx( function );  
+
+  jit_value_t r_out_of_range       = jit_ins_ge( r_idx , r_hi );
+  jit_ins_exit( function , r_out_of_range );
+
+  jit_value_t r_member_addr        = jit_ins_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
+  jit_value_t r_ismember_u8        = jit_ins_load ( r_member_addr , 0 , jit_ptx_type::u8 );
+  jit_value_t r_ismember_u32       = jit_val_create_convert( function , jit_ptx_type::u32 , r_ismember_u8 );
   jit_value_t r_ismember_pred_addr = jit_ins_eq( r_ismember_u32 , jit_val_create_const_int(0) );
   jit_ins_exit( function , r_ismember_pred_addr );
+
+  jit_value_t r_do_site_perm         = jit_add_param( function , jit_ptx_type::s32 ); // Site permutation?, for inner sites
+  jit_value_t r_do_site_perm_pred    = jit_ins_ne( r_do_site_perm , jit_val_create_const_int(0) );
+  jit_value_t r_perm_array_addr      = jit_add_param( function , jit_ptx_type::u64 );  // Site permutation array
+  jit_value_t r_idx_mul_4            = jit_ins_mul( r_idx , jit_val_create_const_int(4)             , r_do_site_perm_pred);
+  jit_value_t r_perm_array_addr_load = jit_ins_add( r_perm_array_addr , r_idx_mul_4      , r_do_site_perm_pred);
+  jit_value_t r_idx_perm             = jit_ins_load ( r_perm_array_addr_load , 0 , jit_ptx_type::s32 , r_do_site_perm_pred);
+  jit_ins_mov_no_create( r_idx , r_idx_perm                                              , r_do_site_perm_pred);
 
   ParamLeaf param_leaf( function , r_idx );
   //ParamLeaf param_leaf_indexed( function , param_leaf.getParamIndexFieldAndOption() );  // Optional soffset (inner/face)
@@ -297,35 +309,61 @@ template<class T, class T1, class RHS>
 CUfunction
 function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs )
 {
-  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   CUfunction func;
 
-  std::string fname("ptxgather.ptx");
-  Jit function(fname.c_str(),"func");
+  const char * fname = "ptx_gather.ptx";
+  jit_function_t function = jit_create_function( fname );
 
-  //std::cout << "function = " << (void*)&function <<"\n";
+  jit_value_t r_lo     = jit_add_param( function , jit_ptx_type::s32 );
+  jit_value_t r_hi     = jit_add_param( function , jit_ptx_type::s32 );
+
+  jit_value_t r_idx = jit_geom_get_linear_th_idx( function );  
+
+  jit_value_t r_out_of_range       = jit_ins_ge( r_idx , r_hi );
+  jit_ins_exit( function , r_out_of_range );
+
+  jit_value_t r_perm_array_addr      = jit_add_param( function , jit_ptx_type::u64 );  // Site permutation array
+  jit_value_t r_idx_mul_4            = jit_ins_mul( r_idx , jit_val_create_const_int(4) );
+  jit_value_t r_perm_array_addr_load = jit_ins_add( r_perm_array_addr , r_idx_mul_4 );
+  jit_value_t r_idx_perm             = jit_ins_load ( r_perm_array_addr_load , 0 , jit_ptx_type::s32 );
+
+  jit_value_t r_gather_buffer        = jit_add_param( function , jit_ptx_type::u64 );  // Gather buffer
+
+  //ParamLeaf param_leaf_idx( function , r_idx );
+  ParamLeaf param_leaf_idx_perm( function , r_idx_perm );
   
-  ParamLeaf param_leaf_0( function , function.getRegIdx() , Jit::LatticeLayout::SCAL );
-  ParamLeaf param_leaf_soffset( function , param_leaf_0.getParamIndexFieldAndOption() , Jit::LatticeLayout::COAL );
+  // ParamLeaf param_leaf_0( function , function.getRegIdx() , Jit::LatticeLayout::SCAL );
+  // ParamLeaf param_leaf_soffset( function , param_leaf_0.getParamIndexFieldAndOption() , Jit::LatticeLayout::COAL );
 
   // Destination
   typedef typename JITType< OLattice<T> >::Type_t DestView_t;
 
-  DestView_t dest_jit( function , 
-		       param_leaf_0.getParamLattice( JITType<T>::Type_t::Size_t * WordSize<T>::Size ) ,
-		       Jit::LatticeLayout::SCAL );
+  std::cout << "0\n";
+
+  DestView_t dest_jit( function , r_gather_buffer , r_idx );
+
+  std::cout << "1\n";
+
+		       // param_leaf_0.getParamLattice( JITType<T>::Type_t::Size_t * WordSize<T>::Size ) ,
+		       // Jit::LatticeLayout::SCAL );
 
   // typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
   // FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
 
   // Now the arguments for the rhs
   typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
-  View_t rhs_view( forEach( rhs , param_leaf_soffset , TreeCombine() ) );
+  View_t rhs_view( forEach( rhs , param_leaf_idx_perm , TreeCombine() ) );
+
+  std::cout << "2\n";
 
   //printme<View_t>();
 
-  //OpAssign()( dest_jit.elem( 0 ) , forEach(rhs_view, ViewLeaf( 0 ) , OpCombine() ) );
+  OpAssign()( dest_jit.elem( QDPTypeJITBase::Scalar ) , 
+	      forEach(rhs_view, ViewLeaf( QDPTypeJITBase::Coalesced ) , OpCombine() ) );
+
+  std::cout << "3\n";
 
   if (Layout::primaryNode())
     function.write();
@@ -359,7 +397,6 @@ function_gather_exec( CUfunction function, void* send_buf , const Map& map , con
   // lo <= idx < hi
   int lo = 0;
   int hi = map.soffset().size();
-  int do_soffset_index = 1;
 
   //QDP_info("gather sites into send_buf lo=%d hi=%d",lo,hi);
 
@@ -387,9 +424,6 @@ function_gather_exec( CUfunction function, void* send_buf , const Map& map , con
 
   addr.push_back( &hi );
   //std::cout << "addr hi =" << addr[1] << "\n";
-
-  addr.push_back( &do_soffset_index );
-  //std::cout << "addr do_soffset_index =" << addr[2] << " " << do_soffset_index << "\n";
 
   addr.push_back( &soffsetsDev );
   //std::cout << "addr soffsetsDev =" << addr[3] << " " << soffsetsDev << "\n";
@@ -476,11 +510,11 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
   addr.push_back( &subset_member );
   std::cout << "addr subset_dev (member_array) = " << addr[3] << " " << subset_member << "\n";
 
-  //addr.push_back( &do_soffset_index );
-  //std::cout << "addr do_soffset_index =" << addr[2] << " " << do_soffset_index << "\n";
+  addr.push_back( &do_soffset_index );
+  std::cout << "addr do_soffset_index =" << addr[2] << " " << do_soffset_index << "\n";
 
-  //addr.push_back( &idx_inner_dev );
-  //std::cout << "addr idx_inner_dev = " << addr[3] << " " << idx_inner_dev << "\n";
+  addr.push_back( &idx_inner_dev );
+  std::cout << "addr idx_inner_dev = " << addr[3] << " " << idx_inner_dev << "\n";
 
 
   int addr_dest=addr.size();

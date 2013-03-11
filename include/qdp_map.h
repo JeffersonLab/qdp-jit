@@ -244,6 +244,8 @@ struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
     inline
     static Type_t apply(const UnaryNode<FnMap, A>& expr, const ParamLeaf &p, const TreeCombine &c)
     {
+      std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+
       const Map& map = expr.operation().map;
       FnMap& fnmap = const_cast<FnMap&>(expr.operation());
 
@@ -310,6 +312,8 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
     inline
     static Type_t apply(const UnaryNode<FnMapJIT, A>& expr, const ViewLeaf &v, const OpCombine &o)
     {
+      std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+
       //const Map& map = expr.operation().map;
       //FnMap& fnmap = const_cast<FnMap&>(expr.operation());
 
@@ -410,7 +414,7 @@ struct ForEach<UnaryNode<FnMap, A>, AddressLeaf, NullCombine>
       } else {
 	rcvBufDev = NULL;
       }
-      //QDP_info("Map:AddressLeaf: add recv buf p=%p",rcvBufDev);
+      QDP_info("Map:AddressLeaf: add recv buf p=%p",rcvBufDev);
       a.setAddr(rcvBufDev);
 
 

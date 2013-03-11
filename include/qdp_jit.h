@@ -218,6 +218,7 @@ namespace QDP {
   jit_value_t jit_ins_lt( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
   jit_value_t jit_ins_ne( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
   jit_value_t jit_ins_eq( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_ge( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
 
   // Unary operations
   jit_value_t jit_ins_neg( jit_value_t lhs , jit_value_t pred=jit_value_t() );
@@ -360,6 +361,21 @@ namespace QDP {
     }
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
       stream << "setp.eq."
+	     << jit_get_ptx_type( getArgsType() );
+      return stream;
+    }
+    virtual float operator()(float f0, float f1) const { return 0; }
+    virtual int operator()(int i0, int i1) const { return 0; }
+  };
+
+  class JitOpGE: public JitOp {
+  public:
+    JitOpGE( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
+    virtual int getDestType() const {
+      return jit_ptx_type::pred;
+    }
+    virtual std::ostream& writeToStream( std::ostream& stream ) const {
+      stream << "setp.ge."
 	     << jit_get_ptx_type( getArgsType() );
       return stream;
     }

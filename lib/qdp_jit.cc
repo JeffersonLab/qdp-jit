@@ -521,6 +521,9 @@ void jit_function::write_reg_defs()
   jit_value_t jit_ins_eq( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
     return jit_ins_op( lhs , rhs , JitOpEQ( lhs->get_type() , rhs->get_type() ) , pred );
   }
+  jit_value_t jit_ins_ge( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
+    return jit_ins_op( lhs , rhs , JitOpGE( lhs->get_type() , rhs->get_type() ) , pred );
+  }
 
 
   jit_value_t jit_ins_or( jit_value_t lhs , jit_value_t rhs ) { assert(!"ni"); }
