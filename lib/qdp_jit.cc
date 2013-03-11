@@ -515,6 +515,12 @@ void jit_function::write_reg_defs()
   jit_value_t jit_ins_lt( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
     return jit_ins_op( lhs , rhs , JitOpLT( lhs->get_type() , rhs->get_type() ) , pred );
   }
+  jit_value_t jit_ins_ne( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
+    return jit_ins_op( lhs , rhs , JitOpNE( lhs->get_type() , rhs->get_type() ) , pred );
+  }
+  jit_value_t jit_ins_eq( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
+    return jit_ins_op( lhs , rhs , JitOpEQ( lhs->get_type() , rhs->get_type() ) , pred );
+  }
 
 
   jit_value_t jit_ins_or( jit_value_t lhs , jit_value_t rhs ) { assert(!"ni"); }
@@ -622,6 +628,12 @@ void jit_function::write_reg_defs()
     if (!label)
       label = jit_label_create( func );
     func->get_prg() << *label << ":\n";
+  }
+
+  void jit_ins_exit( jit_function_t func , jit_value_t pred ) {
+    assert(func);
+    func->get_prg() << jit_predicate( pred )
+		    << "exit;\n";
   }
 
   void jit_ins_branch( jit_function_t func , jit_label_t& label , jit_value_t pred ) {

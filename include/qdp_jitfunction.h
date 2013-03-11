@@ -20,7 +20,18 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 
   //function.setPrettyFunction(__PRETTY_FUNCTION__);
 
-  ParamLeaf param_leaf( function , jit_geom_get_linear_th_idx( function ) );
+  jit_value_t r_lo     = jit_add_param( function , jit_ptx_type::s32 );
+  jit_value_t r_hi     = jit_add_param( function , jit_ptx_type::s32 );
+  jit_value_t r_member = jit_add_param( function , jit_ptx_type::u64 );  // Subset
+
+  jit_value_t r_idx = jit_geom_get_linear_th_idx( function );  // I can save multiplying with 1
+  jit_value_t r_member_addr = jit_ins_add( r_member , r_idx );
+  jit_value_t r_ismember_u8 = jit_ins_load ( r_member_addr , 0 , jit_ptx_type::u8 );
+  jit_value_t r_ismember_u32 = jit_val_create_convert( function , jit_ptx_type::u32 , r_ismember_u8 );
+  jit_value_t r_ismember_pred_addr = jit_ins_eq( r_ismember_u32 , jit_val_create_const_int(0) );
+  jit_ins_exit( function , r_ismember_pred_addr );
+
+  ParamLeaf param_leaf( function , r_idx );
   //ParamLeaf param_leaf_indexed( function , param_leaf.getParamIndexFieldAndOption() );  // Optional soffset (inner/face)
   //function.addParamMemberArray( param_leaf.r_idx ); // Subset member
   
@@ -456,11 +467,14 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
 
   std::vector<void*> addr;
 
-  //addr.push_back( &lo );
-  //std::cout << "addr lo = " << addr[0] << " lo=" << lo << "\n";
+  addr.push_back( &lo );
+  std::cout << "addr lo = " << addr[0] << " lo=" << lo << "\n";
 
-  //addr.push_back( &hi );
-  //std::cout << "addr hi = " << addr[1] << " hi=" << hi << "\n";
+  addr.push_back( &hi );
+  std::cout << "addr hi = " << addr[1] << " hi=" << hi << "\n";
+
+  addr.push_back( &subset_member );
+  std::cout << "addr subset_dev (member_array) = " << addr[3] << " " << subset_member << "\n";
 
   //addr.push_back( &do_soffset_index );
   //std::cout << "addr do_soffset_index =" << addr[2] << " " << do_soffset_index << "\n";
@@ -468,8 +482,6 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
   //addr.push_back( &idx_inner_dev );
   //std::cout << "addr idx_inner_dev = " << addr[3] << " " << idx_inner_dev << "\n";
 
-  //addr.push_back( &subset_member );
-  //std::cout << "addr idx_inner_dev = " << addr[3] << " " << idx_inner_dev << "\n";
 
   int addr_dest=addr.size();
   for(int i=0; i < addr_leaf.addr.size(); ++i) {

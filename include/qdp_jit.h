@@ -216,6 +216,8 @@ namespace QDP {
 
   // Binary operations returning predicate
   jit_value_t jit_ins_lt( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_ne( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_eq( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
 
   // Unary operations
   jit_value_t jit_ins_neg( jit_value_t lhs , jit_value_t pred=jit_value_t() );
@@ -225,7 +227,7 @@ namespace QDP {
   void jit_ins_branch( jit_function_t func , jit_label_t& label , jit_value_t pred=jit_value_t() );
   void jit_ins_label(  jit_function_t func , jit_label_t& label );
   void jit_ins_comment(  jit_function_t func , const char * comment );
-
+  void jit_ins_exit( jit_function_t func , jit_value_t pred=jit_value_t() );
 
   jit_value_t jit_ins_load ( jit_value_t base , int offset , int type , jit_value_t pred=jit_value_t() );
   void        jit_ins_store( jit_value_t base , int offset , int type , jit_value_t val , jit_value_t pred=jit_value_t() );
@@ -328,6 +330,36 @@ namespace QDP {
     }
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
       stream << "setp.lt."
+	     << jit_get_ptx_type( getArgsType() );
+      return stream;
+    }
+    virtual float operator()(float f0, float f1) const { return 0; }
+    virtual int operator()(int i0, int i1) const { return 0; }
+  };
+
+  class JitOpNE: public JitOp {
+  public:
+    JitOpNE( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
+    virtual int getDestType() const {
+      return jit_ptx_type::pred;
+    }
+    virtual std::ostream& writeToStream( std::ostream& stream ) const {
+      stream << "setp.ne."
+	     << jit_get_ptx_type( getArgsType() );
+      return stream;
+    }
+    virtual float operator()(float f0, float f1) const { return 0; }
+    virtual int operator()(int i0, int i1) const { return 0; }
+  };
+
+  class JitOpEQ: public JitOp {
+  public:
+    JitOpEQ( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
+    virtual int getDestType() const {
+      return jit_ptx_type::pred;
+    }
+    virtual std::ostream& writeToStream( std::ostream& stream ) const {
+      stream << "setp.eq."
 	     << jit_get_ptx_type( getArgsType() );
       return stream;
     }
