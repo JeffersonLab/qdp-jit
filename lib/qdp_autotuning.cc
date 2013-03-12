@@ -4,6 +4,11 @@ namespace QDP {
 
   int jit_autotuning(CUfunction function,int lo,int hi,void ** param)
   {
+    // Check for thread count equals zero
+    // This can happen, when inner count is zero
+    if ( hi-lo == 0 )
+      return 0;
+
     // Auto tuning
 
     double best_time;

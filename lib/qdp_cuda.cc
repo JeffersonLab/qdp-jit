@@ -90,9 +90,13 @@ namespace QDP {
 
     CudaSyncTransferStream();
     // This call is async
-    cuLaunchKernel(f, gridDimX, gridDimY, gridDimZ, 
-		   blockDimX, blockDimY, blockDimZ, 
-		   sharedMemBytes, hStream, kernelParams, extra);
+    if ( blockDimX * blockDimY * blockDimZ > 0  &&  gridDimX * gridDimY * gridDimZ > 0 ) {
+      cuLaunchKernel(f, gridDimX, gridDimY, gridDimZ, 
+		     blockDimX, blockDimY, blockDimZ, 
+		     sharedMemBytes, hStream, kernelParams, extra);
+    } else {
+      std::cout << "skipping kernel launch due to zero block!!!\n";
+    }
 
     QDPCache::Instance().releasePrevLockSet();
     QDPCache::Instance().beginNewLockSet();

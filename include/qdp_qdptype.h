@@ -470,7 +470,7 @@ struct LeafFunctor<QDPType<T,OLattice<T> >, ParamLeaf>
     jit_value_t    base_addr = jit_add_param( p.getFunc() , jit_ptx_type::u64 );
     jit_value_t    index     = p.getRegIdx();
     jit_function_t function  = p.getFunc();
-    cout << "QDPTypeOLat ParamLeaf 3er\n";
+    //cout << "QDPTypeOLat ParamLeaf 3er\n";
     return Type_t( function , base_addr , index );
   }
 };
@@ -485,7 +485,7 @@ struct LeafFunctor<QDPType<T,OScalar<T> >, ParamLeaf>
   {
     jit_value_t    base_addr = jit_add_param( p.getFunc() , jit_ptx_type::u64 );
     jit_function_t function  = p.getFunc();
-    cout << "QDPTypeOScalar ParamLeaf 2er\n";
+    //cout << "QDPTypeOScalar ParamLeaf 2er\n";
     return Type_t( function , base_addr );
   }
 };

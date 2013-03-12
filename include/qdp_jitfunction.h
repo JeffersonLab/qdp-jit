@@ -450,7 +450,7 @@ template<class T, class T1, class Op, class RHS>
 void 
 function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
 {
-  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  //  std::cout << "function_exec 0\n";
 
   ShiftPhase1 phase1;
   int offnode_maps = forEach(rhs, phase1 , BitOrCombine());
@@ -553,8 +553,8 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
     idx_inner_dev = idx_face_dev;
 
     //QDP_info_primary("PHASE2 launch");
-    now = getGeom( hi-lo , threadsPerBlock );
-    CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
+    now = getGeom( hi-lo , 1 );                                  // threadsPerBlock
+    CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    1,1,1,    0, 0, &addr[0] , 0);
   }
 }
 

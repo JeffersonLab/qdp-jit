@@ -559,13 +559,14 @@ void jit_function::write_reg_defs()
   void jit_ins_mov_no_create( jit_value_t dest , jit_value_t src , jit_value_t pred ){
     assert(dest);
     assert(src);
-    auto src_reg  = get< jit_value_reg >(src);
     auto dest_reg = get< jit_value_reg >(dest);
-    src_reg->get_func()->get_prg() << jit_predicate(pred)
-				   << "mov."
-				   << jit_get_ptx_type( src->get_type() ) << " "
-				   << jit_get_reg_name( dest_reg ) << ","
-				   << jit_get_reg_name( src_reg ) << ";\n";
+    jit_value_reg_t src_conv = jit_val_create_convert( dest_reg->get_func() , dest_reg->get_type() , src , pred );
+    //auto src_reg  = get< jit_value_reg >(src);
+    dest_reg->get_func()->get_prg() << jit_predicate(pred)
+				    << "mov."
+				    << jit_get_ptx_type( dest->get_type() ) << " "
+				    << jit_get_reg_name( dest_reg ) << ","
+				    << jit_get_reg_name( src_conv ) << ";\n";
   }
 
 
