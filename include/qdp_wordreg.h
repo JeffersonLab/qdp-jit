@@ -172,6 +172,13 @@ namespace QDP {
 
 
 
+  template <class T>
+  jit_function_t getFunc(const WordREG<T>& l) {
+    return getFunc( l.get_val() );
+  }
+
+
+
 
   template<class T> 
   struct JITType< WordREG<T> >

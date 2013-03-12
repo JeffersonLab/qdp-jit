@@ -195,6 +195,8 @@ namespace QDP {
   jit_value_const_t jit_val_create_const_int( int val );
   jit_value_const_t jit_val_create_const_float( float val );
 
+  jit_function_t getFunc(jit_value_t val);
+
   jit_value_t jit_geom_get_tidx( jit_function_t func );
   jit_value_t jit_geom_get_ntidx( jit_function_t func );
   jit_value_t jit_geom_get_ctaidx( jit_function_t func );

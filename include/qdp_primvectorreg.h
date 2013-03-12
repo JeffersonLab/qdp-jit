@@ -122,12 +122,13 @@ public:
 
 
 public:
-        T& elem(int i)       {return this->arrayF(i);}
-  const T& elem(int i) const {return this->arrayF(i);}
+        T& elem(int i)       {return F[i];}
+  const T& elem(int i) const {return F[i];}
 
   // T& elem(int i) {return JV<T,N>::getF()[i];}
   // const T& elem(int i) const {return JV<T,N>::getF()[i];}
 };
+
 
 
 

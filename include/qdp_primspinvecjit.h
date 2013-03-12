@@ -31,8 +31,13 @@ namespace QDP {
 
 template <class T, int N> class PSpinVectorJIT: public BaseJIT<T,N>
 {
-  PSpinVectorJIT(const PSpinVectorJIT& a);
+  //PSpinVectorJIT(const PSpinVectorJIT& a);
 public:
+
+  // Default constructing should be possible
+  // then there is no need for MPL index when
+  // construction a PMatrix<T,N>
+  PSpinVectorJIT(){}
 
   template<class T1>
   PSpinVectorJIT(const PSpinVectorREG<T1,N>& a)
@@ -111,6 +116,8 @@ public:
   // T& elem(int i) {return JV<T,N>::getF()[i];}
   // const T& elem(int i) const {return JV<T,N>::getF()[i];}
 };
+
+
 
 
 
@@ -627,6 +634,13 @@ where(const PScalarJIT<T1>& a, const PSpinVectorJIT<T2,N>& b, const PSpinVectorJ
 //-----------------------------------------------------------------------------
 // Traits classes 
 //-----------------------------------------------------------------------------
+
+template<class T1, int N>
+struct REGType<PSpinVectorJIT<T1,N> > 
+{
+  typedef PSpinVectorREG<typename REGType<T1>::Type_t,N>  Type_t;
+};
+
 
 // Underlying word type
 template<class T1, int N>

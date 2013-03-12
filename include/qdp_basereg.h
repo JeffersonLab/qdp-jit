@@ -1,6 +1,8 @@
 #ifndef QDP_PRIMREGBASE
 #define QDP_PRIMREGBASE
 
+// This code is not used
+#if 0
 namespace QDP {
 
   template<class T, int N, class P >
@@ -24,5 +26,6 @@ namespace QDP {
   };
 
 }
+#endif
 
 #endif

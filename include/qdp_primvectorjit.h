@@ -34,9 +34,9 @@ public:
 
   //! PVectorJIT = PVectorJIT
   /*! Set equal to another PVectorJIT */
-  template<class T1>
+  //template<class T1>
   inline
-  CC& assign(const typename REGType< C<T1,N> >::Type_t& rhs) 
+  CC& assign(const typename REGType< C<T,N> >::Type_t& rhs) 
     {
       for(int i=0; i < N; ++i)
 	elem(i) = rhs.elem(i);

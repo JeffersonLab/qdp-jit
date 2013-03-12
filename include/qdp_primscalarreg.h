@@ -1022,10 +1022,10 @@ getSite(const PScalarREG<T>& s1, int innersite)
 
 //! Extract color vector components 
 /*! Generically, this is an identity operation. Defined differently under color */
-#if 0
+
 template<class T>
 inline typename UnaryReturn<PScalarREG<T>, FnPeekColorVectorREG>::Type_t
-peekColor(const PScalarREG<T>& l, int row)
+peekColor(const PScalarREG<T>& l, jit_value_t row)
 {
   return peekColor(l.elem(),row);
 }
@@ -1034,7 +1034,7 @@ peekColor(const PScalarREG<T>& l, int row)
 /*! Generically, this is an identity operation. Defined differently under color */
 template<class T>
 inline typename UnaryReturn<PScalarREG<T>, FnPeekColorMatrixREG>::Type_t
-peekColor(const PScalarREG<T>& l, int row, int col)
+peekColor(const PScalarREG<T>& l, jit_value_t row, jit_value_t col)
 {
   return peekColor(l.elem(),row,col);
 }
@@ -1043,7 +1043,7 @@ peekColor(const PScalarREG<T>& l, int row, int col)
 /*! Generically, this is an identity operation. Defined differently under spin */
 template<class T>
 inline typename UnaryReturn<PScalarREG<T>, FnPeekSpinVectorREG>::Type_t
-peekSpin(const PScalarREG<T>& l, int row)
+peekSpin(const PScalarREG<T>& l, jit_value_t row)
 {
   return peekSpin(l.elem(),row);
 }
@@ -1052,7 +1052,7 @@ peekSpin(const PScalarREG<T>& l, int row)
 /*! Generically, this is an identity operation. Defined differently under spin */
 template<class T>
 inline typename UnaryReturn<PScalarREG<T>, FnPeekSpinMatrixREG>::Type_t
-peekSpin(const PScalarREG<T>& l, int row, int col)
+peekSpin(const PScalarREG<T>& l, jit_value_t row, jit_value_t col)
 {
   return peekSpin(l.elem(),row,col);
 }
@@ -1062,7 +1062,7 @@ peekSpin(const PScalarREG<T>& l, int row, int col)
 /*! Generically, this is an identity operation. Defined differently under color */
 template<class T1, class T2>
 inline PScalarREG<T1>&
-pokeColor(PScalarREG<T1>& l, const PScalarREG<T2>& r, int row)
+pokeColor(PScalarREG<T1>& l, const PScalarREG<T2>& r, jit_value_t row)
 {
 
   pokeColor(l.elem(),r.elem(),row);
@@ -1073,7 +1073,7 @@ pokeColor(PScalarREG<T1>& l, const PScalarREG<T2>& r, int row)
 /*! Generically, this is an identity operation. Defined differently under color */
 template<class T1, class T2>
 inline PScalarREG<T1>&
-pokeColor(PScalarREG<T1>& l, const PScalarREG<T2>& r, int row, int col)
+pokeColor(PScalarREG<T1>& l, const PScalarREG<T2>& r, jit_value_t row, jit_value_t col)
 {
   pokeColor(l.elem(),r.elem(),row,col);
   return l;
@@ -1083,7 +1083,7 @@ pokeColor(PScalarREG<T1>& l, const PScalarREG<T2>& r, int row, int col)
 /*! Generically, this is an identity operation. Defined differently under spin */
 template<class T1, class T2>
 inline PScalarREG<T1>&
-pokeSpin(PScalarREG<T1>& l, const PScalarREG<T2>& r, int row)
+pokeSpin(PScalarREG<T1>& l, const PScalarREG<T2>& r, jit_value_t row)
 {
   pokeSpin(l.elem(),r.elem(),row);
   return l;
@@ -1093,12 +1093,12 @@ pokeSpin(PScalarREG<T1>& l, const PScalarREG<T2>& r, int row)
 /*! Generically, this is an identity operation. Defined differently under spin */
 template<class T1, class T2>
 inline PScalarREG<T1>&
-pokeSpin(PScalarREG<T1>& l, const PScalarREG<T2>& r, int row, int col)
+pokeSpin(PScalarREG<T1>& l, const PScalarREG<T2>& r, jit_value_t row, jit_value_t col)
 {
   pokeSpin(l.elem(),r.elem(),row,col);
   return l;
 }
-#endif
+
 
 //-----------------------------------------------------------------------------
 //! PScalarREG = Gamma<N,m> * PScalarREG

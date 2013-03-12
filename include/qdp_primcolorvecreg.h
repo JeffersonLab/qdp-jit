@@ -48,11 +48,26 @@ public:
 
 };
 
+
+template <class T, int N>
+jit_function_t getFunc(const PColorVectorREG<T,N>& l) {
+  return getFunc(l.elem(0));
+}
+
+
+
 /*! @} */  // end of group primcolorvector
 
 //-----------------------------------------------------------------------------
 // Traits classes 
 //-----------------------------------------------------------------------------
+
+
+template<class T1, int N>
+struct JITType<PColorVectorREG<T1,N> > 
+{
+  typedef PColorVectorJIT<typename JITType<T1>::Type_t,N>  Type_t;
+};
 
 
 
@@ -214,12 +229,26 @@ struct UnaryReturn<PColorVectorREG<T,N>, FnPeekColorVectorREG > {
 
 template<class T, int N>
 inline typename UnaryReturn<PColorVectorREG<T,N>, FnPeekColorVectorREG >::Type_t
-peekColor(const PColorVectorREG<T,N>& l, int row)
+peekColor(const PColorVectorREG<T,N>& l, jit_value_t row)
 {
   typename UnaryReturn<PColorVectorREG<T,N>, FnPeekColorVectorREG >::Type_t  d;
 
-  // Note, do not need to propagate down since the function is eaten at this level
-  d.elem() = l.getRegElem(row);
+  typedef typename JITType< PColorVectorREG<T,N> >::Type_t TTjit;
+
+  std::cout << "peekColor type = " 
+	    << jit_type<typename WordType<T>::Type_t>::value
+	    << "    size in regs = "
+	    << TTjit::Size_t << "\n";
+  
+  jit_value_t ptr_local = jit_allocate_local( getFunc(l), 
+					      jit_type<typename WordType<T>::Type_t>::value , 
+					      TTjit::Size_t );
+
+  TTjit dj;
+  dj.setup( getFunc(l) , ptr_local, 1 , 0);
+  dj=l;
+
+  d.elem() = dj.getRegElem(row);
   return d;
 }
 

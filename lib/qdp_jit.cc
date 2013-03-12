@@ -417,6 +417,11 @@ void jit_function::write_reg_defs()
 
 
 
+  jit_function_t getFunc(jit_value_t val) {
+    auto val_reg = get< jit_value_reg >(val);
+    assert(val_reg);
+    return val_reg->get_func();
+  }
 
   // Thread Geometry
 

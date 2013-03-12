@@ -24,6 +24,10 @@ template <class T, int N> class PColorVectorJIT : public PVectorJIT<T, N, PColor
 {
 public:
 
+  // Default constructing should be possible
+  // then there is no need for MPL index when
+  // construction a PMatrix<T,N>
+  PColorVectorJIT(){}
 
   //! PColorVectorJIT = PColorVectorJIT
   /*! Set equal to another PColorVectorJIT */
@@ -43,6 +47,12 @@ public:
 // Traits classes 
 //-----------------------------------------------------------------------------
 
+
+template<class T1, int N>
+struct REGType<PColorVectorJIT<T1,N> > 
+{
+  typedef PColorVectorREG<typename REGType<T1>::Type_t,N>  Type_t;
+};
 
 
 // Underlying word type

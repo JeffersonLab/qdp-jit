@@ -433,13 +433,19 @@ public:
 
   inline       T& imag()       { return im; }
   inline const T& imag() const { return im; }
-
-  // inline       T& real()       { return this->arrayF(0); }
-  // inline const T& real() const { return this->arrayF(0); }
-
-  // inline       T& imag()       { return this->arrayF(1); }
-  // inline const T& imag() const { return this->arrayF(1); }
 };
+
+
+template <class T>
+jit_function_t getFunc(const RScalarREG<T>& l) {
+  return getFunc(l.elem());
+}
+
+template <class T>
+jit_function_t getFunc(const RComplexREG<T>& l) {
+  return getFunc(l.real());
+}
+
 
 
 
