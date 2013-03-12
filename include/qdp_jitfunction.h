@@ -430,17 +430,17 @@ function_gather_exec( CUfunction function, void* send_buf , const Map& map , con
   }
 
 
-  static int threadsPerBlock = 0;
+  static std::map<int,int> threadsPerBlock;
 
-  if (!threadsPerBlock) {
-    threadsPerBlock = jit_autotuning(function,lo,hi,&addr[0]);
+  if (!threadsPerBlock[hi-lo]) {
+    threadsPerBlock[hi-lo] = jit_autotuning(function,lo,hi,&addr[0]);
   } else {
     //QDP_info_primary("Previous gather_function auto-tuning result = %d",threadsPerBlock);
   }
 
-  kernel_geom_t now = getGeom( hi-lo , threadsPerBlock );
+  kernel_geom_t now = getGeom( hi-lo , threadsPerBlock[hi-lo] );
 
-  CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
+  CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock[hi-lo],1,1,    0, 0, &addr[0] , 0);
 
 }
 
