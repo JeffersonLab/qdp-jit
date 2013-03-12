@@ -95,7 +95,7 @@ namespace QDP {
 		     blockDimX, blockDimY, blockDimZ, 
 		     sharedMemBytes, hStream, kernelParams, extra);
     } else {
-      std::cout << "skipping kernel launch due to zero block!!!\n";
+      //std::cout << "skipping kernel launch due to zero block!!!\n";
     }
 
     QDPCache::Instance().releasePrevLockSet();

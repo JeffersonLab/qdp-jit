@@ -515,19 +515,18 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
     //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
   }
 
-  static int threadsPerBlock = 0;
+  static std::map<int,int> threadsPerBlock;
 
-  if (!threadsPerBlock) {
+  if (!threadsPerBlock[hi-lo]) {
     // Auto tuning
-
-    // Fist get a data field of the same size as "dest" where we can play on
-    // (in case the final operator is an OpAddAssign, etc.)
+    // Fist get a data field of the same size as "dest" 
+    // where it's safe to do autotuning on.
     int tmpId = QDPCache::Instance().registrate( QDPCache::Instance().getSize( dest.getId() ) , 1 , NULL );
     void * devPtr = QDPCache::Instance().getDevicePtr( tmpId );
     //QDPCache::Instance().printLockSets();
     addr[addr_dest] = &devPtr;
 
-    threadsPerBlock = jit_autotuning(function,lo,hi,&addr[0]);
+    threadsPerBlock[hi-lo] = jit_autotuning(function,lo,hi,&addr[0]);
 
     // Restore original "dest" device address
     addr[addr_dest] = &addr_leaf.addr[0];
@@ -540,21 +539,27 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
 
   //QDP_info("Launching kernel with %d threads",hi-lo);
 
-  kernel_geom_t now = getGeom( hi-lo , threadsPerBlock );
+  kernel_geom_t now = getGeom( hi-lo , threadsPerBlock[hi-lo] );
 
-  CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
+  CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock[hi-lo],1,1,    0, 0, &addr[0] , 0);
 
   if (offnode_maps > 0) {
-    //QDP_info_primary("PHASE2");
     ShiftPhase2 phase2;
     forEach(rhs, phase2 , NullCombine());
 
     hi = faceCount;
     idx_inner_dev = idx_face_dev;
 
-    //QDP_info_primary("PHASE2 launch");
-    now = getGeom( hi-lo , 1 );                                  // threadsPerBlock
-    CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    1,1,1,    0, 0, &addr[0] , 0);
+    if (!threadsPerBlock[hi-lo]) {
+      int tmpId = QDPCache::Instance().registrate( QDPCache::Instance().getSize( dest.getId() ) , 1 , NULL );
+      void * devPtr = QDPCache::Instance().getDevicePtr( tmpId );
+      addr[addr_dest] = &devPtr;
+      threadsPerBlock[hi-lo] = jit_autotuning(function,lo,hi,&addr[0]);
+      addr[addr_dest] = &addr_leaf.addr[0];
+      QDPCache::Instance().signoff( tmpId );
+    }
+    now = getGeom( hi-lo , threadsPerBlock[hi-lo] );                                  
+    CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock[hi-lo],1,1,    0, 0, &addr[0] , 0);
   }
 }
 
