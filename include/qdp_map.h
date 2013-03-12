@@ -165,18 +165,20 @@ private:
 
 public:
   const Map& map;
-  //std::shared_ptr<RsrcWrapper> pRsrc;
-  QDPHandle::Handle<RsrcWrapper> pRsrc;
+  std::shared_ptr<RsrcWrapper> pRsrc;
+  //QDPHandle::Handle<RsrcWrapper> pRsrc;
 
   FnMap(const Map& m): map(m), pRsrc(new RsrcWrapper( m.destnodes , m.srcenodes )) {}
   FnMap(const FnMap& f) : map(f.map) , pRsrc(f.pRsrc) {}
 
   const FnMapRsrc& getResource(int srcnum_, int dstnum_) {
-    return (*pRsrc).getResource( srcnum_ , dstnum_ );
+    assert(pRsrc);
+    return pRsrc->getResource( srcnum_ , dstnum_ );
   }
 
   const FnMapRsrc& getCached() const {
-    return (*pRsrc).get();
+    assert(pRsrc);
+    return pRsrc->get();
   }
   
   template<class T>
@@ -195,7 +197,8 @@ public:
   jit_function_t func;
   IndexRet index;
   const Map& map;
-  QDPHandle::Handle<RsrcWrapper> pRsrc;
+  std::shared_ptr<RsrcWrapper> pRsrc;
+  //QDPHandle::Handle<RsrcWrapper> pRsrc;
 
   FnMapJIT(const FnMap& fnmap,const IndexRet& i,jit_function_t f): 
     map(fnmap.map), pRsrc(fnmap.pRsrc), index(i), func(f) {}
@@ -223,17 +226,6 @@ struct TagVisitor<FnMap, PrintTag> : public ParenPrinter<FnMap>
 
 
 
-#if 1
-    // typedef ForEachTypeParser<A, ParseTag,ParseTag, CTag> ForEachA_t;
-    // typedef OpVisitor<FnMap, ParseTag>          Visitor_t;
-    // typedef typename ForEachA_t::Type_t   TypeA_t;
-    // typedef Combine1<TypeA_t, FnMap, CTag>   Combiner_t;
-    // typedef typename Combiner_t::Type_t   Type_t;
-    // typedef typename ForEach<A, EvalLeaf1, OpCombine>::Type_t AInnerTypeA_t;
-    // typedef typename Combine1<AInnerTypeA_t, FnMap, OpCombine>::Type_t InnerTypeBB_t;
-
-
-
 
 
 template<class A>
@@ -244,13 +236,10 @@ struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
     inline
     static Type_t apply(const UnaryNode<FnMap, A>& expr, const ParamLeaf &p, const TreeCombine &c)
     {
-      std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+      //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
       const Map& map = expr.operation().map;
       FnMap& fnmap = const_cast<FnMap&>(expr.operation());
-
-      // I need dereferencing here since in case A is not a sub-expression
-      // but a QDPType, EvalLeaf1 will return a reference, i.e. wrong word type (always 64 bit)
 
       jit_value_t index_x_4         = jit_ins_mul( p.getRegIdx() , jit_val_create_const_int(4) );
       jit_ins_comment( p.getFunc() , "MAP INDEX" );
@@ -273,28 +262,6 @@ struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
       ParamLeaf pp( p.getFunc() , new_index_local );
       return Type_t( FnMapJIT( expr.operation() , index_pack , p.getFunc() ) , 
 		     ForEach< A, ParamLeaf, TreeCombine >::apply( expr.child() , pp , c ) );
-
-      //assert(!"ni");
-#if 0
-      IndexRet index = p.getFunc().addParamIndexFieldRcvBuf( p.getRegIdx() ,  sizeof(typename WordType<typename DeReference<typename ForEach<A, EvalLeaf1, OpCombine>::Type_t>::Type_t>::Type_t) );
-
-      ParamLeaf pp( p.getFunc() , index.r_newidx );
-
-      return Type_t( FnMapJIT( expr.operation() , index , p.getFunc() ) , 
-		     ForEach< A, ParamLeaf, TreeCombine >::apply( expr.child() , pp , c ) );
-#endif
-      //ForEach< UnaryNode<FnMapJIT, A>, ParamLeaf, TreeCombine>::apply(expr.child() , pp , c );
-
-
-      // TypeA_t A_val  = ForEachA_t::apply(expr.child(), pp, t);
-      // Type_t val = Combiner_t::combine(A_val, expr.operation(), c);
-
-      //ParseTag ff( f.getJitArgs() , newIdx.str() );
-      //TypeA_t A_val  = ForEachA_t::apply(expr.child(), ff, ff, c);
-      //Type_t val = Combiner_t::combine(A_val, expr.operation(), c);
-      //f.ossCode << ff.ossCode.str();
-
-      //return val;
     }
   };
 
@@ -312,7 +279,7 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
     inline
     static Type_t apply(const UnaryNode<FnMapJIT, A>& expr, const ViewLeaf &v, const OpCombine &o)
     {
-      std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+      //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
       //const Map& map = expr.operation().map;
       //FnMap& fnmap = const_cast<FnMap&>(expr.operation());
@@ -345,43 +312,6 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
       jit_ins_label( func , label_in_exit );
 
       return ret;
-      //func->write();
-
-      //assert(!"ni");
-#if 0      
-      Type_t ret(func);
-      func.addCondBranch_if(index);
-
-      ret = Combine1<TypeA_t, FnMapJIT , OpCombine>::combine(ForEach<A, ViewLeaf, OpCombine>::apply(expr.child(), v, o),
-								    expr.operation(), o);
-
-      func.addCondBranch_else();
-
-      OLatticeJIT<Type_t> recv_buf( func , index.r_rcvbuf , Jit::LatticeLayout::SCAL );
-
-      //Type_t recv_buf0(func);
-      //ret = Combine1<OLatticeJIT<Type_t>, FnMapJIT , OpCombine>::combine(ForEach<OLatticeJIT<Type_t>, ViewLeaf, OpCombine>::apply( recv_buf , v, o), expr.operation(), o);
-
-      ret = recv_buf.elem( 0 );
-
-      func.addCondBranch_fi();
-
-      return ret;
-#endif
-      // return Type_t( FnMapJIT(expr.operation(),index) , ForEach<A, ParamLeaf, TreeCombine>::apply(expr.child() , pp , c ) );
-
-      //ForEach< UnaryNode<FnMapJIT, A>, ParamLeaf, TreeCombine>::apply(expr.child() , pp , c );
-
-
-      // TypeA_t A_val  = ForEachA_t::apply(expr.child(), pp, t);
-      // Type_t val = Combiner_t::combine(A_val, expr.operation(), c);
-
-      //ParseTag ff( f.getJitArgs() , newIdx.str() );
-      //TypeA_t A_val  = ForEachA_t::apply(expr.child(), ff, ff, c);
-      //Type_t val = Combiner_t::combine(A_val, expr.operation(), c);
-      //f.ossCode << ff.ossCode.str();
-
-      //return val;
     }
   };
 
@@ -408,23 +338,19 @@ struct ForEach<UnaryNode<FnMap, A>, AddressLeaf, NullCombine>
 
       void * rcvBufDev;
       if (map.hasOffnode()) {
-	const FnMapRsrc& rRSrc = fnmap.getCached();
-	int rcvId = rRSrc.getRcvId();
-	rcvBufDev = QDPCache::Instance().getDevicePtr( rcvId );
+      const FnMapRsrc& rRSrc = fnmap.getCached();
+      int rcvId = rRSrc.getRcvId();
+      rcvBufDev = QDPCache::Instance().getDevicePtr( rcvId );
       } else {
 	rcvBufDev = NULL;
       }
       QDP_info("Map:AddressLeaf: add recv buf p=%p",rcvBufDev);
       a.setAddr(rcvBufDev);
 
-
       return Type_t( ForEach<A, AddressLeaf, NullCombine>::apply( expr.child() , a , n ) );
     }
   };
 
-
-
-#endif
 
 
 
@@ -449,11 +375,9 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
 
     if (map.offnodeP)
       {
-	//assert(!"ni");
-#if 0
 #if QDP_DEBUG >= 3
-#endif
 	QDP_info("Map: off-node communications required");
+#endif
 
 	int dstnum = map.destnodes_num[0]*sizeof(InnerType_t);
 	int srcnum = map.srcenodes_num[0]*sizeof(InnerType_t);
@@ -471,13 +395,6 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
 	}
 
 #if 1
-	// map.soffsets.size();
-	// QDPCache::Instance().getDevicePtr( map.getSoffsetsId() );
-	// typename InnerType_t; // type on 1 site
-	// subexpr; //
-	// rRSrc.getSendBufDevPtr(); // send buffer
-
-	// Gather subexpr evaluated on soffset[] into send buffer
 	static CUfunction function;
 
 	// Build the function
@@ -498,7 +415,6 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
 	rRSrc.send_receive();
 	
 	returnVal = maps_involved | map.getId();
-#endif
 #endif
       }
     else 

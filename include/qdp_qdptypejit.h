@@ -23,7 +23,7 @@ namespace QDP {
     QDPTypeJIT( jit_function_t func_ , 
 		jit_value_t base_ ,
 		jit_value_t index_ ): func_m(func_), base_m(base_), index_m(index_) {
-      std::cout << "QDPTypeJIT 3er ctor\n";
+      //std::cout << "QDPTypeJIT 3er ctor\n";
       assert(func_m);
       assert(base_m);
       assert(index_m);
@@ -31,7 +31,7 @@ namespace QDP {
 
     QDPTypeJIT( jit_function_t func_ , 
 		jit_value_t base_ ): func_m(func_), base_m(base_) {
-      std::cout << "QDPTypeJIT 2er ctor\n";
+      //std::cout << "QDPTypeJIT 2er ctor\n";
       assert(func_m);
       assert(base_m);
     }
@@ -43,7 +43,6 @@ namespace QDP {
 
     jit_value_t getThreadedBase( DeviceLayout lay ) const {
 
-      std::cout << "getThreadedBase should use mul_wide\n";
       assert(index_m);
       assert(base_m);
 

@@ -306,7 +306,7 @@ namespace QDP {
   public:
     JitOpMulWide( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
     virtual int getDestType() const { 
-      std::cout << "IN WIDE\n";
+      //std::cout << "IN WIDE\n";
       return jit_type_wide_promote( getArgsType() );
     }
     virtual std::ostream& writeToStream( std::ostream& stream ) const {

@@ -631,7 +631,7 @@ struct LeafFunctor<OLattice<T>, ParamLeaf>
     jit_value_t    base_addr = jit_add_param( p.getFunc() , jit_ptx_type::u64 );
     jit_value_t    index     = p.getRegIdx();
     jit_function_t function  = p.getFunc();
-    cout << "OLat ParamLeaf 3er\n";
+    //cout << "OLat ParamLeaf 3er\n";
     return Type_t( function , base_addr , index );
   }
 };
@@ -646,7 +646,7 @@ struct LeafFunctor<OScalar<T>, ParamLeaf>
   {
     jit_value_t    base_addr = jit_add_param( p.getFunc() , jit_ptx_type::u64 );
     jit_function_t function  = p.getFunc();
-    cout << "OScalar ParamLeaf 2er\n";
+    //cout << "OScalar ParamLeaf 2er\n";
     return Type_t( function , base_addr );
   }
 };

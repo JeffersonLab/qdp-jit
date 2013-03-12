@@ -181,7 +181,7 @@ public:
     }
   }
   RsrcWrapper(  const multi1d<int>& destnodes_, const multi1d<int>& srcenodes_): 
-    destnodes(destnodes_),srcenodes(srcenodes_),rAlloc(false) {
+    destnodes(destnodes_),srcenodes(srcenodes_),rAlloc(false),cached(NULL) {
     //QDPIO::cout << "wrapper ctor " << srcenodes.size() << " " << destnodes.size() << "\n";
   }
 
@@ -202,6 +202,7 @@ public:
     if (!rAlloc)
       QDP_error_exit("RsrcWrapper::get() internal error");
 #endif
+    assert(cached);
     return *cached;
   }
 

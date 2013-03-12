@@ -80,17 +80,17 @@ namespace QDP {
 
   int jit_type_promote(int t0,int t1) {
     if (t0==t1) return t0;
-    std::cout << "promote: " << jit_get_ptx_type(t0) << " " << jit_get_ptx_type(t1) << "\n";
+    //std::cout << "promote: " << jit_get_ptx_type(t0) << " " << jit_get_ptx_type(t1) << "\n";
     assert( PTX::map_promote.count(t0) > 0 );
     assert( PTX::map_promote.at(t0).count(t1) > 0 );
     int ret = PTX::map_promote.at(t0).at(t1);
     assert((ret >= 0) && (ret < jit_number_of_types()));
-    std::cout << "         ->  " << PTX::ptx_type_matrix.at( ret )[0] << "\n";
+    //std::cout << "         ->  " << PTX::ptx_type_matrix.at( ret )[0] << "\n";
     return ret;
   }
 
   int jit_type_wide_promote(int t0) {
-    std::cout << "wide_promote: " << jit_get_ptx_type(t0) << "\n";
+    //std::cout << "wide_promote: " << jit_get_ptx_type(t0) << "\n";
     assert( PTX::map_wide_promote.count(t0) > 0 );
     return PTX::map_wide_promote.at(t0);
   }
@@ -122,8 +122,8 @@ namespace QDP {
 
   jit_function::jit_function( const char * fname_): fname(fname_), reg_count( jit_number_of_types() )
   {
-    std::cout << "Constructing function " << fname 
-	      << "reg_count vector size = " << reg_count.size() << "\n";
+    // std::cout << "Constructing function " << fname 
+    // 	      << "reg_count vector size = " << reg_count.size() << "\n";
     std::fill ( reg_count.begin() , reg_count.end() , 0 );
     
   }
@@ -260,7 +260,7 @@ void jit_function::write_reg_defs()
 
 
   jit_function_t jit_create_function(const char * fname_) {
-    std::cout << "Creating jit function\n";
+    //std::cout << "Creating jit function\n";
     jit_function_t func( new jit_function(fname_) );
     return func;
   }
@@ -329,14 +329,14 @@ void jit_function::write_reg_defs()
     
   jit_value_reg_t jit_val_create_new( jit_function_t func , int type ) {
     assert(func);
-    std::cout << "Creating jit value, type = " << type << "\n";
+    //std::cout << "Creating jit value, type = " << type << "\n";
     jit_value_reg_t val(new jit_value_reg(func,type));
     return val;
   }
 
   jit_value_reg_t jit_val_create_from_const( jit_function_t func , int type , int val_i , jit_value_t pred) {
     assert(func);
-    std::cout << "Creating const jit value, type = " << type << "\n";
+    //std::cout << "Creating const jit value, type = " << type << "\n";
     jit_value_const_t val_const(new jit_value_const_int(val_i));
     return jit_val_create_convert( func , type , val_const , pred );
   }
@@ -397,8 +397,8 @@ void jit_function::write_reg_defs()
       }
     if (auto val_reg = get< jit_value_reg >(val))
       {
-	std::cout << "TYPE reg = " << val_reg->get_type() << "\n";
-	std::cout << "TYPE     = " << val->get_type() << "\n";
+	// std::cout << "TYPE reg = " << val_reg->get_type() << "\n";
+	// std::cout << "TYPE     = " << val->get_type() << "\n";
 
 	jit_value_reg_t ret = jit_val_create_convert( val_reg->get_func() , val_reg->get_type() , val_reg , pred );
 	return ret;
@@ -602,7 +602,7 @@ void jit_function::write_reg_defs()
 
 
   jit_value_t jit_geom_get_linear_th_idx( jit_function_t func ) {
-    std::cout << "jit_geom_get_linear_th_idx, should use wide_mul\n";
+    //    std::cout << "jit_geom_get_linear_th_idx, should use wide_mul\n";
     assert(func);
     
     jit_value_t tmp = jit_ins_mul_wide( jit_geom_get_ctaidx(func) , jit_geom_get_ntidx(func) );

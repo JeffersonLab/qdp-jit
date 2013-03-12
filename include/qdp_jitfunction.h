@@ -302,6 +302,7 @@ function_zero_rep_build(OLattice<T>& dest)
   return func;
 #endif
 }
+#endif
 
 
 
@@ -340,11 +341,7 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
   // Destination
   typedef typename JITType< OLattice<T> >::Type_t DestView_t;
 
-  std::cout << "0\n";
-
   DestView_t dest_jit( function , r_gather_buffer , r_idx );
-
-  std::cout << "1\n";
 
 		       // param_leaf_0.getParamLattice( JITType<T>::Type_t::Size_t * WordSize<T>::Size ) ,
 		       // Jit::LatticeLayout::SCAL );
@@ -356,26 +353,22 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
   typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
   View_t rhs_view( forEach( rhs , param_leaf_idx_perm , TreeCombine() ) );
 
-  std::cout << "2\n";
-
   //printme<View_t>();
 
   OpAssign()( dest_jit.elem( QDPTypeJITBase::Scalar ) , 
 	      forEach(rhs_view, ViewLeaf( QDPTypeJITBase::Coalesced ) , OpCombine() ) );
 
-  std::cout << "3\n";
-
   if (Layout::primaryNode())
-    function.write();
+    function->write();
 
   QMP_barrier();
 
   CUresult ret;
   CUmodule cuModule;
-  ret = cuModuleLoad(&cuModule, fname.c_str());
-  if (ret) QDP_error_exit("Error loading CUDA module '%s'",fname.c_str());
+  ret = cuModuleLoad(&cuModule, fname);
+  if (ret) QDP_error_exit("Error loading CUDA module '%s'",fname);
 
-  ret = cuModuleGetFunction(&func, cuModule, "func");
+  ret = cuModuleGetFunction(&func, cuModule, "function");
   if (ret) { std::cout << "Error getting function\n"; exit(1); }
 
   //std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
@@ -450,7 +443,6 @@ function_gather_exec( CUfunction function, void* send_buf , const Map& map , con
   CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
 
 }
-#endif
 
 
 
