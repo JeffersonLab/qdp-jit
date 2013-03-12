@@ -30,8 +30,9 @@ namespace QDP {
    */
 template <class T, int N> class PSpinMatrixJIT : public PMatrixJIT<T, N, PSpinMatrixJIT>
 {
-  PSpinMatrixJIT(const PSpinMatrixJIT& a);
+  //PSpinMatrixJIT(const PSpinMatrixJIT& a);
 public:
+  PSpinMatrixJIT(){}
 
 
   template<class T1>
@@ -71,6 +72,13 @@ public:
 //-----------------------------------------------------------------------------
 // Traits classes 
 //-----------------------------------------------------------------------------
+
+template<class T1, int N>
+struct REGType<PSpinMatrixJIT<T1,N> > 
+{
+  typedef PSpinMatrixREG<typename REGType<T1>::Type_t,N>  Type_t;
+};
+
 
 // Underlying word type
 template<class T1, int N>

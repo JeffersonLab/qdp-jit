@@ -35,7 +35,6 @@ namespace QDP {
     template<class T1>
     void operator=(const WordREG<T1>& s1) {
       assert(setup_m);
-      std::cout << __PRETTY_FUNCTION__ << "\n";
       jit_ins_store( r_base , offset_level * sizeof(typename WordType<T>::Type_t) , jit_type<T>::value , s1.get_val() );
     }
 

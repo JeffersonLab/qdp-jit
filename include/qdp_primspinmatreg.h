@@ -30,8 +30,9 @@ namespace QDP {
    */
 template <class T, int N> class PSpinMatrixREG : public PMatrixREG<T, N, PSpinMatrixREG>
 {
-  PSpinMatrixREG(const PSpinMatrixREG& a);
+  //  PSpinMatrixREG(const PSpinMatrixREG& a);
 public:
+  PSpinMatrixREG(){}
 
   void setup( const typename JITType< PSpinMatrixREG >::Type_t& j ) {
     for (int i = 0 ; i < N ; i++ ) 
@@ -77,6 +78,10 @@ public:
 
 /*! @} */   // end of group primspinmatrix
 
+template <class T, int N>
+jit_function_t getFunc(const PSpinMatrixREG<T,N>& l) {
+  return getFunc(l.elem(0,0));
+}
 
 
 
@@ -84,6 +89,14 @@ public:
 //-----------------------------------------------------------------------------
 // Traits classes 
 //-----------------------------------------------------------------------------
+
+template<class T1, int N>
+struct JITType<PSpinMatrixREG<T1,N> > 
+{
+  typedef PSpinMatrixJIT<typename JITType<T1>::Type_t,N>  Type_t;
+};
+
+
 
 // Underlying word type
 template<class T1, int N>
@@ -563,13 +576,26 @@ struct UnaryReturn<PSpinMatrixREG<T,N>, FnPeekSpinMatrixREG > {
 
 template<class T, int N>
 inline typename UnaryReturn<PSpinMatrixREG<T,N>, FnPeekSpinMatrixREG >::Type_t
-peekSpin(const PSpinMatrixREG<T,N>& l, int row, int col)
+peekSpin(const PSpinMatrixREG<T,N>& l, jit_value_t row, jit_value_t col)
 {
   typename UnaryReturn<PSpinMatrixREG<T,N>, FnPeekSpinMatrixREG >::Type_t  d;
 
-  // Note, do not need to propagate down since the function is eaten at this level
-  d.elem() = l.getRegElem(row,col);
+  typedef typename JITType< PSpinMatrixREG<T,N> >::Type_t TTjit;
+
+  jit_value_t ptr_local = jit_allocate_local( getFunc(l), 
+					      jit_type<typename WordType<T>::Type_t>::value , 
+					      TTjit::Size_t );
+
+  TTjit dj;
+  dj.setup( getFunc(l) , ptr_local, 1 , 0);
+  dj=l;
+
+  d.elem() = dj.getRegElem(row,col);
   return d;
+
+  // Note, do not need to propagate down since the function is eaten at this level
+  // d.elem() = l.getRegElem(row,col);
+  // return d;
 }
 
 //! Insert spin matrix components

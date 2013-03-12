@@ -125,6 +125,11 @@ public:
 };
 
 
+template <class T, int N>
+jit_function_t getFunc(const PSpinVectorREG<T,N>& l) {
+  return getFunc(l.elem(0));
+}
+
 
 
 // Primitive Vectors
@@ -436,6 +441,7 @@ peekColor(const PSpinVectorREG<T,N>& l, jit_value_t row, jit_value_t col)
 
 //! Extract spin matrix components 
 /*! Generically, this is an identity operation. Defined differently under spin */
+#if 0
 template<class T, int N>
 inline typename UnaryReturn<PSpinVectorREG<T,N>, FnPeekSpinMatrixREG>::Type_t
 peekSpin(const PSpinVectorREG<T,N>& l, jit_value_t row, jit_value_t col)
@@ -444,6 +450,27 @@ peekSpin(const PSpinVectorREG<T,N>& l, jit_value_t row, jit_value_t col)
 
   for(int i=0; i < N; ++i)
     d.elem(i) = peekSpin(l.elem(i),row,col);
+  return d;
+}
+#endif
+
+template<class T, int N>
+inline typename UnaryReturn<PSpinVectorREG<T,N>, FnPeekSpinVectorREG>::Type_t
+peekSpin(const PSpinVectorREG<T,N>& l, jit_value_t row)
+{
+  typename UnaryReturn<PSpinVectorREG<T,N>, FnPeekSpinVectorREG>::Type_t  d;
+
+  typedef typename JITType< PSpinVectorREG<T,N> >::Type_t TTjit;
+
+  jit_value_t ptr_local = jit_allocate_local( getFunc(l), 
+					      jit_type<typename WordType<T>::Type_t>::value , 
+					      TTjit::Size_t );
+
+  TTjit dj;
+  dj.setup( getFunc(l) , ptr_local, 1 , 0);
+  dj=l;
+
+  d.elem() = dj.getRegElem(row);
   return d;
 }
 

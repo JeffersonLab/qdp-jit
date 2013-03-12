@@ -235,11 +235,6 @@ peekColor(const PColorVectorREG<T,N>& l, jit_value_t row)
 
   typedef typename JITType< PColorVectorREG<T,N> >::Type_t TTjit;
 
-  std::cout << "peekColor type = " 
-	    << jit_type<typename WordType<T>::Type_t>::value
-	    << "    size in regs = "
-	    << TTjit::Size_t << "\n";
-  
   jit_value_t ptr_local = jit_allocate_local( getFunc(l), 
 					      jit_type<typename WordType<T>::Type_t>::value , 
 					      TTjit::Size_t );

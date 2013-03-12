@@ -452,9 +452,9 @@ void jit_function::write_reg_defs()
 
   jit_value_t jit_op_const_const( jit_value_const_t lhs , jit_value_const_t rhs , const JitOp& op ) {
     if (lhs->isInt() && rhs->isInt())  {
-	jit_value_const_int_t c1 = get<jit_value_const_int>(lhs);
-	jit_value_const_int_t c2 = get<jit_value_const_int>(rhs);
-	return std::make_shared<jit_value_const_int>( c1->getValue() + c2->getValue() );
+      jit_value_const_int_t c1 = get<jit_value_const_int>(lhs);
+      jit_value_const_int_t c2 = get<jit_value_const_int>(rhs);
+      return std::make_shared<jit_value_const_int>( op(c1->getValue(),c2->getValue()) );
     } else {
       return std::make_shared<jit_value_const_float>( op( lhs->getAsFloat() , rhs->getAsFloat() ) );
     }
