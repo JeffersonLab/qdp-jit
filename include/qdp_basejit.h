@@ -31,6 +31,15 @@ namespace QDP {
       setup_m = true;
     }
 
+
+    // T getJitElem( jit_value_t index ) {
+    //   T ret;
+    //   ret.setup_jit( func, r_base , 
+    // 		     jit_val_create_const_int( full * N ) , 
+    // 		     jit_val_create_const_intlevel + full * i ); 
+    // }
+
+
     typename REGType<T>::Type_t getRegElem( jit_value_t index ) {
 #if 0
       std::cout << "getRegElem " << full << " " << level << " " << sizeof(typename WordType<T>::Type_t) << "\n";

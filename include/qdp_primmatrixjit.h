@@ -165,17 +165,6 @@ public:
     return BaseJIT<T,N*N>::getRegElem( lin );
   }
 
-#if 0
-  T getRegElem(int row,int col) const {
-    int r_matidx = this->func().getRegs( Jit::s32 , 1 );
-    int r_N = this->func().getRegs( Jit::s32 , 1 );
-    this->func().asm_mov_literal( r_N , (int)N );
-    this->func().asm_mul( r_matidx , col , r_N );
-    this->func().asm_add( r_matidx , r_matidx , row );
-    return JV<T,N*N>::getRegElem( r_matidx );
-  }
-#endif
-
         T& elem(int i, int j)       {return this->arrayF(j+N*i);}
   const T& elem(int i, int j) const {return this->arrayF(j+N*i);}
 

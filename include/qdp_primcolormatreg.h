@@ -69,6 +69,14 @@ public:
 
 };
 
+
+template <class T, int N>
+jit_function_t getFunc(const PColorMatrixREG<T,N>& l) {
+  return getFunc(l.elem(0,0));
+}
+
+
+
 /*! @} */   // end of group primcolormatrix
 
 //-----------------------------------------------------------------------------
@@ -461,10 +469,21 @@ struct UnaryReturn<PColorMatrixREG<T,N>, FnPeekColorMatrixREG > {
 
 template<class T, int N>
 inline typename UnaryReturn<PColorMatrixREG<T,N>, FnPeekColorMatrixREG>::Type_t
-peekColor(const PColorMatrixREG<T,N>& l, int row, int col)
+peekColor(const PColorMatrixREG<T,N>& l, jit_value_t row, jit_value_t col)
 {
-  typename UnaryReturn<PColorMatrixREG<T,N>, FnPeekColorMatrixREG>::Type_t  d( l.func() );
-  d.elem() = l.getRegElem(row,col);
+  typename UnaryReturn<PColorMatrixREG<T,N>, FnPeekColorMatrixREG>::Type_t  d;
+
+  typedef typename JITType< PColorMatrixREG<T,N> >::Type_t TTjit;
+
+  jit_value_t ptr_local = jit_allocate_local( getFunc(l), 
+					      jit_type<typename WordType<T>::Type_t>::value , 
+					      TTjit::Size_t );
+
+  TTjit dj;
+  dj.setup( getFunc(l) , ptr_local, 1 , 0);
+  dj=l;
+
+  d.elem() = dj.getRegElem(row,col);
   return d;
 }
 

@@ -592,10 +592,6 @@ peekSpin(const PSpinMatrixREG<T,N>& l, jit_value_t row, jit_value_t col)
 
   d.elem() = dj.getRegElem(row,col);
   return d;
-
-  // Note, do not need to propagate down since the function is eaten at this level
-  // d.elem() = l.getRegElem(row,col);
-  // return d;
 }
 
 //! Insert spin matrix components
