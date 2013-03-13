@@ -59,26 +59,31 @@ namespace QDP {
     }
 
 
+    jit_value_t getInnerSites(DeviceLayout lay) const {
+      if (lay == DeviceLayout::Coalesced)
+	return jit_val_create_const_int(Layout::sitesOnNode());
+      else 
+	return jit_val_create_const_int(1);
+    }
+
 
     T& elem(DeviceLayout lay) {
-      int innerSites = lay == DeviceLayout::Coalesced ? Layout::sitesOnNode() : 1;
-      F.setup(func_m,getThreadedBase(lay),innerSites,0);
+      F.setup(func_m,getThreadedBase(lay),getInnerSites(lay),jit_val_create_const_int(0));
       return F;
     }
 
     const T& elem(DeviceLayout lay) const {
-      int innerSites = lay == DeviceLayout::Coalesced ? Layout::sitesOnNode() : 1;
-      F.setup(func_m,getThreadedBase(lay),innerSites,0);
+      F.setup(func_m,getThreadedBase(lay),getInnerSites(lay),jit_val_create_const_int(0));
       return F;
     }
 
     T& elem() {
-      F.setup(func_m,getThreadedBase(DeviceLayout::Scalar),1,0);
+      F.setup(func_m,getThreadedBase(DeviceLayout::Scalar),jit_val_create_const_int(1),jit_val_create_const_int(0));
       return F;
     }
 
     const T& elem() const {
-      F.setup(func_m,getThreadedBase(DeviceLayout::Scalar),1,0);
+      F.setup(func_m,getThreadedBase(DeviceLayout::Scalar),jit_val_create_const_int(1),jit_val_create_const_int(0));
       return F;
     }
 

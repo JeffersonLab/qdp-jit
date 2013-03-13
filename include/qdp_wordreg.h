@@ -50,7 +50,7 @@ namespace QDP {
     }
 
     void setup(const WordJIT<T>& wj) {
-      val = jit_ins_load( wj.getBaseReg() , wj.getLevel() * sizeof(typename WordType<T>::Type_t) , jit_type<T>::value );
+      val = jit_ins_load( wj.getAddress() , 0 , jit_type<T>::value );
       setup_m=true;
     }
 

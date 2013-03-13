@@ -165,6 +165,12 @@ public:
     return BaseJIT<T,N*N>::getRegElem( lin );
   }
 
+  T getJitElem(jit_value_t row,jit_value_t col) {
+    jit_value_t tmp = jit_ins_mul( col , jit_val_create_const_int( N ) );
+    jit_value_t lin = jit_ins_add( tmp , row );
+    return BaseJIT<T,N*N>::getJitElem( lin );
+  }
+
         T& elem(int i, int j)       {return this->arrayF(j+N*i);}
   const T& elem(int i, int j) const {return this->arrayF(j+N*i);}
 

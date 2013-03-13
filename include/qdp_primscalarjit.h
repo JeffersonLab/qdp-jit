@@ -27,7 +27,7 @@ namespace QDP {
     template<class T1>
     PScalarJIT& operator=( const PScalarJIT<T1>& rhs);
     PScalarJIT& operator=( const PScalarJIT& rhs);
-    PScalarJIT( const PScalarJIT& rhs);
+    //PScalarJIT( const PScalarJIT& rhs);
 
   public:
 
@@ -994,11 +994,14 @@ getSite(const PScalarJIT<T>& s1, int innersite)
 {
   return getSite(s1.elem(), innersite);
 }
+#endif
 
+
+#if 0
 //! Extract color vector components 
 /*! Generically, this is an identity operation. Defined differently under color */
 template<class T>
-inline typename UnaryReturn<PScalarJIT<T>, FnPeekColorVectorJIT>::Type_t
+inline typename UnaryReturn<PScalarJIT<T>, FnPeekColorVectorREG>::Type_t
 peekColor(const PScalarJIT<T>& l, int row)
 {
   return peekColor(l.elem(),row);
@@ -1007,7 +1010,7 @@ peekColor(const PScalarJIT<T>& l, int row)
 //! Extract color matrix components 
 /*! Generically, this is an identity operation. Defined differently under color */
 template<class T>
-inline typename UnaryReturn<PScalarJIT<T>, FnPeekColorMatrixJIT>::Type_t
+inline typename UnaryReturn<PScalarJIT<T>, FnPeekColorMatrixREG>::Type_t
 peekColor(const PScalarJIT<T>& l, int row, int col)
 {
   return peekColor(l.elem(),row,col);
@@ -1016,7 +1019,7 @@ peekColor(const PScalarJIT<T>& l, int row, int col)
 //! Extract spin vector components 
 /*! Generically, this is an identity operation. Defined differently under spin */
 template<class T>
-inline typename UnaryReturn<PScalarJIT<T>, FnPeekSpinVectorJIT>::Type_t
+inline typename UnaryReturn<PScalarJIT<T>, FnPeekSpinVectorREG>::Type_t
 peekSpin(const PScalarJIT<T>& l, int row)
 {
   return peekSpin(l.elem(),row);
@@ -1025,7 +1028,7 @@ peekSpin(const PScalarJIT<T>& l, int row)
 //! Extract spin matrix components 
 /*! Generically, this is an identity operation. Defined differently under spin */
 template<class T>
-inline typename UnaryReturn<PScalarJIT<T>, FnPeekSpinMatrixJIT>::Type_t
+inline typename UnaryReturn<PScalarJIT<T>, FnPeekSpinMatrixREG>::Type_t
 peekSpin(const PScalarJIT<T>& l, int row, int col)
 {
   return peekSpin(l.elem(),row,col);
@@ -1038,11 +1041,33 @@ template<class T1, class T2>
 inline PScalarJIT<T1>&
 pokeColor(PScalarJIT<T1>& l, const PScalarJIT<T2>& r, int row)
 {
+  pokeColor(l.elem(),r.elem(),row);
+  return l;
+}
+#endif
 
+
+
+template<class T1, class T2>
+inline PScalarJIT<T1>&
+pokeColor(PScalarJIT<T1>& l, const PScalarREG<T2>& r, jit_value_t row)
+{
   pokeColor(l.elem(),r.elem(),row);
   return l;
 }
 
+template<class T1, class T2>
+inline PScalarJIT<T1>&
+pokeColor(PScalarJIT<T1>& l, const PScalarREG<T2>& r, jit_value_t row, jit_value_t col)
+{
+  pokeColor(l.elem(),r.elem(),row,col);
+  return l;
+}
+
+
+
+
+#if 0
 //! Insert color matrix components 
 /*! Generically, this is an identity operation. Defined differently under color */
 template<class T1, class T2>
@@ -1072,8 +1097,12 @@ pokeSpin(PScalarJIT<T1>& l, const PScalarJIT<T2>& r, int row, int col)
   pokeSpin(l.elem(),r.elem(),row,col);
   return l;
 }
+#endif
 
 
+
+
+#if 0
 //-----------------------------------------------------------------------------
 //! PScalarJIT = Gamma<N,m> * PScalarJIT
 template<class T2, int N, int m>

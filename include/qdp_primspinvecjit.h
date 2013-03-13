@@ -1015,6 +1015,15 @@ struct UnaryReturn<PSpinVectorJIT<T,N>, FnPeekSpinVectorREG > {
 // }
 
 
+template<class T1, class T2, int N>
+inline PSpinVectorJIT<T1,N>&
+pokeSpin(PSpinVectorJIT<T1,N>& l, const PScalarREG<T2>& r, jit_value_t row)
+{
+  l.getJitElem(row) = r.elem();
+  return l;
+}
+
+
 
 // SpinVector<4> = Gamma<4,m> * SpinVector<4>
 // There are 16 cases here for Nd=4

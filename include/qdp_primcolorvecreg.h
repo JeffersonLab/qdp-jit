@@ -240,7 +240,7 @@ peekColor(const PColorVectorREG<T,N>& l, jit_value_t row)
 					      TTjit::Size_t );
 
   TTjit dj;
-  dj.setup( getFunc(l) , ptr_local, 1 , 0);
+  dj.setup( getFunc(l) , ptr_local, jit_val_create_const_int(1) , jit_val_create_const_int(0) );
   dj=l;
 
   d.elem() = dj.getRegElem(row);
