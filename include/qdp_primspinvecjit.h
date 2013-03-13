@@ -442,18 +442,18 @@ getSite(const PSpinVectorJIT<T,N>& s1, int innersite)
 //   return d;
 // }
 
-// //! Insert color vector components 
-// /*! Generically, this is an identity operation. Defined differently under color */
-// template<class T1, class T2, int N>
-// inline typename UnaryReturn<PSpinVectorJIT<T1,N>, FnPokeColorVectorJIT >::Type_t&
-// pokeColor(PSpinVectorJIT<T1,N>& l, const PSpinVectorJIT<T2,N>& r, int row)
-// {
-//   typedef typename UnaryReturn<PSpinVectorJIT<T1,N>, FnPokeColorVectorJIT >::Type_t  Return_t;
+//! Insert color vector components 
+/*! Generically, this is an identity operation. Defined differently under color */
+template<class T1, class T2, int N>
+inline typename UnaryReturn<PSpinVectorJIT<T1,N>, FnPokeColorVectorREG >::Type_t&
+pokeColor(PSpinVectorJIT<T1,N>& l, const PSpinVectorREG<T2,N>& r, jit_value_t row)
+{
+  typedef typename UnaryReturn<PSpinVectorJIT<T1,N>, FnPokeColorVectorREG >::Type_t  Return_t;
 
-//   for(int i=0; i < N; ++i)
-//     pokeColor(l.elem(i),r.elem(i),row);
-//   return static_cast<Return_t&>(l);
-// }
+  for(int i=0; i < N; ++i)
+    pokeColor(l.elem(i),r.elem(i),row);
+  return static_cast<Return_t&>(l);
+}
 
 // //! Insert color matrix components 
 // /*! Generically, this is an identity operation. Defined differently under color */
@@ -988,31 +988,11 @@ fill_gaussian(PSpinVectorJIT<T,N>& d, PSpinVectorJIT<T,N>& r1, PSpinVectorJIT<T,
 
 // Peeking and poking
 //! Extract spin vector components 
-template<class T, int N>
-struct UnaryReturn<PSpinVectorJIT<T,N>, FnPeekSpinVectorREG > {
-  typedef PScalarJIT<typename UnaryReturn<T, FnPeekSpinVectorREG>::Type_t>  Type_t;
-};
-
 // template<class T, int N>
-// inline typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekSpinVectorREG>::Type_t
-// peekSpin(const PSpinVectorJIT<T,N>& l, int row)
-// {
-//   typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekSpinVectorREG>::Type_t  d(l.func());
+// struct UnaryReturn<PSpinVectorJIT<T,N>, FnPeekSpinVectorREG > {
+//   typedef PScalarJIT<typename UnaryReturn<T, FnPeekSpinVectorREG>::Type_t>  Type_t;
+// };
 
-//   // Note, do not need to propagate down since the function is eaten at this level
-//   d.elem() = l.getRegElem(row);
-//   return d;
-// }
-
-// //! Insert spin vector components
-// template<class T1, class T2, int N>
-// inline PSpinVectorJIT<T1,N>&
-// pokeSpin(PSpinVectorJIT<T1,N>& l, const PScalarJIT<T2>& r, int row)
-// {
-//   // Note, do not need to propagate down since the function is eaten at this level
-//   l.getRegElem(row) = r.elem();
-//   return l;
-// }
 
 
 template<class T1, class T2, int N>

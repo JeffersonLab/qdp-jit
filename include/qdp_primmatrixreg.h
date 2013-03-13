@@ -1300,15 +1300,15 @@ getSite(const PMatrixREG<T,N,C>& s1, int innersite)
 //! Extract color vector components 
 /*! Generically, this is an identity operation. Defined differently under color */
 template<class T, int N, template<class,int> class C>
-struct UnaryReturn<PMatrixREG<T,N,C>, FnPeekColorVector> {
-  typedef C<typename UnaryReturn<T, FnPeekColorVector>::Type_t, N>  Type_t;
+struct UnaryReturn<PMatrixREG<T,N,C>, FnPeekColorVectorREG> {
+  typedef C<typename UnaryReturn<T, FnPeekColorVectorREG>::Type_t, N>  Type_t;
 };
 
 template<class T, int N, template<class,int> class C>
-inline typename UnaryReturn<PMatrixREG<T,N,C>, FnPeekColorVector>::Type_t
-peekColor(const PMatrixREG<T,N,C>& l, int row)
+inline typename UnaryReturn<PMatrixREG<T,N,C>, FnPeekColorVectorREG>::Type_t
+peekColor(const PMatrixREG<T,N,C>& l, jit_value_t row)
 {
-  typename UnaryReturn<PMatrixREG<T,N,C>, FnPeekColorVector>::Type_t  d;
+  typename UnaryReturn<PMatrixREG<T,N,C>, FnPeekColorVectorREG>::Type_t  d;
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -1319,15 +1319,15 @@ peekColor(const PMatrixREG<T,N,C>& l, int row)
 //! Extract color matrix components 
 /*! Generically, this is an identity operation. Defined differently under color */
 template<class T, int N, template<class,int> class C>
-struct UnaryReturn<PMatrixREG<T,N,C>, FnPeekColorMatrix> {
-  typedef C<typename UnaryReturn<T, FnPeekColorMatrix>::Type_t, N>  Type_t;
+struct UnaryReturn<PMatrixREG<T,N,C>, FnPeekColorMatrixREG> {
+  typedef C<typename UnaryReturn<T, FnPeekColorMatrixREG>::Type_t, N>  Type_t;
 };
 
 template<class T, int N, template<class,int> class C>
-inline typename UnaryReturn<PMatrixREG<T,N,C>, FnPeekColorMatrix>::Type_t
-peekColor(const PMatrixREG<T,N,C>& l, int row, int col)
+inline typename UnaryReturn<PMatrixREG<T,N,C>, FnPeekColorMatrixREG>::Type_t
+peekColor(const PMatrixREG<T,N,C>& l, jit_value_t row, jit_value_t col)
 {
-  typename UnaryReturn<PMatrixREG<T,N,C>, FnPeekColorMatrix>::Type_t  d;
+  typename UnaryReturn<PMatrixREG<T,N,C>, FnPeekColorMatrixREG>::Type_t  d;
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)

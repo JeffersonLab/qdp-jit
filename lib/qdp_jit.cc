@@ -82,7 +82,7 @@ namespace QDP {
 
   int jit_type_promote(int t0,int t1) {
     if (t0==t1) return t0;
-    std::cout << "promote: " << jit_get_ptx_type(t0) << " " << jit_get_ptx_type(t1) << "\n";
+    //std::cout << "promote: " << jit_get_ptx_type(t0) << " " << jit_get_ptx_type(t1) << "\n";
     assert( PTX::map_promote.count(t0) > 0 );
     assert( PTX::map_promote.at(t0).count(t1) > 0 );
     int ret = PTX::map_promote.at(t0).at(t1);

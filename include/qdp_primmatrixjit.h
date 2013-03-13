@@ -1387,19 +1387,20 @@ struct UnaryReturn<PMatrixJIT<T,N,C>, FnPokeColorMatrix> {
 //   return static_cast<Return_t&>(l);
 // }
 
-// //! Insert color matrix components 
-// /*! Generically, this is an identity operation. Defined differently under color */
-// template<class T1, class T2, int N, template<class,int> class C>
-// inline typename UnaryReturn<PMatrixJIT<T1,N,C>, FnPokeColorMatrix>::Type_t&
-// pokeColor(PMatrixJIT<T1,N,C>& l, const PMatrixJIT<T2,N,C>& r, int row, int col)
-// {
-//   typedef typename UnaryReturn<PMatrixJIT<T1,N,C>, FnPokeColorMatrix>::Type_t  Return_t;
+//! Insert color matrix components 
+/*! Generically, this is an identity operation. Defined differently under color */
+template<class T1, class T2, int N, template<class,int> class C, template<class,int> class C2>
+inline typename UnaryReturn<PMatrixJIT<T1,N,C>, FnPokeColorMatrixREG>::Type_t&
+pokeColor(PMatrixJIT<T1,N,C>& l, const PMatrixREG<T2,N,C2>& r, jit_value_t row, jit_value_t col)
+{
+  typedef typename UnaryReturn<PMatrixJIT<T1,N,C>, FnPokeColorMatrixREG>::Type_t  Return_t;
 
-//   for(int i=0; i < N; ++i)
-//     for(int j=0; j < N; ++j)
-//       pokeColor(l.elem(i,j),r.elem(i,j),row,col);
-//   return static_cast<Return_t&>(l);
-// }
+  for(int i=0; i < N; ++i)
+    for(int j=0; j < N; ++j)
+      pokeColor(l.elem(i,j),r.elem(i,j),row,col);
+  return static_cast<Return_t&>(l);
+}
+
 
 //! Insert spin vector components 
 /*! Generically, this is an identity operation. Defined differently under spin */
