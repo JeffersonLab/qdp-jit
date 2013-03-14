@@ -122,7 +122,10 @@ namespace QDP {
 
   // FUNCTION
 
-  jit_function::jit_function( const char * fname_): fname(fname_), reg_count( jit_number_of_types() )
+  jit_function::jit_function( const char * fname_): fname(fname_), 
+						    reg_count( jit_number_of_types() ), 
+						    param_count(0), 
+						    local_count(0)
   {
     // std::cout << "Constructing function " << fname 
     // 	      << "reg_count vector size = " << reg_count.size() << "\n";
@@ -176,34 +179,27 @@ void jit_function::write_reg_defs()
   {
     write_reg_defs();
     std::ofstream out(fname.c_str());
-#if 1
-    out << ".version 1.4\n" <<
-      ".target sm_12\n" <<
-      ".entry function (" << 
-      get_signature().str() << ")\n" <<
-      "{\n" <<
-      oss_reg_defs.str() <<
-      // oss_tidcalc.str() <<
-      // oss_tidmulti.str() <<
-      // oss_baseaddr.str() <<
-      oss_prg.str() <<
-      "}\n";
-#else
-    out << ".version 2.3\n" <<
-      ".target sm_20\n" <<
-      ".address_size 64\n" <<
-      ".entry " << funcname << " (" <<
-      oss_param.str() << ")\n" <<
-      "{\n" <<
-      oss_vardef.str() <<
-      oss_tidcalc.str() <<
-      oss_tidmulti.str() <<
-      oss_baseaddr.str() <<
-      oss_prg.str() <<
-      "}\n";
-#endif
+
+    int major = DeviceParams::Instance().getMajor();
+    int minor = DeviceParams::Instance().getMinor();
+    
+    if (major >= 2) {
+      out << ".version 2.3\n";
+      out << ".target sm_20" << "\n";
+      out << ".address_size 64\n";
+    } else {
+      out << ".version 1.4\n";
+      out << ".target sm_" << major << minor << "\n";
+    }
+    out << ".entry function (" 
+	<< get_signature().str() 
+	<< ")\n" 
+	<< "{\n" 
+	<< oss_reg_defs.str() 
+	<< oss_prg.str() 
+	<< "}\n";
     out.close();
-  } 
+  }
 
 
   jit_function_t jit_get_valid_func( jit_function_t f0 ,jit_function_t f1 ) {
@@ -275,7 +271,9 @@ void jit_function::write_reg_defs()
 
   // VALUE REG
 
-  jit_value_reg::jit_value_reg(jit_function_t func_, int type_): jit_value(type_), func(func_) {
+  jit_value_reg::jit_value_reg(jit_function_t func_, int type_): jit_value(type_),
+								 func(func_),
+								 mem_state(state_global) {
     assert(func);
     number = func->reg_alloc(type);
   }

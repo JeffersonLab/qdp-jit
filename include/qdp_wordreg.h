@@ -20,7 +20,7 @@ namespace QDP {
     // Default constructing should be possible
     // then there is no need for MPL index when
     // construction a PMatrix<T,N>
-    WordREG() {}
+    WordREG(): setup_m(false) {}
 
     explicit WordREG(int i) {
       val = jit_val_create_const_int( i );
@@ -166,7 +166,7 @@ namespace QDP {
     }
 
   private:
-    bool setup_m=false;
+    bool setup_m;
     jit_value_t    val;
   };
 

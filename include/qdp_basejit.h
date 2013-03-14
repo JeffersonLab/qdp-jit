@@ -7,13 +7,15 @@ namespace QDP {
   class BaseJIT {
 
     T F[N];
-    bool setup_m = false;
+    bool setup_m;
     jit_function_t func;
     jit_value_t full;
     jit_value_t level;
     jit_value_t r_base;
 
   public:
+    BaseJIT(): setup_m(false) {}
+    ~BaseJIT() {}
 
     enum { ThisSize = N };                 // Size in T's
     enum { Size_t = ThisSize * T::Size_t}; // Size in registers
