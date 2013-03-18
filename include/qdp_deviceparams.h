@@ -28,13 +28,13 @@ namespace QDP {
 
     void setCC(int sm);
 
-    int getMaxGridX() const {return max_gridx;}
-    int getMaxGridY() const {return max_gridy;}
-    int getMaxGridZ() const {return max_gridz;}
+    size_t getMaxGridX() const {return max_gridx;}
+    size_t getMaxGridY() const {return max_gridy;}
+    size_t getMaxGridZ() const {return max_gridz;}
 
-    int getMaxBlockX() const {return max_blockx;}
-    int getMaxBlockY() const {return max_blocky;}
-    int getMaxBlockZ() const {return max_blockz;}
+    size_t getMaxBlockX() const {return max_blockx;}
+    size_t getMaxBlockY() const {return max_blocky;}
+    size_t getMaxBlockZ() const {return max_blockz;}
 
     int getMaxSMem() const {return smem;}
     int getDefaultSMem() const {return smem_default;}
@@ -58,7 +58,7 @@ namespace QDP {
     DeviceParams(): syncDevice(false), maxKernelArg(512) {};   // Private constructor
     DeviceParams(const DeviceParams&);                            // Prevent copy-construction
     DeviceParams& operator=(const DeviceParams&);
-    int roundDown2pow(int x);
+    size_t roundDown2pow(size_t x);
 
   private:
     int device;

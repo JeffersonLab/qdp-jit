@@ -7,7 +7,7 @@ namespace QDP {
     kernel_geom_t geom_host;
 
     geom_host.threads_per_block = threadsPerBlock;
-    geom_host.Nblock_x = min( DeviceParams::Instance().getMaxGridX() , (int)std::ceil( (double)numSites / (double)geom_host.threads_per_block ) );
+    geom_host.Nblock_x = min( DeviceParams::Instance().getMaxGridX() , (size_t)std::ceil( (double)numSites / (double)geom_host.threads_per_block ) );
     geom_host.Nblock_y = (int)std::ceil(  (double)numSites / (double)(geom_host.Nblock_x * threadsPerBlock) );
 
     return geom_host;
@@ -15,8 +15,8 @@ namespace QDP {
 
 
 
-  int DeviceParams::roundDown2pow(int x) {
-    int s=1;
+  size_t DeviceParams::roundDown2pow(size_t x) {
+    size_t s=1;
     while (s<=x) s <<= 1;
     s >>= 1;
     return s;

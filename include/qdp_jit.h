@@ -68,8 +68,8 @@ namespace QDP {
     std::ostringstream oss_reg_defs;
     std::vector<int> reg_count;
     std::vector<std::pair<int,int> > vec_local_count;     // pair = (type,count)
-    int param_count = 0;
-    int local_count = 0;
+    int param_count;
+    int local_count;
   public:
     int local_alloc( int type, int count );
     void write_reg_defs();
@@ -127,7 +127,7 @@ namespace QDP {
     jit_function_t get_func() const;
     std::string get_name() const;
   private:
-    StateSpace mem_state = state_global;
+    StateSpace mem_state;
   };
 
 

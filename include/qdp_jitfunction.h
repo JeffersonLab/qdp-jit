@@ -1,17 +1,20 @@
 #ifndef QDP_JITFUNC_H
 #define QDP_JITFUNC_H
 
+//#define JIT_DO_MEMBER 1
+#undef JIT_DO_MEMBER
+
+
 #include "qmp.h"
 
 namespace QDP {
-
 
 
 template<class T, class T1, class Op, class RHS>
 CUfunction
 function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs)
 {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   CUfunction func;
 
@@ -22,18 +25,22 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 
   jit_value_t r_lo     = jit_add_param( function , jit_ptx_type::s32 );
   jit_value_t r_hi     = jit_add_param( function , jit_ptx_type::s32 );
+#ifdef JIT_DO_MEMBER
   jit_value_t r_member = jit_add_param( function , jit_ptx_type::u64 );  // Subset
+#endif
 
   jit_value_t r_idx = jit_geom_get_linear_th_idx( function );  
 
   jit_value_t r_out_of_range       = jit_ins_ge( r_idx , r_hi );
   jit_ins_exit( function , r_out_of_range );
 
+#ifdef JIT_DO_MEMBER
   jit_value_t r_member_addr        = jit_ins_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
   jit_value_t r_ismember_u8        = jit_ins_load ( r_member_addr , 0 , jit_ptx_type::u8 );
   jit_value_t r_ismember_u32       = jit_val_create_convert( function , jit_ptx_type::u32 , r_ismember_u8 );
   jit_value_t r_ismember_pred_addr = jit_ins_eq( r_ismember_u32 , jit_val_create_const_int(0) );
   jit_ins_exit( function , r_ismember_pred_addr );
+#endif
 
   jit_value_t r_do_site_perm         = jit_add_param( function , jit_ptx_type::s32 ); // Site permutation?, for inner sites
   jit_value_t r_do_site_perm_pred    = jit_ins_ne( r_do_site_perm , jit_val_create_const_int(0) );
@@ -78,7 +85,7 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   ret = cuModuleGetFunction(&func, cuModule, "function");
   if (ret) { std::cout << "Error getting function\n"; exit(1); }
 
-  std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
+  //std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
 
   return func;
 }
@@ -494,19 +501,21 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
   std::vector<void*> addr;
 
   addr.push_back( &lo );
-  std::cout << "addr lo = " << addr[0] << " lo=" << lo << "\n";
+  //std::cout << "addr lo = " << addr[0] << " lo=" << lo << "\n";
 
   addr.push_back( &hi );
-  std::cout << "addr hi = " << addr[1] << " hi=" << hi << "\n";
+  //std::cout << "addr hi = " << addr[1] << " hi=" << hi << "\n";
 
+#ifdef JIT_DO_MEMBER
   addr.push_back( &subset_member );
-  std::cout << "addr subset_dev (member_array) = " << addr[3] << " " << subset_member << "\n";
+  //std::cout << "addr subset_dev (member_array) = " << addr[3] << " " << subset_member << "\n";
+#endif
 
   addr.push_back( &do_soffset_index );
-  std::cout << "addr do_soffset_index =" << addr[2] << " " << do_soffset_index << "\n";
+  //std::cout << "addr do_soffset_index =" << addr[2] << " " << do_soffset_index << "\n";
 
   addr.push_back( &idx_inner_dev );
-  std::cout << "addr idx_inner_dev = " << addr[3] << " " << idx_inner_dev << "\n";
+  //std::cout << "addr idx_inner_dev = " << addr[3] << " " << idx_inner_dev << "\n";
 
 
   int addr_dest=addr.size();

@@ -200,6 +200,9 @@ namespace QDP {
 
     deviceSet=true;
     DeviceParams::Instance().autoDetect();
+
+    ret = cuCtxSetCacheConfig(CU_FUNC_CACHE_PREFER_L1);
+    CudaRes("",ret);
   }
 
   void CudaGetDeviceCount(int * count)
