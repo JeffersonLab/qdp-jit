@@ -21,26 +21,38 @@ void function_sum_exec( CUfunction function,
 
     CUfunction func;
 
-    std::string fname("ptxsum.ptx");
-    Jit function(fname.c_str(),"func");
+    const char * fname = "ptx_sum_ind.ptx";
+    jit_function_t function = jit_create_function( fname );
 
-    function.addParamIndexFieldAndOption();
+  jit_value_t r_lo     = jit_add_param( function , jit_ptx_type::s32 );
+  jit_value_t r_hi     = jit_add_param( function , jit_ptx_type::s32 );
 
-    OLatticeJIT<typename JITType<T1>::Type_t> idata( function , 
-							      function.addParamLatticeBaseAddr( function.getRegIdx() , 
-												WordSize<T1>::Size ),
-							      Jit::LatticeLayout::COAL );
-    OLatticeJIT<typename JITType<T2>::Type_t> odata( function , 
-							      function.addParamLatticeBaseAddr( function.getRegBlockIdx() , 
-												JITType<T2>::Type_t::Size_t * WordSize<T2>::Size ),
-							      Jit::LatticeLayout::SCAL );
+  jit_value_t r_idx = jit_geom_get_linear_th_idx( function );  
 
+  jit_value_t r_out_of_range       = jit_ins_ge( r_idx , r_hi );
+  jit_ins_exit( function , r_out_of_range );
 
-    OLatticeJIT<typename JITType<T2>::Type_t> sdata( function , 
-							      function.addSharedMemLatticeBaseAddr( function.getTID() , 
-												    JITType<T2>::Type_t::Size_t * WordSize<T2>::Size ),
-							      Jit::LatticeLayout::SCAL );
+  // I'll do always a site perm here
+  // Can eventually be optimized if orderedSubset
+  jit_value_t r_perm_array_addr      = jit_add_param( function , jit_ptx_type::u64 );  // Site permutation array
+  jit_value_t r_idx_mul_4            = jit_ins_mul( r_idx , jit_val_create_const_int(4) );
+  jit_value_t r_perm_array_addr_load = jit_ins_add( r_perm_array_addr , r_idx_mul_4 );
+  jit_value_t r_idx_perm             = jit_ins_load ( r_perm_array_addr_load , 0 , jit_ptx_type::s32 );
 
+  jit_value_t r_idata      = jit_add_param( function , jit_ptx_type::u64 );  // Input  array
+  jit_value_t r_odata      = jit_add_param( function , jit_ptx_type::u64 );  // output array
+  jit_value_t r_block_idx  = jit_geom_get_ctaidx( function );
+  jit_value_t r_tidx       = jit_geom_get_tidx( function );
+  jit_value_t r_shared     = jit_get_shared_mem_ptr( function );
+  
+  OLatticeJIT<typename JITType<T1>::Type_t> idata( function , r_idata , r_idx_perm );   // want coal   access later
+  OLatticeJIT<typename JITType<T1>::Type_t> odata( function , r_odata , r_block_idx );  // want scalar access later
+  OLatticeJIT<typename JITType<T1>::Type_t> sdata( function , r_shared , r_tidx );      // want scalar access later
+
+  function->write();
+  assert(!"ni");
+
+#if 0
     //sdata.elem(0) += sdata.elem(0);
 
     int r_pred_idx = function.getRegs( Jit::pred , 1 );
@@ -145,11 +157,13 @@ void function_sum_exec( CUfunction function,
     //std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
 
     return func;
+#endif
+
   }
 
 
 
-
+#if 0
   template<class T2>
   CUfunction 
   function_sum_build()
@@ -292,17 +306,9 @@ void function_sum_exec( CUfunction function,
 
     return func;
   }
+#endif
 
 
 }
-
-
-
-
-
-
-
-
-
 
 #endif

@@ -70,7 +70,9 @@ namespace QDP {
     std::vector<std::pair<int,int> > vec_local_count;     // pair = (type,count)
     int param_count;
     int local_count;
+    bool m_shared;
   public:
+    void emitShared();
     int local_alloc( int type, int count );
     void write_reg_defs();
     void write();
@@ -119,6 +121,7 @@ namespace QDP {
     jit_value_reg(jit_function_t func_, int type_);
 
     void set_local_state();
+    void set_shared_state();
     void set_state_space( StateSpace ss );
     StateSpace get_state_space();
     const char * get_state_space_str() const;
@@ -148,7 +151,8 @@ namespace QDP {
     virtual bool  isInt() const { return true; }
     virtual float getAsFloat() const { return val; }
     virtual std::string getAsString() const { 
-      std::ostringstream oss; oss << val;
+      std::ostringstream oss; 
+      oss << val;
       return oss.str();
     }
     int getValue() {return val;}
@@ -163,7 +167,9 @@ namespace QDP {
     virtual bool  isInt() const { return false; }
     virtual float getAsFloat() const { return val; }
     virtual std::string getAsString() const { 
-      std::ostringstream oss; oss << val;
+      std::ostringstream oss; 
+      oss.setf(ios::scientific);
+      oss << val;
       return oss.str();
     }
     float getValue() {return val;}
@@ -171,15 +177,17 @@ namespace QDP {
 
 
 
-  jit_value::StateSpace jit_propagate_state_space( jit_value::StateSpace ss0 , jit_value::StateSpace ss1 );
+
 
   std::string jit_predicate( jit_value_t pred );
 
+  jit_value::StateSpace jit_state_promote( jit_value::StateSpace ss0 , jit_value::StateSpace ss1 );
   int jit_type_promote(int t0,int t1);
   int jit_type_wide_promote(int t0);
 
   jit_value_t jit_add_param( jit_function_t func , int type );
   jit_value_t jit_allocate_local( jit_function_t func , int type , int count );
+  jit_value_t jit_get_shared_mem_ptr( jit_function_t func );
 
   jit_function_t jit_create_function(const char * fname_);
   jit_function_t jit_get_valid_func( jit_function_t f0 ,jit_function_t f1 );

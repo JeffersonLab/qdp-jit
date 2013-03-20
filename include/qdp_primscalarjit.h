@@ -1549,13 +1549,6 @@ where(const PScalarJIT<T1>& a, const PScalarJIT<T2>& b, const PScalarJIT<T3>& c)
 
 //-----------------------------------------------------------------------------
 // Other operations
-//! dest = 0
-template<class T> 
-inline void 
-zero_rep(PScalarJIT<T>& dest) 
-{
-  zero_rep(dest.elem());
-}
 
 //! dest [some type] = source [some type]
 template<class T, class T1>
@@ -1594,6 +1587,15 @@ gather_sites(PScalarJIT<T>& d,
 }
 
 #endif
+
+//! dest = 0
+template<class T> 
+inline void 
+zero_rep(PScalarJIT<T>& dest) 
+{
+  zero_rep(dest.elem());
+}
+
 
 /*! @} */  // end of group primscalar
 

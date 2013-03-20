@@ -199,6 +199,14 @@ namespace QDP {
   };
 
 
+  inline void 
+  zero_rep(WordJIT<float>& dest) 
+  {
+    jit_ins_store( dest.getAddress() , 0 , jit_type<float>::value , jit_val_create_const_float( 0.0 ) );
+  }
+
+
+
 } // namespace QDP
 
 #endif

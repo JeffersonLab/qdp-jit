@@ -499,8 +499,7 @@ template<class T>
 inline
 void zero_rep(OLattice<T>& dest, const Subset& s) 
 {
-  assert(!"ni");
-#if 0
+#if 1
   static CUfunction function;
 
   if (function == NULL)

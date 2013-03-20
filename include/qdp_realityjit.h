@@ -1437,7 +1437,7 @@ gather_sites(RScalarJIT<T>& d,
 }
 
 
-#if 1
+
 // Global sum over site indices only
 template<class T>
 struct UnaryReturn<RScalarJIT<T>, FnSum > {
@@ -1450,7 +1450,7 @@ sum(const RScalarJIT<T>& s1)
 {
   return sum(s1.elem());
 }
-#endif
+
 
 
 // Global max
@@ -1560,16 +1560,6 @@ where(const RScalarJIT<T1>& a, const RScalarJIT<T2>& b, const RScalarJIT<T3>& c)
 }
 
 
-
-//-----------------------------------------------------------------------------
-// Broadcast operations
-//! dest = 0
-template<class T> 
-inline
-void zero_rep(RScalarJIT<T>& dest) 
-{
-  zero_rep(dest.elem());
-}
 
 
 //! dest [some type] = source [some type]
@@ -2320,14 +2310,7 @@ where(const RScalarJIT<T1>& a, const RScalarJIT<T2>& b, const RComplexJIT<T3>& c
 
 //-----------------------------------------------------------------------------
 // Broadcast operations
-//! dest = 0
-template<class T> 
-inline
-void zero_rep(RComplexJIT<T>& dest) 
-{
-  zero_rep(dest.real());
-  zero_rep(dest.imag());
-}
+
 
 
 //! dest  = random  
@@ -2406,6 +2389,26 @@ fill_gaussian(RComplexJIT<T>& d, RComplexJIT<T>& r1, RComplexJIT<T>& r2)
 }
 
 #endif
+
+
+
+template<class T> 
+inline
+void zero_rep(RScalarJIT<T>& dest) 
+{
+  zero_rep(dest.elem());
+}
+
+
+template<class T> 
+inline
+void zero_rep(RComplexJIT<T>& dest) 
+{
+  zero_rep(dest.real());
+  zero_rep(dest.imag());
+}
+
+
 
 /*! @} */  // end of group rcomplex
 
