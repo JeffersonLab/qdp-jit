@@ -183,7 +183,10 @@ namespace QDP {
 
   jit_value::StateSpace jit_state_promote( jit_value::StateSpace ss0 , jit_value::StateSpace ss1 );
   int jit_type_promote(int t0,int t1);
+  int jit_bit_type(int type);
   int jit_type_wide_promote(int t0);
+
+  void jit_ins_bar_sync( jit_function_t func , int a );
 
   jit_value_t jit_add_param( jit_function_t func , int type );
   jit_value_t jit_allocate_local( jit_function_t func , int type , int count );
@@ -215,12 +218,12 @@ namespace QDP {
   jit_value_t jit_ins_div( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
   jit_value_t jit_ins_add( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
   jit_value_t jit_ins_sub( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_shl( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_shr( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
 
   // ni
   jit_value_t jit_ins_or( jit_value_t lhs , jit_value_t rhs );
   jit_value_t jit_ins_and( jit_value_t lhs , jit_value_t rhs );
-  jit_value_t jit_ins_shl( jit_value_t lhs , jit_value_t rhs );
-  jit_value_t jit_ins_shr( jit_value_t lhs , jit_value_t rhs );
   jit_value_t jit_ins_xor( jit_value_t lhs , jit_value_t rhs );
   jit_value_t jit_ins_mod( jit_value_t lhs , jit_value_t rhs );
 
@@ -229,6 +232,7 @@ namespace QDP {
   jit_value_t jit_ins_ne( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
   jit_value_t jit_ins_eq( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
   jit_value_t jit_ins_ge( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_le( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
 
   // Unary operations
   jit_value_t jit_ins_neg( jit_value_t lhs , jit_value_t pred=jit_value_t() );
@@ -333,6 +337,32 @@ namespace QDP {
     virtual int operator()(int i0, int i1) const { return i0*i1; }
   };
 
+  class JitOpSHL: public JitOp {
+  public:
+    JitOpSHL( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
+    virtual std::ostream& writeToStream( std::ostream& stream ) const {
+      stream << "shl."
+	     << jit_get_ptx_type( jit_bit_type( getDestType() ) );
+      return stream;
+    }
+    virtual float operator()(float f0, float f1) const { assert(!"strange that i'm here"); return 0.; }
+    virtual int operator()(int i0, int i1) const { return i0 << i1; }
+  };
+
+  class JitOpSHR: public JitOp {
+  public:
+    JitOpSHR( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
+    virtual std::ostream& writeToStream( std::ostream& stream ) const {
+      stream << "shr."
+	     << jit_get_ptx_type( jit_bit_type( getDestType() ) );
+      return stream;
+    }
+    virtual float operator()(float f0, float f1) const { assert(!"strange that i'm here"); return 0.; }
+    virtual int operator()(int i0, int i1) const { return i0 >> i1; }
+  };
+
+
+
   class JitOpLT: public JitOp {
   public:
     JitOpLT( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
@@ -386,6 +416,21 @@ namespace QDP {
     }
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
       stream << "setp.ge."
+	     << jit_get_ptx_type( getArgsType() );
+      return stream;
+    }
+    virtual float operator()(float f0, float f1) const { return 0; }
+    virtual int operator()(int i0, int i1) const { return 0; }
+  };
+
+  class JitOpLE: public JitOp {
+  public:
+    JitOpLE( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
+    virtual int getDestType() const {
+      return jit_ptx_type::pred;
+    }
+    virtual std::ostream& writeToStream( std::ostream& stream ) const {
+      stream << "setp.le."
 	     << jit_get_ptx_type( getArgsType() );
       return stream;
     }

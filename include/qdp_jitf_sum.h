@@ -49,48 +49,81 @@ void function_sum_exec( CUfunction function,
   OLatticeJIT<typename JITType<T1>::Type_t> odata( function , r_odata , r_block_idx );  // want scalar access later
   OLatticeJIT<typename JITType<T1>::Type_t> sdata( function , r_shared , r_tidx );      // want scalar access later
 
+  // zero_rep() branch should be redundant
+
+
+  typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_elem;   // this is stupid
+  reg_idata_elem.setup( idata.elem( QDPTypeJITBase::Coalesced ) );
+  sdata.elem( QDPTypeJITBase::Scalar ) = reg_idata_elem;
+
+  jit_ins_bar_sync( function , 1 );
+
+  jit_value_t val_ntid = jit_geom_get_ntidx(function);
+
+  //
+  // Find next power of 2 loop
+  //
+  jit_value_t r_pred_pow = jit_val_create_from_const( function , jit_ptx_type::u32 , 1 );
+  jit_label_t label_power_end;
+  jit_label_t label_power_start;
+  jit_ins_label( function , label_power_start );
+
+  jit_value_t pred_ge = jit_ins_ge( r_pred_pow , val_ntid );
+  jit_ins_branch( function , label_power_end , pred_ge );
+  jit_value_t new_pred = jit_ins_shl( r_pred_pow , jit_val_create_const_int(1) );
+  jit_ins_mov_no_create( r_pred_pow , new_pred );
+  
+  jit_ins_branch( function , label_power_start );
+  jit_ins_label( function , label_power_end );
+
+  new_pred = jit_ins_shr( r_pred_pow , jit_val_create_const_int(1) );
+  jit_ins_mov_no_create( r_pred_pow , new_pred );
+
+  //
+  // Shared memory reduction loop
+  //
+  jit_label_t label_loop_start;
+  jit_label_t label_loop_sync;
+  jit_label_t label_loop_end;
+  jit_ins_label( function , label_loop_start );
+
+  jit_value_t pred_branch_end = jit_ins_le( r_pred_pow , jit_val_create_const_int(0) );
+  jit_ins_branch( function , label_loop_end , pred_branch_end );
+
+  jit_value_t pred_branch_sync = jit_ins_ge( r_pred_pow , jit_geom_get_tidx(function) );
+  jit_ins_branch( function , label_loop_sync , pred_branch_sync );
+
+  jit_value_t val_s_plus_tid = jit_ins_add( r_pred_pow , jit_geom_get_tidx(function) );
+  jit_value_t pred_branch_sync2 = jit_ins_ge( val_s_plus_tid , jit_geom_get_ntidx(function) );
+  jit_ins_branch( function , label_loop_sync , pred_branch_sync2 );
+
+  OLatticeJIT<typename JITType<T1>::Type_t> sdata_plus_s( function , r_shared , 
+							  jit_ins_add( r_tidx , r_pred_pow ) );
+
+  typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_plus_s_elem;   // this is stupid
+  sdata_plus_s_elem.setup( sdata_plus_s.elem( QDPTypeJITBase::Scalar ) );
+  sdata.elem( QDPTypeJITBase::Scalar ) += sdata_plus_s_elem;
+
+  jit_ins_label( function , label_loop_sync );  
+  jit_ins_bar_sync( function , 1 );
+  
+  jit_ins_label( function , label_loop_end );  
+
+  jit_label_t label_exit;
+  jit_value_t pred_branch_exit = jit_ins_ne( jit_geom_get_tidx(function) , jit_val_create_const_int(0) );
+  jit_ins_branch( function , label_exit , pred_branch_exit );
+
+  typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_reg;   // this is stupid
+  sdata_reg.setup( sdata.elem( QDPTypeJITBase::Scalar ) );
+  odata.elem( QDPTypeJITBase::Scalar ) = sdata_reg;
+
+  jit_ins_label( function , label_exit );
+
+
   function->write();
-  assert(!"ni");
+  //  assert(!"ni");
 
 #if 0
-    //sdata.elem(0) += sdata.elem(0);
-
-    int r_pred_idx = function.getRegs( Jit::pred , 1 );
-    function.asm_cmp( Jit::CmpOp::ge , r_pred_idx , function.getRegIdxNoIndex() , function.getRegHi() );
-    function.addCondBranchPredToLabel( r_pred_idx , "ZERO_REP" );
-
-    sdata.elem(0) = idata.elem(0);
-
-    function.addBranchToLabel( "ZERO_REP_END" );
-    function.insert_label("ZERO_REP");
-
-    zero_rep( sdata.elem(0) );
-
-    function.insert_label("ZERO_REP_END");
-    function.asm_bar_sync(1);
-
-    int r_one = function.getRegs( Jit::u32 , 1 );
-    function.asm_mov_literal( r_one , (unsigned)1 );
-    int r_s = function.getRegs( Jit::s32 , 1 );
-    int r_pred_s = function.getRegs( Jit::pred , 1 );
-    int r_pred_tid = function.getRegs( Jit::pred , 1 );
-    int r_pred_block = function.getRegs( Jit::pred , 1 );
-    int r_pred_pow = function.getRegs( Jit::pred , 1 );
-
-    int r_zero = function.getRegs( Jit::s32 , 1 );
-    function.asm_mov_literal( r_zero , (int)0 );
-
-    function.asm_mov_literal( r_s , (int)1 );
-
-    // Next power of 2 of blockDimX
-    function.insert_label("POWER_START");
-    function.asm_cmp( Jit::CmpOp::ge , r_pred_pow , r_s , function.getBlockDimX() );
-    function.addCondBranchPredToLabel( r_pred_pow , "POWER_END" );
-    function.asm_shl( r_s , r_s , r_one );
-    function.addBranchToLabel( "POWER_START" );
-    function.insert_label("POWER_END");
-
-    function.asm_shr( r_s , r_s , r_one );
 
     function.insert_label("LOOP_S");
 

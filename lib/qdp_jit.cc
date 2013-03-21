@@ -65,6 +65,19 @@ namespace QDP {
       map_wide_promote[ jit_ptx_type::s64 ] = jit_ptx_type::s64;
       return map_wide_promote;
     }
+    std::map< int , int > create_bit_type()
+    {
+      std::map< int , int > map_bit_type;
+      map_bit_type[ jit_ptx_type::u32 ] = jit_ptx_type::b32;
+      map_bit_type[ jit_ptx_type::s32 ] = jit_ptx_type::b32;
+      map_bit_type[ jit_ptx_type::f32 ] = jit_ptx_type::b32;
+      map_bit_type[ jit_ptx_type::u64 ] = jit_ptx_type::b64;
+      map_bit_type[ jit_ptx_type::s64 ] = jit_ptx_type::b64;
+      map_bit_type[ jit_ptx_type::f64 ] = jit_ptx_type::b64;
+      map_bit_type[ jit_ptx_type::u16 ] = jit_ptx_type::b16;
+      map_bit_type[ jit_ptx_type::s16 ] = jit_ptx_type::b16;
+      return map_bit_type;
+    }
     std::map< jit_value::StateSpace , 
 	      std::map< jit_value::StateSpace , 
 			jit_value::StateSpace > >
@@ -80,25 +93,37 @@ namespace QDP {
       map_state_promote[ jit_value::state_local  ][ jit_value::state_global ] = jit_value::state_local;
       map_state_promote[ jit_value::state_global ][ jit_value::state_local  ] = jit_value::state_local;
       map_state_promote[ jit_value::state_global ][ jit_value::state_global ] = jit_value::state_global;
+      return map_state_promote;
     }
 
     const std::map< int , std::map<int,int> > map_promote      = create_promote();
     const std::map< int , int >               map_wide_promote = create_wide_promote();
+    const std::map< int , int >               map_bit_type     = create_bit_type();
     const std::map< jit_value::StateSpace , 
 		    std::map< jit_value::StateSpace , 
 			      jit_value::StateSpace > > map_state_promote = create_state_promote();
   }
 
+
   int jit_number_of_types() { return PTX::ptx_type_matrix.size(); }
+
 
   const char * jit_value_reg::get_state_space_str() const { 
     assert(mem_state >= 0 && mem_state < PTX::jit_state_space_str.size());
     return PTX::jit_state_space_str[mem_state]; 
   }
 
+
   const char * jit_get_identifier_local_memory() {
     return PTX::jit_identifier_local_memory;
   }
+
+
+  int jit_bit_type(int type) {
+    assert( PTX::map_bit_type.count( type ) > 0 );
+    return PTX::map_bit_type.at( type );
+  }
+
 
   int jit_type_promote(int t0,int t1) {
     if (t0==t1) return t0;
@@ -113,7 +138,7 @@ namespace QDP {
 
   jit_value::StateSpace jit_state_promote( jit_value::StateSpace ss0 , jit_value::StateSpace ss1 ) {
     if ( ss0 == ss1 ) return ss0;
-    //std::cout << "promote: " << jit_get_ptx_type(t0) << " " << jit_get_ptx_type(t1) << "\n";
+    //std::cout << "state_promote: " << ss0 << " " << ss1 << "\n";
     assert( PTX::map_state_promote.count( ss0 ) > 0 );
     assert( PTX::map_state_promote.at( ss0 ).count( ss1 ) > 0 );
     jit_value::StateSpace ret = PTX::map_state_promote.at( ss0 ).at( ss1 );
@@ -303,6 +328,7 @@ void jit_function::write_reg_defs()
 		    << ",sdata;\n";
     ret->set_shared_state();
     func->emitShared();
+    return ret;
   }
 
 
@@ -350,6 +376,12 @@ void jit_function::write_reg_defs()
   }
 
 
+
+  void jit_ins_bar_sync( jit_function_t func , int a ) {
+    assert(func);
+    assert( a >= 0 && a <= 15 );
+    func->get_prg() << "bar.sync " << a << ";\n";
+  }
 
 
   std::string jit_value_reg::get_name() const {
@@ -549,40 +581,71 @@ void jit_function::write_reg_defs()
 
 
   jit_value_t jit_ins_add( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
+    assert(lhs);
+    assert(rhs);
     return jit_ins_op( lhs , rhs , JitOpAdd( lhs->get_type() , rhs->get_type() ) , pred );
   }
   jit_value_t jit_ins_sub( jit_value_t lhs , jit_value_t rhs , jit_value_t pred) {
+    assert(lhs);
+    assert(rhs);
     return jit_ins_op( lhs , rhs , JitOpSub( lhs->get_type() , rhs->get_type() ) , pred );
   }
   jit_value_t jit_ins_mul( jit_value_t lhs , jit_value_t rhs , jit_value_t pred) {
+    assert(lhs);
+    assert(rhs);
     return jit_ins_op( lhs , rhs , JitOpMul( lhs->get_type() , rhs->get_type() ) , pred );
   }
   jit_value_t jit_ins_div( jit_value_t lhs , jit_value_t rhs , jit_value_t pred) {
+    assert(lhs);
+    assert(rhs);
     return jit_ins_op( lhs , rhs , JitOpDiv( lhs->get_type() , rhs->get_type() ) , pred );
   }
+  jit_value_t jit_ins_shl( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
+    assert(lhs);
+    assert(rhs);
+    return jit_ins_op( lhs , rhs , JitOpSHL( lhs->get_type() , rhs->get_type() ) , pred );
+  }
+  jit_value_t jit_ins_shr( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
+    assert(lhs);
+    assert(rhs);
+    return jit_ins_op( lhs , rhs , JitOpSHR( lhs->get_type() , rhs->get_type() ) , pred );
+  }
   jit_value_t jit_ins_mul_wide( jit_value_t lhs , jit_value_t rhs , jit_value_t pred) {
+    assert(lhs);
+    assert(rhs);
     return jit_ins_op( lhs , rhs , JitOpMulWide( lhs->get_type() , rhs->get_type() ) , pred );
   }
 
 
   jit_value_t jit_ins_lt( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
+    assert(lhs);
+    assert(rhs);
     return jit_ins_op( lhs , rhs , JitOpLT( lhs->get_type() , rhs->get_type() ) , pred );
   }
   jit_value_t jit_ins_ne( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
+    assert(lhs);
+    assert(rhs);
     return jit_ins_op( lhs , rhs , JitOpNE( lhs->get_type() , rhs->get_type() ) , pred );
   }
   jit_value_t jit_ins_eq( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
+    assert(lhs);
+    assert(rhs);
     return jit_ins_op( lhs , rhs , JitOpEQ( lhs->get_type() , rhs->get_type() ) , pred );
   }
   jit_value_t jit_ins_ge( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
+    assert(lhs);
+    assert(rhs);
     return jit_ins_op( lhs , rhs , JitOpGE( lhs->get_type() , rhs->get_type() ) , pred );
+  }
+  jit_value_t jit_ins_le( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
+    assert(lhs);
+    assert(rhs);
+    return jit_ins_op( lhs , rhs , JitOpLE( lhs->get_type() , rhs->get_type() ) , pred );
   }
 
 
   jit_value_t jit_ins_or( jit_value_t lhs , jit_value_t rhs ) { assert(!"ni"); }
   jit_value_t jit_ins_and( jit_value_t lhs , jit_value_t rhs ) { assert(!"ni"); }
-  jit_value_t jit_ins_shl( jit_value_t lhs , jit_value_t rhs ) { assert(!"ni"); }
-  jit_value_t jit_ins_shr( jit_value_t lhs , jit_value_t rhs ) { assert(!"ni"); }
   jit_value_t jit_ins_xor( jit_value_t lhs , jit_value_t rhs ) { assert(!"ni"); }
   jit_value_t jit_ins_mod( jit_value_t lhs , jit_value_t rhs ) { assert(!"ni"); }
 

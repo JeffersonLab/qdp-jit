@@ -13,7 +13,7 @@ function_sum_ind_coal_exec( CUfunction function,
   // lo <= idx < hi
   int lo = 0;
   int hi = size;
-  int do_soffset_index = 1;
+  //int do_soffset_index = 1;
 
 
   //QDPCache::Instance().printLockSets();
@@ -26,7 +26,7 @@ function_sum_ind_coal_exec( CUfunction function,
   addr.push_back( &hi );
   //std::cout << "addr hi =" << addr[1] << "\n";
 
-  addr.push_back( &do_soffset_index );
+  //addr.push_back( &do_soffset_index );
   //std::cout << "addr do_soffset_index =" << addr[2] << " " << do_soffset_index << "\n";
 
   addr.push_back( &siteTable );

@@ -47,10 +47,11 @@ namespace QDP {
       assert(base_m);
 
       jit_value_t wordsize = jit_val_create_const_int( sizeof(typename WordType<T>::Type_t) );
-      jit_value_t ret0 = jit_ins_mul( wordsize , index_m );
+      jit_value_t ret0 = jit_ins_mul( index_m , wordsize );
       if (lay != DeviceLayout::Coalesced) {
 	jit_value_t tsize = jit_val_create_const_int( T::Size_t );
 	jit_value_t ret1 = jit_ins_mul( ret0 , tsize );
+    std::cout << "--\n";
 	jit_value_t ret2 = jit_ins_add( ret1 , base_m );
 	return ret2;
       }
