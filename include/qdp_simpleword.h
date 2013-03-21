@@ -487,7 +487,7 @@ struct TrinaryReturn<bool, int, int, FnWhere> {
 
 template<>
 struct UnaryReturn<float, FnSum> {
-  typedef double  Type_t;
+  typedef float  Type_t;
 };
 
 template<>

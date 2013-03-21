@@ -17,7 +17,7 @@ void function_sum_exec( CUfunction function,
   CUfunction 
   function_sum_ind_coal_build()
   {
-    //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+    std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
     CUfunction func;
 
@@ -56,7 +56,7 @@ void function_sum_exec( CUfunction function,
   reg_idata_elem.setup( idata.elem( QDPTypeJITBase::Coalesced ) );
   sdata.elem( QDPTypeJITBase::Scalar ) = reg_idata_elem;
 
-  jit_ins_bar_sync( function , 1 );
+  jit_ins_bar_sync( function , 0 );
 
   jit_value_t val_ntid = jit_geom_get_ntidx(function);
 
@@ -90,7 +90,7 @@ void function_sum_exec( CUfunction function,
   jit_value_t pred_branch_end = jit_ins_le( r_pred_pow , jit_val_create_const_int(0) );
   jit_ins_branch( function , label_loop_end , pred_branch_end );
 
-  jit_value_t pred_branch_sync = jit_ins_ge( r_pred_pow , jit_geom_get_tidx(function) );
+  jit_value_t pred_branch_sync = jit_ins_ge( jit_geom_get_tidx(function) , r_pred_pow );
   jit_ins_branch( function , label_loop_sync , pred_branch_sync );
 
   jit_value_t val_s_plus_tid = jit_ins_add( r_pred_pow , jit_geom_get_tidx(function) );
@@ -105,7 +105,12 @@ void function_sum_exec( CUfunction function,
   sdata.elem( QDPTypeJITBase::Scalar ) += sdata_plus_s_elem;
 
   jit_ins_label( function , label_loop_sync );  
-  jit_ins_bar_sync( function , 1 );
+  jit_ins_bar_sync( function , 0 );
+
+  new_pred = jit_ins_shr( r_pred_pow , jit_val_create_const_int(1) );
+  jit_ins_mov_no_create( r_pred_pow , new_pred );
+
+  jit_ins_branch( function , label_loop_start );
   
   jit_ins_label( function , label_loop_end );  
 
@@ -119,9 +124,25 @@ void function_sum_exec( CUfunction function,
 
   jit_ins_label( function , label_exit );
 
-
+#if 1
   function->write();
+#endif
   //  assert(!"ni");
+
+  QMP_barrier();
+
+  CUresult ret;
+  CUmodule cuModule;
+  ret = cuModuleLoad( &cuModule , fname );
+  if (ret) QDP_error_exit( "Error loading CUDA module '%s'" , fname );
+
+  ret = cuModuleGetFunction(&func, cuModule, "function");
+  if (ret) { std::cout << "Error getting function\n"; exit(1); }
+
+  //std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
+
+  return func;
+
 
 #if 0
 

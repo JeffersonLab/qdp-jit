@@ -88,6 +88,8 @@ namespace QDP {
     QDP_debug_deep("CudaLaunchKernel ... ");
 #endif
 
+    //std::cout << "shmem = " << sharedMemBytes << "\n";
+
     CudaSyncTransferStream();
     // This call is async
     if ( blockDimX * blockDimY * blockDimZ > 0  &&  gridDimX * gridDimY * gridDimZ > 0 ) {
