@@ -416,7 +416,7 @@ operator<=(const WordREG<T1>& l, const WordREG<T2>& r)
 {
   return l.elem() <= r.elem();
 }
-
+#endif
 
 template<class T1, class T2 >
 struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpGT > {
@@ -427,10 +427,14 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpGT>::Type_t
 operator>(const WordREG<T1>& l, const WordREG<T2>& r)
 {
-  return l.elem() > r.elem();
+  typedef typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpGT>::Type_t Ret_t;
+  jit_value_t new_tmp = jit_ins_gt( l.get_val() , r.get_val() );
+  Ret_t tmp;
+  tmp.setup( new_tmp );
+  return tmp;
 }
 
-
+#if 0
 template<class T1, class T2 >
 struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpGE > {
   typedef WordREG<typename BinaryReturn<T1, T2, OpGE>::Type_t>  Type_t;

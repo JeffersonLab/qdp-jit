@@ -25,6 +25,9 @@ namespace QDP {
   template<> struct jit_type<float>            { enum { value = jit_ptx_type::f32 }; };
   template<> struct jit_type<double>           { enum { value = jit_ptx_type::f64 }; };
   template<> struct jit_type<int>              { enum { value = jit_ptx_type::s32 }; };
+  template<> struct jit_type<bool>             { enum { value = jit_ptx_type::pred }; };
+
+
 
   class jit_function;
   class jit_label;
@@ -183,6 +186,7 @@ namespace QDP {
 
   jit_value::StateSpace jit_state_promote( jit_value::StateSpace ss0 , jit_value::StateSpace ss1 );
   int jit_type_promote(int t0,int t1);
+  //int jit_type_promote(int t0,int t1,int t2);
   int jit_bit_type(int type);
   int jit_type_wide_promote(int t0);
 
@@ -234,9 +238,13 @@ namespace QDP {
   jit_value_t jit_ins_eq( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
   jit_value_t jit_ins_ge( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
   jit_value_t jit_ins_le( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_gt( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
 
   // Unary operations
   jit_value_t jit_ins_neg( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+
+  // Select
+  jit_value_t jit_ins_selp( jit_function_t func , jit_value_t lhs , jit_value_t rhs , jit_value_t p );
 
   void jit_ins_mov_no_create( jit_value_t dest , jit_value_t src , jit_value_t pred=jit_value_t() );
 
@@ -437,6 +445,21 @@ namespace QDP {
     }
     virtual float operator()(float f0, float f1) const { return 0; }
     virtual int operator()(int i0, int i1) const { return 0; }
+  };
+
+  class JitOpGT: public JitOp {
+  public:
+    JitOpGT( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
+    virtual int getDestType() const {
+      return jit_ptx_type::pred;
+    }
+    virtual std::ostream& writeToStream( std::ostream& stream ) const {
+      stream << "setp.gt."
+	     << jit_get_ptx_type( getArgsType() );
+      return stream;
+    }
+    virtual float operator()(float f0, float f1) const { assert(!"strange that i'm here"); return 0; }
+    virtual int operator()(int i0, int i1) const { assert(!"strange that i'm here"); return 0; }
   };
 
   class JitOpBitAnd: public JitOp {

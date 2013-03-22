@@ -30,6 +30,20 @@ struct LeafFunctor<QDPTypeJIT<T,OScalarJIT<T> >, ViewLeaf>
   }
 };
 
+
+template<class T>
+struct LeafFunctor<OScalarJIT<T>, ViewLeaf>
+{
+  typedef typename REGType<T>::Type_t Type_t;
+  inline static
+  Type_t apply(const OScalarJIT<T> & s, const ViewLeaf& v)
+  {
+    Type_t reg;
+    reg.setup( s.elem() );
+    return reg;
+  }
+};
+
 }
 
 #endif

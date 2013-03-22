@@ -66,6 +66,8 @@ namespace QDP {
       map_promote[jit_ptx_type::u64][jit_ptx_type::s64] = jit_ptx_type::s64;
       map_promote[jit_ptx_type::s64][jit_ptx_type::s32] = jit_ptx_type::s64;
       map_promote[jit_ptx_type::s32][jit_ptx_type::s64] = jit_ptx_type::s64;
+      map_promote[jit_ptx_type::s32][jit_ptx_type::u8] = jit_ptx_type::s32;
+      map_promote[jit_ptx_type::u8][jit_ptx_type::s32] = jit_ptx_type::s32;
       return map_promote;
     }
     std::map< int , int > create_wide_promote()
@@ -159,6 +161,17 @@ namespace QDP {
     //std::cout << "         ->  " << PTX::ptx_type_matrix.at( ret )[0] << "\n";
     return ret;
   }
+
+#if 0
+  int jit_type_promote(int t0,int t1,int t2) {
+    if (t0==t1 && t0==t2) return t0;
+    std::cout << "3 type promote: " 
+	      << jit_get_ptx_type(t0) << " " 
+	      << jit_get_ptx_type(t1) << " " 
+	      << jit_get_ptx_type(t2) << "\n";
+    return jit_type_promote( jit_type_promote( t0 , t1 ) , t2 );
+  }
+#endif
 
   jit_value::StateSpace jit_state_promote( jit_value::StateSpace ss0 , jit_value::StateSpace ss1 ) {
     if ( ss0 == ss1 ) return ss0;
@@ -553,6 +566,53 @@ void jit_function::write_reg_defs()
   }
 
 
+  jit_value_t jit_ins_selp_const_const( jit_value_const_t lhs , jit_value_const_t rhs , const JitOp& op ) {
+  }
+
+
+  jit_value_t jit_ins_selp( jit_function_t func , jit_value_t lhs , jit_value_t rhs , jit_value_t p ) {
+    assert(func);
+    assert(lhs);
+    assert(rhs);
+    assert(p);
+    int typebase = jit_type_promote( lhs->get_type() , rhs->get_type() );
+    std::ostringstream instr;
+
+    // Op code
+    instr << "selp." << jit_get_ptx_type( typebase ) << " ";
+
+    // Destination
+    jit_value_reg_t ret = jit_val_create_new( func , typebase );
+    assert(ret);
+    instr << jit_get_reg_name( ret ) << ",";
+
+    // LHS
+    if (auto lhs_const = get< jit_value_const >(lhs)) {
+      instr << lhs_const->getAsString() << ",";
+    } else {
+      auto lhs_reg = get< jit_value_reg >(lhs);
+      jit_value_t lhs_typebase = jit_val_create_convert( func , typebase , lhs_reg );
+      instr << jit_get_reg_name( lhs_typebase ) << ",";
+    }
+
+    // RHS
+    if (auto rhs_const = get< jit_value_const >(rhs)) {
+      instr << rhs_const->getAsString() << ",";
+    } else {
+      auto rhs_reg = get< jit_value_reg >(rhs);
+      jit_value_t rhs_typebase = jit_val_create_convert( func , typebase , rhs_reg );
+      instr << jit_get_reg_name( rhs_typebase ) << ",";
+    }
+
+    // Predicate
+    auto p_reg = get< jit_value_reg >(p);
+    assert(p_reg);
+    instr << jit_get_reg_name( p_reg ) << ";\n";
+
+    func->get_prg() << instr.str();
+    return ret;
+  }
+
 
 
   jit_value_t jit_op_const_const( jit_value_const_t lhs , jit_value_const_t rhs , const JitOp& op ) {
@@ -671,6 +731,11 @@ void jit_function::write_reg_defs()
     assert(rhs);
     return jit_ins_op( lhs , rhs , JitOpLE( lhs->get_type() , rhs->get_type() ) , pred );
   }
+  jit_value_t jit_ins_gt( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
+    assert(lhs);
+    assert(rhs);
+    return jit_ins_op( lhs , rhs , JitOpGT( lhs->get_type() , rhs->get_type() ) , pred );
+  }
 
 
   jit_value_t jit_ins_or( jit_value_t lhs , jit_value_t rhs ) { assert(!"ni"); }
@@ -717,6 +782,13 @@ void jit_function::write_reg_defs()
 
   jit_value_t jit_ins_load( jit_value_t base , int offset , int type , jit_value_t pred ) {
     assert(base);
+    int type_orig = -1;
+
+    if (type == jit_ptx_type::pred ) {
+      type_orig = type;
+      type      = jit_ptx_type::u8;
+    }
+
     auto base_reg = get< jit_value_reg >(base);
     if (!base_reg)
       assert(!"Problem");
@@ -727,11 +799,26 @@ void jit_function::write_reg_defs()
 				    << jit_get_reg_name( ret ) << ",["
 				    << jit_get_reg_name( base_reg ) << " + "
 				    << offset << "];\n";
+
+    if ( type_orig != -1 ) {
+      jit_value_t ret_pred = jit_ins_ne( ret , jit_val_create_const_int( 0 ) );
+      return ret_pred;
+    }
+
     return ret;
   }
 
 
   void jit_ins_store_reg( jit_value_reg_t base_reg , int offset , int type , jit_value_reg_t reg , jit_value_t pred ) {
+    if (type == jit_ptx_type::pred ) {
+      assert( reg->get_type() == jit_ptx_type::pred );
+      jit_value_t s32 = jit_ins_selp( base_reg->get_func() , 
+				      jit_val_create_const_int( 1 ) , 
+				      jit_val_create_const_int( 0 ) , 
+				      reg );
+      reg = jit_val_create_convert( base_reg->get_func() , jit_ptx_type::u8 , s32 );
+      type = jit_ptx_type::u8;
+    }
     base_reg->get_func()->get_prg() << jit_predicate(pred)
 				    << "st." << base_reg->get_state_space_str() << "."
 				    << jit_get_ptx_type( type ) << " ["

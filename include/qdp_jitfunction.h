@@ -271,11 +271,96 @@ function_sca_sca_build(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar
 
 
 
-#if 0
 template<class T>
 CUfunction
 function_random_build(OLattice<T>& dest , Seed& seed_tmp)
 {
+  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+
+  CUfunction func;
+
+  const char * fname = "ptx_random.ptx";
+  jit_function_t function = jit_create_function( fname );
+
+  jit_value_t r_lo     = jit_add_param( function , jit_ptx_type::s32 );
+  jit_value_t r_hi     = jit_add_param( function , jit_ptx_type::s32 );
+#ifdef JIT_DO_MEMBER
+  jit_value_t r_member = jit_add_param( function , jit_ptx_type::u64 );  // Subset
+#endif
+
+  jit_value_t r_idx = jit_geom_get_linear_th_idx( function );  
+
+  jit_value_t r_out_of_range       = jit_ins_ge( r_idx , r_hi );
+  jit_ins_exit( function , r_out_of_range );
+
+#ifdef JIT_DO_MEMBER
+  jit_value_t r_member_addr        = jit_ins_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
+  jit_value_t r_ismember_u8        = jit_ins_load ( r_member_addr , 0 , jit_ptx_type::u8 );
+  jit_value_t r_ismember_u32       = jit_val_create_convert( function , jit_ptx_type::u32 , r_ismember_u8 );
+  jit_value_t r_ismember_pred_addr = jit_ins_eq( r_ismember_u32 , jit_val_create_const_int(0) );
+  jit_ins_exit( function , r_ismember_pred_addr );
+#endif
+
+  ParamLeaf param_leaf( function , r_idx );
+  
+  typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
+  FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
+
+  // RNG::ran_seed
+  typedef typename LeafFunctor<Seed, ParamLeaf>::Type_t  SeedJIT;
+  typedef typename LeafFunctor<LatticeSeed, ParamLeaf>::Type_t  LatticeSeedJIT;
+  typedef typename REGType<SeedJIT::Subtype_t>::Type_t PSeedREG;
+
+  SeedJIT ran_seed_jit(forEach(RNG::ran_seed, param_leaf, TreeCombine()));
+  SeedJIT seed_tmp_jit(forEach(seed_tmp, param_leaf, TreeCombine()));
+  // SeedJIT skewed_seed_jit(forEach(skewed_seed, param_leaf, TreeCombine()));
+  SeedJIT ran_mult_n_jit(forEach(RNG::ran_mult_n, param_leaf, TreeCombine()));
+  LatticeSeedJIT lattice_ran_mult_jit(forEach( *RNG::lattice_ran_mult , param_leaf, TreeCombine()));
+
+  //  printme<View_t>();
+
+  PSeedREG seed_jit;
+  PSeedREG skewed_seed_jit;
+  PSeedREG ran_seed_jit_elem;
+  PSeedREG lattice_ran_mult_jit_elem;
+  // typename SeedREG::Subtype_t seed_jit;
+  // typename SeedREG::Subtype_t skewed_seed_jit;
+  // typename SeedREG::Subtype_t ran_seed_jit_elem;
+  // typename SeedREG::Subtype_t lattice_ran_mult_jit_elem;
+
+  ran_seed_jit_elem.setup( ran_seed_jit.elem( QDPTypeJITBase::Coalesced ) );
+  lattice_ran_mult_jit_elem.setup( lattice_ran_mult_jit.elem( QDPTypeJITBase::Coalesced ) );
+  seed_jit.setup( ran_seed_jit.elem( QDPTypeJITBase::Coalesced ) );
+  skewed_seed_jit.setup = ran_seed_jit_elem * lattice_ran_mult_jit_elem;
+
+  fill_random( dest_jit.elem(QDPTypeJITBase::Coalesced) , seed_jit , skewed_seed_jit , ran_mult_n_jit );
+
+  jit_value_t r_no_save = jit_ins_ne( r_idx , jit_val_create_const_int(0) );
+
+  jit_label_t label_nosave;
+  jit_ins_branch( function , label_nosave , r_no_save );
+  seed_tmp_jit.elem(0) = seed_jit;
+  jit_ins_label( function , label_nosave );
+
+  if (Layout::primaryNode())
+    function->write();
+      
+  QMP_barrier();
+
+  CUresult ret;
+  CUmodule cuModule;
+  ret = cuModuleLoad( &cuModule , fname );
+  if (ret) QDP_error_exit("Error loading CUDA module '%s'",fname);
+
+  ret = cuModuleGetFunction(&func, cuModule, "function");
+  if (ret) { std::cout << "Error getting function\n"; exit(1); }
+
+  //std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
+
+  return func;
+
+
+#if 0
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   CUfunction func;
@@ -338,8 +423,9 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
   //std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
 
   return func;
-}
 #endif
+}
+
 
 
 
