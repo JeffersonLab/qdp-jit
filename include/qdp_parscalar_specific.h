@@ -121,7 +121,6 @@ template<class T, class T1, class Op, class RHS>
 void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs,
 	      const Subset& s)
 {
-  std::cout << "eval_lat_sca host\n";
 #if 1
   //std::cout << __PRETTY_FUNCTION__ << "\n";
 

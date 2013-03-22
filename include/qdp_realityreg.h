@@ -1454,6 +1454,11 @@ outerProduct(const RScalarREG<T1>& l, const RScalarREG<T2>& r)
 }
 
 
+template<class T>
+struct UnaryReturn<RScalarREG<T>, FnSeedToFloat> {
+  typedef RScalarREG<typename UnaryReturn<T, FnSeedToFloat>::Type_t>  Type_t;
+};
+
 //! dest [float type] = source [seed type]
 template<class T1>
 inline typename UnaryReturn<RScalarREG<T1>, FnSeedToFloat>::Type_t

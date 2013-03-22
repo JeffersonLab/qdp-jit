@@ -33,6 +33,20 @@ namespace QDP {
     const std::array<const char *,3> jit_state_space_str = { "global","local","shared" };
     const char * jit_identifier_local_memory = "loc";
 
+    std::map< int , std::map<int,const char *> > create_cvt_rnd_from_to()
+    {
+      std::map< int , std::map<int,const char *> > map_cvt_rnd_from_to;
+      map_cvt_rnd_from_to[jit_ptx_type::s32][jit_ptx_type::f32] = "rn.";
+      map_cvt_rnd_from_to[jit_ptx_type::u32][jit_ptx_type::f32] = "rn.";
+      map_cvt_rnd_from_to[jit_ptx_type::s32][jit_ptx_type::f64] = "rn.";
+      map_cvt_rnd_from_to[jit_ptx_type::u32][jit_ptx_type::f64] = "rn.";
+      map_cvt_rnd_from_to[jit_ptx_type::s64][jit_ptx_type::f32] = "rn.";
+      map_cvt_rnd_from_to[jit_ptx_type::u64][jit_ptx_type::f32] = "rn.";
+      map_cvt_rnd_from_to[jit_ptx_type::s64][jit_ptx_type::f64] = "rn.";
+      map_cvt_rnd_from_to[jit_ptx_type::u64][jit_ptx_type::f64] = "rn.";
+      return map_cvt_rnd_from_to;
+    }
+
     std::map< int , std::map<int,int> > create_promote()
     {
       std::map< int , std::map<int,int> > map_promote;
@@ -96,12 +110,13 @@ namespace QDP {
       return map_state_promote;
     }
 
-    const std::map< int , std::map<int,int> > map_promote      = create_promote();
-    const std::map< int , int >               map_wide_promote = create_wide_promote();
-    const std::map< int , int >               map_bit_type     = create_bit_type();
+    const std::map< int , std::map<int,const char *> > map_cvt_rnd_from_to = create_cvt_rnd_from_to();
+    const std::map< int , std::map<int,int> >          map_promote         = create_promote();
+    const std::map< int , int >                        map_wide_promote    = create_wide_promote();
+    const std::map< int , int >                        map_bit_type        = create_bit_type();
     const std::map< jit_value::StateSpace , 
 		    std::map< jit_value::StateSpace , 
-			      jit_value::StateSpace > > map_state_promote = create_state_promote();
+			      jit_value::StateSpace > > map_state_promote  = create_state_promote();
   }
 
 
@@ -116,6 +131,15 @@ namespace QDP {
 
   const char * jit_get_identifier_local_memory() {
     return PTX::jit_identifier_local_memory;
+  }
+
+  const char * jit_get_map_cvt_rnd_from_to(int from,int to) {
+    static const char * nullstr = "";
+    if (!PTX::map_cvt_rnd_from_to.count(from))
+      return nullstr;
+    if (!PTX::map_cvt_rnd_from_to.at(from).count(to))
+      return nullstr;
+    return PTX::map_cvt_rnd_from_to.at(from).at(to);
   }
 
 
@@ -443,7 +467,8 @@ void jit_function::write_reg_defs()
 		      << val->get_name() << ";\n";
     } else {
       func->get_prg() << jit_predicate(pred)
-		      << "cvt." 
+		      << "cvt."
+		      << jit_get_map_cvt_rnd_from_to(val->get_type(),type) 
 		      << jit_get_ptx_type( type ) << "." 
 		      << jit_get_ptx_type( val->get_type() ) << " " 
 		      << ret->get_name() << ","

@@ -27,12 +27,12 @@ namespace QDP {
       setup_m=true;
     }
 
-    explicit WordREG(float f) {
+    WordREG(float f) {
       val = jit_val_create_const_float( f );
       setup_m=true;
     }
 
-    explicit WordREG(double f) {
+    WordREG(double f) {
       val = jit_val_create_const_float( f );
       setup_m=true;
     }
@@ -76,12 +76,20 @@ namespace QDP {
     }
 
     template<class T1>
-    inline
-    WordREG& operator=(const WordREG<T1>& rhs) 
+    WordREG(const WordREG<T1>& rhs) 
     {
-      val = jit_val_create_convert( getFunc(*this) , jit_type<T>::value , rhs.get_val() );
-      return *this;
+      val = jit_val_create_convert( getFunc(rhs) , jit_type<T>::value , rhs.get_val() );
+      setup_m = true;
     }
+
+    // template<class T1>
+    // inline
+    // WordREG& operator=(const WordREG<T1>& rhs) 
+    // {
+    //   val = jit_val_create_convert( getFunc(*this) , jit_type<T>::value , rhs.get_val() );
+    //   return *this;
+    // }
+
 
     //! WordREG += WordREG
     template<class T1>
@@ -214,6 +222,26 @@ namespace QDP {
   {
     typedef T  Type_t;
   };
+
+
+  template<class T>
+  struct UnaryReturn<WordREG<T>, FnSeedToFloat> {
+    typedef WordREG<typename UnaryReturn<T, FnSeedToFloat>::Type_t>  Type_t;
+  };
+
+
+  template<class T>
+  inline typename UnaryReturn<WordREG<T>, FnSeedToFloat>::Type_t
+  seedToFloat(const WordREG<T>& s1)
+  {
+    printme<typename UnaryReturn<WordREG<T>, FnSeedToFloat>::Type_t>();
+    typename UnaryReturn<WordREG<T>, FnSeedToFloat>::Type_t d;
+    assert(!"ni");
+    //val = jit_val_create_convert( getFunc(*this) , jit_type<T>::value , rhs.get_val() );
+
+    return d;
+  }
+
   
 
   // Default binary(WordREG,WordREG) -> WordREG

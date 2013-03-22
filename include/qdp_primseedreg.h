@@ -431,8 +431,11 @@ template<class T>
 inline typename UnaryReturn<PSeedREG<T>, FnSeedToFloat>::Type_t
 seedToFloat(const PSeedREG<T>& s1)
 {
-  typename UnaryReturn<PSeedREG<T>, FnSeedToFloat>::Type_t  d;
-  typedef typename RealScalar<T>::Type_t  S;
+  typename UnaryReturn<PSeedREG<T>, FnSeedToFloat>::Type_t  d; // QDP::PScalarREG<QDP::RScalarREG<QDP::WordREG<float> > >
+  typedef typename RealScalar<T>::Type_t  S;                                   // QDP::RScalarREG<QDP::WordREG<float> >
+
+  // printme<typename UnaryReturn<PSeedREG<T>, FnSeedToFloat>::Type_t>(); 
+  // printme<typename RealScalar<T>::Type_t>(); 
 
   S  twom11(1.0 / 2048.0);
   S  twom12(1.0 / 4096.0);
