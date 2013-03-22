@@ -267,19 +267,21 @@ function_sca_sca_build(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar
 
   return func;
 }
+#endif
 
 
+
+#if 0
 template<class T>
 CUfunction
 function_random_build(OLattice<T>& dest , Seed& seed_tmp)
 {
-#if 1
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   CUfunction func;
 
-  std::string fname("ptxrandom.ptx");
-  Jit function(fname.c_str(),"func");
+  const char * fname = "ptx_random.ptx";
+  Jit function(fname,"func");
 
   int r_idx = function.getRegIdx();
   ParamLeaf param_leaf(function, r_idx , Jit::LatticeLayout::COAL );
@@ -327,7 +329,7 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
 
   CUresult ret;
   CUmodule cuModule;
-  ret = cuModuleLoad(&cuModule, fname.c_str());
+  ret = cuModuleLoad( &cuModule , fname );
   if (ret) QDP_error_exit("Error loading CUDA module '%s'",fname.c_str());
 
   ret = cuModuleGetFunction(&func, cuModule, "func");
@@ -336,7 +338,6 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
   //std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
 
   return func;
-#endif
 }
 #endif
 

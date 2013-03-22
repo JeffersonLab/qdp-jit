@@ -615,7 +615,11 @@ void jit_function::write_reg_defs()
     assert(rhs);
     return jit_ins_op( lhs , rhs , JitOpMulWide( lhs->get_type() , rhs->get_type() ) , pred );
   }
-
+  jit_value_t jit_ins_bit_and( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
+    assert(lhs);
+    assert(rhs);
+    return jit_ins_op( lhs , rhs , JitOpBitAnd( lhs->get_type() , rhs->get_type() ) , pred );
+  }
 
   jit_value_t jit_ins_lt( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
     assert(lhs);

@@ -5,8 +5,8 @@
  */
 
 
-#ifndef QDP_PRIMSEEDJIT_H
-#define QDP_PRIMSEEDJIT_H
+#ifndef QDP_PRIMSEEDREG_H
+#define QDP_PRIMSEEDREG_H
 
 namespace QDP {
 
@@ -30,23 +30,26 @@ namespace QDP {
    * an inner lattice so the type could be represented as an length 4
    * array of lattice integers
    */
-template <class T> class PSeedJIT : public BaseJIT<T,4>
+template <class T> class PSeedREG 
 {
-  private:
-    template<class T1>
-    PSeedJIT& operator=( const PSeedJIT<T1>& rhs);
-    PSeedJIT& operator=( const PSeedJIT& rhs);
+private:
+  T F[4];
 
 public:
 
   // Default constructing should be possible
   // then there is no need for MPL index when
   // construction a PMatrix<T,N>
-  PSeedJIT() {}
-  ~PSeedJIT() {}
+  PSeedREG() {}
+  ~PSeedREG() {}
+
+  void setup( const typename JITType< PSeedREG >::Type_t& j ) {
+    for (int i = 0 ; i < 4 ; i++ )
+      elem(i).setup( j.elem(i) );
+  }
   
   // template<class T1>
-  // PSeedJIT& operator=( const PSeedREG<T1>& rhs) {
+  // PSeedREG& operator=( const PSeedREG<T1>& rhs) {
   //   for(int i=0; i < 4; ++i)
   //     elem(i) = rhs.elem(i);
   //   return *this;
@@ -55,28 +58,28 @@ public:
 #if 0
   //! construct dest = const
   template<class T1>
-  PSeedJIT(const PScalarJIT<T1>& rhs)
+  PSeedREG(const PScalarREG<T1>& rhs)
   {
     assign(rhs);
   }
 
-  PSeedJIT(const PSeedJIT& a): JV<T,4>(newspace_t(a.func()),&a)
+  PSeedREG(const PSeedREG& a): JV<T,4>(newspace_t(a.func()),&a)
   {
     assign(a);
   }
 
   template<class T1>
-  PSeedJIT(const PSeedJIT<T1>& a): JV<T,4>(newspace_t(a.func()))
+  PSeedREG(const PSeedREG<T1>& a): JV<T,4>(newspace_t(a.func()))
   {
     assign(a);
   }
 #endif
 
-  //! PSeedJIT = PScalarJIT
+  //! PSeedREG = PScalarREG
   /*! Set equal to input scalar (an integer) */
   template<class T1>
   inline
-  PSeedJIT& assign(const PScalarREG<T1>& rhs) 
+  PSeedREG& assign(const PScalarREG<T1>& rhs) 
     {
       typedef typename InternalScalar<T1>::Type_t  S;
 
@@ -111,20 +114,20 @@ public:
 #endif
     }
 
-  //! PSeedJIT = PScalarJIT
+  //! PSeedREG = PScalarREG
   /*! Set equal to input scalar (an integer) */
   template<class T1>
   inline
-  PSeedJIT& operator=(const PScalarREG<T1>& rhs) 
+  PSeedREG& operator=(const PScalarREG<T1>& rhs) 
     {
       return assign(rhs);
     }
 
-  //! PSeedJIT = PSeedJIT
-  /*! Set equal to another PSeedJIT */
+  //! PSeedREG = PSeedREG
+  /*! Set equal to another PSeedREG */
   template<class T1>
   inline
-  PSeedJIT& operator=(const PSeedREG<T1>& rhs) 
+  PSeedREG& operator=(const PSeedREG<T1>& rhs) 
     {
       for(int i=0; i < 4; ++i)
 	elem(i) = rhs.elem(i);
@@ -134,7 +137,7 @@ public:
 
 
 
-  // PSeedJIT& operator=(const PSeedJIT& rhs) 
+  // PSeedREG& operator=(const PSeedREG& rhs) 
   //   {
   //     for(int i=0; i < 4; ++i)
   // 	elem(i) = rhs.elem(i);
@@ -144,8 +147,8 @@ public:
 
 
 public:
-        T& elem(int i)       {return this->arrayF(i);}
-  const T& elem(int i) const {return this->arrayF(i);}
+        T& elem(int i)       {return F[i];}
+  const T& elem(int i) const {return F[i];}
 
   // T& elem(int i)             {return JV<T,4>::getF()[i]; }
   // const T& elem(int i) const {return JV<T,4>::getF()[i]; }
@@ -158,15 +161,15 @@ public:
 //-----------------------------------------------------------------------------
 
 template<class T> 
-struct REGType< PSeedJIT<T> >
+struct JITType< PSeedREG<T> >
 {
-  typedef PSeedREG<typename REGType<T>::Type_t>  Type_t;
+  typedef PSeedJIT<typename JITType<T>::Type_t>  Type_t;
 };
 
 
 // Underlying word type
 template<class T1>
-struct WordType<PSeedJIT<T1> > 
+struct WordType<PSeedREG<T1> > 
 {
   typedef typename WordType<T1>::Type_t  Type_t;
 };
@@ -174,34 +177,34 @@ struct WordType<PSeedJIT<T1> >
 // Fixed Precision versions (do these even make sense? )
 
 template<class T1>
-struct SinglePrecType<PSeedJIT<T1> >
+struct SinglePrecType<PSeedREG<T1> >
 {
-  typedef PSeedJIT< typename SinglePrecType<T1>::Type_t > Type_t;
+  typedef PSeedREG< typename SinglePrecType<T1>::Type_t > Type_t;
 };
 
 template<class T1>
-struct DoublePrecType<PSeedJIT<T1> >
+struct DoublePrecType<PSeedREG<T1> >
 {
-  typedef PSeedJIT< typename DoublePrecType<T1>::Type_t > Type_t;
+  typedef PSeedREG< typename DoublePrecType<T1>::Type_t > Type_t;
 };
 
 
 // Internally used scalars
 template<class T>
-struct InternalScalar<PSeedJIT<T> > {
-  typedef PScalarJIT<typename InternalScalar<T>::Type_t>  Type_t;
+struct InternalScalar<PSeedREG<T> > {
+  typedef PScalarREG<typename InternalScalar<T>::Type_t>  Type_t;
 };
 
 // Makes a primitive scalar leaving grid alone
 template<class T>
-struct PrimitiveScalar<PSeedJIT<T> > {
-  typedef PScalarJIT<typename PrimitiveScalar<T>::Type_t>  Type_t;
+struct PrimitiveScalar<PSeedREG<T> > {
+  typedef PScalarREG<typename PrimitiveScalar<T>::Type_t>  Type_t;
 };
 
 // Makes a lattice scalar leaving primitive indices alone
 template<class T>
-struct LatticeScalar<PSeedJIT<T> > {
-  typedef PSeedJIT<typename LatticeScalar<T>::Type_t>  Type_t;
+struct LatticeScalar<PSeedREG<T> > {
+  typedef PSeedREG<typename LatticeScalar<T>::Type_t>  Type_t;
 };
 
 
@@ -211,8 +214,8 @@ struct LatticeScalar<PSeedJIT<T> > {
 
 // Assignment is different
 template<class T1, class T2 >
-struct BinaryReturn<PSeedJIT<T1>, PSeedJIT<T2>, OpAssign > {
-  typedef PSeedJIT<T1> &Type_t;
+struct BinaryReturn<PSeedREG<T1>, PSeedREG<T2>, OpAssign > {
+  typedef PSeedREG<T1> &Type_t;
 };
 
  
@@ -221,15 +224,15 @@ struct BinaryReturn<PSeedJIT<T1>, PSeedJIT<T2>, OpAssign > {
 // Operators
 //-----------------------------------------------------------------------------
 
-// PScalarJIT = (PSeedJIT == PSeedJIT)
+// PScalarREG = (PSeedREG == PSeedREG)
 template<class T1, class T2>
-struct BinaryReturn<PSeedJIT<T1>, PSeedJIT<T2>, OpEQ> {
-  typedef PScalarJIT<typename BinaryReturn<T1, T2, OpEQ>::Type_t>  Type_t;
+struct BinaryReturn<PSeedREG<T1>, PSeedREG<T2>, OpEQ> {
+  typedef PScalarREG<typename BinaryReturn<T1, T2, OpEQ>::Type_t>  Type_t;
 };
 
 template<class T1, class T2>
-inline typename BinaryReturn<PSeedJIT<T1>, PSeedJIT<T2>, OpEQ>::Type_t
-operator==(const PSeedJIT<T1>& l, const PSeedJIT<T2>& r)
+inline typename BinaryReturn<PSeedREG<T1>, PSeedREG<T2>, OpEQ>::Type_t
+operator==(const PSeedREG<T1>& l, const PSeedREG<T2>& r)
 {
   return 
     (l.elem(0) == r.elem(0)) && 
@@ -239,15 +242,15 @@ operator==(const PSeedJIT<T1>& l, const PSeedJIT<T2>& r)
 }
 
 
-// PScalarJIT = (Seed != Seed)
+// PScalarREG = (Seed != Seed)
 template<class T1, class T2>
-struct BinaryReturn<PSeedJIT<T1>, PSeedJIT<T2>, OpNE> {
-  typedef PScalarJIT<typename BinaryReturn<T1, T2, OpNE>::Type_t>  Type_t;
+struct BinaryReturn<PSeedREG<T1>, PSeedREG<T2>, OpNE> {
+  typedef PScalarREG<typename BinaryReturn<T1, T2, OpNE>::Type_t>  Type_t;
 };
 
 template<class T1, class T2>
-inline typename BinaryReturn<PSeedJIT<T1>, PSeedJIT<T2>, OpNE>::Type_t
-operator!=(const PSeedJIT<T1>& l, const PSeedJIT<T2>& r)
+inline typename BinaryReturn<PSeedREG<T1>, PSeedREG<T2>, OpNE>::Type_t
+operator!=(const PSeedREG<T1>& l, const PSeedREG<T2>& r)
 {
   return 
     (l.elem(0) != r.elem(0)) ||
@@ -263,7 +266,7 @@ operator!=(const PSeedJIT<T1>& l, const PSeedJIT<T2>& r)
 
 // Primitive Seeds
 
-//! PSeedJIT<T> = PSeedJIT<T> * PSeedJIT<T>
+//! PSeedREG<T> = PSeedREG<T> * PSeedREG<T>
 /*!
  * A 47 bit seed multiplication is represented as the multiplication
  * of three 12bit and one 11bit integer
@@ -284,26 +287,18 @@ operator!=(const PSeedJIT<T1>& l, const PSeedJIT<T2>& r)
  * dest(3) = mod(i3, 2048);
  */
 template<class T1, class T2>
-struct BinaryReturn<PSeedJIT<T1>, PSeedJIT<T2>, OpMultiply> {
-  typedef PSeedJIT<typename BinaryReturn<T1, T2, OpMultiply>::Type_t>  Type_t;
+struct BinaryReturn<PSeedREG<T1>, PSeedREG<T2>, OpMultiply> {
+  typedef PSeedREG<typename BinaryReturn<T1, T2, OpMultiply>::Type_t>  Type_t;
 };
 
 template<class T1, class T2>
-inline typename BinaryReturn<PSeedJIT<T1>, PSeedJIT<T2>, OpMultiply>::Type_t
-operator*(const PSeedJIT<T1>& s1, const PSeedJIT<T2>& s2)
+inline typename BinaryReturn<PSeedREG<T1>, PSeedREG<T2>, OpMultiply>::Type_t
+operator*(const PSeedREG<T1>& s1, const PSeedREG<T2>& s2)
 {
-  typename BinaryReturn<PSeedJIT<T1>, PSeedJIT<T2>, OpMultiply>::Type_t  d(s1.func());
+  typename BinaryReturn<PSeedREG<T1>, PSeedREG<T2>, OpMultiply>::Type_t  d;
   typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t  T;
   typedef typename InternalScalar<T>::Type_t  S;
-  T  i0(s1.func()), i1(s1.func()), i2(s1.func()), i3(s1.func());
-
-  S s4095(s1.func());
-  S s2047(s1.func());
-  S s12(s1.func());
-  s4095 = 4095;
-  s2047 = 2047;
-  s12 = 12;
-
+  T  i0, i1, i2, i3;
 
   /* i3 = s1(3)*s2(0) + s1(2)*s2(1) + s1(1)*s2(2) + s1(0)*s2(3) */
   i3  = s1.elem(3) * s2.elem(0);
@@ -322,48 +317,41 @@ operator*(const PSeedJIT<T1>& s1, const PSeedJIT<T2>& s2)
 
   /* i0 = s1(0)*s2(0) */
   i0 = s1.elem(0) * s2.elem(0);
-  
+
   /* dest(0) = mod(i0, 4096) */
-  //  d.elem(0) = i0 & S(s1.func(),4095);
-  d.elem(0) = i0 & s4095;
+  d.elem(0) = i0 & S(4095);
 
   /* i1 = i1 + i0/4096 */
-  i1 += i0 >> s12;
-  //i1 += i0 >> S(s1.func(),12);
+  i1 += i0 >> S(12);
 
   /* dest(1) = mod(i1, 4096) */
-  d.elem(1) = i1 & s4095;
-  //  d.elem(1) = i1 & S(s1.func(),4095);
+  d.elem(1) = i1 & S(4095);
 
   /* i2 = i2 + i1/4096 */
-  //  i2 += i1 >> S(s1.func(),12);
-  i2 += i1 >> s12;
+  i2 += i1 >> S(12);
 
   /* dest(2) = mod(i2, 4096) */
-  d.elem(2) = i2 & s4095;
-  //d.elem(2) = i2 & S(s1.func(),4095);
+  d.elem(2) = i2 & S(4095);
   /* i3 = i3 + i2/4096 */
-  i3 += i2 >> s12;
-  //  i3 += i2 >> S(s1.func(),12);
+  i3 += i2 >> S(12);
 
   /* dest(3) = mod(i3, 2048) */
-  d.elem(3) = i3 & s2047;
-  //d.elem(3) = i3 & S(s1.func(),2047);
-  
+  d.elem(3) = i3 & S(2047);
+
   return d;
 }
 
 
 template<class T1, class T2>
-struct BinaryReturn<PSeedJIT<T1>, PSeedJIT<T2>, OpBitwiseOr> {
-  typedef PSeedJIT<typename BinaryReturn<T1, T2, OpBitwiseOr>::Type_t>  Type_t;
+struct BinaryReturn<PSeedREG<T1>, PSeedREG<T2>, OpBitwiseOr> {
+  typedef PSeedREG<typename BinaryReturn<T1, T2, OpBitwiseOr>::Type_t>  Type_t;
 };
 
 template<class T1, class T2>
-inline typename BinaryReturn<PSeedJIT<T1>, PSeedJIT<T2>, OpBitwiseOr>::Type_t
-operator|(const PSeedJIT<T1>& l, const PSeedJIT<T2>& r)
+inline typename BinaryReturn<PSeedREG<T1>, PSeedREG<T2>, OpBitwiseOr>::Type_t
+operator|(const PSeedREG<T1>& l, const PSeedREG<T2>& r)
 {
-  typename BinaryReturn<PSeedJIT<T1>, PSeedJIT<T2>, OpBitwiseOr>::Type_t  d(l.func());
+  typename BinaryReturn<PSeedREG<T1>, PSeedREG<T2>, OpBitwiseOr>::Type_t  d(l.func());
 
   d.elem(0) = l.elem(0) | r.elem(0);
   d.elem(1) = l.elem(1) | r.elem(1);
@@ -377,17 +365,17 @@ operator|(const PSeedJIT<T1>& l, const PSeedJIT<T2>& r)
 
 // Mixed versions
 template<class T1, class T2>
-struct BinaryReturn<PSeedJIT<T1>, PScalarJIT<T2>, OpBitwiseOr> {
-  typedef PSeedJIT<typename BinaryReturn<T1, T2, OpBitwiseOr>::Type_t>  Type_t;
+struct BinaryReturn<PSeedREG<T1>, PScalarREG<T2>, OpBitwiseOr> {
+  typedef PSeedREG<typename BinaryReturn<T1, T2, OpBitwiseOr>::Type_t>  Type_t;
 };
  
 template<class T1, class T2>
-inline typename BinaryReturn<PSeedJIT<T1>, PScalarJIT<T2>, OpBitwiseOr>::Type_t
-operator|(const PSeedJIT<T1>& l, const PScalarJIT<T2>& r)
+inline typename BinaryReturn<PSeedREG<T1>, PScalarREG<T2>, OpBitwiseOr>::Type_t
+operator|(const PSeedREG<T1>& l, const PScalarREG<T2>& r)
 {
   // Lazy implementation
 
-  PSeedJIT<T2>  d(l.func());
+  PSeedREG<T2>  d(l.func());
   d = r;
 
   return (l | d);
@@ -400,15 +388,15 @@ operator|(const PSeedJIT<T1>& l, const PScalarJIT<T2>& r)
  * greater than 12
  */
 template<class T1, class T2>
-struct BinaryReturn<PSeedJIT<T1>, PScalarJIT<T2>, OpLeftShift> {
-  typedef PSeedJIT<typename BinaryReturn<T1, T2, OpLeftShift>::Type_t>  Type_t;
+struct BinaryReturn<PSeedREG<T1>, PScalarREG<T2>, OpLeftShift> {
+  typedef PSeedREG<typename BinaryReturn<T1, T2, OpLeftShift>::Type_t>  Type_t;
 };
 
 template<class T1, class T2>
-inline typename BinaryReturn<PSeedJIT<T1>, PScalarJIT<T2>, OpLeftShift>::Type_t
-operator<<(const PSeedJIT<T1>& s1, const PScalarJIT<T2>& s2)
+inline typename BinaryReturn<PSeedREG<T1>, PScalarREG<T2>, OpLeftShift>::Type_t
+operator<<(const PSeedREG<T1>& s1, const PScalarREG<T2>& s2)
 {
-  typename BinaryReturn<PSeedJIT<T1>, PScalarJIT<T2>, OpLeftShift>::Type_t  d(s1.func());
+  typename BinaryReturn<PSeedREG<T1>, PScalarREG<T2>, OpLeftShift>::Type_t  d(s1.func());
   typedef typename BinaryReturn<T1, T2, OpLeftShift>::Type_t  T;
   typedef typename InternalScalar<T>::Type_t  S;
   T  i0, i1, i2, i3;
@@ -435,15 +423,44 @@ operator<<(const PSeedJIT<T1>& s1, const PScalarJIT<T2>& s2)
 
 //! dest [float type] = source [seed type]
 template<class T>
-struct UnaryReturn<PSeedJIT<T>, FnSeedToFloat> {
-  typedef PScalarJIT<typename UnaryReturn<T, FnSeedToFloat>::Type_t>  Type_t;
+struct UnaryReturn<PSeedREG<T>, FnSeedToFloat> {
+  typedef PScalarREG<typename UnaryReturn<T, FnSeedToFloat>::Type_t>  Type_t;
 };
 
 template<class T>
-inline typename UnaryReturn<PSeedJIT<T>, FnSeedToFloat>::Type_t
-seedToFloat(const PSeedJIT<T>& s1)
+inline typename UnaryReturn<PSeedREG<T>, FnSeedToFloat>::Type_t
+seedToFloat(const PSeedREG<T>& s1)
 {
-  typename UnaryReturn<PSeedJIT<T>, FnSeedToFloat>::Type_t  d(s1.func());
+  typename UnaryReturn<PSeedREG<T>, FnSeedToFloat>::Type_t  d;
+  typedef typename RealScalar<T>::Type_t  S;
+
+  S  twom11(1.0 / 2048.0);
+  S  twom12(1.0 / 4096.0);
+  S  fs1, fs2;
+
+//  recast_rep(fs1, s1.elem(0));
+  fs1 = S(s1.elem(0));
+  d.elem() = twom12 * S(s1.elem(0));
+
+//  recast_rep(fs1, s1.elem(1));
+  fs1 = S(s1.elem(1));
+  fs2 = fs1 + d.elem();
+  d.elem() = twom12 * fs2;
+
+//  recast_rep(fs1, s1.elem(2));
+  fs1 = S(s1.elem(2));
+  fs2 = fs1 + d.elem();
+  d.elem() = twom12 * fs2;
+
+//  recast_rep(fs1, s1.elem(3));
+  fs1 = S(s1.elem(3));
+  fs2 = fs1 + d.elem();
+  d.elem() = twom11 * fs2;
+
+  return d;
+
+#if 0
+  typename UnaryReturn<PSeedREG<T>, FnSeedToFloat>::Type_t  d(s1.func());
   typedef typename RealScalar<T>::Type_t  S;
 
   S  twom11(s1.func(),1.0 / 2048.0);
@@ -470,21 +487,22 @@ seedToFloat(const PSeedJIT<T>& s1)
   d.elem() = twom11 * fs2;
 
   return d;
+#endif
 }
 
 
 //! dest [some type] = source [some type]
 /*! Portable (internal) way of returning a single site */
 template<class T>
-struct UnaryReturn<PSeedJIT<T>, FnGetSite> {
-  typedef PSeedJIT<typename UnaryReturn<T, FnGetSite>::Type_t>  Type_t;
+struct UnaryReturn<PSeedREG<T>, FnGetSite> {
+  typedef PSeedREG<typename UnaryReturn<T, FnGetSite>::Type_t>  Type_t;
 };
 
 template<class T>
-inline typename UnaryReturn<PSeedJIT<T>, FnGetSite>::Type_t
-getSite(const PSeedJIT<T>& s1, int innersite)
+inline typename UnaryReturn<PSeedREG<T>, FnGetSite>::Type_t
+getSite(const PSeedREG<T>& s1, int innersite)
 { 
-  typename UnaryReturn<PSeedJIT<T>, FnGetSite>::Type_t  d(s1.func());
+  typename UnaryReturn<PSeedREG<T>, FnGetSite>::Type_t  d(s1.func());
 
   for(int i=0; i < 4; ++i)
     d.elem(i) = getSite(s1.elem(i), innersite);
@@ -497,7 +515,7 @@ getSite(const PSeedJIT<T>& s1, int innersite)
 //! dest = 0
 template<class T> 
 inline void 
-zero_rep(PSeedJIT<T>& dest) 
+zero_rep(PSeedREG<T>& dest) 
 {
   for(int i=0; i < 4; ++i)
     zero_rep(dest.elem(i));
@@ -507,7 +525,7 @@ zero_rep(PSeedJIT<T>& dest)
 //! dest = (mask) ? s1 : dest
 template<class T, class T1> 
 inline void 
-copymask(PSeedJIT<T>& d, const PScalarJIT<T1>& mask, const PSeedJIT<T>& s1) 
+copymask(PSeedREG<T>& d, const PScalarREG<T1>& mask, const PSeedREG<T>& s1) 
 {
   for(int i=0; i < 4; ++i)
     copymask(d.elem(i),mask.elem(),s1.elem(i));

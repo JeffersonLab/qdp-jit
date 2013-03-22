@@ -35,6 +35,7 @@
 #include "qdp_primvector.h"
 
 #include "qdp_primseedjit.h"
+#include "qdp_primseedreg.h"
 #include "qdp_primseed.h"
 
 #include "qdp_primcolormatjit.h"

@@ -22,7 +22,7 @@ namespace QDP {
     // construction a PMatrix<T,N>
     WordREG(): setup_m(false) {}
 
-    explicit WordREG(int i) {
+    WordREG(int i) {
       val = jit_val_create_const_int( i );
       setup_m=true;
     }
@@ -72,6 +72,14 @@ namespace QDP {
 
     WordREG& operator=(WordREG rhs) {
       swap(*this,rhs);
+      return *this;
+    }
+
+    template<class T1>
+    inline
+    WordREG& operator=(const WordREG<T1>& rhs) 
+    {
+      val = jit_val_create_convert( getFunc(*this) , jit_type<T>::value , rhs.get_val() );
       return *this;
     }
 
@@ -178,6 +186,19 @@ namespace QDP {
   }
 
 
+//-----------------------------------------------------------------------------
+// Traits classes 
+//-----------------------------------------------------------------------------
+
+  template<class T>
+  struct InternalScalar<WordREG<T> > {
+    typedef WordREG<T>  Type_t;
+  };
+
+  template<class T>
+  struct RealScalar<WordREG<T> > {
+    typedef WordREG<typename RealScalar<T>::Type_t>  Type_t;
+  };
 
 
   template<class T> 
@@ -196,11 +217,12 @@ namespace QDP {
   
 
   // Default binary(WordREG,WordREG) -> WordREG
+#if 0
   template<class T1, class T2, class Op>
   struct BinaryReturn<WordREG<T1>, WordREG<T2>, Op> {
     typedef WordREG<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
   };
-
+#endif
 
 
   template<class T1, class T2>
@@ -263,6 +285,188 @@ namespace QDP {
   }
 #endif  
 
+
+
+#if 0
+template<class T1, class T2 >
+struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpLeftShift > {
+  typedef WordREG<typename BinaryReturn<T1, T2, OpLeftShift>::Type_t>  Type_t;
+};
+ 
+
+template<class T1, class T2>
+inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpLeftShift>::Type_t
+operator<<(const WordREG<T1>& l, const WordREG<T2>& r)
+{
+  return l.elem() << r.elem();
+}
+#endif
+
+
+template<class T1, class T2 >
+struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpRightShift > {
+  typedef WordREG<typename BinaryReturn<T1, T2, OpRightShift>::Type_t>  Type_t;
+};
+ 
+
+template<class T1, class T2>
+inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpRightShift>::Type_t
+operator>>(const WordREG<T1>& l, const WordREG<T2>& r)
+{
+  typedef typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpRightShift>::Type_t Ret_t;
+  jit_value_t new_tmp = jit_ins_shr( l.get_val() , r.get_val() );
+  Ret_t tmp;
+  tmp.setup( new_tmp );
+  return tmp;
+}
+
+
+#if 0
+template<class T1, class T2 >
+inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpMod>::Type_t
+operator%(const WordREG<T1>& l, const WordREG<T2>& r)
+{
+  return l.elem() % r.elem();
+}
+
+template<class T1, class T2 >
+inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseXor>::Type_t
+operator^(const WordREG<T1>& l, const WordREG<T2>& r)
+{
+  return l.elem() ^ r.elem();
+}
+#endif 
+
+
+
+template<class T1, class T2 >
+inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseAnd>::Type_t
+operator&(const WordREG<T1>& l, const WordREG<T2>& r)
+{
+  typedef typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseAnd>::Type_t Ret_t;
+  jit_value_t new_tmp = jit_ins_bit_and( l.get_val() , r.get_val() );
+  Ret_t tmp;
+  tmp.setup( new_tmp );
+  return tmp;
+}
+
+
+
+
+#if 0
+template<class T1, class T2>
+inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseOr>::Type_t
+operator|(const WordREG<T1>& l, const WordREG<T2>& r)
+{
+  return l.elem() | r.elem();
+}
+
+
+
+// Comparisons
+template<class T1, class T2 >
+struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpLT > {
+  typedef WordREG<typename BinaryReturn<T1, T2, OpLT>::Type_t>  Type_t;
+};
+
+template<class T1, class T2>
+inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpLT>::Type_t
+operator<(const WordREG<T1>& l, const WordREG<T2>& r)
+{
+  return l.elem() < r.elem();
+}
+
+
+template<class T1, class T2 >
+struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpLE > {
+  typedef WordREG<typename BinaryReturn<T1, T2, OpLE>::Type_t>  Type_t;
+};
+
+template<class T1, class T2>
+inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpLE>::Type_t
+operator<=(const WordREG<T1>& l, const WordREG<T2>& r)
+{
+  return l.elem() <= r.elem();
+}
+
+
+template<class T1, class T2 >
+struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpGT > {
+  typedef WordREG<typename BinaryReturn<T1, T2, OpGT>::Type_t>  Type_t;
+};
+
+template<class T1, class T2>
+inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpGT>::Type_t
+operator>(const WordREG<T1>& l, const WordREG<T2>& r)
+{
+  return l.elem() > r.elem();
+}
+
+
+template<class T1, class T2 >
+struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpGE > {
+  typedef WordREG<typename BinaryReturn<T1, T2, OpGE>::Type_t>  Type_t;
+};
+
+template<class T1, class T2>
+inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpGE>::Type_t
+operator>=(const WordREG<T1>& l, const WordREG<T2>& r)
+{
+  return l.elem() >= r.elem();
+}
+
+
+template<class T1, class T2 >
+struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpEQ > {
+  typedef WordREG<typename BinaryReturn<T1, T2, OpEQ>::Type_t>  Type_t;
+};
+
+template<class T1, class T2>
+inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpEQ>::Type_t
+operator==(const WordREG<T1>& l, const WordREG<T2>& r)
+{
+  return l.elem() == r.elem();
+}
+
+
+template<class T1, class T2 >
+struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpNE > {
+  typedef WordREG<typename BinaryReturn<T1, T2, OpNE>::Type_t>  Type_t;
+};
+
+template<class T1, class T2>
+inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpNE>::Type_t
+operator!=(const WordREG<T1>& l, const WordREG<T2>& r)
+{
+  return l.elem() != r.elem();
+}
+
+
+template<class T1, class T2>
+struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpAnd > {
+  typedef WordREG<typename BinaryReturn<T1, T2, OpAnd>::Type_t>  Type_t;
+};
+
+template<class T1, class T2>
+inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpAnd>::Type_t
+operator&&(const WordREG<T1>& l, const WordREG<T2>& r)
+{
+  return l.elem() && r.elem();
+}
+
+
+template<class T1, class T2>
+struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpOr > {
+  typedef WordREG<typename BinaryReturn<T1, T2, OpOr>::Type_t>  Type_t;
+};
+
+template<class T1, class T2>
+inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpOr>::Type_t
+operator||(const WordREG<T1>& l, const WordREG<T2>& r)
+{
+  return l.elem() || r.elem();
+}
+#endif
 
 
 } // namespace QDP
