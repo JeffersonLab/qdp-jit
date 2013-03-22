@@ -122,7 +122,7 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& 
 	      const Subset& s)
 {
   std::cout << "eval_lat_sca host\n";
-#if 0
+#if 1
   //std::cout << __PRETTY_FUNCTION__ << "\n";
 
 // cerr << "In evaluateSubset(olattice,oscalar)\n";
@@ -155,6 +155,8 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& 
   // dispatch_to_threads< u_arg<T,T1,Op,RHS> >(numSiteTable, a, ev_userfunc);
 
 #endif
+
+#if 0
   ///////////////////
   // Original code
   //////////////////
@@ -172,6 +174,7 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& 
   prof.time += getClockTime();
   prof.count++;
   prof.print();
+#endif
 #endif
 }
 

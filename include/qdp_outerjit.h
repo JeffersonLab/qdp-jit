@@ -27,7 +27,10 @@ namespace QDP {
   {
   public:
     OScalarJIT( jit_function_t f_, 
-		jit_value_t base_ ) : QDPTypeJIT<T, OScalarJIT<T> >(f_,base_) {}
+		jit_value_t base_,
+		jit_value_t index_) : QDPTypeJIT<T, OScalarJIT<T> >(f_,base_,index_) {}
+    // OScalarJIT( jit_function_t f_, 
+    // 		jit_value_t base_ ) : QDPTypeJIT<T, OScalarJIT<T> >(f_,base_) {}
 
     OScalarJIT(const OScalarJIT& rhs) : QDPTypeJIT<T, OScalarJIT<T> >(rhs) {}
 

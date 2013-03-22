@@ -647,7 +647,7 @@ struct LeafFunctor<OScalar<T>, ParamLeaf>
     jit_value_t    base_addr = jit_add_param( p.getFunc() , jit_ptx_type::u64 );
     jit_function_t function  = p.getFunc();
     //cout << "OScalar ParamLeaf 2er\n";
-    return Type_t( function , base_addr );
+    return Type_t( function , base_addr , jit_val_create_const_int(0) );
   }
 };
 

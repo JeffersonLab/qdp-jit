@@ -29,12 +29,12 @@ namespace QDP {
       assert(index_m);
     }
 
-    QDPTypeJIT( jit_function_t func_ , 
-		jit_value_t base_ ): func_m(func_), base_m(base_) {
-      //std::cout << "QDPTypeJIT 2er ctor\n";
-      assert(func_m);
-      assert(base_m);
-    }
+    // QDPTypeJIT( jit_function_t func_ , 
+    // 		jit_value_t base_ ): func_m(func_), base_m(base_) {
+    //   //std::cout << "QDPTypeJIT 2er ctor\n";
+    //   assert(func_m);
+    //   assert(base_m);
+    // }
 
     QDPTypeJIT(const QDPTypeJIT& a) : func_m(a.func_m), base_m(a.base_m), index_m(a.index_m) { }
 
