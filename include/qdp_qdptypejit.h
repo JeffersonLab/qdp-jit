@@ -51,7 +51,6 @@ namespace QDP {
       if (lay != DeviceLayout::Coalesced) {
 	jit_value_t tsize = jit_val_create_const_int( T::Size_t );
 	jit_value_t ret1 = jit_ins_mul( ret0 , tsize );
-    std::cout << "--\n";
 	jit_value_t ret2 = jit_ins_add( ret1 , base_m );
 	return ret2;
       }

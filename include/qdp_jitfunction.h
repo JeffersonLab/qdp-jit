@@ -1,8 +1,8 @@
 #ifndef QDP_JITFUNC_H
 #define QDP_JITFUNC_H
 
-//#define JIT_DO_MEMBER 1
-#undef JIT_DO_MEMBER
+#define JIT_DO_MEMBER 1
+//#undef JIT_DO_MEMBER
 
 
 #include "qmp.h"
@@ -107,7 +107,7 @@ function_zero_rep_build(OLattice<T>& dest)
   jit_value_t r_member = jit_add_param( function , jit_ptx_type::u64 );  // Subset
 #endif
 
-  jit_value_t r_idx = jit_geom_get_linear_th_idx( function );  
+  jit_value_t r_idx = jit_geom_get_linear_th_idx( function );
 
   jit_value_t r_out_of_range       = jit_ins_ge( r_idx , r_hi );
   jit_ins_exit( function , r_out_of_range );
@@ -616,8 +616,10 @@ function_zero_rep_exec(CUfunction function, OLattice<T>& dest, const Subset& s )
   addr.push_back( &hi );
   //std::cout << "addr hi = " << addr[1] << " hi=" << hi << "\n";
 
+#if JIT_DO_MEMBER
   addr.push_back( &subset_member );
   //std::cout << "addr subset_member = " << addr[3] << " " << subset_member << "\n";
+#endif
 
   int addr_dest=addr.size();
   for(int i=0; i < addr_leaf.addr.size(); ++i) {

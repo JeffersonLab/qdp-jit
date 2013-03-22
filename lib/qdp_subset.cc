@@ -153,7 +153,6 @@ namespace QDP
   //! Initializer for sets
   void initDefaultSets()
   {
-#if 0
     // Initialize the red/black checkerboard
     rb.make(SetRBFunc());
 
@@ -162,7 +161,6 @@ namespace QDP
 
     // Initialize the 32-style checkerboard
     mcb.make(Set32CBFunc());
-#endif
 
     // The all set
     set_all.make(SetAllFunc());
@@ -170,13 +168,11 @@ namespace QDP
     // The all subset
     all.make(set_all[0]);
 
-#if 0
     // COPY the rb[0] to the even subset
     even = rb[0];
 
     // COPY the rb[1] to the odd subset
     odd = rb[1];
-#endif
   }
 
 	  

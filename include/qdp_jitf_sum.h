@@ -125,7 +125,8 @@ void function_sum_exec( CUfunction function,
   jit_ins_label( function , label_exit );
 
 #if 1
-  function->write();
+  if (Layout::primaryNode())
+    function->write();
 #endif
   //  assert(!"ni");
 
