@@ -224,12 +224,11 @@ namespace QDP {
   jit_value_t jit_ins_sub( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
   jit_value_t jit_ins_shl( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
   jit_value_t jit_ins_shr( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_bit_and( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_and( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_or ( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_xor( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
 
   // ni
-  jit_value_t jit_ins_or( jit_value_t lhs , jit_value_t rhs );
-  jit_value_t jit_ins_and( jit_value_t lhs , jit_value_t rhs );
-  jit_value_t jit_ins_xor( jit_value_t lhs , jit_value_t rhs );
   jit_value_t jit_ins_mod( jit_value_t lhs , jit_value_t rhs );
 
   // Binary operations returning predicate
@@ -462,9 +461,9 @@ namespace QDP {
     virtual int operator()(int i0, int i1) const { assert(!"strange that i'm here"); return 0; }
   };
 
-  class JitOpBitAnd: public JitOp {
+  class JitOpAnd: public JitOp {
   public:
-    JitOpBitAnd( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
+    JitOpAnd( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
       stream << "and." 
 	     << jit_get_ptx_type( jit_bit_type( getDestType() ) );
@@ -472,6 +471,30 @@ namespace QDP {
     }
     virtual float operator()(float f0, float f1) const { assert(!"strange that i'm here"); return 0.; }
     virtual int operator()(int i0, int i1) const { return i0 & i1; }
+  };
+
+  class JitOpOr: public JitOp {
+  public:
+    JitOpOr( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
+    virtual std::ostream& writeToStream( std::ostream& stream ) const {
+      stream << "or." 
+	     << jit_get_ptx_type( jit_bit_type( getDestType() ) );
+      return stream;
+    }
+    virtual float operator()(float f0, float f1) const { assert(!"strange that i'm here"); return 0.; }
+    virtual int operator()(int i0, int i1) const { return i0 | i1; }
+  };
+
+  class JitOpXOr: public JitOp {
+  public:
+    JitOpXOr( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
+    virtual std::ostream& writeToStream( std::ostream& stream ) const {
+      stream << "xor." 
+	     << jit_get_ptx_type( jit_bit_type( getDestType() ) );
+      return stream;
+    }
+    virtual float operator()(float f0, float f1) const { assert(!"strange that i'm here"); return 0.; }
+    virtual int operator()(int i0, int i1) const { return i0 ^ i1; }
   };
 
 

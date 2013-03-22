@@ -92,6 +92,7 @@ namespace QDP {
       map_bit_type[ jit_ptx_type::f64 ] = jit_ptx_type::b64;
       map_bit_type[ jit_ptx_type::u16 ] = jit_ptx_type::b16;
       map_bit_type[ jit_ptx_type::s16 ] = jit_ptx_type::b16;
+      map_bit_type[ jit_ptx_type::pred ] = jit_ptx_type::pred;
       return map_bit_type;
     }
     std::map< jit_value::StateSpace , 
@@ -700,10 +701,20 @@ void jit_function::write_reg_defs()
     assert(rhs);
     return jit_ins_op( lhs , rhs , JitOpMulWide( lhs->get_type() , rhs->get_type() ) , pred );
   }
-  jit_value_t jit_ins_bit_and( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
+  jit_value_t jit_ins_and( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
     assert(lhs);
     assert(rhs);
-    return jit_ins_op( lhs , rhs , JitOpBitAnd( lhs->get_type() , rhs->get_type() ) , pred );
+    return jit_ins_op( lhs , rhs , JitOpAnd( lhs->get_type() , rhs->get_type() ) , pred );
+  }
+  jit_value_t jit_ins_or( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
+    assert(lhs);
+    assert(rhs);
+    return jit_ins_op( lhs , rhs , JitOpOr( lhs->get_type() , rhs->get_type() ) , pred );
+  }
+  jit_value_t jit_ins_xor( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
+    assert(lhs);
+    assert(rhs);
+    return jit_ins_op( lhs , rhs , JitOpXOr( lhs->get_type() , rhs->get_type() ) , pred );
   }
 
   jit_value_t jit_ins_lt( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
@@ -746,7 +757,7 @@ void jit_function::write_reg_defs()
 
 
 
-
+#if 0
   jit_value_t jit_ins_unary_op( jit_value_t rhs , const JitUnaryOp& op , jit_value_t pred ) {
     if (auto reg = get< jit_value_reg >(rhs)) {
       jit_value_reg_t ret = jit_val_create_new( reg->get_func() , reg->get_type() );
@@ -759,6 +770,37 @@ void jit_function::write_reg_defs()
     }
     assert(!"Should never be here");
   }
+#endif
+
+
+
+  jit_value_t jit_ins_unary_op_const( jit_value_const_t rhs , const JitUnaryOp& op ) {
+    if (rhs->isInt())  {
+      jit_value_const_int_t c1 = get<jit_value_const_int>(rhs);
+      return std::make_shared<jit_value_const_int>( op( c1->getValue() ) );
+    } else {
+      return std::make_shared<jit_value_const_float>( op( rhs->getAsFloat() ) );
+    }
+  }
+
+  jit_value_t jit_ins_unary_op_reg( jit_value_reg_t reg , const JitUnaryOp& op , jit_value_t pred ) {
+    jit_value_reg_t ret = jit_val_create_new( reg->get_func() , reg->get_type() );
+    reg->get_func()->get_prg() << jit_predicate(pred)
+			       << op << " "
+			       << jit_get_reg_name( ret ) << ","
+			       << jit_get_reg_name( reg ) << ";\n";
+    ret->set_state_space( ret->get_state_space() );
+    return ret;
+  }
+
+  jit_value_t jit_ins_unary_op( jit_value_t rhs , const JitUnaryOp& op , jit_value_t pred ) {
+    if (auto reg = get< jit_value_reg >(rhs))
+      return jit_ins_unary_op_reg( reg , op , pred );
+    if (auto con = get< jit_value_const >(rhs))
+      return jit_ins_unary_op_const( con , op );
+    assert(!"Should never be here");
+  }
+
 
   jit_value_t jit_ins_neg( jit_value_t rhs , jit_value_t pred ) {
     return jit_ins_unary_op( rhs , JitUnaryOpNeg( rhs->get_type() ) , pred );

@@ -300,7 +300,7 @@ namespace QDP {
     return tmp;
   }
 
-#if 0
+
   template<class T1>
   inline typename UnaryReturn<WordREG<T1>, OpUnaryMinus>::Type_t
   operator-(const WordREG<T1>& l)
@@ -308,14 +308,14 @@ namespace QDP {
     typedef typename UnaryReturn<WordREG<T1>, OpUnaryMinus>::Type_t  Ret_t;
     jit_value_t new_tmp = jit_ins_neg( l.get_val() );
     Ret_t tmp;
-    tmp.setup( l.get_func() , new_tmp );
+    tmp.setup( new_tmp );
     return tmp;
   }
-#endif  
 
 
 
-#if 0
+
+
 template<class T1, class T2 >
 struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpLeftShift > {
   typedef WordREG<typename BinaryReturn<T1, T2, OpLeftShift>::Type_t>  Type_t;
@@ -326,9 +326,13 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpLeftShift>::Type_t
 operator<<(const WordREG<T1>& l, const WordREG<T2>& r)
 {
-  return l.elem() << r.elem();
+  typedef typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpLeftShift>::Type_t Ret_t;
+  jit_value_t new_tmp = jit_ins_shl( l.get_val() , r.get_val() );
+  Ret_t tmp;
+  tmp.setup( new_tmp );
+  return tmp;
 }
-#endif
+
 
 
 template<class T1, class T2 >
@@ -356,15 +360,20 @@ operator%(const WordREG<T1>& l, const WordREG<T2>& r)
 {
   return l.elem() % r.elem();
 }
+#endif 
+
+
 
 template<class T1, class T2 >
 inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseXor>::Type_t
 operator^(const WordREG<T1>& l, const WordREG<T2>& r)
 {
-  return l.elem() ^ r.elem();
+  typedef typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseXor>::Type_t Ret_t;
+  jit_value_t new_tmp = jit_ins_xor( l.get_val() , r.get_val() );
+  Ret_t tmp;
+  tmp.setup( new_tmp );
+  return tmp;
 }
-#endif 
-
 
 
 template<class T1, class T2 >
@@ -372,7 +381,7 @@ inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseAnd>::Type_t
 operator&(const WordREG<T1>& l, const WordREG<T2>& r)
 {
   typedef typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseAnd>::Type_t Ret_t;
-  jit_value_t new_tmp = jit_ins_bit_and( l.get_val() , r.get_val() );
+  jit_value_t new_tmp = jit_ins_and( l.get_val() , r.get_val() );
   Ret_t tmp;
   tmp.setup( new_tmp );
   return tmp;
@@ -381,16 +390,20 @@ operator&(const WordREG<T1>& l, const WordREG<T2>& r)
 
 
 
-#if 0
+
 template<class T1, class T2>
 inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseOr>::Type_t
 operator|(const WordREG<T1>& l, const WordREG<T2>& r)
 {
-  return l.elem() | r.elem();
+  typedef typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseOr>::Type_t Ret_t;
+  jit_value_t new_tmp = jit_ins_or( l.get_val() , r.get_val() );
+  Ret_t tmp;
+  tmp.setup( new_tmp );
+  return tmp;
 }
 
 
-
+#if 0
 // Comparisons
 template<class T1, class T2 >
 struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpLT > {
@@ -472,6 +485,7 @@ operator!=(const WordREG<T1>& l, const WordREG<T2>& r)
 {
   return l.elem() != r.elem();
 }
+#endif
 
 
 template<class T1, class T2>
@@ -483,7 +497,11 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpAnd>::Type_t
 operator&&(const WordREG<T1>& l, const WordREG<T2>& r)
 {
-  return l.elem() && r.elem();
+  typedef typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpAnd>::Type_t Ret_t;
+  jit_value_t new_tmp = jit_ins_and( l.get_val() , r.get_val() );
+  Ret_t tmp;
+  tmp.setup( new_tmp );
+  return tmp;
 }
 
 
@@ -496,9 +514,13 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpOr>::Type_t
 operator||(const WordREG<T1>& l, const WordREG<T2>& r)
 {
-  return l.elem() || r.elem();
+  typedef typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpOr>::Type_t Ret_t;
+  jit_value_t new_tmp = jit_ins_or( l.get_val() , r.get_val() );
+  Ret_t tmp;
+  tmp.setup( new_tmp );
+  return tmp;
 }
-#endif
+
 
 
 } // namespace QDP
