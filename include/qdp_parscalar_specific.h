@@ -368,8 +368,7 @@ template<class T>
 void 
 random(OLattice<T>& d, const Subset& s)
 {
-  assert(!"ni");
-#if 0
+#if 1
   static CUfunction function;
 
   Seed seed_tmp;

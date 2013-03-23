@@ -309,7 +309,7 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
   // RNG::ran_seed
   typedef typename LeafFunctor<Seed, ParamLeaf>::Type_t  SeedJIT;
   typedef typename LeafFunctor<LatticeSeed, ParamLeaf>::Type_t  LatticeSeedJIT;
-  typedef typename REGType<SeedJIT::Subtype_t>::Type_t PSeedREG;
+  typedef typename REGType<typename SeedJIT::Subtype_t>::Type_t PSeedREG;
 
   SeedJIT ran_seed_jit(forEach(RNG::ran_seed, param_leaf, TreeCombine()));
   SeedJIT seed_tmp_jit(forEach(seed_tmp, param_leaf, TreeCombine()));
@@ -319,27 +319,30 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
 
   //  printme<View_t>();
 
-  PSeedREG seed_jit;
-  PSeedREG skewed_seed_jit;
-  PSeedREG ran_seed_jit_elem;
-  PSeedREG lattice_ran_mult_jit_elem;
+  PSeedREG seed_reg;
+  PSeedREG skewed_seed_reg;
+  PSeedREG ran_mult_n_reg;
+  PSeedREG lattice_ran_mult_reg;
   // typename SeedREG::Subtype_t seed_jit;
   // typename SeedREG::Subtype_t skewed_seed_jit;
   // typename SeedREG::Subtype_t ran_seed_jit_elem;
   // typename SeedREG::Subtype_t lattice_ran_mult_jit_elem;
 
-  ran_seed_jit_elem.setup( ran_seed_jit.elem( QDPTypeJITBase::Coalesced ) );
-  lattice_ran_mult_jit_elem.setup( lattice_ran_mult_jit.elem( QDPTypeJITBase::Coalesced ) );
-  seed_jit.setup( ran_seed_jit.elem( QDPTypeJITBase::Coalesced ) );
-  skewed_seed_jit.setup = ran_seed_jit_elem * lattice_ran_mult_jit_elem;
+  seed_reg.setup( ran_seed_jit.elem() );
 
-  fill_random( dest_jit.elem(QDPTypeJITBase::Coalesced) , seed_jit , skewed_seed_jit , ran_mult_n_jit );
+  lattice_ran_mult_reg.setup( lattice_ran_mult_jit.elem( QDPTypeJITBase::Coalesced ) );
+
+  skewed_seed_reg = seed_reg * lattice_ran_mult_reg;
+
+  ran_mult_n_reg.setup( ran_mult_n_jit.elem() );
+
+  fill_random( dest_jit.elem(QDPTypeJITBase::Coalesced) , seed_reg , skewed_seed_reg , ran_mult_n_reg );
 
   jit_value_t r_no_save = jit_ins_ne( r_idx , jit_val_create_const_int(0) );
 
   jit_label_t label_nosave;
   jit_ins_branch( function , label_nosave , r_no_save );
-  seed_tmp_jit.elem(0) = seed_jit;
+  seed_tmp_jit.elem() = seed_reg;
   jit_ins_label( function , label_nosave );
 
   if (Layout::primaryNode())
@@ -850,8 +853,8 @@ function_sca_sca_exec(CUfunction function, OScalar<T>& dest, const Op& op, const
   kernel_geom_t now = getGeom( hi-lo , 1 );
 
   CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    1,1,1,    0, 0, &addr[0] , 0);
-
 }
+#endif
 
 
 
@@ -911,9 +914,6 @@ function_random_exec(CUfunction function, OLattice<T>& dest, const Subset& s , S
 #endif
 }
 
-
-
-#endif
 
 }
 

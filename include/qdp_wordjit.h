@@ -221,6 +221,17 @@ namespace QDP {
   }
 
 
+  //! dest  = random  
+  template<class T, class T1, class T2, class T3>
+  inline void
+  fill_random(WordJIT<T>& d, T1& seed, T2& skewed_seed, const T3& seed_mult)
+  {
+    d = seedToFloat( skewed_seed ).elem().elem().elem();
+    seed        = seed        * seed_mult;
+    skewed_seed = skewed_seed * seed_mult;
+  }
+
+
 
 } // namespace QDP
 

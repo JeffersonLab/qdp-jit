@@ -1598,14 +1598,6 @@ gather_sites(RComplexJIT<T>& d,
 }
 
 
-//! dest  = random  
-template<class T, class T1, class T2, class T3>
-inline void
-fill_random(RScalarJIT<T>& d, T1& seed, T2& skewed_seed, const T3& seed_mult)
-{
-  fill_random(d.elem(), seed, skewed_seed, seed_mult);
-}
-
 
 
 //! dest  = gaussian  
@@ -2418,6 +2410,15 @@ void zero_rep(RComplexJIT<T>& dest)
 {
   zero_rep(dest.real());
   zero_rep(dest.imag());
+}
+
+
+//! dest  = random  
+template<class T, class T1, class T2, class T3>
+inline void
+fill_random(RScalarJIT<T>& d, T1& seed, T2& skewed_seed, const T3& seed_mult)
+{
+  fill_random(d.elem(), seed, skewed_seed, seed_mult);
 }
 
 
