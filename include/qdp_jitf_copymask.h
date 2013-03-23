@@ -11,10 +11,19 @@ namespace QDP {
   {
     CUfunction func;
 
-    std::string fname("ptx_copymask.ptx");
-    Jit function(fname.c_str(),"func");
+    const char * fname = "ptx_copymask.ptx";
+    jit_function_t function = jit_create_function( fname );
 
-    ParamLeaf param_leaf(function,function.getRegIdx() , Jit::LatticeLayout::COAL );
+
+  jit_value_t r_lo           = jit_add_param( function , jit_ptx_type::s32 );
+  jit_value_t r_hi           = jit_add_param( function , jit_ptx_type::s32 );
+  jit_value_t r_idx          = jit_geom_get_linear_th_idx( function );  
+  jit_value_t r_out_of_range = jit_ins_ge( r_idx , r_hi );
+  jit_ins_exit( function , r_out_of_range );
+
+  ParamLeaf param_leaf( function , r_idx );
+
+
 
     typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
     typedef typename LeafFunctor<OLattice<T1>, ParamLeaf>::Type_t  FuncRet1_t;
@@ -23,19 +32,27 @@ namespace QDP {
     FuncRet_t src_jit(forEach(src, param_leaf, TreeCombine()));
     FuncRet1_t mask_jit(forEach(mask, param_leaf, TreeCombine()));
 
-    copymask( dest_jit.elem(0) , mask_jit.elem(0) , src_jit.elem(0) );
+    typedef typename REGType<typename FuncRet_t::Subtype_t>::Type_t REGFuncRet_t;
+    typedef typename REGType<typename FuncRet1_t::Subtype_t>::Type_t REGFuncRet1_t;
+
+    REGFuncRet_t src_reg;
+    REGFuncRet1_t mask_reg;
+    src_reg.setup ( src_jit.elem( QDPTypeJITBase::Coalesced ) );
+    mask_reg.setup( mask_jit.elem( QDPTypeJITBase::Coalesced ) );
+
+    copymask( dest_jit.elem( QDPTypeJITBase::Coalesced ) , mask_reg , src_reg );
 
     if (Layout::primaryNode())
-      function.write();
+      function->write();
       
     QMP_barrier();
 
     CUresult ret;
     CUmodule cuModule;
-    ret = cuModuleLoad(&cuModule, fname.c_str());
-    if (ret) QDP_error_exit("Error loading CUDA module '%s'",fname.c_str());
+    ret = cuModuleLoad(&cuModule, fname);
+    if (ret) QDP_error_exit("Error loading CUDA module '%s'",fname);
 
-    ret = cuModuleGetFunction(&func, cuModule, "func");
+    ret = cuModuleGetFunction(&func, cuModule, "function");
     if (ret) { std::cout << "Error getting function\n"; exit(1); }
 
     return func;

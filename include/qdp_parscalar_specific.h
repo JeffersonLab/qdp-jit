@@ -312,8 +312,6 @@ void copymask(OSubLattice<T2> d, const OLattice<T1>& mask, const OLattice<T2>& s
 template<class T1, class T2> 
 void copymask(OLattice<T2>& dest, const OLattice<T1>& mask, const OLattice<T2>& s1) 
 {
-  assert(!"ni");
-#if 0
   //std::cout << __PRETTY_FUNCTION__ << "\n";
   static CUfunction function;
   // Build the function
@@ -334,7 +332,6 @@ void copymask(OLattice<T2>& dest, const OLattice<T1>& mask, const OLattice<T2>& 
   // int nodeSites = Layout::sitesOnNode();
   // for(int i=0; i < nodeSites; ++i) 
   //   copymask(dest.elem(i), mask.elem(i), s1.elem(i));
-#endif
 }
 
 

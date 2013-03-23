@@ -1374,13 +1374,8 @@ colorCrossProduct(const PScalarJIT<T1>& s1, const PScalarJIT<T2>& s2)
 
 
 //-----------------------------------------------------------------------------
-//! dest = (mask) ? s1 : dest
-template<class T, class T1> 
-inline void 
-copymask(PScalarJIT<T>& d, const PScalarJIT<T1>& mask, const PScalarJIT<T>& s1) 
-{
-  copymask(d.elem(),mask.elem(),s1.elem());
-}
+
+
 
 //! dest  = random  
 template<class T, class T1, class T2,class T3>
@@ -1587,6 +1582,16 @@ gather_sites(PScalarJIT<T>& d,
 }
 
 #endif
+
+
+//! dest = (mask) ? s1 : dest
+template<class T, class T1, class T2> 
+inline void 
+copymask(PScalarJIT<T>& d, const PScalarREG<T1>& mask, const PScalarREG<T2>& s1) 
+{
+  copymask(d.elem(),mask.elem(),s1.elem());
+}
+
 
 //! dest = 0
 template<class T> 

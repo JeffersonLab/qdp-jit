@@ -199,6 +199,15 @@ namespace QDP {
   };
 
 
+  template<class T, class T1, class T2> 
+  inline
+  void copymask(WordJIT<T>& d, const WordREG<T1>& mask, const WordREG<T2>& s1)
+  {
+    jit_ins_store( d.getAddress() , 0 , jit_type<T>::value , s1.get_val() , mask.get_val() );
+  }
+
+
+
   inline void 
   zero_rep(WordJIT<float>& dest) 
   {

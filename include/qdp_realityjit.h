@@ -1385,14 +1385,6 @@ peekSpin(const RScalarJIT<T>& l, int row, int col)
 
 
 //------------------------------------------
-//! dest = (mask) ? s1 : dest
-template<class T, class T1> 
-inline
-void copymask(RScalarJIT<T>& d, const RScalarJIT<T1>& mask, const RScalarJIT<T>& s1) 
-{
-  copymask(d.elem(),mask.elem(),s1.elem());
-}
-
 //! dest [float type] = source [int type]
 template<class T, class T1>
 inline
@@ -2389,6 +2381,26 @@ fill_gaussian(RComplexJIT<T>& d, RComplexJIT<T>& r1, RComplexJIT<T>& r2)
 }
 
 #endif
+
+
+//! dest = (mask) ? s1 : dest
+template<class T, class T1, class T2> 
+inline
+void copymask(RScalarJIT<T>& d, const RScalarREG<T1>& mask, const RScalarREG<T2>& s1)
+{
+  copymask(d.elem(),mask.elem(),s1.elem());
+}
+
+
+//! dest = (mask) ? s1 : dest
+template<class T, class T1, class T2> 
+inline
+void copymask(RComplexJIT<T>& d, const RScalarREG<T1>& mask, const RComplexREG<T2>& s1)
+{
+  copymask(d.real(),mask.elem(),s1.real());
+  copymask(d.imag(),mask.elem(),s1.imag());
+}
+
 
 
 
