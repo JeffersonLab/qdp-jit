@@ -522,6 +522,16 @@ operator||(const WordREG<T1>& l, const WordREG<T2>& r)
 }
 
 
+  template<class T1, class T2, class T3>
+  inline typename TrinaryReturn<WordREG<T1>, WordREG<T2>, WordREG<T3>, FnWhere >::Type_t
+  do_where(const WordREG<T1> &a, const WordREG<T2> &b, const WordREG<T3> &c)
+  {
+    typename TrinaryReturn<WordREG<T1>, WordREG<T2>, WordREG<T3>, FnWhere >::Type_t ret;
+    ret.setup( jit_ins_selp( getFunc(a) , b.get_val() , c.get_val() , a.get_val() ) );
+    return ret;
+  }
+
+
 
 } // namespace QDP
 

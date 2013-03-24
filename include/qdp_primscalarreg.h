@@ -1407,6 +1407,8 @@ template<class T1, class T2, class T3>
 inline typename TrinaryReturn<PScalarREG<T1>, PScalarREG<T2>, PScalarREG<T3>, FnWhere >::Type_t
 do_where(const PScalarREG<T1> &a, const PScalarREG<T2> &b, const PScalarREG<T3> &c)
 {
+  return do_where( a.elem() , b.elem() , c.elem() );
+#if 0
   int pred;
   get_pred( pred , a );
 
@@ -1419,6 +1421,7 @@ do_where(const PScalarREG<T1> &a, const PScalarREG<T2> &b, const PScalarREG<T3> 
   a.func().addCondBranchPred_fi();
 
   return ret;
+#endif
 }
 
 

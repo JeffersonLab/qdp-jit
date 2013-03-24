@@ -938,16 +938,6 @@ struct UnaryReturn<PSpinVectorJIT<T,N>, FnSpinReconstructDir3Minus > {
 
 
 
-//! dest  = random  
-template<class T, int N,  class T1, class T2, class T3>
-inline void
-fill_random(PSpinVectorJIT<T,N>& d, T1& seed, T2& skewed_seed, const T3& seed_mult)
-{
-  // Loop over rows the slowest
-  for(int i=0; i < N; ++i)
-    fill_random(d.elem(i), seed, skewed_seed, seed_mult);
-}
-
 
 //! dest  = gaussian
 template<class T, int N>
@@ -1003,6 +993,9 @@ pokeSpin(PSpinVectorJIT<T1,N>& l, const PScalarREG<T2>& r, jit_value_t row)
   return l;
 }
 
+
+
+#if 0
 
 
 // SpinVector<4> = Gamma<4,m> * SpinVector<4>
@@ -1825,6 +1818,20 @@ chiralProjectMinus(const PSpinVectorJIT<T,4>& s1)
 
   return d;
 }
+#endif
+
+
+//! dest  = random  
+template<class T, int N,  class T1, class T2, class T3>
+inline void
+fill_random(PSpinVectorJIT<T,N>& d, T1& seed, T2& skewed_seed, const T3& seed_mult)
+{
+  // Loop over rows the slowest
+  for(int i=0; i < N; ++i)
+    fill_random(d.elem(i), seed, skewed_seed, seed_mult);
+}
+
+
 
 
 /*! @} */   // end of group primspinvector

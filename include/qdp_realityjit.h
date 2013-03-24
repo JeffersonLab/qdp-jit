@@ -2297,18 +2297,6 @@ where(const RScalarJIT<T1>& a, const RScalarJIT<T2>& b, const RComplexJIT<T3>& c
 
 
 
-//! dest  = random  
-template<class T, class T1, class T2, class T3>
-inline void
-fill_random(RComplexJIT<T>& d, T1& seed, T2& skewed_seed, const T3& seed_mult)
-{
-  //d.func().insert_label("before_real");    
-  fill_random(d.real(), seed, skewed_seed, seed_mult);
-  //d.func().insert_label("before_imag");    
-  fill_random(d.imag(), seed, skewed_seed, seed_mult);
-}
-
-
 template<class T>
 inline void
 get_pred(int& pred, const RScalarJIT<T>& d)
@@ -2419,6 +2407,15 @@ inline void
 fill_random(RScalarJIT<T>& d, T1& seed, T2& skewed_seed, const T3& seed_mult)
 {
   fill_random(d.elem(), seed, skewed_seed, seed_mult);
+}
+
+
+template<class T, class T1, class T2, class T3>
+inline void
+fill_random(RComplexJIT<T>& d, T1& seed, T2& skewed_seed, const T3& seed_mult)
+{
+  fill_random(d.real(), seed, skewed_seed, seed_mult);
+  fill_random(d.imag(), seed, skewed_seed, seed_mult);
 }
 
 
