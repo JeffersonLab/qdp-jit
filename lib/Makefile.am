@@ -28,7 +28,6 @@ lib_LIBRARIES = libqdp.a
 BUILT_SOURCES = func_sin_f32.inc \
 		func_asin_f32.inc \
 		func_atan_f32.inc \
-		func_ceil_f32.inc \
 		func_cos_f32.inc \
 		func_cosh_f32.inc \
 		func_exp_f32.inc \

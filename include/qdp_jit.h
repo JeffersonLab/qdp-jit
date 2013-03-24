@@ -582,6 +582,20 @@ namespace QDP {
     virtual int operator()(int i0) const { return floor(i0); }
   };
 
+  class JitUnaryOpCeil: public JitUnaryOp {
+  public:
+    JitUnaryOpCeil( int type_ ): JitUnaryOp(type_) {}
+    virtual std::ostream& writeToStream( std::ostream& stream ) const {
+      stream << "cvt.rpi."
+	     << jit_get_ptx_type( type )
+	     << "."
+	     << jit_get_ptx_type( type );
+      return stream;
+    }
+    virtual float operator()(float f0) const { return ceil(f0); }
+    virtual int operator()(int i0) const { return ceil(i0); }
+  };
+
 
 }
 

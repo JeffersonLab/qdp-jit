@@ -4,7 +4,6 @@
 #include "../lib/func_acos_f32.inc"
 #include "../lib/func_asin_f32.inc"
 #include "../lib/func_atan_f32.inc"
-#include "../lib/func_ceil_f32.inc"
 #include "../lib/func_cos_f32.inc"
 #include "../lib/func_cosh_f32.inc"
 #include "../lib/func_exp_f32.inc"
@@ -44,24 +43,22 @@ namespace QDP {
       map_ptx_math_functions[3] = 
 	std::make_pair("func_atan_f32",std::string( (const char *)func_atan_f32_ptx , func_atan_f32_ptx_len ));
       map_ptx_math_functions[4] = 
-	std::make_pair("func_ceil_f32",std::string( (const char *)func_ceil_f32_ptx , func_ceil_f32_ptx_len ));
-      map_ptx_math_functions[5] = 
 	std::make_pair("func_cos_f32",std::string( (const char *)func_cos_f32_ptx , func_cos_f32_ptx_len ));
-      map_ptx_math_functions[6] = 
+      map_ptx_math_functions[5] = 
 	std::make_pair("func_cosh_f32",std::string( (const char *)func_cosh_f32_ptx , func_cosh_f32_ptx_len ));
-      map_ptx_math_functions[7] = 
+      map_ptx_math_functions[6] = 
 	std::make_pair("func_exp_f32",std::string( (const char *)func_exp_f32_ptx , func_exp_f32_ptx_len ));
-      map_ptx_math_functions[8] = 
+      map_ptx_math_functions[7] = 
 	std::make_pair("func_log_f32",std::string( (const char *)func_log_f32_ptx , func_log_f32_ptx_len ));
-      map_ptx_math_functions[9] = 
+      map_ptx_math_functions[8] = 
 	std::make_pair("func_log10_f32",std::string( (const char *)func_log10_f32_ptx , func_log10_f32_ptx_len ));
-      map_ptx_math_functions[10] = 
+      map_ptx_math_functions[9] = 
 	std::make_pair("func_sinh_f32",std::string( (const char *)func_sinh_f32_ptx , func_sinh_f32_ptx_len ));
-      map_ptx_math_functions[11] = 
+      map_ptx_math_functions[10] = 
 	std::make_pair("func_sqrt_f32",std::string( (const char *)func_sqrt_f32_ptx , func_sqrt_f32_ptx_len ));
-      map_ptx_math_functions[12] = 
+      map_ptx_math_functions[11] = 
 	std::make_pair("func_tan_f32",std::string( (const char *)func_tan_f32_ptx , func_tan_f32_ptx_len ));
-      map_ptx_math_functions[13] = 
+      map_ptx_math_functions[12] = 
 	std::make_pair("func_tanh_f32",std::string( (const char *)func_tanh_f32_ptx , func_tanh_f32_ptx_len ));
       return map_ptx_math_functions;
     }
@@ -886,6 +883,9 @@ void jit_function::write_reg_defs()
   jit_value_t jit_ins_floor( jit_value_t rhs , jit_value_t pred ) {
     return jit_ins_unary_op( rhs , JitUnaryOpFloor( rhs->get_type() ) , pred );
   }
+  jit_value_t jit_ins_ceil( jit_value_t rhs , jit_value_t pred ) {
+    return jit_ins_unary_op( rhs , JitUnaryOpCeil( rhs->get_type() ) , pred );
+  }
 
 
 
@@ -909,16 +909,15 @@ void jit_function::write_reg_defs()
   jit_value_t jit_ins_acos( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 1 , lhs , pred ); }
   jit_value_t jit_ins_asin( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 2 , lhs , pred ); }
   jit_value_t jit_ins_atan( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 3 , lhs , pred ); }
-  jit_value_t jit_ins_ceil( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 4 , lhs , pred ); }
-  jit_value_t jit_ins_cos( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 5 , lhs , pred ); }
-  jit_value_t jit_ins_cosh( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 6 , lhs , pred ); }
-  jit_value_t jit_ins_exp( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 7 , lhs , pred ); }
-  jit_value_t jit_ins_log( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 8 , lhs , pred ); }
-  jit_value_t jit_ins_log10( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 9 , lhs , pred ); }
-  jit_value_t jit_ins_sinh( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 10 , lhs , pred ); }
-  jit_value_t jit_ins_sqrt( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 11 , lhs , pred ); }
-  jit_value_t jit_ins_tan( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 12 , lhs , pred ); }
-  jit_value_t jit_ins_tanh( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 13 , lhs , pred ); }
+  jit_value_t jit_ins_cos( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 4 , lhs , pred ); }
+  jit_value_t jit_ins_cosh( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 5 , lhs , pred ); }
+  jit_value_t jit_ins_exp( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 6 , lhs , pred ); }
+  jit_value_t jit_ins_log( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 7 , lhs , pred ); }
+  jit_value_t jit_ins_log10( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 8 , lhs , pred ); }
+  jit_value_t jit_ins_sinh( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 9 , lhs , pred ); }
+  jit_value_t jit_ins_sqrt( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 10 , lhs , pred ); }
+  jit_value_t jit_ins_tan( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 11 , lhs , pred ); }
+  jit_value_t jit_ins_tanh( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 12 , lhs , pred ); }
 
 
   void jit_ins_mov_no_create( jit_value_t dest , jit_value_t src , jit_value_t pred ){
