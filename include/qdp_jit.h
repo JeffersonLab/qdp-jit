@@ -74,7 +74,9 @@ namespace QDP {
     int param_count;
     int local_count;
     bool m_shared;
+    bool m_emit_sin_f32;
   public:
+    void emit_sin_f32() { m_emit_sin_f32 = true; }
     void emitShared();
     int local_alloc( int type, int count );
     void write_reg_defs();
@@ -241,6 +243,7 @@ namespace QDP {
 
   // Unary operations
   jit_value_t jit_ins_neg( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_sin( jit_value_t lhs , jit_value_t pred=jit_value_t() );
 
   // Select
   jit_value_t jit_ins_selp( jit_function_t func , jit_value_t lhs , jit_value_t rhs , jit_value_t p );

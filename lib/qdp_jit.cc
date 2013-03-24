@@ -1,5 +1,9 @@
 #include "qdp.h"
 
+extern char _binary__home_fwinter_git_qdp_jit_lib_ptx_func_sin_f32_ptx_start;
+extern char _binary__home_fwinter_git_qdp_jit_lib_ptx_func_sin_f32_ptx_size;
+extern char _binary__home_fwinter_git_qdp_jit_lib_ptx_func_sin_f32_ptx_end;
+
 namespace QDP {
 
   int jit_label::count = 0;
@@ -221,7 +225,8 @@ namespace QDP {
 						    reg_count( jit_number_of_types() ), 
 						    param_count(0), 
 						    local_count(0),
-						    m_shared(false)
+						    m_shared(false),
+						    m_emit_sin_f32(false)
   {
     // std::cout << "Constructing function " << fname 
     // 	      << "reg_count vector size = " << reg_count.size() << "\n";
@@ -291,8 +296,17 @@ void jit_function::write_reg_defs()
       out << ".version 1.4\n";
       out << ".target sm_" << major << minor << "\n";
     }
+
     if (m_shared)
       out << ".extern .shared .align 4 .b8 sdata[];\n";
+
+    if (m_emit_sin_f32) {
+      std::cout << "emmiting sin\n";
+      std::string prg( (const char *)&_binary__home_fwinter_git_qdp_jit_lib_ptx_func_sin_f32_ptx_start ,
+		       (size_t)&_binary__home_fwinter_git_qdp_jit_lib_ptx_func_sin_f32_ptx_size );
+      out << prg << "\n";
+    }
+
     out << ".entry function (" 
 	<< get_signature().str() 
 	<< ")\n" 
@@ -804,6 +818,21 @@ void jit_function::write_reg_defs()
 
   jit_value_t jit_ins_neg( jit_value_t rhs , jit_value_t pred ) {
     return jit_ins_unary_op( rhs , JitUnaryOpNeg( rhs->get_type() ) , pred );
+  }
+
+
+
+  jit_value_t jit_ins_sin( jit_value_t lhs , jit_value_t pred ) {
+    jit_function_t func = getFunc(lhs);
+    jit_value_t ret = jit_val_create_new( func , jit_ptx_type::f32 );
+    func->get_prg() << jit_predicate(pred)
+		    << "call (" 
+		    << jit_get_reg_name( ret ) 
+		    << "),func_sin_f32,(" 
+		    << jit_get_reg_name( lhs ) 
+		    << ");\n";
+    func->emit_sin_f32();
+    return ret;
   }
 
 

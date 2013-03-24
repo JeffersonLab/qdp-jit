@@ -161,6 +161,8 @@ CUDA_HDRS = qdp_cuda.h \
             qdp_handle.h qdp_mastermap.h qdp_autotuning.h qdp_randomjit.h qdp_sum.h \
             qdp_jitf_copymask.h qdp_jitf_sum.h qdp_jitf_gaussian.h qdp_internal.h qdp_newopsreg.h
 
+
+
 # All the include files - avoid flattening of dirs by using nobase
 nobase_include_HEADERS = \
 		qdp_config.h \
@@ -237,6 +239,7 @@ nobase_include_HEADERS = \
 		$(SSEVEC_HDRS) \
 	        $(BAGEL_HDRS) \
 	        $(CUDA_HDRS)
+
 
 nodist_include_HEADERS = qdp_config_internal.h
 
