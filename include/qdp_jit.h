@@ -75,10 +75,15 @@ namespace QDP {
     int local_count;
     bool m_shared;
     std::vector<bool> m_include_math_ptx_unary;
+    std::vector<bool> m_include_math_ptx_binary;
   public:
     void set_include_math_ptx_unary(int i) { 
       assert(m_include_math_ptx_unary.size()>i); 
       m_include_math_ptx_unary.at(i) = true; 
+    }
+    void set_include_math_ptx_binary(int i) { 
+      assert(m_include_math_ptx_binary.size()>i); 
+      m_include_math_ptx_binary.at(i) = true; 
     }
     void emitShared();
     int local_alloc( int type, int count );
@@ -252,7 +257,6 @@ namespace QDP {
   // Imported PTX Unary operations
   jit_value_t jit_ins_sin( jit_value_t lhs , jit_value_t pred=jit_value_t() );
   jit_value_t jit_ins_acos( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-
   jit_value_t jit_ins_asin( jit_value_t lhs , jit_value_t pred=jit_value_t() );
   jit_value_t jit_ins_atan( jit_value_t lhs , jit_value_t pred=jit_value_t() );
   jit_value_t jit_ins_ceil( jit_value_t lhs , jit_value_t pred=jit_value_t() );
@@ -266,9 +270,10 @@ namespace QDP {
   jit_value_t jit_ins_tan( jit_value_t lhs , jit_value_t pred=jit_value_t() );
   jit_value_t jit_ins_tanh( jit_value_t lhs , jit_value_t pred=jit_value_t() );
 
+  // Imported PTX Binary operations
+  jit_value_t jit_ins_pow( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_atan2( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
 
-  //pow
-  //atan2
 
 
   // Select

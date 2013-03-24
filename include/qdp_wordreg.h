@@ -698,7 +698,9 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, FnPow>::Type_t
 pow(const WordREG<T1>& s1, const WordREG<T2>& s2)
 {
-  return pow(s1.elem(), s2.elem());
+  typename UnaryReturn<WordREG<T1>, FnHypTan>::Type_t ret;
+  ret.setup( jit_ins_pow( s1.get_val() , s2.get_val() ) );
+  return ret;
 }
 
 //! WordREG<T> = atan2(WordREG<T> , WordREG<T>)
@@ -706,7 +708,9 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, FnArcTan2>::Type_t
 atan2(const WordREG<T1>& s1, const WordREG<T2>& s2)
 {
-  return atan2(s1.elem(), s2.elem());
+  typename UnaryReturn<WordREG<T1>, FnArcTan2>::Type_t ret;
+  ret.setup( jit_ins_atan2( s1.get_val() , s2.get_val() ) );
+  return ret;
 }
 
 

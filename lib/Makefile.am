@@ -37,6 +37,8 @@ BUILT_SOURCES = func_sin_f32.inc \
 		func_sqrt_f32.inc \
 		func_tan_f32.inc \
 		func_tanh_f32.inc \
+		func_pow_f32.inc \
+		func_atan2_f32.inc \
 		func_acos_f32.inc
 
 ## Base set of sources and conditionally included sources
