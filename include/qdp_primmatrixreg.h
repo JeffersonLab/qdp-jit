@@ -1525,28 +1525,6 @@ fill_gaussian(PMatrixREG<T,N,C>& d, PMatrixREG<T,N,C>& r1, PMatrixREG<T,N,C>& r2
 }
 
 
-#if 0
-template<class T0,class T1,class T2, int N, 
-	 template<class,int> class C1,
-	 template<class,int> class C2>
-inline typename TrinaryReturn<PScalarREG<T0>, PMatrixREG<T1,N,C1>, PMatrixREG<T2,N,C2>, FnWhere >::Type_t
-do_where(const PScalarREG<T0> &a, const PMatrixREG<T1,N,C1> &b, const PMatrixREG<T2,N,C2> &c)
-{
-  int pred;
-  get_pred( pred , a );
-
-  typename TrinaryReturn<PScalarREG<T0>, PMatrixREG<T1,N,C1>, PMatrixREG<T2,N,C2>, FnWhere >::Type_t ret;
-
-  a.func().addCondBranchPred_if( pred );
-  ret = b;
-  a.func().addCondBranchPred_else();
-  ret = c;
-  a.func().addCondBranchPred_fi();
-
-  return ret;
-}
-#endif
-
 
 #if 0
 // Global sum over site indices only

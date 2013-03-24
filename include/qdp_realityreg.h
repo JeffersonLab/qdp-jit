@@ -1689,13 +1689,6 @@ where(const RScalarREG<T1>& a, const RScalarREG<T2>& b, const RScalarREG<T3>& c)
 }
 
 
-template<class T1, class T2, class T3>
-inline typename TrinaryReturn<RScalarREG<T1>, RScalarREG<T2>, RScalarREG<T3>, FnWhere >::Type_t
-do_where(const RScalarREG<T1> &a, const RScalarREG<T2> &b, const RScalarREG<T3> &c)
-{
-  return do_where( a.elem() , b.elem() , c.elem() );
-}
-
 
 //-----------------------------------------------------------------------------
 // Broadcast operations

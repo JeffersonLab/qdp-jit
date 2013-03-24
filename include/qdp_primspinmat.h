@@ -342,14 +342,6 @@ struct BinaryReturn<PSpinMatrix<T2,N>, GammaTypeDP<N>, OpMultiplyGammaTypeDP> {
 
 
 
-  template<class T0,class T1,class T2, int N >
-  inline typename TrinaryReturn<PScalar<T0>, PSpinMatrix<T1,N>, PSpinMatrix<T2,N>, FnWhere >::Type_t
-  do_where(const PScalar<T0> &a, const PSpinMatrix<T1,N> &b, const PSpinMatrix<T2,N> &c)
-{
-  if (toBool(a)) return b; else return c;
-}
-
-
 
 
 //-----------------------------------------------------------------------------

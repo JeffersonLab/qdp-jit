@@ -1403,28 +1403,6 @@ get_pred(int& pred, const PScalarREG<T>& d)
 
 
 
-template<class T1, class T2, class T3>
-inline typename TrinaryReturn<PScalarREG<T1>, PScalarREG<T2>, PScalarREG<T3>, FnWhere >::Type_t
-do_where(const PScalarREG<T1> &a, const PScalarREG<T2> &b, const PScalarREG<T3> &c)
-{
-  return do_where( a.elem() , b.elem() , c.elem() );
-#if 0
-  int pred;
-  get_pred( pred , a );
-
-  typename TrinaryReturn<PScalarREG<T1>, PScalarREG<T2>, PScalarREG<T3>, FnWhere >::Type_t ret(a.func());
-
-  a.func().addCondBranchPred_if( pred );
-  ret = b;
-  a.func().addCondBranchPred_else();
-  ret = c;
-  a.func().addCondBranchPred_fi();
-
-  return ret;
-#endif
-}
-
-
 //! dest  = gaussian  
 template<class T>
 inline void

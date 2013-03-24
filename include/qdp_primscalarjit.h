@@ -1387,24 +1387,6 @@ get_pred(int& pred, const PScalarJIT<T>& d)
 
 
 
-template<class T1, class T2, class T3>
-inline typename TrinaryReturn<PScalarJIT<T1>, PScalarJIT<T2>, PScalarJIT<T3>, FnWhere >::Type_t
-do_where(const PScalarJIT<T1> &a, const PScalarJIT<T2> &b, const PScalarJIT<T3> &c)
-{
-  int pred;
-  get_pred( pred , a );
-
-  typename TrinaryReturn<PScalarJIT<T1>, PScalarJIT<T2>, PScalarJIT<T3>, FnWhere >::Type_t ret(a.func());
-
-  a.func().addCondBranchPred_if( pred );
-  ret = b;
-  a.func().addCondBranchPred_else();
-  ret = c;
-  a.func().addCondBranchPred_fi();
-
-  return ret;
-}
-
 
 //! dest  = gaussian  
 template<class T>

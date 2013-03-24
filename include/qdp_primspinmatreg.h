@@ -372,28 +372,6 @@ struct BinaryReturn<PSpinMatrixREG<T2,N>, GammaTypeDP<N>, OpMultiplyGammaTypeDP>
 
 
 
-  template<class T0,class T1,class T2, int N >
-  inline typename TrinaryReturn<PScalarREG<T0>, PSpinMatrixREG<T1,N>, PSpinMatrixREG<T2,N>, FnWhere >::Type_t
-  do_where(const PScalarREG<T0> &a, const PSpinMatrixREG<T1,N> &b, const PSpinMatrixREG<T2,N> &c)
-{
-  assert(!"ni");
-#if 0
-  int pred;
-  get_pred( pred , a );
-
-  typename TrinaryReturn<PScalarREG<T0>, PSpinMatrixREG<T1,N>, PSpinMatrixREG<T2,N>, FnWhere >::Type_t ret;
-
-  a.func().addCondBranchPred_if( pred );
-  ret = b;
-  a.func().addCondBranchPred_else();
-  ret = c;
-  a.func().addCondBranchPred_fi();
-
-  return ret;
-#endif
-}
-
-
 
 
 //-----------------------------------------------------------------------------

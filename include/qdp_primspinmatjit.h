@@ -354,27 +354,6 @@ struct BinaryReturn<PSpinMatrixJIT<T2,N>, GammaTypeDP<N>, OpMultiplyGammaTypeDP>
 
 
 
-  template<class T0,class T1,class T2, int N >
-  inline typename TrinaryReturn<PScalarJIT<T0>, PSpinMatrixJIT<T1,N>, PSpinMatrixJIT<T2,N>, FnWhere >::Type_t
-  do_where(const PScalarJIT<T0> &a, const PSpinMatrixJIT<T1,N> &b, const PSpinMatrixJIT<T2,N> &c)
-{
-  int pred;
-  get_pred( pred , a );
-
-  typename TrinaryReturn<PScalarJIT<T0>, PSpinMatrixJIT<T1,N>, PSpinMatrixJIT<T2,N>, FnWhere >::Type_t ret(a.func());
-
-  a.func().addCondBranchPred_if( pred );
-  ret = b;
-  a.func().addCondBranchPred_else();
-  ret = c;
-  a.func().addCondBranchPred_fi();
-
-  return ret;
-}
-
-
-
-
 //-----------------------------------------------------------------------------
 // Operators
 //-----------------------------------------------------------------------------

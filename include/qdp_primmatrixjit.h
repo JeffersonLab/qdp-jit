@@ -1521,28 +1521,6 @@ fill_gaussian(PMatrixJIT<T,N,C>& d, PMatrixJIT<T,N,C>& r1, PMatrixJIT<T,N,C>& r2
 }
 
 
-#if 0
-template<class T0,class T1,class T2, int N, 
-	 template<class,int> class C1,
-	 template<class,int> class C2>
-inline typename TrinaryReturn<PScalarJIT<T0>, PMatrixJIT<T1,N,C1>, PMatrixJIT<T2,N,C2>, FnWhere >::Type_t
-do_where(const PScalarJIT<T0> &a, const PMatrixJIT<T1,N,C1> &b, const PMatrixJIT<T2,N,C2> &c)
-{
-  int pred;
-  get_pred( pred , a );
-
-  typename TrinaryReturn<PScalarJIT<T0>, PMatrixJIT<T1,N,C1>, PMatrixJIT<T2,N,C2>, FnWhere >::Type_t ret(a.func());
-
-  a.func().addCondBranchPred_if( pred );
-  ret = b;
-  a.func().addCondBranchPred_else();
-  ret = c;
-  a.func().addCondBranchPred_fi();
-
-  return ret;
-}
-#endif
-
 
 #if 0
 // Global sum over site indices only
