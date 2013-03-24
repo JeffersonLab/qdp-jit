@@ -1,8 +1,6 @@
 #include "qdp.h"
 
-extern char _binary__home_fwinter_git_qdp_jit_lib_ptx_func_sin_f32_ptx_start;
-extern char _binary__home_fwinter_git_qdp_jit_lib_ptx_func_sin_f32_ptx_size;
-extern char _binary__home_fwinter_git_qdp_jit_lib_ptx_func_sin_f32_ptx_end;
+#include "../lib/func_sin_f32.inc"
 
 namespace QDP {
 
@@ -302,8 +300,7 @@ void jit_function::write_reg_defs()
 
     if (m_emit_sin_f32) {
       std::cout << "emmiting sin\n";
-      std::string prg( (const char *)&_binary__home_fwinter_git_qdp_jit_lib_ptx_func_sin_f32_ptx_start ,
-		       (size_t)&_binary__home_fwinter_git_qdp_jit_lib_ptx_func_sin_f32_ptx_size );
+      std::string prg( (const char *)func_sin_f32_ptx , func_sin_f32_ptx_len );
       out << prg << "\n";
     }
 

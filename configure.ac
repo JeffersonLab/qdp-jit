@@ -6,6 +6,7 @@ AC_LANG([C++])
 AC_PROG_CXX(g++ cxx CC)
 AC_PROG_RANLIB
 AC_CHECK_TOOL(AR, ar, [ar])
+AC_CHECK_TOOL(XXD, xxd, [xxd])
 
 dnl Initialise automake
 AM_INIT_AUTOMAKE
