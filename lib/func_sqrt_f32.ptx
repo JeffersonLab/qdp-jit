@@ -1,0 +1,85 @@
+	.func (.reg .f32 res) func_sqrt_f32 ( .reg .f32 arg)
+	{
+	.reg .u32 %r<39>;
+	.reg .u64 %rd<3>;
+	.reg .f32 %f<6>;
+	.reg .pred %p<6>;
+	.loc	14	5	0
+$LDWbegin__Z6kernelPff:
+	.loc	14	6	0
+	mov.f32 	%f1, arg;
+	mov.b32 	%r1, %f1;
+	shr.u32 	%r2, %r1, 23;
+	sub.u32 	%r3, %r2, 1;
+	mov.u32 	%r4, 253;
+	setp.gt.u32 	%p1, %r3, %r4;
+	@%p1 bra 	$Lt_0_3842;
+	.loc	18	2687	0
+	shl.b32 	%r5, %r1, 8;
+	shl.b32 	%r6, %r1, 8;
+	shr.u32 	%r7, %r6, 31;
+	or.b32 	%r8, %r1, 1;
+	or.b32 	%r9, %r5, -2147483648;
+	mov.b32 	%f2, %r8;
+	shr.u32 	%r10, %r9, %r7;
+	rsqrt.approx.f32 	%f3, %f2;
+	mov.b32 	%r11, %f3;
+	and.b32 	%r12, %r11, 16777215;
+	or.b32 	%r13, %r12, 8388608;
+	shl.b32 	%r14, %r13, 7;
+	mul.hi.u32 	%r15, %r14, %r14;
+	mul.hi.u32 	%r16, %r10, %r15;
+	mov.s32 	%r17, 805306368;
+	sub.s32 	%r18, %r17, %r16;
+	mul.hi.u32 	%r19, %r18, %r14;
+	.loc	18	2689	0
+	mul.hi.u32 	%r20, %r10, %r19;
+	.loc	18	2691	0
+	shr.u32 	%r21, %r20, 3;
+	mul.lo.u32 	%r22, %r21, %r21;
+	shl.b32 	%r23, %r10, 16;
+	sub.u32 	%r24, %r23, %r22;
+	mov.s32 	%r25, %r24;
+	.loc	18	2693	0
+	mul.lo.u32 	%r26, %r21, 2;
+	sub.u32 	%r27, %r24, %r26;
+	sub.u32 	%r28, %r27, 1;
+	mov.s32 	%r29, %r28;
+	mov.u32 	%r30, 0;
+	setp.ge.s32 	%p2, %r28, %r30;
+	@%p2 bra 	$Lt_0_4354;
+	.loc	18	2694	0
+	neg.s32 	%r29, %r28;
+$Lt_0_4354:
+	mov.u32 	%r31, 0;
+	setp.ge.s32 	%p3, %r24, %r31;
+	@%p3 bra 	$Lt_0_4866;
+	.loc	18	2695	0
+	neg.s32 	%r25, %r24;
+$Lt_0_4866:
+	.loc	18	2696	0
+	add.u32 	%r32, %r21, 1;
+	setp.lt.u32 	%p4, %r29, %r25;
+	selp.u32 	%r33, %r32, %r21, %p4;
+	.loc	18	2697	0
+	add.u32 	%r34, %r2, 125;
+	and.b32 	%r35, %r34, -2;
+	shl.b32 	%r36, %r35, 22;
+	add.u32 	%r37, %r33, %r36;
+	.loc	18	2698	0
+	mov.b32 	%f4, %r37;
+	bra.uni 	$LDWendi___fsqrt_rn_243_1;
+$Lt_0_3842:
+	.loc	14	6	0
+	mov.f32 	%f1, arg;
+	.loc	18	2700	0
+	sqrt.approx.f32 	%f4, %f1;
+$LDWendi___fsqrt_rn_243_1:
+	.loc	14	6	0
+	mov.f32 	res, %f4;
+	.loc	14	7	0
+	ret;
+$LDWend__Z6kernelPff:
+	} // _Z6kernelPff
+
+

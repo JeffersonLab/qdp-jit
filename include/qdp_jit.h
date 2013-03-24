@@ -74,9 +74,12 @@ namespace QDP {
     int param_count;
     int local_count;
     bool m_shared;
-    bool m_emit_sin_f32;
+    std::vector<bool> m_include_math_ptx_unary;
   public:
-    void emit_sin_f32() { m_emit_sin_f32 = true; }
+    void set_include_math_ptx_unary(int i) { 
+      assert(m_include_math_ptx_unary.size()>i); 
+      m_include_math_ptx_unary.at(i) = true; 
+    }
     void emitShared();
     int local_alloc( int type, int count );
     void write_reg_defs();
@@ -241,9 +244,32 @@ namespace QDP {
   jit_value_t jit_ins_le( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
   jit_value_t jit_ins_gt( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
 
-  // Unary operations
+  // Native PTX Unary operations
   jit_value_t jit_ins_neg( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_fabs( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_floor( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+
+  // Imported PTX Unary operations
   jit_value_t jit_ins_sin( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_acos( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+
+  jit_value_t jit_ins_asin( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_atan( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_ceil( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_cos( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_cosh( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_exp( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_log( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_log10( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_sinh( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_sqrt( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_tan( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_tanh( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+
+
+  //pow
+  //atan2
+
 
   // Select
   jit_value_t jit_ins_selp( jit_function_t func , jit_value_t lhs , jit_value_t rhs , jit_value_t p );
@@ -528,6 +554,32 @@ namespace QDP {
     }
     virtual float operator()(float f0) const { return -f0; }
     virtual int operator()(int i0) const { return -i0; }
+  };
+
+  class JitUnaryOpAbs: public JitUnaryOp {
+  public:
+    JitUnaryOpAbs( int type_ ): JitUnaryOp(type_) {}
+    virtual std::ostream& writeToStream( std::ostream& stream ) const {
+      stream << "abs."
+	     << jit_get_ptx_type( type );
+      return stream;
+    }
+    virtual float operator()(float f0) const { return fabs(f0); }
+    virtual int operator()(int i0) const { return fabs(i0); }
+  };
+
+  class JitUnaryOpFloor: public JitUnaryOp {
+  public:
+    JitUnaryOpFloor( int type_ ): JitUnaryOp(type_) {}
+    virtual std::ostream& writeToStream( std::ostream& stream ) const {
+      stream << "cvt.rmi."
+	     << jit_get_ptx_type( type )
+	     << "."
+	     << jit_get_ptx_type( type );
+      return stream;
+    }
+    virtual float operator()(float f0) const { return floor(f0); }
+    virtual int operator()(int i0) const { return floor(i0); }
   };
 
 

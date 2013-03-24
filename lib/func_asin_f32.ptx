@@ -1,0 +1,80 @@
+	.func (.reg .f32 res) func_asin_f32 ( .reg .f32 arg)
+	{
+	.reg .u32 %r<6>;
+	.reg .u64 %rd<3>;
+	.reg .f32 %f<49>;
+	.reg .pred %p<4>;
+	.loc	14	5	0
+$LDWbegin__Z6kernelPff:
+	.loc	16	8429	0
+	mov.f32 	%f1, arg;
+	abs.f32 	%f2, %f1;
+	mov.f32 	%f3, 0f3f11eb85;     	// 0.57
+	setp.gt.f32 	%p1, %f2, %f3;
+	mov.f32 	%f4, 0f3f800000;     	// 1
+	sub.f32 	%f5, %f4, %f2;
+	mov.f32 	%f6, 0f3f000000;     	// 0.5
+	mul.f32 	%f7, %f5, %f6;
+	sqrt.approx.f32 	%f8, %f7;
+	selp.f32 	%f9, %f8, %f2, %p1;
+	mul.f32 	%f10, %f9, %f9;
+	mov.f32 	%f11, 0f3d53f941;    	// 0.0517514
+	mov.f32 	%f12, %f11;
+	mov.f32 	%f13, %f10;
+	mov.f32 	%f14, 0f3c94d2e9;    	// 0.018167
+	mov.f32 	%f15, %f14;
+	mad.f32 %f16, %f12, %f13, %f15;
+	mov.f32 	%f17, %f16;
+	mov.f32 	%f18, %f17;
+	mov.f32 	%f19, %f10;
+	mov.f32 	%f20, 0f3d3f841f;    	// 0.0467569
+	mov.f32 	%f21, %f20;
+	mad.f32 %f22, %f18, %f19, %f21;
+	mov.f32 	%f17, %f22;
+	mov.f32 	%f23, %f17;
+	mov.f32 	%f24, %f10;
+	mov.f32 	%f25, 0f3d994929;    	// 0.0748466
+	mov.f32 	%f26, %f25;
+	mad.f32 %f27, %f23, %f24, %f26;
+	mov.f32 	%f17, %f27;
+	mov.f32 	%f28, %f17;
+	mov.f32 	%f29, %f10;
+	mov.f32 	%f30, 0f3e2aab94;    	// 0.16667
+	mov.f32 	%f31, %f30;
+	mad.f32 %f32, %f28, %f29, %f31;
+	mov.f32 	%f17, %f32;
+	mul.f32 	%f33, %f10, %f17;
+	mov.f32 	%f34, %f33;
+	mov.f32 	%f35, %f9;
+	mov.f32 	%f36, %f9;
+	mad.f32 %f37, %f34, %f35, %f36;
+	mov.f32 	%f17, %f37;
+	mov.f32 	%f38, 0fc0000000;    	// -2
+	mov.f32 	%f39, %f38;
+	mov.f32 	%f40, %f17;
+	mov.f32 	%f41, 0f3fc90fdb;    	// 1.5708
+	mov.f32 	%f42, %f41;
+	mad.f32 %f43, %f39, %f40, %f42;
+	mov.f32 	%f44, %f43;
+	.loc	16	9331	0
+	selp.f32 	%f45, %f44, %f17, %p1;
+	mov.f32 	%f46, %f45;
+	mov.f32 	%f47, 0f7f800000;    	// ((1.0F)/(0.0F))
+	setp.le.f32 	%p2, %f45, %f47;
+	@!%p2 bra 	$Lt_0_2562;
+	.loc	16	9338	0
+	mov.b32 	%r1, %f45;
+	.loc	16	8429	0
+	mov.f32 	%f1, arg;
+	.loc	16	9338	0
+	mov.b32 	%r2, %f1;
+	and.b32 	%r3, %r2, -2147483648;
+	or.b32 	%r4, %r1, %r3;
+	mov.b32 	%f46, %r4;
+$Lt_0_2562:
+	.loc	14	6	0
+	mov.f32 	res, %f46;
+	.loc	14	7	0
+	ret;
+$LDWend__Z6kernelPff:
+	} // _Z6kernelPff

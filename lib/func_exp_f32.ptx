@@ -1,0 +1,48 @@
+	.func (.reg .f32 res) func_exp_f32 ( .reg .f32 arg)
+	{
+	.reg .u64 %rd<3>;
+	.reg .f32 %f<29>;
+	.reg .pred %p<4>;
+	.loc	14	5	0
+$LDWbegin__Z6kernelPff:
+	.loc	16	8429	0
+	mov.f32 	%f1, arg;
+	mov.f32 	%f2, 0f3fb8aa3b;     	// 1.4427
+	mul.f32 	%f3, %f1, %f2;
+	cvt.rzi.f32.f32 	%f4, %f3;
+	mov.f32 	%f5, %f4;
+	mov.f32 	%f6, 0fbf317200;     	// -0.693146
+	mov.f32 	%f7, %f6;
+	mov.f32 	%f8, %f1;
+	mad.f32 %f9, %f5, %f7, %f8;
+	mov.f32 	%f10, %f9;
+	mov.f32 	%f11, %f4;
+	mov.f32 	%f12, 0fb5bfbe8e;    	// -1.42861e-06
+	mov.f32 	%f13, %f12;
+	mov.f32 	%f14, %f10;
+	mad.f32 %f15, %f11, %f13, %f14;
+	mov.f32 	%f16, %f15;
+	.loc	14	6	0
+	mov.f32 	%f17, 0f7f800000;    	// ((1.0F)/(0.0F))
+	mov.f32 	%f18, 0f00000000;    	// 0
+	ex2.approx.f32 	%f19, %f4;
+	mov.f32 	%f20, 0f3fb8aa3b;    	// 1.4427
+	mul.f32 	%f21, %f16, %f20;
+	ex2.approx.f32 	%f22, %f21;
+	mul.f32 	%f23, %f19, %f22;
+	mov.f32 	%f24, 0fc2d20000;    	// -105
+	.loc	16	8429	0
+	mov.f32 	%f1, arg;
+	.loc	14	6	0
+	setp.lt.f32 	%p1, %f1, %f24;
+	selp.f32 	%f25, %f18, %f23, %p1;
+	mov.f32 	%f26, 0f42d20000;    	// 105
+	setp.gt.f32 	%p2, %f1, %f26;
+	selp.f32 	%f27, %f17, %f25, %p2;
+	mov.f32 	res, %f27;
+	.loc	14	7	0
+	ret;
+$LDWend__Z6kernelPff:
+	} // _Z6kernelPff
+
+

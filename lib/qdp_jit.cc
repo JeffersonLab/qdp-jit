@@ -1,6 +1,21 @@
 #include "qdp.h"
 
 #include "../lib/func_sin_f32.inc"
+#include "../lib/func_acos_f32.inc"
+#include "../lib/func_asin_f32.inc"
+#include "../lib/func_atan_f32.inc"
+#include "../lib/func_ceil_f32.inc"
+#include "../lib/func_cos_f32.inc"
+#include "../lib/func_cosh_f32.inc"
+#include "../lib/func_exp_f32.inc"
+#include "../lib/func_log_f32.inc"
+#include "../lib/func_log10_f32.inc"
+#include "../lib/func_sinh_f32.inc"
+#include "../lib/func_sqrt_f32.inc"
+#include "../lib/func_tan_f32.inc"
+#include "../lib/func_tanh_f32.inc"
+
+
 
 namespace QDP {
 
@@ -16,6 +31,41 @@ namespace QDP {
     // { "f32","f64","u16","u32","u64","s16","s32","s64", "u8","b16","b32","b64","pred" };
     // { "f"  ,"d"  ,"h"  ,"u"  ,"w"  ,"q"  ,"i"  ,"l"  ,"s"  ,"x"  ,"y"  ,"z"  ,"p" };
     // { ""   ,""   ,"lo.","lo.","lo.","lo.","lo.","lo.","lo.",""   ,""   ,""   ,"" };
+
+    std::map< int , std::pair<const char *,std::string> > create_ptx_math_functions()
+    {
+      std::map< int , std::pair<const char *,std::string> > map_ptx_math_functions;
+      map_ptx_math_functions[0] = 
+	std::make_pair("func_sin_f32",std::string(  (const char *)func_sin_f32_ptx  , func_sin_f32_ptx_len ));
+      map_ptx_math_functions[1] = 
+	std::make_pair("func_acos_f32",std::string( (const char *)func_acos_f32_ptx , func_acos_f32_ptx_len ));
+      map_ptx_math_functions[2] = 
+	std::make_pair("func_asin_f32",std::string( (const char *)func_asin_f32_ptx , func_asin_f32_ptx_len ));
+      map_ptx_math_functions[3] = 
+	std::make_pair("func_atan_f32",std::string( (const char *)func_atan_f32_ptx , func_atan_f32_ptx_len ));
+      map_ptx_math_functions[4] = 
+	std::make_pair("func_ceil_f32",std::string( (const char *)func_ceil_f32_ptx , func_ceil_f32_ptx_len ));
+      map_ptx_math_functions[5] = 
+	std::make_pair("func_cos_f32",std::string( (const char *)func_cos_f32_ptx , func_cos_f32_ptx_len ));
+      map_ptx_math_functions[6] = 
+	std::make_pair("func_cosh_f32",std::string( (const char *)func_cosh_f32_ptx , func_cosh_f32_ptx_len ));
+      map_ptx_math_functions[7] = 
+	std::make_pair("func_exp_f32",std::string( (const char *)func_exp_f32_ptx , func_exp_f32_ptx_len ));
+      map_ptx_math_functions[8] = 
+	std::make_pair("func_log_f32",std::string( (const char *)func_log_f32_ptx , func_log_f32_ptx_len ));
+      map_ptx_math_functions[9] = 
+	std::make_pair("func_log10_f32",std::string( (const char *)func_log10_f32_ptx , func_log10_f32_ptx_len ));
+      map_ptx_math_functions[10] = 
+	std::make_pair("func_sinh_f32",std::string( (const char *)func_sinh_f32_ptx , func_sinh_f32_ptx_len ));
+      map_ptx_math_functions[11] = 
+	std::make_pair("func_sqrt_f32",std::string( (const char *)func_sqrt_f32_ptx , func_sqrt_f32_ptx_len ));
+      map_ptx_math_functions[12] = 
+	std::make_pair("func_tan_f32",std::string( (const char *)func_tan_f32_ptx , func_tan_f32_ptx_len ));
+      map_ptx_math_functions[13] = 
+	std::make_pair("func_tanh_f32",std::string( (const char *)func_tanh_f32_ptx , func_tanh_f32_ptx_len ));
+      return map_ptx_math_functions;
+    }
+
 
     std::map< int , std::array<const char*,4> > ptx_type_matrix = {
       {jit_ptx_type::f32 ,{{"f32" ,"f" ,""   ,"rn."}}},
@@ -115,10 +165,12 @@ namespace QDP {
       return map_state_promote;
     }
 
-    const std::map< int , std::map<int,const char *> > map_cvt_rnd_from_to = create_cvt_rnd_from_to();
-    const std::map< int , std::map<int,int> >          map_promote         = create_promote();
-    const std::map< int , int >                        map_wide_promote    = create_wide_promote();
-    const std::map< int , int >                        map_bit_type        = create_bit_type();
+    const std::map< int , std::pair<const char *,
+				    std::string> >     map_ptx_math_functions = create_ptx_math_functions();
+    const std::map< int , std::map<int,const char *> > map_cvt_rnd_from_to    = create_cvt_rnd_from_to();
+    const std::map< int , std::map<int,int> >          map_promote            = create_promote();
+    const std::map< int , int >                        map_wide_promote       = create_wide_promote();
+    const std::map< int , int >                        map_bit_type           = create_bit_type();
     const std::map< jit_value::StateSpace , 
 		    std::map< jit_value::StateSpace , 
 			      jit_value::StateSpace > > map_state_promote  = create_state_promote();
@@ -127,6 +179,17 @@ namespace QDP {
 
   int jit_number_of_types() { return PTX::ptx_type_matrix.size(); }
 
+  const char * jit_get_map_ptx_math_functions_funcname(int i) {
+    if (!PTX::map_ptx_math_functions.count(i))
+      QDP_error_exit("PTX math function: Out of range %d",i);
+    return PTX::map_ptx_math_functions.at(i).first;
+  }
+
+  const std::string& jit_get_map_ptx_math_functions_prg(int i) {
+    if (!PTX::map_ptx_math_functions.count(i))
+      QDP_error_exit("PTX math function: Out of range %d",i);
+    return PTX::map_ptx_math_functions.at(i).second;
+  }
 
   const char * jit_value_reg::get_state_space_str() const { 
     assert(mem_state >= 0 && mem_state < PTX::jit_state_space_str.size());
@@ -224,7 +287,7 @@ namespace QDP {
 						    param_count(0), 
 						    local_count(0),
 						    m_shared(false),
-						    m_emit_sin_f32(false)
+						    m_include_math_ptx_unary( PTX::map_ptx_math_functions.size() , false )
   {
     // std::cout << "Constructing function " << fname 
     // 	      << "reg_count vector size = " << reg_count.size() << "\n";
@@ -298,10 +361,11 @@ void jit_function::write_reg_defs()
     if (m_shared)
       out << ".extern .shared .align 4 .b8 sdata[];\n";
 
-    if (m_emit_sin_f32) {
-      std::cout << "emmiting sin\n";
-      std::string prg( (const char *)func_sin_f32_ptx , func_sin_f32_ptx_len );
-      out << prg << "\n";
+    for( int i=0 ; i < PTX::map_ptx_math_functions.size() ; i++ ) {
+      if (m_include_math_ptx_unary.at(i)) {
+	std::cout << "including PTX math function " << i << "\n";
+	out << jit_get_map_ptx_math_functions_prg(i) << "\n";
+      }
     }
 
     out << ".entry function (" 
@@ -816,22 +880,45 @@ void jit_function::write_reg_defs()
   jit_value_t jit_ins_neg( jit_value_t rhs , jit_value_t pred ) {
     return jit_ins_unary_op( rhs , JitUnaryOpNeg( rhs->get_type() ) , pred );
   }
+  jit_value_t jit_ins_fabs( jit_value_t rhs , jit_value_t pred ) {
+    return jit_ins_unary_op( rhs , JitUnaryOpAbs( rhs->get_type() ) , pred );
+  }
+  jit_value_t jit_ins_floor( jit_value_t rhs , jit_value_t pred ) {
+    return jit_ins_unary_op( rhs , JitUnaryOpFloor( rhs->get_type() ) , pred );
+  }
 
 
 
-  jit_value_t jit_ins_sin( jit_value_t lhs , jit_value_t pred ) {
+  jit_value_t jit_ins_math_unary( int num , jit_value_t lhs , jit_value_t pred ) {
+    assert( num >= 0 && num < PTX::map_ptx_math_functions.size() );
     jit_function_t func = getFunc(lhs);
     jit_value_t ret = jit_val_create_new( func , jit_ptx_type::f32 );
     func->get_prg() << jit_predicate(pred)
 		    << "call (" 
 		    << jit_get_reg_name( ret ) 
-		    << "),func_sin_f32,(" 
+		    << ")," 
+		    << jit_get_map_ptx_math_functions_funcname(num)
+		    << ",(" 
 		    << jit_get_reg_name( lhs ) 
 		    << ");\n";
-    func->emit_sin_f32();
+    func->set_include_math_ptx_unary(num);
     return ret;
   }
 
+  jit_value_t jit_ins_sin(  jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 0 , lhs , pred ); }
+  jit_value_t jit_ins_acos( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 1 , lhs , pred ); }
+  jit_value_t jit_ins_asin( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 2 , lhs , pred ); }
+  jit_value_t jit_ins_atan( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 3 , lhs , pred ); }
+  jit_value_t jit_ins_ceil( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 4 , lhs , pred ); }
+  jit_value_t jit_ins_cos( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 5 , lhs , pred ); }
+  jit_value_t jit_ins_cosh( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 6 , lhs , pred ); }
+  jit_value_t jit_ins_exp( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 7 , lhs , pred ); }
+  jit_value_t jit_ins_log( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 8 , lhs , pred ); }
+  jit_value_t jit_ins_log10( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 9 , lhs , pred ); }
+  jit_value_t jit_ins_sinh( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 10 , lhs , pred ); }
+  jit_value_t jit_ins_sqrt( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 11 , lhs , pred ); }
+  jit_value_t jit_ins_tan( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 12 , lhs , pred ); }
+  jit_value_t jit_ins_tanh( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 13 , lhs , pred ); }
 
 
   void jit_ins_mov_no_create( jit_value_t dest , jit_value_t src , jit_value_t pred ){
