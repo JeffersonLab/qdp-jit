@@ -1075,6 +1075,9 @@ void jit_function::write_reg_defs()
       reg = jit_val_create_convert( base_reg->get_func() , jit_ptx_type::u8 , s32 );
       type = jit_ptx_type::u8;
     }
+    if ( reg->get_type() != type ) {
+      reg = jit_val_create_convert( base_reg->get_func() , type , reg );
+    }
     base_reg->get_func()->get_prg() << jit_predicate(pred)
 				    << "st." << base_reg->get_state_space_str() << "."
 				    << jit_get_ptx_type( type ) << " ["

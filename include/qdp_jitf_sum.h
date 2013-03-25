@@ -13,6 +13,8 @@ void function_sum_exec( CUfunction function,
 			int size, int threads, int blocks, int shared_mem_usage,
 			void *d_idata, void *d_odata);
 
+  // T1 input
+  // T2 output
   template<class T1,class T2>
   CUfunction 
   function_sum_ind_coal_build()
@@ -46,15 +48,15 @@ void function_sum_exec( CUfunction function,
     jit_value_t r_shared     = jit_get_shared_mem_ptr( function );
   
     OLatticeJIT<typename JITType<T1>::Type_t> idata( function , r_idata , r_idx_perm );   // want coal   access later
-    OLatticeJIT<typename JITType<T1>::Type_t> odata( function , r_odata , r_block_idx );  // want scalar access later
-    OLatticeJIT<typename JITType<T1>::Type_t> sdata( function , r_shared , r_tidx );      // want scalar access later
+    OLatticeJIT<typename JITType<T2>::Type_t> odata( function , r_odata , r_block_idx );  // want scalar access later
+    OLatticeJIT<typename JITType<T2>::Type_t> sdata( function , r_shared , r_tidx );      // want scalar access later
 
     // zero_rep() branch should be redundant
 
 
     typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_elem;   // this is stupid
     reg_idata_elem.setup( idata.elem( QDPTypeJITBase::Coalesced ) );
-    sdata.elem( QDPTypeJITBase::Scalar ) = reg_idata_elem;
+    sdata.elem( QDPTypeJITBase::Scalar ) = reg_idata_elem; // This should do the precision conversion (SP->DP)
 
     jit_ins_bar_sync( function , 0 );
 
@@ -97,10 +99,10 @@ void function_sum_exec( CUfunction function,
     jit_value_t pred_branch_sync2 = jit_ins_ge( val_s_plus_tid , jit_geom_get_ntidx(function) );
     jit_ins_branch( function , label_loop_sync , pred_branch_sync2 );
 
-    OLatticeJIT<typename JITType<T1>::Type_t> sdata_plus_s( function , r_shared , 
+    OLatticeJIT<typename JITType<T2>::Type_t> sdata_plus_s( function , r_shared , 
 							    jit_ins_add( r_tidx , r_pred_pow ) );
 
-    typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_plus_s_elem;   // this is stupid
+    typename REGType< typename JITType<T2>::Type_t >::Type_t sdata_plus_s_elem;   // this is stupid
     sdata_plus_s_elem.setup( sdata_plus_s.elem( QDPTypeJITBase::Scalar ) );
     sdata.elem( QDPTypeJITBase::Scalar ) += sdata_plus_s_elem;
 
@@ -118,7 +120,7 @@ void function_sum_exec( CUfunction function,
     jit_value_t pred_branch_exit = jit_ins_ne( jit_geom_get_tidx(function) , jit_val_create_const_int(0) );
     jit_ins_branch( function , label_exit , pred_branch_exit );
 
-    typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_reg;   // this is stupid
+    typename REGType< typename JITType<T2>::Type_t >::Type_t sdata_reg;   // this is stupid
     sdata_reg.setup( sdata.elem( QDPTypeJITBase::Scalar ) );
     odata.elem( QDPTypeJITBase::Scalar ) = sdata_reg;
 
