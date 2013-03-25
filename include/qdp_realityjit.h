@@ -1568,31 +1568,7 @@ gather_sites(RComplexJIT<T>& d,
 
 //! dest  = gaussian  
 /*! Real form of complex polar method */
-template<class T>
-inline void
-fill_gaussian( RScalarJIT<T>& d, RScalarJIT<T>& r1, RScalarJIT<T>& r2)
-{
-  T w_2pi(d.func());
-  T w_2(d.func());
-  T w_g_r(d.func());
-  T w_r1(d.func());
-  T w_r2(d.func());
 
-  w_r1 = r1.elem();
-  w_r2 = r2.elem();
-
-  w_2pi = (float)6.283185307;
-  w_2 = (float)2.0;
-
-  w_r2 *= w_2pi;
-  w_g_r = cos(w_r2);
-
-  w_r1 = sqrt( -w_2 * log(w_r1) );
-
-  d.elem() = w_r1 * w_g_r;
-
-  //  fill_gaussian(d.elem(), r1.elem(), r2.elem());
-}
 
 /*! @} */   // end of group rscalar
 
@@ -2384,6 +2360,53 @@ fill_random(RComplexJIT<T>& d, T1& seed, T2& skewed_seed, const T3& seed_mult)
   fill_random(d.imag(), seed, skewed_seed, seed_mult);
 }
 
+
+template<class T,class T2>
+inline void
+fill_gaussian(RScalarJIT<T>& d, RScalarREG<T2>& r1, RScalarREG<T2>& r2)
+{
+  typedef typename InternalScalar<T2>::Type_t  S;
+
+  // r1 and r2 are the input random numbers needed
+
+  /* Stage 2: get the cos of the second number  */
+  T2  g_r;
+
+  r2.elem() *= S(6.283185307);
+  g_r = cos(r2.elem());
+    
+  /* Stage 4: get  sqrt(-2.0 * log(u1)) */
+  r1.elem() = sqrt(-S(2.0) * log(r1.elem()));
+
+  /* Stage 5:   g_r = sqrt(-2*log(u1))*cos(2*pi*u2) */
+  /* Stage 5:   g_i = sqrt(-2*log(u1))*sin(2*pi*u2) */
+  d.elem() = r1.elem() * g_r;
+}
+
+
+template<class T,class T2>
+inline void
+fill_gaussian(RComplexJIT<T>& d, RComplexREG<T2>& r1, RComplexREG<T2>& r2)
+{
+  typedef typename InternalScalar<T2>::Type_t  S;
+
+  // r1 and r2 are the input random numbers needed
+
+  /* Stage 2: get the cos of the second number  */
+  T2  g_r, g_i;
+
+  r2.real() *= S(6.283185307);
+  g_r = cos(r2.real());
+  g_i = sin(r2.real());
+    
+  /* Stage 4: get  sqrt(-2.0 * log(u1)) */
+  r1.real() = sqrt(-S(2.0) * log(r1.real()));
+
+  /* Stage 5:   g_r = sqrt(-2*log(u1))*cos(2*pi*u2) */
+  /* Stage 5:   g_i = sqrt(-2*log(u1))*sin(2*pi*u2) */
+  d.real() = r1.real() * g_r;
+  d.imag() = r1.real() * g_i;
+}
 
 
 /*! @} */  // end of group rcomplex

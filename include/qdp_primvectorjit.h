@@ -672,9 +672,9 @@ fill_random(PVectorJIT<T,N,C>& d, T1& seed, T2& skewed_seed, const T3& seed_mult
 
 
 //! dest  = gaussian
-template<class T, int N, template<class,int> class C>
+template<class T,class T2, int N, template<class,int> class C, template<class,int> class C2>
 inline void
-fill_gaussian(PVectorJIT<T,N,C>& d, PVectorJIT<T,N,C>& r1, PVectorJIT<T,N,C>& r2)
+fill_gaussian(PVectorJIT<T,N,C>& d, PVectorREG<T2,N,C2>& r1, PVectorREG<T2,N,C2>& r2)
 {
   for(int i=0; i < N; ++i)
     fill_gaussian(d.elem(i), r1.elem(i), r2.elem(i));

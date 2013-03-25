@@ -433,8 +433,8 @@ void random(OLattice<T>& d)
 template<class T>
 void gaussian(OLattice<T>& d, const Subset& s)
 {
-  assert(!"ni");
-#if 0
+  //assert(!"ni");
+#if 1
   OLattice<T>  r1, r2;
 
   random(r1,s);

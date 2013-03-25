@@ -198,7 +198,7 @@ namespace QDP {
 #include "qdp_jitfunction.h"
 #include "qdp_jitf_copymask.h"
 #include "qdp_jitf_sum.h"
-//#include "qdp_jitf_gaussian.h"
+#include "qdp_jitf_gaussian.h"
 
 // Include threading code here if applicable
 #include "qdp_dispatch.h"

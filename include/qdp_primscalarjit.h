@@ -1388,14 +1388,6 @@ get_pred(int& pred, const PScalarJIT<T>& d)
 
 
 
-//! dest  = gaussian  
-template<class T>
-inline void
-fill_gaussian(PScalarJIT<T>& d, PScalarJIT<T>& r1, PScalarJIT<T>& r2)
-{
-  fill_gaussian(d.elem(), r1.elem(), r2.elem());
-}
-
 
 #if 1
 // Global sum over site indices only
@@ -1583,6 +1575,16 @@ fill_random( PScalarJIT<T>& d, T1& seed, T2& skewed_seed, const T3& seed_mult)
 {
   fill_random(d.elem(), seed, skewed_seed, seed_mult);
 }
+
+
+//! dest  = gaussian  
+template<class T,class T2>
+inline void
+fill_gaussian(PScalarJIT<T>& d, PScalarREG<T2>& r1, PScalarREG<T2>& r2)
+{
+  fill_gaussian(d.elem(), r1.elem(), r2.elem());
+}
+
 
 
 
