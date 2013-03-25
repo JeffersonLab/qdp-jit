@@ -32,7 +32,9 @@ public:
   inline
   PColorMatrixJIT& operator=(const PScalarREG<T1>& rhs)
     {
-      this->assign(rhs);
+      for(int i=0; i < N; ++i)
+	for(int j=0; j < N; ++j)
+	  this->elem(i,j) += rhs.elem();
       return *this;
     }
 
@@ -42,7 +44,9 @@ public:
   inline
   PColorMatrixJIT& operator=(const PColorMatrixREG<T1,N>& rhs) 
     {
-      this->assign(rhs);
+      for(int i=0; i < N; ++i)
+	for(int j=0; j < N; ++j)
+	  this->elem(i,j) += rhs.elem(i,j);
       return *this;
     }
 
@@ -53,7 +57,6 @@ public:
       for(int i=0; i < N; ++i)
 	for(int j=0; j < N; ++j)
 	  this->elem(i,j) += rhs.elem(i,j);
-
       return *this;
     }
 
@@ -64,7 +67,6 @@ public:
       for(int i=0; i < N; ++i)
 	for(int j=0; j < N; ++j)
 	  this->elem(i,j) -= rhs.elem(i,j);
-
       return *this;
     }
 

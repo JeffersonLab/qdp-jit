@@ -52,16 +52,16 @@ public:
 
   //! PMatrixJIT = PMatrixJIT
   /*! Set equal to another PMatrixJIT */
-  template<class T1>
-  inline
-  CC& assign(const typename REGType< C<T1,N> >::Type_t& rhs)
-    {
-      for(int i=0; i < N; ++i)
-	for(int j=0; j < N; ++j)
-	  elem(i,j) = rhs.elem(i,j);
+  // template<class T1>
+  // inline
+  // CC& assign(const typename REGType< C<T1,N> >::Type_t& rhs)
+  //   {
+  //     for(int i=0; i < N; ++i)
+  // 	for(int j=0; j < N; ++j)
+  // 	  elem(i,j) = rhs.elem(i,j);
 
-      return static_cast<CC&>(*this);
-    }
+  //     return static_cast<CC&>(*this);
+  //   }
 
 
   template<class T1,template<class,int> class C1>

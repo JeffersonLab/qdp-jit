@@ -35,7 +35,8 @@ public:
   inline
   PColorVectorJIT& operator=(const PColorVectorREG<T1,N>& rhs) 
     {
-      this->assign(rhs);
+      for(int i=0; i < N; ++i)
+	this->elem(i) = rhs.elem(i);
       return *this;
     }
 
@@ -284,7 +285,7 @@ template<class T1, class T2, class T3>
 inline typename TrinaryReturn<PColorVectorJIT<T1,3>, PColorVectorJIT<T2,3>, PColorVectorJIT<T3,3>, FnColorContract>::Type_t
 colorContract(const PColorVectorJIT<T1,3>& s1, const PColorVectorJIT<T2,3>& s2, const PColorVectorJIT<T3,3>& s3)
 {
-  typename TrinaryReturn<PColorVectorJIT<T1,3>, PColorVectorJIT<T2,3>, PColorVectorJIT<T3,3>, FnColorContract>::Type_t  d(s1.func());
+  typename TrinaryReturn<PColorVectorJIT<T1,3>, PColorVectorJIT<T2,3>, PColorVectorJIT<T3,3>, FnColorContract>::Type_t  d;
 
   // Permutations: +(0,1,2)+(1,2,0)+(2,0,1)-(1,0,2)-(0,2,1)-(2,1,0)
 
@@ -317,7 +318,7 @@ template<class T1, class T2, int N>
 inline typename BinaryReturn<PColorVectorJIT<T1,N>, PColorVectorJIT<T2,N>, FnColorVectorContract>::Type_t
 colorVectorContract(const PColorVectorJIT<T1,N>& s1, const PColorVectorJIT<T2,N>& s2)
 {
-  typename BinaryReturn<PColorVectorJIT<T1,N>, PColorVectorJIT<T2,N>, FnColorVectorContract>::Type_t  d(s1.func());
+  typename BinaryReturn<PColorVectorJIT<T1,N>, PColorVectorJIT<T2,N>, FnColorVectorContract>::Type_t  d;
 
   // d = V1^{i} V2^{i}
   d.elem() = s1.elem(0)*s2.elem(0);
@@ -347,7 +348,7 @@ template<class T1, class T2>
 inline typename BinaryReturn<PColorVectorJIT<T1,3>, PColorVectorJIT<T2,3>, FnColorCrossProduct>::Type_t
 colorCrossProduct(const PColorVectorJIT<T1,3>& s1, const PColorVectorJIT<T2,3>& s2)
 {
-  typename BinaryReturn<PColorVectorJIT<T1,3>, PColorVectorJIT<T2,3>, FnColorCrossProduct>::Type_t  d(s1.func());
+  typename BinaryReturn<PColorVectorJIT<T1,3>, PColorVectorJIT<T2,3>, FnColorCrossProduct>::Type_t  d;
   
   d.elem(0) = s1.elem(1)*s2.elem(2) - s1.elem(2)*s2.elem(1);
   d.elem(1) = s1.elem(2)*s2.elem(0) - s1.elem(0)*s2.elem(2);

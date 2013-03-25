@@ -52,25 +52,6 @@ public:
   //   return *this;
   // }
 
-#if 0
-  //! construct dest = const
-  template<class T1>
-  PSeedJIT(const PScalarJIT<T1>& rhs)
-  {
-    assign(rhs);
-  }
-
-  PSeedJIT(const PSeedJIT& a): JV<T,4>(newspace_t(a.func()),&a)
-  {
-    assign(a);
-  }
-
-  template<class T1>
-  PSeedJIT(const PSeedJIT<T1>& a): JV<T,4>(newspace_t(a.func()))
-  {
-    assign(a);
-  }
-#endif
 
   //! PSeedJIT = PScalarJIT
   /*! Set equal to input scalar (an integer) */
@@ -87,28 +68,6 @@ public:
       zero_rep(elem(3));    // assumes 32 bit integers
 
       return *this;
-#if 0
-      typedef typename InternalScalar<T1>::Type_t  S;
-
-      // elem(0) = rhs.elem() & S(rhs.func(),4095);
-      // elem(1) = (rhs.elem() >> S(rhs.func(),12)) & S(rhs.func(),4095);
-      // elem(2) = (rhs.elem() >> S(rhs.func(),24)) & S(rhs.func(),4095);
-
-      S s4095(rhs.func());
-      S s12(rhs.func());
-      S s24(rhs.func());
-      s4095 = 4095;
-      s12 = 12;
-      s24 = 24;
-
-      elem(0) = rhs.elem() & S(rhs.func(),4095);
-      elem(1) = (rhs.elem() >> s12) & s4095;
-      elem(2) = (rhs.elem() >> s24) & s4095;
-//      elem(3) = (rhs.elem() >> S(36)) & S(2047);  // This probably will never be nonzero
-      zero_rep(elem(3));    // assumes 32 bit integers
-
-      return *this;
-#endif
     }
 
   //! PSeedJIT = PScalarJIT
@@ -263,116 +222,18 @@ operator!=(const PSeedJIT<T1>& l, const PSeedJIT<T2>& r)
 
 // Primitive Seeds
 
-//! PSeedJIT<T> = PSeedJIT<T> * PSeedJIT<T>
-/*!
- * A 47 bit seed multiplication is represented as the multiplication
- * of three 12bit and one 11bit integer
- *
- * i3 = s1(3)*s2(0) + s1(2)*s2(1)
- *    + s1(1)*s2(2) + s1(0)*s2(3);
- * i2 = s1(2)*s2(0) + s1(1)*s2(1)
- *    + s1(0)*s2(2);
- * i1 = s1(1)*s2(0) + s1(0)*s2(1);
- * i0 = s1(0)*s2(0);
- *
- * dest(0) = mod(i0, 4096);
- * i1      = i1 + i0/4096;
- * dest(1) = mod(i1, 4096);
- * i2      = i2 + i1/4096;
- * dest(2) = mod(i2, 4096);
- * i3      = i3 + i2/4096
- * dest(3) = mod(i3, 2048);
- */
+
 template<class T1, class T2>
 struct BinaryReturn<PSeedJIT<T1>, PSeedJIT<T2>, OpMultiply> {
   typedef PSeedJIT<typename BinaryReturn<T1, T2, OpMultiply>::Type_t>  Type_t;
 };
 
-template<class T1, class T2>
-inline typename BinaryReturn<PSeedJIT<T1>, PSeedJIT<T2>, OpMultiply>::Type_t
-operator*(const PSeedJIT<T1>& s1, const PSeedJIT<T2>& s2)
-{
-  typename BinaryReturn<PSeedJIT<T1>, PSeedJIT<T2>, OpMultiply>::Type_t  d(s1.func());
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t  T;
-  typedef typename InternalScalar<T>::Type_t  S;
-  T  i0(s1.func()), i1(s1.func()), i2(s1.func()), i3(s1.func());
-
-  S s4095(s1.func());
-  S s2047(s1.func());
-  S s12(s1.func());
-  s4095 = 4095;
-  s2047 = 2047;
-  s12 = 12;
-
-
-  /* i3 = s1(3)*s2(0) + s1(2)*s2(1) + s1(1)*s2(2) + s1(0)*s2(3) */
-  i3  = s1.elem(3) * s2.elem(0);
-  i3 += s1.elem(2) * s2.elem(1);
-  i3 += s1.elem(1) * s2.elem(2);
-  i3 += s1.elem(0) * s2.elem(3);
-
-  /* i2 = s1(2)*s2(0) + s1(1)*s2(1) + s1(0)*s2(2) */
-  i2  = s1.elem(2) * s2.elem(0);
-  i2 += s1.elem(1) * s2.elem(1);
-  i2 += s1.elem(0) * s2.elem(2);
-
-  /* i1 = s1(1)*s2(0) + s1(0)*s2(1) */
-  i1  = s1.elem(1) * s2.elem(0);
-  i1 += s1.elem(0) * s2.elem(1);
-
-  /* i0 = s1(0)*s2(0) */
-  i0 = s1.elem(0) * s2.elem(0);
-  
-  /* dest(0) = mod(i0, 4096) */
-  //  d.elem(0) = i0 & S(s1.func(),4095);
-  d.elem(0) = i0 & s4095;
-
-  /* i1 = i1 + i0/4096 */
-  i1 += i0 >> s12;
-  //i1 += i0 >> S(s1.func(),12);
-
-  /* dest(1) = mod(i1, 4096) */
-  d.elem(1) = i1 & s4095;
-  //  d.elem(1) = i1 & S(s1.func(),4095);
-
-  /* i2 = i2 + i1/4096 */
-  //  i2 += i1 >> S(s1.func(),12);
-  i2 += i1 >> s12;
-
-  /* dest(2) = mod(i2, 4096) */
-  d.elem(2) = i2 & s4095;
-  //d.elem(2) = i2 & S(s1.func(),4095);
-  /* i3 = i3 + i2/4096 */
-  i3 += i2 >> s12;
-  //  i3 += i2 >> S(s1.func(),12);
-
-  /* dest(3) = mod(i3, 2048) */
-  d.elem(3) = i3 & s2047;
-  //d.elem(3) = i3 & S(s1.func(),2047);
-  
-  return d;
-}
 
 
 template<class T1, class T2>
 struct BinaryReturn<PSeedJIT<T1>, PSeedJIT<T2>, OpBitwiseOr> {
   typedef PSeedJIT<typename BinaryReturn<T1, T2, OpBitwiseOr>::Type_t>  Type_t;
 };
-
-template<class T1, class T2>
-inline typename BinaryReturn<PSeedJIT<T1>, PSeedJIT<T2>, OpBitwiseOr>::Type_t
-operator|(const PSeedJIT<T1>& l, const PSeedJIT<T2>& r)
-{
-  typename BinaryReturn<PSeedJIT<T1>, PSeedJIT<T2>, OpBitwiseOr>::Type_t  d(l.func());
-
-  d.elem(0) = l.elem(0) | r.elem(0);
-  d.elem(1) = l.elem(1) | r.elem(1);
-  d.elem(2) = l.elem(2) | r.elem(2);
-  d.elem(3) = l.elem(3) | r.elem(3);
-
-  return d;
-}
-
 
 
 // Mixed versions
@@ -381,19 +242,6 @@ struct BinaryReturn<PSeedJIT<T1>, PScalarJIT<T2>, OpBitwiseOr> {
   typedef PSeedJIT<typename BinaryReturn<T1, T2, OpBitwiseOr>::Type_t>  Type_t;
 };
  
-template<class T1, class T2>
-inline typename BinaryReturn<PSeedJIT<T1>, PScalarJIT<T2>, OpBitwiseOr>::Type_t
-operator|(const PSeedJIT<T1>& l, const PScalarJIT<T2>& r)
-{
-  // Lazy implementation
-
-  PSeedJIT<T2>  d(l.func());
-  d = r;
-
-  return (l | d);
-}
-
-
 
 /*! 
  * This left shift implementation will not work properly for shifts
@@ -404,33 +252,6 @@ struct BinaryReturn<PSeedJIT<T1>, PScalarJIT<T2>, OpLeftShift> {
   typedef PSeedJIT<typename BinaryReturn<T1, T2, OpLeftShift>::Type_t>  Type_t;
 };
 
-template<class T1, class T2>
-inline typename BinaryReturn<PSeedJIT<T1>, PScalarJIT<T2>, OpLeftShift>::Type_t
-operator<<(const PSeedJIT<T1>& s1, const PScalarJIT<T2>& s2)
-{
-  typename BinaryReturn<PSeedJIT<T1>, PScalarJIT<T2>, OpLeftShift>::Type_t  d(s1.func());
-  typedef typename BinaryReturn<T1, T2, OpLeftShift>::Type_t  T;
-  typedef typename InternalScalar<T>::Type_t  S;
-  T  i0, i1, i2, i3;
-
-  i0 = s1.elem(0) << s2.elem();
-  i1 = s1.elem(1) << s2.elem();
-  i2 = s1.elem(2) << s2.elem();
-  i3 = s1.elem(3) << s2.elem();
-
-  d.elem(0) = i0 & S(4095);
-  i0 >>= S(12);
-  i1 |= i0 & S(4095);
-  d.elem(1) = i1 & S(4095);
-  i1 >>= S(12);
-  i2 |= i1 & S(4095);
-  d.elem(2) = i2 & S(4095);
-  i2 >>= S(12);
-  i3 |= i2 & S(4095);
-  d.elem(3) = i3 & S(2047);
-
-  return d;
-}
 
 
 //! dest [float type] = source [seed type]
@@ -439,38 +260,6 @@ struct UnaryReturn<PSeedJIT<T>, FnSeedToFloat> {
   typedef PScalarJIT<typename UnaryReturn<T, FnSeedToFloat>::Type_t>  Type_t;
 };
 
-template<class T>
-inline typename UnaryReturn<PSeedJIT<T>, FnSeedToFloat>::Type_t
-seedToFloat(const PSeedJIT<T>& s1)
-{
-  typename UnaryReturn<PSeedJIT<T>, FnSeedToFloat>::Type_t  d(s1.func());
-  typedef typename RealScalar<T>::Type_t  S;
-
-  S  twom11(s1.func(),1.0 / 2048.0);
-  S  twom12(s1.func(),1.0 / 4096.0);
-  S  fs1(s1.func()), fs2(s1.func());
-
-//  recast_rep(fs1, s1.elem(0));
-  fs1 = S(s1.elem(0));
-  d.elem() = twom12 * S(s1.elem(0));
-
-//  recast_rep(fs1, s1.elem(1));
-  fs1 = S(s1.elem(1));
-  fs2 = fs1 + d.elem();
-  d.elem() = twom12 * fs2;
-
-//  recast_rep(fs1, s1.elem(2));
-  fs1 = S(s1.elem(2));
-  fs2 = fs1 + d.elem();
-  d.elem() = twom12 * fs2;
-
-//  recast_rep(fs1, s1.elem(3));
-  fs1 = S(s1.elem(3));
-  fs2 = fs1 + d.elem();
-  d.elem() = twom11 * fs2;
-
-  return d;
-}
 
 
 //! dest [some type] = source [some type]
@@ -479,18 +268,6 @@ template<class T>
 struct UnaryReturn<PSeedJIT<T>, FnGetSite> {
   typedef PSeedJIT<typename UnaryReturn<T, FnGetSite>::Type_t>  Type_t;
 };
-
-template<class T>
-inline typename UnaryReturn<PSeedJIT<T>, FnGetSite>::Type_t
-getSite(const PSeedJIT<T>& s1, int innersite)
-{ 
-  typename UnaryReturn<PSeedJIT<T>, FnGetSite>::Type_t  d(s1.func());
-
-  for(int i=0; i < 4; ++i)
-    d.elem(i) = getSite(s1.elem(i), innersite);
-
-  return d;
-}
 
 
 // Functions

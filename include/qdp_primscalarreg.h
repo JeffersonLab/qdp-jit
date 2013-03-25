@@ -47,49 +47,6 @@ namespace QDP {
     }
 
 
-#if 0
-    //---------------------------------------------------------
-    //! PScalar = PScalar
-    /*! Set equal to another PScalar */
-    template<class T1>
-    PScalarREG& operator=( const PScalarREG<T1>& rhs) {
-      elem() = rhs.elem();
-      return *this;
-    }
-
-
-    PScalarREG& operator=( const PScalarREG& rhs) {
-      elem() = rhs.elem();
-      return *this;
-    }
-
-
-    //---------------------------------------------------------
-    //! construct dest = const
-    PScalarREG(const typename WordType<T>::Type_t& rhs) : F(rhs) {}
-
-    //! construct dest = rhs
-    template<class T1>
-    PScalarREG(const PScalarREG<T1>& rhs) : F(rhs.elem()) {}
-
-    template<class T1>
-    PScalarREG(const PScalarREG<T1>& a) : JV<T,1>::JV( newspace_t( a.func() ) ) {
-      elem() = a.elem();
-    }
-
-    PScalarREG(const PScalarREG& a) : JV<T,1>::JV(newspace_t(a.func()), &a ) {
-      elem() = a.elem();
-    }
-
-
-    template<class T1>
-    PScalarREG(const T1& rhs) : JV<T,1>(newspace_t(rhs.func())) {
-      elem() = rhs;
-    }
-#endif
-
-
-
     //! PScalarREG += PScalarREG
     template<class T1>
     inline
@@ -472,16 +429,7 @@ template<class T1, class T2>
 inline typename BinaryReturn<PScalarREG<T1>, PScalarREG<T2>, OpMultiply>::Type_t
 operator*(const PScalarREG<T1>& l, const PScalarREG<T2>& r)
 {
-#if 1
   return l.elem() * r.elem();
-#else
-  typename BinaryReturn<PScalarREG<T1>, PScalarREG<T2>, OpMultiply>::Type_t ret(l.func());
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t  T;
-  typedef typename InternalScalar<T>::Type_t  S;
-  ret = l.elem() * S(l.func(),12);
-  return ret;
-
-#endif
 }
 
 

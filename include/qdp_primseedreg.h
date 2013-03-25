@@ -55,26 +55,6 @@ public:
   //   return *this;
   // }
 
-#if 0
-  //! construct dest = const
-  template<class T1>
-  PSeedREG(const PScalarREG<T1>& rhs)
-  {
-    assign(rhs);
-  }
-
-  PSeedREG(const PSeedREG& a): JV<T,4>(newspace_t(a.func()),&a)
-  {
-    assign(a);
-  }
-
-  template<class T1>
-  PSeedREG(const PSeedREG<T1>& a): JV<T,4>(newspace_t(a.func()))
-  {
-    assign(a);
-  }
-#endif
-
   //! PSeedREG = PScalarREG
   /*! Set equal to input scalar (an integer) */
   template<class T1>
@@ -90,28 +70,6 @@ public:
       zero_rep(elem(3));    // assumes 32 bit integers
 
       return *this;
-#if 0
-      typedef typename InternalScalar<T1>::Type_t  S;
-
-      // elem(0) = rhs.elem() & S(rhs.func(),4095);
-      // elem(1) = (rhs.elem() >> S(rhs.func(),12)) & S(rhs.func(),4095);
-      // elem(2) = (rhs.elem() >> S(rhs.func(),24)) & S(rhs.func(),4095);
-
-      S s4095(rhs.func());
-      S s12(rhs.func());
-      S s24(rhs.func());
-      s4095 = 4095;
-      s12 = 12;
-      s24 = 24;
-
-      elem(0) = rhs.elem() & S(rhs.func(),4095);
-      elem(1) = (rhs.elem() >> s12) & s4095;
-      elem(2) = (rhs.elem() >> s24) & s4095;
-//      elem(3) = (rhs.elem() >> S(36)) & S(2047);  // This probably will never be nonzero
-      zero_rep(elem(3));    // assumes 32 bit integers
-
-      return *this;
-#endif
     }
 
   //! PSeedREG = PScalarREG
@@ -351,7 +309,7 @@ template<class T1, class T2>
 inline typename BinaryReturn<PSeedREG<T1>, PSeedREG<T2>, OpBitwiseOr>::Type_t
 operator|(const PSeedREG<T1>& l, const PSeedREG<T2>& r)
 {
-  typename BinaryReturn<PSeedREG<T1>, PSeedREG<T2>, OpBitwiseOr>::Type_t  d(l.func());
+  typename BinaryReturn<PSeedREG<T1>, PSeedREG<T2>, OpBitwiseOr>::Type_t  d;
 
   d.elem(0) = l.elem(0) | r.elem(0);
   d.elem(1) = l.elem(1) | r.elem(1);
@@ -375,7 +333,7 @@ operator|(const PSeedREG<T1>& l, const PScalarREG<T2>& r)
 {
   // Lazy implementation
 
-  PSeedREG<T2>  d(l.func());
+  PSeedREG<T2>  d;
   d = r;
 
   return (l | d);

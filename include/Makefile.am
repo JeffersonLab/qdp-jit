@@ -158,7 +158,7 @@ CUDA_HDRS = qdp_cuda.h \
             qdp_primseedreg.h \
             qdp_primvectorjit.h qdp_primspinvecjit.h qdp_primcolorvecjit.h \
             qdp_primvectorreg.h qdp_primspinvecreg.h qdp_primcolorvecreg.h \
-            qdp_handle.h qdp_mastermap.h qdp_autotuning.h qdp_randomjit.h qdp_sum.h \
+            qdp_handle.h qdp_mastermap.h qdp_autotuning.h qdp_sum.h \
             qdp_jitf_copymask.h qdp_jitf_sum.h qdp_jitf_gaussian.h qdp_internal.h qdp_newopsreg.h
 
 

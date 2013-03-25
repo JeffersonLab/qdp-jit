@@ -46,23 +46,24 @@ public:
       elem(i) = a.elem(i);
   }
 
+  // template<class T1>
+  // inline
+  // PSpinVectorJIT& assign(const PSpinVectorREG<T1, N>& rhs)
+  // {
+  //   for(int i=0; i < N; i++) 
+  //     elem(i) = rhs.elem(i);
 
+  //   return *this;
+  // }
 
-  template<class T1>
-  inline
-  PSpinVectorJIT& assign(const PSpinVectorREG<T1, N>& rhs)
-  {
-    for(int i=0; i < N; i++) 
-      elem(i) = rhs.elem(i);
-
-    return *this;
-  }
 
   template<class T1> 
   inline 
   PSpinVectorJIT& operator=(const PSpinVectorREG<T1,N>& rhs)
   {
-    return assign(rhs);
+    for(int i=0; i < N; ++i)
+      this->elem(i) = rhs.elem(i);
+    return *this;
   }
 
 
@@ -128,7 +129,7 @@ template<class T1, int N>
 inline typename UnaryReturn<PSpinVectorJIT<T1,N>, OpUnaryPlus>::Type_t
 operator+(const PSpinVectorJIT<T1,N>& l)
 {
-  typename UnaryReturn<PSpinVectorJIT<T1,N>, OpUnaryPlus>::Type_t  d(l.func());
+  typename UnaryReturn<PSpinVectorJIT<T1,N>, OpUnaryPlus>::Type_t  d;
   
   for(int i=0; i < N; ++i)
     d.elem(i) = +l.elem(i);
@@ -140,7 +141,7 @@ template<class T1, int N>
 inline typename UnaryReturn<PSpinVectorJIT<T1,N>, OpUnaryMinus>::Type_t
 operator-(const PSpinVectorJIT<T1,N>& l)
 {
-  typename UnaryReturn<PSpinVectorJIT<T1,N>, OpUnaryMinus>::Type_t  d(l.func());
+  typename UnaryReturn<PSpinVectorJIT<T1,N>, OpUnaryMinus>::Type_t  d;
 
   for(int i=0; i < N; ++i)
     d.elem(i) = -l.elem(i);
@@ -152,7 +153,7 @@ template<class T1, class T2, int N>
 inline typename BinaryReturn<PSpinVectorJIT<T1,N>, PSpinVectorJIT<T2,N>, OpAdd>::Type_t
 operator+(const PSpinVectorJIT<T1,N>& l, const PSpinVectorJIT<T2,N>& r)
 {
-  typename BinaryReturn<PSpinVectorJIT<T1,N>, PSpinVectorJIT<T2,N>, OpAdd>::Type_t  d(l.func());
+  typename BinaryReturn<PSpinVectorJIT<T1,N>, PSpinVectorJIT<T2,N>, OpAdd>::Type_t  d;
 
   for(int i=0; i < N; ++i)
     d.elem(i) = l.elem(i) + r.elem(i);
@@ -164,7 +165,7 @@ template<class T1, class T2, int N>
 inline typename BinaryReturn<PSpinVectorJIT<T1,N>, PSpinVectorJIT<T2,N>, OpSubtract>::Type_t
 operator-(const PSpinVectorJIT<T1,N>& l, const PSpinVectorJIT<T2,N>& r)
 {
-  typename BinaryReturn<PSpinVectorJIT<T1,N>, PSpinVectorJIT<T2,N>, OpSubtract>::Type_t  d(l.func());
+  typename BinaryReturn<PSpinVectorJIT<T1,N>, PSpinVectorJIT<T2,N>, OpSubtract>::Type_t  d;
 
   for(int i=0; i < N; ++i)
     d.elem(i) = l.elem(i) - r.elem(i);
@@ -177,7 +178,7 @@ template<class T1, class T2, int N>
 inline typename BinaryReturn<PSpinVectorJIT<T1,N>, PScalarJIT<T2>, OpMultiply>::Type_t
 operator*(const PSpinVectorJIT<T1,N>& l, const PScalarJIT<T2>& r)
 {
-  typename BinaryReturn<PSpinVectorJIT<T1,N>, PScalarJIT<T2>, OpMultiply>::Type_t  d(l.func());
+  typename BinaryReturn<PSpinVectorJIT<T1,N>, PScalarJIT<T2>, OpMultiply>::Type_t  d;
 
   for(int i=0; i < N; ++i)
     d.elem(i) = l.elem(i) * r.elem();
@@ -189,7 +190,7 @@ template<class T1, class T2, int N>
 inline typename BinaryReturn<PSpinVectorJIT<T1,N>, PScalarJIT<T2>, OpMultiplyAdj>::Type_t
 multiplyAdj(const PSpinVectorJIT<T1,N>& l, const PScalarJIT<T2>& r)
 {
-  typename BinaryReturn<PSpinVectorJIT<T1,N>, PScalarJIT<T2>, OpMultiplyAdj>::Type_t  d(l.func());
+  typename BinaryReturn<PSpinVectorJIT<T1,N>, PScalarJIT<T2>, OpMultiplyAdj>::Type_t  d;
 
   for(int i=0; i < N; ++i)
     d.elem(i) = multiplyAdj(l.elem(i), r.elem());
@@ -202,7 +203,7 @@ template<class T1, class T2, int N>
 inline typename BinaryReturn<PScalarJIT<T1>, PSpinVectorJIT<T2,N>, OpMultiply>::Type_t
 operator*(const PScalarJIT<T1>& l, const PSpinVectorJIT<T2,N>& r)
 {
-  typename BinaryReturn<PScalarJIT<T1>, PSpinVectorJIT<T2,N>, OpMultiply>::Type_t  d(l.func());
+  typename BinaryReturn<PScalarJIT<T1>, PSpinVectorJIT<T2,N>, OpMultiply>::Type_t  d;
 
   for(int i=0; i < N; ++i)
     d.elem(i) = l.elem() * r.elem(i);
@@ -214,7 +215,7 @@ template<class T1, class T2, int N>
 inline typename BinaryReturn<PScalarJIT<T1>, PSpinVectorJIT<T2,N>, OpAdjMultiply>::Type_t
 adjMultiply(const PScalarJIT<T1>& l, const PSpinVectorJIT<T2,N>& r)
 {
-  typename BinaryReturn<PScalarJIT<T1>, PSpinVectorJIT<T2,N>, OpAdjMultiply>::Type_t  d(l.func());
+  typename BinaryReturn<PScalarJIT<T1>, PSpinVectorJIT<T2,N>, OpAdjMultiply>::Type_t  d;
 
   for(int i=0; i < N; ++i)
     d.elem(i) = adjMultiply(l.elem(), r.elem(i));
@@ -227,7 +228,7 @@ template<class T1, class T2, int N>
 inline typename BinaryReturn<PSpinMatrixJIT<T1,N>, PSpinVectorJIT<T2,N>, OpMultiply>::Type_t
 operator*(const PSpinMatrixJIT<T1,N>& l, const PSpinVectorJIT<T2,N>& r)
 {
-  typename BinaryReturn<PSpinMatrixJIT<T1,N>, PSpinVectorJIT<T2,N>, OpMultiply>::Type_t  d(l.func());
+  typename BinaryReturn<PSpinMatrixJIT<T1,N>, PSpinVectorJIT<T2,N>, OpMultiply>::Type_t  d;
 
   for(int i=0; i < N; ++i)
   {
@@ -245,7 +246,7 @@ template<class T1, class T2,  template<class,int> class C, int N>
 inline typename BinaryReturn<PMatrixJIT<T1,N,C>, PSpinVectorJIT<T2,N>, OpMultiply>::Type_t
 operator*(const PSpinMatrixJIT<T1,N>& l, const PSpinVectorJIT<T2,N>& r)
 {
-  typename BinaryReturn<PSpinMatrixJIT<T1,N>, PSpinVectorJIT<T2,N>, OpMultiply>::Type_t  d(l.func());
+  typename BinaryReturn<PSpinMatrixJIT<T1,N>, PSpinVectorJIT<T2,N>, OpMultiply>::Type_t  d;
 
   for(int i=0; i < N; ++i)
   {
@@ -262,7 +263,7 @@ template<class T1, class T2, int N>
 inline typename BinaryReturn<PSpinMatrixJIT<T1,N>, PSpinVectorJIT<T2,N>, OpAdjMultiply>::Type_t
 adjMultiply(const PSpinMatrixJIT<T1,N>& l, const PSpinVectorJIT<T2,N>& r)
 {
-  typename BinaryReturn<PSpinMatrixJIT<T1,N>, PSpinVectorJIT<T2,N>, OpAdjMultiply>::Type_t  d(l.func());
+  typename BinaryReturn<PSpinMatrixJIT<T1,N>, PSpinVectorJIT<T2,N>, OpAdjMultiply>::Type_t  d;
 
   for(int i=0; i < N; ++i)
   {
@@ -279,7 +280,7 @@ template<class T1, class T2, int N, template<class,int> class C1>
 inline typename BinaryReturn<PMatrixJIT<T1,N,C1>, PSpinVectorJIT<T2,N>, OpAdjMultiply>::Type_t
 adjMultiply(const PMatrixJIT<T1,N,C1>& l, const PSpinVectorJIT<T2,N>& r)
 {
-  typename BinaryReturn<PMatrixJIT<T1,N,C1>, PSpinVectorJIT<T2,N>, OpAdjMultiply>::Type_t  d(l.func());
+  typename BinaryReturn<PMatrixJIT<T1,N,C1>, PSpinVectorJIT<T2,N>, OpAdjMultiply>::Type_t  d;
 
   for(int i=0; i < N; ++i)
   {
@@ -295,7 +296,7 @@ template<class T1, class T2, int N>
 inline typename BinaryReturn<PSpinVectorJIT<T1,N>, PScalarJIT<T2>, OpDivide>::Type_t
 operator/(const PSpinVectorJIT<T1,N>& l, const PScalarJIT<T2>& r)
 {
-  typename BinaryReturn<PSpinVectorJIT<T1,N>, PScalarJIT<T2>, OpDivide>::Type_t  d(l.func());
+  typename BinaryReturn<PSpinVectorJIT<T1,N>, PScalarJIT<T2>, OpDivide>::Type_t  d;
 
   for(int i=0; i < N; ++i)
     d.elem(i) = l.elem(i) / r.elem();
@@ -309,7 +310,7 @@ template<class T, int N>
 inline typename UnaryReturn<PSpinVectorJIT<T,N>, FnReal>::Type_t
 real(const PSpinVectorJIT<T,N>& s1)
 {
-  typename UnaryReturn<PSpinVectorJIT<T,N>, FnReal>::Type_t  d(s1.func());
+  typename UnaryReturn<PSpinVectorJIT<T,N>, FnReal>::Type_t  d;
 
   for(int i=0; i < N; ++i)
     d.elem(i) = real(s1.elem(i));
@@ -323,7 +324,7 @@ template<class T, int N>
 inline typename UnaryReturn<PSpinVectorJIT<T,N>, FnImag>::Type_t
 imag(const PSpinVectorJIT<T,N>& s1)
 {
-  typename UnaryReturn<PSpinVectorJIT<T,N>, FnImag>::Type_t  d(s1.func());
+  typename UnaryReturn<PSpinVectorJIT<T,N>, FnImag>::Type_t  d;
 
   for(int i=0; i < N; ++i)
     d.elem(i) = imag(s1.elem(i));
@@ -337,7 +338,7 @@ template<class T1, class T2, int N>
 inline typename BinaryReturn<PSpinVectorJIT<T1,N>, PSpinVectorJIT<T2,N>, FnCmplx>::Type_t
 cmplx(const PSpinVectorJIT<T1,N>& s1, const PSpinVectorJIT<T2,N>& s2)
 {
-  typename BinaryReturn<PSpinVectorJIT<T1,N>, PSpinVectorJIT<T2,N>, FnCmplx>::Type_t  d(s1.func());
+  typename BinaryReturn<PSpinVectorJIT<T1,N>, PSpinVectorJIT<T2,N>, FnCmplx>::Type_t  d;
 
   for(int i=0; i < N; ++i)
     d.elem(i) = cmplx(s1.elem(i), s2.elem(i));
@@ -353,7 +354,7 @@ template<class T1, int N>
 inline typename UnaryReturn<PSpinVectorJIT<T1,N>, FnConjugate>::Type_t
 conj(const PSpinVectorJIT<T1,N>& l)
 {
-  typename UnaryReturn<PSpinVectorJIT<T1,N>, FnConjugate>::Type_t  d(l.func());
+  typename UnaryReturn<PSpinVectorJIT<T1,N>, FnConjugate>::Type_t  d;
 
   for(int i=0; i < N; ++i)
     d.elem(i) = conj(l.elem(i));
@@ -366,7 +367,7 @@ template<class T, int N>
 inline typename UnaryReturn<PSpinVectorJIT<T,N>, FnTimesI>::Type_t
 timesI(const PSpinVectorJIT<T,N>& s1)
 {
-  typename UnaryReturn<PSpinVectorJIT<T,N>, FnTimesI>::Type_t  d(s1.func());
+  typename UnaryReturn<PSpinVectorJIT<T,N>, FnTimesI>::Type_t  d;
 
   for(int i=0; i < N; ++i)
     d.elem(i) = timesI(s1.elem(i));
@@ -379,7 +380,7 @@ template<class T, int N>
 inline typename UnaryReturn<PSpinVectorJIT<T,N>, FnTimesMinusI>::Type_t
 timesMinusI(const PSpinVectorJIT<T,N>& s1)
 {
-  typename UnaryReturn<PSpinVectorJIT<T,N>, FnTimesMinusI>::Type_t  d(s1.func());
+  typename UnaryReturn<PSpinVectorJIT<T,N>, FnTimesMinusI>::Type_t  d;
 
   for(int i=0; i < N; ++i)
     d.elem(i) = timesMinusI(s1.elem(i));
@@ -394,7 +395,7 @@ template<class T, int N>
 inline typename UnaryReturn<PSpinVectorJIT<T,N>, FnGetSite>::Type_t
 getSite(const PSpinVectorJIT<T,N>& s1, int innersite)
 { 
-  typename UnaryReturn<PSpinVectorJIT<T,N>, FnGetSite>::Type_t  d(s1.func());
+  typename UnaryReturn<PSpinVectorJIT<T,N>, FnGetSite>::Type_t  d;
 
   for(int i=0; i < N; ++i)
     d.elem(i) = getSite(s1.elem(i), innersite);
@@ -408,7 +409,7 @@ getSite(const PSpinVectorJIT<T,N>& s1, int innersite)
 // inline typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekColorVectorJIT >::Type_t
 // peekColor(const PSpinVectorJIT<T,N>& l, int row)
 // {
-//   typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekColorVectorJIT >::Type_t  d(l.func());
+//   typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekColorVectorJIT >::Type_t  d;
 
 //   for(int i=0; i < N; ++i)
 //     d.elem(i) = peekColor(l.elem(i),row);
@@ -421,7 +422,7 @@ getSite(const PSpinVectorJIT<T,N>& s1, int innersite)
 // inline typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekColorMatrixJIT >::Type_t
 // peekColor(const PSpinVectorJIT<T,N>& l, int row, int col)
 // {
-//   typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekColorMatrixJIT >::Type_t  d(l.func());
+//   typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekColorMatrixJIT >::Type_t  d;
 
 //   for(int i=0; i < N; ++i)
 //     d.elem(i) = peekColor(l.elem(i),row,col);
@@ -435,7 +436,7 @@ getSite(const PSpinVectorJIT<T,N>& s1, int innersite)
 // inline typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekSpinMatrixJIT>::Type_t
 // peekSpin(const PSpinVectorJIT<T,N>& l, int row, int col)
 // {
-//   typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekSpinMatrixJIT>::Type_t  d(l.func());
+//   typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekSpinMatrixJIT>::Type_t  d;
 
 //   for(int i=0; i < N; ++i)
 //     d.elem(i) = peekSpin(l.elem(i),row,col);
@@ -563,7 +564,7 @@ template<class T, int N>
 inline typename UnaryReturn<PSpinVectorJIT<T,N>, FnSum>::Type_t
 sum(const PSpinVectorJIT<T,N>& s1)
 {
-  typename UnaryReturn<PSpinVectorJIT<T,N>, FnSum>::Type_t  d(s1.func());
+  typename UnaryReturn<PSpinVectorJIT<T,N>, FnSum>::Type_t  d;
 
   for(int i=0; i < N; ++i)
     d.elem(i) = sum(s1.elem(i));
@@ -579,7 +580,7 @@ template<class T, int N>
 inline typename UnaryReturn<PSpinVectorJIT<T,N>, FnLocalNorm2>::Type_t
 localNorm2(const PSpinVectorJIT<T,N>& s1)
 {
-  typename UnaryReturn<PSpinVectorJIT<T,N>, FnLocalNorm2>::Type_t  d(s1.func());
+  typename UnaryReturn<PSpinVectorJIT<T,N>, FnLocalNorm2>::Type_t  d;
 
   d.elem() = localNorm2(s1.elem(0));
   for(int i=1; i < N; ++i)
@@ -605,7 +606,7 @@ template<class T1, class T2, class T3, int N>
 inline typename TrinaryReturn<PScalarJIT<T1>, PSpinVectorJIT<T2,N>, PSpinVectorJIT<T3,N>, FnWhere>::Type_t
 where(const PScalarJIT<T1>& a, const PSpinVectorJIT<T2,N>& b, const PSpinVectorJIT<T3,N>& c)
 {
-  typename TrinaryReturn<PScalarJIT<T1>, PSpinVectorJIT<T2,N>, PSpinVectorJIT<T3,N>, FnWhere>::Type_t  d(a.func());
+  typename TrinaryReturn<PScalarJIT<T1>, PSpinVectorJIT<T2,N>, PSpinVectorJIT<T3,N>, FnWhere>::Type_t  d;
 
   // Not optimal - want to have where outside assignment
   for(int i=0; i < N; ++i)
@@ -796,7 +797,7 @@ template<class T1, class T2, int N>
 inline PScalarJIT<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>
 localInnerProduct(const PSpinVectorJIT<T1,N>& s1, const PSpinVectorJIT<T2,N>& s2)
 {
-  PScalarJIT<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>  d(s1.func());
+  PScalarJIT<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>  d;
 
   d.elem() = localInnerProduct(s1.elem(0), s2.elem(0));
   for(int i=1; i < N; ++i)
@@ -809,7 +810,7 @@ template<class T1, class T2, int N>
 inline PScalarJIT<typename BinaryReturn<T1, T2, FnLocalInnerProductReal>::Type_t>
 localInnerProductReal(const PSpinVectorJIT<T1,N>& s1, const PSpinVectorJIT<T2,N>& s2)
 {
-  PScalarJIT<typename BinaryReturn<T1, T2, FnLocalInnerProductReal>::Type_t>  d(s1.func());
+  PScalarJIT<typename BinaryReturn<T1, T2, FnLocalInnerProductReal>::Type_t>  d;
 
   d.elem() = localInnerProductReal(s1.elem(0), s2.elem(0));
   for(int i=1; i < N; ++i)
@@ -985,7 +986,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,0>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,0>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,0>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,0>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d;
   
   d.elem(0) =  r.elem(0);
   d.elem(1) =  r.elem(1);
@@ -999,7 +1000,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,1>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,1>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,1>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,1>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d;
 
   d.elem(0) = timesI(r.elem(3));
   d.elem(1) = timesI(r.elem(2));
@@ -1013,7 +1014,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,2>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,2>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,2>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,2>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d;
 
   d.elem(0) = -r.elem(3);
   d.elem(1) =  r.elem(2);
@@ -1027,7 +1028,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,3>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,3>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,3>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,3>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d;
 
   d.elem(0) = timesMinusI(r.elem(0));
   d.elem(1) = timesI(r.elem(1));
@@ -1041,7 +1042,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,4>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,4>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,4>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,4>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d;
 
   d.elem(0) = timesI(r.elem(2));
   d.elem(1) = timesMinusI(r.elem(3));
@@ -1055,7 +1056,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,5>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,5>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,5>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,5>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d;
 
   d.elem(0) = -r.elem(1);
   d.elem(1) =  r.elem(0);
@@ -1069,7 +1070,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,6>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,6>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,6>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,6>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d;
 
   d.elem(0) = timesMinusI(r.elem(1));
   d.elem(1) = timesMinusI(r.elem(0));
@@ -1083,7 +1084,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,7>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,7>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,7>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,7>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d;
 
   d.elem(0) =  r.elem(2);
   d.elem(1) =  r.elem(3);
@@ -1097,7 +1098,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,8>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,8>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,8>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,8>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d;
 
   d.elem(0) =  r.elem(2);
   d.elem(1) =  r.elem(3);
@@ -1111,7 +1112,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,9>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,9>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,9>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,9>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d;
 
   d.elem(0) = timesI(r.elem(1));
   d.elem(1) = timesI(r.elem(0));
@@ -1125,7 +1126,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,10>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,10>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,10>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,10>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d;
 
   d.elem(0) = -r.elem(1);
   d.elem(1) =  r.elem(0);
@@ -1139,7 +1140,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,11>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,11>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,11>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,11>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d;
 
   d.elem(0) = timesMinusI(r.elem(2));
   d.elem(1) = timesI(r.elem(3));
@@ -1153,7 +1154,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,12>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,12>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,12>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,12>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d;
 
   d.elem(0) = timesI(r.elem(0));
   d.elem(1) = timesMinusI(r.elem(1));
@@ -1167,7 +1168,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,13>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,13>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,13>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,13>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d;
 
   d.elem(0) = -r.elem(3);
   d.elem(1) =  r.elem(2);
@@ -1181,7 +1182,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,14>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,14>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,14>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,14>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d;
 
   d.elem(0) = timesMinusI(r.elem(3));
   d.elem(1) = timesMinusI(r.elem(2));
@@ -1195,7 +1196,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,15>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,15>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,15>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,15>, PSpinVectorJIT<T2,4>, OpGammaConstMultiply>::Type_t  d;
 
   d.elem(0) =  r.elem(0);
   d.elem(1) =  r.elem(1);
@@ -1212,7 +1213,7 @@ template<class T>
 inline typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir0Minus>::Type_t
 spinProjectDir0Minus(const PSpinVectorJIT<T,4>& s1)
 {
-  typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir0Minus>::Type_t  d(s1.func());
+  typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir0Minus>::Type_t  d;
 
   /*                              ( 1  0  0 -i)  ( a0 )    ( a0 - i a3 )
    *  B  :=  ( 1 - Gamma  ) A  =  ( 0  1 -i  0)  ( a1 )  = ( a1 - i a2 )
@@ -1239,7 +1240,7 @@ template<class T>
 inline typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir1Minus>::Type_t
 spinProjectDir1Minus(const PSpinVectorJIT<T,4>& s1)
 {
-  typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir1Minus>::Type_t  d(s1.func());
+  typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir1Minus>::Type_t  d;
 
   /*                              ( 1  0  0  1)  ( a0 )    ( a0 + a3 )
    *  B  :=  ( 1 - Gamma  ) A  =  ( 0  1 -1  0)  ( a1 )  = ( a1 - a2 )
@@ -1266,7 +1267,7 @@ template<class T>
 inline typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir2Minus>::Type_t
 spinProjectDir2Minus(const PSpinVectorJIT<T,4>& s1)
 {
-  typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir2Minus>::Type_t  d(s1.func());
+  typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir2Minus>::Type_t  d;
 
   /*                              ( 1  0 -i  0)  ( a0 )    ( a0 - i a2 )
    *  B  :=  ( 1 - Gamma  ) A  =  ( 0  1  0  i)  ( a1 )  = ( a1 + i a3 )
@@ -1293,7 +1294,7 @@ template<class T>
 inline typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir3Minus>::Type_t
 spinProjectDir3Minus(const PSpinVectorJIT<T,4>& s1)
 {
-  typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir3Minus>::Type_t  d(s1.func());
+  typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir3Minus>::Type_t  d;
 
   /*                              ( 1  0 -1  0)  ( a0 )    ( a0 - a2 )
    *  B  :=  ( 1 - Gamma  ) A  =  ( 0  1  0 -1)  ( a1 )  = ( a1 - a3 )
@@ -1320,7 +1321,7 @@ template<class T>
 inline typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir0Plus>::Type_t
 spinProjectDir0Plus(const PSpinVectorJIT<T,4>& s1)
 {
-  typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir0Plus>::Type_t  d(s1.func());
+  typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir0Plus>::Type_t  d;
 
   /*                              ( 1  0  0 +i)  ( a0 )    ( a0 + i a3 )
    *  B  :=  ( 1 + Gamma  ) A  =  ( 0  1 +i  0)  ( a1 )  = ( a1 + i a2 )
@@ -1347,7 +1348,7 @@ template<class T>
 inline typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir1Plus>::Type_t
 spinProjectDir1Plus(const PSpinVectorJIT<T,4>& s1)
 {
-  typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir1Plus>::Type_t  d(s1.func());
+  typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir1Plus>::Type_t  d;
 
   /*                              ( 1  0  0 -1)  ( a0 )    ( a0 - a3 )
    *  B  :=  ( 1 + Gamma  ) A  =  ( 0  1  1  0)  ( a1 )  = ( a1 + a2 )
@@ -1374,7 +1375,7 @@ template<class T>
 inline typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir2Plus>::Type_t
 spinProjectDir2Plus(const PSpinVectorJIT<T,4>& s1)
 {
-  typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir2Plus>::Type_t  d(s1.func());
+  typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir2Plus>::Type_t  d;
 
   /*                              ( 1  0  i  0)  ( a0 )    ( a0 + i a2 )
    *  B  :=  ( 1 + Gamma  ) A  =  ( 0  1  0 -i)  ( a1 )  = ( a1 - i a3 )
@@ -1401,7 +1402,7 @@ template<class T>
 inline typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir3Plus>::Type_t
 spinProjectDir3Plus(const PSpinVectorJIT<T,4>& s1)
 {
-  typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir3Plus>::Type_t  d(s1.func());
+  typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir3Plus>::Type_t  d;
 
   /*                              ( 1  0  1  0)  ( a0 )    ( a0 + a2 )
    *  B  :=  ( 1 + Gamma  ) A  =  ( 0  1  0  1)  ( a1 )  = ( a1 + a3 )
@@ -1431,7 +1432,7 @@ template<class T>
 inline typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir0Minus>::Type_t
 spinReconstructDir0Minus(const PSpinVectorJIT<T,2>& s1)
 {
-  typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir0Minus>::Type_t  d(s1.func());
+  typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir0Minus>::Type_t  d;
 
   d.elem(0) = s1.elem(0);
   d.elem(1) = s1.elem(1);
@@ -1445,7 +1446,7 @@ template<class T>
 inline typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir1Minus>::Type_t
 spinReconstructDir1Minus(const PSpinVectorJIT<T,2>& s1)
 {
-  typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir1Minus>::Type_t  d(s1.func());
+  typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir1Minus>::Type_t  d;
 
   d.elem(0) = s1.elem(0);
   d.elem(1) = s1.elem(1);
@@ -1460,7 +1461,7 @@ template<class T>
 inline typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir2Minus>::Type_t
 spinReconstructDir2Minus(const PSpinVectorJIT<T,2>& s1)
 {
-  typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir2Minus>::Type_t  d(s1.func());
+  typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir2Minus>::Type_t  d;
 
   d.elem(0) = s1.elem(0);
   d.elem(1) = s1.elem(1);
@@ -1474,7 +1475,7 @@ template<class T>
 inline typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir3Minus>::Type_t
 spinReconstructDir3Minus(const PSpinVectorJIT<T,2>& s1)
 {
-  typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir3Minus>::Type_t  d(s1.func());
+  typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir3Minus>::Type_t  d;
 
   d.elem(0) = s1.elem(0);
   d.elem(1) = s1.elem(1);
@@ -1488,7 +1489,7 @@ template<class T>
 inline typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir0Plus>::Type_t
 spinReconstructDir0Plus(const PSpinVectorJIT<T,2>& s1)
 {
-  typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir0Plus>::Type_t  d(s1.func());
+  typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir0Plus>::Type_t  d;
 
   d.elem(0) = s1.elem(0);
   d.elem(1) = s1.elem(1);
@@ -1502,7 +1503,7 @@ template<class T>
 inline typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir1Plus>::Type_t
 spinReconstructDir1Plus(const PSpinVectorJIT<T,2>& s1)
 {
-  typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir1Plus>::Type_t  d(s1.func());
+  typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir1Plus>::Type_t  d;
 
   d.elem(0) = s1.elem(0);
   d.elem(1) = s1.elem(1);
@@ -1516,7 +1517,7 @@ template<class T>
 inline typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir2Plus>::Type_t
 spinReconstructDir2Plus(const PSpinVectorJIT<T,2>& s1)
 {
-  typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir2Plus>::Type_t  d(s1.func());
+  typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir2Plus>::Type_t  d;
 
   d.elem(0) = s1.elem(0);
   d.elem(1) = s1.elem(1);
@@ -1530,7 +1531,7 @@ template<class T>
 inline typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir3Plus>::Type_t
 spinReconstructDir3Plus(const PSpinVectorJIT<T,2>& s1)
 {
-  typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir3Plus>::Type_t  d(s1.func());
+  typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir3Plus>::Type_t  d;
 
   d.elem(0) = s1.elem(0);
   d.elem(1) = s1.elem(1);
@@ -1548,7 +1549,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,0>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,0>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,0>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,0>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
   
   d.elem(0) =  r.elem(0);
   d.elem(1) =  r.elem(1);
@@ -1562,7 +1563,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,1>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,1>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,1>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,1>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
   
   d.elem(0) = timesMinusI(r.elem(3));
   d.elem(1) = timesMinusI(r.elem(2));
@@ -1576,7 +1577,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,2>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,2>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,2>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,2>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
 
   d.elem(0) = -r.elem(3);
   d.elem(1) =  r.elem(2);
@@ -1590,7 +1591,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,3>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,3>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,3>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,3>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
 
   d.elem(0) = timesI(r.elem(0));
   d.elem(1) = timesMinusI(r.elem(1));
@@ -1604,7 +1605,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,4>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,4>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,4>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,4>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
 
   d.elem(0) = timesMinusI(r.elem(2));
   d.elem(1) = timesI(r.elem(3));
@@ -1618,7 +1619,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,5>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,5>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,5>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,5>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
 
   d.elem(0) = -r.elem(1);
   d.elem(1) =  r.elem(0);
@@ -1632,7 +1633,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,6>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,6>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,6>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,6>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
 
   d.elem(0) = timesI(r.elem(1));
   d.elem(1) = timesI(r.elem(0));
@@ -1646,7 +1647,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,7>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,7>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,7>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,7>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
 
   d.elem(0) =  r.elem(2);
   d.elem(1) =  r.elem(3);
@@ -1660,7 +1661,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,8>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,8>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,8>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,8>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
 
   d.elem(0) =  r.elem(0);
   d.elem(1) =  r.elem(1);
@@ -1674,7 +1675,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,9>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,9>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,9>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,9>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
 
   d.elem(0) = timesI(r.elem(3));
   d.elem(1) = timesI(r.elem(2));
@@ -1688,7 +1689,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,10>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,10>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,10>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,10>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
 
   d.elem(0) =  r.elem(3);
   d.elem(1) = -r.elem(2);
@@ -1702,7 +1703,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,11>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,11>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,11>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,11>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
 
   d.elem(0) = timesI(r.elem(0));
   d.elem(1) = timesMinusI(r.elem(1));
@@ -1716,7 +1717,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,12>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,12>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,12>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,12>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
 
   d.elem(0) = timesI(r.elem(2));
   d.elem(1) = timesMinusI(r.elem(3));
@@ -1730,7 +1731,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,13>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,13>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,13>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,13>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
 
   d.elem(0) = -r.elem(1);
   d.elem(1) =  r.elem(0);
@@ -1744,7 +1745,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,14>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,14>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,14>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,14>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
 
   d.elem(0) = timesI(r.elem(1));
   d.elem(1) = timesI(r.elem(0));
@@ -1758,7 +1759,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,15>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,15>&, const PSpinVectorJIT<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,15>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,15>, PSpinVectorJIT<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
 
   d.elem(0) = -r.elem(2);
   d.elem(1) = -r.elem(3);
@@ -1775,7 +1776,7 @@ template<class T>
 inline typename UnaryReturn<PSpinVectorJIT<T,4>, FnChiralProjectPlus>::Type_t
 chiralProjectPlus(const PSpinVectorJIT<T,4>& s1)
 {
-  typename UnaryReturn<PSpinVectorJIT<T,4>, FnChiralProjectPlus>::Type_t  d(s1.func());
+  typename UnaryReturn<PSpinVectorJIT<T,4>, FnChiralProjectPlus>::Type_t  d;
 
   d.elem(0) = s1.elem(0);
   d.elem(1) = s1.elem(1);
@@ -1790,7 +1791,7 @@ template<class T>
 inline typename UnaryReturn<PSpinVectorJIT<T,4>, FnChiralProjectMinus>::Type_t
 chiralProjectMinus(const PSpinVectorJIT<T,4>& s1)
 {
-  typename UnaryReturn<PSpinVectorJIT<T,4>, FnChiralProjectMinus>::Type_t  d(s1.func());
+  typename UnaryReturn<PSpinVectorJIT<T,4>, FnChiralProjectMinus>::Type_t  d;
 
   zero_rep(d.elem(0));
   zero_rep(d.elem(1));

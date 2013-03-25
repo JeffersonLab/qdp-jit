@@ -50,28 +50,6 @@ public:
 #endif
 
 
-#if 0
-  //! construct dest = rhs
-  template<class T1>
-  RScalarJIT(const RScalarJIT<T1>& rhs) : JV<T,1>(newspace_t(rhs.func())) {
-    elem() = rhs.elem();
-  }
-
-  RScalarJIT(const RScalarJIT& rhs) : JV<T,1>(newspace_t(rhs.func())) {
-    elem() = rhs.elem();
-  }
-#endif
-
-  // I keep this deactivated. Takes too much.
-#if 0
-  template<class T1>
-  RScalarJIT(const T1& rhs) : JV<T,1>(newspace_t(rhs.func())) {
-    elem() = rhs;
-  }
-#endif
-
-
-
 
   //! RScalarJIT += RScalarJIT
   template<class T1>
@@ -275,18 +253,6 @@ public:
     imag() = im;
   }
 
-#if 0
-  template<class T1>
-  RComplexJIT(const RComplexJIT<T1>& a) : JV<T,2>::JV(newspace_t(a.func())) {
-    real() = a.real();
-    imag() = a.imag();
-  }
-
-  RComplexJIT(const RComplexJIT& a) : JV<T,2>::JV(newspace_t(a.func())) {
-    real() = a.real();
-    imag() = a.imag();
-  }
-#endif
 
   //! RComplexJIT += RScalarJIT
   template<class T1>
@@ -842,7 +808,7 @@ template<class T1, class T2>
 inline typename BinaryReturn<RScalarJIT<T1>, RScalarJIT<T2>, OpMultiply>::Type_t
 operator*(const RScalarJIT<T1>& l, const RScalarJIT<T2>& r)
 {
-  typename BinaryReturn<RScalarJIT<T1>, RScalarJIT<T2>, OpMultiply>::Type_t ret(l.func());
+  typename BinaryReturn<RScalarJIT<T1>, RScalarJIT<T2>, OpMultiply>::Type_t ret;
   ret = l.elem() * r.elem();
   return ret;
 }
@@ -1747,7 +1713,7 @@ operator*(const RComplexJIT<T1>& l, const RComplexJIT<T2>& r)
   return Ret_t(l.real()*r.real() - l.imag()*r.imag(),
 	       l.real()*r.imag() + l.imag()*r.real());
 #else
-  typename BinaryReturn<RComplexJIT<T1>, RComplexJIT<T2>, OpMultiply>::Type_t ret(l.func());
+  typename BinaryReturn<RComplexJIT<T1>, RComplexJIT<T2>, OpMultiply>::Type_t ret;
   ret.real() = l.real()*r.real() - l.imag()*r.imag();
   ret.imag() = l.real()*r.imag() + l.imag()*r.real();
   return ret;

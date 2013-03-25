@@ -35,23 +35,23 @@ public:
   //! PVectorJIT = PVectorJIT
   /*! Set equal to another PVectorJIT */
   //template<class T1>
-  inline
-  CC& assign(const typename REGType< C<T,N> >::Type_t& rhs) 
-    {
-      for(int i=0; i < N; ++i)
-	elem(i) = rhs.elem(i);
+  // inline
+  // CC& assign(const typename REGType< C<T,N> >::Type_t& rhs) 
+  //   {
+  //     for(int i=0; i < N; ++i)
+  // 	elem(i) = rhs.elem(i);
 
-      return static_cast<CC&>(*this);
-    }
+  //     return static_cast<CC&>(*this);
+  //   }
 
   //! PVectorJIT = PVectorJIT
   /*! Set equal to another PVectorJIT */
-  template<class T1>
-  inline
-  CC& operator=(const typename REGType< C<T1,N> >::Type_t& rhs) 
-    {
-      return assign(rhs);
-    }
+  // template<class T1>
+  // inline
+  // CC& operator=(const typename REGType< C<T1,N> >::Type_t& rhs) 
+  //   {
+  //     return assign(rhs);
+  //   }
 
   //! PVectorJIT += PVectorJIT
   // template<class T1>

@@ -1041,7 +1041,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,0>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,0>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,0>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,0>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d;
   
   d.elem(0) =  r.elem(0);
   d.elem(1) =  r.elem(1);
@@ -1055,7 +1055,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,1>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,1>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,1>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,1>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d;
 
   d.elem(0) = timesI(r.elem(3));
   d.elem(1) = timesI(r.elem(2));
@@ -1069,7 +1069,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,2>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,2>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,2>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,2>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d;
 
   d.elem(0) = -r.elem(3);
   d.elem(1) =  r.elem(2);
@@ -1083,7 +1083,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,3>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,3>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,3>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,3>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d;
 
   d.elem(0) = timesMinusI(r.elem(0));
   d.elem(1) = timesI(r.elem(1));
@@ -1097,7 +1097,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,4>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,4>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,4>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,4>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d;
 
   d.elem(0) = timesI(r.elem(2));
   d.elem(1) = timesMinusI(r.elem(3));
@@ -1111,7 +1111,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,5>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,5>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,5>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,5>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d;
 
   d.elem(0) = -r.elem(1);
   d.elem(1) =  r.elem(0);
@@ -1125,7 +1125,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,6>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,6>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,6>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,6>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d;
 
   d.elem(0) = timesMinusI(r.elem(1));
   d.elem(1) = timesMinusI(r.elem(0));
@@ -1139,7 +1139,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,7>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,7>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,7>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,7>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d;
 
   d.elem(0) =  r.elem(2);
   d.elem(1) =  r.elem(3);
@@ -1153,7 +1153,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,8>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,8>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,8>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,8>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d;
 
   d.elem(0) =  r.elem(2);
   d.elem(1) =  r.elem(3);
@@ -1167,7 +1167,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,9>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,9>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,9>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,9>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d;
 
   d.elem(0) = timesI(r.elem(1));
   d.elem(1) = timesI(r.elem(0));
@@ -1181,7 +1181,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,10>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,10>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,10>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,10>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d;
 
   d.elem(0) = -r.elem(1);
   d.elem(1) =  r.elem(0);
@@ -1195,7 +1195,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,11>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,11>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,11>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,11>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d;
 
   d.elem(0) = timesMinusI(r.elem(2));
   d.elem(1) = timesI(r.elem(3));
@@ -1209,7 +1209,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,12>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,12>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,12>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,12>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d;
 
   d.elem(0) = timesI(r.elem(0));
   d.elem(1) = timesMinusI(r.elem(1));
@@ -1223,7 +1223,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,13>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,13>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,13>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,13>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d;
 
   d.elem(0) = -r.elem(3);
   d.elem(1) =  r.elem(2);
@@ -1237,7 +1237,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,14>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,14>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,14>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,14>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d;
 
   d.elem(0) = timesMinusI(r.elem(3));
   d.elem(1) = timesMinusI(r.elem(2));
@@ -1251,7 +1251,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConst<4,15>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t
 operator*(const GammaConst<4,15>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConst<4,15>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConst<4,15>, PSpinVectorREG<T2,4>, OpGammaConstMultiply>::Type_t  d;
 
   d.elem(0) =  r.elem(0);
   d.elem(1) =  r.elem(1);
@@ -1604,7 +1604,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,0>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,0>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,0>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,0>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
   
   d.elem(0) =  r.elem(0);
   d.elem(1) =  r.elem(1);
@@ -1618,7 +1618,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,1>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,1>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,1>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,1>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
   
   d.elem(0) = timesMinusI(r.elem(3));
   d.elem(1) = timesMinusI(r.elem(2));
@@ -1632,7 +1632,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,2>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,2>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,2>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,2>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
 
   d.elem(0) = -r.elem(3);
   d.elem(1) =  r.elem(2);
@@ -1646,7 +1646,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,3>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,3>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,3>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,3>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
 
   d.elem(0) = timesI(r.elem(0));
   d.elem(1) = timesMinusI(r.elem(1));
@@ -1660,7 +1660,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,4>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,4>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,4>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,4>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
 
   d.elem(0) = timesMinusI(r.elem(2));
   d.elem(1) = timesI(r.elem(3));
@@ -1674,7 +1674,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,5>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,5>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,5>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,5>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
 
   d.elem(0) = -r.elem(1);
   d.elem(1) =  r.elem(0);
@@ -1688,7 +1688,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,6>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,6>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,6>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,6>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
 
   d.elem(0) = timesI(r.elem(1));
   d.elem(1) = timesI(r.elem(0));
@@ -1702,7 +1702,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,7>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,7>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,7>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,7>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
 
   d.elem(0) =  r.elem(2);
   d.elem(1) =  r.elem(3);
@@ -1716,7 +1716,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,8>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,8>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,8>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,8>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
 
   d.elem(0) =  r.elem(0);
   d.elem(1) =  r.elem(1);
@@ -1730,7 +1730,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,9>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,9>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,9>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,9>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
 
   d.elem(0) = timesI(r.elem(3));
   d.elem(1) = timesI(r.elem(2));
@@ -1744,7 +1744,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,10>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,10>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,10>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,10>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
 
   d.elem(0) =  r.elem(3);
   d.elem(1) = -r.elem(2);
@@ -1758,7 +1758,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,11>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,11>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,11>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,11>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
 
   d.elem(0) = timesI(r.elem(0));
   d.elem(1) = timesMinusI(r.elem(1));
@@ -1772,7 +1772,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,12>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,12>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,12>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,12>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
 
   d.elem(0) = timesI(r.elem(2));
   d.elem(1) = timesMinusI(r.elem(3));
@@ -1786,7 +1786,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,13>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,13>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,13>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,13>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
 
   d.elem(0) = -r.elem(1);
   d.elem(1) =  r.elem(0);
@@ -1800,7 +1800,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,14>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,14>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,14>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,14>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
 
   d.elem(0) = timesI(r.elem(1));
   d.elem(1) = timesI(r.elem(0));
@@ -1814,7 +1814,7 @@ template<class T2>
 inline typename BinaryReturn<GammaConstDP<4,15>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t
 operator*(const GammaConstDP<4,15>&, const PSpinVectorREG<T2,4>& r)
 {
-  typename BinaryReturn<GammaConstDP<4,15>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d(r.func());
+  typename BinaryReturn<GammaConstDP<4,15>, PSpinVectorREG<T2,4>, OpGammaConstDPMultiply>::Type_t  d;
 
   d.elem(0) = -r.elem(2);
   d.elem(1) = -r.elem(3);
