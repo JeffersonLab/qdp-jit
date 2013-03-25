@@ -61,6 +61,29 @@ public:
       return *this;
     }
 
+  //! PVectorJIT *= PScalarJIT
+  template<class T1>
+  inline
+  PColorVectorJIT& operator*=(const PScalarREG<T1>& rhs) 
+    {
+      for(int i=0; i < N; ++i)
+	this->elem(i) *= rhs.elem();
+
+      return *this;
+    }
+
+  //! PVectorJIT /= PScalarJIT
+  template<class T1>
+  inline
+  PColorVectorJIT& operator/=(const PScalarREG<T1>& rhs) 
+    {
+      for(int i=0; i < N; ++i)
+	this->elem(i) /= rhs.elem();
+
+      return *this;
+    }
+
+
 
 };
 

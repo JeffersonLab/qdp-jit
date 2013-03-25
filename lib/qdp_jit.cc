@@ -952,6 +952,9 @@ void jit_function::write_reg_defs()
   jit_value_t jit_ins_neg( jit_value_t rhs , jit_value_t pred ) {
     return jit_ins_unary_op( rhs , JitUnaryOpNeg( rhs->get_type() ) , pred );
   }
+  jit_value_t jit_ins_not( jit_value_t rhs , jit_value_t pred ) {
+    return jit_ins_unary_op( rhs , JitUnaryOpNot( rhs->get_type() ) , pred );
+  }
   jit_value_t jit_ins_fabs( jit_value_t rhs , jit_value_t pred ) {
     return jit_ins_unary_op( rhs , JitUnaryOpAbs( rhs->get_type() ) , pred );
   }

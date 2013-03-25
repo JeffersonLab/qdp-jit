@@ -110,51 +110,51 @@ public:
   //     return static_cast<CC&>(*this);
   //   }
 
-  //! PMatrixJIT += PScalarJIT
-  template<class T1>
-  inline
-  CC& operator+=(const PScalarREG<T1>& rhs) 
-    {
-      for(int i=0; i < N; ++i)
-	elem(i,i) += rhs.elem();
+  // //! PMatrixJIT += PScalarJIT
+  // template<class T1>
+  // inline
+  // CC& operator+=(const PScalarREG<T1>& rhs) 
+  //   {
+  //     for(int i=0; i < N; ++i)
+  // 	elem(i,i) += rhs.elem();
 
-      return static_cast<CC&>(*this);
-    }
+  //     return static_cast<CC&>(*this);
+  //   }
 
-  //! PMatrixJIT -= PScalarJIT
-  template<class T1>
-  inline
-  CC& operator-=(const PScalarREG<T1>& rhs) 
-    {
-      for(int i=0; i < N; ++i)
-	elem(i,i) -= rhs.elem();
+  // //! PMatrixJIT -= PScalarJIT
+  // template<class T1>
+  // inline
+  // CC& operator-=(const PScalarREG<T1>& rhs) 
+  //   {
+  //     for(int i=0; i < N; ++i)
+  // 	elem(i,i) -= rhs.elem();
 
-      return static_cast<CC&>(*this);
-    }
+  //     return static_cast<CC&>(*this);
+  //   }
 
-  //! PMatrixJIT *= PScalarJIT
-  template<class T1>
-  inline
-  CC& operator*=(const PScalarREG<T1>& rhs) 
-    {
-      for(int i=0; i < N; ++i)
-	for(int j=0; j < N; ++j)
-	  elem(i,j) *= rhs.elem();
+  // //! PMatrixJIT *= PScalarJIT
+  // template<class T1>
+  // inline
+  // CC& operator*=(const PScalarREG<T1>& rhs) 
+  //   {
+  //     for(int i=0; i < N; ++i)
+  // 	for(int j=0; j < N; ++j)
+  // 	  elem(i,j) *= rhs.elem();
 
-      return static_cast<CC&>(*this);
-    }
+  //     return static_cast<CC&>(*this);
+  //   }
 
-  //! PMatrixJIT /= PScalarJIT
-  template<class T1>
-  inline
-  CC& operator/=(const PScalarREG<T1>& rhs) 
-    {
-      for(int i=0; i < N; ++i)
-	for(int j=0; j < N; ++j)
-	  elem(i,j) /= rhs.elem();
+  // //! PMatrixJIT /= PScalarJIT
+  // template<class T1>
+  // inline
+  // CC& operator/=(const PScalarREG<T1>& rhs) 
+  //   {
+  //     for(int i=0; i < N; ++i)
+  // 	for(int j=0; j < N; ++j)
+  // 	  elem(i,j) /= rhs.elem();
 
-      return static_cast<CC&>(*this);
-    }
+  //     return static_cast<CC&>(*this);
+  //   }
 
 
 
@@ -1448,16 +1448,6 @@ zero_rep(PMatrixJIT<T,N,C>& dest)
 }
 
 
-//! dest = (mask) ? s1 : dest
-template<class T, class T1, int N, template<class,int> class C> 
-inline void 
-copymask(PMatrixJIT<T,N,C>& d, const PScalarJIT<T1>& mask, const PMatrixJIT<T,N,C>& s1) 
-{
-  for(int i=0; i < N; ++i)
-    for(int j=0; j < N; ++j)
-      copymask(d.elem(i,j),mask.elem(),s1.elem(i,j));
-}
-
 
 //! dest [some type] = source [some type]
 template<class T, class T1, int N, template<class,int> class C>
@@ -1735,6 +1725,19 @@ where(const PScalarJIT<T1>& a, const PMatrixJIT<T2,N,C>& b, const PMatrixJIT<T3,
 
   return d;
 }
+
+//! dest = (mask) ? s1 : dest
+template<class T, class T1, class T2, int N, template<class,int> class C, template<class,int> class C2> 
+inline void 
+copymask(PMatrixJIT<T,N,C>& d, const PScalarREG<T1>& mask, const PMatrixREG<T2,N,C2>& s1) 
+{
+  for(int i=0; i < N; ++i)
+    for(int j=0; j < N; ++j)
+      copymask(d.elem(i,j),mask.elem(),s1.elem(i,j));
+}
+
+
+
 
 /*! @} */  // end of group primmatrix
 

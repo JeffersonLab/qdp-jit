@@ -43,7 +43,7 @@ public:
   PSpinVectorJIT(const PSpinVectorREG<T1,N>& a)
   {
     for(int i=0; i < N; i++) 
-      elem(i) = a.elem(i);
+      this->elem(i) = a.elem(i);
   }
 
   // template<class T1>
@@ -73,7 +73,7 @@ public:
   PSpinVectorJIT& operator+=(const PSpinVectorREG<T1,N>& rhs) 
     {
       for(int i=0; i < N; ++i)
-	elem(i) += rhs.elem(i);
+	this->elem(i) += rhs.elem(i);
 
       return *this;
     }
@@ -94,7 +94,7 @@ public:
   PSpinVectorJIT& operator-=(const PSpinVectorREG<T1,N>& rhs) 
     {
       for(int i=0; i < N; ++i)
-	elem(i) -= rhs.elem(i);
+	this->elem(i) -= rhs.elem(i);
 
       return *this;
     }
@@ -105,10 +105,11 @@ public:
   PSpinVectorJIT& operator/=(const PScalarREG<T1>& rhs) 
     {
       for(int i=0; i < N; ++i)
-	elem(i) /= rhs.elem();
+	this->elem(i) /= rhs.elem();
 
       return *this;
     }
+
 
 public:
         T& elem(int i)       {return this->arrayF(i);}
@@ -503,15 +504,6 @@ zero_rep(PSpinVectorJIT<T,N>& dest)
 {
   for(int i=0; i < N; ++i)
     zero_rep(dest.elem(i));
-}
-
-//! dest = (mask) ? s1 : dest
-template<class T, class T1, int N> 
-inline void 
-copymask(PSpinVectorJIT<T,N>& d, const PScalarJIT<T1>& mask, const PSpinVectorJIT<T,N>& s1) 
-{
-  for(int i=0; i < N; ++i)
-    copymask(d.elem(i),mask.elem(),s1.elem(i));
 }
 
 
@@ -1812,6 +1804,18 @@ fill_gaussian(PSpinVectorJIT<T,N>& d, PSpinVectorREG<T2,N>& r1, PSpinVectorREG<T
   for(int i=0; i < N; ++i)
     fill_gaussian(d.elem(i), r1.elem(i), r2.elem(i));
 }
+
+
+
+//! dest = (mask) ? s1 : dest
+template<class T, class T1, class T2, int N> 
+inline void 
+copymask(PSpinVectorJIT<T,N>& d, const PScalarREG<T1>& mask, const PSpinVectorREG<T2,N>& s1) 
+{
+  for(int i=0; i < N; ++i)
+    copymask(d.elem(i),mask.elem(),s1.elem(i));
+}
+
 
 
 

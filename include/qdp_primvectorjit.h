@@ -75,27 +75,27 @@ public:
   //     return static_cast<CC&>(*this);
   //   }
 
-  //! PVectorJIT *= PScalarJIT
-  template<class T1>
-  inline
-  CC& operator*=(const PScalarREG<T1>& rhs) 
-    {
-      for(int i=0; i < N; ++i)
-	elem(i) *= rhs.elem();
+  // //! PVectorJIT *= PScalarJIT
+  // template<class T1>
+  // inline
+  // CC& operator*=(const PScalarREG<T1>& rhs) 
+  //   {
+  //     for(int i=0; i < N; ++i)
+  // 	elem(i) *= rhs.elem();
 
-      return static_cast<CC&>(*this);
-    }
+  //     return static_cast<CC&>(*this);
+  //   }
 
-  //! PVectorJIT /= PScalarJIT
-  template<class T1>
-  inline
-  CC& operator/=(const PScalarREG<T1>& rhs) 
-    {
-      for(int i=0; i < N; ++i)
-	elem(i) /= rhs.elem();
+  // //! PVectorJIT /= PScalarJIT
+  // template<class T1>
+  // inline
+  // CC& operator/=(const PScalarREG<T1>& rhs) 
+  //   {
+  //     for(int i=0; i < N; ++i)
+  // 	elem(i) /= rhs.elem();
 
-      return static_cast<CC&>(*this);
-    }
+  //     return static_cast<CC&>(*this);
+  //   }
 
 
 #if 0
@@ -613,15 +613,6 @@ zero_rep(PVectorJIT<T,N,C>& dest)
     zero_rep(dest.elem(i));
 }
 
-//! dest = (mask) ? s1 : dest
-template<class T, class T1, int N, template<class,int> class C> 
-inline void 
-copymask(PVectorJIT<T,N,C>& d, const PScalarJIT<T1>& mask, const PVectorJIT<T,N,C>& s1) 
-{
-  for(int i=0; i < N; ++i)
-    copymask(d.elem(i),mask.elem(),s1.elem(i));
-}
-
 
 //! dest [some type] = source [some type]
 template<class T, class T1, int N, template<class,int> class C>
@@ -850,6 +841,18 @@ where(const PScalarJIT<T1>& a, const PVectorJIT<T2,N,C>& b, const PVectorJIT<T3,
 
   return d;
 }
+
+//! dest = (mask) ? s1 : dest
+template<class T, class T1, class T2, int N, template<class,int> class C, template<class,int> class C2> 
+inline void 
+copymask(PVectorJIT<T,N,C>& d, const PScalarREG<T1>& mask, const PVectorREG<T2,N,C2>& s1) 
+{
+  for(int i=0; i < N; ++i)
+    copymask(d.elem(i),mask.elem(),s1.elem(i));
+}
+
+
+
 
 /*! @} */  // end of group primvector
 

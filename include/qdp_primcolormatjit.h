@@ -70,6 +70,53 @@ public:
       return *this;
     }
 
+  template<class T1>
+  inline
+  PColorMatrixJIT& operator+=(const PScalarREG<T1>& rhs) 
+    {
+      for(int i=0; i < N; ++i)
+	this->elem(i,i) += rhs.elem();
+
+      return *this;
+    }
+
+  //! PMatrixJIT -= PScalarJIT
+  template<class T1>
+  inline
+  PColorMatrixJIT& operator-=(const PScalarREG<T1>& rhs) 
+    {
+      for(int i=0; i < N; ++i)
+	this->elem(i,i) -= rhs.elem();
+
+      return *this;
+    }
+
+  //! PMatrixJIT *= PScalarJIT
+  template<class T1>
+  inline
+  PColorMatrixJIT& operator*=(const PScalarREG<T1>& rhs) 
+    {
+      for(int i=0; i < N; ++i)
+	for(int j=0; j < N; ++j)
+	  this->elem(i,j) *= rhs.elem();
+
+      return *this;
+    }
+
+  //! PMatrixJIT /= PScalarJIT
+  template<class T1>
+  inline
+  PColorMatrixJIT& operator/=(const PScalarREG<T1>& rhs) 
+    {
+      for(int i=0; i < N; ++i)
+	for(int j=0; j < N; ++j)
+	  this->elem(i,j) /= rhs.elem();
+
+      return *this;
+    }
+
+
+
 };
 
 /*! @} */   // end of group primcolormatrix

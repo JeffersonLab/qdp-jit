@@ -253,6 +253,21 @@ namespace QDP {
 #endif
 
 
+  template<class T>
+  struct UnaryReturn<WordREG<T>, OpNot > {
+    typedef WordREG<typename UnaryReturn<T, OpNot>::Type_t>  Type_t;
+  };
+  
+  template<class T1>
+  inline typename UnaryReturn<WordREG<T1>, OpNot>::Type_t
+  operator!(const WordREG<T1>& l)
+  {
+    typename UnaryReturn<WordREG<T1>, OpNot>::Type_t ret;
+    ret.setup( jit_ins_not( l.get_val() ) );
+    return ret;
+  }
+
+
   template<class T1, class T2>
   inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpAdd>::Type_t
   operator+(const WordREG<T1>& l, const WordREG<T2>& r)
