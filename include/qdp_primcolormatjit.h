@@ -46,6 +46,28 @@ public:
       return *this;
     }
 
+  template<class T1>
+  inline
+  PColorMatrixJIT& operator+=(const PColorMatrixREG<T1,N>& rhs) 
+    {
+      for(int i=0; i < N; ++i)
+	for(int j=0; j < N; ++j)
+	  this->elem(i,j) += rhs.elem(i,j);
+
+      return *this;
+    }
+
+  template<class T1>
+  inline
+  PColorMatrixJIT& operator-=(const PColorMatrixREG<T1,N>& rhs) 
+    {
+      for(int i=0; i < N; ++i)
+	for(int j=0; j < N; ++j)
+	  this->elem(i,j) -= rhs.elem(i,j);
+
+      return *this;
+    }
+
 };
 
 /*! @} */   // end of group primcolormatrix

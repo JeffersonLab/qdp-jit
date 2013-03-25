@@ -86,29 +86,29 @@ public:
     }
 #endif
 
-  //! PMatrixJIT += PMatrixJIT
-  template<class T1>
-  inline
-  CC& operator+=(const typename REGType< C<T1,N> >::Type_t& rhs) 
-    {
-      for(int i=0; i < N; ++i)
-	for(int j=0; j < N; ++j)
-	  elem(i,j) += rhs.elem(i,j);
+  // //! PMatrixJIT += PMatrixJIT
+  // template<class T1>
+  // inline
+  // CC& operator+=(const typename REGType< C<T1,N> >::Type_t& rhs) 
+  //   {
+  //     for(int i=0; i < N; ++i)
+  // 	for(int j=0; j < N; ++j)
+  // 	  elem(i,j) += rhs.elem(i,j);
 
-      return static_cast<CC&>(*this);
-    }
+  //     return static_cast<CC&>(*this);
+  //   }
 
-  //! PMatrixJIT -= PMatrixJIT
-  template<class T1>
-  inline
-  CC& operator-=(const typename REGType< C<T1,N> >::Type_t& rhs) 
-    {
-      for(int i=0; i < N; ++i)
-	for(int j=0; j < N; ++j)
-	  elem(i,j) -= rhs.elem(i,j);
+  // //! PMatrixJIT -= PMatrixJIT
+  // template<class T1>
+  // inline
+  // CC& operator-=(const typename REGType< C<T1,N> >::Type_t& rhs) 
+  //   {
+  //     for(int i=0; i < N; ++i)
+  // 	for(int j=0; j < N; ++j)
+  // 	  elem(i,j) -= rhs.elem(i,j);
 
-      return static_cast<CC&>(*this);
-    }
+  //     return static_cast<CC&>(*this);
+  //   }
 
   //! PMatrixJIT += PScalarJIT
   template<class T1>

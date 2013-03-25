@@ -7,6 +7,9 @@
 #ifndef QDP_SIMPLEWORD_H
 #define QDP_SIMPLEWORD_H
 
+#define DOUBLE_TYPE float
+
+
 #include <cmath>
 
 namespace QDP {
@@ -487,7 +490,7 @@ struct TrinaryReturn<bool, int, int, FnWhere> {
 
 template<>
 struct UnaryReturn<float, FnSum> {
-  typedef float  Type_t;
+  typedef DOUBLE_TYPE  Type_t;
 };
 
 template<>
@@ -502,27 +505,27 @@ struct UnaryReturn<float, FnGlobalMin> {
 
 template<>
 struct UnaryReturn<float, FnSumMulti> {
-  typedef double  Type_t;
+  typedef DOUBLE_TYPE  Type_t;
 };
 
 template<>
 struct UnaryReturn<float, FnNorm2> {
-  typedef double  Type_t;
+  typedef DOUBLE_TYPE  Type_t;
 };
 
 template<>
 struct BinaryReturn<float, float, FnInnerProduct> {
-  typedef double  Type_t;
+  typedef DOUBLE_TYPE  Type_t;
 };
 
 template<>
 struct UnaryReturn<float, FnLocalNorm2> {
-  typedef double  Type_t;
+  typedef DOUBLE_TYPE  Type_t;
 };
 
 template<>
 struct BinaryReturn<float, float, FnLocalInnerProduct> {
-  typedef double  Type_t;
+  typedef DOUBLE_TYPE  Type_t;
 };
 
 template<>
@@ -533,47 +536,47 @@ struct TrinaryReturn<bool, float, float, FnWhere> {
 
 template<>
 struct UnaryReturn<double, FnSum> {
-  typedef double  Type_t;
+  typedef DOUBLE_TYPE  Type_t;
 };
 
 template<>
 struct UnaryReturn<double, FnGlobalMax> {
-  typedef double  Type_t;
+  typedef DOUBLE_TYPE  Type_t;
 };
 
 template<>
 struct UnaryReturn<double, FnGlobalMin> {
-  typedef double  Type_t;
+  typedef DOUBLE_TYPE  Type_t;
 };
 
 template<>
 struct UnaryReturn<double, FnSumMulti> {
-  typedef double  Type_t;
+  typedef DOUBLE_TYPE  Type_t;
 };
 
 template<>
 struct UnaryReturn<double, FnNorm2> {
-  typedef double  Type_t;
+  typedef DOUBLE_TYPE  Type_t;
 };
 
 template<>
 struct BinaryReturn<double, double, FnInnerProduct> {
-  typedef double  Type_t;
+  typedef DOUBLE_TYPE  Type_t;
 };
 
 template<>
 struct UnaryReturn<double, FnLocalNorm2> {
-  typedef double  Type_t;
+  typedef DOUBLE_TYPE  Type_t;
 };
 
 template<>
 struct BinaryReturn<double, double, FnLocalInnerProduct> {
-  typedef double  Type_t;
+  typedef DOUBLE_TYPE  Type_t;
 };
 
 template<>
 struct TrinaryReturn<bool, double, double, FnWhere> {
-  typedef double  Type_t;
+  typedef DOUBLE_TYPE  Type_t;
 };
 
 
@@ -692,57 +695,57 @@ struct BinaryReturn<float, float, OpRightShiftAssign> {
 
 template<>
 struct BinaryReturn<double, double, OpAssign> {
-  typedef double  Type_t;
+  typedef DOUBLE_TYPE  Type_t;
 };
  
 template<>
 struct BinaryReturn<double, double, OpAddAssign> {
-  typedef double  Type_t;
+  typedef DOUBLE_TYPE  Type_t;
 };
  
 template<>
 struct BinaryReturn<double, double, OpSubtractAssign> {
-  typedef double  Type_t;
+  typedef DOUBLE_TYPE  Type_t;
 };
  
 template<>
 struct BinaryReturn<double, double, OpMultiplyAssign> {
-  typedef double  Type_t;
+  typedef DOUBLE_TYPE  Type_t;
 };
  
 template<>
 struct BinaryReturn<double, double, OpDivideAssign> {
-  typedef double  Type_t;
+  typedef DOUBLE_TYPE  Type_t;
 };
  
 template<>
 struct BinaryReturn<double, double, OpModAssign> {
-  typedef double  Type_t;
+  typedef DOUBLE_TYPE  Type_t;
 };
  
 template<>
 struct BinaryReturn<double, double, OpBitwiseOrAssign> {
-  typedef double  Type_t;
+  typedef DOUBLE_TYPE  Type_t;
 };
  
 template<>
 struct BinaryReturn<double, double, OpBitwiseAndAssign> {
-  typedef double  Type_t;
+  typedef DOUBLE_TYPE  Type_t;
 };
  
 template<>
 struct BinaryReturn<double, double, OpBitwiseXorAssign> {
-  typedef double  Type_t;
+  typedef DOUBLE_TYPE  Type_t;
 };
  
 template<>
 struct BinaryReturn<double, double, OpLeftShiftAssign> {
-  typedef double  Type_t;
+  typedef DOUBLE_TYPE  Type_t;
 };
  
 template<>
 struct BinaryReturn<double, double, OpRightShiftAssign> {
-  typedef double  Type_t;
+  typedef DOUBLE_TYPE  Type_t;
 };
  
 

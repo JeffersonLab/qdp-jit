@@ -237,6 +237,7 @@ namespace QDP {
   jit_value_t jit_ins_and( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
   jit_value_t jit_ins_or ( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
   jit_value_t jit_ins_xor( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_rem( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
 
   // ni
   jit_value_t jit_ins_mod( jit_value_t lhs , jit_value_t rhs );
@@ -529,6 +530,18 @@ namespace QDP {
     }
     virtual float operator()(float f0, float f1) const { assert(!"strange that i'm here"); return 0.; }
     virtual int operator()(int i0, int i1) const { return i0 ^ i1; }
+  };
+
+  class JitOpRem: public JitOp {
+  public:
+    JitOpRem( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
+    virtual std::ostream& writeToStream( std::ostream& stream ) const {
+      stream << "rem." 
+	     << jit_get_ptx_type( getDestType() );
+      return stream;
+    }
+    virtual float operator()(float f0, float f1) const { assert(!"strange that i'm here"); return 0.; }
+    virtual int operator()(int i0, int i1) const { return i0 % i1; }
   };
 
 
