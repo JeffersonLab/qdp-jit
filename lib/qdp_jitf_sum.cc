@@ -38,7 +38,7 @@ function_sum_ind_coal_exec( CUfunction function,
 
   kernel_geom_t now = getGeom( hi-lo , threads );
 
-  QDP_info("launing block=(%d,1,1)  grid=(%d,%d,1)",threads,now.Nblock_x,now.Nblock_y);
+  //QDP_info("launing block=(%d,1,1)  grid=(%d,%d,1)",threads,now.Nblock_x,now.Nblock_y);
 
   CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threads,1,1,    shared_mem_usage, 0, &addr[0] , 0);
 
@@ -56,8 +56,8 @@ function_sum_exec( CUfunction function,
   // lo <= idx < hi
   int lo = 0;
   int hi = size;
-  int do_soffset_index = 0;
-  void *dummy_ptr = NULL;
+  //int do_soffset_index = 0;
+  //void *dummy_ptr = NULL;
 
   //QDPCache::Instance().printLockSets();
 
@@ -69,10 +69,10 @@ function_sum_exec( CUfunction function,
   addr.push_back( &hi );
   //std::cout << "addr hi =" << addr[1] << "\n";
 
-  addr.push_back( &do_soffset_index );
+  //addr.push_back( &do_soffset_index );
   //std::cout << "addr do_soffset_index =" << addr[2] << " " << do_soffset_index << "\n";
 
-  addr.push_back( &dummy_ptr );
+  //addr.push_back( &dummy_ptr );
   //std::cout << "addr soffsetsDev =" << addr[3] << " " << soffsetsDev << "\n";
 
   addr.push_back( &d_idata );

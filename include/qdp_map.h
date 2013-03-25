@@ -344,7 +344,7 @@ struct ForEach<UnaryNode<FnMap, A>, AddressLeaf, NullCombine>
       } else {
 	rcvBufDev = NULL;
       }
-      QDP_info("Map:AddressLeaf: add recv buf p=%p",rcvBufDev);
+      //QDP_info("Map:AddressLeaf: add recv buf p=%p",rcvBufDev);
       a.setAddr(rcvBufDev);
 
       return Type_t( ForEach<A, AddressLeaf, NullCombine>::apply( expr.child() , a , n ) );

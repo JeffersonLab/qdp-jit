@@ -8,8 +8,8 @@ template <class T2>
 void reduce_convert(int size, int threads, int blocks, int shared_mem_usage,
 		    T2 *d_idata, T2 *d_odata )
 {
-  assert(!"ni");
-#if 0
+  //assert(!"ni");
+#if 1
   static CUfunction function;
 
   // Build the function

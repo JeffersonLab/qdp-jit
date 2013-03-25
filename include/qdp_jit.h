@@ -60,6 +60,8 @@ namespace QDP {
   const char * jit_get_identifier_local_memory();
 
   namespace PTX {
+    std::map< int , std::array<const char*,4> > create_ptx_type_matrix(int cc);
+    extern std::map< int , std::array<const char*,4> > ptx_type_matrix;
     extern const std::map< int , std::map<int,int> > map_promote;
     extern const std::map< int , int >               map_wide_promote;
   }

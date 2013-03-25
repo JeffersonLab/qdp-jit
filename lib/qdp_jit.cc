@@ -77,22 +77,47 @@ namespace QDP {
       return map_ptx_math_functions_unary;
     }
 
+    // PTX_type , reg_name_prefix, mul_lo_specifier , div_lo_specifier
+    std::map< int , std::array<const char*,4> > create_ptx_type_matrix(int cc) {
+      if (cc >= 20) {
+	QDP_info_primary("Using ptx_type_matrix for sm_20 or higher");
+	std::map< int , std::array<const char*,4> > ptx_type_matrix {
+	  {jit_ptx_type::f32 ,{{"f32" ,"f" ,""   ,"rn."}}},
+	  {jit_ptx_type::f64 ,{{"f64" ,"d" ,""   ,"rn."}}},
+	  {jit_ptx_type::u16 ,{{"u16" ,"h" ,"lo.",""}}},
+	  {jit_ptx_type::u32 ,{{"u32" ,"u" ,"lo.",""}}},
+	  {jit_ptx_type::u64 ,{{"u64" ,"w" ,"lo.",""}}},
+	  {jit_ptx_type::s16 ,{{"s16" ,"q" ,"lo.",""}}},
+	  {jit_ptx_type::s32 ,{{"s32" ,"i" ,"lo.",""}}},
+	  {jit_ptx_type::s64 ,{{"s64" ,"l" ,"lo.",""}}},
+	  {jit_ptx_type::u8  ,{{"u8"  ,"s" ,"lo.",""}}},
+	  {jit_ptx_type::b16 ,{{"b16" ,"x" ,""   ,""}}},
+	  {jit_ptx_type::b32 ,{{"b32" ,"y" ,""   ,""}}},
+	  {jit_ptx_type::b64 ,{{"b64" ,"z" ,""   ,""}}},
+	  {jit_ptx_type::pred,{{"pred","p" ,""   ,""}}} };
+	return ptx_type_matrix;
+      } else {
+	QDP_info_primary("Using ptx_type_matrix for sm_1x");
+	std::map< int , std::array<const char*,4> > ptx_type_matrix {
+	  {jit_ptx_type::f32 ,{{"f32" ,"f" ,""   ,"full."}}},
+	  {jit_ptx_type::f64 ,{{"f64" ,"d" ,""   ,"full."}}},
+	  {jit_ptx_type::u16 ,{{"u16" ,"h" ,"lo.",""}}},
+	  {jit_ptx_type::u32 ,{{"u32" ,"u" ,"lo.",""}}},
+	  {jit_ptx_type::u64 ,{{"u64" ,"w" ,"lo.",""}}},
+	  {jit_ptx_type::s16 ,{{"s16" ,"q" ,"lo.",""}}},
+	  {jit_ptx_type::s32 ,{{"s32" ,"i" ,"lo.",""}}},
+	  {jit_ptx_type::s64 ,{{"s64" ,"l" ,"lo.",""}}},
+	  {jit_ptx_type::u8  ,{{"u8"  ,"s" ,"lo.",""}}},
+	  {jit_ptx_type::b16 ,{{"b16" ,"x" ,""   ,""}}},
+	  {jit_ptx_type::b32 ,{{"b32" ,"y" ,""   ,""}}},
+	  {jit_ptx_type::b64 ,{{"b64" ,"z" ,""   ,""}}},
+	  {jit_ptx_type::pred,{{"pred","p" ,""   ,""}}} };
+	return ptx_type_matrix;
+      }
+    }
 
-    std::map< int , std::array<const char*,4> > ptx_type_matrix = {
-      {jit_ptx_type::f32 ,{{"f32" ,"f" ,""   ,"rn."}}},
-      {jit_ptx_type::f64 ,{{"f64" ,"d" ,""   ,"rn."}}},
-      {jit_ptx_type::u16 ,{{"u16" ,"h" ,"lo.",""}}},
-      {jit_ptx_type::u32 ,{{"u32" ,"u" ,"lo.",""}}},
-      {jit_ptx_type::u64 ,{{"u64" ,"w" ,"lo.",""}}},
-      {jit_ptx_type::s16 ,{{"s16" ,"q" ,"lo.",""}}},
-      {jit_ptx_type::s32 ,{{"s32" ,"i" ,"lo.",""}}},
-      {jit_ptx_type::s64 ,{{"s64" ,"l" ,"lo.",""}}},
-      {jit_ptx_type::u8  ,{{"u8"  ,"s" ,"lo.",""}}},
-      {jit_ptx_type::b16 ,{{"b16" ,"x" ,""   ,""}}},
-      {jit_ptx_type::b32 ,{{"b32" ,"y" ,""   ,""}}},
-      {jit_ptx_type::b64 ,{{"b64" ,"z" ,""   ,""}}},
-      {jit_ptx_type::pred,{{"pred","p" ,""   ,""}}} };
-
+    std::map< int , std::array<const char*,4> > ptx_type_matrix;
+	
     const std::array<const char *,3> jit_state_space_str = { "global","local","shared" };
     const char * jit_identifier_local_memory = "loc";
 
@@ -675,6 +700,7 @@ void jit_function::write_reg_defs()
 
 
   jit_value_t jit_ins_selp_const_const( jit_value_const_t lhs , jit_value_const_t rhs , const JitOp& op ) {
+    assert(!"ni");
   }
 
 
@@ -684,6 +710,15 @@ void jit_function::write_reg_defs()
     assert(rhs);
     assert(p);
     int typebase = jit_type_promote( lhs->get_type() , rhs->get_type() );
+
+    if (typebase == jit_ptx_type::pred) {
+      assert( lhs->get_type() == jit_ptx_type::pred );
+      assert( rhs->get_type() == jit_ptx_type::pred );
+      typebase = jit_ptx_type::u32;
+      lhs = jit_ins_selp( func , jit_val_create_const_int(1) , jit_val_create_const_int(0) , lhs );
+      rhs = jit_ins_selp( func , jit_val_create_const_int(1) , jit_val_create_const_int(0) , rhs );
+    }
+
     std::ostringstream instr;
 
     // Op code
@@ -1028,6 +1063,10 @@ void jit_function::write_reg_defs()
 
   void jit_ins_store_reg( jit_value_reg_t base_reg , int offset , int type , jit_value_reg_t reg , jit_value_t pred ) {
     if (type == jit_ptx_type::pred ) {
+      if ( reg->get_type() != jit_ptx_type::pred ) {
+	jit_value_t reg_tmp = jit_ins_ne( reg , jit_val_create_const_int(0) );
+	reg = get<jit_value_reg>(reg_tmp);
+      }
       assert( reg->get_type() == jit_ptx_type::pred );
       jit_value_t s32 = jit_ins_selp( base_reg->get_func() , 
 				      jit_val_create_const_int( 1 ) , 

@@ -6,6 +6,8 @@
 #include "qdp.h"
 #include <list>
 
+#define SKIP_DOUBLE
+
 namespace QDP 
 {
 
@@ -389,11 +391,13 @@ namespace QDP
   {
     readArrayPrimitive<Real32>(xml, xpath, result);
   }
+#ifndef SKIP_DOUBLE
   template<>
   void read(XMLReader& xml, const std::string& xpath, multi1d<Real64>& result)
   {
     readArrayPrimitive<Real64>(xml, xpath, result);
   }
+#endif
   template<>
   void read(XMLReader& xml, const std::string& xpath, multi1d<Boolean>& result)
   {
@@ -488,11 +492,13 @@ namespace QDP
   {
     readVectorPrimitive<Real32>(xml, xpath, result);
   }
+#ifndef SKIP_DOUBLE
   template<>
   void read(XMLReader& xml, const std::string& xpath, std::vector<Real64>& result)
   {
     readVectorPrimitive<Real64>(xml, xpath, result);
   }
+#endif
   template<>
   void read(XMLReader& xml, const std::string& xpath, std::vector<Boolean>& result)
   {
@@ -569,11 +575,13 @@ namespace QDP
   {
     readListPrimitive<Real32>(xml, xpath, result);
   }
+#ifndef SKIP_DOUBLE
   template<>
   void read(XMLReader& xml, const std::string& xpath, std::list<Real64>& result)
   {
     readListPrimitive<Real64>(xml, xpath, result);
   }
+#endif
   template<>
   void read(XMLReader& xml, const std::string& xpath, std::list<Boolean>& result)
   {
@@ -960,6 +968,7 @@ namespace QDP
     xml << output.str();
     xml.closeTag();
   }
+#ifndef SKIP_DOUBLE
   template<>
   void write(XMLWriter& xml, const std::string& s, const multi1d<Real64>& s1)
   {
@@ -978,6 +987,7 @@ namespace QDP
     xml << output.str();
     xml.closeTag();
   }
+#endif
   template<>
   void write(XMLWriter& xml, const std::string& xpath, const multi1d<Boolean>& output)
   {
@@ -1092,6 +1102,7 @@ namespace QDP
     xml << output.str();
     xml.closeTag();
   }
+#ifndef SKIP_DOUBLE
   template<>
   void write(XMLWriter& xml, const std::string& s, const std::vector<Real64>& s1)
   {
@@ -1110,6 +1121,7 @@ namespace QDP
     xml << output.str();
     xml.closeTag();
   }
+#endif
   template<>
   void write(XMLWriter& xml, const std::string& xpath, const std::vector<Boolean>& output)
   {
@@ -1237,6 +1249,7 @@ namespace QDP
     xml << output.str();
     xml.closeTag();
   }
+#ifndef SKIP_DOUBLE
   template<>
   void write(XMLWriter& xml, const std::string& s, const std::list<Real64>& s1)
   {
@@ -1258,6 +1271,7 @@ namespace QDP
     xml << output.str();
     xml.closeTag();
   }
+#endif
   template<>
   void write(XMLWriter& xml, const std::string& xpath, const std::list<Boolean>& output)
   {

@@ -8,6 +8,7 @@
 
 namespace QDP {
 
+#define SKIP_DOUBLE
 
 //
 // Conversion routines. These cannot be implicit conversion functions
@@ -296,6 +297,7 @@ struct CreateLeaf<OScalar<IntReal32> >
 #endif
 };
 
+#ifndef SKIP_DOUBLE
 template<>
 struct CreateLeaf<OScalar<IntReal64> >
 {
@@ -303,6 +305,7 @@ struct CreateLeaf<OScalar<IntReal64> >
   inline static
   Leaf_t make(const OScalar<IntReal64> &a) { return Leaf_t(a); }
 };
+#endif
 
 template<>
 struct CreateLeaf<OScalar<IntInteger> >

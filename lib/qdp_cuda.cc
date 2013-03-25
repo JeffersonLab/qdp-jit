@@ -193,15 +193,19 @@ namespace QDP {
   void CudaSetDevice(int dev)
   {
     CUresult ret;
-    std::cout << "trying to get device " << dev << "\n";
+    QDP_info_primary("trying to get device %d",dev);
     ret = cuDeviceGet(&cuDevice, dev);
     CudaRes("",ret);
-    std::cout << "trying to create a context \n";
+    QDP_info_primary("trying to create a context");
     ret = cuCtxCreate(&cuContext, 0, cuDevice);
     CudaRes("",ret);
 
     deviceSet=true;
     DeviceParams::Instance().autoDetect();
+
+    int major = DeviceParams::Instance().getMajor();
+    int minor = DeviceParams::Instance().getMinor();
+    PTX::ptx_type_matrix = PTX::create_ptx_type_matrix( major*10+minor );
 
     ret = cuCtxSetCacheConfig(CU_FUNC_CACHE_PREFER_L1);
     CudaRes("",ret);
