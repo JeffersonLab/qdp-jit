@@ -55,8 +55,12 @@ namespace QDP {
     }
 
     void replace(const WordREG& rhs ) {
-      assert(val);
-      jit_ins_mov_no_create( val , rhs.get_val() );
+      if (val) {
+	jit_ins_mov_no_create( val , rhs.get_val() );	
+      } else {
+	val = rhs.get_val();
+      }
+      setup_m = true;
     }
 
 
@@ -773,6 +777,25 @@ localInnerProductReal(const WordREG<T1>& s1, const WordREG<T2>& s2)
   ret.setup( jit_ins_mul( s1.get_val() , s1.get_val() ) );
   return ret;
 }
+
+
+  inline void 
+  zero_rep(WordREG<double>& dest) 
+  {
+    dest.replace( WordREG<double>(0.) );
+  }
+
+  inline void 
+  zero_rep(WordREG<float>& dest) 
+  {
+    dest.replace( WordREG<float>(0.) );
+  }
+
+  inline void 
+  zero_rep(WordREG<int>& dest) 
+  {
+    dest.replace( WordREG<int>(0) );
+  }
 
 
 

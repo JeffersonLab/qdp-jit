@@ -1021,6 +1021,13 @@ void jit_function::write_reg_defs()
   jit_value_t jit_ins_atan2( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) { 
     return jit_ins_math_binary( 1 , lhs , rhs , pred ); }
 
+
+  void jit_ins_mov_no_create_const( jit_value_t dest , jit_value_const_t src_const , jit_value_t pred ){
+  }
+
+  void jit_ins_mov_no_create_reg( jit_value_t dest , jit_value_reg_t src_const , jit_value_t pred ){
+  }
+
   void jit_ins_mov_no_create( jit_value_t dest , jit_value_t src , jit_value_t pred ){
     assert(dest);
     assert(src);
