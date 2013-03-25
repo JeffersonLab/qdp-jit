@@ -26,17 +26,18 @@ template <class T, int N> class PColorMatrixREG : public PMatrixREG<T, N, PColor
 {
 public:
 
+  void replace(const PColorMatrixREG& rhs ) {
+    for (int i = 0 ; i < N ; i++ ) 
+      for (int q = 0 ; q < N ; q++ ) 
+	this->elem(i,q).replace( rhs.elem(i,q) );
+  }
+
   void setup( const typename JITType< PColorMatrixREG >::Type_t& j ) {
     for (int i = 0 ; i < N ; i++ ) 
       for (int q = 0 ; q < N ; q++ ) 
 	this->elem(i,q).setup( j.elem(i,q) );
   }
 
-  void replace( const PColorMatrixREG& j ) {
-    for (int i = 0 ; i < N ; i++ ) 
-      for (int q = 0 ; q < N ; q++ ) 
-	this->elem(i,q).replace( j.elem(i,q) );
-  }
 
 
   //! PColorMatrixREG = PScalarREG

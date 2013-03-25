@@ -54,26 +54,26 @@ public:
     }
 
   //! PVectorJIT += PVectorJIT
-  template<class T1>
-  inline
-  CC& operator+=(const typename REGType< C<T1,N> >::Type_t& rhs) 
-    {
-      for(int i=0; i < N; ++i)
-	elem(i) += rhs.elem(i);
+  // template<class T1>
+  // inline
+  // CC& operator+=(const typename REGType< C<T1,N> >::Type_t& rhs) 
+  //   {
+  //     for(int i=0; i < N; ++i)
+  // 	elem(i) += rhs.elem(i);
 
-      return static_cast<CC&>(*this);
-    }
+  //     return static_cast<CC&>(*this);
+  //   }
 
-  //! PVectorJIT -= PVectorJIT
-  template<class T1>
-  inline
-  CC& operator-=(const typename REGType< C<T1,N> >::Type_t& rhs) 
-    {
-      for(int i=0; i < N; ++i)
-	elem(i) -= rhs.elem(i);
+  // //! PVectorJIT -= PVectorJIT
+  // template<class T1>
+  // inline
+  // CC& operator-=(const typename REGType< C<T1,N> >::Type_t& rhs) 
+  //   {
+  //     for(int i=0; i < N; ++i)
+  // 	elem(i) -= rhs.elem(i);
 
-      return static_cast<CC&>(*this);
-    }
+  //     return static_cast<CC&>(*this);
+  //   }
 
   //! PVectorJIT *= PScalarJIT
   template<class T1>

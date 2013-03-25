@@ -39,6 +39,28 @@ public:
       return *this;
     }
 
+  template<class T1>
+  inline
+  PColorVectorJIT& operator+=(const PColorVectorREG<T1,N>& rhs) 
+    {
+      for(int i=0; i < N; ++i)
+	this->elem(i) += rhs.elem(i);
+
+      return *this;
+    }
+
+  //! PVectorJIT -= PVectorJIT
+  template<class T1>
+  inline
+  PColorVectorJIT& operator-=(const PColorVectorREG<T1,N>& rhs) 
+    {
+      for(int i=0; i < N; ++i)
+	this->elem(i) -= rhs.elem(i);
+
+      return *this;
+    }
+
+
 };
 
 /*! @} */  // end of group primcolorvector

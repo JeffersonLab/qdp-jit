@@ -61,6 +61,29 @@ public:
       return *this;
     }
 
+  template<class T1>
+  inline
+  PSpinMatrixJIT& operator+=(const PSpinMatrixREG<T1,N>& rhs) 
+    {
+      for(int i=0; i < N; ++i)
+  	for(int j=0; j < N; ++j)
+  	  this->elem(i,j) += rhs.elem(i,j);
+
+      return *this;
+    }
+
+  //! PMatrixJIT -= PMatrixJIT
+  template<class T1>
+  inline
+  PSpinMatrixJIT& operator-=(const PSpinMatrixREG<T1,N>& rhs) 
+    {
+      for(int i=0; i < N; ++i)
+  	for(int j=0; j < N; ++j)
+  	  this->elem(i,j) -= rhs.elem(i,j);
+
+      return *this;
+    }
+
 };
 
 /*! @} */   // end of group primspinmatrix

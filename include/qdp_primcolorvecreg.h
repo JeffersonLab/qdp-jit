@@ -24,6 +24,11 @@ template <class T, int N> class PColorVectorREG : public PVectorREG<T, N, PColor
 {
 public:
 
+  void replace(const PColorVectorREG& rhs ) {
+    for (int i = 0 ; i < N ; i++ )
+      this->elem(i).replace( rhs.elem(i) );
+  }
+
   void setup( const typename JITType< PColorVectorREG >::Type_t& j ) {
     for (int i = 0 ; i < N ; i++ )
       this->elem(i).setup( j.elem(i) );
