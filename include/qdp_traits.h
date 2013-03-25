@@ -9,7 +9,7 @@
 #ifndef QDP_TRAITS_H
 #define QDP_TRAITS_H
 
-#define SKIP_DOUBLE
+#undef SKIP_DOUBLE
 
 namespace QDP {
 

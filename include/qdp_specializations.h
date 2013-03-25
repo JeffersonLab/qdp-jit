@@ -8,7 +8,7 @@
 
 namespace QDP {
 
-#define SKIP_DOUBLE
+#undef SKIP_DOUBLE
 
 //
 // Conversion routines. These cannot be implicit conversion functions

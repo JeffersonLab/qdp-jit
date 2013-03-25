@@ -6,7 +6,7 @@
 #include "qdp.h"
 #include <list>
 
-#define SKIP_DOUBLE
+#undef SKIP_DOUBLE
 
 namespace QDP 
 {

@@ -19,7 +19,7 @@
 // These are fixed precision versions
 typedef int       INTEGER32;
 typedef float     REAL32;
-typedef float    REAL64;   // double
+typedef double    REAL64;
 typedef bool      LOGICAL;
 
 // Set the base floating precision

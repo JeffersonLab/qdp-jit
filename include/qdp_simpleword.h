@@ -7,7 +7,7 @@
 #ifndef QDP_SIMPLEWORD_H
 #define QDP_SIMPLEWORD_H
 
-#define DOUBLE_TYPE float
+#define DOUBLE_TYPE double
 
 
 #include <cmath>

@@ -1,6 +1,6 @@
 #include "qdp.h"
 
-#define SKIP_DOUBLE
+#undef SKIP_DOUBLE
 
 namespace QDP {
 
