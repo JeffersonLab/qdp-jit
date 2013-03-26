@@ -752,7 +752,7 @@ inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, FnLocalInnerProduct>::Typ
 localInnerProduct(const WordREG<T1>& s1, const WordREG<T2>& s2)
 {
   typename BinaryReturn<WordREG<T1>, WordREG<T2>, FnLocalInnerProduct>::Type_t ret;
-  ret.setup( jit_ins_mul( s1.get_val() , s1.get_val() ) );
+  ret.setup( jit_ins_mul( s1.get_val() , s2.get_val() ) );
   return ret;
 }
 
@@ -774,7 +774,7 @@ inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, FnLocalInnerProductReal>:
 localInnerProductReal(const WordREG<T1>& s1, const WordREG<T2>& s2)
 {
   typename BinaryReturn<WordREG<T1>, WordREG<T2>, FnLocalInnerProductReal>::Type_t ret;
-  ret.setup( jit_ins_mul( s1.get_val() , s1.get_val() ) );
+  ret.setup( jit_ins_mul( s1.get_val() , s2.get_val() ) );
   return ret;
 }
 
