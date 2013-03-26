@@ -132,6 +132,7 @@ namespace QDP {
       map_cvt_rnd_from_to[jit_ptx_type::u64][jit_ptx_type::f32] = "rn.";
       map_cvt_rnd_from_to[jit_ptx_type::s64][jit_ptx_type::f64] = "rn.";
       map_cvt_rnd_from_to[jit_ptx_type::u64][jit_ptx_type::f64] = "rn.";
+      map_cvt_rnd_from_to[jit_ptx_type::f64][jit_ptx_type::f32] = "rn.";
       return map_cvt_rnd_from_to;
     }
 
@@ -156,6 +157,12 @@ namespace QDP {
       map_promote[jit_ptx_type::s32][jit_ptx_type::s64] = jit_ptx_type::s64;
       map_promote[jit_ptx_type::s32][jit_ptx_type::u8] = jit_ptx_type::s32;
       map_promote[jit_ptx_type::u8][jit_ptx_type::s32] = jit_ptx_type::s32;
+      map_promote[jit_ptx_type::f64][jit_ptx_type::f32] = jit_ptx_type::f64;
+      map_promote[jit_ptx_type::f32][jit_ptx_type::f64] = jit_ptx_type::f64;
+      map_promote[jit_ptx_type::f64][jit_ptx_type::s32] = jit_ptx_type::f64;
+      map_promote[jit_ptx_type::s32][jit_ptx_type::f64] = jit_ptx_type::f64;
+      map_promote[jit_ptx_type::f32][jit_ptx_type::s32] = jit_ptx_type::f32;
+      map_promote[jit_ptx_type::s32][jit_ptx_type::f32] = jit_ptx_type::f32;
       return map_promote;
     }
     std::map< int , int > create_wide_promote()
@@ -270,7 +277,11 @@ namespace QDP {
   int jit_type_promote(int t0,int t1) {
     if (t0==t1) return t0;
     //std::cout << "promote: " << jit_get_ptx_type(t0) << " " << jit_get_ptx_type(t1) << "\n";
+    if ( PTX::map_promote.count(t0) == 0 )
+      std::cout << "promote: " << jit_get_ptx_type(t0) << " " << jit_get_ptx_type(t1) << "\n";
     assert( PTX::map_promote.count(t0) > 0 );
+    if ( PTX::map_promote.at(t0).count(t1) == 0 )
+      std::cout << "promote: " << jit_get_ptx_type(t0) << " " << jit_get_ptx_type(t1) << "\n";
     assert( PTX::map_promote.at(t0).count(t1) > 0 );
     int ret = PTX::map_promote.at(t0).at(t1);
     assert((ret >= 0) && (ret < jit_number_of_types()));
@@ -969,7 +980,12 @@ void jit_function::write_reg_defs()
 
   jit_value_t jit_ins_math_unary( int num , jit_value_t lhs , jit_value_t pred ) {
     assert( num >= 0 && num < PTX::map_ptx_math_functions_unary.size() );
-    jit_function_t func = getFunc(lhs);
+    jit_function_t func;
+    if (get<jit_value_reg>(lhs))
+      func = getFunc(lhs);
+    assert(func);
+    if (lhs->get_type() != jit_ptx_type::f32)
+      lhs = jit_val_create_convert( func , jit_ptx_type::f32 , lhs );
     jit_value_t ret = jit_val_create_new( func , jit_ptx_type::f32 );
     func->get_prg() << jit_predicate(pred)
 		    << "call (" 
@@ -984,7 +1000,16 @@ void jit_function::write_reg_defs()
   }
   jit_value_t jit_ins_math_binary( int num , jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
     assert( num >= 0 && num < PTX::map_ptx_math_functions_binary.size() );
-    jit_function_t func = getFunc(lhs);
+    jit_function_t func;
+    if (get<jit_value_reg>(lhs))
+      func = getFunc(lhs);
+    if (get<jit_value_reg>(rhs))
+      func = getFunc(rhs);
+    assert(func);
+    if (lhs->get_type() != jit_ptx_type::f32)
+      lhs = jit_val_create_convert( func , jit_ptx_type::f32 , lhs );
+    if (rhs->get_type() != jit_ptx_type::f32)
+      rhs = jit_val_create_convert( func , jit_ptx_type::f32 , rhs );
     jit_value_t ret = jit_val_create_new( func , jit_ptx_type::f32 );
     func->get_prg() << jit_predicate(pred)
 		    << "call (" 

@@ -34,7 +34,10 @@ public:
     {
       for(int i=0; i < N; ++i)
 	for(int j=0; j < N; ++j)
-	  this->elem(i,j) += rhs.elem();
+	  if (i == j)
+	    this->elem(i,j) = rhs.elem();
+	  else
+	    zero_rep(this->elem(i,j));
       return *this;
     }
 
@@ -46,7 +49,7 @@ public:
     {
       for(int i=0; i < N; ++i)
 	for(int j=0; j < N; ++j)
-	  this->elem(i,j) += rhs.elem(i,j);
+	  this->elem(i,j) = rhs.elem(i,j);
       return *this;
     }
 
