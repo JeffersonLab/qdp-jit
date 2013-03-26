@@ -96,7 +96,7 @@ namespace QDP {
     void * rcv_buf_dev = QDPCache::Instance().getDevicePtr( srcId );
 #ifdef GPU_DEBUG_DEEP
 #endif
-    QDP_info("H2D %d bytes receive buffer p = %p",srcnum,rcv_buf_dev);
+    //QDP_info("H2D %d bytes receive buffer p = %p",srcnum,rcv_buf_dev);
     // for (int i=0;i<srcnum/4;i++)
     //   ((float*)recv_buf)[i]=-1.11;
     CudaMemcpyH2D( rcv_buf_dev , recv_buf , srcnum );

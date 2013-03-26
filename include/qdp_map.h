@@ -400,13 +400,13 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
 	// Build the function
 	if (function == NULL)
 	  {
-	    std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
+	    //std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
 	    function = function_gather_build<InnerType_t>( rRSrc.getSendBufDevPtr() , map , subexpr );
-	    std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
+	    //std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
 	  }
 	else
 	  {
-	    std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
+	    //std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
 	  }
 
 	// Execute the function
@@ -442,7 +442,7 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase2 , CTag>
     FnMap& fnmap = const_cast<FnMap&>(expr.operation());
     if (map.offnodeP) {
       const FnMapRsrc& rRSrc = fnmap.getCached();
-      QDP_info("ShiftPhase2: FnMap");
+      //QDP_info("ShiftPhase2: FnMap");
       rRSrc.qmp_wait();
     }
     ForEach<A, ShiftPhase2, CTag>::apply(expr.child(), f, c);
