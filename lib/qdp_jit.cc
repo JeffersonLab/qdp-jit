@@ -11,7 +11,6 @@
 #include "../lib/func_log_f32.inc"
 #include "../lib/func_log10_f32.inc"
 #include "../lib/func_sinh_f32.inc"
-#include "../lib/func_sqrt_f32.inc"
 #include "../lib/func_tan_f32.inc"
 #include "../lib/func_tanh_f32.inc"
 
@@ -69,10 +68,8 @@ namespace QDP {
       map_ptx_math_functions_unary[9] = 
 	std::make_pair("func_sinh_f32",std::string( (const char *)func_sinh_f32_ptx , func_sinh_f32_ptx_len ));
       map_ptx_math_functions_unary[10] = 
-	std::make_pair("func_sqrt_f32",std::string( (const char *)func_sqrt_f32_ptx , func_sqrt_f32_ptx_len ));
-      map_ptx_math_functions_unary[11] = 
 	std::make_pair("func_tan_f32",std::string( (const char *)func_tan_f32_ptx , func_tan_f32_ptx_len ));
-      map_ptx_math_functions_unary[12] = 
+      map_ptx_math_functions_unary[11] = 
 	std::make_pair("func_tanh_f32",std::string( (const char *)func_tanh_f32_ptx , func_tanh_f32_ptx_len ));
       return map_ptx_math_functions_unary;
     }
@@ -975,8 +972,9 @@ void jit_function::write_reg_defs()
   jit_value_t jit_ins_ceil( jit_value_t rhs , jit_value_t pred ) {
     return jit_ins_unary_op( rhs , JitUnaryOpCeil( rhs->get_type() ) , pred );
   }
-
-
+  jit_value_t jit_ins_sqrt( jit_value_t rhs , jit_value_t pred ) { 
+    return jit_ins_unary_op( rhs , JitUnaryOpSqrt( rhs->get_type() ) , pred );
+  }
 
   jit_value_t jit_ins_math_unary( int num , jit_value_t lhs , jit_value_t pred ) {
     assert( num >= 0 && num < PTX::map_ptx_math_functions_unary.size() );
@@ -1036,9 +1034,8 @@ void jit_function::write_reg_defs()
   jit_value_t jit_ins_log( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 7 , lhs , pred ); }
   jit_value_t jit_ins_log10( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 8 , lhs , pred ); }
   jit_value_t jit_ins_sinh( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 9 , lhs , pred ); }
-  jit_value_t jit_ins_sqrt( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 10 , lhs , pred ); }
-  jit_value_t jit_ins_tan( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 11 , lhs , pred ); }
-  jit_value_t jit_ins_tanh( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 12 , lhs , pred ); }
+  jit_value_t jit_ins_tan( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 10 , lhs , pred ); }
+  jit_value_t jit_ins_tanh( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 11 , lhs , pred ); }
 
   // Imported PTX Binary operations
   jit_value_t jit_ins_pow( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) { 

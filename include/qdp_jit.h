@@ -257,6 +257,7 @@ namespace QDP {
   jit_value_t jit_ins_not( jit_value_t lhs , jit_value_t pred=jit_value_t() );
   jit_value_t jit_ins_fabs( jit_value_t lhs , jit_value_t pred=jit_value_t() );
   jit_value_t jit_ins_floor( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_sqrt( jit_value_t lhs , jit_value_t pred=jit_value_t() );
 
   // Imported PTX Unary operations
   jit_value_t jit_ins_sin( jit_value_t lhs , jit_value_t pred=jit_value_t() );
@@ -270,7 +271,6 @@ namespace QDP {
   jit_value_t jit_ins_log( jit_value_t lhs , jit_value_t pred=jit_value_t() );
   jit_value_t jit_ins_log10( jit_value_t lhs , jit_value_t pred=jit_value_t() );
   jit_value_t jit_ins_sinh( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_sqrt( jit_value_t lhs , jit_value_t pred=jit_value_t() );
   jit_value_t jit_ins_tan( jit_value_t lhs , jit_value_t pred=jit_value_t() );
   jit_value_t jit_ins_tanh( jit_value_t lhs , jit_value_t pred=jit_value_t() );
 
@@ -611,6 +611,22 @@ namespace QDP {
 	     << jit_get_ptx_type( type )
 	     << "."
 	     << jit_get_ptx_type( type );
+      return stream;
+    }
+    virtual float operator()(float f0) const { return floor(f0); }
+    virtual int operator()(int i0) const { return floor(i0); }
+  };
+
+  class JitUnaryOpSqrt: public JitUnaryOp {
+  public:
+    JitUnaryOpSqrt( int type_ ): JitUnaryOp(type_) {}
+    virtual std::ostream& writeToStream( std::ostream& stream ) const {
+      stream << "sqrt.";
+      if ( DeviceParams::Instance().getMajor() >= 2 )
+	stream << "rn.";
+      else
+	stream << "approx.";
+      stream << jit_get_ptx_type( type );
       return stream;
     }
     virtual float operator()(float f0) const { return floor(f0); }
