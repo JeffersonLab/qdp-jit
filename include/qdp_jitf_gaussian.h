@@ -60,45 +60,8 @@ function_gaussian_build(OLattice<T>& dest ,OLattice<T>& r1 ,OLattice<T>& r2 )
   if (ret) { std::cout << "Error getting function\n"; exit(1); }
 
   return func;
-
-
-
-#if 0
-  CUfunction func;
-
-  std::string fname("ptxgaussian.ptx");
-  Jit function(fname.c_str(),"func");
-
-  int r_idx = function.getRegIdx();
-  ParamLeaf param_leaf(function, r_idx , Jit::LatticeLayout::COAL );
-  function.addParamMemberArray( param_leaf.r_idx );
-
-  // Destination
-  typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
-  FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
-  FuncRet_t r1_jit(forEach(r1, param_leaf, TreeCombine()));
-  FuncRet_t r2_jit(forEach(r2, param_leaf, TreeCombine()));
-
-  fill_gaussian( dest_jit.elem(0) , r1_jit.elem(0) , r2_jit.elem(0) );
-
-  if (Layout::primaryNode())
-    function.write();
-      
-  QMP_barrier();
-
-  CUresult ret;
-  CUmodule cuModule;
-  ret = cuModuleLoad(&cuModule, fname.c_str());
-  if (ret) QDP_error_exit("Error loading CUDA module '%s'",fname.c_str());
-
-  ret = cuModuleGetFunction(&func, cuModule, "func");
-  if (ret) { std::cout << "Error getting function\n"; exit(1); }
-
-  //std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
-
-  return func;
-#endif
 }
+
 
 template<class T>
 void 
