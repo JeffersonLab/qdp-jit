@@ -259,25 +259,43 @@ namespace QDP {
   jit_value_t jit_ins_floor( jit_value_t lhs , jit_value_t pred=jit_value_t() );
   jit_value_t jit_ins_sqrt( jit_value_t lhs , jit_value_t pred=jit_value_t() );
 
-  // Imported PTX Unary operations
-  jit_value_t jit_ins_sin( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_acos( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_asin( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_atan( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_ceil( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_cos( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_cosh( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_exp( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_log( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_log10( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_sinh( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_tan( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_tanh( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  // Imported PTX Unary operations single precision
+  jit_value_t jit_ins_sin_f32( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_acos_f32( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_asin_f32( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_atan_f32( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_ceil_f32( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_cos_f32( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_cosh_f32( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_exp_f32( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_log_f32( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_log10_f32( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_sinh_f32( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_tan_f32( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_tanh_f32( jit_value_t lhs , jit_value_t pred=jit_value_t() );
 
-  // Imported PTX Binary operations
-  jit_value_t jit_ins_pow( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_atan2( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
+  // Imported PTX Binary operations single precision
+  jit_value_t jit_ins_pow_f32( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_atan2_f32( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
 
+  // Imported PTX Unary operations double precision
+  jit_value_t jit_ins_sin_f64( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_acos_f64( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_asin_f64( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_atan_f64( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_ceil_f64( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_cos_f64( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_cosh_f64( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_exp_f64( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_log_f64( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_log10_f64( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_sinh_f64( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_tan_f64( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_tanh_f64( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+
+  // Imported PTX Binary operations single precision
+  jit_value_t jit_ins_pow_f64( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
+  jit_value_t jit_ins_atan2_f64( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
 
 
   // Select

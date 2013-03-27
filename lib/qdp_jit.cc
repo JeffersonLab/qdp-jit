@@ -1,6 +1,6 @@
 #include "qdp.h"
 
-// Unary
+// Unary single precision
 #include "../lib/func_sin_f32.inc"
 #include "../lib/func_acos_f32.inc"
 #include "../lib/func_asin_f32.inc"
@@ -14,9 +14,24 @@
 #include "../lib/func_tan_f32.inc"
 #include "../lib/func_tanh_f32.inc"
 
-// Binary
+#include "../lib/func_sin_f64.inc"
+#include "../lib/func_acos_f64.inc"
+#include "../lib/func_asin_f64.inc"
+#include "../lib/func_atan_f64.inc"
+#include "../lib/func_cos_f64.inc"
+#include "../lib/func_cosh_f64.inc"
+#include "../lib/func_exp_f64.inc"
+#include "../lib/func_log_f64.inc"
+#include "../lib/func_log10_f64.inc"
+#include "../lib/func_sinh_f64.inc"
+#include "../lib/func_tan_f64.inc"
+#include "../lib/func_tanh_f64.inc"
+
+// Binary single precision
 #include "../lib/func_pow_f32.inc"
 #include "../lib/func_atan2_f32.inc"
+#include "../lib/func_pow_f64.inc"
+#include "../lib/func_atan2_f64.inc"
 
 
 namespace QDP {
@@ -41,6 +56,10 @@ namespace QDP {
 	std::make_pair("func_pow_f32",std::string(  (const char *)func_pow_f32_ptx  , func_pow_f32_ptx_len ));
       map_ptx_math_functions_binary[1] = 
 	std::make_pair("func_atan2_f32",std::string(  (const char *)func_atan2_f32_ptx  , func_atan2_f32_ptx_len ));
+      map_ptx_math_functions_binary[2] = 
+	std::make_pair("func_pow_f64",std::string(  (const char *)func_pow_f64_ptx  , func_pow_f64_ptx_len ));
+      map_ptx_math_functions_binary[3] = 
+	std::make_pair("func_atan2_f64",std::string(  (const char *)func_atan2_f64_ptx  , func_atan2_f64_ptx_len ));
       return map_ptx_math_functions_binary;
     }
 
@@ -71,6 +90,32 @@ namespace QDP {
 	std::make_pair("func_tan_f32",std::string( (const char *)func_tan_f32_ptx , func_tan_f32_ptx_len ));
       map_ptx_math_functions_unary[11] = 
 	std::make_pair("func_tanh_f32",std::string( (const char *)func_tanh_f32_ptx , func_tanh_f32_ptx_len ));
+
+      map_ptx_math_functions_unary[12] = 
+	std::make_pair("func_sin_f64",std::string(  (const char *)func_sin_f64_ptx  , func_sin_f64_ptx_len ));
+      map_ptx_math_functions_unary[13] = 
+	std::make_pair("func_acos_f64",std::string( (const char *)func_acos_f64_ptx , func_acos_f64_ptx_len ));
+      map_ptx_math_functions_unary[14] = 
+	std::make_pair("func_asin_f64",std::string( (const char *)func_asin_f64_ptx , func_asin_f64_ptx_len ));
+      map_ptx_math_functions_unary[15] = 
+	std::make_pair("func_atan_f64",std::string( (const char *)func_atan_f64_ptx , func_atan_f64_ptx_len ));
+      map_ptx_math_functions_unary[16] = 
+       	std::make_pair("func_cos_f64",std::string( (const char *)func_cos_f64_ptx , func_cos_f64_ptx_len ));
+      map_ptx_math_functions_unary[17] = 
+       	std::make_pair("func_cosh_f64",std::string( (const char *)func_cosh_f64_ptx , func_cosh_f64_ptx_len ));
+      map_ptx_math_functions_unary[18] = 
+       	std::make_pair("func_exp_f64",std::string( (const char *)func_exp_f64_ptx , func_exp_f64_ptx_len ));
+      map_ptx_math_functions_unary[19] = 
+       	std::make_pair("func_log_f64",std::string( (const char *)func_log_f64_ptx , func_log_f64_ptx_len ));
+      map_ptx_math_functions_unary[20] = 
+       	std::make_pair("func_log10_f64",std::string( (const char *)func_log10_f64_ptx , func_log10_f64_ptx_len ));
+      map_ptx_math_functions_unary[21] = 
+       	std::make_pair("func_sinh_f64",std::string( (const char *)func_sinh_f64_ptx , func_sinh_f64_ptx_len ));
+      map_ptx_math_functions_unary[22] = 
+       	std::make_pair("func_tan_f64",std::string( (const char *)func_tan_f64_ptx , func_tan_f64_ptx_len ));
+      map_ptx_math_functions_unary[23] = 
+       	std::make_pair("func_tanh_f64",std::string( (const char *)func_tanh_f64_ptx , func_tanh_f64_ptx_len ));
+
       return map_ptx_math_functions_unary;
     }
 
@@ -976,15 +1021,16 @@ void jit_function::write_reg_defs()
     return jit_ins_unary_op( rhs , JitUnaryOpSqrt( rhs->get_type() ) , pred );
   }
 
-  jit_value_t jit_ins_math_unary( int num , jit_value_t lhs , jit_value_t pred ) {
+  jit_value_t jit_ins_math_unary( int num , int arg_type , jit_value_t lhs , jit_value_t pred ) {
+    assert( arg_type == jit_ptx_type::f32 || arg_type == jit_ptx_type::f64);
     assert( num >= 0 && num < PTX::map_ptx_math_functions_unary.size() );
     jit_function_t func;
     if (get<jit_value_reg>(lhs))
       func = getFunc(lhs);
     assert(func);
-    if (lhs->get_type() != jit_ptx_type::f32)
-      lhs = jit_val_create_convert( func , jit_ptx_type::f32 , lhs );
-    jit_value_t ret = jit_val_create_new( func , jit_ptx_type::f32 );
+    if (lhs->get_type() != arg_type )
+      lhs = jit_val_create_convert( func , arg_type , lhs );
+    jit_value_t ret = jit_val_create_new( func , arg_type );
     func->get_prg() << jit_predicate(pred)
 		    << "call (" 
 		    << jit_get_reg_name( ret ) 
@@ -996,7 +1042,8 @@ void jit_function::write_reg_defs()
     func->set_include_math_ptx_unary(num);
     return ret;
   }
-  jit_value_t jit_ins_math_binary( int num , jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
+  jit_value_t jit_ins_math_binary( int num , int arg_type , jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
+    assert( arg_type == jit_ptx_type::f32 || arg_type == jit_ptx_type::f64);
     assert( num >= 0 && num < PTX::map_ptx_math_functions_binary.size() );
     jit_function_t func;
     if (get<jit_value_reg>(lhs))
@@ -1004,11 +1051,11 @@ void jit_function::write_reg_defs()
     if (get<jit_value_reg>(rhs))
       func = getFunc(rhs);
     assert(func);
-    if (lhs->get_type() != jit_ptx_type::f32)
-      lhs = jit_val_create_convert( func , jit_ptx_type::f32 , lhs );
-    if (rhs->get_type() != jit_ptx_type::f32)
-      rhs = jit_val_create_convert( func , jit_ptx_type::f32 , rhs );
-    jit_value_t ret = jit_val_create_new( func , jit_ptx_type::f32 );
+    if (lhs->get_type() != arg_type )
+      lhs = jit_val_create_convert( func , arg_type , lhs );
+    if (rhs->get_type() != arg_type)
+      rhs = jit_val_create_convert( func , arg_type , rhs );
+    jit_value_t ret = jit_val_create_new( func , arg_type );
     func->get_prg() << jit_predicate(pred)
 		    << "call (" 
 		    << jit_get_reg_name( ret ) 
@@ -1023,25 +1070,70 @@ void jit_function::write_reg_defs()
     return ret;
   }
 
-  // Imported PTX Unary operations
-  jit_value_t jit_ins_sin(  jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 0 , lhs , pred ); }
-  jit_value_t jit_ins_acos( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 1 , lhs , pred ); }
-  jit_value_t jit_ins_asin( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 2 , lhs , pred ); }
-  jit_value_t jit_ins_atan( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 3 , lhs , pred ); }
-  jit_value_t jit_ins_cos( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 4 , lhs , pred ); }
-  jit_value_t jit_ins_cosh( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 5 , lhs , pred ); }
-  jit_value_t jit_ins_exp( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 6 , lhs , pred ); }
-  jit_value_t jit_ins_log( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 7 , lhs , pred ); }
-  jit_value_t jit_ins_log10( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 8 , lhs , pred ); }
-  jit_value_t jit_ins_sinh( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 9 , lhs , pred ); }
-  jit_value_t jit_ins_tan( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 10 , lhs , pred ); }
-  jit_value_t jit_ins_tanh( jit_value_t lhs , jit_value_t pred ) { return jit_ins_math_unary( 11 , lhs , pred ); }
+  // Imported PTX Unary operations single precicion
+  jit_value_t jit_ins_sin_f32(  jit_value_t lhs , jit_value_t pred ) { 
+    return jit_ins_math_unary( 0 , jit_ptx_type::f32 , lhs , pred ); }
+  jit_value_t jit_ins_acos_f32( jit_value_t lhs , jit_value_t pred ) { 
+    return jit_ins_math_unary( 1 , jit_ptx_type::f32 , lhs , pred ); }
+  jit_value_t jit_ins_asin_f32( jit_value_t lhs , jit_value_t pred ) { 
+    return jit_ins_math_unary( 2 , jit_ptx_type::f32 , lhs , pred ); }
+  jit_value_t jit_ins_atan_f32( jit_value_t lhs , jit_value_t pred ) { 
+    return jit_ins_math_unary( 3 , jit_ptx_type::f32 , lhs , pred ); }
+  jit_value_t jit_ins_cos_f32( jit_value_t lhs , jit_value_t pred ) { 
+    return jit_ins_math_unary( 4 , jit_ptx_type::f32 , lhs , pred ); }
+  jit_value_t jit_ins_cosh_f32( jit_value_t lhs , jit_value_t pred ) { 
+    return jit_ins_math_unary( 5 , jit_ptx_type::f32 , lhs , pred ); }
+  jit_value_t jit_ins_exp_f32( jit_value_t lhs , jit_value_t pred ) { 
+    return jit_ins_math_unary( 6 , jit_ptx_type::f32 , lhs , pred ); }
+  jit_value_t jit_ins_log_f32( jit_value_t lhs , jit_value_t pred ) { 
+    return jit_ins_math_unary( 7 , jit_ptx_type::f32 , lhs , pred ); }
+  jit_value_t jit_ins_log10_f32( jit_value_t lhs , jit_value_t pred ) { 
+    return jit_ins_math_unary( 8 , jit_ptx_type::f32 , lhs , pred ); }
+  jit_value_t jit_ins_sinh_f32( jit_value_t lhs , jit_value_t pred ) { 
+    return jit_ins_math_unary( 9 , jit_ptx_type::f32 , lhs , pred ); }
+  jit_value_t jit_ins_tan_f32( jit_value_t lhs , jit_value_t pred ) { 
+    return jit_ins_math_unary( 10 , jit_ptx_type::f32 , lhs , pred ); }
+  jit_value_t jit_ins_tanh_f32( jit_value_t lhs , jit_value_t pred ) { 
+    return jit_ins_math_unary( 11 , jit_ptx_type::f32 , lhs , pred ); }
 
-  // Imported PTX Binary operations
-  jit_value_t jit_ins_pow( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) { 
-    return jit_ins_math_binary( 0 , lhs , rhs , pred ); }
-  jit_value_t jit_ins_atan2( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) { 
-    return jit_ins_math_binary( 1 , lhs , rhs , pred ); }
+  // Imported PTX Binary operations single precicion
+  jit_value_t jit_ins_pow_f32( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) { 
+    return jit_ins_math_binary( 0 , jit_ptx_type::f32 , lhs , rhs , pred ); }
+  jit_value_t jit_ins_atan2_f32( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) { 
+    return jit_ins_math_binary( 1 , jit_ptx_type::f32 , lhs , rhs , pred ); }
+
+
+  // Imported PTX Unary operations double precicion
+  jit_value_t jit_ins_sin_f64(  jit_value_t lhs , jit_value_t pred ) { 
+    return jit_ins_math_unary( 12 , jit_ptx_type::f64 , lhs , pred ); }
+  jit_value_t jit_ins_acos_f64( jit_value_t lhs , jit_value_t pred ) { 
+    return jit_ins_math_unary( 13 , jit_ptx_type::f64 , lhs , pred ); }
+  jit_value_t jit_ins_asin_f64( jit_value_t lhs , jit_value_t pred ) { 
+    return jit_ins_math_unary( 14 , jit_ptx_type::f64 , lhs , pred ); }
+  jit_value_t jit_ins_atan_f64( jit_value_t lhs , jit_value_t pred ) { 
+    return jit_ins_math_unary( 15 , jit_ptx_type::f64 , lhs , pred ); }
+  jit_value_t jit_ins_cos_f64( jit_value_t lhs , jit_value_t pred ) { 
+    return jit_ins_math_unary( 16 , jit_ptx_type::f64 , lhs , pred ); }
+  jit_value_t jit_ins_cosh_f64( jit_value_t lhs , jit_value_t pred ) { 
+    return jit_ins_math_unary( 17 , jit_ptx_type::f64 , lhs , pred ); }
+  jit_value_t jit_ins_exp_f64( jit_value_t lhs , jit_value_t pred ) { 
+    return jit_ins_math_unary( 18 , jit_ptx_type::f64 , lhs , pred ); }
+  jit_value_t jit_ins_log_f64( jit_value_t lhs , jit_value_t pred ) { 
+    return jit_ins_math_unary( 19 , jit_ptx_type::f64 , lhs , pred ); }
+  jit_value_t jit_ins_log10_f64( jit_value_t lhs , jit_value_t pred ) { 
+    return jit_ins_math_unary( 20 , jit_ptx_type::f64 , lhs , pred ); }
+  jit_value_t jit_ins_sinh_f64( jit_value_t lhs , jit_value_t pred ) { 
+    return jit_ins_math_unary( 21 , jit_ptx_type::f64 , lhs , pred ); }
+  jit_value_t jit_ins_tan_f64( jit_value_t lhs , jit_value_t pred ) { 
+    return jit_ins_math_unary( 22 , jit_ptx_type::f64 , lhs , pred ); }
+  jit_value_t jit_ins_tanh_f64( jit_value_t lhs , jit_value_t pred ) { 
+    return jit_ins_math_unary( 23 , jit_ptx_type::f64 , lhs , pred ); }
+
+  // Imported PTX Binary operations single precicion
+  jit_value_t jit_ins_pow_f64( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) { 
+    return jit_ins_math_binary( 2 , jit_ptx_type::f64 , lhs , rhs , pred ); }
+  jit_value_t jit_ins_atan2_f64( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) { 
+    return jit_ins_math_binary( 3 , jit_ptx_type::f64 , lhs , rhs , pred ); }
 
 
   void jit_ins_mov_no_create_const( jit_value_t dest , jit_value_const_t src_const , jit_value_t pred ){

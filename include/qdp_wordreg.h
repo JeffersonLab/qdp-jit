@@ -537,36 +537,6 @@ operator||(const WordREG<T1>& l, const WordREG<T2>& r)
   }
 
 
-// ArcCos
-template<class T1>
-inline typename UnaryReturn<WordREG<T1>, FnArcCos>::Type_t
-acos(const WordREG<T1>& s1)
-{
-  typename UnaryReturn<WordREG<T1>, FnArcCos>::Type_t ret;
-  ret.setup( jit_ins_acos( s1.get_val() ) );
-  return ret;
-}
-
-// ArcSin
-template<class T1>
-inline typename UnaryReturn<WordREG<T1>, FnArcSin>::Type_t
-asin(const WordREG<T1>& s1)
-{
-  typename UnaryReturn<WordREG<T1>, FnArcSin>::Type_t ret;
-  ret.setup( jit_ins_asin( s1.get_val() ) );
-  return ret;
-}
-
-// ArcTan
-template<class T1>
-inline typename UnaryReturn<WordREG<T1>, FnArcTan>::Type_t
-atan(const WordREG<T1>& s1)
-{
-  typename UnaryReturn<WordREG<T1>, FnArcTan>::Type_t ret;
-  ret.setup( jit_ins_atan( s1.get_val() ) );
-  return ret;
-}
-
 // Ceil(ing)
 template<class T1>
 inline typename UnaryReturn<WordREG<T1>, FnCeil>::Type_t
@@ -577,35 +547,6 @@ ceil(const WordREG<T1>& s1)
   return ret;
 }
 
-// Cos
-template<class T1>
-inline typename UnaryReturn<WordREG<T1>, FnCos>::Type_t
-cos(const WordREG<T1>& s1)
-{
-  typename UnaryReturn<WordREG<T1>, FnCos>::Type_t ret;
-  ret.setup( jit_ins_cos( s1.get_val() ) );
-  return ret;
-}
-
-// Cosh
-template<class T1>
-inline typename UnaryReturn<WordREG<T1>, FnHypCos>::Type_t
-cosh(const WordREG<T1>& s1)
-{
-  typename UnaryReturn<WordREG<T1>, FnHypCos>::Type_t ret;
-  ret.setup( jit_ins_cosh( s1.get_val() ) );
-  return ret;
-}
-
-// Exp
-template<class T1>
-inline typename UnaryReturn<WordREG<T1>, FnExp>::Type_t
-exp(const WordREG<T1>& s1)
-{
-  typename UnaryReturn<WordREG<T1>, FnExp>::Type_t ret;
-  ret.setup( jit_ins_exp( s1.get_val() ) );
-  return ret;
-}
 
 // Fabs
 template<class T1>
@@ -627,46 +568,6 @@ floor(const WordREG<T1>& s1)
   return ret;
 }
 
-// Log
-template<class T1>
-inline typename UnaryReturn<WordREG<T1>, FnLog>::Type_t
-log(const WordREG<T1>& s1)
-{
-  typename UnaryReturn<WordREG<T1>, FnLog>::Type_t ret;
-  ret.setup( jit_ins_log( s1.get_val() ) );
-  return ret;
-}
-
-// Log10
-template<class T1>
-inline typename UnaryReturn<WordREG<T1>, FnLog10>::Type_t
-log10(const WordREG<T1>& s1)
-{
-  typename UnaryReturn<WordREG<T1>, FnLog10>::Type_t ret;
-  ret.setup( jit_ins_log10( s1.get_val() ) );
-  return ret;
-}
-
-// Sin
-template<class T1>
-inline typename UnaryReturn<WordREG<T1>, FnSin>::Type_t
-sin(const WordREG<T1>& s1)
-{
-  typename UnaryReturn<WordREG<T1>, FnSin>::Type_t ret;
-  ret.setup( jit_ins_sin( s1.get_val() ) );
-  return ret;
-}
-
-// Sinh
-template<class T1>
-inline typename UnaryReturn<WordREG<T1>, FnHypSin>::Type_t
-sinh(const WordREG<T1>& s1)
-{
-  typename UnaryReturn<WordREG<T1>, FnHypSin>::Type_t ret;
-  ret.setup( jit_ins_sinh( s1.get_val() ) );
-  return ret;
-}
-
 // Sqrt
 template<class T1>
 inline typename UnaryReturn<WordREG<T1>, FnSqrt>::Type_t
@@ -677,46 +578,6 @@ sqrt(const WordREG<T1>& s1)
   return ret;
 }
 
-// Tan
-template<class T1>
-inline typename UnaryReturn<WordREG<T1>, FnTan>::Type_t
-tan(const WordREG<T1>& s1)
-{
-  typename UnaryReturn<WordREG<T1>, FnTan>::Type_t ret;
-  ret.setup( jit_ins_tan( s1.get_val() ) );
-  return ret;
-}
-
-// Tanh
-template<class T1>
-inline typename UnaryReturn<WordREG<T1>, FnHypTan>::Type_t
-tanh(const WordREG<T1>& s1)
-{
-  typename UnaryReturn<WordREG<T1>, FnHypTan>::Type_t ret;
-  ret.setup( jit_ins_tanh( s1.get_val() ) );
-  return ret;
-}
-
-
-//! WordREG<T> = pow(WordREG<T> , WordREG<T>)
-template<class T1, class T2>
-inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, FnPow>::Type_t
-pow(const WordREG<T1>& s1, const WordREG<T2>& s2)
-{
-  typename UnaryReturn<WordREG<T1>, FnHypTan>::Type_t ret;
-  ret.setup( jit_ins_pow( s1.get_val() , s2.get_val() ) );
-  return ret;
-}
-
-//! WordREG<T> = atan2(WordREG<T> , WordREG<T>)
-template<class T1, class T2>
-inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, FnArcTan2>::Type_t
-atan2(const WordREG<T1>& s1, const WordREG<T2>& s2)
-{
-  typename UnaryReturn<WordREG<T1>, FnArcTan2>::Type_t ret;
-  ret.setup( jit_ins_atan2( s1.get_val() , s2.get_val() ) );
-  return ret;
-}
 
 
 template<class T>
@@ -796,6 +657,45 @@ localInnerProductReal(const WordREG<T1>& s1, const WordREG<T2>& s2)
   {
     dest.replace( WordREG<int>(0) );
   }
+
+
+
+
+typename UnaryReturn<WordREG<float>, FnArcCos>::Type_t acos(const WordREG<float>& s1);
+typename UnaryReturn<WordREG<float>, FnArcSin>::Type_t asin(const WordREG<float>& s1);
+typename UnaryReturn<WordREG<float>, FnArcTan>::Type_t atan(const WordREG<float>& s1);
+typename UnaryReturn<WordREG<float>, FnCos>::Type_t cos(const WordREG<float>& s1);
+typename UnaryReturn<WordREG<float>, FnHypCos>::Type_t cosh(const WordREG<float>& s1);
+typename UnaryReturn<WordREG<float>, FnExp>::Type_t exp(const WordREG<float>& s1);
+typename UnaryReturn<WordREG<float>, FnLog>::Type_t log(const WordREG<float>& s1);
+typename UnaryReturn<WordREG<float>, FnLog10>::Type_t log10(const WordREG<float>& s1);
+typename UnaryReturn<WordREG<float>, FnSin>::Type_t sin(const WordREG<float>& s1);
+typename UnaryReturn<WordREG<float>, FnHypSin>::Type_t sinh(const WordREG<float>& s1);
+typename UnaryReturn<WordREG<float>, FnTan>::Type_t tan(const WordREG<float>& s1);
+typename UnaryReturn<WordREG<float>, FnHypTan>::Type_t tanh(const WordREG<float>& s1);
+typename BinaryReturn<WordREG<float>, WordREG<float>, FnPow>::Type_t pow(const WordREG<float>& s1, const WordREG<float>& s2);
+typename BinaryReturn<WordREG<float>, WordREG<float>, FnArcTan2>::Type_t atan2(const WordREG<float>& s1, const WordREG<float>& s2);
+
+
+typename UnaryReturn<WordREG<double>, FnSin>::Type_t sin(const WordREG<double>& s1);
+typename UnaryReturn<WordREG<double>, FnArcCos>::Type_t acos(const WordREG<double>& s1);
+typename UnaryReturn<WordREG<double>, FnArcSin>::Type_t asin(const WordREG<double>& s1);
+typename UnaryReturn<WordREG<double>, FnArcTan>::Type_t atan(const WordREG<double>& s1);
+typename UnaryReturn<WordREG<double>, FnCos>::Type_t cos(const WordREG<double>& s1);
+typename UnaryReturn<WordREG<double>, FnHypCos>::Type_t cosh(const WordREG<double>& s1);
+typename UnaryReturn<WordREG<double>, FnExp>::Type_t exp(const WordREG<double>& s1);
+typename UnaryReturn<WordREG<double>, FnLog>::Type_t log(const WordREG<double>& s1);
+typename UnaryReturn<WordREG<double>, FnLog10>::Type_t log10(const WordREG<double>& s1);
+typename UnaryReturn<WordREG<double>, FnSin>::Type_t sin(const WordREG<double>& s1);
+typename UnaryReturn<WordREG<double>, FnHypSin>::Type_t sinh(const WordREG<double>& s1);
+typename UnaryReturn<WordREG<double>, FnTan>::Type_t tan(const WordREG<double>& s1);
+typename UnaryReturn<WordREG<double>, FnHypTan>::Type_t tanh(const WordREG<double>& s1);
+typename BinaryReturn<WordREG<double>, WordREG<double>, FnPow>::Type_t pow(const WordREG<double>& s1, const WordREG<double>& s2);
+typename BinaryReturn<WordREG<double>, WordREG<double>, FnArcTan2>::Type_t atan2(const WordREG<double>& s1, const WordREG<double>& s2);
+
+
+
+
 
 
 

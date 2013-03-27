@@ -1,0 +1,166 @@
+	.func (.reg .f64 res) func_sinh_f64 ( .reg .f64 arg)
+{
+	.reg .pred 	%p<6>;
+	.reg .s32 	%r<18>;
+	.reg .s64 	%rd<4>;
+	.reg .f64 	%fd<64>;
+
+
+	mov.f64 	%fd5, arg;
+	cvta.to.global.u64 	%rd1, %rd2;
+	.loc 2 405 5
+	abs.f64 	%fd1, %fd5;
+	.loc 2 1491 5
+	{
+	.reg .b32 %temp; 
+	mov.b64 	{%temp, %r1}, %fd1;
+	}
+	.loc 3 1134 3
+	setp.lt.s32 	%p1, %r1, 1072693248;
+	@%p1 bra 	BB0_2;
+
+	.loc 3 1073 3
+	mul.f64 	%fd6, %fd1, 0d3FF71547652B82FE;
+	.loc 2 594 5
+	cvt.rni.f64.f64 	%fd7, %fd6;
+	.loc 3 1074 3
+	cvt.rzi.s32.f64 	%r2, %fd7;
+	add.s32 	%r3, %r2, -1;
+	mov.f64 	%fd8, 0dBFE62E42FEFA39EF;
+	.loc 2 721 5
+	fma.rn.f64 	%fd9, %fd7, %fd8, %fd1;
+	mov.f64 	%fd10, 0dBC7ABC9E3B39803F;
+	.loc 2 721 5
+	fma.rn.f64 	%fd11, %fd7, %fd10, %fd9;
+	.loc 3 1077 3
+	shl.b32 	%r4, %r1, 1;
+	.loc 3 1078 3
+	setp.lt.u32 	%p2, %r4, 2142496327;
+	selp.f64 	%fd12, %fd1, %fd11, %p2;
+	selp.b32 	%r5, 0, %r3, %p2;
+	mov.u32 	%r6, 0;
+	mov.f64 	%fd13, 0d3E5AFD81DA6C3BAF;
+	mov.f64 	%fd14, 0d3E21F07FCCF58BAD;
+	.loc 2 721 5
+	fma.rn.f64 	%fd15, %fd14, %fd12, %fd13;
+	mov.f64 	%fd16, 0d3E927E55F60F80E6;
+	.loc 2 721 5
+	fma.rn.f64 	%fd17, %fd15, %fd12, %fd16;
+	mov.f64 	%fd18, 0d3EC71DDA8F02D666;
+	.loc 2 721 5
+	fma.rn.f64 	%fd19, %fd17, %fd12, %fd18;
+	mov.f64 	%fd20, 0d3EFA01A013B894E0;
+	.loc 2 721 5
+	fma.rn.f64 	%fd21, %fd19, %fd12, %fd20;
+	mov.f64 	%fd22, 0d3F2A01A01D3AF788;
+	.loc 2 721 5
+	fma.rn.f64 	%fd23, %fd21, %fd12, %fd22;
+	mov.f64 	%fd24, 0d3F56C16C16C3A1EC;
+	.loc 2 721 5
+	fma.rn.f64 	%fd25, %fd23, %fd12, %fd24;
+	mov.f64 	%fd26, 0d3F81111111109161;
+	.loc 2 721 5
+	fma.rn.f64 	%fd27, %fd25, %fd12, %fd26;
+	mov.f64 	%fd28, 0d3FA55555555554C1;
+	.loc 2 721 5
+	fma.rn.f64 	%fd29, %fd27, %fd12, %fd28;
+	mov.f64 	%fd30, 0d3FC555555555556F;
+	.loc 2 721 5
+	fma.rn.f64 	%fd31, %fd29, %fd12, %fd30;
+	mov.f64 	%fd32, 0d3FE0000000000000;
+	.loc 2 721 5
+	fma.rn.f64 	%fd33, %fd31, %fd12, %fd32;
+	.loc 3 468 3
+	mul.f64 	%fd34, %fd33, %fd12;
+	.loc 2 721 5
+	fma.rn.f64 	%fd35, %fd34, %fd12, %fd12;
+	.loc 3 1084 3
+	setp.eq.s32 	%p3, %r5, 1024;
+	selp.b32 	%r7, -1, 0, %p3;
+	add.s32 	%r8, %r7, %r5;
+	.loc 3 534 3
+	shl.b32 	%r9, %r8, 20;
+	add.s32 	%r10, %r9, 1072693248;
+	.loc 2 1473 5
+	mov.b64 	%fd36, {%r6, %r10};
+	mov.u32 	%r11, 1071644672;
+	.loc 2 1473 5
+	mov.b64 	%fd37, {%r6, %r11};
+	.loc 3 1087 3
+	sub.f64 	%fd38, %fd36, %fd37;
+	.loc 2 721 5
+	fma.rn.f64 	%fd39, %fd35, %fd36, %fd38;
+	.loc 3 1089 3
+	add.f64 	%fd40, %fd39, %fd39;
+	selp.f64 	%fd41, %fd40, %fd39, %p3;
+	.loc 3 1090 3
+	setp.eq.s32 	%p4, %r4, 0;
+	selp.f64 	%fd42, %fd12, %fd41, %p4;
+	mov.f64 	%fd43, 0d3FF0000000000000;
+	mov.f64 	%fd44, 0d4000000000000000;
+	.loc 2 721 5
+	fma.rn.f64 	%fd45, %fd44, %fd42, %fd43;
+	.loc 3 1147 5
+	div.rn.f64 	%fd46, %fd42, %fd45;
+	add.f64 	%fd47, %fd42, %fd46;
+	mov.u64 	%rd3, 9218868437227405312;
+	.loc 2 1792 5
+	mov.b64 	%fd48, %rd3;
+	.loc 3 1148 5
+	setp.ltu.f64 	%p5, %fd1, 0d408633CE8FB9F87E;
+	selp.f64 	%fd63, %fd47, %fd48, %p5;
+	bra.uni 	BB0_3;
+
+BB0_2:
+	.loc 3 1135 5
+	mul.f64 	%fd49, %fd1, %fd1;
+	mov.f64 	%fd50, 0d3E5AE54AA7F65A50;
+	mov.f64 	%fd51, 0d3DE66F72AF4891C2;
+	.loc 2 721 5
+	fma.rn.f64 	%fd52, %fd51, %fd49, %fd50;
+	mov.f64 	%fd53, 0d3EC71DE4F068906D;
+	.loc 2 721 5
+	fma.rn.f64 	%fd54, %fd52, %fd49, %fd53;
+	mov.f64 	%fd55, 0d3F2A01A01848AC60;
+	.loc 2 721 5
+	fma.rn.f64 	%fd56, %fd54, %fd49, %fd55;
+	mov.f64 	%fd57, 0d3F81111111121E55;
+	.loc 2 721 5
+	fma.rn.f64 	%fd58, %fd56, %fd49, %fd57;
+	mov.f64 	%fd59, 0d3FC555555555547B;
+	.loc 2 721 5
+	fma.rn.f64 	%fd60, %fd58, %fd49, %fd59;
+	.loc 3 1143 5
+	mul.f64 	%fd61, %fd60, %fd49;
+	.loc 2 721 5
+	fma.rn.f64 	%fd63, %fd61, %fd1, %fd1;
+
+BB0_3:
+	.loc 2 1491 5
+	{
+	.reg .b32 %temp; 
+	mov.b64 	{%temp, %r12}, %fd5;
+	}
+	.loc 3 198 3
+	and.b32  	%r13, %r12, -2147483648;
+	.loc 2 1491 5
+	{
+	.reg .b32 %temp; 
+	mov.b64 	{%temp, %r14}, %fd63;
+	}
+	.loc 3 198 3
+	or.b32  	%r15, %r14, %r13;
+	.loc 2 1482 5
+	{
+	.reg .b32 %temp; 
+	mov.b64 	{%r16, %temp}, %fd63;
+	}
+	.loc 2 1473 5
+	mov.b64 	%fd62, {%r16, %r15};
+	.loc 4 9 1
+	mov.f64 	res, %fd62;
+	.loc 4 11 2
+	ret;
+}
+
+
