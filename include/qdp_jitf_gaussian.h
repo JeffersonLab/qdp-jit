@@ -12,7 +12,7 @@ function_gaussian_build(OLattice<T>& dest ,OLattice<T>& r1 ,OLattice<T>& r2 )
   //  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
   CUfunction func;
 
-  const char * fname = "ptx_random.ptx";
+  const char * fname = "ptx_gaussian.ptx";
   jit_function_t function = jit_create_function( fname );
 
   jit_value_t r_lo     = jit_add_param( function , jit_ptx_type::s32 );
