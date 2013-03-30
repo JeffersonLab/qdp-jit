@@ -70,7 +70,7 @@ struct FnNorm2Multi
 
 struct FnInnerProductMulti
 {
-  PETE_EMPTY_CONSTRUCTORS(FnInnerProduct)
+  PETE_EMPTY_CONSTRUCTORS(FnInnerProductMulti)
 };
 
 struct FnInnerProductRealMulti

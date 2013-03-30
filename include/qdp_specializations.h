@@ -8,8 +8,6 @@
 
 namespace QDP {
 
-#undef SKIP_DOUBLE
-
 //
 // Conversion routines. These cannot be implicit conversion functions
 // since they foul up the PETE defs in QDPOperators.h using primitive
@@ -285,19 +283,9 @@ struct CreateLeaf<OScalar<IntReal32> >
 {
   typedef OScalar<IntReal32> Leaf_t;
   inline static
-  Leaf_t make(const OScalar<IntReal32> &a) { 
-    return Leaf_t( std::move(a) ); 
-  }
-#if 0
-  inline static
-  Leaf_t make(OScalar<IntReal32> &&a) { 
-    //return std::move( Leaf_t( std::move(a) ) );
-    return std::move(a);
-  }
-#endif
+  Leaf_t make(const OScalar<IntReal32> &a) { return Leaf_t(a); }
 };
 
-#ifndef SKIP_DOUBLE
 template<>
 struct CreateLeaf<OScalar<IntReal64> >
 {
@@ -305,7 +293,6 @@ struct CreateLeaf<OScalar<IntReal64> >
   inline static
   Leaf_t make(const OScalar<IntReal64> &a) { return Leaf_t(a); }
 };
-#endif
 
 template<>
 struct CreateLeaf<OScalar<IntInteger> >

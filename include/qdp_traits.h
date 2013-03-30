@@ -9,8 +9,6 @@
 #ifndef QDP_TRAITS_H
 #define QDP_TRAITS_H
 
-#undef SKIP_DOUBLE
-
 namespace QDP {
 
   //template<class T>       struct SignedType;
@@ -119,13 +117,11 @@ struct SinglePrecType<REAL32>
   typedef REAL32 Type_t;
 };
 
-#ifndef SKIP_DOUBLE
 template<>
 struct SinglePrecType<REAL64>
 {
   typedef REAL32 Type_t;
 };
-#endif
 
 // The Double prec types for both REAL32 and REAL64 are REAL64
 template<>
@@ -134,13 +130,11 @@ struct DoublePrecType<REAL32>
   typedef REAL64 Type_t;
 };
 
-#ifndef SKIP_DOUBLE
 template<>
 struct DoublePrecType<REAL64>
 {
   typedef REAL64 Type_t;
 };
-#endif
 
   template<typename T> 
   struct DoublePrecType< multi1d< T > >
