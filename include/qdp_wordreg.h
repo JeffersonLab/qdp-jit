@@ -22,32 +22,16 @@ namespace QDP {
     // construction a PMatrix<T,N>
     WordREG(): setup_m(false) {}
 
-    WordREG(int i) {
-      val = jit_val_create_const_int( i );
-      setup_m=true;
-    }
+    WordREG(int i);
+    WordREG(double f);
 
-    WordREG(float f) {
-      val = jit_val_create_const_float( f );
-      setup_m=true;
-    }
-
-    WordREG(double f) {
-      val = jit_val_create_const_float( f );
-      setup_m=true;
-    }
-    
     WordREG(const WordREG& rhs) {
       assert(rhs.get_val());
       val = jit_val_create_copy( rhs.get_val() );
       setup_m=true;
     }
 
-    void setup(jit_value_t v) {
-      assert(v);
-      val=v;
-      setup_m=true;
-    }
+    void setup(jit_value_t v);
 
     void setup(const WordJIT<T>& wj) {
       val = jit_ins_load( wj.getAddress() , 0 , jit_type<T>::value );
@@ -55,6 +39,7 @@ namespace QDP {
     }
 
     void replace(const WordREG& rhs ) {
+      assert( rhs.get_val()->get_type() == jit_type<T>::value );
       if (val) {
 	jit_ins_mov_no_create( val , rhs.get_val() );	
       } else {
@@ -80,19 +65,21 @@ namespace QDP {
     }
 
     template<class T1>
-    WordREG(const WordREG<T1>& rhs) 
+    WordREG(const WordREG<T1>& rhs)
     {
-      val = jit_val_create_convert( getFunc(rhs) , jit_type<T>::value , rhs.get_val() );
-      setup_m = true;
+      setup(rhs.get_val());
+      // val = jit_val_create_convert( getFunc(rhs) , jit_type<T>::value , rhs.get_val() );
+      // setup_m = true;
     }
 
-    // template<class T1>
-    // inline
-    // WordREG& operator=(const WordREG<T1>& rhs) 
-    // {
-    //   val = jit_val_create_convert( getFunc(*this) , jit_type<T>::value , rhs.get_val() );
-    //   return *this;
-    // }
+    template<class T1>
+    inline
+    WordREG& operator=(const WordREG<T1>& rhs) 
+    {
+      setup(rhs.get_val());
+      //val = jit_val_create_convert( getFunc(*this) , jit_type<T>::value , rhs.get_val() );
+      return *this;
+    }
 
 
     //! WordREG += WordREG
@@ -196,6 +183,45 @@ namespace QDP {
   jit_function_t getFunc(const WordREG<T>& l) {
     return getFunc( l.get_val() );
   }
+
+
+
+
+
+  template<>
+  WordREG<double>::WordREG(int i);
+
+  template<>
+  WordREG<double>::WordREG(double f);
+
+  template<>
+  WordREG<float>::WordREG(int i);
+
+  template<>
+  WordREG<float>::WordREG(double f);
+
+  template<>
+  WordREG<int>::WordREG(int i);
+
+  template<>
+  WordREG<int>::WordREG(double f);
+
+
+
+  template<>
+  void WordREG<int>::setup(jit_value_t v);
+
+  template<>
+  void WordREG<float>::setup(jit_value_t v);
+
+  template<>
+  void WordREG<double>::setup(jit_value_t v);
+
+  template<>
+  void WordREG<bool>::setup(jit_value_t v);
+
+
+
 
 
 //-----------------------------------------------------------------------------

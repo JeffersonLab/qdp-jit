@@ -3,6 +3,148 @@
 namespace QDP 
 {
 
+
+  template<>
+  WordREG<double>::WordREG(int i) {
+    val = jit_val_create_const_float( i );
+    setup_m=true;
+  }
+
+  template<>
+  WordREG<double>::WordREG(double f) {
+    val = jit_val_create_const_float( f );
+    setup_m=true;
+  }
+
+  template<>
+  WordREG<float>::WordREG(int i) {
+    val = jit_val_create_const_float( i );
+    setup_m=true;
+  }
+
+  template<>
+  WordREG<float>::WordREG(double f) {
+    val = jit_val_create_const_float( f );
+    setup_m=true;
+  }
+
+  template<>
+  WordREG<int>::WordREG(int i) {
+    val = jit_val_create_const_int( i );
+    setup_m=true;
+  }
+
+  template<>
+  WordREG<int>::WordREG(double f) {
+    val = jit_val_create_const_int( f );
+    setup_m=true;
+  }
+
+
+
+  template<>
+  void WordREG<int>::setup(jit_value_t v) {
+    assert(v);
+    if (v->get_type() == jit_type<int>::value) {
+      val=v;
+    } else {
+      if (auto v_const = get<jit_value_const>(v)) {
+      	if (v_const->isInt()) {
+      	  val = v;
+      	} else {
+      	  val = jit_val_create_const_int( v_const->getAsFloat() );
+      	}
+      } else {
+      	val = jit_val_create_convert( getFunc(v) , jit_type<int>::value , v );
+      }
+    }
+    setup_m=true;
+  }
+
+
+  template<>
+  void WordREG<float>::setup(jit_value_t v) {
+    assert(v);
+    if (v->get_type() == jit_type<float>::value) {
+      val=v;
+    } else {
+      if (auto v_const = get<jit_value_const>(v)) {
+      	if (v_const->isInt()) {
+	  if (auto v_const_int = get<jit_value_const_int>(v_const)) {
+	    val = jit_val_create_const_int( v_const_int->getValue() );
+	  } else {
+	    assert(!"oops");
+	  }
+      	} else {
+      	  val = jit_val_create_const_float( v_const->getAsFloat() );
+      	}
+      } else {
+      	val = jit_val_create_convert( getFunc(v) , jit_type<float>::value , v );
+      }
+    }
+    setup_m=true;
+  }
+
+
+  template<>
+  void WordREG<double>::setup(jit_value_t v) {
+    assert(v);
+    if (v->get_type() == jit_type<double>::value) {
+      val=v;
+    } else {
+      if (auto v_const = get<jit_value_const>(v)) {
+      	if (v_const->isInt()) {
+	  if (auto v_const_int = get<jit_value_const_int>(v_const)) {
+	    val = jit_val_create_const_int( v_const_int->getValue() );
+	  } else {
+	    assert(!"oops");
+	  }
+      	} else {
+      	  val = jit_val_create_const_float( v_const->getAsFloat() );
+      	}
+      } else {
+      	val = jit_val_create_convert( getFunc(v) , jit_type<double>::value , v );
+      }
+    }
+    setup_m=true;
+  }
+
+
+  template<>
+  void WordREG<bool>::setup(jit_value_t v) {
+    assert(v);
+    if (v->get_type() == jit_type<bool>::value) {
+      val=v;
+    } else {
+      //std::cout << "trying... " << __PRETTY_FUNCTION__ << v->get_type() << "\n";
+      if (auto v_const = get<jit_value_const>(v)) {
+      	if (v_const->isInt()) {
+	  auto v_const_int = get<jit_value_const_int>(v_const);
+	  assert(v_const_int);
+	  val = jit_ins_ne( v_const_int , jit_val_create_const_int(0) );
+	  //std::cout << "it was a const_int!n";
+	} else {
+	  auto v_const_float = get<jit_value_const_float>(v_const);
+	  assert(v_const_float);
+	  val = jit_ins_ne( v_const_float , jit_val_create_const_float(0.0) );
+	  //std::cout << "it was a const_float!n";
+	}
+      } else {
+	//std::cout << "its a reg!n";
+	auto v_reg = get<jit_value_reg>(v);
+	assert(v_reg);
+	jit_function_t func = getFunc(v_reg);
+	assert( func );
+	val = jit_val_create_convert( func , jit_type<bool>::value , v );
+	//std::cout << "converted from reg!n";
+      }
+    }
+    setup_m=true;
+  }
+
+
+
+
   typename UnaryReturn<WordREG<float>, FnArcCos>::Type_t
   acos(const WordREG<float>& s1)
   {

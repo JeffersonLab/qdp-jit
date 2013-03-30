@@ -15,6 +15,7 @@
 namespace QDP {
 
 
+  
 
   enum jit_ptx_type { f32=0,f64=1,u16=2,u32=3,u64=4,s16=5,s32=6,s64=7,u8=8,b16=9,b32=10,b64=11,pred=12 };
 
@@ -51,6 +52,10 @@ namespace QDP {
     jit_value_t r_rcvbuf;
   };
 
+  template<class T>
+    std::shared_ptr<T> get(const jit_value_t & pA) {
+    return std::dynamic_pointer_cast< T >( pA );
+  }
 
 
   const char * jit_get_ptx_type( int type );
@@ -153,7 +158,7 @@ namespace QDP {
   public:
     jit_value_const( int type ) : jit_value(type) {}
     virtual bool  isInt() const      = 0;
-    virtual float getAsFloat() const = 0;
+    virtual double getAsFloat() const = 0;
     virtual std::string getAsString() const = 0;
   };
 
@@ -164,7 +169,7 @@ namespace QDP {
   public:
     jit_value_const_int( int val_): jit_value_const( jit_type<int>::value ), val(val_) {};
     virtual bool  isInt() const { return true; }
-    virtual float getAsFloat() const { return val; }
+    virtual double getAsFloat() const { return val; }
     virtual std::string getAsString() const { 
       std::ostringstream oss; 
       oss << val;
@@ -176,18 +181,20 @@ namespace QDP {
 
 
   class jit_value_const_float: public jit_value_const {
-    float val;
+    double val;
   public:
-    jit_value_const_float( float val_): jit_value_const( jit_type<float>::value ), val(val_) {};
+    jit_value_const_float( double val_): jit_value_const( jit_type<double>::value ), val(val_) {};
     virtual bool  isInt() const { return false; }
-    virtual float getAsFloat() const { return val; }
+    virtual double getAsFloat() const { return val; }
     virtual std::string getAsString() const { 
       std::ostringstream oss; 
+      //oss.setf(ios::hex);
       oss.setf(ios::scientific);
+      oss.precision(std::numeric_limits<double>::digits10 + 1);
       oss << val;
       return oss.str();
     }
-    float getValue() {return val;}
+    double getValue() {return val;}
   };
 
 
@@ -220,7 +227,7 @@ namespace QDP {
   jit_value_reg_t jit_val_create_convert( jit_function_t func , int type , jit_value_t val , jit_value_t pred=jit_value_t() );
   jit_value_t jit_val_create_copy( jit_value_t val , jit_value_t pred=jit_value_t() );
   jit_value_const_t jit_val_create_const_int( int val );
-  jit_value_const_t jit_val_create_const_float( float val );
+  jit_value_const_t jit_val_create_const_float( double val );
 
   jit_function_t getFunc(jit_value_t val);
 
@@ -323,7 +330,7 @@ namespace QDP {
     JitOp( int type_lhs_ , int type_rhs_ ): type_lhs(type_lhs_), type_rhs(type_rhs_) {}
     int getArgsType() const { return jit_type_promote( type_lhs , type_rhs ); };
     virtual int getDestType() const { return this->getArgsType(); }
-    virtual float operator()(float f0, float f1) const = 0;
+    virtual double operator()(double f0, double f1) const = 0;
     virtual int operator()(int i0, int i1) const = 0;
     friend std::ostream& operator<< (std::ostream& stream, const JitOp& op) {
       return op.writeToStream(stream);
@@ -338,7 +345,7 @@ namespace QDP {
 	     << jit_get_ptx_type( getDestType() );
       return stream;
     }
-    virtual float operator()(float f0, float f1) const { return f0+f1; }
+    virtual double operator()(double f0, double f1) const { return f0+f1; }
     virtual int operator()(int i0, int i1) const { return i0+i1; }
   };
 
@@ -350,7 +357,7 @@ namespace QDP {
 	     << jit_get_ptx_type( getDestType() );
       return stream;
     }
-    virtual float operator()(float f0, float f1) const { return f0-f1; }
+    virtual double operator()(double f0, double f1) const { return f0-f1; }
     virtual int operator()(int i0, int i1) const { return i0-i1; }
   };
 
@@ -363,7 +370,7 @@ namespace QDP {
 	     << jit_get_ptx_type( getDestType() );
       return stream;
     }
-    virtual float operator()(float f0, float f1) const { return f0*f1; }
+    virtual double operator()(double f0, double f1) const { return f0*f1; }
     virtual int operator()(int i0, int i1) const { return i0*i1; }
   };
 
@@ -376,7 +383,7 @@ namespace QDP {
 	     << jit_get_ptx_type( getDestType() );
       return stream;
     }
-    virtual float operator()(float f0, float f1) const { return f0*f1; }
+    virtual double operator()(double f0, double f1) const { return f0*f1; }
     virtual int operator()(int i0, int i1) const { return i0*i1; }
   };
 
@@ -397,7 +404,7 @@ namespace QDP {
 	     << jit_get_ptx_type( getArgsType() );
       return stream;
     }
-    virtual float operator()(float f0, float f1) const { return f0*f1; }
+    virtual double operator()(double f0, double f1) const { return f0*f1; }
     virtual int operator()(int i0, int i1) const { return i0*i1; }
   };
 
@@ -409,7 +416,7 @@ namespace QDP {
 	     << jit_get_ptx_type( jit_bit_type( getDestType() ) );
       return stream;
     }
-    virtual float operator()(float f0, float f1) const { assert(!"strange that i'm here"); return 0.; }
+    virtual double operator()(double f0, double f1) const { assert(!"strange that i'm here"); return 0.; }
     virtual int operator()(int i0, int i1) const { return i0 << i1; }
   };
 
@@ -421,7 +428,7 @@ namespace QDP {
 	     << jit_get_ptx_type( jit_bit_type( getDestType() ) );
       return stream;
     }
-    virtual float operator()(float f0, float f1) const { assert(!"strange that i'm here"); return 0.; }
+    virtual double operator()(double f0, double f1) const { assert(!"strange that i'm here"); return 0.; }
     virtual int operator()(int i0, int i1) const { return i0 >> i1; }
   };
 
@@ -438,7 +445,7 @@ namespace QDP {
 	     << jit_get_ptx_type( getArgsType() );
       return stream;
     }
-    virtual float operator()(float f0, float f1) const { return 0; }
+    virtual double operator()(double f0, double f1) const { return 0; }
     virtual int operator()(int i0, int i1) const { return 0; }
   };
 
@@ -453,7 +460,7 @@ namespace QDP {
 	     << jit_get_ptx_type( getArgsType() );
       return stream;
     }
-    virtual float operator()(float f0, float f1) const { return 0; }
+    virtual double operator()(double f0, double f1) const { return 0; }
     virtual int operator()(int i0, int i1) const { return 0; }
   };
 
@@ -468,7 +475,7 @@ namespace QDP {
 	     << jit_get_ptx_type( getArgsType() );
       return stream;
     }
-    virtual float operator()(float f0, float f1) const { return 0; }
+    virtual double operator()(double f0, double f1) const { return 0; }
     virtual int operator()(int i0, int i1) const { return 0; }
   };
 
@@ -483,7 +490,7 @@ namespace QDP {
 	     << jit_get_ptx_type( getArgsType() );
       return stream;
     }
-    virtual float operator()(float f0, float f1) const { return 0; }
+    virtual double operator()(double f0, double f1) const { return 0; }
     virtual int operator()(int i0, int i1) const { return 0; }
   };
 
@@ -498,7 +505,7 @@ namespace QDP {
 	     << jit_get_ptx_type( getArgsType() );
       return stream;
     }
-    virtual float operator()(float f0, float f1) const { return 0; }
+    virtual double operator()(double f0, double f1) const { return 0; }
     virtual int operator()(int i0, int i1) const { return 0; }
   };
 
@@ -513,7 +520,7 @@ namespace QDP {
 	     << jit_get_ptx_type( getArgsType() );
       return stream;
     }
-    virtual float operator()(float f0, float f1) const { assert(!"strange that i'm here"); return 0; }
+    virtual double operator()(double f0, double f1) const { assert(!"strange that i'm here"); return 0; }
     virtual int operator()(int i0, int i1) const { assert(!"strange that i'm here"); return 0; }
   };
 
@@ -525,7 +532,7 @@ namespace QDP {
 	     << jit_get_ptx_type( jit_bit_type( getDestType() ) );
       return stream;
     }
-    virtual float operator()(float f0, float f1) const { assert(!"strange that i'm here"); return 0.; }
+    virtual double operator()(double f0, double f1) const { assert(!"strange that i'm here"); return 0.; }
     virtual int operator()(int i0, int i1) const { return i0 & i1; }
   };
 
@@ -537,7 +544,7 @@ namespace QDP {
 	     << jit_get_ptx_type( jit_bit_type( getDestType() ) );
       return stream;
     }
-    virtual float operator()(float f0, float f1) const { assert(!"strange that i'm here"); return 0.; }
+    virtual double operator()(double f0, double f1) const { assert(!"strange that i'm here"); return 0.; }
     virtual int operator()(int i0, int i1) const { return i0 | i1; }
   };
 
@@ -549,7 +556,7 @@ namespace QDP {
 	     << jit_get_ptx_type( jit_bit_type( getDestType() ) );
       return stream;
     }
-    virtual float operator()(float f0, float f1) const { assert(!"strange that i'm here"); return 0.; }
+    virtual double operator()(double f0, double f1) const { assert(!"strange that i'm here"); return 0.; }
     virtual int operator()(int i0, int i1) const { return i0 ^ i1; }
   };
 
@@ -561,7 +568,7 @@ namespace QDP {
 	     << jit_get_ptx_type( getDestType() );
       return stream;
     }
-    virtual float operator()(float f0, float f1) const { assert(!"strange that i'm here"); return 0.; }
+    virtual double operator()(double f0, double f1) const { assert(!"strange that i'm here"); return 0.; }
     virtual int operator()(int i0, int i1) const { return i0 % i1; }
   };
 
@@ -576,7 +583,7 @@ namespace QDP {
     int type;
   public:
     JitUnaryOp( int type_ ): type(type_) {}
-    virtual float operator()(float f0) const = 0;
+    virtual double operator()(double f0) const = 0;
     virtual int operator()(int i0) const = 0;
     friend std::ostream& operator<< (std::ostream& stream, const JitUnaryOp& op) {
       return op.writeToStream(stream);
@@ -591,7 +598,7 @@ namespace QDP {
 	     << jit_get_ptx_type( type );
       return stream;
     }
-    virtual float operator()(float f0) const { return -f0; }
+    virtual double operator()(double f0) const { return -f0; }
     virtual int operator()(int i0) const { return -i0; }
   };
 
@@ -605,7 +612,7 @@ namespace QDP {
 	     << jit_get_ptx_type( type );
       return stream;
     }
-    virtual float operator()(float f0) const { return -f0; }
+    virtual double operator()(double f0) const { return -f0; }
     virtual int operator()(int i0) const { return -i0; }
   };
 
@@ -617,7 +624,7 @@ namespace QDP {
 	     << jit_get_ptx_type( type );
       return stream;
     }
-    virtual float operator()(float f0) const { return fabs(f0); }
+    virtual double operator()(double f0) const { return fabs(f0); }
     virtual int operator()(int i0) const { return fabs(i0); }
   };
 
@@ -631,7 +638,7 @@ namespace QDP {
 	     << jit_get_ptx_type( type );
       return stream;
     }
-    virtual float operator()(float f0) const { return floor(f0); }
+    virtual double operator()(double f0) const { return floor(f0); }
     virtual int operator()(int i0) const { return floor(i0); }
   };
 
@@ -647,7 +654,7 @@ namespace QDP {
       stream << jit_get_ptx_type( type );
       return stream;
     }
-    virtual float operator()(float f0) const { return floor(f0); }
+    virtual double operator()(double f0) const { return floor(f0); }
     virtual int operator()(int i0) const { return floor(i0); }
   };
 
@@ -661,7 +668,7 @@ namespace QDP {
 	     << jit_get_ptx_type( type );
       return stream;
     }
-    virtual float operator()(float f0) const { return ceil(f0); }
+    virtual double operator()(double f0) const { return ceil(f0); }
     virtual int operator()(int i0) const { return ceil(i0); }
   };
 

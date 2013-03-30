@@ -38,10 +38,6 @@ namespace QDP {
 
   int jit_label::count = 0;
 
-  template<class T>
-  std::shared_ptr<T> get(const jit_value_t & pA) {
-    return std::dynamic_pointer_cast< T >( pA );
-  }
 
 
   namespace PTX {
@@ -665,13 +661,23 @@ void jit_function::write_reg_defs()
 		      << ret->get_name() << ","
 		      << val->get_name() << ";\n";
     } else {
-      func->get_prg() << jit_predicate(pred)
-		      << "cvt."
-		      << jit_get_map_cvt_rnd_from_to(val->get_type(),type) 
-		      << jit_get_ptx_type( type ) << "." 
-		      << jit_get_ptx_type( val->get_type() ) << " " 
-		      << ret->get_name() << ","
-		      << val->get_name() << ";\n";
+      if ( type == jit_ptx_type::pred ) {
+	ret = get<jit_value_reg>(jit_ins_ne( val , jit_val_create_const_int(0) , pred ));
+      } else if ( val->get_type() == jit_ptx_type::pred ) {
+	jit_value_t ret_s32 = jit_ins_selp( func , jit_val_create_const_int(1) , jit_val_create_const_int(0) , val );
+	if (type != jit_ptx_type::s32)
+	  return jit_val_create_convert( func , jit_ptx_type::s32 , ret_s32 , pred );
+	else
+	  return get<jit_value_reg>(ret_s32);
+      } else {
+	func->get_prg() << jit_predicate(pred)
+			<< "cvt."
+			<< jit_get_map_cvt_rnd_from_to(val->get_type(),type) 
+			<< jit_get_ptx_type( type ) << "." 
+			<< jit_get_ptx_type( val->get_type() ) << " " 
+			<< ret->get_name() << ","
+			<< val->get_name() << ";\n";
+      }
     }
     return ret;
   }
@@ -715,7 +721,7 @@ void jit_function::write_reg_defs()
     return std::make_shared< jit_value_const_int >(val);
   }
 
-  jit_value_const_t jit_val_create_const_float( float val ) {
+  jit_value_const_t jit_val_create_const_float( double val ) {
     return std::make_shared< jit_value_const_float >(val);
   }
 
