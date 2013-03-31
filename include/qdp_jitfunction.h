@@ -214,12 +214,62 @@ function_zero_rep_build(OLattice<T>& dest)
 
 
 
-#if 0
+
 
 template<class T, class T1, class Op, class RHS>
 CUfunction
 function_sca_sca_build(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
 {
+  CUfunction func;
+
+  const char * fname = "ptx_sca_sca.ptx";
+  jit_function_t function = jit_create_function( fname );
+
+  jit_value_t r_idx = jit_geom_get_linear_th_idx( function );
+
+  ParamLeaf param_leaf( function , r_idx );
+
+  typedef typename LeafFunctor<OScalar<T>, ParamLeaf>::Type_t  FuncRet_t;
+  FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
+
+  auto op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
+
+  // Now the arguments for the rhs
+  typedef typename ForEach<QDPExpr<RHS,OScalar<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
+  //View_t rhs_view(forEach(rhs, param_leaf_indexed, TreeCombine()));
+  View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
+
+  //printme<View_t>();
+
+  op_jit(dest_jit.elem( QDPTypeJITBase::Scalar ), forEach(rhs_view, ViewLeaf( QDPTypeJITBase::Scalar ), OpCombine()));
+
+#if 1
+  if (Layout::primaryNode())
+    function->write();
+#endif     
+ 
+  QMP_barrier();
+
+  CUresult ret;
+  CUmodule cuModule;
+  ret = cuModuleLoad( &cuModule , fname );
+  if (ret) QDP_error_exit( "Error loading CUDA module '%s'" , fname );
+
+  ret = cuModuleGetFunction(&func, cuModule, "function");
+  if (ret) { std::cout << "Error getting function\n"; exit(1); }
+
+  //std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
+
+  return func;
+
+
+
+
+
+
+
+
+#if 0
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   CUfunction func;
@@ -265,8 +315,9 @@ function_sca_sca_build(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar
   //std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
 
   return func;
-}
 #endif
+}
+
 
 
 
@@ -763,7 +814,7 @@ function_zero_rep_exec(CUfunction function, OLattice<T>& dest, const Subset& s )
 
 
 
-#if 0
+
 
 
 
@@ -774,19 +825,10 @@ function_sca_sca_exec(CUfunction function, OScalar<T>& dest, const Op& op, const
   AddressLeaf addr_leaf;
 
   int junk_dest = forEach(dest, addr_leaf, NullCombine());
+  AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
   int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
 
-  // lo <= idx < hi
-  int lo = 0;
-  int hi = 1;
-
   std::vector<void*> addr;
-
-  addr.push_back( &lo );
-  //std::cout << "addr lo = " << addr[0] << " lo=" << lo << "\n";
-
-  addr.push_back( &hi );
-  //std::cout << "addr hi = " << addr[1] << " hi=" << hi << "\n";
 
   int addr_dest=addr.size();
   for(int i=0; i < addr_leaf.addr.size(); ++i) {
@@ -794,11 +836,9 @@ function_sca_sca_exec(CUfunction function, OScalar<T>& dest, const Op& op, const
     //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
   }
 
-  kernel_geom_t now = getGeom( hi-lo , 1 );
-
-  CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    1,1,1,    0, 0, &addr[0] , 0);
+  CudaLaunchKernel(function,   1,1,1,    1,1,1,    0, 0, &addr[0] , 0);
 }
-#endif
+
 
 
 

@@ -354,7 +354,7 @@ template<class T1, class T2>
 inline typename BinaryReturn<PSeedREG<T1>, PScalarREG<T2>, OpLeftShift>::Type_t
 operator<<(const PSeedREG<T1>& s1, const PScalarREG<T2>& s2)
 {
-  typename BinaryReturn<PSeedREG<T1>, PScalarREG<T2>, OpLeftShift>::Type_t  d(s1.func());
+  typename BinaryReturn<PSeedREG<T1>, PScalarREG<T2>, OpLeftShift>::Type_t  d;
   typedef typename BinaryReturn<T1, T2, OpLeftShift>::Type_t  T;
   typedef typename InternalScalar<T>::Type_t  S;
   T  i0, i1, i2, i3;
@@ -421,12 +421,12 @@ seedToFloat(const PSeedREG<T>& s1)
   return d;
 
 #if 0
-  typename UnaryReturn<PSeedREG<T>, FnSeedToFloat>::Type_t  d(s1.func());
+  typename UnaryReturn<PSeedREG<T>, FnSeedToFloat>::Type_t  d;
   typedef typename RealScalar<T>::Type_t  S;
 
   S  twom11(s1.func(),1.0 / 2048.0);
   S  twom12(s1.func(),1.0 / 4096.0);
-  S  fs1(s1.func()), fs2(s1.func());
+  S  fs1, fs2;
 
 //  recast_rep(fs1, s1.elem(0));
   fs1 = S(s1.elem(0));
@@ -463,7 +463,7 @@ template<class T>
 inline typename UnaryReturn<PSeedREG<T>, FnGetSite>::Type_t
 getSite(const PSeedREG<T>& s1, int innersite)
 { 
-  typename UnaryReturn<PSeedREG<T>, FnGetSite>::Type_t  d(s1.func());
+  typename UnaryReturn<PSeedREG<T>, FnGetSite>::Type_t  d;
 
   for(int i=0; i < 4; ++i)
     d.elem(i) = getSite(s1.elem(i), innersite);

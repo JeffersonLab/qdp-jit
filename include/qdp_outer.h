@@ -335,6 +335,7 @@ void read(XMLReader& xml, const string& path, OScalar<T>& d)
  * OScalar Op Expression, where Op is some kind of binary operation 
  * involving the destination 
  */
+#if 1
 template<class T, class T1, class Op, class RHS>
 inline
 void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs,
@@ -343,6 +344,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
   // Subset is not used at this level. It may be needed, though, within an inner operation
   op(dest.elem(), forEach(rhs, ElemLeaf(), OpCombine()));
 }
+#endif
 
 
 //-------------------------------------------------------------------------------------

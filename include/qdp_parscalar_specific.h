@@ -111,6 +111,30 @@ void evaluate_userfunc(int lo, int hi, int myId, user_arg<T,T1,Op,RHS> *a)
 #include "qdp_dispatch.h"
 
 
+#if 0
+template<class T, class T1, class Op, class RHS>
+inline
+void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs,
+	      const Subset& s)
+{
+  static CUfunction function;
+
+  // Build the function
+  if (function == NULL)
+    {
+      //std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
+      function = function_sca_sca_build(dest, op, rhs);
+      //std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
+    }
+  else
+    {
+      //std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
+    }
+
+  // Execute the function
+  function_sca_sca_exec(function, dest, op, rhs);
+}
+#endif
 
 //-----------------------------------------------------------------------------
 //! OLattice Op Scalar(Expression(source)) under an Subset
