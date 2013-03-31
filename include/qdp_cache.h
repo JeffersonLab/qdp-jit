@@ -43,6 +43,7 @@ namespace QDP
     void signoff(int id);
     void lockId(int id);
     void * getDevicePtr(int id);
+    void * getDevicePtrNoLock(int id);
     void getHostPtr(void ** ptr , int id);
     void freeHostMemory(Entry& e);
     void allocateHostMemory(Entry& e);

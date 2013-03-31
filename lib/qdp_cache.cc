@@ -234,6 +234,11 @@ namespace QDP
 #endif
   }
 
+  void * QDPCache::getDevicePtrNoLock(int id) {
+    if (id < 0) return NULL;
+    Entry& e = vecEntry[id];
+    return e.devPtr;
+  }
 
   void * QDPCache::getDevicePtr(int id) {
 #ifdef GPU_DEBUG_DEEP

@@ -332,24 +332,19 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
   const char * fname = "ptx_random.ptx";
   jit_function_t function = jit_create_function( fname );
 
+  // No member possible here.
+  // If thread exists due to non-member
+  // it possibly can't store the new seed at the end.
+
   jit_value_t r_lo     = jit_add_param( function , jit_ptx_type::s32 );
   jit_value_t r_hi     = jit_add_param( function , jit_ptx_type::s32 );
-#ifdef JIT_DO_MEMBER
-  jit_value_t r_member = jit_add_param( function , jit_ptx_type::u64 );  // Subset
-#endif
 
-  jit_value_t r_idx = jit_geom_get_linear_th_idx( function );  
+  jit_value_t r_idx_thread = jit_geom_get_linear_th_idx( function );
 
-  jit_value_t r_out_of_range       = jit_ins_ge( r_idx , r_hi );
+  jit_value_t r_out_of_range       = jit_ins_gt( r_idx_thread , jit_ins_sub( r_hi , r_lo ) );
   jit_ins_exit( function , r_out_of_range );
 
-#ifdef JIT_DO_MEMBER
-  jit_value_t r_member_addr        = jit_ins_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
-  jit_value_t r_ismember_u8        = jit_ins_load ( r_member_addr , 0 , jit_ptx_type::u8 );
-  jit_value_t r_ismember_u32       = jit_val_create_convert( function , jit_ptx_type::u32 , r_ismember_u8 );
-  jit_value_t r_ismember_pred_addr = jit_ins_eq( r_ismember_u32 , jit_val_create_const_int(0) );
-  jit_ins_exit( function , r_ismember_pred_addr );
-#endif
+  jit_value_t r_idx = jit_ins_add( r_lo , r_idx_thread );
 
   ParamLeaf param_leaf( function , r_idx );
 
@@ -363,20 +358,13 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
 
   SeedJIT ran_seed_jit(forEach(RNG::ran_seed, param_leaf, TreeCombine()));
   SeedJIT seed_tmp_jit(forEach(seed_tmp, param_leaf, TreeCombine()));
-  // SeedJIT skewed_seed_jit(forEach(skewed_seed, param_leaf, TreeCombine()));
   SeedJIT ran_mult_n_jit(forEach(RNG::ran_mult_n, param_leaf, TreeCombine()));
   LatticeSeedJIT lattice_ran_mult_jit(forEach( *RNG::lattice_ran_mult , param_leaf, TreeCombine()));
-
-  //  printme<View_t>();
 
   PSeedREG seed_reg;
   PSeedREG skewed_seed_reg;
   PSeedREG ran_mult_n_reg;
   PSeedREG lattice_ran_mult_reg;
-  // typename SeedREG::Subtype_t seed_jit;
-  // typename SeedREG::Subtype_t skewed_seed_jit;
-  // typename SeedREG::Subtype_t ran_seed_jit_elem;
-  // typename SeedREG::Subtype_t lattice_ran_mult_jit_elem;
 
   seed_reg.setup( ran_seed_jit.elem() );
 
@@ -388,7 +376,7 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
 
   fill_random( dest_jit.elem(QDPTypeJITBase::Coalesced) , seed_reg , skewed_seed_reg , ran_mult_n_reg );
 
-  jit_value_t r_no_save = jit_ins_ne( r_idx , jit_val_create_const_int(0) );
+  jit_value_t r_no_save = jit_ins_ne( r_idx_thread , jit_val_create_const_int(0) );
 
   jit_label_t label_nosave;
   jit_ins_branch( function , label_nosave , r_no_save );
@@ -846,7 +834,9 @@ template<class T>
 void 
 function_random_exec(CUfunction function, OLattice<T>& dest, const Subset& s , Seed& seed_tmp)
 {
-#if 1
+  if (!s.hasOrderedRep())
+    QDP_error_exit("random on subset with unordered representation not implemented");
+
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   AddressLeaf addr_leaf;
@@ -859,9 +849,8 @@ function_random_exec(CUfunction function, OLattice<T>& dest, const Subset& s , S
   int junk_4 = forEach(*RNG::lattice_ran_mult, addr_leaf, NullCombine());
 
   // lo <= idx < hi
-  int lo = 0;
-  int hi = Layout::sitesOnNode();
-  void * subset_member = QDPCache::Instance().getDevicePtr( s.getIdMemberTable() );
+  int lo = s.start();
+  int hi = s.end();
 
   std::vector<void*> addr;
 
@@ -870,9 +859,6 @@ function_random_exec(CUfunction function, OLattice<T>& dest, const Subset& s , S
 
   addr.push_back( &hi );
   //std::cout << "addr hi = " << addr[1] << " hi=" << hi << "\n";
-
-  addr.push_back( &subset_member );
-  //std::cout << "addr subset_member = " << addr[3] << " " << subset_member << "\n";
 
   int addr_dest=addr.size();
   for(int i=0; i < addr_leaf.addr.size(); ++i) {
@@ -894,8 +880,6 @@ function_random_exec(CUfunction function, OLattice<T>& dest, const Subset& s , S
   kernel_geom_t now = getGeom( hi-lo , threadsPerBlock );
 
   CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
-
-#endif
 }
 
 
