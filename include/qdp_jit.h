@@ -9,8 +9,7 @@
 #include<vector>
 #include<array>
 #include<string>
-#include<stdlib.h>
-#include<assert.h>
+#include<cstdlib>
 
 namespace QDP {
 

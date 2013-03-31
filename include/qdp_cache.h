@@ -9,7 +9,7 @@
 #include "string.h"
 #include "math.h"
 
-#define SANITY_CHECKS_CACHE
+//#define SANITY_CHECKS_CACHE
 
 using namespace std;
 

@@ -30,6 +30,10 @@
 #ifndef QDP_INCLUDE
 #define QDP_INCLUDE
 
+#define NDEBUG
+#include<cassert>
+
+
 /* Get local configuration options (ARCH_SCALAR/PARSCALAR, Nd, Nc, Ns) */
 #include <qdp_config.h>
 #include "qdp_precision.h"
