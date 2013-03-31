@@ -301,7 +301,7 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
 #endif
 
   ParamLeaf param_leaf( function , r_idx );
-  
+
   typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
   FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
 

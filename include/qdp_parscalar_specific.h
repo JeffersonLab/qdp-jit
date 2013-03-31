@@ -16,6 +16,8 @@ namespace QDP {
 //-----------------------------------------------------------------------------
 // Layout stuff specific to a parallel architecture
 
+  void check_abort();
+
 namespace Layout
 {
   //! coord[mu]  <- mu  : fill with lattice coord in mu direction
@@ -238,33 +240,26 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
     for(int w=0 ; w < sizeof(T)/sizeof(typename WordType<T>::Type_t) ; w++ ) {
       bool different = false;
 
-      if ( fabs( f_gpu[w] ) > 1.0e-12 ) {
-        if ( fabs( f_cpu[w] / f_gpu[w] - 1.0 ) > 1.0e-5 ) {
+      double d_cpu = (double)f_cpu[w];
+      double d_gpu = (double)f_gpu[w];
+
+      if ( fabs( d_gpu ) > 1.0e-9 ) {
+        if ( fabs( d_cpu / d_gpu - 1.0 ) > 1.0e-5 ) {
           different = true;
         }
       } else {
-        if ( fabs( f_cpu[w] ) > 1.0e-11 ) {
+        if ( fabs( d_cpu ) > 1.0e-8 ) {
           different = true;
         }
       }
 
-      // if (f_gpu[w] != 0) {
-      // 	if ( ( fabs(f_gpu[w]) > 1.0e-4 ) &&
-      // 	     ( fabs(f_cpu[w]) > 1.0e-4 ) )
-      // 	  if ( fabs(f_cpu[w]/f_gpu[w]-1.0) > 0.15 ) 
-      // 	    different = true;
-      // } else {
-      // 	if ( fabs(f_cpu[w]) > 1.0e-5 )
-      // 	  different = true;
-      // }
-
-      if (different) {      
-	diffs++;
-	std::cout << "site = " << i 
-		  << "   cpu = " << f_cpu[w] 
-		  << "   gpu = " << f_gpu[w] 
-		  << "   factor = " << f_cpu[w]/f_gpu[w]
-		  << "    diff = " << f_cpu[w] - f_gpu[w] << "\n";
+      if (different) {
+        diffs++;
+        std::cout << "site = " << i
+                  << "   cpu = " << d_cpu
+                  << "   gpu = " << d_gpu
+                  << "   factor = " << d_cpu/d_gpu
+                  << "    diff = " << d_cpu - d_gpu << "\n";
       }
     }
     if (diffs > 1000)
@@ -272,8 +267,8 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
   }
 
   if (diffs > 0) {
-    std::cout << __PRETTY_FUNCTION__ << " numsitetable = " << s.numSiteTable() << "\n";    
-    QDP_error_exit("Differences!");
+    std::cout << __PRETTY_FUNCTION__ << " numsitetable = " << s.numSiteTable() << "\n";
+    check_abort();
   }
 #else
   static CUfunction function;
@@ -379,7 +374,81 @@ template<class T>
 void 
 random(OLattice<T>& d, const Subset& s)
 {
-#if 1
+
+  // Do cross check with CPU
+#if 0
+  OLattice<T> dest0;
+  dest0 = d;
+
+  // GPU
+  static CUfunction function;
+  Seed seed_tmp;
+  if (function == NULL)
+    function = function_random_build( d , seed_tmp );
+  function_random_exec(function, d, s , seed_tmp );
+  //RNG::ran_seed = seed_tmp;  // The seed from any site is the same as the new global seed
+
+  // CPU
+  Seed seed;
+  Seed skewed_seed;
+  const int *tab = s.siteTable().slice();
+  for(int j=0; j < s.numSiteTable(); ++j) 
+  {
+    int i = tab[j];
+    seed = RNG::ran_seed;
+    skewed_seed.elem() = RNG::ran_seed.elem() * RNG::lattice_ran_mult->elem(i);
+    fill_random(dest0.elem(i), seed, skewed_seed, RNG::ran_mult_n);
+  }
+  RNG::ran_seed = seed;  // The seed from any site is the same as the new global seed
+
+  if ( toBool( seed != seed_tmp ) ) {
+    std::cout << "seed from GPU and CPU different! seed_cpu = " 
+	      << seed
+	      << "    seed_gpu = "
+	      << seed_tmp << "\n";
+    std::cout << __PRETTY_FUNCTION__ << " numsitetable = " << s.numSiteTable() << "\n";
+    check_abort();
+  }
+
+  size_t diffs=0;
+  for(int j=0; j < s.numSiteTable(); ++j) {
+    int i = tab[j];
+    typename WordType<T>::Type_t * f_cpu = (typename WordType<T>::Type_t *)&dest0.elem(i);
+    typename WordType<T>::Type_t * f_gpu = (typename WordType<T>::Type_t *)&d.elem(i);
+    for(int w=0 ; w < sizeof(T)/sizeof(typename WordType<T>::Type_t) ; w++ ) {
+      bool different = false;
+
+      double d_cpu = (double)f_cpu[w];
+      double d_gpu = (double)f_gpu[w];
+
+      if ( fabs( d_gpu ) > 1.0e-9 ) {
+        if ( fabs( d_cpu / d_gpu - 1.0 ) > 1.0e-5 ) {
+          different = true;
+        }
+      } else {
+        if ( fabs( d_cpu ) > 1.0e-8 ) {
+          different = true;
+        }
+      }
+
+      if (different) {
+        diffs++;
+        std::cout << "site = " << i
+                  << "   cpu = " << d_cpu
+                  << "   gpu = " << d_gpu
+                  << "   factor = " << d_cpu/d_gpu
+                  << "    diff = " << d_cpu - d_gpu << "\n";
+      }
+    }
+    if (diffs > 1000)
+      break;
+  }
+
+  if (diffs > 0) {
+    std::cout << __PRETTY_FUNCTION__ << " numsitetable = " << s.numSiteTable() << "\n";
+    check_abort();
+  }
+#else
   static CUfunction function;
 
   Seed seed_tmp;
@@ -400,6 +469,7 @@ random(OLattice<T>& d, const Subset& s)
   function_random_exec(function, d, s , seed_tmp );
 
   RNG::ran_seed = seed_tmp;
+#endif
 
 #if 0
   Seed seed;
@@ -415,7 +485,6 @@ random(OLattice<T>& d, const Subset& s)
   }
 
   RNG::ran_seed = seed;  // The seed from any site is the same as the new global seed
-#endif
 #endif
 }
 

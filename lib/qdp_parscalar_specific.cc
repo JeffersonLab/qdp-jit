@@ -13,6 +13,21 @@
 namespace QDP {
 
 
+  void check_abort() {
+    std::string input;
+    int myNumber = 0;
+    
+    while (myNumber != 1 && myNumber != 2) {
+      cout << "1 - abort, 2 - continue: ";
+      getline(cin, input);
+      std::stringstream myStream(input);
+      myStream >> myNumber;
+    }
+
+    if (myNumber == 1)
+      QDP_error_exit("Abort!");
+  }
+
 //-----------------------------------------------------------------------------
 // IO routine solely for debugging. Only defined here
   template<class T>
