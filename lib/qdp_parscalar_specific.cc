@@ -281,7 +281,11 @@ namespace QDP {
     QDP_info("exiting Map::make");
 #endif
 
+    StopWatch t;
+    t.start();
     myId = MasterMap::Instance().registrate(*this);
+    t.stop();
+    QDP_info_primary("Face and inner compute time = %f secs", t.getTimeInSeconds() );
   }
 
 
