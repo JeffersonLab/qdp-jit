@@ -237,15 +237,26 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
     typename WordType<T>::Type_t * f_gpu = (typename WordType<T>::Type_t *)&dest.elem(i);
     for(int w=0 ; w < sizeof(T)/sizeof(typename WordType<T>::Type_t) ; w++ ) {
       bool different = false;
-      if (f_gpu[w] != 0) {
-	if ( ( fabs(f_gpu[w]) > 1.0e-4 ) &&
-	     ( fabs(f_cpu[w]) > 1.0e-4 ) )
-	  if ( fabs(f_cpu[w]/f_gpu[w]-1.0) > 0.15 ) 
-	    different = true;
+
+      if ( fabs( f_gpu[w] ) > 1.0e-12 ) {
+        if ( fabs( f_cpu[w] / f_gpu[w] - 1.0 ) > 1.0e-5 ) {
+          different = true;
+        }
       } else {
-	if ( fabs(f_cpu[w]) > 1.0e-5 )
-	  different = true;
+        if ( fabs( f_cpu[w] ) > 1.0e-11 ) {
+          different = true;
+        }
       }
+
+      // if (f_gpu[w] != 0) {
+      // 	if ( ( fabs(f_gpu[w]) > 1.0e-4 ) &&
+      // 	     ( fabs(f_cpu[w]) > 1.0e-4 ) )
+      // 	  if ( fabs(f_cpu[w]/f_gpu[w]-1.0) > 0.15 ) 
+      // 	    different = true;
+      // } else {
+      // 	if ( fabs(f_cpu[w]) > 1.0e-5 )
+      // 	  different = true;
+      // }
 
       if (different) {      
 	diffs++;
@@ -256,7 +267,7 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
 		  << "    diff = " << f_cpu[w] - f_gpu[w] << "\n";
       }
     }
-    if (diffs > 10000)
+    if (diffs > 1000)
       break;
   }
 

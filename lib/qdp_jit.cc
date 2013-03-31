@@ -826,6 +826,19 @@ void jit_function::write_reg_defs()
       return std::make_shared<jit_value_const_float>( op( lhs->getAsFloat() , rhs->getAsFloat() ) );
     }
   }
+
+  jit_value_t jit_op_const_reg( jit_function_t func, jit_value_const_t lhs , jit_value_reg_t rhs , const JitOp& op , jit_value_t pred ) {
+    jit_value_reg_t ret = jit_val_create_new( func , op.getDestType() );
+    jit_value_t rhs_new = jit_val_create_convert( func , op.getArgsType() , rhs , pred );
+    func->get_prg() << jit_predicate(pred)
+		    << op << " "
+		    << jit_get_reg_name( ret ) << ","
+		    << lhs->getAsString() << ","
+		    << jit_get_reg_name( rhs_new ) << ";\n";
+    ret->set_state_space( rhs->get_state_space() );
+    return ret;
+  }
+
   jit_value_t jit_op_reg_const( jit_function_t func, jit_value_reg_t lhs , jit_value_const_t rhs , const JitOp& op , jit_value_t pred ) {
     jit_value_reg_t ret = jit_val_create_new( func , op.getDestType() );
     jit_value_t lhs_new = jit_val_create_convert( func , op.getArgsType() , lhs , pred );
@@ -837,6 +850,7 @@ void jit_function::write_reg_defs()
     ret->set_state_space( lhs->get_state_space() );
     return ret;
   }
+
   jit_value_t jit_op_reg_reg( jit_function_t func, jit_value_reg_t lhs , jit_value_reg_t rhs , const JitOp& op , jit_value_t pred ) {
     jit_value_reg_t ret     = jit_val_create_new( func , op.getDestType() );
     jit_value_t lhs_new = jit_val_create_convert( func , op.getArgsType() , lhs , pred );
@@ -849,19 +863,24 @@ void jit_function::write_reg_defs()
     ret->set_state_space( jit_state_promote( lhs->get_state_space() , rhs->get_state_space() ) );
     return ret;
   }
+
+
   jit_value_t jit_ins_op( jit_value_t lhs , jit_value_t rhs , const JitOp& op , jit_value_t pred ) {
-    if (auto c1 = get< jit_value_const >(lhs))
-      if (auto c2 = get< jit_value_const >(rhs))
-	return jit_op_const_const(c1,c2,op);
-    if (auto c1 = get< jit_value_const >(lhs))
-      if (auto r2 = get< jit_value_reg >(rhs))
-	return jit_op_reg_const(r2->get_func(),r2,c1,op,pred);
-    if (auto r1 = get< jit_value_reg >(lhs))
-      if (auto c2 = get< jit_value_const >(rhs))
-	return jit_op_reg_const(r1->get_func(),r1,c2,op,pred);
-    if (auto r1 = get< jit_value_reg >(lhs))
-      if (auto r2 = get< jit_value_reg >(rhs))
-	return jit_op_reg_reg(r1->get_func(),r1,r2,op,pred);
+    if (auto lhs_c = get< jit_value_const >(lhs))
+      if (auto rhs_c = get< jit_value_const >(rhs))
+	return jit_op_const_const(lhs_c,rhs_c,op);
+
+    if (auto lhs_c = get< jit_value_const >(lhs))
+      if (auto rhs_r = get< jit_value_reg >(rhs))
+	return jit_op_const_reg(rhs_r->get_func(),lhs_c,rhs_r,op,pred);
+
+    if (auto lhs_r = get< jit_value_reg >(lhs))
+      if (auto rhs_c = get< jit_value_const >(rhs))
+	return jit_op_reg_const(lhs_r->get_func(),lhs_r,rhs_c,op,pred);
+
+    if (auto lhs_r = get< jit_value_reg >(lhs))
+      if (auto rhs_r = get< jit_value_reg >(rhs))
+	return jit_op_reg_reg(lhs_r->get_func(),lhs_r,rhs_r,op,pred);
     assert(!"Should never be here");
   }
 
