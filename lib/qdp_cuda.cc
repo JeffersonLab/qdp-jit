@@ -193,23 +193,47 @@ namespace QDP {
   void CudaSetDevice(int dev)
   {
     CUresult ret;
+
     QDP_info_primary("trying to get device %d",dev);
     ret = cuDeviceGet(&cuDevice, dev);
     CudaRes("",ret);
+
     QDP_info_primary("trying to create a context");
     ret = cuCtxCreate(&cuContext, 0, cuDevice);
     CudaRes("",ret);
 
     deviceSet=true;
+  }
+
+
+
+  void CudaGetDeviceProps()
+  {
+    CUresult ret;
+
     DeviceParams::Instance().autoDetect();
+
+    size_t free, total;
+    ret = cuMemGetInfo(&free, &total);
+    CudaRes("cuMemGetInfo",ret);
+
+    QDP_info_primary("GPU memory: free = %lld,  total = %lld",(unsigned long long)free ,(unsigned long long)total);
+    if (!setPoolSize) {
+      size_t val = (size_t)((double)(0.90) * (double)free);
+      QDP_info_primary("Using device pool size %lld, ",(unsigned long long)val);
+      CUDADevicePoolAllocator::Instance().setPoolSize(val);
+      setPoolSize = true;
+    }
 
     int major = DeviceParams::Instance().getMajor();
     int minor = DeviceParams::Instance().getMinor();
     PTX::ptx_type_matrix = PTX::create_ptx_type_matrix( major*10+minor );
 
     ret = cuCtxSetCacheConfig(CU_FUNC_CACHE_PREFER_L1);
-    CudaRes("",ret);
+    CudaRes("cuCtxSetCacheConfig",ret);
   }
+
+
 
   void CudaGetDeviceCount(int * count)
   {

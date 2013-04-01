@@ -33,6 +33,7 @@ namespace QDP {
 
   void CudaSetDevice(int dev);
   void CudaGetDeviceCount(int * count);
+  void CudaGetDeviceProps();
 
 #if 0
   void CudaMemcpy(const void * dest ,  const void * src , size_t size);

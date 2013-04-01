@@ -26,6 +26,7 @@ namespace QDP {
 
   //! Private flag for status
   static bool isInit = false;
+  bool setPoolSize = false;
 
 #if 1
   int gamma_degrand_rossi[5][4][4][2] = 
@@ -76,7 +77,10 @@ namespace QDP {
 
   void QDP_startGPU()
   {
-    QDP_info_primary("Start using the GPU");
+    QDP_info_primary("Getting GPU device properties");
+    CudaGetDeviceProps();
+
+    QDP_info_primary("Trigger GPU evaluation");
     QDPuseGPU=true;
     
     CudaCreateStreams();
@@ -99,6 +103,7 @@ namespace QDP {
     QDP_info("JIT: Setting active CUDA device to %d",dev);
     CudaSetDevice( dev );
   }
+
 
 
 	
@@ -155,7 +160,6 @@ namespace QDP {
 #endif
 
 		CudaInit();
-		bool setPoolSize = false;
 
 		
 		//
@@ -334,8 +338,10 @@ namespace QDP {
 		}
 		
 
-		if (!setPoolSize)
-		  QDP_error_exit("Run-time argument -poolsize <size> missing. Please consult README.");
+		if (!setPoolSize) {
+		  // It'll be set later in CudaGetDeviceProps
+		  //QDP_error_exit("Run-time argument -poolsize <size> missing. Please consult README.");
+		}
 
 		
 		QMP_verbose (QMP_verboseP);

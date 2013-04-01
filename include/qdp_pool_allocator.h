@@ -104,7 +104,7 @@ namespace QDP
 
 
   template<class Allocator>
-    QDPPoolAllocator<Allocator>::QDPPoolAllocator(): bufferAllocated(false) { 
+    QDPPoolAllocator<Allocator>::QDPPoolAllocator(): bufferAllocated(false) {
       QDP_debug("Pool allocator construct");
       setPoolSize( 50*1024*1024 );
     }
