@@ -123,7 +123,7 @@ namespace QDP {
 		}
 
 #if 1
-		std::cout << "Setting gamma matrices" << endl;
+		QDP_info_primary("Setting gamma matrices");
 
 		SpinMatrix dgr[5];
 		for (int i=0;i<5;i++) {
@@ -135,8 +135,8 @@ namespace QDP {
 		  }
 		  //std::cout << i << "\n" << dgr[i] << "\n";
 		}
-		std::cout << "Finished setting gamma matrices" << endl;
-		std::cout << "Multiplying gamma matrices" << endl;
+		QDP_info_primary("Finished setting gamma matrices");
+		QDP_info_primary("Multiplying gamma matrices");
 
 		QDP_Gamma_values[0]=dgr[4]; // Unity
 		for (int i=1;i<16;i++) {
@@ -156,7 +156,7 @@ namespace QDP {
 		  //std::cout << "\n" << QDP_Gamma_values[i] << "\n";
 		  
 		}
-		std::cout << "Finished multiplying gamma matrices" << endl;
+		QDP_info_primary("Finished multiplying gamma matrices");
 #endif
 
 		CudaInit();
