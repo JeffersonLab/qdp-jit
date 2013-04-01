@@ -10,6 +10,7 @@
  * variables.
  */
 
+
 // Info/error routines
 namespace QDP {
 

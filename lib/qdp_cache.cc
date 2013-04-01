@@ -397,7 +397,7 @@ namespace QDP
 	//	CudaMemcpyAsync( e.devPtr , e.hstPtr , e.size );
 	if (e.fptr) {
 	  
-	  int tmp = registrate( e.size , 0 , NULL );
+	  int tmp = registrate( e.size , 1 , NULL );
 	  void * hstptr;
 	  getHostPtr( &hstptr , tmp );
 	  lockId(tmp);

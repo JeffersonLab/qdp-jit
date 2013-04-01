@@ -143,6 +143,7 @@ MEMORY_HDRS = qdp_allocator.h \
 
 CUDA_HDRS = qdp_cuda.h \
 	    qdp_cache.h \
+	    qdp_quda.h \
 	    qdp_mapresource.h \
             qdp_pool_allocator.h \
 	    qdp_cuda_allocator.h \

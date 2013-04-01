@@ -25,7 +25,6 @@ namespace QDP {
   CUdevice cuDevice;
   CUcontext cuContext;
 
-  bool deviceSet = false;
 
 
   std::map<CUresult,std::string> mapCuErrorString= {
@@ -126,8 +125,6 @@ namespace QDP {
   //int CudaGetConfig(CUdevice_attribute what)
   int CudaGetConfig(int what)
   {
-    if (!deviceSet)
-      QDP_error_exit("CudaGetConfig called before device set");
     int data;
     CUresult ret;
     ret = cuDeviceGetAttribute( &data, (CUdevice_attribute)what , cuDevice );
@@ -201,8 +198,6 @@ namespace QDP {
     QDP_info_primary("trying to create a context");
     ret = cuCtxCreate(&cuContext, 0, cuDevice);
     CudaRes("",ret);
-
-    deviceSet=true;
   }
 
 
