@@ -25,6 +25,16 @@ public:
     F.setup( rhs.elem() );
   }
 
+  RScalarREG(const RScalarJIT< typename JITType<T>::Type_t >& rhs ) {
+    setup( rhs.elem() );
+  }
+
+  // RScalarREG& operator=( const RScalarJIT< typename JITType<T>::Type_t >& rhs) {
+  //   setup(rhs);
+  //   return *this;
+  // }
+
+
   void replace(const RScalarREG& rhs ) {
     F.replace( rhs.elem() );
   }
@@ -71,14 +81,6 @@ public:
     elem() = rhs.elem();
   }
 
-  // I keep this deactivated. Takes too much.
-#if 0
-  template<class T1>
-  RScalarREG(const T1& rhs) : JV<T,1>(newspace_t(rhs.func())) {
-    elem() = rhs;
-  }
-#endif
-
   RScalarREG(const T& rhs) {
     elem() = rhs;
   }
@@ -94,10 +96,22 @@ public:
       return *this;
     }
 
+  RScalarREG& operator+=(const RScalarREG& rhs) 
+    {
+      elem() += rhs.elem();
+      return *this;
+    }
+
   //! RScalarREG -= RScalarREG
   template<class T1>
   inline
   RScalarREG& operator-=(const RScalarREG<T1>& rhs) 
+    {
+      elem() -= rhs.elem();
+      return *this;
+    }
+
+  RScalarREG& operator-=(const RScalarREG& rhs) 
     {
       elem() -= rhs.elem();
       return *this;
@@ -112,10 +126,22 @@ public:
       return *this;
     }
 
+  RScalarREG& operator*=(const RScalarREG& rhs) 
+    {
+      elem() *= rhs.elem();
+      return *this;
+    }
+
   //! RScalarREG /= RScalarREG
   template<class T1>
   inline
   RScalarREG& operator/=(const RScalarREG<T1>& rhs) 
+    {
+      elem() /= rhs.elem();
+      return *this;
+    }
+
+  RScalarREG& operator/=(const RScalarREG& rhs) 
     {
       elem() /= rhs.elem();
       return *this;
@@ -130,10 +156,22 @@ public:
       return *this;
     }
 
+  RScalarREG& operator%=(const RScalarREG& rhs) 
+    {
+      elem() %= rhs.elem();
+      return *this;
+    }
+
   //! RScalarREG |= RScalarREG
   template<class T1>
   inline
   RScalarREG& operator|=(const RScalarREG<T1>& rhs) 
+    {
+      elem() |= rhs.elem();
+      return *this;
+    }
+
+  RScalarREG& operator|=(const RScalarREG& rhs) 
     {
       elem() |= rhs.elem();
       return *this;
@@ -148,10 +186,22 @@ public:
       return *this;
     }
 
+  RScalarREG& operator&=(const RScalarREG& rhs) 
+    {
+      elem() &= rhs.elem();
+      return *this;
+    }
+
   //! RScalarREG ^= RScalarREG
   template<class T1>
   inline
   RScalarREG& operator^=(const RScalarREG<T1>& rhs) 
+    {
+      elem() ^= rhs.elem();
+      return *this;
+    }
+
+  RScalarREG& operator^=(const RScalarREG& rhs) 
     {
       elem() ^= rhs.elem();
       return *this;
@@ -166,10 +216,22 @@ public:
       return *this;
     }
 
+  RScalarREG& operator<<=(const RScalarREG& rhs) 
+    {
+      elem() <<= rhs.elem();
+      return *this;
+    }
+
   //! RScalarREG >>= RScalarREG
   template<class T1>
   inline
   RScalarREG& operator>>=(const RScalarREG<T1>& rhs) 
+    {
+      elem() >>= rhs.elem();
+      return *this;
+    }
+
+  RScalarREG& operator>>=(const RScalarREG& rhs) 
     {
       elem() >>= rhs.elem();
       return *this;
@@ -276,6 +338,17 @@ public:
     im.setup( rhs.imag() );
   }
 
+  // RComplexREG& operator=( const RComplexJIT< typename JITType<T>::Type_t >& rhs) {
+  //   setup(rhs);
+  //   return *this;
+  // }
+
+  RComplexREG( const RComplexJIT< typename JITType<T>::Type_t >& rhs) {
+    setup(rhs);
+  }
+
+
+
   void replace(const RComplexREG& rhs ) {
     re.replace( rhs.real() );
     im.replace( rhs.imag() );
@@ -304,18 +377,6 @@ public:
     imag() = im;
   }
 
-#if 0
-  template<class T1>
-  RComplexREG(const RComplexREG<T1>& a) : JV<T,2>::JV(newspace_t(a.func())) {
-    real() = a.real();
-    imag() = a.imag();
-  }
-
-  RComplexREG(const RComplexREG& a) : JV<T,2>::JV(newspace_t(a.func())) {
-    real() = a.real();
-    imag() = a.imag();
-  }
-#endif
 
   //! RComplexREG += RScalarREG
   template<class T1>
@@ -365,10 +426,24 @@ public:
       return *this;
     }
 
+  RComplexREG& operator+=(const RComplexREG& rhs) 
+    {
+      real() += rhs.real();
+      imag() += rhs.imag();
+      return *this;
+    }
+
   //! RComplexREG -= RComplexREG
   template<class T1>
   inline
   RComplexREG& operator-=(const RComplexREG<T1>& rhs) 
+    {
+      real() -= rhs.real();
+      imag() -= rhs.imag();
+      return *this;
+    }
+
+  RComplexREG& operator-=(const RComplexREG& rhs) 
     {
       real() -= rhs.real();
       imag() -= rhs.imag();
@@ -388,10 +463,31 @@ public:
       return *this;
     }
 
+
+  RComplexREG& operator*=(const RComplexREG& rhs)
+    {
+      RComplexREG<T> d;
+      d = *this * rhs;
+
+      real() = d.real();
+      imag() = d.imag();
+      return *this;
+    }
+
   //! RComplexREG /= RComplexREG
   template<class T1>
   inline
   RComplexREG& operator/=(const RComplexREG<T1>& rhs) 
+    {
+      RComplexREG<T> d;
+      d = *this / rhs;
+
+      real() = d.real();
+      imag() = d.imag();
+      return *this;
+    }
+
+  RComplexREG& operator/=(const RComplexREG& rhs) 
     {
       RComplexREG<T> d;
       d = *this / rhs;

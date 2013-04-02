@@ -177,11 +177,22 @@ namespace QDP {
   };
 
 
+  template<class T1>
+  inline typename UnaryReturn<WordREG<T1>, OpUnaryMinus>::Type_t
+  operator-(const WordJIT<T1>& l)
+  {
+    typename UnaryReturn<WordREG<T1>, OpUnaryMinus>::Type_t ret;
+    ret.setup(l);
+    return -ret.elem();
+  }
+
+
   template<class T>
   struct REGType< WordJIT<T> >
   {
     typedef WordREG<typename REGType<T>::Type_t>  Type_t;
   };
+
 
 
 

@@ -60,6 +60,12 @@ public:
       return *this;
     }
 
+  RScalarJIT& operator+=(const typename REGType<RScalarJIT>::Type_t& rhs) 
+    {
+      elem() += rhs.elem();
+      return *this;
+    }
+
   //! RScalarJIT -= RScalarJIT
   template<class T1>
   inline
@@ -68,6 +74,13 @@ public:
       elem() -= rhs.elem();
       return *this;
     }
+
+  RScalarJIT& operator-=(const typename REGType<RScalarJIT>::Type_t& rhs) 
+    {
+      elem() -= rhs.elem();
+      return *this;
+    }
+
 
   //! RScalarJIT *= RScalarJIT
   template<class T1>
@@ -78,10 +91,23 @@ public:
       return *this;
     }
 
+  RScalarJIT& operator*=(const typename REGType<RScalarJIT>::Type_t& rhs) 
+    {
+      elem() *= rhs.elem();
+      return *this;
+    }
+
+
   //! RScalarJIT /= RScalarJIT
   template<class T1>
   inline
   RScalarJIT& operator/=(const RScalarREG<T1>& rhs) 
+    {
+      elem() /= rhs.elem();
+      return *this;
+    }
+
+  RScalarJIT& operator/=(const typename REGType<RScalarJIT>::Type_t& rhs) 
     {
       elem() /= rhs.elem();
       return *this;
@@ -132,6 +158,7 @@ public:
       return *this;
     }
 
+
   //! RScalarJIT >>= RScalarJIT
   template<class T1>
   inline
@@ -140,6 +167,7 @@ public:
       elem() >>= rhs.elem();
       return *this;
     }
+
 
 public:
   inline       T& elem()       { return this->arrayF(0); }
@@ -263,6 +291,7 @@ public:
       return *this;
     }
 
+
   //! RComplexJIT -= RScalarJIT
   template<class T1>
   inline
@@ -271,6 +300,7 @@ public:
       real() -= rhs.elem();
       return *this;
     }
+
 
   //! RComplexJIT *= RScalarJIT
   template<class T1>
@@ -302,10 +332,24 @@ public:
       return *this;
     }
 
+  RComplexJIT& operator+=(const typename REGType<RComplexJIT>::Type_t& rhs) 
+    {
+      real() += rhs.real();
+      imag() += rhs.imag();
+      return *this;
+    }
+
   //! RComplexJIT -= RComplexJIT
   template<class T1>
   inline
   RComplexJIT& operator-=(const RComplexREG<T1>& rhs) 
+    {
+      real() -= rhs.real();
+      imag() -= rhs.imag();
+      return *this;
+    }
+
+  RComplexJIT& operator-=(const typename REGType<RComplexJIT>::Type_t& rhs) 
     {
       real() -= rhs.real();
       imag() -= rhs.imag();
@@ -323,7 +367,12 @@ public:
 
       // real() = d.real();
       // imag() = d.imag();
-      return *this;
+      //return *this;
+    }
+
+  RComplexJIT& operator*=(const typename REGType<RComplexJIT>::Type_t& rhs) 
+    {
+      assert(!"ni");
     }
 
   //! RComplexJIT /= RComplexJIT
@@ -337,7 +386,12 @@ public:
 
       // real() = d.real();
       // imag() = d.imag();
-      return *this;
+      // return *this;
+    }
+
+  RComplexJIT& operator/=(const typename REGType<RComplexJIT>::Type_t& rhs) 
+    {
+      assert(!"ni");
     }
 
   template<class T1>
@@ -348,14 +402,13 @@ public:
       return *this;
     }
 
-#if 0
-  RComplexJIT& operator=(const RComplexREG& rhs) 
+  RComplexJIT& operator=(const typename REGType<RComplexJIT>::Type_t& rhs) 
     {
       real() = rhs.real();
       imag() = rhs.imag();
       return *this;
     }
-#endif
+
 
   template<class T1>
   inline
@@ -1595,15 +1648,17 @@ operator+(const RComplexJIT<T1>& l)
 
 
 //! RComplexJIT = -RComplexJIT
-template<class T1>
-inline typename UnaryReturn<RComplexJIT<T1>, OpUnaryMinus>::Type_t
-operator-(const RComplexJIT<T1>& l)
-{
-  typedef typename UnaryReturn<RComplexJIT<T1>, OpUnaryMinus>::Type_t  Ret_t;
+// template<class T1>
+// inline typename UnaryReturn<RComplexJIT<T1>, OpUnaryMinus>::Type_t
+// operator-(const RComplexJIT<T1>& l)
+// {
+//   typedef typename UnaryReturn<RComplexJIT<T1>, OpUnaryMinus>::Type_t  Ret_t;
 
-  return Ret_t(-l.real(),
-	       -l.imag());
-}
+//   return Ret_t(-l.real(),
+// 	       -l.imag());
+// }
+
+
 
 
 
@@ -1983,17 +2038,6 @@ timesI(const RScalarJIT<T>& s1)
   zero_rep(d.real());
   d.imag() = s1.elem();
   return d;
-}
-
-// RComplexJIT = i * RComplexJIT
-template<class T>
-inline typename UnaryReturn<RComplexJIT<T>, FnTimesI>::Type_t
-timesI(const RComplexJIT<T>& s1)
-{
-  typedef typename UnaryReturn<RComplexJIT<T>, FnTimesI>::Type_t  Ret_t;
-
-  return Ret_t(-s1.imag(),
-	       s1.real());
 }
 
 
@@ -2407,6 +2451,28 @@ fill_gaussian(RComplexJIT<T>& d, RComplexREG<T2>& r1, RComplexREG<T2>& r2)
   d.real() = r1.real() * g_r;
   d.imag() = r1.real() * g_i;
 }
+
+
+// template<class T>
+// struct UnaryReturn<RComplexJIT<T>, FnTimesI > {
+//   typedef RComplexJIT<typename UnaryReturn<T, FnTimesI>::Type_t>  Type_t;
+// };
+
+
+// // RComplexJIT = i * RComplexJIT
+// template<class T>
+// inline typename UnaryReturn<RComplexREG<T>, FnTimesI>::Type_t
+// timesI(const RComplexJIT<T>& s1)
+// {
+//   typedef typename UnaryReturn<RComplexREG<T>, FnTimesI>::Type_t  Ret_t;
+
+//   Ret_t ret;
+//   return ret;
+//   // return Ret_t(-s1.imag(),
+//   // 	       s1.real());
+// }
+
+
 
 
 /*! @} */  // end of group rcomplex
