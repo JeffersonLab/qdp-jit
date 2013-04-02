@@ -484,6 +484,7 @@ namespace QDP
 	  // CudaMemcpyAsync( e.hstPtr , e.devPtr , e.size );
 	  //CudaMemcpyD2HAsync( e.hstPtr , e.devPtr , e.size );
 	  if (e.fptr) {
+	    //std::cout << "allocating host memory to store data in device format " << e.size << "\n";
 	    char * tmp = new char[e.size];
 	    //std::cout << "copy data to host\n";
 	    CudaMemcpyD2H( tmp , e.devPtr , e.size );

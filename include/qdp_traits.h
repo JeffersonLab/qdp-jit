@@ -76,12 +76,25 @@ struct QDPSubTypeTrait {};
 // etc.) on QDPTypes
 //-----------------------------------------------------------------------------
 
-//! Find the underlying word type of a field
+
+  // Don't provide default implementation of
+  // WordType. This forces the user to provide
+  // WordType specializations for custom containers
+  // to participate in jitting.
+  template<class T> struct WordType;
+
+  template<> struct WordType<float>  { typedef float  Type_t; };
+  template<> struct WordType<double> { typedef double Type_t; };
+  template<> struct WordType<int>    { typedef int    Type_t; };
+  template<> struct WordType<bool>   { typedef bool   Type_t; };
+
+#if 0
 template<class T>
 struct WordType
 {
   typedef T  Type_t;
 };
+#endif
 
   // template<>
   // template<class T>

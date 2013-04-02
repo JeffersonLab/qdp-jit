@@ -510,6 +510,9 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
       int lim_col = GetLimit<T,1>::Limit_v; //T::ThisSize;
       int lim_spi = GetLimit<T,0>::Limit_v; //T::ThisSize;
 
+      // QDP_info_primary("lim_rea = %d" , lim_rea );
+      // QDP_info_primary("lim_col = %d" , lim_col );
+      // QDP_info_primary("lim_spi = %d" , lim_spi );
 
       for ( int site = 0 ; site < Layout::sitesOnNode() ; site++ ) {
 	for ( int reality = 0 ; reality < lim_rea ; reality++ ) {
