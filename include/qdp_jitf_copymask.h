@@ -42,8 +42,10 @@ namespace QDP {
 
     copymask( dest_jit.elem( QDPTypeJITBase::Coalesced ) , mask_reg , src_reg );
 
+#if 1
     if (Layout::primaryNode())
       function->write();
+#endif
       
     QMP_barrier();
 

@@ -323,11 +323,25 @@ namespace QDP {
   class JitOp {
   protected:
     virtual std::ostream& writeToStream( std::ostream& stream ) const = 0;
-    int type_lhs;
-    int type_rhs;
+    int args_type;
   public:
-    JitOp( int type_lhs_ , int type_rhs_ ): type_lhs(type_lhs_), type_rhs(type_rhs_) {}
-    int getArgsType() const { return jit_type_promote( type_lhs , type_rhs ); };
+    JitOp( jit_value_t lhs , jit_value_t rhs ): args_type(-1) {
+      if (auto lhs_r = get< jit_value_reg >(lhs)) {
+	if (auto rhs_r = get< jit_value_reg >(rhs)) {
+	  args_type = jit_type_promote( lhs->get_type() , rhs->get_type() );
+	} else {
+	  args_type = lhs->get_type();
+	}
+      } else {
+	args_type = rhs->get_type();
+      }
+      assert( args_type >= 0 );
+    }
+
+    int getArgsType() const {
+      return args_type;
+    }
+
     virtual int getDestType() const { return this->getArgsType(); }
     virtual double operator()(double f0, double f1) const = 0;
     virtual int operator()(int i0, int i1) const = 0;
@@ -338,7 +352,7 @@ namespace QDP {
 
   class JitOpAdd: public JitOp {
   public:
-    JitOpAdd( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
+    JitOpAdd( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
       stream << "add." 
 	     << jit_get_ptx_type( getDestType() );
@@ -350,7 +364,7 @@ namespace QDP {
 
   class JitOpSub: public JitOp {
   public:
-    JitOpSub( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
+    JitOpSub( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
       stream << "sub." 
 	     << jit_get_ptx_type( getDestType() );
@@ -362,7 +376,7 @@ namespace QDP {
 
   class JitOpMul: public JitOp {
   public:
-    JitOpMul( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
+    JitOpMul( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
       stream << "mul." 
 	     << jit_get_mul_specifier_lo_str( getDestType() ) 
@@ -375,7 +389,7 @@ namespace QDP {
 
   class JitOpDiv: public JitOp {
   public:
-    JitOpDiv( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
+    JitOpDiv( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
       stream << "div." 
 	     << jit_get_div_specifier( getDestType() ) 
@@ -388,7 +402,7 @@ namespace QDP {
 
   class JitOpMulWide: public JitOp {
   public:
-    JitOpMulWide( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
+    JitOpMulWide( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
     virtual int getDestType() const { 
       //std::cout << "IN WIDE\n";
       return jit_type_wide_promote( getArgsType() );
@@ -409,7 +423,7 @@ namespace QDP {
 
   class JitOpSHL: public JitOp {
   public:
-    JitOpSHL( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
+    JitOpSHL( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
       stream << "shl."
 	     << jit_get_ptx_type( jit_bit_type( getDestType() ) );
@@ -421,7 +435,7 @@ namespace QDP {
 
   class JitOpSHR: public JitOp {
   public:
-    JitOpSHR( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
+    JitOpSHR( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
       stream << "shr."
 	     << jit_get_ptx_type( jit_bit_type( getDestType() ) );
@@ -435,7 +449,7 @@ namespace QDP {
 
   class JitOpLT: public JitOp {
   public:
-    JitOpLT( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
+    JitOpLT( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
     virtual int getDestType() const {
       return jit_ptx_type::pred;
     }
@@ -450,7 +464,7 @@ namespace QDP {
 
   class JitOpNE: public JitOp {
   public:
-    JitOpNE( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
+    JitOpNE( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
     virtual int getDestType() const {
       return jit_ptx_type::pred;
     }
@@ -465,7 +479,7 @@ namespace QDP {
 
   class JitOpEQ: public JitOp {
   public:
-    JitOpEQ( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
+    JitOpEQ( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
     virtual int getDestType() const {
       return jit_ptx_type::pred;
     }
@@ -480,7 +494,7 @@ namespace QDP {
 
   class JitOpGE: public JitOp {
   public:
-    JitOpGE( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
+    JitOpGE( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
     virtual int getDestType() const {
       return jit_ptx_type::pred;
     }
@@ -495,7 +509,7 @@ namespace QDP {
 
   class JitOpLE: public JitOp {
   public:
-    JitOpLE( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
+    JitOpLE( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
     virtual int getDestType() const {
       return jit_ptx_type::pred;
     }
@@ -510,7 +524,7 @@ namespace QDP {
 
   class JitOpGT: public JitOp {
   public:
-    JitOpGT( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
+    JitOpGT( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
     virtual int getDestType() const {
       return jit_ptx_type::pred;
     }
@@ -525,7 +539,7 @@ namespace QDP {
 
   class JitOpAnd: public JitOp {
   public:
-    JitOpAnd( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
+    JitOpAnd( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
       stream << "and." 
 	     << jit_get_ptx_type( jit_bit_type( getDestType() ) );
@@ -537,7 +551,7 @@ namespace QDP {
 
   class JitOpOr: public JitOp {
   public:
-    JitOpOr( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
+    JitOpOr( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
       stream << "or." 
 	     << jit_get_ptx_type( jit_bit_type( getDestType() ) );
@@ -549,7 +563,7 @@ namespace QDP {
 
   class JitOpXOr: public JitOp {
   public:
-    JitOpXOr( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
+    JitOpXOr( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
       stream << "xor." 
 	     << jit_get_ptx_type( jit_bit_type( getDestType() ) );
@@ -561,7 +575,7 @@ namespace QDP {
 
   class JitOpRem: public JitOp {
   public:
-    JitOpRem( int type_lhs_ , int type_rhs_ ): JitOp(type_lhs_,type_rhs_) {}
+    JitOpRem( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
       stream << "rem." 
 	     << jit_get_ptx_type( getDestType() );

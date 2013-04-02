@@ -645,6 +645,7 @@ void jit_function::write_reg_defs()
 
   jit_value_reg_t jit_val_create_convert_const( jit_function_t func , int type , jit_value_const_t val , jit_value_t pred ) {
     jit_value_reg_t ret = jit_val_create_new( func , type );
+    assert( type != jit_ptx_type::u8 );
     func->get_prg() << jit_predicate(pred)
 		    << "mov." 
 		    << jit_get_ptx_type( type ) << " " 
@@ -655,6 +656,7 @@ void jit_function::write_reg_defs()
   jit_value_reg_t jit_val_create_convert_reg( jit_function_t func , int type , jit_value_reg_t val , jit_value_t pred ) {
     jit_value_reg_t ret = jit_val_create_new( func , type );
     if (type == val->get_type()) {
+      assert( type != jit_ptx_type::u8 );
       func->get_prg() << jit_predicate(pred)
 		      << "mov." 
 		      << jit_get_ptx_type( type ) << " " 
@@ -709,7 +711,7 @@ void jit_function::write_reg_defs()
       {
 	// std::cout << "TYPE reg = " << val_reg->get_type() << "\n";
 	// std::cout << "TYPE     = " << val->get_type() << "\n";
-
+	assert( val_reg->get_type() != jit_ptx_type::u8 );
 	jit_value_reg_t ret = jit_val_create_convert( val_reg->get_func() , val_reg->get_type() , val_reg , pred );
 	return ret;
       }
@@ -889,88 +891,88 @@ void jit_function::write_reg_defs()
   jit_value_t jit_ins_add( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
     assert(lhs);
     assert(rhs);
-    return jit_ins_op( lhs , rhs , JitOpAdd( lhs->get_type() , rhs->get_type() ) , pred );
+    return jit_ins_op( lhs , rhs , JitOpAdd( lhs , rhs ) , pred );
   }
   jit_value_t jit_ins_sub( jit_value_t lhs , jit_value_t rhs , jit_value_t pred) {
     assert(lhs);
     assert(rhs);
-    return jit_ins_op( lhs , rhs , JitOpSub( lhs->get_type() , rhs->get_type() ) , pred );
+    return jit_ins_op( lhs , rhs , JitOpSub( lhs , rhs ) , pred );
   }
   jit_value_t jit_ins_mul( jit_value_t lhs , jit_value_t rhs , jit_value_t pred) {
     assert(lhs);
     assert(rhs);
-    return jit_ins_op( lhs , rhs , JitOpMul( lhs->get_type() , rhs->get_type() ) , pred );
+    return jit_ins_op( lhs , rhs , JitOpMul( lhs , rhs ) , pred );
   }
   jit_value_t jit_ins_div( jit_value_t lhs , jit_value_t rhs , jit_value_t pred) {
     assert(lhs);
     assert(rhs);
-    return jit_ins_op( lhs , rhs , JitOpDiv( lhs->get_type() , rhs->get_type() ) , pred );
+    return jit_ins_op( lhs , rhs , JitOpDiv( lhs , rhs ) , pred );
   }
   jit_value_t jit_ins_shl( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
     assert(lhs);
     assert(rhs);
-    return jit_ins_op( lhs , rhs , JitOpSHL( lhs->get_type() , rhs->get_type() ) , pred );
+    return jit_ins_op( lhs , rhs , JitOpSHL( lhs , rhs ) , pred );
   }
   jit_value_t jit_ins_shr( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
     assert(lhs);
     assert(rhs);
-    return jit_ins_op( lhs , rhs , JitOpSHR( lhs->get_type() , rhs->get_type() ) , pred );
+    return jit_ins_op( lhs , rhs , JitOpSHR( lhs , rhs ) , pred );
   }
   jit_value_t jit_ins_mul_wide( jit_value_t lhs , jit_value_t rhs , jit_value_t pred) {
     assert(lhs);
     assert(rhs);
-    return jit_ins_op( lhs , rhs , JitOpMulWide( lhs->get_type() , rhs->get_type() ) , pred );
+    return jit_ins_op( lhs , rhs , JitOpMulWide( lhs , rhs ) , pred );
   }
   jit_value_t jit_ins_and( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
     assert(lhs);
     assert(rhs);
-    return jit_ins_op( lhs , rhs , JitOpAnd( lhs->get_type() , rhs->get_type() ) , pred );
+    return jit_ins_op( lhs , rhs , JitOpAnd( lhs , rhs ) , pred );
   }
   jit_value_t jit_ins_or( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
     assert(lhs);
     assert(rhs);
-    return jit_ins_op( lhs , rhs , JitOpOr( lhs->get_type() , rhs->get_type() ) , pred );
+    return jit_ins_op( lhs , rhs , JitOpOr( lhs , rhs ) , pred );
   }
   jit_value_t jit_ins_xor( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
     assert(lhs);
     assert(rhs);
-    return jit_ins_op( lhs , rhs , JitOpXOr( lhs->get_type() , rhs->get_type() ) , pred );
+    return jit_ins_op( lhs , rhs , JitOpXOr( lhs , rhs ) , pred );
   }
   jit_value_t jit_ins_rem( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
     assert(lhs);
     assert(rhs);
-    return jit_ins_op( lhs , rhs , JitOpRem( lhs->get_type() , rhs->get_type() ) , pred );
+    return jit_ins_op( lhs , rhs , JitOpRem( lhs , rhs ) , pred );
   }
 
   jit_value_t jit_ins_lt( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
     assert(lhs);
     assert(rhs);
-    return jit_ins_op( lhs , rhs , JitOpLT( lhs->get_type() , rhs->get_type() ) , pred );
+    return jit_ins_op( lhs , rhs , JitOpLT( lhs , rhs ) , pred );
   }
   jit_value_t jit_ins_ne( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
     assert(lhs);
     assert(rhs);
-    return jit_ins_op( lhs , rhs , JitOpNE( lhs->get_type() , rhs->get_type() ) , pred );
+    return jit_ins_op( lhs , rhs , JitOpNE( lhs , rhs ) , pred );
   }
   jit_value_t jit_ins_eq( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
     assert(lhs);
     assert(rhs);
-    return jit_ins_op( lhs , rhs , JitOpEQ( lhs->get_type() , rhs->get_type() ) , pred );
+    return jit_ins_op( lhs , rhs , JitOpEQ( lhs , rhs ) , pred );
   }
   jit_value_t jit_ins_ge( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
     assert(lhs);
     assert(rhs);
-    return jit_ins_op( lhs , rhs , JitOpGE( lhs->get_type() , rhs->get_type() ) , pred );
+    return jit_ins_op( lhs , rhs , JitOpGE( lhs , rhs ) , pred );
   }
   jit_value_t jit_ins_le( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
     assert(lhs);
     assert(rhs);
-    return jit_ins_op( lhs , rhs , JitOpLE( lhs->get_type() , rhs->get_type() ) , pred );
+    return jit_ins_op( lhs , rhs , JitOpLE( lhs , rhs ) , pred );
   }
   jit_value_t jit_ins_gt( jit_value_t lhs , jit_value_t rhs , jit_value_t pred ) {
     assert(lhs);
     assert(rhs);
-    return jit_ins_op( lhs , rhs , JitOpGT( lhs->get_type() , rhs->get_type() ) , pred );
+    return jit_ins_op( lhs , rhs , JitOpGT( lhs , rhs ) , pred );
   }
 
 
@@ -1173,6 +1175,7 @@ void jit_function::write_reg_defs()
     auto dest_reg = get< jit_value_reg >(dest);
     jit_value_reg_t src_conv = jit_val_create_convert( dest_reg->get_func() , dest_reg->get_type() , src , pred );
     //auto src_reg  = get< jit_value_reg >(src);
+    assert( dest->get_type() != jit_ptx_type::u8 );
     dest_reg->get_func()->get_prg() << jit_predicate(pred)
 				    << "mov."
 				    << jit_get_ptx_type( dest->get_type() ) << " "
@@ -1202,7 +1205,8 @@ void jit_function::write_reg_defs()
 				    << offset << "];\n";
 
     if ( type_orig != -1 ) {
-      jit_value_t ret_pred = jit_ins_ne( ret , jit_val_create_const_int( 0 ) );
+      jit_value_reg_t ret_u32 = jit_val_create_convert( base_reg->get_func() , jit_ptx_type::u32 , ret );
+      jit_value_t ret_pred = jit_ins_ne( ret_u32 , jit_val_create_const_int( 0 ) );
       return ret_pred;
     }
 

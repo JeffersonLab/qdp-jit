@@ -30,7 +30,7 @@
 #ifndef QDP_INCLUDE
 #define QDP_INCLUDE
 
-#define NDEBUG
+//#define NDEBUG
 #include<cassert>
 
 
