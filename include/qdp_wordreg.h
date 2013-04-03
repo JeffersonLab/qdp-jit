@@ -39,7 +39,7 @@ namespace QDP {
     }
 
     void replace(const WordREG& rhs ) {
-      assert( rhs.get_val()->get_type() == jit_type<T>::value );
+      //assert( rhs.get_val()->get_type() == jit_type<T>::value );
       if (val) {
 	jit_ins_mov_no_create( val , rhs.get_val() );	
       } else {

@@ -1163,24 +1163,49 @@ void jit_function::write_reg_defs()
     return jit_ins_math_binary( 3 , jit_ptx_type::f64 , lhs , rhs , pred ); }
 
 
-  void jit_ins_mov_no_create_const( jit_value_t dest , jit_value_const_t src_const , jit_value_t pred ){
+
+  void jit_ins_mov_no_create_reg_const( jit_value_reg_t dest , jit_value_const_t src , jit_value_t pred ){
+    assert( dest->get_type() != jit_ptx_type::u8 );
+    dest->get_func()->get_prg() << jit_predicate(pred)
+				<< "mov."
+				<< jit_get_ptx_type( dest->get_type() ) << " "
+				<< jit_get_reg_name( dest ) << ","
+				<< src->getAsString() << ";\n";
   }
 
-  void jit_ins_mov_no_create_reg( jit_value_t dest , jit_value_reg_t src_const , jit_value_t pred ){
+  void jit_ins_mov_no_create_reg_reg( jit_value_reg_t dest , jit_value_reg_t src , jit_value_t pred ){
+    assert( dest->get_type() != jit_ptx_type::u8 );
+    if (dest->get_type() != src->get_type())
+      src = jit_val_create_convert( dest->get_func() , dest->get_type() , src , pred );
+    dest->get_func()->get_prg() << jit_predicate(pred)
+				<< "mov."
+				<< jit_get_ptx_type( dest->get_type() ) << " "
+				<< jit_get_reg_name( dest ) << ","
+				<< jit_get_reg_name( src ) << ";\n";
   }
 
   void jit_ins_mov_no_create( jit_value_t dest , jit_value_t src , jit_value_t pred ){
     assert(dest);
     assert(src);
-    auto dest_reg = get< jit_value_reg >(dest);
-    jit_value_reg_t src_conv = jit_val_create_convert( dest_reg->get_func() , dest_reg->get_type() , src , pred );
-    //auto src_reg  = get< jit_value_reg >(src);
-    assert( dest->get_type() != jit_ptx_type::u8 );
-    dest_reg->get_func()->get_prg() << jit_predicate(pred)
-				    << "mov."
-				    << jit_get_ptx_type( dest->get_type() ) << " "
-				    << jit_get_reg_name( dest_reg ) << ","
-				    << jit_get_reg_name( src_conv ) << ";\n";
+    if (auto dest_reg = get< jit_value_reg >(dest)) 
+      if (auto src_reg = get< jit_value_reg >(src)) {
+	jit_ins_mov_no_create_reg_reg( dest_reg , src_reg , pred );
+	return;
+      }
+    if (auto dest_reg = get< jit_value_reg >(dest)) 
+      if (auto src_const = get< jit_value_const >(src)) {
+	jit_ins_mov_no_create_reg_const( dest_reg , src_const , pred );
+	return;
+      }
+    if (auto dest_const = get< jit_value_const >(dest)) 
+      if (auto src_reg = get< jit_value_reg >(src))
+	QDP_error_exit("Sorry, you are trying to assign a register to a const");
+    if (auto dest_const = get< jit_value_const >(dest)) 
+      if (auto src_const = get< jit_value_const >(src)) {
+	dest = src;
+	return;
+      }
+    assert(!"should never be here");
   }
 
 
