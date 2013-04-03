@@ -38,7 +38,11 @@ public:
 	this->elem(i,q).setup( j.elem(i,q) );
   }
 
+  PColorMatrixREG() {}
 
+  PColorMatrixREG( const typename JITType< PColorMatrixREG >::Type_t& rhs ) {
+    setup(rhs);
+  }
 
   //! PColorMatrixREG = PScalarREG
   /*! Fill with primitive scalar */
