@@ -32,14 +32,9 @@ struct ViewLeaf
 
 struct ParamLeaf
 {
-  jit_value_t    index;
-  jit_function_t func;
-
-  ParamLeaf( jit_function_t func_ , jit_value_t index_ ) : func(func_), index(index_) {}
-  //ParamLeaf(Jit& func_,int r_idx,Jit::LatticeLayout lay) : func(func_),r_idx(r_idx),layout(lay) {}
-
-  jit_value_t getRegIdx() const {return index;}
-  jit_function_t getFunc() const {return func;}
+  jit_value    index;
+  ParamLeaf( jit_value_t index_ ) : index(index_) {}
+  jit_value getRegIdx() const {return index;}
 };
 
   // int getParamLattice( int idx_multiplier ) const {

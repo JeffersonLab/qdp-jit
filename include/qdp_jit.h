@@ -37,22 +37,16 @@ namespace QDP {
   class jit_value_const_float;
   class jit_value_reg;
   typedef std::shared_ptr<jit_function>          jit_function_t;
-  typedef std::shared_ptr<jit_value>             jit_value_t;
-  typedef std::shared_ptr<jit_value_reg>         jit_value_reg_t;
-  typedef std::shared_ptr<jit_value_const>       jit_value_const_t;
-  typedef std::shared_ptr<jit_value_const_int>   jit_value_const_int_t;
-  typedef std::shared_ptr<jit_value_const_float> jit_value_const_float_t;
+  // typedef std::shared_ptr<jit_value>             jit_value;
+  // typedef std::shared_ptr<jit_value_reg>         jit_value_reg_t;
+  // typedef std::shared_ptr<jit_value_const>       jit_value_const_t;
+  // typedef std::shared_ptr<jit_value_const_int>   jit_value_const_int_t;
+  // typedef std::shared_ptr<jit_value_const_float> jit_value_const_float_t;
   typedef std::shared_ptr<jit_label>             jit_label_t;
 
-  struct IndexRet {
-    jit_value_t r_newidx_local;
-    jit_value_t r_newidx_buffer;
-    jit_value_t r_pred_in_buf;
-    jit_value_t r_rcvbuf;
-  };
 
   template<class T>
-    std::shared_ptr<T> get(const jit_value_t & pA) {
+    std::shared_ptr<T> get(const jit_value & pA) {
     return std::dynamic_pointer_cast< T >( pA );
   }
 
@@ -70,13 +64,16 @@ namespace QDP {
     extern const std::map< int , int >               map_wide_promote;
   }
 
+
+
+
   class jit_function {
     std::string fname;
     std::ostringstream oss_prg;
     std::ostringstream oss_signature;
     std::ostringstream oss_reg_defs;
-    std::vector<int> reg_count;
-    std::vector<std::pair<int,int> > vec_local_count;     // pair = (type,count)
+    std::map<jit_ptx_type,int> reg_count;
+    std::vector<std::pair<jit_ptx_type,int> > vec_local_count;     // pair = (type,count)
     int param_count;
     int local_count;
     bool m_shared;
@@ -98,10 +95,25 @@ namespace QDP {
     int get_param_count();
     void inc_param_count();
     jit_function( const char * fname_);
-    int reg_alloc( int type );
+    int reg_alloc( jit_ptx_type type );
     std::ostringstream& get_prg();
     std::ostringstream& get_signature();
   };
+
+  extern jit_function_t jit_internal_function;
+
+  jit_function_t jit_create_function(const char * fname_);
+  jit_function_t jit_get_function();
+
+
+
+  // class jit_function_singleton
+  // {
+  //   static jit_function singleton {
+  //   return singleton;
+  //   };
+
+
 
 
 
@@ -121,230 +133,198 @@ namespace QDP {
 
 
   class jit_value {
-  protected:
-    int type;
   public:
-    virtual ~jit_value() {}
-    enum StateSpace { state_global=0 , state_local=1 , state_shared=2 };
-    jit_value( int type_ ) : type(type_) {}
-    int get_type() const {return type;}
-  };
+    enum StateSpace { state_default=0 , state_global=1 , state_local=2 , state_shared=3 };
+    
+    explicit jit_value( jit_ptx_type type_ );
+    explicit jit_value( const jit_value& rhs );
+    explicit jit_value( int val );
 
-
-
-  class jit_value_reg: public jit_value {
-    int number;
-    jit_function_t func;
-  public:
-    ~jit_value_reg() {}
-    jit_value_reg(jit_function_t func_, int type_);
-
-    void set_local_state();
-    void set_shared_state();
+    // jit_value( double val )
+    
+    void reg_alloc();
+    void assign( const jit_value& rhs );
+    jit_value& operator=( const jit_value& rhs );    
+    ~jit_value();
+    jit_ptx_type get_type() const;
     void set_state_space( StateSpace ss );
     StateSpace get_state_space();
     const char * get_state_space_str() const;
-
-    int get_number() const;
-    jit_function_t get_func() const;
+    
+    //int get_number() const;
     std::string get_name() const;
+    bool get_ever_assigned() const { return ever_assigned; }
+    void set_ever_assigned() { ever_assigned = true; }
   private:
+    bool ever_assigned;
     StateSpace mem_state;
-  };
-
-
-  class jit_value_const: public jit_value {
-  public:
-    jit_value_const( int type ) : jit_value(type) {}
-    virtual bool  isInt() const      = 0;
-    virtual double getAsFloat() const = 0;
-    virtual std::string getAsString() const = 0;
+    jit_ptx_type type;
+    int number;
   };
 
 
 
-  class jit_value_const_int: public jit_value_const {
-    int val;
-  public:
-    jit_value_const_int( int val_): jit_value_const( jit_type<int>::value ), val(val_) {};
-    virtual bool  isInt() const { return true; }
-    virtual double getAsFloat() const { return val; }
-    virtual std::string getAsString() const { 
-      std::ostringstream oss; 
-      oss << val;
-      return oss.str();
-    }
-    int getValue() {return val;}
+  struct IndexRet {
+    jit_value r_newidx_local;
+    jit_value r_newidx_buffer;
+    jit_value r_pred_in_buf;
+    jit_value r_rcvbuf;
   };
 
-
-
-  class jit_value_const_float: public jit_value_const {
-    double val;
-  public:
-    jit_value_const_float( double val_): jit_value_const( jit_type<double>::value ), val(val_) {};
-    virtual bool  isInt() const { return false; }
-    virtual double getAsFloat() const { return val; }
-    virtual std::string getAsString() const { 
-      std::ostringstream oss; 
-      //oss.setf(ios::hex);
-      oss.setf(ios::scientific);
-      oss.precision(std::numeric_limits<double>::digits10 + 1);
-      oss << val;
-      return oss.str();
-    }
-    double getValue() {return val;}
-  };
-
+  
+  
+#if 0
+  jit_value_const_float( double val_): jit_value_const( jit_type<double>::value ), val(val_) {};
+  virtual bool  isInt() const { return false; }
+  virtual double getAsFloat() const { return val; }
+  virtual std::string getAsString() const { 
+    std::ostringstream oss; 
+    //oss.setf(ios::hex);
+    oss.setf(ios::scientific);
+    oss.precision(std::numeric_limits<double>::digits10 + 1);
+    oss << val;
+    return oss.str();
+  }
+  double getValue() {return val;}
+#endif
 
 
 
-
-  std::string jit_predicate( jit_value_t pred );
+  
+  std::string jit_predicate( const jit_value& pred );
 
   jit_value::StateSpace jit_state_promote( jit_value::StateSpace ss0 , jit_value::StateSpace ss1 );
-  int jit_type_promote(int t0,int t1);
-  //int jit_type_promote(int t0,int t1,int t2);
-  int jit_bit_type(int type);
-  int jit_type_wide_promote(int t0);
+  jit_ptx_type jit_type_promote(jit_ptx_type t0,jit_ptx_type t1);
 
-  void jit_ins_bar_sync( jit_function_t func , int a );
+  jit_ptx_type jit_bit_type(jit_ptx_type type);
+  jit_ptx_type jit_type_wide_promote(jit_ptx_type t0);
 
-  jit_value_t jit_add_param( jit_function_t func , int type );
-  jit_value_t jit_allocate_local( jit_function_t func , int type , int count );
-  jit_value_t jit_get_shared_mem_ptr( jit_function_t func );
+  void jit_ins_bar_sync( int a );
 
-  jit_function_t jit_create_function(const char * fname_);
-  jit_function_t jit_get_valid_func( jit_function_t f0 ,jit_function_t f1 );
+  jit_value jit_add_param( jit_ptx_type type );
+  jit_value jit_allocate_local( jit_ptx_type type , int count );
+  jit_value jit_get_shared_mem_ptr();
 
-  std::string jit_get_reg_name( jit_value_t val );
 
-  jit_label_t jit_label_create( jit_function_t func );
+  //jit_function_t jit_get_valid_func( jit_function_t f0 ,jit_function_t f1 );
 
-  jit_value_reg_t jit_val_create_new( jit_function_t func , int type );
-  jit_value_reg_t jit_val_create_from_const( jit_function_t func , int type , int const_val , jit_value_t pred=jit_value_t() );
-  jit_value_reg_t jit_val_create_convert( jit_function_t func , int type , jit_value_t val , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_val_create_copy( jit_value_t val , jit_value_t pred=jit_value_t() );
-  jit_value_const_t jit_val_create_const_int( int val );
-  jit_value_const_t jit_val_create_const_float( double val );
+  std::string jit_get_reg_name( const jit_value& val );
 
-  jit_function_t getFunc(jit_value_t val);
+  jit_label_t jit_label_create();
 
-  jit_value_t jit_geom_get_tidx( jit_function_t func );
-  jit_value_t jit_geom_get_ntidx( jit_function_t func );
-  jit_value_t jit_geom_get_ctaidx( jit_function_t func );
+  // jit_value_reg_t jit_val_create_new( int type );
+  // jit_value_reg_t jit_val_create_from_const( int type , int const_val , jit_value pred=jit_value() );
+  // jit_value_reg_t jit_val_create_convert( int type , jit_value val , jit_value pred=jit_value() );
+  // jit_value jit_val_create_copy( jit_value val , jit_value pred=jit_value() );
+  // jit_value_const_t jit_val_create_const_int( int val );
+  // jit_value_const_t jit_val_create_const_float( double val );
+
+  //jit_function_t getFunc(jit_value val);
+
+  jit_value jit_val_convert( jit_ptx_type type , const jit_value& rhs );
+
+
+  jit_value jit_geom_get_tidx( );
+  jit_value jit_geom_get_ntidx( );
+  jit_value jit_geom_get_ctaidx( );
 
   // Binary operations
-  jit_value_t jit_ins_mul_wide( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_mul( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_div( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_add( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_sub( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_shl( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_shr( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_and( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_or ( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_xor( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_rem( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
+  jit_value jit_ins_mul_wide( const jit_value& lhs , const jit_value& rhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_mul( const jit_value& lhs , const jit_value& rhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_div( const jit_value& lhs , const jit_value& rhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_add( const jit_value& lhs , const jit_value& rhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_sub( const jit_value& lhs , const jit_value& rhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_shl( const jit_value& lhs , const jit_value& rhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_shr( const jit_value& lhs , const jit_value& rhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_and( const jit_value& lhs , const jit_value& rhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_or ( const jit_value& lhs , const jit_value& rhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_xor( const jit_value& lhs , const jit_value& rhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_rem( const jit_value& lhs , const jit_value& rhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
 
   // ni
-  jit_value_t jit_ins_mod( jit_value_t lhs , jit_value_t rhs );
+  jit_value jit_ins_mod( const jit_value& lhs , const jit_value& rhs );
 
   // Binary operations returning predicate
-  jit_value_t jit_ins_lt( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_ne( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_eq( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_ge( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_le( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_gt( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
+  jit_value jit_ins_lt( const jit_value& lhs , const jit_value& rhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_ne( const jit_value& lhs , const jit_value& rhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_eq( const jit_value& lhs , const jit_value& rhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_ge( const jit_value& lhs , const jit_value& rhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_le( const jit_value& lhs , const jit_value& rhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_gt( const jit_value& lhs , const jit_value& rhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
 
   // Native PTX Unary operations
-  jit_value_t jit_ins_neg( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_not( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_fabs( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_floor( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_sqrt( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value jit_ins_neg( const jit_value& lhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_not( const jit_value& lhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_fabs( const jit_value& lhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_floor( const jit_value& lhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_sqrt( const jit_value& lhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
 
   // Imported PTX Unary operations single precision
-  jit_value_t jit_ins_sin_f32( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_acos_f32( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_asin_f32( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_atan_f32( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_ceil_f32( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_cos_f32( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_cosh_f32( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_exp_f32( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_log_f32( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_log10_f32( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_sinh_f32( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_tan_f32( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_tanh_f32( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value jit_ins_sin_f32( const jit_value& lhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_acos_f32( const jit_value& lhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_asin_f32( const jit_value& lhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_atan_f32( const jit_value& lhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_ceil_f32( const jit_value& lhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_cos_f32( const jit_value& lhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_cosh_f32( const jit_value& lhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_exp_f32( const jit_value& lhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_log_f32( const jit_value& lhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_log10_f32( const jit_value& lhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_sinh_f32( const jit_value& lhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_tan_f32( const jit_value& lhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_tanh_f32( const jit_value& lhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
 
   // Imported PTX Binary operations single precision
-  jit_value_t jit_ins_pow_f32( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_atan2_f32( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
+  jit_value jit_ins_pow_f32( const jit_value& lhs , const jit_value& rhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_atan2_f32( const jit_value& lhs , const jit_value& rhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
 
   // Imported PTX Unary operations double precision
-  jit_value_t jit_ins_sin_f64( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_acos_f64( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_asin_f64( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_atan_f64( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_ceil_f64( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_cos_f64( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_cosh_f64( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_exp_f64( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_log_f64( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_log10_f64( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_sinh_f64( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_tan_f64( jit_value_t lhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_tanh_f64( jit_value_t lhs , jit_value_t pred=jit_value_t() );
+  jit_value jit_ins_sin_f64( const jit_value& lhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_acos_f64( const jit_value& lhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_asin_f64( const jit_value& lhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_atan_f64( const jit_value& lhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_ceil_f64( const jit_value& lhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_cos_f64( const jit_value& lhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_cosh_f64( const jit_value& lhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_exp_f64( const jit_value& lhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_log_f64( const jit_value& lhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_log10_f64( const jit_value& lhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_sinh_f64( const jit_value& lhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_tan_f64( const jit_value& lhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_tanh_f64( const jit_value& lhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
 
   // Imported PTX Binary operations single precision
-  jit_value_t jit_ins_pow_f64( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
-  jit_value_t jit_ins_atan2_f64( jit_value_t lhs , jit_value_t rhs , jit_value_t pred=jit_value_t() );
+  jit_value jit_ins_pow_f64( const jit_value& lhs , const jit_value& rhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_atan2_f64( const jit_value& lhs , const jit_value& rhs , const jit_value& pred=jit_value(jit_ptx_type::pred) );
 
 
   // Select
-  jit_value_t jit_ins_selp( jit_function_t func , jit_value_t lhs , jit_value_t rhs , jit_value_t p );
+  jit_value jit_ins_selp( const jit_value& lhs , const jit_value& rhs , const jit_value& p );
 
-  void jit_ins_mov_no_create( jit_value_t dest , jit_value_t src , jit_value_t pred=jit_value_t() );
+  void jit_ins_mov( jit_value& dest , const jit_value& src , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  void jit_ins_mov( jit_value& dest , const std::string& src , const jit_value& pred=jit_value(jit_ptx_type::pred) );
 
-  void jit_ins_branch( jit_function_t func , jit_label_t& label , jit_value_t pred=jit_value_t() );
-  void jit_ins_label(  jit_function_t func , jit_label_t& label );
-  void jit_ins_comment(  jit_function_t func , const char * comment );
-  void jit_ins_exit( jit_function_t func , jit_value_t pred=jit_value_t() );
+  void jit_ins_branch( jit_label_t& label , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  void jit_ins_label(  jit_label_t& label );
+  void jit_ins_comment(  const char * comment );
+  void jit_ins_exit( const jit_value& pred=jit_value(jit_ptx_type::pred) );
 
-  jit_value_t jit_ins_load ( jit_value_t base , int offset , int type , jit_value_t pred=jit_value_t() );
-  void        jit_ins_store( jit_value_t base , int offset , int type , jit_value_t val , jit_value_t pred=jit_value_t() );
+  jit_value jit_ins_load ( const jit_value& base , int offset , int type , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  void        jit_ins_store( const jit_value& base , int offset , int type , const jit_value& val , const jit_value& pred=jit_value(jit_ptx_type::pred) );
 
-  jit_value_t jit_geom_get_linear_th_idx( jit_function_t func );
+  jit_value jit_geom_get_linear_th_idx();
 
 
   class JitOp {
   protected:
     virtual std::ostream& writeToStream( std::ostream& stream ) const = 0;
-    int args_type;
+    jit_ptx_type args_type;
   public:
-    JitOp( jit_value_t lhs , jit_value_t rhs ): args_type(-1) {
-      if (auto lhs_r = get< jit_value_reg >(lhs)) {
-	if (auto rhs_r = get< jit_value_reg >(rhs)) {
-	  args_type = jit_type_promote( lhs->get_type() , rhs->get_type() );
-	} else {
-	  args_type = lhs->get_type();
-	}
-      } else {
-	args_type = rhs->get_type();
-      }
-      assert( args_type >= 0 );
+    JitOp( const jit_value& lhs , const jit_value& rhs ) {
+      args_type = jit_type_promote( lhs.get_type() , rhs.get_type() );
     }
-
-    int getArgsType() const {
-      return args_type;
-    }
-
-    virtual int getDestType() const { return this->getArgsType(); }
-    virtual double operator()(double f0, double f1) const = 0;
-    virtual int operator()(int i0, int i1) const = 0;
+    jit_ptx_type getArgsType() const { return args_type; }
+    virtual jit_ptx_type getDestType() const { return this->getArgsType(); }
     friend std::ostream& operator<< (std::ostream& stream, const JitOp& op) {
       return op.writeToStream(stream);
     }
@@ -352,59 +332,50 @@ namespace QDP {
 
   class JitOpAdd: public JitOp {
   public:
-    JitOpAdd( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
+    JitOpAdd( const jit_value& lhs , const jit_value& rhs ): JitOp(lhs,rhs) {}
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
       stream << "add." 
 	     << jit_get_ptx_type( getDestType() );
       return stream;
     }
-    virtual double operator()(double f0, double f1) const { return f0+f1; }
-    virtual int operator()(int i0, int i1) const { return i0+i1; }
   };
 
   class JitOpSub: public JitOp {
   public:
-    JitOpSub( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
+    JitOpSub( const jit_value& lhs , const jit_value& rhs ): JitOp(lhs,rhs) {}
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
       stream << "sub." 
 	     << jit_get_ptx_type( getDestType() );
       return stream;
     }
-    virtual double operator()(double f0, double f1) const { return f0-f1; }
-    virtual int operator()(int i0, int i1) const { return i0-i1; }
   };
 
   class JitOpMul: public JitOp {
   public:
-    JitOpMul( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
+    JitOpMul( const jit_value& lhs , const jit_value& rhs ): JitOp(lhs,rhs) {}
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
       stream << "mul." 
 	     << jit_get_mul_specifier_lo_str( getDestType() ) 
 	     << jit_get_ptx_type( getDestType() );
       return stream;
     }
-    virtual double operator()(double f0, double f1) const { return f0*f1; }
-    virtual int operator()(int i0, int i1) const { return i0*i1; }
   };
 
   class JitOpDiv: public JitOp {
   public:
-    JitOpDiv( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
+    JitOpDiv( const jit_value& lhs , const jit_value& rhs ): JitOp(lhs,rhs) {}
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
       stream << "div." 
 	     << jit_get_div_specifier( getDestType() ) 
 	     << jit_get_ptx_type( getDestType() );
       return stream;
     }
-    virtual double operator()(double f0, double f1) const { return f0*f1; }
-    virtual int operator()(int i0, int i1) const { return i0*i1; }
   };
 
   class JitOpMulWide: public JitOp {
   public:
-    JitOpMulWide( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
-    virtual int getDestType() const { 
-      //std::cout << "IN WIDE\n";
+    JitOpMulWide( const jit_value& lhs , const jit_value& rhs ): JitOp(lhs,rhs) {}
+    virtual jit_ptx_type getDestType() const { 
       return jit_type_wide_promote( getArgsType() );
     }
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
@@ -417,40 +388,34 @@ namespace QDP {
 	     << jit_get_ptx_type( getArgsType() );
       return stream;
     }
-    virtual double operator()(double f0, double f1) const { return f0*f1; }
-    virtual int operator()(int i0, int i1) const { return i0*i1; }
   };
 
   class JitOpSHL: public JitOp {
   public:
-    JitOpSHL( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
+    JitOpSHL( const jit_value& lhs , const jit_value& rhs ): JitOp(lhs,rhs) {}
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
       stream << "shl."
 	     << jit_get_ptx_type( jit_bit_type( getDestType() ) );
       return stream;
     }
-    virtual double operator()(double f0, double f1) const { assert(!"strange that i'm here"); return 0.; }
-    virtual int operator()(int i0, int i1) const { return i0 << i1; }
   };
 
   class JitOpSHR: public JitOp {
   public:
-    JitOpSHR( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
+    JitOpSHR( const jit_value& lhs , const jit_value& rhs ): JitOp(lhs,rhs) {}
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
       stream << "shr."
 	     << jit_get_ptx_type( jit_bit_type( getDestType() ) );
       return stream;
     }
-    virtual double operator()(double f0, double f1) const { assert(!"strange that i'm here"); return 0.; }
-    virtual int operator()(int i0, int i1) const { return i0 >> i1; }
   };
 
 
 
   class JitOpLT: public JitOp {
   public:
-    JitOpLT( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
-    virtual int getDestType() const {
+    JitOpLT( const jit_value& lhs , const jit_value& rhs ): JitOp(lhs,rhs) {}
+    virtual jit_ptx_type getDestType() const {
       return jit_ptx_type::pred;
     }
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
@@ -458,14 +423,12 @@ namespace QDP {
 	     << jit_get_ptx_type( getArgsType() );
       return stream;
     }
-    virtual double operator()(double f0, double f1) const { return 0; }
-    virtual int operator()(int i0, int i1) const { return 0; }
   };
 
   class JitOpNE: public JitOp {
   public:
-    JitOpNE( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
-    virtual int getDestType() const {
+    JitOpNE( const jit_value& lhs , const jit_value& rhs ): JitOp(lhs,rhs) {}
+    virtual jit_ptx_type getDestType() const {
       return jit_ptx_type::pred;
     }
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
@@ -473,14 +436,12 @@ namespace QDP {
 	     << jit_get_ptx_type( getArgsType() );
       return stream;
     }
-    virtual double operator()(double f0, double f1) const { return 0; }
-    virtual int operator()(int i0, int i1) const { return 0; }
   };
 
   class JitOpEQ: public JitOp {
   public:
-    JitOpEQ( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
-    virtual int getDestType() const {
+    JitOpEQ( const jit_value& lhs , const jit_value& rhs ): JitOp(lhs,rhs) {}
+    virtual jit_ptx_type getDestType() const {
       return jit_ptx_type::pred;
     }
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
@@ -488,14 +449,12 @@ namespace QDP {
 	     << jit_get_ptx_type( getArgsType() );
       return stream;
     }
-    virtual double operator()(double f0, double f1) const { return 0; }
-    virtual int operator()(int i0, int i1) const { return 0; }
   };
 
   class JitOpGE: public JitOp {
   public:
-    JitOpGE( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
-    virtual int getDestType() const {
+    JitOpGE( const jit_value& lhs , const jit_value& rhs ): JitOp(lhs,rhs) {}
+    virtual jit_ptx_type getDestType() const {
       return jit_ptx_type::pred;
     }
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
@@ -503,14 +462,12 @@ namespace QDP {
 	     << jit_get_ptx_type( getArgsType() );
       return stream;
     }
-    virtual double operator()(double f0, double f1) const { return 0; }
-    virtual int operator()(int i0, int i1) const { return 0; }
   };
 
   class JitOpLE: public JitOp {
   public:
-    JitOpLE( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
-    virtual int getDestType() const {
+    JitOpLE( const jit_value& lhs , const jit_value& rhs ): JitOp(lhs,rhs) {}
+    virtual jit_ptx_type getDestType() const {
       return jit_ptx_type::pred;
     }
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
@@ -518,14 +475,12 @@ namespace QDP {
 	     << jit_get_ptx_type( getArgsType() );
       return stream;
     }
-    virtual double operator()(double f0, double f1) const { return 0; }
-    virtual int operator()(int i0, int i1) const { return 0; }
   };
 
   class JitOpGT: public JitOp {
   public:
-    JitOpGT( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
-    virtual int getDestType() const {
+    JitOpGT( const jit_value& lhs , const jit_value& rhs ): JitOp(lhs,rhs) {}
+    virtual jit_ptx_type getDestType() const {
       return jit_ptx_type::pred;
     }
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
@@ -533,56 +488,46 @@ namespace QDP {
 	     << jit_get_ptx_type( getArgsType() );
       return stream;
     }
-    virtual double operator()(double f0, double f1) const { assert(!"strange that i'm here"); return 0; }
-    virtual int operator()(int i0, int i1) const { assert(!"strange that i'm here"); return 0; }
   };
 
   class JitOpAnd: public JitOp {
   public:
-    JitOpAnd( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
+    JitOpAnd( const jit_value& lhs , const jit_value& rhs ): JitOp(lhs,rhs) {}
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
       stream << "and." 
 	     << jit_get_ptx_type( jit_bit_type( getDestType() ) );
       return stream;
     }
-    virtual double operator()(double f0, double f1) const { assert(!"strange that i'm here"); return 0.; }
-    virtual int operator()(int i0, int i1) const { return i0 & i1; }
   };
 
   class JitOpOr: public JitOp {
   public:
-    JitOpOr( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
+    JitOpOr( const jit_value& lhs , const jit_value& rhs ): JitOp(lhs,rhs) {}
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
       stream << "or." 
 	     << jit_get_ptx_type( jit_bit_type( getDestType() ) );
       return stream;
     }
-    virtual double operator()(double f0, double f1) const { assert(!"strange that i'm here"); return 0.; }
-    virtual int operator()(int i0, int i1) const { return i0 | i1; }
   };
 
   class JitOpXOr: public JitOp {
   public:
-    JitOpXOr( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
+    JitOpXOr( const jit_value& lhs , const jit_value& rhs ): JitOp(lhs,rhs) {}
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
       stream << "xor." 
 	     << jit_get_ptx_type( jit_bit_type( getDestType() ) );
       return stream;
     }
-    virtual double operator()(double f0, double f1) const { assert(!"strange that i'm here"); return 0.; }
-    virtual int operator()(int i0, int i1) const { return i0 ^ i1; }
   };
 
   class JitOpRem: public JitOp {
   public:
-    JitOpRem( jit_value_t lhs , jit_value_t rhs ): JitOp(lhs,rhs) {}
+    JitOpRem( const jit_value& lhs , const jit_value& rhs ): JitOp(lhs,rhs) {}
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
       stream << "rem." 
 	     << jit_get_ptx_type( getDestType() );
       return stream;
     }
-    virtual double operator()(double f0, double f1) const { assert(!"strange that i'm here"); return 0.; }
-    virtual int operator()(int i0, int i1) const { return i0 % i1; }
   };
 
 
@@ -593,11 +538,9 @@ namespace QDP {
   class JitUnaryOp {
   protected:
     virtual std::ostream& writeToStream( std::ostream& stream ) const = 0;
-    int type;
+    jit_ptx_type type;
   public:
-    JitUnaryOp( int type_ ): type(type_) {}
-    virtual double operator()(double f0) const = 0;
-    virtual int operator()(int i0) const = 0;
+    JitUnaryOp( jit_ptx_type type_ ): type(type_) {}
     friend std::ostream& operator<< (std::ostream& stream, const JitUnaryOp& op) {
       return op.writeToStream(stream);
     }
@@ -605,19 +548,17 @@ namespace QDP {
 
   class JitUnaryOpNeg: public JitUnaryOp {
   public:
-    JitUnaryOpNeg( int type_ ): JitUnaryOp(type_) {}
+    JitUnaryOpNeg( jit_ptx_type type_ ): JitUnaryOp(type_) {}
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
       stream << "neg."
 	     << jit_get_ptx_type( type );
       return stream;
     }
-    virtual double operator()(double f0) const { return -f0; }
-    virtual int operator()(int i0) const { return -i0; }
   };
 
   class JitUnaryOpNot: public JitUnaryOp {
   public:
-    JitUnaryOpNot( int type_ ): JitUnaryOp(type_) {
+    JitUnaryOpNot( jit_ptx_type type_ ): JitUnaryOp(type_) {
       assert( type_ == jit_ptx_type::pred );
     }
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
@@ -625,25 +566,21 @@ namespace QDP {
 	     << jit_get_ptx_type( type );
       return stream;
     }
-    virtual double operator()(double f0) const { return -f0; }
-    virtual int operator()(int i0) const { return -i0; }
   };
 
   class JitUnaryOpAbs: public JitUnaryOp {
   public:
-    JitUnaryOpAbs( int type_ ): JitUnaryOp(type_) {}
+    JitUnaryOpAbs( jit_ptx_type type_ ): JitUnaryOp(type_) {}
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
       stream << "abs."
 	     << jit_get_ptx_type( type );
       return stream;
     }
-    virtual double operator()(double f0) const { return fabs(f0); }
-    virtual int operator()(int i0) const { return fabs(i0); }
   };
 
   class JitUnaryOpFloor: public JitUnaryOp {
   public:
-    JitUnaryOpFloor( int type_ ): JitUnaryOp(type_) {}
+    JitUnaryOpFloor( jit_ptx_type type_ ): JitUnaryOp(type_) {}
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
       stream << "cvt.rmi."
 	     << jit_get_ptx_type( type )
@@ -651,13 +588,11 @@ namespace QDP {
 	     << jit_get_ptx_type( type );
       return stream;
     }
-    virtual double operator()(double f0) const { return floor(f0); }
-    virtual int operator()(int i0) const { return floor(i0); }
   };
 
   class JitUnaryOpSqrt: public JitUnaryOp {
   public:
-    JitUnaryOpSqrt( int type_ ): JitUnaryOp(type_) {}
+    JitUnaryOpSqrt( jit_ptx_type type_ ): JitUnaryOp(type_) {}
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
       stream << "sqrt.";
       if ( DeviceParams::Instance().getMajor() >= 2 )
@@ -667,13 +602,11 @@ namespace QDP {
       stream << jit_get_ptx_type( type );
       return stream;
     }
-    virtual double operator()(double f0) const { return floor(f0); }
-    virtual int operator()(int i0) const { return floor(i0); }
   };
 
   class JitUnaryOpCeil: public JitUnaryOp {
   public:
-    JitUnaryOpCeil( int type_ ): JitUnaryOp(type_) {}
+    JitUnaryOpCeil( jit_ptx_type type_ ): JitUnaryOp(type_) {}
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
       stream << "cvt.rpi."
 	     << jit_get_ptx_type( type )
@@ -681,8 +614,6 @@ namespace QDP {
 	     << jit_get_ptx_type( type );
       return stream;
     }
-    virtual double operator()(double f0) const { return ceil(f0); }
-    virtual int operator()(int i0) const { return ceil(i0); }
   };
 
 

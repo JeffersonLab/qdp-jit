@@ -3,7 +3,7 @@
 namespace QDP 
 {
 
-
+#if 0
   template<>
   WordREG<double>::WordREG(int i) {
     val = jit_val_create_const_float( i );
@@ -141,7 +141,7 @@ namespace QDP
     }
     setup_m=true;
   }
-
+#endif
 
 
 
