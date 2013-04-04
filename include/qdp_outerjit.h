@@ -8,11 +8,8 @@ namespace QDP {
   class OLatticeJIT: public QDPTypeJIT<T, OLatticeJIT<T> >
   {
   public:
-    OLatticeJIT( jit_function_t f_, 
-		 jit_value_t base_,
-		 jit_value_t index_) : QDPTypeJIT<T, OLatticeJIT<T> >(f_,base_,index_) {}
-
-    OLatticeJIT(const OLatticeJIT& rhs) : QDPTypeJIT<T, OLatticeJIT<T> >(rhs) {}
+    OLatticeJIT( jit_value base_, jit_value index_) : QDPTypeJIT<T, OLatticeJIT<T> >(base_,index_) {}
+    OLatticeJIT( const OLatticeJIT& rhs ) : QDPTypeJIT<T, OLatticeJIT<T> >(rhs) {}
 
   private:
     void operator=(const OLatticeJIT& a);
@@ -26,11 +23,8 @@ namespace QDP {
   class OScalarJIT: public QDPTypeJIT<T, OScalarJIT<T> >
   {
   public:
-    OScalarJIT( jit_function_t f_, 
-		jit_value_t base_,
-		jit_value_t index_) : QDPTypeJIT<T, OScalarJIT<T> >(f_,base_,index_) {}
-    // OScalarJIT( jit_function_t f_, 
-    // 		jit_value_t base_ ) : QDPTypeJIT<T, OScalarJIT<T> >(f_,base_) {}
+    OScalarJIT( jit_value base_,
+		jit_value index_) : QDPTypeJIT<T, OScalarJIT<T> >(base_,index_) {}
 
     OScalarJIT(const OScalarJIT& rhs) : QDPTypeJIT<T, OScalarJIT<T> >(rhs) {}
 

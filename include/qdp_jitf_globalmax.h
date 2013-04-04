@@ -23,25 +23,25 @@ namespace QDP {
     CUfunction func;
 
     const char * fname = "ptx_global_max.ptx";
-    jit_function_t function = jit_create_function( fname );
+    jit_start_new_function( fname );
 
-    jit_value_t r_lo     = jit_add_param( function , jit_ptx_type::s32 );
-    jit_value_t r_hi     = jit_add_param( function , jit_ptx_type::s32 );
+    jit_value r_lo     = jit_add_param( jit_ptx_type::s32 );
+    jit_value r_hi     = jit_add_param( jit_ptx_type::s32 );
 
-    jit_value_t r_idx = jit_geom_get_linear_th_idx( function );  
+    jit_value r_idx = jit_geom_get_linear_th_idx();  
 
-    jit_value_t r_out_of_range       = jit_ins_ge( r_idx , r_hi );
-    jit_ins_exit( function , r_out_of_range );
+    jit_value r_out_of_range       = jit_ins_ge( r_idx , r_hi );
+    jit_ins_exit( r_out_of_range );
 
-    jit_value_t r_idata      = jit_add_param( function , jit_ptx_type::u64 );  // Input  array
-    jit_value_t r_odata      = jit_add_param( function , jit_ptx_type::u64 );  // output array
-    jit_value_t r_block_idx  = jit_geom_get_ctaidx( function );
-    jit_value_t r_tidx       = jit_geom_get_tidx( function );
-    jit_value_t r_shared     = jit_get_shared_mem_ptr( function );
+    jit_value r_idata      = jit_add_param( jit_ptx_type::u64 );  // Input  array
+    jit_value r_odata      = jit_add_param( jit_ptx_type::u64 );  // output array
+    jit_value r_block_idx  = jit_geom_get_ctaidx();
+    jit_value r_tidx       = jit_geom_get_tidx();
+    jit_value r_shared     = jit_get_shared_mem_ptr();
   
-    OLatticeJIT<typename JITType<T1>::Type_t> idata( function , r_idata , r_idx );       // want coal/scalar (templ. param)
-    OLatticeJIT<typename JITType<T1>::Type_t> odata( function , r_odata , r_block_idx ); // want scalar access later
-    OLatticeJIT<typename JITType<T1>::Type_t> sdata( function , r_shared , r_tidx );     // want scalar access later
+    OLatticeJIT<typename JITType<T1>::Type_t> idata( r_idata , r_idx );       // want coal/scalar (templ. param)
+    OLatticeJIT<typename JITType<T1>::Type_t> odata( r_odata , r_block_idx ); // want scalar access later
+    OLatticeJIT<typename JITType<T1>::Type_t> sdata( r_shared , r_tidx );     // want scalar access later
 
     // zero_rep() branch should be redundant
 
@@ -50,28 +50,28 @@ namespace QDP {
     idata_reg.setup( idata.elem( QDPTypeJITBase::Scalar ) );            // Scalar is fine, because it's a scalar data type
     sdata.elem( QDPTypeJITBase::Scalar ) = idata_reg;
 
-    jit_ins_bar_sync( function , 0 );
+    jit_ins_bar_sync( 0 );
 
-    jit_value_t val_ntid = jit_geom_get_ntidx(function);
+    jit_value val_ntid = jit_geom_get_ntidx();
 
     //
     // Find next power of 2 loop
     //
-    jit_value_t r_pred_pow = jit_val_create_from_const( function , jit_ptx_type::u32 , 1 );
+    jit_value r_pred_pow(1);
     jit_label_t label_power_end;
     jit_label_t label_power_start;
-    jit_ins_label( function , label_power_start );
+    jit_ins_label( label_power_start );
 
-    jit_value_t pred_ge = jit_ins_ge( r_pred_pow , val_ntid );
-    jit_ins_branch( function , label_power_end , pred_ge );
-    jit_value_t new_pred = jit_ins_shl( r_pred_pow , jit_val_create_const_int(1) );
-    jit_ins_mov_no_create( r_pred_pow , new_pred );
+    jit_value pred_ge = jit_ins_ge( r_pred_pow , val_ntid );
+    jit_ins_branch( label_power_end , pred_ge );
+    jit_value new_pred = jit_ins_shl( r_pred_pow , jit_value(1) );
+    jit_ins_mov( r_pred_pow , new_pred );
   
-    jit_ins_branch( function , label_power_start );
-    jit_ins_label( function , label_power_end );
+    jit_ins_branch( label_power_start );
+    jit_ins_label( label_power_end );
 
-    new_pred = jit_ins_shr( r_pred_pow , jit_val_create_const_int(1) );
-    jit_ins_mov_no_create( r_pred_pow , new_pred );
+    new_pred = jit_ins_shr( r_pred_pow , jit_value(1) );
+    jit_ins_mov( r_pred_pow , new_pred );
 
     //
     // Shared memory maximizing loop
@@ -79,19 +79,19 @@ namespace QDP {
     jit_label_t label_loop_start;
     jit_label_t label_loop_sync;
     jit_label_t label_loop_end;
-    jit_ins_label( function , label_loop_start );
+    jit_ins_label( label_loop_start );
 
-    jit_value_t pred_branch_end = jit_ins_le( r_pred_pow , jit_val_create_const_int(0) );
-    jit_ins_branch( function , label_loop_end , pred_branch_end );
+    jit_value pred_branch_end = jit_ins_le( r_pred_pow , jit_value(0) );
+    jit_ins_branch( label_loop_end , pred_branch_end );
 
-    jit_value_t pred_branch_sync = jit_ins_ge( jit_geom_get_tidx(function) , r_pred_pow );
-    jit_ins_branch( function , label_loop_sync , pred_branch_sync );
+    jit_value pred_branch_sync = jit_ins_ge( jit_geom_get_tidx() , r_pred_pow );
+    jit_ins_branch( label_loop_sync , pred_branch_sync );
 
-    jit_value_t val_s_plus_tid = jit_ins_add( r_pred_pow , jit_geom_get_tidx(function) );
-    jit_value_t pred_branch_sync2 = jit_ins_ge( val_s_plus_tid , jit_geom_get_ntidx(function) );
-    jit_ins_branch( function , label_loop_sync , pred_branch_sync2 );
+    jit_value val_s_plus_tid = jit_ins_add( r_pred_pow , jit_geom_get_tidx() );
+    jit_value pred_branch_sync2 = jit_ins_ge( val_s_plus_tid , jit_geom_get_ntidx() );
+    jit_ins_branch( label_loop_sync , pred_branch_sync2 );
 
-    OLatticeJIT<typename JITType<T1>::Type_t> sdata_plus_s( function , r_shared , 
+    OLatticeJIT<typename JITType<T1>::Type_t> sdata_plus_s( r_shared , 
 							    jit_ins_add( r_tidx , r_pred_pow ) );
 
     typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_plus_s_elem;   // this is stupid
@@ -102,28 +102,28 @@ namespace QDP {
 
     sdata.elem( QDPTypeJITBase::Scalar ) = where( sdata_reg > sdata_plus_s_elem , sdata_reg , sdata_plus_s_elem );
 
-    jit_ins_label( function , label_loop_sync );
-    jit_ins_bar_sync( function , 0 );
+    jit_ins_label( label_loop_sync );
+    jit_ins_bar_sync( 0 );
 
-    new_pred = jit_ins_shr( r_pred_pow , jit_val_create_const_int(1) );
-    jit_ins_mov_no_create( r_pred_pow , new_pred );
+    new_pred = jit_ins_shr( r_pred_pow , jit_value(1) );
+    jit_ins_mov( r_pred_pow , new_pred );
 
-    jit_ins_branch( function , label_loop_start );
+    jit_ins_branch( label_loop_start );
   
-    jit_ins_label( function , label_loop_end );  
+    jit_ins_label( label_loop_end );  
 
     jit_label_t label_exit;
-    jit_value_t pred_branch_exit = jit_ins_ne( jit_geom_get_tidx(function) , jit_val_create_const_int(0) );
-    jit_ins_branch( function , label_exit , pred_branch_exit );
+    jit_value pred_branch_exit = jit_ins_ne( jit_geom_get_tidx() , jit_value(0) );
+    jit_ins_branch( label_exit , pred_branch_exit );
 
     sdata_reg.setup( sdata.elem( QDPTypeJITBase::Scalar ) );
     odata.elem( QDPTypeJITBase::Scalar ) = sdata_reg;
 
-    jit_ins_label( function , label_exit );
+    jit_ins_label( label_exit );
 
 #if 1
     if (Layout::primaryNode())
-      function->write();
+      jit_function_write();
 #endif
 
     QMP_barrier();

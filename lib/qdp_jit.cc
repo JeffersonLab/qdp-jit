@@ -161,7 +161,7 @@ namespace QDP {
 
     std::map< jit_ptx_type , std::map<jit_ptx_type,const char *> > create_cvt_rnd_from_to()
     {
-      std::map< int , std::map<int,const char *> > map_cvt_rnd_from_to;
+      std::map< jit_ptx_type , std::map<jit_ptx_type,const char *> > map_cvt_rnd_from_to;
       map_cvt_rnd_from_to[jit_ptx_type::s32][jit_ptx_type::f32] = "rn.";
       map_cvt_rnd_from_to[jit_ptx_type::u32][jit_ptx_type::f32] = "rn.";
       map_cvt_rnd_from_to[jit_ptx_type::s32][jit_ptx_type::f64] = "rn.";
@@ -176,7 +176,7 @@ namespace QDP {
 
     std::map< jit_ptx_type , std::map<jit_ptx_type,jit_ptx_type> > create_promote()
     {
-      std::map< int , std::map<int,int> > map_promote;
+      std::map< jit_ptx_type , std::map<jit_ptx_type,jit_ptx_type> > map_promote;
       map_promote[jit_ptx_type::u32][jit_ptx_type::u16] = jit_ptx_type::u32;
       map_promote[jit_ptx_type::u16][jit_ptx_type::u32] = jit_ptx_type::u32;
       map_promote[jit_ptx_type::s32][jit_ptx_type::u32] = jit_ptx_type::s32;
@@ -303,7 +303,7 @@ namespace QDP {
     return PTX::jit_identifier_local_memory;
   }
 
-  const char * jit_get_map_cvt_rnd_from_to(int from,int to) {
+  const char * jit_get_map_cvt_rnd_from_to(jit_ptx_type from,jit_ptx_type to) {
     static const char * nullstr = "";
     if (!PTX::map_cvt_rnd_from_to.count(from))
       return nullstr;
@@ -329,7 +329,7 @@ namespace QDP {
       std::cout << "promote: " << jit_get_ptx_type(t0) << " " << jit_get_ptx_type(t1) << "\n";
     assert( PTX::map_promote.at(t0).count(t1) > 0 );
     jit_ptx_type ret = PTX::map_promote.at(t0).at(t1);
-    assert((ret >= 0) && (ret < jit_number_of_types()));
+    //assert((ret >= 0) && (ret < jit_number_of_types()));
     //std::cout << "         ->  " << PTX::ptx_type_matrix.at( ret )[0] << "\n";
     return ret;
   }
@@ -348,6 +348,22 @@ namespace QDP {
   jit_value::jit_value( int val ): ever_assigned(true), mem_state(state_default), type(jit_ptx_type::s32) {
     reg_alloc();
     std::ostringstream oss; oss << val;
+    jit_ins_mov( *this , oss.str() );
+  }
+
+  jit_value::jit_value( size_t val ): ever_assigned(true), mem_state(state_default), type(jit_ptx_type::s32) {
+    reg_alloc();
+    std::ostringstream oss; oss << val;
+    jit_ins_mov( *this , oss.str() );
+  }
+
+  jit_value::jit_value( double val ): ever_assigned(true), mem_state(state_default) {
+    jit_ptx_type type1 = jit_type<REAL>::value;
+    reg_alloc();
+    std::ostringstream oss; 
+    oss.setf(ios::scientific);
+    oss.precision(std::numeric_limits<double>::digits10 + 1);
+    oss << val;
     jit_ins_mov( *this , oss.str() );
   }
 
@@ -370,22 +386,26 @@ namespace QDP {
   }
 
   const char * jit_get_ptx_type( jit_ptx_type type ) {
-    assert((type >= 0) && (type < PTX::ptx_type_matrix.size()));
+    //assert((type >= 0) && (type < PTX::ptx_type_matrix.size()));
+    assert( PTX::ptx_type_matrix.count(type) > 0 );
     return PTX::ptx_type_matrix.at(type)[0];
   }
 
   const char * jit_get_ptx_letter( jit_ptx_type type ) {
-    assert((type >= 0) && (type < PTX::ptx_type_matrix.size()));
-    return PTX::ptx_type_matrix.at(type)[1];
+    //assert((type >= 0) && (type < PTX::ptx_type_matrix.size()));
+    assert( PTX::ptx_type_matrix.count(type) > 0 );
+    return  PTX::ptx_type_matrix.at(type)[1];
   }
 
   const char * jit_get_mul_specifier_lo_str( jit_ptx_type type ) {
-    assert((type >= 0) && (type < PTX::ptx_type_matrix.size()));
+    //assert((type >= 0) && (type < PTX::ptx_type_matrix.size()));
+    assert( PTX::ptx_type_matrix.count(type) > 0 );
     return PTX::ptx_type_matrix.at(type)[2];
   }
 
   const char * jit_get_div_specifier( jit_ptx_type type ) {
-    assert((type >= 0) && (type < PTX::ptx_type_matrix.size()));
+    //assert((type >= 0) && (type < PTX::ptx_type_matrix.size()));
+    assert( PTX::ptx_type_matrix.count(type) > 0 );
     return PTX::ptx_type_matrix.at(type)[3];
   }
 
@@ -414,7 +434,6 @@ namespace QDP {
 
 
   int jit_function::reg_alloc( jit_ptx_type type ) {
-    assert((type >= 0) && (type < jit_number_of_types() ));
     return reg_count[type]++;
   }
 
@@ -434,21 +453,38 @@ namespace QDP {
 
 void jit_function::write_reg_defs()
 {
-  int i=0;
-  for (auto& x: reg_count) {
-    if (x>0) {
-      oss_reg_defs << ".reg ." << jit_get_ptx_type(i) << " " << jit_get_ptx_letter(i) << "<" << x << ">;\n";
+  for( RegCountMap::const_iterator it = reg_count.begin(); it != reg_count.end(); ++it )
+    {
+      jit_ptx_type type = it->first;
+      int count = it->second;
+      oss_reg_defs << ".reg ." 
+		   << jit_get_ptx_type(type) 
+		   << " " 
+		   << jit_get_ptx_letter(type) 
+		   << "<" 
+		   << count
+		   << ">;\n";
     }
-    i++;
-  }
-  i=0;
-  for (auto& x: vec_local_count) {
-    oss_reg_defs << ".local ." 
-		 << jit_get_ptx_type( x.first ) << " " 
-		 << jit_get_identifier_local_memory() << i 
-		 << "[" << x.second << "];\n";
-    i++;
-  }
+
+  // for (auto& x: ) {
+  //   if (x>0) {
+  //     oss_reg_defs << ".reg ." << jit_get_ptx_type(x.first) << " " << jit_get_ptx_letter(x.first) << "<" << x << ">;\n";
+  //     //oss_reg_defs << ".reg ." << jit_get_ptx_type(i) << " " << jit_get_ptx_letter(i) << "<" << x << ">;\n";
+  //   }
+  //   i++;
+  // }
+
+  int i=0;
+  for( LocalCountVec::const_iterator it = vec_local_count.begin(); it != vec_local_count.end(); ++it ) 
+    {
+      jit_ptx_type type = it->first;
+      int count = it->second;
+      oss_reg_defs << ".local ." 
+		   << jit_get_ptx_type( type ) << " " 
+		   << jit_get_identifier_local_memory() << i 
+		   << "[" << count << "];\n";
+      i++;
+    }
 }
 
 
@@ -530,7 +566,6 @@ void jit_function::write_reg_defs()
 
 
   int jit_function::local_alloc( jit_ptx_type type, int count ) {
-    assert((type >= 0) && (type < jit_number_of_types() ));
     assert(count>0);
     int ret =  vec_local_count.size();
     vec_local_count.push_back( std::make_pair(type,count) );
@@ -566,13 +601,16 @@ void jit_function::write_reg_defs()
   }
 
 
+  void jit_function_write() {
+    jit_get_function()->write();
+  }
 
-  jit_function_t jit_create_function(const char * fname_) {
+  jit_create_function(const char * fname_) {
     //std::cout << "Creating jit function\n";
     if (jit_internal_function)
-      QDP_info_primary("Creating new jit function even there is an old one (use_count = %d), hope it works!",(int)jit_internal_function.use_count());
+      QDP_info_primary("Creating new jit function even there is an old one (use_count = %d), hope it works!",
+		       (int)jit_internal_function.use_count());
     jit_internal_function = make_shared<jit_function>( fname_ );
-    return jit_get_function();
   }
 
 
@@ -732,9 +770,9 @@ void jit_function::write_reg_defs()
   // 		      << val->get_name() << ";\n";
   //   } else {
   //     if ( type == jit_ptx_type::pred ) {
-  // 	ret = get<jit_value_reg>(jit_ins_ne( val , jit_val_create_const_int(0) , pred ));
+  // 	ret = get<jit_value_reg>(jit_ins_ne( val , jit_value(0) , pred ));
   //     } else if ( val.get_type() == jit_ptx_type::pred ) {
-  // 	jit_value ret_s32 = jit_ins_selp( jit_val_create_const_int(1) , jit_val_create_const_int(0) , val );
+  // 	jit_value ret_s32 = jit_ins_selp( jit_value(1) , jit_value(0) , val );
   // 	if (type != jit_ptx_type::s32)
   // 	  return jit_val_create_convert( jit_ptx_type::s32 , ret_s32 , pred );
   // 	else
@@ -766,7 +804,7 @@ void jit_function::write_reg_defs()
   //     {
   // 	if (jit_value_const_int_t val_const_int = get<jit_value_const_int>(val_const)) 
   // 	  {
-  // 	    return jit_val_create_const_int( val_const_int->getValue()  );
+  // 	    return jit_value( val_const_int->getValue()  );
   // 	  } 
   // 	if (jit_value_const_float_t val_const_float = get<jit_value_const_float>(val_const)) 
   // 	  {
@@ -786,7 +824,7 @@ void jit_function::write_reg_defs()
   // }
 
 
-  // jit_value_const_t jit_val_create_const_int( int val ) {
+  // jit_value_const_t jit_value( int val ) {
   //   return std::make_shared< jit_value_const_int >(val);
   // }
 
@@ -840,8 +878,8 @@ void jit_function::write_reg_defs()
       assert( lhs.get_type() == jit_ptx_type::pred );
       assert( rhs.get_type() == jit_ptx_type::pred );
       typebase = jit_ptx_type::u32;
-      lhs = jit_ins_selp( func , jit_val_create_const_int(1) , jit_val_create_const_int(0) , lhs );
-      rhs = jit_ins_selp( func , jit_val_create_const_int(1) , jit_val_create_const_int(0) , rhs );
+      lhs = jit_ins_selp( func , jit_value(1) , jit_value(0) , lhs );
+      rhs = jit_ins_selp( func , jit_value(1) , jit_value(0) , rhs );
     }
 
     std::ostringstream instr;
@@ -1187,7 +1225,7 @@ void jit_function::write_reg_defs()
     int type_orig = -1;
     jit_ptx_type load_type;
 
-    type == jit_ptx_type::pred ? load_type = jit_ptx_type::u8 : type;
+    load_type = type == jit_ptx_type::pred ? jit_ptx_type::u8 : type;
 
     jit_value loaded( load_type );
     jit_get_function()->get_prg() << jit_predicate(pred)

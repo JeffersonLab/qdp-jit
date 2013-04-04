@@ -12,16 +12,16 @@ namespace QDP {
     CUfunction func;
 
     const char * fname = "ptx_copymask.ptx";
-    jit_function_t function = jit_create_function( fname );
+    jit_start_new_function( fname );
 
 
-  jit_value_t r_lo           = jit_add_param( function , jit_ptx_type::s32 );
-  jit_value_t r_hi           = jit_add_param( function , jit_ptx_type::s32 );
-  jit_value_t r_idx          = jit_geom_get_linear_th_idx( function );  
-  jit_value_t r_out_of_range = jit_ins_ge( r_idx , r_hi );
-  jit_ins_exit( function , r_out_of_range );
+  jit_value r_lo           = jit_add_param( jit_ptx_type::s32 );
+  jit_value r_hi           = jit_add_param( jit_ptx_type::s32 );
+  jit_value r_idx          = jit_geom_get_linear_th_idx();  
+  jit_value r_out_of_range = jit_ins_ge( r_idx , r_hi );
+  jit_ins_exit( r_out_of_range );
 
-  ParamLeaf param_leaf( function , r_idx );
+  ParamLeaf param_leaf( r_idx );
 
 
 
@@ -44,7 +44,7 @@ namespace QDP {
 
 #if 1
     if (Layout::primaryNode())
-      function->write();
+      jit_function_write();
 #endif
       
     QMP_barrier();

@@ -234,18 +234,18 @@ struct UnaryReturn<PColorVectorREG<T,N>, FnPeekColorVectorREG > {
 
 template<class T, int N>
 inline typename UnaryReturn<PColorVectorREG<T,N>, FnPeekColorVectorREG >::Type_t
-peekColor(const PColorVectorREG<T,N>& l, jit_value_t row)
+peekColor(const PColorVectorREG<T,N>& l, jit_value row)
 {
   typename UnaryReturn<PColorVectorREG<T,N>, FnPeekColorVectorREG >::Type_t  d;
 
   typedef typename JITType< PColorVectorREG<T,N> >::Type_t TTjit;
 
-  jit_value_t ptr_local = jit_allocate_local( getFunc(l), 
+  jit_value ptr_local = jit_allocate_local( getFunc(l), 
 					      jit_type<typename WordType<T>::Type_t>::value , 
 					      TTjit::Size_t );
 
   TTjit dj;
-  dj.setup( getFunc(l) , ptr_local, jit_val_create_const_int(1) , jit_val_create_const_int(0) );
+  dj.setup( getFunc(l) , ptr_local, jit_value(1) , jit_value(0) );
   dj=l;
 
   d.elem() = dj.getRegElem(row);

@@ -20,70 +20,66 @@ namespace QDP {
     typedef C Container_t;
 
 
-    QDPTypeJIT( jit_function_t func_ , 
-		jit_value_t base_ ,
-		jit_value_t index_ ): func_m(func_), base_m(base_), index_m(index_) {
+    QDPTypeJIT( jit_value base_ ,
+		jit_value index_ ): base_m(base_), index_m(index_) {
       //std::cout << "QDPTypeJIT 3er ctor\n";
-      assert(func_m);
-      assert(base_m);
-      assert(index_m);
     }
 
     // QDPTypeJIT( jit_function_t func_ , 
-    // 		jit_value_t base_ ): func_m(func_), base_m(base_) {
+    // 		jit_value base_ ): func_m(func_), base_m(base_) {
     //   //std::cout << "QDPTypeJIT 2er ctor\n";
     //   assert(func_m);
     //   assert(base_m);
     // }
 
-    QDPTypeJIT(const QDPTypeJIT& a) : func_m(a.func_m), base_m(a.base_m), index_m(a.index_m) { }
+    QDPTypeJIT(const QDPTypeJIT& a) : base_m(a.base_m), index_m(a.index_m) { }
 
     ~QDPTypeJIT(){}
 
 
-    jit_value_t getThreadedBase( DeviceLayout lay ) const {
+    jit_value getThreadedBase( DeviceLayout lay ) const {
 
       assert(index_m);
       assert(base_m);
 
-      jit_value_t wordsize = jit_val_create_const_int( sizeof(typename WordType<T>::Type_t) );
-      jit_value_t ret0 = jit_ins_mul( index_m , wordsize );
+      jit_value wordsize = jit_value( sizeof(typename WordType<T>::Type_t) );
+      jit_value ret0 = jit_ins_mul( index_m , wordsize );
       if (lay != DeviceLayout::Coalesced) {
-	jit_value_t tsize = jit_val_create_const_int( T::Size_t );
-	jit_value_t ret1 = jit_ins_mul( ret0 , tsize );
-	jit_value_t ret2 = jit_ins_add( ret1 , base_m );
+	jit_value tsize = jit_value( T::Size_t );
+	jit_value ret1 = jit_ins_mul( ret0 , tsize );
+	jit_value ret2 = jit_ins_add( ret1 , base_m );
 	return ret2;
       }
-      jit_value_t ret1 = jit_ins_add( ret0 , base_m );
+      jit_value ret1 = jit_ins_add( ret0 , base_m );
       return ret1;
     }
 
 
-    jit_value_t getInnerSites(DeviceLayout lay) const {
+    jit_value getInnerSites(DeviceLayout lay) const {
       if (lay == DeviceLayout::Coalesced)
-	return jit_val_create_const_int(Layout::sitesOnNode());
+	return jit_value(Layout::sitesOnNode());
       else 
-	return jit_val_create_const_int(1);
+	return jit_value(1);
     }
 
 
     T& elem(DeviceLayout lay) {
-      F.setup(func_m,getThreadedBase(lay),getInnerSites(lay),jit_val_create_const_int(0));
+      F.setup(getThreadedBase(lay),getInnerSites(lay),jit_value(0));
       return F;
     }
 
     const T& elem(DeviceLayout lay) const {
-      F.setup(func_m,getThreadedBase(lay),getInnerSites(lay),jit_val_create_const_int(0));
+      F.setup(getThreadedBase(lay),getInnerSites(lay),jit_value(0));
       return F;
     }
 
     T& elem() {
-      F.setup(func_m,getThreadedBase(DeviceLayout::Scalar),jit_val_create_const_int(1),jit_val_create_const_int(0));
+      F.setup(getThreadedBase(DeviceLayout::Scalar),jit_value(1),jit_value(0));
       return F;
     }
 
     const T& elem() const {
-      F.setup(func_m,getThreadedBase(DeviceLayout::Scalar),jit_val_create_const_int(1),jit_val_create_const_int(0));
+      F.setup(getThreadedBase(DeviceLayout::Scalar),jit_value(1),jit_value(0));
       return F;
     }
 
@@ -93,9 +89,8 @@ namespace QDP {
 
 
   private:
-    jit_function_t func_m;
-    jit_value_t    base_m;
-    jit_value_t    index_m;
+    jit_value    base_m;
+    jit_value    index_m;
     mutable T F;
 
 

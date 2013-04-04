@@ -467,11 +467,10 @@ struct LeafFunctor<QDPType<T,OLattice<T> >, ParamLeaf>
   typedef TypeA_t  Type_t;
   inline static Type_t apply(const QDPType<T,OLattice<T> > &a, const ParamLeaf& p)
   {
-    jit_value_t    base_addr = jit_add_param( p.getFunc() , jit_ptx_type::u64 );
-    jit_value_t    index     = p.getRegIdx();
-    jit_function_t function  = p.getFunc();
+    jit_value    base_addr = jit_add_param( jit_ptx_type::u64 );
+    jit_value    index     = p.getRegIdx();
     //cout << "QDPTypeOLat ParamLeaf 3er\n";
-    return Type_t( function , base_addr , index );
+    return Type_t( base_addr , index );
   }
 };
 
@@ -483,10 +482,9 @@ struct LeafFunctor<QDPType<T,OScalar<T> >, ParamLeaf>
   typedef TypeA_t  Type_t;
   inline static Type_t apply(const QDPType<T,OScalar<T> > &a, const ParamLeaf& p)
   {
-    jit_value_t    base_addr = jit_add_param( p.getFunc() , jit_ptx_type::u64 );
-    jit_function_t function  = p.getFunc();
+    jit_value    base_addr = jit_add_param( jit_ptx_type::u64 );
     //cout << "QDPTypeOScalar ParamLeaf 2er\n";
-    return Type_t( function , base_addr , jit_val_create_const_int(0) );
+    return Type_t( base_addr , jit_value(0) );
   }
 };
 

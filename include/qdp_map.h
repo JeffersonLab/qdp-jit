@@ -194,15 +194,14 @@ public:
 struct FnMapJIT
 {
 public:
-  jit_function_t func;
   IndexRet index;
   const Map& map;
   std::shared_ptr<RsrcWrapper> pRsrc;
   //QDPHandle::Handle<RsrcWrapper> pRsrc;
 
-  FnMapJIT(const FnMap& fnmap,const IndexRet& i,jit_function_t f): 
-    map(fnmap.map), pRsrc(fnmap.pRsrc), index(i), func(f) {}
-  FnMapJIT(const FnMapJIT& f) : map(f.map) , pRsrc(f.pRsrc), index(f.index), func(f.func) {}
+  FnMapJIT(const FnMap& fnmap,const IndexRet& i): 
+    map(fnmap.map), pRsrc(fnmap.pRsrc), index(i) {}
+  FnMapJIT(const FnMapJIT& f) : map(f.map) , pRsrc(f.pRsrc), index(f.index) {}
 
 public:
   template<class T>
@@ -241,26 +240,26 @@ struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
       const Map& map = expr.operation().map;
       FnMap& fnmap = const_cast<FnMap&>(expr.operation());
 
-      jit_value_t index_x_4         = jit_ins_mul( p.getRegIdx() , jit_val_create_const_int(4) );
-      jit_ins_comment( p.getFunc() , "MAP INDEX" );
-      jit_value_t idx_array_address = jit_add_param( p.getFunc() , jit_ptx_type::u64 );
-      jit_value_t idx_array_adr_off = jit_ins_add( idx_array_address , index_x_4 );
-      jit_value_t new_index_local   = jit_ins_load ( idx_array_adr_off , 0 , jit_ptx_type::s32 );
+      jit_value index_x_4         = jit_ins_mul( p.getRegIdx() , jit_value(4) );
+      jit_ins_comment( "MAP INDEX" );
+      jit_value idx_array_address = jit_add_param( jit_ptx_type::u64 );
+      jit_value idx_array_adr_off = jit_ins_add( idx_array_address , index_x_4 );
+      jit_value new_index_local   = jit_ins_load ( idx_array_adr_off , 0 , jit_ptx_type::s32 );
 
-      jit_value_t pred_lt0          = jit_ins_lt( new_index_local , jit_val_create_const_int(0) );
+      jit_value pred_lt0          = jit_ins_lt( new_index_local , jit_value(0) );
 
-      jit_value_t new_index_tmp     = jit_ins_neg ( new_index_local , pred_lt0 );
-      jit_value_t new_index_buffer  = jit_ins_sub ( new_index_tmp , jit_val_create_const_int(1) , pred_lt0 );
+      jit_value new_index_tmp     = jit_ins_neg ( new_index_local , pred_lt0 );
+      jit_value new_index_buffer  = jit_ins_sub ( new_index_tmp , jit_value(1) , pred_lt0 );
 
       IndexRet index_pack;
       index_pack.r_newidx_local  = new_index_local;
       index_pack.r_newidx_buffer = new_index_buffer;
       index_pack.r_pred_in_buf   = pred_lt0;
-      jit_ins_comment( p.getFunc() , "RECEIVE BUFFER" );
-      index_pack.r_rcvbuf        = jit_add_param( p.getFunc() , jit_ptx_type::u64 );
+      jit_ins_comment( "RECEIVE BUFFER" );
+      index_pack.r_rcvbuf        = jit_add_param( jit_ptx_type::u64 );
       
-      ParamLeaf pp( p.getFunc() , new_index_local );
-      return Type_t( FnMapJIT( expr.operation() , index_pack , p.getFunc() ) , 
+      ParamLeaf pp( new_index_local );
+      return Type_t( FnMapJIT( expr.operation() , index_pack ) , 
 		     ForEach< A, ParamLeaf, TreeCombine >::apply( expr.child() , pp , c ) );
     }
   };
@@ -286,30 +285,28 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
 
       IndexRet index = expr.operation().index;
 
-      jit_function_t func = expr.operation().func;
-
       jit_label_t label_in_buffer;
       jit_label_t label_in_exit;
 
       Type_t ret;
 
-      jit_ins_branch( func , label_in_buffer , index.r_pred_in_buf );
+      jit_ins_branch( label_in_buffer , index.r_pred_in_buf );
 
       ret = Combine1<TypeA_t, 
 		     FnMapJIT , 
 		     OpCombine>::combine(ForEach<A, ViewLeaf, OpCombine>::apply(expr.child(), v, o) , 
 					 expr.operation(), o);
 
-      jit_ins_branch( func , label_in_exit );
-      jit_ins_label( func , label_in_buffer );
+      jit_ins_branch( label_in_exit );
+      jit_ins_label( label_in_buffer );
 
-      OLatticeJIT< typename JITType<Type_t>::Type_t > lattice_recv( func , index.r_rcvbuf , index.r_newidx_buffer );
+      OLatticeJIT< typename JITType<Type_t>::Type_t > lattice_recv( index.r_rcvbuf , index.r_newidx_buffer );
 
       Type_t ret_new;
       ret_new.setup( lattice_recv.elem( QDPTypeJITBase::Scalar ) );
       ret.replace(ret_new);
 
-      jit_ins_label( func , label_in_exit );
+      jit_ins_label( label_in_exit );
 
       return ret;
     }

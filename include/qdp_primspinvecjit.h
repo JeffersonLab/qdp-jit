@@ -448,7 +448,7 @@ getSite(const PSpinVectorJIT<T,N>& s1, int innersite)
 /*! Generically, this is an identity operation. Defined differently under color */
 template<class T1, class T2, int N>
 inline typename UnaryReturn<PSpinVectorJIT<T1,N>, FnPokeColorVectorREG >::Type_t&
-pokeColor(PSpinVectorJIT<T1,N>& l, const PSpinVectorREG<T2,N>& r, jit_value_t row)
+pokeColor(PSpinVectorJIT<T1,N>& l, const PSpinVectorREG<T2,N>& r, jit_value row)
 {
   typedef typename UnaryReturn<PSpinVectorJIT<T1,N>, FnPokeColorVectorREG >::Type_t  Return_t;
 
@@ -952,7 +952,7 @@ struct UnaryReturn<PSpinVectorJIT<T,N>, FnSpinReconstructDir3Minus > {
 
 template<class T1, class T2, int N>
 inline PSpinVectorJIT<T1,N>&
-pokeSpin(PSpinVectorJIT<T1,N>& l, const PScalarREG<T2>& r, jit_value_t row)
+pokeSpin(PSpinVectorJIT<T1,N>& l, const PScalarREG<T2>& r, jit_value row)
 {
   l.getJitElem(row) = r.elem();
   return l;

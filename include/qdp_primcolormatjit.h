@@ -534,7 +534,7 @@ outerProduct(const PColorVectorJIT<T1,N>& l, const PColorVectorJIT<T2,N>& r)
 
 template<class T1, class T2, int N>
 inline PColorMatrixJIT<T1,N>&
-pokeColor(PColorMatrixJIT<T1,N>& l, const PScalarREG<T2>& r, jit_value_t row, jit_value_t col)
+pokeColor(PColorMatrixJIT<T1,N>& l, const PScalarREG<T2>& r, jit_value row, jit_value col)
 {
   l.getJitElem(row,col) = r.elem();
   return l;

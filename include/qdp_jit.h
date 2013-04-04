@@ -16,16 +16,39 @@ namespace QDP {
 
   
 
-  enum jit_ptx_type { f32=0,f64=1,u16=2,u32=3,u64=4,s16=5,s32=6,s64=7,u8=8,b16=9,b32=10,b64=11,pred=12 };
+  //enum jit_ptx_type { f32=0,f64=1,u16=2,u32=3,u64=4,s16=5,s32=6,s64=7,u8=8,b16=9,b32=10,b64=11,pred=12 };
+  enum class jit_ptx_type { 
+    f32,
+      f64,
+      u16,
+      u32,
+      u64,
+      s16,
+      s32,
+      s64,
+      u8,
+      b16,
+      b32,
+      b64,
+      pred 
+      };
+
+  enum class state_space { 
+    state_default , 
+      state_global , 
+      state_local , 
+      state_shared 
+      };
+    
 
   //
   // MATCHING C TYPES TO PTX TYPES
   //
   template<class T> struct jit_type {};
-  template<> struct jit_type<float>            { enum { value = jit_ptx_type::f32 }; };
-  template<> struct jit_type<double>           { enum { value = jit_ptx_type::f64 }; };
-  template<> struct jit_type<int>              { enum { value = jit_ptx_type::s32 }; };
-  template<> struct jit_type<bool>             { enum { value = jit_ptx_type::pred }; };
+  template<> struct jit_type<float>            { static constexpr jit_ptx_type value = jit_ptx_type::f32; };
+  template<> struct jit_type<double>           { static constexpr jit_ptx_type value = jit_ptx_type::f64; };
+  template<> struct jit_type<int>              { static constexpr jit_ptx_type value = jit_ptx_type::s32; };
+  template<> struct jit_type<bool>             { static constexpr jit_ptx_type value = jit_ptx_type::pred; };
 
 
 
@@ -51,17 +74,17 @@ namespace QDP {
   }
 
 
-  const char * jit_get_ptx_type( int type );
-  const char * jit_get_ptx_letter( int type );
-  const char * jit_get_mul_specifier_lo_str( int type );
-  const char * jit_get_div_specifier( int type );
+  const char * jit_get_ptx_type( jit_ptx_type type );
+  const char * jit_get_ptx_letter( jit_ptx_type type );
+  const char * jit_get_mul_specifier_lo_str( jit_ptx_type type );
+  const char * jit_get_div_specifier( jit_ptx_type type );
   const char * jit_get_identifier_local_memory();
 
   namespace PTX {
-    std::map< int , std::array<const char*,4> > create_ptx_type_matrix(int cc);
-    extern std::map< int , std::array<const char*,4> > ptx_type_matrix;
-    extern const std::map< int , std::map<int,int> > map_promote;
-    extern const std::map< int , int >               map_wide_promote;
+    std::map< jit_ptx_type , std::array<const char*,4> > create_ptx_type_matrix(int cc);
+    extern std::map< jit_ptx_type , std::array<const char*,4> > ptx_type_matrix;
+    extern const std::map< jit_ptx_type , std::map<jit_ptx_type,jit_ptx_type> > map_promote;
+    extern const std::map< jit_ptx_type , jit_ptx_type >               map_wide_promote;
   }
 
 
@@ -72,8 +95,10 @@ namespace QDP {
     std::ostringstream oss_prg;
     std::ostringstream oss_signature;
     std::ostringstream oss_reg_defs;
-    std::map<jit_ptx_type,int> reg_count;
-    std::vector<std::pair<jit_ptx_type,int> > vec_local_count;     // pair = (type,count)
+    typedef std::map<jit_ptx_type,int> RegCountMap;
+    RegCountMap reg_count;
+    typedef std::vector<std::pair<jit_ptx_type,int> > LocalCountVec;
+    LocalCountVec vec_local_count;
     int param_count;
     int local_count;
     bool m_shared;
@@ -89,7 +114,7 @@ namespace QDP {
       m_include_math_ptx_binary.at(i) = true; 
     }
     void emitShared();
-    int local_alloc( int type, int count );
+    int local_alloc( jit_ptx_type type, int count );
     void write_reg_defs();
     void write();
     int get_param_count();
@@ -102,9 +127,9 @@ namespace QDP {
 
   extern jit_function_t jit_internal_function;
 
-  jit_function_t jit_create_function(const char * fname_);
+  void jit_start_new_function(const char * fname_);
   jit_function_t jit_get_function();
-
+  void jit_function_write();
 
 
   // class jit_function_singleton
@@ -134,11 +159,12 @@ namespace QDP {
 
   class jit_value {
   public:
-    enum StateSpace { state_default=0 , state_global=1 , state_local=2 , state_shared=3 };
-    
+    jit_value( const jit_value& rhs );
+
     explicit jit_value( jit_ptx_type type_ );
-    explicit jit_value( const jit_value& rhs );
     explicit jit_value( int val );
+    explicit jit_value( size_t val );
+    explicit jit_value( double val );
 
     // jit_value( double val )
     
@@ -216,7 +242,7 @@ namespace QDP {
   // jit_value_reg_t jit_val_create_from_const( int type , int const_val , jit_value pred=jit_value() );
   // jit_value_reg_t jit_val_create_convert( int type , jit_value val , jit_value pred=jit_value() );
   // jit_value jit_val_create_copy( jit_value val , jit_value pred=jit_value() );
-  // jit_value_const_t jit_val_create_const_int( int val );
+  // jit_value_const_t jit_value( int val );
   // jit_value_const_t jit_val_create_const_float( double val );
 
   //jit_function_t getFunc(jit_value val);
@@ -309,8 +335,8 @@ namespace QDP {
   void jit_ins_comment(  const char * comment );
   void jit_ins_exit( const jit_value& pred=jit_value(jit_ptx_type::pred) );
 
-  jit_value jit_ins_load ( const jit_value& base , int offset , int type , const jit_value& pred=jit_value(jit_ptx_type::pred) );
-  void        jit_ins_store( const jit_value& base , int offset , int type , const jit_value& val , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  jit_value jit_ins_load ( const jit_value& base , int offset , jit_ptx_type type , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+  void        jit_ins_store( const jit_value& base , int offset , jit_ptx_type type , const jit_value& val , const jit_value& pred=jit_value(jit_ptx_type::pred) );
 
   jit_value jit_geom_get_linear_th_idx();
 

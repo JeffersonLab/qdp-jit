@@ -19,38 +19,36 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   CUfunction func;
 
   const char * fname = "ptx_eval.ptx";
-  jit_function_t function = jit_create_function( fname );
+  jit_start_new_function( fname );
 
   //function.setPrettyFunction(__PRETTY_FUNCTION__);
 
-  jit_value_t r_lo     = jit_add_param( function , jit_ptx_type::s32 );
-  jit_value_t r_hi     = jit_add_param( function , jit_ptx_type::s32 );
+  jit_value r_lo     = jit_add_param(  jit_ptx_type::s32 );
+  jit_value r_hi     = jit_add_param(  jit_ptx_type::s32 );
 
-  jit_value_t r_idx = jit_geom_get_linear_th_idx( function );  
+  jit_value r_idx = jit_geom_get_linear_th_idx();  
 
-  jit_value_t r_out_of_range       = jit_ins_ge( r_idx , r_hi );
-  jit_ins_exit( function , r_out_of_range );
-
-
-  jit_value_t r_do_site_perm         = jit_add_param( function , jit_ptx_type::s32 ); // Site permutation?, for inner sites
-  jit_value_t r_do_site_perm_pred    = jit_ins_ne( r_do_site_perm , jit_val_create_const_int(0) );
-  jit_value_t r_perm_array_addr      = jit_add_param( function , jit_ptx_type::u64 );  // Site permutation array
-  jit_value_t r_idx_mul_4            = jit_ins_mul( r_idx , jit_val_create_const_int(4)  , r_do_site_perm_pred);
-  jit_value_t r_perm_array_addr_load = jit_ins_add( r_perm_array_addr , r_idx_mul_4      , r_do_site_perm_pred);
-  jit_value_t r_idx_perm             = jit_ins_load ( r_perm_array_addr_load , 0 , jit_ptx_type::s32 , r_do_site_perm_pred);
-  jit_ins_mov_no_create( r_idx , r_idx_perm                                              , r_do_site_perm_pred);
+  jit_value r_out_of_range       = jit_ins_ge( r_idx , r_hi );
+  jit_ins_exit(  r_out_of_range );
 
 
-  jit_value_t r_member = jit_add_param( function , jit_ptx_type::u64 );  // Subset
-  jit_value_t r_member_addr        = jit_ins_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
-  jit_value_t r_ismember_u8        = jit_ins_load ( r_member_addr , 0 , jit_ptx_type::u8 );
-  jit_value_t r_ismember_u32       = jit_val_create_convert( function , jit_ptx_type::u32 , r_ismember_u8 );
-  jit_value_t r_ismember_pred_addr = jit_ins_eq( r_ismember_u32 , jit_val_create_const_int(0) );
-  jit_ins_exit( function , r_ismember_pred_addr );
+  jit_value r_do_site_perm         = jit_add_param(  jit_ptx_type::s32 ); // Site permutation?, for inner sites
+  jit_value r_do_site_perm_pred    = jit_ins_ne( r_do_site_perm , jit_value(0) );
+  jit_value r_perm_array_addr      = jit_add_param(  jit_ptx_type::u64 );  // Site permutation array
+  jit_value r_idx_mul_4            = jit_ins_mul( r_idx , jit_value(4)  , r_do_site_perm_pred);
+  jit_value r_perm_array_addr_load = jit_ins_add( r_perm_array_addr , r_idx_mul_4      , r_do_site_perm_pred);
+  jit_value r_idx_perm             = jit_ins_load ( r_perm_array_addr_load , 0 , jit_ptx_type::s32 , r_do_site_perm_pred);
+  jit_ins_mov( r_idx , r_idx_perm                                              , r_do_site_perm_pred);
+
+  jit_value r_member = jit_add_param(  jit_ptx_type::u64 );  // Subset
+  jit_value r_member_addr        = jit_ins_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
+  jit_value r_ismember           = jit_ins_load ( r_member_addr , 0 , jit_ptx_type::pred );
+  jit_value r_ismember_not       = jit_ins_not( r_ismember );
+  jit_ins_exit( r_ismember_not );
 
 
-  ParamLeaf param_leaf( function , r_idx );
-  //ParamLeaf param_leaf_indexed( function , param_leaf.getParamIndexFieldAndOption() );  // Optional soffset (inner/face)
+  ParamLeaf param_leaf(  r_idx );
+  //ParamLeaf param_leaf_indexed(  param_leaf.getParamIndexFieldAndOption() );  // Optional soffset (inner/face)
   //function.addParamMemberArray( param_leaf.r_idx ); // Subset member
   
   // Destination
@@ -71,7 +69,7 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 
 #if 1
   if (Layout::primaryNode())
-    function->write();
+    jit_function_write();
 #endif     
  
   QMP_barrier();
@@ -99,30 +97,27 @@ function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScala
   CUfunction func;
 
   const char * fname = "ptx_lat_sca.ptx";
-  jit_function_t function = jit_create_function( fname );
+  jit_start_new_function( fname );
 
   //function.setPrettyFunction(__PRETTY_FUNCTION__);
 
-  jit_value_t r_lo     = jit_add_param( function , jit_ptx_type::s32 );
-  jit_value_t r_hi     = jit_add_param( function , jit_ptx_type::s32 );
-#ifdef JIT_DO_MEMBER
-  jit_value_t r_member = jit_add_param( function , jit_ptx_type::u64 );  // Subset
-#endif
+  jit_value r_lo     = jit_add_param(  jit_ptx_type::s32 );
+  jit_value r_hi     = jit_add_param(  jit_ptx_type::s32 );
 
-  jit_value_t r_idx = jit_geom_get_linear_th_idx( function );  
+  jit_value r_idx = jit_geom_get_linear_th_idx();  
 
-  jit_value_t r_out_of_range       = jit_ins_ge( r_idx , r_hi );
-  jit_ins_exit( function , r_out_of_range );
+  jit_value r_out_of_range       = jit_ins_ge( r_idx , r_hi );
+  jit_ins_exit(  r_out_of_range );
 
 #ifdef JIT_DO_MEMBER
-  jit_value_t r_member_addr        = jit_ins_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
-  jit_value_t r_ismember_u8        = jit_ins_load ( r_member_addr , 0 , jit_ptx_type::u8 );
-  jit_value_t r_ismember_u32       = jit_val_create_convert( function , jit_ptx_type::u32 , r_ismember_u8 );
-  jit_value_t r_ismember_pred_addr = jit_ins_eq( r_ismember_u32 , jit_val_create_const_int(0) );
-  jit_ins_exit( function , r_ismember_pred_addr );
+  jit_value r_member = jit_add_param(  jit_ptx_type::u64 );  // Subset
+  jit_value r_member_addr        = jit_ins_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
+  jit_value r_ismember           = jit_ins_load ( r_member_addr , 0 , jit_ptx_type::pred );
+  jit_value r_ismember_not       = jit_ins_not( r_ismember );
+  jit_ins_exit( r_ismember_not );
 #endif
 
-  ParamLeaf param_leaf( function , r_idx );
+  ParamLeaf param_leaf(  r_idx );
   
   typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
   FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
@@ -136,7 +131,7 @@ function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScala
 
 #if 1
   if (Layout::primaryNode())
-    function->write();
+    jit_function_write();
 #endif     
  
   QMP_barrier();
@@ -166,28 +161,25 @@ function_zero_rep_build(OLattice<T>& dest)
   CUfunction func;
 
   const char * fname = "ptx_zero.ptx";
-  jit_function_t function = jit_create_function( fname );
+  jit_start_new_function( fname );
 
-  jit_value_t r_lo     = jit_add_param( function , jit_ptx_type::s32 );
-  jit_value_t r_hi     = jit_add_param( function , jit_ptx_type::s32 );
-#ifdef JIT_DO_MEMBER
-  jit_value_t r_member = jit_add_param( function , jit_ptx_type::u64 );  // Subset
-#endif
+  jit_value r_lo     = jit_add_param(  jit_ptx_type::s32 );
+  jit_value r_hi     = jit_add_param(  jit_ptx_type::s32 );
 
-  jit_value_t r_idx = jit_geom_get_linear_th_idx( function );
+  jit_value r_idx = jit_geom_get_linear_th_idx();
 
-  jit_value_t r_out_of_range       = jit_ins_ge( r_idx , r_hi );
-  jit_ins_exit( function , r_out_of_range );
+  jit_value r_out_of_range       = jit_ins_ge( r_idx , r_hi );
+  jit_ins_exit(  r_out_of_range );
 
 #ifdef JIT_DO_MEMBER
-  jit_value_t r_member_addr        = jit_ins_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
-  jit_value_t r_ismember_u8        = jit_ins_load ( r_member_addr , 0 , jit_ptx_type::u8 );
-  jit_value_t r_ismember_u32       = jit_val_create_convert( function , jit_ptx_type::u32 , r_ismember_u8 );
-  jit_value_t r_ismember_pred_addr = jit_ins_eq( r_ismember_u32 , jit_val_create_const_int(0) );
-  jit_ins_exit( function , r_ismember_pred_addr );
+  jit_value r_member = jit_add_param(  jit_ptx_type::u64 );  // Subset
+  jit_value r_member_addr        = jit_ins_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
+  jit_value r_ismember           = jit_ins_load ( r_member_addr , 0 , jit_ptx_type::pred );
+  jit_value r_ismember_not       = jit_ins_not( r_ismember );
+  jit_ins_exit( r_ismember_not );
 #endif
 
-  ParamLeaf param_leaf( function , r_idx );
+  ParamLeaf param_leaf(  r_idx );
 
   typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
   FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
@@ -195,7 +187,7 @@ function_zero_rep_build(OLattice<T>& dest)
   zero_rep( dest_jit.elem(QDPTypeJITBase::Coalesced) );
 
   if (Layout::primaryNode())
-    function->write();
+    jit_function_write();
       
   QMP_barrier();
 
@@ -223,11 +215,11 @@ function_sca_sca_build(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar
   CUfunction func;
 
   const char * fname = "ptx_sca_sca.ptx";
-  jit_function_t function = jit_create_function( fname );
+  jit_start_new_function( fname );
 
-  jit_value_t r_idx = jit_geom_get_linear_th_idx( function );
+  jit_value r_idx = jit_geom_get_linear_th_idx();
 
-  ParamLeaf param_leaf( function , r_idx );
+  ParamLeaf param_leaf(  r_idx );
 
   typedef typename LeafFunctor<OScalar<T>, ParamLeaf>::Type_t  FuncRet_t;
   FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
@@ -245,7 +237,7 @@ function_sca_sca_build(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar
 
 #if 1
   if (Layout::primaryNode())
-    function->write();
+    jit_function_write();
 #endif     
  
   QMP_barrier();
@@ -282,7 +274,7 @@ function_sca_sca_build(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar
   //std::cout << "function = " << (void*)&function <<"\n";
 
   ParamLeaf param_leaf(function,function.getRegIdx() , Jit::LatticeLayout::SCAL );
-  //ParamLeaf param_leaf_indexed( function , param_leaf.getParamIndexFieldAndOption() , Jit::LatticeLayout::COAL);
+  //ParamLeaf param_leaf_indexed(  param_leaf.getParamIndexFieldAndOption() , Jit::LatticeLayout::COAL);
   //function.addParamMemberArray( param_leaf.r_idx );
 
   // Destination
@@ -330,23 +322,23 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
   CUfunction func;
 
   const char * fname = "ptx_random.ptx";
-  jit_function_t function = jit_create_function( fname );
+  jit_start_new_function( fname );
 
   // No member possible here.
   // If thread exists due to non-member
   // it possibly can't store the new seed at the end.
 
-  jit_value_t r_lo     = jit_add_param( function , jit_ptx_type::s32 );
-  jit_value_t r_hi     = jit_add_param( function , jit_ptx_type::s32 );
+  jit_value r_lo     = jit_add_param(  jit_ptx_type::s32 );
+  jit_value r_hi     = jit_add_param(  jit_ptx_type::s32 );
 
-  jit_value_t r_idx_thread = jit_geom_get_linear_th_idx( function );
+  jit_value r_idx_thread = jit_geom_get_linear_th_idx();
 
-  jit_value_t r_out_of_range       = jit_ins_gt( r_idx_thread , jit_ins_sub( r_hi , r_lo ) );
-  jit_ins_exit( function , r_out_of_range );
+  jit_value r_out_of_range       = jit_ins_gt( r_idx_thread , jit_ins_sub( r_hi , r_lo ) );
+  jit_ins_exit(  r_out_of_range );
 
-  jit_value_t r_idx = jit_ins_add( r_lo , r_idx_thread );
+  jit_value r_idx = jit_ins_add( r_lo , r_idx_thread );
 
-  ParamLeaf param_leaf( function , r_idx );
+  ParamLeaf param_leaf(  r_idx );
 
   typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
   FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
@@ -376,15 +368,15 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
 
   fill_random( dest_jit.elem(QDPTypeJITBase::Coalesced) , seed_reg , skewed_seed_reg , ran_mult_n_reg );
 
-  jit_value_t r_no_save = jit_ins_ne( r_idx_thread , jit_val_create_const_int(0) );
+  jit_value r_no_save = jit_ins_ne( r_idx_thread , jit_value(0) );
 
   jit_label_t label_nosave;
-  jit_ins_branch( function , label_nosave , r_no_save );
+  jit_ins_branch(  label_nosave , r_no_save );
   seed_tmp_jit.elem() = seed_reg;
-  jit_ins_label( function , label_nosave );
+  jit_ins_label(  label_nosave );
 
   if (Layout::primaryNode())
-    function->write();
+    jit_function_write();
       
   QMP_barrier();
 
@@ -417,33 +409,33 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
   CUfunction func;
 
   const char * fname = "ptx_gather.ptx";
-  jit_function_t function = jit_create_function( fname );
+  jit_start_new_function( fname );
 
-  jit_value_t r_lo     = jit_add_param( function , jit_ptx_type::s32 );
-  jit_value_t r_hi     = jit_add_param( function , jit_ptx_type::s32 );
+  jit_value r_lo     = jit_add_param(  jit_ptx_type::s32 );
+  jit_value r_hi     = jit_add_param(  jit_ptx_type::s32 );
 
-  jit_value_t r_idx = jit_geom_get_linear_th_idx( function );  
+  jit_value r_idx = jit_geom_get_linear_th_idx();  
 
-  jit_value_t r_out_of_range       = jit_ins_ge( r_idx , r_hi );
-  jit_ins_exit( function , r_out_of_range );
+  jit_value r_out_of_range       = jit_ins_ge( r_idx , r_hi );
+  jit_ins_exit(  r_out_of_range );
 
-  jit_value_t r_perm_array_addr      = jit_add_param( function , jit_ptx_type::u64 );  // Site permutation array
-  jit_value_t r_idx_mul_4            = jit_ins_mul( r_idx , jit_val_create_const_int(4) );
-  jit_value_t r_perm_array_addr_load = jit_ins_add( r_perm_array_addr , r_idx_mul_4 );
-  jit_value_t r_idx_perm             = jit_ins_load ( r_perm_array_addr_load , 0 , jit_ptx_type::s32 );
+  jit_value r_perm_array_addr      = jit_add_param(  jit_ptx_type::u64 );  // Site permutation array
+  jit_value r_idx_mul_4            = jit_ins_mul( r_idx , jit_value(4) );
+  jit_value r_perm_array_addr_load = jit_ins_add( r_perm_array_addr , r_idx_mul_4 );
+  jit_value r_idx_perm             = jit_ins_load ( r_perm_array_addr_load , 0 , jit_ptx_type::s32 );
 
-  jit_value_t r_gather_buffer        = jit_add_param( function , jit_ptx_type::u64 );  // Gather buffer
+  jit_value r_gather_buffer        = jit_add_param(  jit_ptx_type::u64 );  // Gather buffer
 
-  //ParamLeaf param_leaf_idx( function , r_idx );
-  ParamLeaf param_leaf_idx_perm( function , r_idx_perm );
+  //ParamLeaf param_leaf_idx(  r_idx );
+  ParamLeaf param_leaf_idx_perm(  r_idx_perm );
   
-  // ParamLeaf param_leaf_0( function , function.getRegIdx() , Jit::LatticeLayout::SCAL );
-  // ParamLeaf param_leaf_soffset( function , param_leaf_0.getParamIndexFieldAndOption() , Jit::LatticeLayout::COAL );
+  // ParamLeaf param_leaf_0(  function.getRegIdx() , Jit::LatticeLayout::SCAL );
+  // ParamLeaf param_leaf_soffset(  param_leaf_0.getParamIndexFieldAndOption() , Jit::LatticeLayout::COAL );
 
   // Destination
   typedef typename JITType< OLattice<T> >::Type_t DestView_t;
 
-  DestView_t dest_jit( function , r_gather_buffer , r_idx );
+  DestView_t dest_jit(  r_gather_buffer , r_idx );
 
 		       // param_leaf_0.getParamLattice( JITType<T>::Type_t::Size_t * WordSize<T>::Size ) ,
 		       // Jit::LatticeLayout::SCAL );
@@ -461,7 +453,7 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
 	      forEach(rhs_view, ViewLeaf( QDPTypeJITBase::Coalesced ) , OpCombine() ) );
 
   if (Layout::primaryNode())
-    function->write();
+    jit_function_write();
 
   QMP_barrier();
 

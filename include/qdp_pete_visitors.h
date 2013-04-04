@@ -33,7 +33,7 @@ struct ViewLeaf
 struct ParamLeaf
 {
   jit_value    index;
-  ParamLeaf( jit_value_t index_ ) : index(index_) {}
+  ParamLeaf( jit_value index_ ) : index(index_) {}
   jit_value getRegIdx() const {return index;}
 };
 

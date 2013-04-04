@@ -30,20 +30,20 @@ namespace QDP
 
   template<>
   WordREG<int>::WordREG(int i) {
-    val = jit_val_create_const_int( i );
+    val = jit_value( i );
     setup_m=true;
   }
 
   template<>
   WordREG<int>::WordREG(double f) {
-    val = jit_val_create_const_int( f );
+    val = jit_value( f );
     setup_m=true;
   }
 
 
 
   template<>
-  void WordREG<int>::setup(jit_value_t v) {
+  void WordREG<int>::setup(jit_value v) {
     assert(v);
     if (v->get_type() == jit_type<int>::value) {
       val=v;
@@ -52,7 +52,7 @@ namespace QDP
       	if (v_const->isInt()) {
       	  val = v;
       	} else {
-      	  val = jit_val_create_const_int( v_const->getAsFloat() );
+      	  val = jit_value( v_const->getAsFloat() );
       	}
       } else {
       	val = jit_val_create_convert( getFunc(v) , jit_type<int>::value , v );
@@ -63,7 +63,7 @@ namespace QDP
 
 
   template<>
-  void WordREG<float>::setup(jit_value_t v) {
+  void WordREG<float>::setup(jit_value v) {
     assert(v);
     if (v->get_type() == jit_type<float>::value) {
       val=v;
@@ -71,7 +71,7 @@ namespace QDP
       if (auto v_const = get<jit_value_const>(v)) {
       	if (v_const->isInt()) {
 	  if (auto v_const_int = get<jit_value_const_int>(v_const)) {
-	    val = jit_val_create_const_int( v_const_int->getValue() );
+	    val = jit_value( v_const_int->getValue() );
 	  } else {
 	    assert(!"oops");
 	  }
@@ -87,7 +87,7 @@ namespace QDP
 
 
   template<>
-  void WordREG<double>::setup(jit_value_t v) {
+  void WordREG<double>::setup(jit_value v) {
     assert(v);
     if (v->get_type() == jit_type<double>::value) {
       val=v;
@@ -95,7 +95,7 @@ namespace QDP
       if (auto v_const = get<jit_value_const>(v)) {
       	if (v_const->isInt()) {
 	  if (auto v_const_int = get<jit_value_const_int>(v_const)) {
-	    val = jit_val_create_const_int( v_const_int->getValue() );
+	    val = jit_value( v_const_int->getValue() );
 	  } else {
 	    assert(!"oops");
 	  }
@@ -111,7 +111,7 @@ namespace QDP
 
 
   template<>
-  void WordREG<bool>::setup(jit_value_t v) {
+  void WordREG<bool>::setup(jit_value v) {
     assert(v);
     if (v->get_type() == jit_type<bool>::value) {
       val=v;
@@ -121,7 +121,7 @@ namespace QDP
       	if (v_const->isInt()) {
 	  auto v_const_int = get<jit_value_const_int>(v_const);
 	  assert(v_const_int);
-	  val = jit_ins_ne( v_const_int , jit_val_create_const_int(0) );
+	  val = jit_ins_ne( v_const_int , jit_value(0) );
 	  //std::cout << "it was a const_int!n";
 	} else {
 	  auto v_const_float = get<jit_value_const_float>(v_const);

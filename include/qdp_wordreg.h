@@ -20,53 +20,46 @@ namespace QDP {
     // Default constructing should be possible
     // then there is no need for MPL index when
     // construction a PMatrix<T,N>
-    WordREG() {
-      create_value()
+    WordREG(): val(jit_type<T>::value) {}
+
+    // WordREG(int i);
+    // WordREG(double f);
+
+    WordREG(const WordREG& rhs): val(jit_type<T>::value) {
+      assert(rhs.get_val().get_ever_assigned());      
+      val = rhs.get_val();
+      //      setup_m=true;
     }
 
-    void create_value() {
-      val = jit_val_create_new( jit_type<T>::value );
-    }
-
-    WordREG(int i);
-    WordREG(double f);
-
-    WordREG(const WordREG& rhs) {
-      assert(rhs.get_val());
-      val = jit_val_create_copy( rhs.get_val() );
-      setup_m=true;
-    }
-
-    void setup(jit_value_t v);
+    void setup(jit_value v);
 
     void setup(const WordJIT<T>& wj) {
       val = jit_ins_load( wj.getAddress() , 0 , jit_type<T>::value );
-      setup_m=true;
+      //setup_m=true;
     }
 
-    void replace(const WordREG& rhs ) {
-      //assert( rhs.get_val()->get_type() == jit_type<T>::value );
-      if (val) {
-	jit_ins_mov_no_create( val , rhs.get_val() );	
-      } else {
-	val = rhs.get_val();
-      }
-      setup_m = true;
-    }
+    // void replace(const WordREG& rhs ) {
+    //   //assert( rhs.get_val()->get_type() == jit_type<T>::value );
+    //   if (val) {
+    // 	jit_ins_mov_no_create( val , rhs.get_val() );	
+    //   } else {
+    // 	val = rhs.get_val();
+    //   }
+    //   setup_m = true;
+    // }
 
 
-    jit_value_t    get_val() const  { 
-      assert(setup_m);
-      return val; 
-    }
+    jit_value&       get_val()        { return val; }
+    const jit_value& get_val() const  { return val; }
 
-    friend void swap(WordREG& lhs,WordREG& rhs) {
-      std::swap( lhs.val , rhs.val );
-      std::swap( lhs.setup_m , rhs.setup_m );
-    }
+    // friend void swap(WordREG& lhs,WordREG& rhs) {
+    //   std::swap( lhs.val , rhs.val );
+    //   std::swap( lhs.setup_m , rhs.setup_m );
+    // }
 
-    WordREG& operator=(WordREG rhs) {
-      swap(*this,rhs);
+    WordREG& operator=(const WordREG& rhs) {
+      assert(rhs.get_val().get_ever_assigned());      
+      val = rhs.get_val();      
       return *this;
     }
 
@@ -180,7 +173,7 @@ namespace QDP {
 
   private:
     //    bool setup_m;
-    jit_value_t    val;
+    jit_value    val;
   };
 
 
@@ -215,16 +208,16 @@ namespace QDP {
 
 
   template<>
-  void WordREG<int>::setup(jit_value_t v);
+  void WordREG<int>::setup(jit_value v);
 
   template<>
-  void WordREG<float>::setup(jit_value_t v);
+  void WordREG<float>::setup(jit_value v);
 
   template<>
-  void WordREG<double>::setup(jit_value_t v);
+  void WordREG<double>::setup(jit_value v);
 
   template<>
-  void WordREG<bool>::setup(jit_value_t v);
+  void WordREG<bool>::setup(jit_value v);
 #endif
 
 
@@ -675,19 +668,19 @@ localInnerProductReal(const WordREG<T1>& s1, const WordREG<T2>& s2)
   inline void 
   zero_rep(WordREG<double>& dest) 
   {
-    dest.replace( WordREG<double>(0.) );
+    jit_ins_mov( dest.get_val() , jit_value(0.0) );
   }
 
   inline void 
   zero_rep(WordREG<float>& dest) 
   {
-    dest.replace( WordREG<float>(0.) );
+    jit_ins_mov( dest.get_val() , jit_value(0.0) );
   }
 
   inline void 
   zero_rep(WordREG<int>& dest) 
   {
-    dest.replace( WordREG<int>(0) );
+    jit_ins_mov( dest.get_val() , jit_value(0) );
   }
 
 
