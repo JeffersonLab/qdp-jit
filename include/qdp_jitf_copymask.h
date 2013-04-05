@@ -11,19 +11,15 @@ namespace QDP {
   {
     CUfunction func;
 
-    const char * fname = "ptx_copymask.ptx";
-    jit_start_new_function( fname );
+    jit_start_new_function();
 
+    jit_value r_lo           = jit_add_param( jit_ptx_type::s32 );
+    jit_value r_hi           = jit_add_param( jit_ptx_type::s32 );
+    jit_value r_idx          = jit_geom_get_linear_th_idx();  
+    jit_value r_out_of_range = jit_ins_ge( r_idx , r_hi );
+    jit_ins_exit( r_out_of_range );
 
-  jit_value r_lo           = jit_add_param( jit_ptx_type::s32 );
-  jit_value r_hi           = jit_add_param( jit_ptx_type::s32 );
-  jit_value r_idx          = jit_geom_get_linear_th_idx();  
-  jit_value r_out_of_range = jit_ins_ge( r_idx , r_hi );
-  jit_ins_exit( r_out_of_range );
-
-  ParamLeaf param_leaf( r_idx );
-
-
+    ParamLeaf param_leaf( r_idx );
 
     typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
     typedef typename LeafFunctor<OLattice<T1>, ParamLeaf>::Type_t  FuncRet1_t;
@@ -42,22 +38,7 @@ namespace QDP {
 
     copymask( dest_jit.elem( QDPTypeJITBase::Coalesced ) , mask_reg , src_reg );
 
-#if 1
-    if (Layout::primaryNode())
-      jit_function_write();
-#endif
-      
-    QMP_barrier();
-
-    CUresult ret;
-    CUmodule cuModule;
-    ret = cuModuleLoad(&cuModule, fname);
-    if (ret) QDP_error_exit("Error loading CUDA module '%s'",fname);
-
-    ret = cuModuleGetFunction(&func, cuModule, "function");
-    if (ret) { std::cout << "Error getting function\n"; exit(1); }
-
-    return func;
+    return jit_get_cufunction("ptx_copymask.ptx");
   }
 
 

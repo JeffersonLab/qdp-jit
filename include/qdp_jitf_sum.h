@@ -23,8 +23,7 @@ void function_sum_exec( CUfunction function,
 
     CUfunction func;
 
-    const char * fname = "ptx_sum_ind.ptx";
-    jit_start_new_function( fname );
+    jit_start_new_function();
 
     jit_value r_lo     = jit_add_param( jit_ptx_type::s32 );
     jit_value r_hi     = jit_add_param( jit_ptx_type::s32 );
@@ -126,25 +125,7 @@ void function_sum_exec( CUfunction function,
 
     jit_ins_label(  label_exit );
 
-#if 1
-    if (Layout::primaryNode())
-      jit_function_write();
-#endif
-    //  assert(!"ni");
-
-    QMP_barrier();
-
-    CUresult ret;
-    CUmodule cuModule;
-    ret = cuModuleLoad( &cuModule , fname );
-    if (ret) QDP_error_exit( "Error loading CUDA module '%s'" , fname );
-
-    ret = cuModuleGetFunction(&func, cuModule, "function");
-    if (ret) { std::cout << "Error getting function\n"; exit(1); }
-
-    //std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
-
-    return func;
+    return jit_get_cufunction("ptx_sum_ind.ptx");
   }
 
 
@@ -158,8 +139,7 @@ void function_sum_exec( CUfunction function,
 
     CUfunction func;
 
-    const char * fname = "ptx_sum.ptx";
-    jit_start_new_function( fname );
+    jit_start_new_function();
 
     jit_value r_lo     = jit_add_param(  jit_ptx_type::s32 );
     jit_value r_hi     = jit_add_param(  jit_ptx_type::s32 );
@@ -254,25 +234,7 @@ void function_sum_exec( CUfunction function,
 
     jit_ins_label(  label_exit );
 
-#if 1
-    if (Layout::primaryNode())
-      jit_function_write();
-#endif
-    //  assert(!"ni");
-
-    QMP_barrier();
-
-    CUresult ret;
-    CUmodule cuModule;
-    ret = cuModuleLoad( &cuModule , fname );
-    if (ret) QDP_error_exit( "Error loading CUDA module '%s'" , fname );
-
-    ret = cuModuleGetFunction(&func, cuModule, "function");
-    if (ret) { std::cout << "Error getting function\n"; exit(1); }
-
-    //std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
-
-    return func;
+    return jit_get_cufunction("ptx_sum.ptx");
   }
 
 

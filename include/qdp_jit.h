@@ -71,7 +71,7 @@ namespace QDP {
 
 
   class jit_function {
-    std::string fname;
+    std::ostringstream final_ptx;
     std::ostringstream oss_prg;
     std::ostringstream oss_signature;
     std::ostringstream oss_reg_defs;
@@ -85,6 +85,7 @@ namespace QDP {
     std::vector<bool> m_include_math_ptx_unary;
     std::vector<bool> m_include_math_ptx_binary;
   public:
+    std::ostringstream& get_kernel_as_stream();
     void set_include_math_ptx_unary(int i) { 
       assert(m_include_math_ptx_unary.size()>i); 
       m_include_math_ptx_unary.at(i) = true; 
@@ -96,10 +97,9 @@ namespace QDP {
     void emitShared();
     int local_alloc( jit_ptx_type type, int count );
     void write_reg_defs();
-    void write();
     int get_param_count();
     void inc_param_count();
-    jit_function( const char * fname_);
+    jit_function();
     int reg_alloc( jit_ptx_type type );
     std::ostringstream& get_prg();
     std::ostringstream& get_signature();
@@ -107,10 +107,11 @@ namespace QDP {
 
   extern jit_function_t jit_internal_function;
 
-  void jit_start_new_function(const char * fname_);
+  void jit_start_new_function();
   jit_function_t jit_get_function();
-  void jit_function_write();
-
+  std::ostringstream& jit_get_kernel_as_stream();
+  CUfunction jit_get_cufunction(const char* fname);
+  
 
   // class jit_function_singleton
   // {

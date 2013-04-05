@@ -430,16 +430,12 @@ namespace QDP {
 
   // FUNCTION
 
-  jit_function::jit_function( const char * fname_): fname(fname_), 
-						    param_count(0), 
-						    local_count(0),
-						    m_shared(false),
-						    m_include_math_ptx_unary(PTX::map_ptx_math_functions_unary.size(),false),
-						    m_include_math_ptx_binary(PTX::map_ptx_math_functions_binary.size(),false)
-  {
-    // std::cout << "Constructing function " << fname 
-    // 	      << "reg_count vector size = " << reg_count.size() << "\n";
-  }
+  jit_function::jit_function(): param_count(0), 
+				local_count(0),
+				m_shared(false),
+				m_include_math_ptx_unary(PTX::map_ptx_math_functions_unary.size(),false),
+				m_include_math_ptx_binary(PTX::map_ptx_math_functions_binary.size(),false)
+  {}
 
 
   void jit_function::emitShared() {
@@ -500,57 +496,51 @@ namespace QDP {
   }
 
 
-
-  void jit_function::write() 
+  std::ostringstream& jit_function::get_kernel_as_stream()
   {
+    final_ptx.str("");
+    final_ptx.clear();
+
     write_reg_defs();
-    std::ofstream out(fname.c_str());
 
     int major = DeviceParams::Instance().getMajor();
     int minor = DeviceParams::Instance().getMinor();
     
     if (major >= 2) {
-      out << ".version 2.3\n";
-      out << ".target sm_20" << "\n";
-      out << ".address_size 64\n";
+      final_ptx << ".version 2.3\n";
+      final_ptx << ".target sm_20" << "\n";
+      final_ptx << ".address_size 64\n";
     } else {
-      out << ".version 1.4\n";
-      out << ".target sm_" << major << minor << "\n";
+      final_ptx << ".version 1.4\n";
+      final_ptx << ".target sm_" << major << minor << "\n";
     }
 
     if (m_shared)
-      out << ".extern .shared .align 4 .b8 sdata[];\n";
+      final_ptx << ".extern .shared .align 4 .b8 sdata[];\n";
 
     for( int i=0 ; i < PTX::map_ptx_math_functions_unary.size() ; i++ ) {
       if (m_include_math_ptx_unary.at(i)) {
 	QDP_info_primary("including unary PTX math function %d",(int)i);
-	out << jit_get_map_ptx_math_functions_prg_unary(i) << "\n";
+	final_ptx << jit_get_map_ptx_math_functions_prg_unary(i) << "\n";
       }
     }
     for( int i=0 ; i < PTX::map_ptx_math_functions_binary.size() ; i++ ) {
       if (m_include_math_ptx_binary.at(i)) {
 	QDP_info_primary("including binary PTX math function %i",(int)i);
-	out << jit_get_map_ptx_math_functions_prg_binary(i) << "\n";
+	final_ptx << jit_get_map_ptx_math_functions_prg_binary(i) << "\n";
       }
     }
 
-    out << ".entry function (" 
+    final_ptx << ".entry function (" 
 	<< get_signature().str() 
 	<< ")\n" 
 	<< "{\n" 
 	<< oss_reg_defs.str() 
 	<< oss_prg.str() 
 	<< "}\n";
-    out.close();
+
+    return final_ptx;
   }
-
-
-  // jit_function_t jit_get_valid_func( jit_function_t f0 ,jit_function_t f1 ) {
-  //   if (f0) 
-  //     return f0;
-  //   else
-  //     return f1;
-  // }
 
 
 
@@ -613,17 +603,17 @@ namespace QDP {
     return ret;
   }
 
-
-  void jit_function_write() {
-    jit_get_function()->write();
+  std::ostringstream& jit_get_kernel_as_stream() {
+    return jit_get_function()->get_kernel_as_stream();
   }
 
-  void jit_start_new_function(const char * fname_) {
+
+  void jit_start_new_function() {
     if (jit_internal_function) {
       //QDP_info_primary("Resetting old jit function (use_count = %d) ...",(int)jit_internal_function.use_count());
       jit_internal_function.reset();
     }
-    jit_internal_function = make_shared<jit_function>( fname_ );
+    jit_internal_function = make_shared<jit_function>();
   }
 
 
@@ -631,6 +621,34 @@ namespace QDP {
     assert( jit_internal_function );
     return jit_internal_function;
   }
+
+
+  CUfunction jit_get_cufunction(const char* fname)
+  {
+    CUfunction func;
+    CUresult ret;
+    CUmodule cuModule;
+
+    std::string ptx_kernel = jit_get_kernel_as_stream().str();
+
+    ret = cuModuleLoadDataEx( &cuModule , ptx_kernel.c_str() , 0 , 0 , 0 );
+    if (ret) {
+      if (Layout::primaryNode()) {
+	QDP_info_primary("Error loading external data. Dumping kernel to %s.",fname);
+	std::ofstream out(fname);
+	out << ptx_kernel;
+	out.close();
+	QDP_error_exit("Abort.");
+      }
+    }
+
+    ret = cuModuleGetFunction(&func, cuModule, "function");
+    if (ret)
+      QDP_error_exit("Error returned from cuModuleGetFunction. Abort.");
+
+    return func;
+  }
+
 
 
 

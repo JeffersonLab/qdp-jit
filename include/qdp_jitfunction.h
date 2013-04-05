@@ -16,10 +16,7 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 {
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
-  CUfunction func;
-
-  const char * fname = "ptx_eval.ptx";
-  jit_start_new_function( fname );
+  jit_start_new_function();
 
   //function.setPrettyFunction(__PRETTY_FUNCTION__);
 
@@ -67,24 +64,7 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 
   op_jit(dest_jit.elem( QDPTypeJITBase::Coalesced ), forEach(rhs_view, ViewLeaf( QDPTypeJITBase::Coalesced ), OpCombine()));
 
-#if 1
-  if (Layout::primaryNode())
-    jit_function_write();
-#endif     
- 
-  QMP_barrier();
-
-  CUresult ret;
-  CUmodule cuModule;
-  ret = cuModuleLoad( &cuModule , fname );
-  if (ret) QDP_error_exit( "Error loading CUDA module '%s'" , fname );
-
-  ret = cuModuleGetFunction(&func, cuModule, "function");
-  if (ret) { std::cout << "Error getting function\n"; exit(1); }
-
-  //std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
-
-  return func;
+  return jit_get_cufunction("ptx_eval.ptx");
 }
 
 
@@ -96,8 +76,7 @@ function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScala
 
   CUfunction func;
 
-  const char * fname = "ptx_lat_sca.ptx";
-  jit_start_new_function( fname );
+  jit_start_new_function();
 
   //function.setPrettyFunction(__PRETTY_FUNCTION__);
 
@@ -129,24 +108,7 @@ function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScala
 
   op_jit(dest_jit.elem( QDPTypeJITBase::Coalesced ), forEach(rhs_view, ViewLeaf( QDPTypeJITBase::Scalar ), OpCombine()));
 
-#if 1
-  if (Layout::primaryNode())
-    jit_function_write();
-#endif     
- 
-  QMP_barrier();
-
-  CUresult ret;
-  CUmodule cuModule;
-  ret = cuModuleLoad( &cuModule , fname );
-  if (ret) QDP_error_exit( "Error loading CUDA module '%s'" , fname );
-
-  ret = cuModuleGetFunction(&func, cuModule, "function");
-  if (ret) { std::cout << "Error getting function\n"; exit(1); }
-
-  //std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
-
-  return func;
+  return jit_get_cufunction("ptx_lat_sca.ptx");
 }
 
 
@@ -160,8 +122,7 @@ function_zero_rep_build(OLattice<T>& dest)
 {
   CUfunction func;
 
-  const char * fname = "ptx_zero.ptx";
-  jit_start_new_function( fname );
+  jit_start_new_function();
 
   jit_value r_lo     = jit_add_param(  jit_ptx_type::s32 );
   jit_value r_hi     = jit_add_param(  jit_ptx_type::s32 );
@@ -186,20 +147,7 @@ function_zero_rep_build(OLattice<T>& dest)
 
   zero_rep( dest_jit.elem(QDPTypeJITBase::Coalesced) );
 
-  if (Layout::primaryNode())
-    jit_function_write();
-      
-  QMP_barrier();
-
-  CUresult ret;
-  CUmodule cuModule;
-  ret = cuModuleLoad( &cuModule , fname );
-  if (ret) QDP_error_exit("Error loading CUDA module '%s'" , fname );
-
-  ret = cuModuleGetFunction(&func, cuModule, "function");
-  if (ret) { std::cout << "Error getting function\n"; exit(1); }
-
-  return func;
+  return jit_get_cufunction("ptx_zero.ptx");
 }
 
 
@@ -214,8 +162,7 @@ function_sca_sca_build(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar
 {
   CUfunction func;
 
-  const char * fname = "ptx_sca_sca.ptx";
-  jit_start_new_function( fname );
+  jit_start_new_function();
 
   jit_value r_idx = jit_geom_get_linear_th_idx();
 
@@ -235,79 +182,7 @@ function_sca_sca_build(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar
 
   op_jit(dest_jit.elem( QDPTypeJITBase::Scalar ), forEach(rhs_view, ViewLeaf( QDPTypeJITBase::Scalar ), OpCombine()));
 
-#if 1
-  if (Layout::primaryNode())
-    jit_function_write();
-#endif     
- 
-  QMP_barrier();
-
-  CUresult ret;
-  CUmodule cuModule;
-  ret = cuModuleLoad( &cuModule , fname );
-  if (ret) QDP_error_exit( "Error loading CUDA module '%s'" , fname );
-
-  ret = cuModuleGetFunction(&func, cuModule, "function");
-  if (ret) { std::cout << "Error getting function\n"; exit(1); }
-
-  //std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
-
-  return func;
-
-
-
-
-
-
-
-
-#if 0
-  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-
-  CUfunction func;
-
-  std::string fname("ptx_sca_sca.ptx");
-  Jit function(fname.c_str(),"func");
-
-  function.setPrettyFunction(__PRETTY_FUNCTION__);
-
-  //std::cout << "function = " << (void*)&function <<"\n";
-
-  ParamLeaf param_leaf(function,function.getRegIdx() , Jit::LatticeLayout::SCAL );
-  //ParamLeaf param_leaf_indexed(  param_leaf.getParamIndexFieldAndOption() , Jit::LatticeLayout::COAL);
-  //function.addParamMemberArray( param_leaf.r_idx );
-
-  // Destination
-  typedef typename LeafFunctor<OScalar<T>, ParamLeaf>::Type_t  FuncRet_t;
-  FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
-
-  // Now the arguments for the rhs
-  typedef typename ForEach<QDPExpr<RHS,OScalar<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
-  View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
-
-  //printme<View_t>();
-
-  op(dest_jit.elem( 0 ), forEach(rhs_view, ViewLeaf(0), OpCombine()));
-
-#if 1
-  if (Layout::primaryNode())
-    function.write();
-#endif     
- 
-  QMP_barrier();
-
-  CUresult ret;
-  CUmodule cuModule;
-  ret = cuModuleLoad(&cuModule, fname.c_str() );
-  if (ret) QDP_error_exit("Error loading CUDA module '%s'",fname.c_str());
-
-  ret = cuModuleGetFunction(&func, cuModule, "func");
-  if (ret) { std::cout << "Error getting function\n"; exit(1); }
-
-  //std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
-
-  return func;
-#endif
+  return jit_get_cufunction("ptx_sca_sca.ptx");
 }
 
 
@@ -321,8 +196,7 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
 
   CUfunction func;
 
-  const char * fname = "ptx_random.ptx";
-  jit_start_new_function( fname );
+  jit_start_new_function();
 
   // No member possible here.
   // If thread exists due to non-member
@@ -375,22 +249,7 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
   seed_tmp_jit.elem() = seed_reg;
   jit_ins_label(  label_nosave );
 
-  if (Layout::primaryNode())
-    jit_function_write();
-      
-  QMP_barrier();
-
-  CUresult ret;
-  CUmodule cuModule;
-  ret = cuModuleLoad( &cuModule , fname );
-  if (ret) QDP_error_exit("Error loading CUDA module '%s'",fname);
-
-  ret = cuModuleGetFunction(&func, cuModule, "function");
-  if (ret) { std::cout << "Error getting function\n"; exit(1); }
-
-  //std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
-
-  return func;
+  return jit_get_cufunction("ptx_random.ptx");
 }
 
 
@@ -408,8 +267,7 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
 
   CUfunction func;
 
-  const char * fname = "ptx_gather.ptx";
-  jit_start_new_function( fname );
+  jit_start_new_function();
 
   jit_value r_lo     = jit_add_param(  jit_ptx_type::s32 );
   jit_value r_hi     = jit_add_param(  jit_ptx_type::s32 );
@@ -452,22 +310,7 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
   OpAssign()( dest_jit.elem( QDPTypeJITBase::Scalar ) , 
 	      forEach(rhs_view, ViewLeaf( QDPTypeJITBase::Coalesced ) , OpCombine() ) );
 
-  if (Layout::primaryNode())
-    jit_function_write();
-
-  QMP_barrier();
-
-  CUresult ret;
-  CUmodule cuModule;
-  ret = cuModuleLoad(&cuModule, fname);
-  if (ret) QDP_error_exit("Error loading CUDA module '%s'",fname);
-
-  ret = cuModuleGetFunction(&func, cuModule, "function");
-  if (ret) { std::cout << "Error getting function\n"; exit(1); }
-
-  //std::cout << __PRETTY_FUNCTION__ << ": exiting\n";
-
-  return func;
+  return jit_get_cufunction("ptx_gather.ptx");
 }
 
 
