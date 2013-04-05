@@ -304,7 +304,7 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
 
       Type_t ret_new;
       ret_new.setup( lattice_recv.elem( QDPTypeJITBase::Scalar ) );
-      ret.replace(ret_new);
+      ret = ret_new;
 
       jit_ins_label( label_in_exit );
 

@@ -34,12 +34,6 @@ template <class T, int N> class PSpinMatrixREG : public PMatrixREG<T, N, PSpinMa
 public:
   PSpinMatrixREG(){}
 
-  void replace(const PSpinMatrixREG& rhs ) {
-    for (int i = 0 ; i < N ; i++ ) 
-      for (int q = 0 ; q < N ; q++ ) 
-	this->elem(i,q).replace( rhs.elem(i,q) );
-  }
-
   void setup( const typename JITType< PSpinMatrixREG >::Type_t& j ) {
     for (int i = 0 ; i < N ; i++ ) 
       for (int q = 0 ; q < N ; q++ ) 

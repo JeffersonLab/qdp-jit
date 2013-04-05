@@ -22,8 +22,8 @@ namespace QDP {
     // construction a PMatrix<T,N>
     WordREG(): val(jit_type<T>::value) {}
 
-    // WordREG(int i);
-    // WordREG(double f);
+    WordREG(int i): val(i) {}
+    WordREG(double f): val(f) {}
 
     WordREG(const WordREG& rhs): val(jit_type<T>::value) {
       assert(rhs.get_val().get_ever_assigned());      
@@ -31,7 +31,12 @@ namespace QDP {
       //      setup_m=true;
     }
 
-    void setup(jit_value v);
+    void setup(const jit_value& v) {
+      if (val.get_type() == v.get_type())
+	jit_ins_mov(val,v);
+      else
+	val = jit_val_convert( val.get_type() , v );
+    }
 
     void setup(const WordJIT<T>& wj) {
       val = jit_ins_load( wj.getAddress() , 0 , jit_type<T>::value );

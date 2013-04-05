@@ -17,12 +17,16 @@ namespace QDP {
 
   enum class jit_ptx_type { f32,f64,u16,u32,u64,s16,s32,s64,u8,b16,b32,b64,pred};
 
+
   enum class jit_state_space { 
     state_default , 
       state_global , 
       state_local , 
       state_shared 
       };
+
+  std::ostream& operator<< (std::ostream& stream, const jit_state_space& space );
+  std::ostream& operator<< (std::ostream& stream, const jit_ptx_type& type );
     
 
   //
@@ -138,9 +142,10 @@ namespace QDP {
     jit_value( const jit_value& rhs );
 
     explicit jit_value( jit_ptx_type type_ );
-    explicit jit_value( int val );
+
+    jit_value( int val );
+    jit_value( double val );
     explicit jit_value( size_t val );
-    explicit jit_value( double val );
 
     // jit_value( double val )
     
@@ -169,6 +174,12 @@ namespace QDP {
 
 
   struct IndexRet {
+    IndexRet():
+      r_newidx_local(jit_ptx_type::s32),
+      r_newidx_buffer(jit_ptx_type::s32),
+      r_pred_in_buf(jit_ptx_type::pred),
+      r_rcvbuf(jit_ptx_type::u64)
+    {}
     jit_value r_newidx_local;
     jit_value r_newidx_buffer;
     jit_value r_pred_in_buf;
@@ -209,7 +220,7 @@ namespace QDP {
 
   //jit_function_t getFunc(jit_value val);
 
-  jit_value jit_val_convert( jit_ptx_type type , const jit_value& rhs );
+  jit_value jit_val_convert( jit_ptx_type type , const jit_value& rhs , const jit_value& pred=jit_value(jit_ptx_type::pred));
 
 
   jit_value jit_geom_get_tidx( );
@@ -287,7 +298,7 @@ namespace QDP {
 
 
   // Select
-  jit_value jit_ins_selp( const jit_value& lhs , const jit_value& rhs , const jit_value& p );
+  jit_value jit_ins_selp( jit_value lhs , jit_value rhs , const jit_value& p );
 
   void jit_ins_mov( jit_value& dest , const jit_value& src , const jit_value& pred=jit_value(jit_ptx_type::pred) );
   void jit_ins_mov( jit_value& dest , const std::string& src , const jit_value& pred=jit_value(jit_ptx_type::pred) );

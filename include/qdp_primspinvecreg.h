@@ -35,10 +35,6 @@ template <class T, int N> class PSpinVectorREG //: public BaseREG<T,N,PSpinVecto
 public:
   PSpinVectorREG(){}
 
-  void replace(const PSpinVectorREG& rhs ) {
-    for (int i = 0 ; i < N ; i++ )
-      this->elem(i).replace( rhs.elem(i) );
-  }
 
   void setup( const typename JITType< PSpinVectorREG >::Type_t& j ) {
     for (int i = 0 ; i < N ; i++ )
