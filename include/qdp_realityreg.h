@@ -520,15 +520,6 @@ public:
 };
 
 
-template <class T>
-jit_function_t getFunc(const RScalarREG<T>& l) {
-  return getFunc(l.elem());
-}
-
-template <class T>
-jit_function_t getFunc(const RComplexREG<T>& l) {
-  return getFunc(l.real());
-}
 
 
 

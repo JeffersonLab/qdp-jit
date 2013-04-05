@@ -142,10 +142,6 @@ namespace QDP {
   };
 
 
-template <class T>
-jit_function_t getFunc(const PScalarREG<T>& l) {
-  return getFunc(l.elem());
-}
 
 
 template<class T> 

@@ -50,12 +50,6 @@ public:
 };
 
 
-template <class T, int N>
-jit_function_t getFunc(const PColorVectorREG<T,N>& l) {
-  return getFunc(l.elem(0));
-}
-
-
 
 /*! @} */  // end of group primcolorvector
 
@@ -236,12 +230,10 @@ peekColor(const PColorVectorREG<T,N>& l, jit_value row)
 
   typedef typename JITType< PColorVectorREG<T,N> >::Type_t TTjit;
 
-  jit_value ptr_local = jit_allocate_local( getFunc(l), 
-					      jit_type<typename WordType<T>::Type_t>::value , 
-					      TTjit::Size_t );
+  jit_value ptr_local = jit_allocate_local( jit_type<typename WordType<T>::Type_t>::value , TTjit::Size_t );
 
   TTjit dj;
-  dj.setup( getFunc(l) , ptr_local, jit_value(1) , jit_value(0) );
+  dj.setup( ptr_local, jit_value(1) , jit_value(0) );
   dj=l;
 
   d.elem() = dj.getRegElem(row);

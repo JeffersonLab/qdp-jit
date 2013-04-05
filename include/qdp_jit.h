@@ -218,7 +218,6 @@ namespace QDP {
   // jit_value_reg_t jit_val_create_convert( int type , jit_value val , jit_value pred=jit_value() );
   // jit_value jit_val_create_copy( jit_value val , jit_value pred=jit_value() );
 
-  //jit_function_t getFunc(jit_value val);
 
   jit_value jit_val_convert( jit_ptx_type type , const jit_value& rhs , const jit_value& pred=jit_value(jit_ptx_type::pred));
 

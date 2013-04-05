@@ -38,8 +38,6 @@ private:
 
 
 
-  // p.getFunc().addParam( Jit::s32 )
-  // jit_add_param( p.getFunc() , jit_ptx_type::s32 );
 
 template<class A>
 struct ForEach<UnaryNode<FnPeekColorMatrix, A>, ParamLeaf, TreeCombine>

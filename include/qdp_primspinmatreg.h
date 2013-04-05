@@ -78,11 +78,6 @@ public:
 
 /*! @} */   // end of group primspinmatrix
 
-template <class T, int N>
-jit_function_t getFunc(const PSpinMatrixREG<T,N>& l) {
-  return getFunc(l.elem(0,0));
-}
-
 
 
 
@@ -560,12 +555,10 @@ peekSpin(const PSpinMatrixREG<T,N>& l, jit_value row, jit_value col)
 
   typedef typename JITType< PSpinMatrixREG<T,N> >::Type_t TTjit;
 
-  jit_value ptr_local = jit_allocate_local( getFunc(l), 
-					      jit_type<typename WordType<T>::Type_t>::value , 
-					      TTjit::Size_t );
+  jit_value ptr_local = jit_allocate_local( jit_type<typename WordType<T>::Type_t>::value , TTjit::Size_t );
 
   TTjit dj;
-  dj.setup( getFunc(l) , ptr_local, jit_value(1) , jit_value(0) );
+  dj.setup( ptr_local, jit_value(1) , jit_value(0) );
   dj=l;
 
   d.elem() = dj.getRegElem(row,col);

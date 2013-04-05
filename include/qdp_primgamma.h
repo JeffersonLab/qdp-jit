@@ -77,24 +77,7 @@ private:
       // Reference<QDPTypeJIT<PSpinMatrixJIT<PScalarJIT<RComplexJIT<float> >,4>,
       // 			   OScalarJIT<PSpinMatrixJIT<PScalarJIT<RComplexJIT<float> >,4> > > >,
 
-//{ p.getFunc() , 0 }
 
-#if 0
-  template<class A>
-  struct ForEach<BinaryNode<OpGammaTypeMultiply,GammaType<4>, A>, ParamLeaf , TreeCombine>
-  {
-    typedef typename ForEach< A , ParamLeaf, TreeCombine>::Type_t InnerTypeA_t;
-    typedef BinaryNode<
-      OpMultiply, 
-      OScalarJIT<PSpinMatrixJIT<PScalarJIT<RComplexJIT<WordJIT<float> > >,4> >,
-      InnerTypeA_t> Type_t;
-    inline static
-    Type_t apply(const BinaryNode<OpGammaTypeMultiply,GammaType<4>, A> &expr, const ParamLeaf &p, const TreeCombine &c)
-    {
-      return Type_t( OpMultiply() , OScalarJIT<PSpinMatrixJIT<PScalarJIT<RComplexJIT<WordJIT<float> > >,4> >(p.getFunc(),PSpinMatrixJIT<PScalarJIT<RComplexJIT<WordJIT<float> > >,4> > (PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)),PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)),PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)),PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)),PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)),PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)),PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)),PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)),PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)),PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)),PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)),PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)),PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)),PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)),PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)),PScalarJIT<RComplexJIT<WordJIT<float> > >(p.getFunc(),RComplexJIT<WordJIT<float> >(p.getFunc(),0.,0.)) ) , ForEach<A, ParamLeaf, TreeCombine>::apply(expr.right(), p, c) );
-    }
-  };
-#endif
 
 
 //-------------------------------------------------------------------------------------

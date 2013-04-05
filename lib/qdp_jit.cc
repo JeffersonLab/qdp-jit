@@ -340,7 +340,7 @@ namespace QDP {
 
 
   jit_ptx_type jit_type_promote(jit_ptx_type t0,jit_ptx_type t1) {
-    std::cout << "type promote: " << t0 << " " << t1 << "\n";
+    //std::cout << "type promote: " << t0 << " " << t1 << "\n";
     if (t0==t1) return t0;
     if ( PTX::map_promote.count(t0) == 0 )
       std::cout << "promote: " << jit_get_ptx_type(t0) << " " << jit_get_ptx_type(t1) << "\n";
@@ -354,16 +354,6 @@ namespace QDP {
     return ret;
   }
 
-#if 0
-  int jit_type_promote(int t0,int t1,int t2) {
-    if (t0==t1 && t0==t2) return t0;
-    std::cout << "3 type promote: " 
-	      << jit_get_ptx_type(t0) << " " 
-	      << jit_get_ptx_type(t1) << " " 
-	      << jit_get_ptx_type(t2) << "\n";
-    return jit_type_promote( jit_type_promote( t0 , t1 ) , t2 );
-  }
-#endif
 
   jit_value::jit_value( int val ): 
     ever_assigned(true), 
@@ -387,9 +377,9 @@ namespace QDP {
 
   jit_value::jit_value( double val ): 
     ever_assigned(true), 
-    mem_state(jit_state_space::state_default) 
+    mem_state(jit_state_space::state_default),
+    type(jit_type<REAL>::value)
   {
-    jit_ptx_type type1 = jit_type<REAL>::value;
     reg_alloc();
     std::ostringstream oss; 
     oss.setf(ios::scientific);
@@ -399,7 +389,7 @@ namespace QDP {
   }
 
   jit_state_space jit_state_promote( jit_state_space ss0 , jit_state_space ss1 ) {
-    std::cout << "state_promote: " << ss0 << " " << ss1 << "\n";
+    //std::cout << "state_promote: " << ss0 << " " << ss1 << "\n";
     if ( ss0 == ss1 ) return ss0;
     assert( PTX::map_state_promote.count( ss0 ) > 0 );
     assert( PTX::map_state_promote.at( ss0 ).count( ss1 ) > 0 );
@@ -411,31 +401,26 @@ namespace QDP {
 
 
   jit_ptx_type jit_type_wide_promote(jit_ptx_type t0) {
-    //std::cout << "wide_promote: " << jit_get_ptx_type(t0) << "\n";
     assert( PTX::map_wide_promote.count(t0) > 0 );
     return PTX::map_wide_promote.at(t0);
   }
 
   const char * jit_get_ptx_type( jit_ptx_type type ) {
-    //assert((type >= 0) && (type < PTX::ptx_type_matrix.size()));
     assert( PTX::ptx_type_matrix.count(type) > 0 );
     return PTX::ptx_type_matrix.at(type)[0];
   }
 
   const char * jit_get_ptx_letter( jit_ptx_type type ) {
-    //assert((type >= 0) && (type < PTX::ptx_type_matrix.size()));
     assert( PTX::ptx_type_matrix.count(type) > 0 );
     return  PTX::ptx_type_matrix.at(type)[1];
   }
 
   const char * jit_get_mul_specifier_lo_str( jit_ptx_type type ) {
-    //assert((type >= 0) && (type < PTX::ptx_type_matrix.size()));
     assert( PTX::ptx_type_matrix.count(type) > 0 );
     return PTX::ptx_type_matrix.at(type)[2];
   }
 
   const char * jit_get_div_specifier( jit_ptx_type type ) {
-    //assert((type >= 0) && (type < PTX::ptx_type_matrix.size()));
     assert( PTX::ptx_type_matrix.count(type) > 0 );
     return PTX::ptx_type_matrix.at(type)[3];
   }
@@ -454,8 +439,6 @@ namespace QDP {
   {
     // std::cout << "Constructing function " << fname 
     // 	      << "reg_count vector size = " << reg_count.size() << "\n";
-    //std::fill ( reg_count.begin() , reg_count.end() , 0 );
-    
   }
 
 
@@ -540,13 +523,13 @@ namespace QDP {
 
     for( int i=0 ; i < PTX::map_ptx_math_functions_unary.size() ; i++ ) {
       if (m_include_math_ptx_unary.at(i)) {
-	std::cout << "including unary PTX math function " << i << "\n";
+	QDP_info_primary("including unary PTX math function %d",(int)i);
 	out << jit_get_map_ptx_math_functions_prg_unary(i) << "\n";
       }
     }
     for( int i=0 ; i < PTX::map_ptx_math_functions_binary.size() ; i++ ) {
       if (m_include_math_ptx_binary.at(i)) {
-	std::cout << "including binary PTX math function " << i << "\n";
+	QDP_info_primary("including binary PTX math function %i",(int)i);
 	out << jit_get_map_ptx_math_functions_prg_binary(i) << "\n";
       }
     }
@@ -636,10 +619,10 @@ namespace QDP {
   }
 
   void jit_start_new_function(const char * fname_) {
-    //std::cout << "Creating jit function\n";
-    if (jit_internal_function)
-      QDP_info_primary("Creating new jit function even there is an old one (use_count = %d), hope it works!",
-		       (int)jit_internal_function.use_count());
+    if (jit_internal_function) {
+      //QDP_info_primary("Resetting old jit function (use_count = %d) ...",(int)jit_internal_function.use_count());
+      jit_internal_function.reset();
+    }
     jit_internal_function = make_shared<jit_function>( fname_ );
   }
 
@@ -682,6 +665,7 @@ namespace QDP {
   
 
   void jit_value::assign( const jit_value& rhs ) {
+    assert( rhs.get_ever_assigned() );
     assert( type != jit_ptx_type::u8 );
     if ( type != rhs.get_type() ) {
       jit_ins_mov( *this , jit_val_convert( type , rhs ) );
@@ -698,8 +682,8 @@ namespace QDP {
     
 
 
-  jit_ptx_type jit_value::get_type() const {return type;}
-  void jit_value::set_state_space( jit_state_space ss ) { mem_state = ss; }
+  jit_ptx_type    jit_value::get_type() const {return type;}
+  void            jit_value::set_state_space( jit_state_space ss ) { mem_state = ss; }
   jit_state_space jit_value::get_state_space() const { 
     return mem_state; 
   }
@@ -763,6 +747,7 @@ namespace QDP {
 				    << rhs.get_name() << ";\n";
     }
     ret.set_state_space( rhs.get_state_space() );
+    ret.set_ever_assigned();
     return ret;
   }
 
@@ -854,11 +839,6 @@ namespace QDP {
 
 
 
-  // jit_function_t getFunc(jit_value val) {
-  //   auto val_reg = get< jit_value_reg >(val);
-  //   assert(val_reg);
-  //   return val_reg->get_func();
-  // }
 
   // Thread Geometry
 
@@ -866,18 +846,24 @@ namespace QDP {
     jit_value tidx( jit_ptx_type::u16 );
     jit_get_function()->get_prg() << "mov.u16 " 
 				  << jit_get_reg_name( tidx ) << ",%tid.x;\n";
+    tidx.set_state_space( jit_state_space::state_default );
+    tidx.set_ever_assigned();
     return tidx;
   }
   jit_value jit_geom_get_ntidx() {
     jit_value tidx( jit_ptx_type::u16 );
     jit_get_function()->get_prg() << "mov.u16 " 
 				  << jit_get_reg_name( tidx ) << ",%ntid.x;\n";
+    tidx.set_state_space( jit_state_space::state_default );
+    tidx.set_ever_assigned();
     return tidx;
   }
   jit_value jit_geom_get_ctaidx() {
     jit_value tidx( jit_ptx_type::u16 );
     jit_get_function()->get_prg() << "mov.u16 " 
 				  << jit_get_reg_name( tidx ) << ",%ctaid.x;\n";
+    tidx.set_state_space( jit_state_space::state_default );
+    tidx.set_ever_assigned();
     return tidx;
   }
 
@@ -918,6 +904,8 @@ namespace QDP {
     instr << jit_get_reg_name( p ) << ";\n";
 
     jit_get_function()->get_prg() << instr.str();
+    ret.set_state_space( jit_state_promote( lhs.get_state_space() , rhs.get_state_space() ) );
+    ret.set_ever_assigned();
     return ret;
   }
 
@@ -1223,7 +1211,6 @@ namespace QDP {
   }
 
   void jit_ins_store(const jit_value& base, int offset , jit_ptx_type type , const jit_value& reg , const jit_value& pred ) {
-    std::cout << "store\n";
     if (type == jit_ptx_type::pred ) {
       if ( reg.get_type() != jit_ptx_type::pred ) {
 	jit_value reg_u8 = jit_val_convert( jit_ptx_type::u8 , reg );

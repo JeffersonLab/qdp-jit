@@ -57,13 +57,8 @@ namespace QDP {
     jit_value&       get_val()        { return val; }
     const jit_value& get_val() const  { return val; }
 
-    // friend void swap(WordREG& lhs,WordREG& rhs) {
-    //   std::swap( lhs.val , rhs.val );
-    //   std::swap( lhs.setup_m , rhs.setup_m );
-    // }
 
     WordREG& operator=(const WordREG& rhs) {
-      assert(rhs.get_val().get_ever_assigned());      
       val = rhs.get_val();      
       return *this;
     }
@@ -72,8 +67,6 @@ namespace QDP {
     WordREG(const WordREG<T1>& rhs)
     {
       setup(rhs.get_val());
-      // val = jit_val_create_convert( getFunc(rhs) , jit_type<T>::value , rhs.get_val() );
-      // setup_m = true;
     }
 
     template<class T1>
@@ -81,7 +74,6 @@ namespace QDP {
     WordREG& operator=(const WordREG<T1>& rhs) 
     {
       setup(rhs.get_val());
-      //val = jit_val_create_convert( getFunc(*this) , jit_type<T>::value , rhs.get_val() );
       return *this;
     }
 
@@ -183,50 +175,6 @@ namespace QDP {
 
 
 
-  template <class T>
-  jit_function_t getFunc(const WordREG<T>& l) {
-    return getFunc( l.get_val() );
-  }
-
-
-
-
-#if 0
-  template<>
-  WordREG<double>::WordREG(int i);
-
-  template<>
-  WordREG<double>::WordREG(double f);
-
-  template<>
-  WordREG<float>::WordREG(int i);
-
-  template<>
-  WordREG<float>::WordREG(double f);
-
-  template<>
-  WordREG<int>::WordREG(int i);
-
-  template<>
-  WordREG<int>::WordREG(double f);
-
-
-
-  template<>
-  void WordREG<int>::setup(jit_value v);
-
-  template<>
-  void WordREG<float>::setup(jit_value v);
-
-  template<>
-  void WordREG<double>::setup(jit_value v);
-
-  template<>
-  void WordREG<bool>::setup(jit_value v);
-#endif
-
-
-
 
 //-----------------------------------------------------------------------------
 // Traits classes 
@@ -271,8 +219,6 @@ namespace QDP {
     printme<typename UnaryReturn<WordREG<T>, FnSeedToFloat>::Type_t>();
     typename UnaryReturn<WordREG<T>, FnSeedToFloat>::Type_t d;
     assert(!"ni");
-    //val = jit_val_create_convert( getFunc(*this) , jit_type<T>::value , rhs.get_val() );
-
     return d;
   }
 
@@ -562,7 +508,7 @@ operator||(const WordREG<T1>& l, const WordREG<T2>& r)
   where(const WordREG<T1> &a, const WordREG<T2> &b, const WordREG<T3> &c)
   {
     typename TrinaryReturn<WordREG<T1>, WordREG<T2>, WordREG<T3>, FnWhere >::Type_t ret;
-    ret.setup( jit_ins_selp( getFunc(a) , b.get_val() , c.get_val() , a.get_val() ) );
+    ret.setup( jit_ins_selp( b.get_val() , c.get_val() , a.get_val() ) );
     return ret;
   }
 

@@ -79,9 +79,6 @@ namespace QDP {
       return F;
     }
 
-    //jit_function_t& getFunc() const { return function; }
-    //int getAddr() const { return r_base; }
-    //jit_function_t getFunc() const { return func; }
 
 
   private:
@@ -170,10 +167,6 @@ struct LeafFunctor<QDPTypeJIT<T,C>, EvalLeaf1>
 };
 
 
-#endif
-
-
-#if 0
 template<class T>
 struct LeafFunctor<QDPTypeJIT<T,OLattice<T> >, ParamLeaf>
 {
@@ -182,7 +175,7 @@ struct LeafFunctor<QDPTypeJIT<T,OLattice<T> >, ParamLeaf>
   typedef TypeA_t  Type_t;
   inline static Type_t apply(const QDPTypeJIT<T,OLattice<T> > &a, const ParamLeaf& p)
   {
-    return Type_t( p.getFunc() , jit_add_param( p.getFunc() , jit_ptx_type::u64 ) );
+    return Type_t( jit_add_param( jit_ptx_type::u64 ) );
   }
 };
 
@@ -194,10 +187,9 @@ struct LeafFunctor<QDPTypeJIT<T,OScalar<T> >, ParamLeaf>
   typedef TypeA_t  Type_t;
   inline static Type_t apply(const QDPTypeJIT<T,OScalar<T> > &a, const ParamLeaf& p)
   {
-    return Type_t( p.getFunc() , jit_add_param( p.getFunc() , jit_ptx_type::u64 ) );
+    return Type_t( jit_add_param( jit_ptx_type::u64 ) );
   }
 };
-#endif
 
 
 // template<class T, class C>
@@ -211,6 +203,9 @@ struct LeafFunctor<QDPTypeJIT<T,OScalar<T> >, ParamLeaf>
 //   }
 // };
 
+
+
+#endif
 
 
 
