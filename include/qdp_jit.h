@@ -13,27 +13,11 @@
 
 namespace QDP {
 
-
-  
-
   //enum jit_ptx_type { f32=0,f64=1,u16=2,u32=3,u64=4,s16=5,s32=6,s64=7,u8=8,b16=9,b32=10,b64=11,pred=12 };
-  enum class jit_ptx_type { 
-    f32,
-      f64,
-      u16,
-      u32,
-      u64,
-      s16,
-      s32,
-      s64,
-      u8,
-      b16,
-      b32,
-      b64,
-      pred 
-      };
 
-  enum class state_space { 
+  enum class jit_ptx_type { f32,f64,u16,u32,u64,s16,s32,s64,u8,b16,b32,b64,pred};
+
+  enum class jit_state_space { 
     state_default , 
       state_global , 
       state_local , 
@@ -55,16 +39,8 @@ namespace QDP {
   class jit_function;
   class jit_label;
   class jit_value;
-  class jit_value_const;
-  class jit_value_const_int;
-  class jit_value_const_float;
   class jit_value_reg;
   typedef std::shared_ptr<jit_function>          jit_function_t;
-  // typedef std::shared_ptr<jit_value>             jit_value;
-  // typedef std::shared_ptr<jit_value_reg>         jit_value_reg_t;
-  // typedef std::shared_ptr<jit_value_const>       jit_value_const_t;
-  // typedef std::shared_ptr<jit_value_const_int>   jit_value_const_int_t;
-  // typedef std::shared_ptr<jit_value_const_float> jit_value_const_float_t;
   typedef std::shared_ptr<jit_label>             jit_label_t;
 
 
@@ -171,11 +147,11 @@ namespace QDP {
     void reg_alloc();
     void assign( const jit_value& rhs );
     jit_value& operator=( const jit_value& rhs );    
-    ~jit_value();
+    ~jit_value() {}
+
     jit_ptx_type get_type() const;
-    void set_state_space( StateSpace ss );
-    StateSpace get_state_space();
-    const char * get_state_space_str() const;
+    void set_state_space( jit_state_space space );
+    jit_state_space get_state_space() const;
     
     //int get_number() const;
     std::string get_name() const;
@@ -183,11 +159,13 @@ namespace QDP {
     void set_ever_assigned() { ever_assigned = true; }
   private:
     bool ever_assigned;
-    StateSpace mem_state;
+    jit_state_space mem_state;
     jit_ptx_type type;
     int number;
   };
 
+
+  const char * get_state_space_str( jit_state_space space );
 
 
   struct IndexRet {
@@ -199,27 +177,13 @@ namespace QDP {
 
   
   
-#if 0
-  jit_value_const_float( double val_): jit_value_const( jit_type<double>::value ), val(val_) {};
-  virtual bool  isInt() const { return false; }
-  virtual double getAsFloat() const { return val; }
-  virtual std::string getAsString() const { 
-    std::ostringstream oss; 
-    //oss.setf(ios::hex);
-    oss.setf(ios::scientific);
-    oss.precision(std::numeric_limits<double>::digits10 + 1);
-    oss << val;
-    return oss.str();
-  }
-  double getValue() {return val;}
-#endif
 
 
 
   
   std::string jit_predicate( const jit_value& pred );
 
-  jit_value::StateSpace jit_state_promote( jit_value::StateSpace ss0 , jit_value::StateSpace ss1 );
+  jit_state_space jit_state_promote( jit_state_space ss0 , jit_state_space ss1 );
   jit_ptx_type jit_type_promote(jit_ptx_type t0,jit_ptx_type t1);
 
   jit_ptx_type jit_bit_type(jit_ptx_type type);
@@ -242,8 +206,6 @@ namespace QDP {
   // jit_value_reg_t jit_val_create_from_const( int type , int const_val , jit_value pred=jit_value() );
   // jit_value_reg_t jit_val_create_convert( int type , jit_value val , jit_value pred=jit_value() );
   // jit_value jit_val_create_copy( jit_value val , jit_value pred=jit_value() );
-  // jit_value_const_t jit_value( int val );
-  // jit_value_const_t jit_val_create_const_float( double val );
 
   //jit_function_t getFunc(jit_value val);
 
@@ -336,7 +298,9 @@ namespace QDP {
   void jit_ins_exit( const jit_value& pred=jit_value(jit_ptx_type::pred) );
 
   jit_value jit_ins_load ( const jit_value& base , int offset , jit_ptx_type type , const jit_value& pred=jit_value(jit_ptx_type::pred) );
-  void        jit_ins_store( const jit_value& base , int offset , jit_ptx_type type , const jit_value& val , const jit_value& pred=jit_value(jit_ptx_type::pred) );
+
+
+  void jit_ins_store( const jit_value& base , int offset , jit_ptx_type type , const jit_value& val , const jit_value& pred=jit_value(jit_ptx_type::pred) );
 
   jit_value jit_geom_get_linear_th_idx();
 

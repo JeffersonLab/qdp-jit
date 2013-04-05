@@ -13,7 +13,13 @@ namespace QDP {
     jit_value r_base;
 
   public:
-    BaseJIT(): setup_m(false) {}
+    BaseJIT(): 
+      setup_m(false),
+      full(jit_ptx_type::s32),
+      level(jit_ptx_type::s32),
+      r_base(jit_ptx_type::u64)
+    {}
+
     ~BaseJIT() {}
 
     enum { ThisSize = N };                 // Size in T's

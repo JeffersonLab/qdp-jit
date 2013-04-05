@@ -38,10 +38,6 @@ namespace QDP {
 
 
     jit_value getThreadedBase( DeviceLayout lay ) const {
-
-      assert(index_m);
-      assert(base_m);
-
       jit_value wordsize = jit_value( sizeof(typename WordType<T>::Type_t) );
       jit_value ret0 = jit_ins_mul( index_m , wordsize );
       if (lay != DeviceLayout::Coalesced) {

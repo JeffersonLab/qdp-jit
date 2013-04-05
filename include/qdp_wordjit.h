@@ -21,7 +21,13 @@ namespace QDP {
     // Default constructing should be possible
     // then there is no need for MPL index when
     // construction a PMatrix<T,N>
-    WordJIT(): setup_m(false) {}
+    WordJIT(): 
+      setup_m(false),
+      r_base(jit_ptx_type::u64),
+      offset_full(jit_ptx_type::s32),
+      offset_level(jit_ptx_type::s32)
+    {
+    }
 
 
     void setup( jit_value r_base_, jit_value full_, jit_value level_ ) {
