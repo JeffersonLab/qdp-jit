@@ -496,11 +496,9 @@ namespace QDP {
   }
 
 
-  std::ostringstream& jit_function::get_kernel_as_stream()
+  std::string jit_function::get_kernel_as_string()
   {
-    final_ptx.str("");
-    final_ptx.clear();
-
+    std::ostringstream final_ptx;
     write_reg_defs();
 
     int major = DeviceParams::Instance().getMajor();
@@ -539,7 +537,7 @@ namespace QDP {
 	<< oss_prg.str() 
 	<< "}\n";
 
-    return final_ptx;
+    return final_ptx.str();
   }
 
 
@@ -603,16 +601,21 @@ namespace QDP {
     return ret;
   }
 
-  std::ostringstream& jit_get_kernel_as_stream() {
-    return jit_get_function()->get_kernel_as_stream();
+  std::string jit_get_kernel_as_string() {
+    std::string ret = jit_get_function()->get_kernel_as_string();
+    QDP_info_primary("Resetting jit function");
+    jit_internal_function.reset();
+    return ret;
   }
 
 
   void jit_start_new_function() {
     if (jit_internal_function) {
+      QDP_error_exit("New jit function requested, but previous one not finished yet!");
       //QDP_info_primary("Resetting old jit function (use_count = %d) ...",(int)jit_internal_function.use_count());
-      jit_internal_function.reset();
+      //jit_internal_function.reset();
     }
+    QDP_info_primary("Starting new jit function");
     jit_internal_function = make_shared<jit_function>();
   }
 
@@ -629,7 +632,7 @@ namespace QDP {
     CUresult ret;
     CUmodule cuModule;
 
-    std::string ptx_kernel = jit_get_kernel_as_stream().str();
+    std::string ptx_kernel = jit_get_kernel_as_string();
 
     ret = cuModuleLoadDataEx( &cuModule , ptx_kernel.c_str() , 0 , 0 , 0 );
     if (ret) {

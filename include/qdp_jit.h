@@ -68,10 +68,7 @@ namespace QDP {
   }
 
 
-
-
   class jit_function {
-    std::ostringstream final_ptx;
     std::ostringstream oss_prg;
     std::ostringstream oss_signature;
     std::ostringstream oss_reg_defs;
@@ -85,7 +82,7 @@ namespace QDP {
     std::vector<bool> m_include_math_ptx_unary;
     std::vector<bool> m_include_math_ptx_binary;
   public:
-    std::ostringstream& get_kernel_as_stream();
+    std::string get_kernel_as_string();
     void set_include_math_ptx_unary(int i) { 
       assert(m_include_math_ptx_unary.size()>i); 
       m_include_math_ptx_unary.at(i) = true; 
@@ -109,7 +106,7 @@ namespace QDP {
 
   void jit_start_new_function();
   jit_function_t jit_get_function();
-  std::ostringstream& jit_get_kernel_as_stream();
+  std::string jit_get_kernel_as_string();
   CUfunction jit_get_cufunction(const char* fname);
   
 
