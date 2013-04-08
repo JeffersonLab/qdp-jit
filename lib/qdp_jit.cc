@@ -543,26 +543,59 @@ namespace QDP {
 
 
   jit_value jit_add_param( jit_ptx_type type ) {
+    assert( type != jit_ptx_type::u8 );
     jit_function_t func = jit_get_function();
     if (func->get_param_count() > 0)
       func->get_signature() << ",\n";
-    func->get_signature() << ".param ." 
-			  << jit_get_ptx_type(type) 
-			  << " param" 
-			  << func->get_param_count();
-    jit_value ret( type );
-    func->get_prg() << "ld.param." 
-		    << jit_get_ptx_type(type) 
-		    << " " 
-		    << jit_get_reg_name(ret) 
-		    << ",[" 
-		    << "param" 
-		    << func->get_param_count() 
-		    << "];\n";
-    ret.set_state_space( jit_state_space::state_global );
-    ret.set_ever_assigned();
-    func->inc_param_count();
-    return ret;
+
+    if (type == jit_ptx_type::pred) {
+      func->get_signature() << ".param ." 
+			    << jit_get_ptx_type( jit_ptx_type::u8 )
+			    << " param" 
+			    << func->get_param_count();
+
+      int num = jit_get_function()->reg_alloc( jit_ptx_type::u8 );
+      jit_get_function()->get_prg() << "ld.param."
+				    << jit_get_ptx_type( jit_ptx_type::u8 ) << " "
+				    << jit_get_ptx_letter( jit_ptx_type::u8 ) << num 
+				    << ",[" 
+				    << "param" 
+				    << func->get_param_count() 
+				    << "];\n";
+
+      jit_value s32( jit_ptx_type::s32 );
+      jit_get_function()->get_prg() << "cvt."
+				    << jit_get_ptx_type( s32.get_type() )
+				    << ".u8"
+				    << " "
+				    << jit_get_reg_name( s32 )
+				    << ","
+				    << jit_get_ptx_letter( jit_ptx_type::u8 ) << num
+				    << ";\n";
+      func->inc_param_count();
+      jit_value ret = jit_ins_ne( s32 , jit_value(0) );
+      ret.set_state_space( jit_state_space::state_default );
+      ret.set_ever_assigned();
+      return ret;
+    } else {
+      func->get_signature() << ".param ." 
+			    << jit_get_ptx_type(type) 
+			    << " param" 
+			    << func->get_param_count();
+      jit_value ret( type );
+      func->get_prg() << "ld.param." 
+		      << jit_get_ptx_type(type) 
+		      << " " 
+		      << jit_get_reg_name(ret) 
+		      << ",[" 
+		      << "param" 
+		      << func->get_param_count() 
+		      << "];\n";
+      ret.set_state_space( jit_state_space::state_global );
+      ret.set_ever_assigned();
+      func->inc_param_count();
+      return ret;
+    }
   }
 
 
@@ -690,6 +723,7 @@ namespace QDP {
   }
     
   void jit_value::reg_alloc() {
+    assert( type != jit_ptx_type::u8 );
     number = jit_get_function()->reg_alloc(type);
   }
   
@@ -766,15 +800,22 @@ namespace QDP {
   jit_value jit_val_convert( jit_ptx_type type , const jit_value& rhs , const jit_value& pred ) {
     jit_value ret(type);
     if (rhs.get_type() == type) {
+      assert(type != jit_ptx_type::u8);
       jit_ins_mov( ret , rhs , pred );
     } else {
-      jit_get_function()->get_prg() << jit_predicate(pred)
-				    << "cvt."
-				    << jit_get_map_cvt_rnd_from_to(rhs.get_type(),type) 
-				    << jit_get_ptx_type( type ) << "." 
-				    << jit_get_ptx_type( rhs.get_type() ) << " " 
-				    << ret.get_name() << ","
-				    << rhs.get_name() << ";\n";
+      if (rhs.get_type() == jit_ptx_type::pred) {
+	jit_value ret_s32(jit_ptx_type::s32);
+	ret_s32 = jit_ins_selp( jit_value(1), jit_value(0), rhs );
+	return jit_val_convert( type , ret_s32 , pred );
+      } else {
+	jit_get_function()->get_prg() << jit_predicate(pred)
+				      << "cvt."
+				      << jit_get_map_cvt_rnd_from_to(rhs.get_type(),type) 
+				      << jit_get_ptx_type( type ) << "." 
+				      << jit_get_ptx_type( rhs.get_type() ) << " " 
+				      << ret.get_name() << ","
+				      << rhs.get_name() << ";\n";
+      }
     }
     ret.set_state_space( rhs.get_state_space() );
     ret.set_ever_assigned();
@@ -900,38 +941,55 @@ namespace QDP {
 
 
 
-  jit_value jit_ins_selp( jit_value lhs ,  jit_value rhs , const jit_value& p ) {
+  jit_value jit_ins_selp( const jit_value& lhs ,  const jit_value& rhs , const jit_value& p ) {
     jit_ptx_type typebase = jit_type_promote( lhs.get_type() , rhs.get_type() );
+    jit_value ret( typebase );
+    std::ostringstream instr;
     
     if (typebase == jit_ptx_type::pred) {
       assert( lhs.get_type() == jit_ptx_type::pred );
       assert( rhs.get_type() == jit_ptx_type::pred );
       typebase = jit_ptx_type::s32;
-      lhs = jit_ins_selp( jit_value(1) , jit_value(0) , lhs );
-      rhs = jit_ins_selp( jit_value(1) , jit_value(0) , rhs );
+      jit_value lhs_s32(typebase);
+      jit_value rhs_s32(typebase);
+      jit_value ret_s32(typebase);
+      lhs_s32 = jit_ins_selp( jit_value(1) , jit_value(0) , lhs );
+      rhs_s32 = jit_ins_selp( jit_value(1) , jit_value(0) , rhs );
+      instr << "selp." 
+	    << jit_get_ptx_type( typebase ) 
+	    << " "
+	    << jit_get_reg_name( ret_s32 ) 
+	    << ","
+	    << jit_get_reg_name( lhs_s32 ) 
+	    << ","
+	    << jit_get_reg_name( rhs_s32 ) 
+	    << ","
+	    << jit_get_reg_name( p ) 
+	    << ";\n";
+      jit_get_function()->get_prg() << instr.str();
+      ret = jit_ins_ne( ret_s32 , jit_value(0) );
+      ret.set_state_space( jit_state_promote( lhs.get_state_space() , rhs.get_state_space() ) );
+      ret.set_ever_assigned();
+      return ret;
     }
 
-    std::ostringstream instr;
+    jit_value lhs_tb(typebase);
+    jit_value rhs_tb(typebase);
 
-    // Op code
-    instr << "selp." << jit_get_ptx_type( typebase ) << " ";
+    lhs_tb = lhs.get_type() != typebase ? jit_val_convert( typebase , lhs ) : lhs;
+    rhs_tb = rhs.get_type() != typebase ? jit_val_convert( typebase , rhs ) : rhs;
 
-    // Destination
-    jit_value ret( typebase );
-    instr << jit_get_reg_name( ret ) << ",";
-
-    // LHS
-    if (lhs.get_type() != typebase)
-      lhs = jit_val_convert( typebase , lhs );
-    instr << jit_get_reg_name( lhs ) << ",";
-
-    // RHS
-    if (rhs.get_type() != typebase)
-      rhs = jit_val_convert( typebase , rhs );
-    instr << jit_get_reg_name( rhs ) << ",";
-
-    // Predicate
-    instr << jit_get_reg_name( p ) << ";\n";
+    instr << "selp." 
+	  << jit_get_ptx_type( typebase ) 
+	  << " "
+	  << jit_get_reg_name( ret ) 
+	  << ","
+	  << jit_get_reg_name( lhs_tb ) 
+	  << ","
+	  << jit_get_reg_name( rhs_tb ) 
+	  << ","
+	  << jit_get_reg_name( p ) 
+	  << ";\n";
 
     jit_get_function()->get_prg() << instr.str();
     ret.set_state_space( jit_state_promote( lhs.get_state_space() , rhs.get_state_space() ) );
@@ -1215,26 +1273,34 @@ namespace QDP {
 
 
   jit_value jit_ins_load( const jit_value& base , int offset , jit_ptx_type type , const jit_value& pred ) {
-    int type_orig = -1;
-    jit_ptx_type load_type;
+    if ( type == jit_ptx_type::pred ) {
+      int num = jit_get_function()->reg_alloc( jit_ptx_type::u8 );
+      jit_get_function()->get_prg() << jit_predicate(pred)
+				    << "ld." << get_state_space_str(base.get_state_space()) << "."
+				    << jit_get_ptx_type( jit_ptx_type::u8 ) << " "
+				    << jit_get_ptx_letter( jit_ptx_type::u8 ) << num << ",["
+				    << jit_get_reg_name( base ) << " + "
+				    << offset << "];\n";
 
-    load_type = type == jit_ptx_type::pred ? jit_ptx_type::u8 : type;
-
-    jit_value loaded( load_type );
+      jit_value s32( jit_ptx_type::s32 );
+      jit_get_function()->get_prg() << "cvt."
+				    << jit_get_ptx_type( s32.get_type() )
+				    << ".u8"
+				    << " "
+				    << jit_get_reg_name( s32 )
+				    << ","
+				    << jit_get_ptx_letter( jit_ptx_type::u8 ) << num
+				    << ";\n";
+      return jit_ins_ne( s32 , jit_value(0) );
+    }
+    jit_value loaded( type );
     jit_get_function()->get_prg() << jit_predicate(pred)
 				  << "ld." << get_state_space_str(base.get_state_space()) << "."
-				  << jit_get_ptx_type( load_type ) << " "
+				  << jit_get_ptx_type( type ) << " "
 				  << jit_get_reg_name( loaded ) << ",["
 				  << jit_get_reg_name( base ) << " + "
 				  << offset << "];\n";
     
-    if ( load_type != type ) {
-      jit_value loaded_s32 = jit_val_convert( jit_ptx_type::s32 , loaded );
-      jit_value ret_pred = jit_ins_ne( loaded_s32 , jit_value(0) );
-      ret_pred.set_state_space( jit_state_space::state_default );
-      ret_pred.set_ever_assigned();
-      return ret_pred;
-    }
     loaded.set_state_space( jit_state_space::state_default );
     loaded.set_ever_assigned();
     return loaded;
@@ -1243,12 +1309,39 @@ namespace QDP {
   void jit_ins_store(const jit_value& base, int offset , jit_ptx_type type , const jit_value& reg , const jit_value& pred ) {
     if (type == jit_ptx_type::pred ) {
       if ( reg.get_type() != jit_ptx_type::pred ) {
-	jit_value reg_u8 = jit_val_convert( jit_ptx_type::u8 , reg );
-	jit_ins_store( base , offset , jit_ptx_type::u8 , reg_u8 , pred );
+	// I need to convert reg to an 'u8' and the store it
+	int num = jit_get_function()->reg_alloc( jit_ptx_type::u8 );
+	jit_get_function()->get_prg() << "cvt.u8."
+				      << jit_get_ptx_type( reg.get_type() )
+				      << " "
+				      << jit_get_ptx_letter( jit_ptx_type::u8 ) << num
+				      << ","
+				      << jit_get_reg_name( reg )
+				      << ";\n";
+	jit_get_function()->get_prg() << jit_predicate(pred)
+				      << "st." << get_state_space_str(base.get_state_space()) << "."
+				      << jit_get_ptx_type( jit_ptx_type::u8 ) << " ["
+				      << jit_get_reg_name( base ) << " + "
+				      << offset << "],"
+				      << jit_get_ptx_letter( jit_ptx_type::u8 ) << num << ";\n";
       } else {
 	jit_value reg_s32 = jit_ins_selp( jit_value(1) , jit_value(0) , reg );
-	jit_value reg_u8 = jit_val_convert( jit_ptx_type::u8 , reg_s32 );
-	jit_ins_store( base , offset , jit_ptx_type::u8 , reg_u8 , pred );
+
+	// I need to convert reg_s32 to an 'u8' and the store it
+	int num = jit_get_function()->reg_alloc( jit_ptx_type::u8 );
+	jit_get_function()->get_prg() << "cvt.u8."
+				      << jit_get_ptx_type( reg_s32.get_type() )
+				      << " "
+				      << jit_get_ptx_letter( jit_ptx_type::u8 ) << num
+				      << ","
+				      << jit_get_reg_name( reg_s32 )
+				      << ";\n";
+	jit_get_function()->get_prg() << jit_predicate(pred)
+				      << "st." << get_state_space_str(base.get_state_space()) << "."
+				      << jit_get_ptx_type( jit_ptx_type::u8 ) << " ["
+				      << jit_get_reg_name( base ) << " + "
+				      << offset << "],"
+				      << jit_get_ptx_letter( jit_ptx_type::u8 ) << num << ";\n";
       }
     } else {
       if ( reg.get_type() != type ) {

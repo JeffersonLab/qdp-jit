@@ -295,7 +295,7 @@ namespace QDP {
 
 
   // Select
-  jit_value jit_ins_selp( jit_value lhs , jit_value rhs , const jit_value& p );
+  jit_value jit_ins_selp( const jit_value& lhs , const jit_value& rhs , const jit_value& p );
 
   void jit_ins_mov( jit_value& dest , const jit_value& src , const jit_value& pred=jit_value(jit_ptx_type::pred) );
   void jit_ins_mov( jit_value& dest , const std::string& src , const jit_value& pred=jit_value(jit_ptx_type::pred) );
