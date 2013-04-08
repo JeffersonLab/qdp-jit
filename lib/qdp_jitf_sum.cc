@@ -4,9 +4,9 @@
 namespace QDP {
 
   void
-  function_sum_ind_coal_exec( CUfunction function, 
-			      int size, int threads, int blocks, int shared_mem_usage,
-			      void *d_idata, void *d_odata, void *siteTable)
+  function_sum_ind_exec( CUfunction function, 
+			 int size, int threads, int blocks, int shared_mem_usage,
+			 void *d_idata, void *d_odata, void *siteTable)
   {
     // lo <= idx < hi
     int lo = 0;

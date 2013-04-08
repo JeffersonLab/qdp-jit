@@ -849,6 +849,9 @@ sumMulti(const QDPExpr<RHS,OScalar<T> >& s1, const Set& ss)
  * slow. Otherwise, generalized sums happen so infrequently the slow
  * version is fine.
  */
+#if 0
+// If you want to deactive sumMulti GPU evaluation
+// then deactivate sumMulti( OLattice , Set ) in qdp_sum.h as well!
 template<class RHS, class T>
 typename UnaryReturn<OLattice<T>, FnSumMulti>::Type_t
 sumMulti(const QDPExpr<RHS,OLattice<T> >& s1, const Set& ss)
@@ -887,6 +890,19 @@ sumMulti(const QDPExpr<RHS,OLattice<T> >& s1, const Set& ss)
 
   return dest;
 }
+#else
+template<class RHS, class T>
+typename UnaryReturn<OLattice<T>, FnSumMulti>::Type_t
+sumMulti(const QDPExpr<RHS,OLattice<T> >& s1, const Set& ss)
+{
+  OLattice<T> lat;
+  lat = s1;
+  return sumMulti(lat,ss);
+}
+#endif
+
+
+
 
 
 //-----------------------------------------------------------------------------

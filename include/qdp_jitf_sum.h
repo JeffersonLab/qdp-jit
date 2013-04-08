@@ -5,9 +5,9 @@
 
 namespace QDP {
 
-void function_sum_ind_coal_exec( CUfunction function, 
-				 int size, int threads, int blocks, int shared_mem_usage,
-				 void *d_idata, void *d_odata, void *siteTable);
+void function_sum_ind_exec( CUfunction function, 
+			    int size, int threads, int blocks, int shared_mem_usage,
+			    void *d_idata, void *d_odata, void *siteTable);
 
 void function_sum_exec( CUfunction function, 
 			int size, int threads, int blocks, int shared_mem_usage,
@@ -15,9 +15,9 @@ void function_sum_exec( CUfunction function,
 
   // T1 input
   // T2 output
-  template<class T1,class T2>
+  template< class T1 , class T2 , JitDeviceLayout input_layout >
   CUfunction 
-  function_sum_ind_coal_build()
+  function_sum_ind_build()
   {
     //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
@@ -54,7 +54,7 @@ void function_sum_exec( CUfunction function,
 
 
     typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_elem;   // this is stupid
-    reg_idata_elem.setup( idata.elem( JitDeviceLayout::Coalesced ) );
+    reg_idata_elem.setup( idata.elem( input_layout ) );
     sdata.elem( JitDeviceLayout::Scalar ) = reg_idata_elem; // This should do the precision conversion (SP->DP)
 
     jit_ins_bar_sync( 0 );
