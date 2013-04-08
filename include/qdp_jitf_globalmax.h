@@ -46,8 +46,8 @@ namespace QDP {
 
 
     typename REGType< typename JITType<T1>::Type_t >::Type_t idata_reg; // this is stupid
-    idata_reg.setup( idata.elem( QDPTypeJITBase::Scalar ) );            // Scalar is fine, because it's a scalar data type
-    sdata.elem( QDPTypeJITBase::Scalar ) = idata_reg;
+    idata_reg.setup( idata.elem( JitDeviceLayout::Scalar ) );            // Scalar is fine, because it's a scalar data type
+    sdata.elem( JitDeviceLayout::Scalar ) = idata_reg;
 
     jit_ins_bar_sync( 0 );
 
@@ -94,12 +94,12 @@ namespace QDP {
 							    jit_ins_add( r_tidx , r_pred_pow ) );
 
     typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_plus_s_elem;   // this is stupid
-    sdata_plus_s_elem.setup( sdata_plus_s.elem( QDPTypeJITBase::Scalar ) );
+    sdata_plus_s_elem.setup( sdata_plus_s.elem( JitDeviceLayout::Scalar ) );
 
     typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_reg;   // this is stupid
-    sdata_reg.setup( sdata.elem( QDPTypeJITBase::Scalar ) );
+    sdata_reg.setup( sdata.elem( JitDeviceLayout::Scalar ) );
 
-    sdata.elem( QDPTypeJITBase::Scalar ) = where( sdata_reg > sdata_plus_s_elem , sdata_reg , sdata_plus_s_elem );
+    sdata.elem( JitDeviceLayout::Scalar ) = where( sdata_reg > sdata_plus_s_elem , sdata_reg , sdata_plus_s_elem );
 
     jit_ins_label( label_loop_sync );
     jit_ins_bar_sync( 0 );
@@ -115,8 +115,8 @@ namespace QDP {
     jit_value pred_branch_exit = jit_ins_ne( jit_geom_get_tidx() , jit_value(0) );
     jit_ins_branch( label_exit , pred_branch_exit );
 
-    sdata_reg.setup( sdata.elem( QDPTypeJITBase::Scalar ) );
-    odata.elem( QDPTypeJITBase::Scalar ) = sdata_reg;
+    sdata_reg.setup( sdata.elem( JitDeviceLayout::Scalar ) );
+    odata.elem( JitDeviceLayout::Scalar ) = sdata_reg;
 
     jit_ins_label( label_exit );
 

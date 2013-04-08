@@ -39,10 +39,10 @@ function_gaussian_build(OLattice<T>& dest ,OLattice<T>& r1 ,OLattice<T>& r2 )
   typedef typename REGType< typename JITType<T>::Type_t >::Type_t TREG;
   TREG r1_reg;
   TREG r2_reg;
-  r1_reg.setup( r1_jit.elem( QDPTypeJITBase::Coalesced ) );
-  r2_reg.setup( r2_jit.elem( QDPTypeJITBase::Coalesced ) );
+  r1_reg.setup( r1_jit.elem( JitDeviceLayout::Coalesced ) );
+  r2_reg.setup( r2_jit.elem( JitDeviceLayout::Coalesced ) );
 
-  fill_gaussian( dest_jit.elem(QDPTypeJITBase::Coalesced) , r1_reg , r2_reg );
+  fill_gaussian( dest_jit.elem(JitDeviceLayout::Coalesced) , r1_reg , r2_reg );
 
   return jit_get_cufunction("ptx_gaussian.ptx");
 }

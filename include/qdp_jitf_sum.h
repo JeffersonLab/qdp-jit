@@ -54,8 +54,8 @@ void function_sum_exec( CUfunction function,
 
 
     typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_elem;   // this is stupid
-    reg_idata_elem.setup( idata.elem( QDPTypeJITBase::Coalesced ) );
-    sdata.elem( QDPTypeJITBase::Scalar ) = reg_idata_elem; // This should do the precision conversion (SP->DP)
+    reg_idata_elem.setup( idata.elem( JitDeviceLayout::Coalesced ) );
+    sdata.elem( JitDeviceLayout::Scalar ) = reg_idata_elem; // This should do the precision conversion (SP->DP)
 
     jit_ins_bar_sync( 0 );
 
@@ -102,8 +102,8 @@ void function_sum_exec( CUfunction function,
 							    jit_ins_add( r_tidx , r_pred_pow ) );
 
     typename REGType< typename JITType<T2>::Type_t >::Type_t sdata_plus_s_elem;   // this is stupid
-    sdata_plus_s_elem.setup( sdata_plus_s.elem( QDPTypeJITBase::Scalar ) );
-    sdata.elem( QDPTypeJITBase::Scalar ) += sdata_plus_s_elem;
+    sdata_plus_s_elem.setup( sdata_plus_s.elem( JitDeviceLayout::Scalar ) );
+    sdata.elem( JitDeviceLayout::Scalar ) += sdata_plus_s_elem;
 
     jit_ins_label(  label_loop_sync );  
     jit_ins_bar_sync(  0 );
@@ -120,8 +120,8 @@ void function_sum_exec( CUfunction function,
     jit_ins_branch(  label_exit , pred_branch_exit );
 
     typename REGType< typename JITType<T2>::Type_t >::Type_t sdata_reg;   // this is stupid
-    sdata_reg.setup( sdata.elem( QDPTypeJITBase::Scalar ) );
-    odata.elem( QDPTypeJITBase::Scalar ) = sdata_reg;
+    sdata_reg.setup( sdata.elem( JitDeviceLayout::Scalar ) );
+    odata.elem( JitDeviceLayout::Scalar ) = sdata_reg;
 
     jit_ins_label(  label_exit );
 
@@ -163,8 +163,8 @@ void function_sum_exec( CUfunction function,
 
 
     typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_elem;   // this is stupid
-    reg_idata_elem.setup( idata.elem( QDPTypeJITBase::Scalar ) );
-    sdata.elem( QDPTypeJITBase::Scalar ) = reg_idata_elem;
+    reg_idata_elem.setup( idata.elem( JitDeviceLayout::Scalar ) );
+    sdata.elem( JitDeviceLayout::Scalar ) = reg_idata_elem;
 
     jit_ins_bar_sync(  0 );
 
@@ -211,8 +211,8 @@ void function_sum_exec( CUfunction function,
 							    jit_ins_add( r_tidx , r_pred_pow ) );
 
     typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_plus_s_elem;   // this is stupid
-    sdata_plus_s_elem.setup( sdata_plus_s.elem( QDPTypeJITBase::Scalar ) );
-    sdata.elem( QDPTypeJITBase::Scalar ) += sdata_plus_s_elem;
+    sdata_plus_s_elem.setup( sdata_plus_s.elem( JitDeviceLayout::Scalar ) );
+    sdata.elem( JitDeviceLayout::Scalar ) += sdata_plus_s_elem;
 
     jit_ins_label(  label_loop_sync );  
     jit_ins_bar_sync(  0 );
@@ -229,8 +229,8 @@ void function_sum_exec( CUfunction function,
     jit_ins_branch(  label_exit , pred_branch_exit );
 
     typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_reg;   // this is stupid
-    sdata_reg.setup( sdata.elem( QDPTypeJITBase::Scalar ) );
-    odata.elem( QDPTypeJITBase::Scalar ) = sdata_reg;
+    sdata_reg.setup( sdata.elem( JitDeviceLayout::Scalar ) );
+    odata.elem( JitDeviceLayout::Scalar ) = sdata_reg;
 
     jit_ins_label(  label_exit );
 

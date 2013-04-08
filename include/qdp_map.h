@@ -303,7 +303,7 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
       OLatticeJIT< typename JITType<Type_t>::Type_t > lattice_recv( index.r_rcvbuf , index.r_newidx_buffer );
 
       Type_t ret_new;
-      ret_new.setup( lattice_recv.elem( QDPTypeJITBase::Scalar ) );
+      ret_new.setup( lattice_recv.elem( JitDeviceLayout::Scalar ) );
       ret = ret_new;
 
       jit_ins_label( label_in_exit );

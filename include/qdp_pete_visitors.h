@@ -22,9 +22,9 @@ struct ShiftPhase2
 
 struct ViewLeaf
 {
-  QDPTypeJITBase::DeviceLayout layout_m;
-  inline ViewLeaf(QDPTypeJITBase::DeviceLayout layout) : layout_m(layout) { }
-  inline QDPTypeJITBase::DeviceLayout getLayout() const { return layout_m; }
+  JitDeviceLayout layout_m;
+  inline ViewLeaf( JitDeviceLayout layout ) : layout_m(layout) { }
+  inline JitDeviceLayout getLayout() const { return layout_m; }
 };
   
 

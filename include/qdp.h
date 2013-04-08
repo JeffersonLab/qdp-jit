@@ -137,7 +137,6 @@ namespace QDP {
 #include "qdp_subset.h"
 #include "qdp_stopwatch.h"
 
-#include "qdp_qdptypejitbase.h"
 #include "qdp_pete_visitors.h"
 
 #include "qdp_traits.h"

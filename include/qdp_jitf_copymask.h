@@ -33,10 +33,10 @@ namespace QDP {
 
     REGFuncRet_t src_reg;
     REGFuncRet1_t mask_reg;
-    src_reg.setup ( src_jit.elem( QDPTypeJITBase::Coalesced ) );
-    mask_reg.setup( mask_jit.elem( QDPTypeJITBase::Coalesced ) );
+    src_reg.setup ( src_jit.elem( JitDeviceLayout::Coalesced ) );
+    mask_reg.setup( mask_jit.elem( JitDeviceLayout::Coalesced ) );
 
-    copymask( dest_jit.elem( QDPTypeJITBase::Coalesced ) , mask_reg , src_reg );
+    copymask( dest_jit.elem( JitDeviceLayout::Coalesced ) , mask_reg , src_reg );
 
     return jit_get_cufunction("ptx_copymask.ptx");
   }

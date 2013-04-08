@@ -192,7 +192,7 @@ void Set::make(const SetFunc& fun)
   }
 
 
-  QDP_debug("Building strided sitetables...");
+  QDPIO::cout << "Set: Building strided sitetables...\n";
 
   int ss_size = sitetables[0].size();
 
@@ -210,7 +210,7 @@ void Set::make(const SetFunc& fun)
     if ((ss_size > 0) && 
 	(sitetables[n].size() > 0) && 
 	(sitetables[n].size() != ss_size)) {
-      QDP_error("Warning: Set found with subset sizes changing accross nodes. This will cause problems with sumMulti on GPUs. Disable device calculation for this specific set.");
+      QDPIO::cout << "Warning: This set has subsets which sizes are different accross nodes. Disabling it for GPU\n";
       enableGPU = false;
     }
 
@@ -219,17 +219,16 @@ void Set::make(const SetFunc& fun)
 	first = false;
 	stride_offset=n;
 	hill0=true;
-	QDP_debug("hill0");
+	//QDP_debug("hill0");
       }
       nonEmptySubsetsOnNode++;
       if (valley0) {
-	QDP_error("Warning: Set found with at least two separate junctions. This will cause problems when using with CUDA! Disable device calculation for this set.");
+	QDPIO::cout << "Warning: This set has at least two separate junctions. Disabling it for GPU\n";
 	enableGPU = false;
       }
       ss_size=sitetables[0].size();
     } else {
       if (hill0) { valley0=true;  QDP_debug_deep("hill0 valley0"); }
-
     }
 
     for (int i=0 ; i < sitetables[n].size() ; i++ ) {
@@ -239,25 +238,25 @@ void Set::make(const SetFunc& fun)
 
   unsigned dsize = sitetables_strided.size() * sizeof(int);
 
-  QDP_debug("Set::make: Strided:  Will register memory now...");
+  QDPIO::cout << "Set: Registering this set ...\n";
 
   if (registered) {
-    QDP_info("Set::~Set: Strided:  Already registered, will sign off the old memory ...");
+    QDPIO::cout << "Set: Already registered, will sign it off first ...\n";
     QDPCache::Instance().signoff( idStrided );
   }
 
   idStrided = QDPCache::Instance().registrateOwnHostMem( dsize , (void*)sitetables_strided.slice() , NULL );
   registered=true;
-
+  
   QDP_debug("nonEmptySubsetsOnNode  = %d" , nonEmptySubsetsOnNode );  
   QDP_debug("stride_offset = %d" , stride_offset );
-
-#if 0
+  
+#if 1
   // Now check across nodes
   Integer yo = enableGPU ? 1 : 0;
   QDPInternal::globalSum(yo);
-  if ( yo.elem().elem().elem().elem() < Layout::numNodes() ) {
-    QDP_info_primary("Disabling 1 particular Set for sumMulti on GPUs");
+  if ( toInt( yo ) < Layout::numNodes() ) {
+    QDPIO::cout << "Set: This set is disabled at least on one node. Disabling it for all.\n";
     enableGPU=false;
   }
 #endif

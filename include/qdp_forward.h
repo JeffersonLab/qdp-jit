@@ -7,6 +7,9 @@
 namespace QDP
 {
 
+  enum class JitDeviceLayout { Coalesced , Scalar };
+
+
   // IO
   class TextReader;
   class TextWriter;

@@ -10,7 +10,7 @@ namespace QDP {
 
 
   template<class T, class C> 
-  class QDPTypeJIT: public QDPTypeJITBase
+  class QDPTypeJIT
   {
   public:
     //! Type of the first argument
@@ -37,10 +37,10 @@ namespace QDP {
     ~QDPTypeJIT(){}
 
 
-    jit_value getThreadedBase( DeviceLayout lay ) const {
+    jit_value getThreadedBase( JitDeviceLayout lay ) const {
       jit_value wordsize = jit_value( sizeof(typename WordType<T>::Type_t) );
       jit_value ret0 = jit_ins_mul( index_m , wordsize );
-      if (lay != DeviceLayout::Coalesced) {
+      if ( lay != JitDeviceLayout::Coalesced ) {
 	jit_value tsize = jit_value( T::Size_t );
 	jit_value ret1 = jit_ins_mul( ret0 , tsize );
 	jit_value ret2 = jit_ins_add( ret1 , base_m );
@@ -51,31 +51,31 @@ namespace QDP {
     }
 
 
-    jit_value getInnerSites(DeviceLayout lay) const {
-      if (lay == DeviceLayout::Coalesced)
+    jit_value getInnerSites( JitDeviceLayout lay) const {
+      if ( lay == JitDeviceLayout::Coalesced )
 	return jit_value(Layout::sitesOnNode());
       else 
 	return jit_value(1);
     }
 
 
-    T& elem(DeviceLayout lay) {
+    T& elem( JitDeviceLayout lay ) {
       F.setup(getThreadedBase(lay),getInnerSites(lay),jit_value(0));
       return F;
     }
 
-    const T& elem(DeviceLayout lay) const {
+    const T& elem( JitDeviceLayout lay ) const {
       F.setup(getThreadedBase(lay),getInnerSites(lay),jit_value(0));
       return F;
     }
 
     T& elem() {
-      F.setup(getThreadedBase(DeviceLayout::Scalar),jit_value(1),jit_value(0));
+      F.setup(getThreadedBase( JitDeviceLayout::Scalar ),jit_value(1),jit_value(0));
       return F;
     }
 
     const T& elem() const {
-      F.setup(getThreadedBase(DeviceLayout::Scalar),jit_value(1),jit_value(0));
+      F.setup(getThreadedBase( JitDeviceLayout::Scalar ),jit_value(1),jit_value(0));
       return F;
     }
 

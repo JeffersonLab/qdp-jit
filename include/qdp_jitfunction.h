@@ -62,7 +62,7 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 
   //printme<View_t>();
 
-  op_jit(dest_jit.elem( QDPTypeJITBase::Coalesced ), forEach(rhs_view, ViewLeaf( QDPTypeJITBase::Coalesced ), OpCombine()));
+  op_jit(dest_jit.elem( JitDeviceLayout::Coalesced ), forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced ), OpCombine()));
 
   return jit_get_cufunction("ptx_eval.ptx");
 }
@@ -106,7 +106,7 @@ function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScala
   typedef typename ForEach<QDPExpr<RHS,OScalar<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
   View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
-  op_jit(dest_jit.elem( QDPTypeJITBase::Coalesced ), forEach(rhs_view, ViewLeaf( QDPTypeJITBase::Scalar ), OpCombine()));
+  op_jit(dest_jit.elem( JitDeviceLayout::Coalesced ), forEach(rhs_view, ViewLeaf( JitDeviceLayout::Scalar ), OpCombine()));
 
   return jit_get_cufunction("ptx_lat_sca.ptx");
 }
@@ -145,7 +145,7 @@ function_zero_rep_build(OLattice<T>& dest)
   typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
   FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
 
-  zero_rep( dest_jit.elem(QDPTypeJITBase::Coalesced) );
+  zero_rep( dest_jit.elem(JitDeviceLayout::Coalesced) );
 
   return jit_get_cufunction("ptx_zero.ptx");
 }
@@ -180,7 +180,7 @@ function_sca_sca_build(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar
 
   //printme<View_t>();
 
-  op_jit(dest_jit.elem( QDPTypeJITBase::Scalar ), forEach(rhs_view, ViewLeaf( QDPTypeJITBase::Scalar ), OpCombine()));
+  op_jit(dest_jit.elem( JitDeviceLayout::Scalar ), forEach(rhs_view, ViewLeaf( JitDeviceLayout::Scalar ), OpCombine()));
 
   return jit_get_cufunction("ptx_sca_sca.ptx");
 }
@@ -234,13 +234,13 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
 
   seed_reg.setup( ran_seed_jit.elem() );
 
-  lattice_ran_mult_reg.setup( lattice_ran_mult_jit.elem( QDPTypeJITBase::Coalesced ) );
+  lattice_ran_mult_reg.setup( lattice_ran_mult_jit.elem( JitDeviceLayout::Coalesced ) );
 
   skewed_seed_reg = seed_reg * lattice_ran_mult_reg;
 
   ran_mult_n_reg.setup( ran_mult_n_jit.elem() );
 
-  fill_random( dest_jit.elem(QDPTypeJITBase::Coalesced) , seed_reg , skewed_seed_reg , ran_mult_n_reg );
+  fill_random( dest_jit.elem(JitDeviceLayout::Coalesced) , seed_reg , skewed_seed_reg , ran_mult_n_reg );
 
   jit_value r_no_save = jit_ins_ne( r_idx_thread , jit_value(0) );
 
@@ -307,8 +307,8 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
 
   //printme<View_t>();
 
-  OpAssign()( dest_jit.elem( QDPTypeJITBase::Scalar ) , 
-	      forEach(rhs_view, ViewLeaf( QDPTypeJITBase::Coalesced ) , OpCombine() ) );
+  OpAssign()( dest_jit.elem( JitDeviceLayout::Scalar ) , 
+	      forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced ) , OpCombine() ) );
 
   return jit_get_cufunction("ptx_gather.ptx");
 }
