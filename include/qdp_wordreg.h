@@ -31,6 +31,10 @@ namespace QDP {
       //      setup_m=true;
     }
 
+    // WordREG(const jit_value& rhs): val(jit_type<T>::value) {
+    //   setup(rhs);
+    // }
+
     void setup(const jit_value& v) {
       if (val.get_type() == v.get_type())
 	jit_ins_mov(val,v);

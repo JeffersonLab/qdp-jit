@@ -634,6 +634,15 @@ namespace QDP {
 
     std::string ptx_kernel = jit_get_kernel_as_string();
 
+#if 0
+    // Write kernel to file ?
+    if (Layout::primaryNode()) {
+      std::ofstream out(fname);
+      out << ptx_kernel;
+      out.close();
+    }
+#endif
+
     ret = cuModuleLoadDataEx( &cuModule , ptx_kernel.c_str() , 0 , 0 , 0 );
     if (ret) {
       if (Layout::primaryNode()) {
