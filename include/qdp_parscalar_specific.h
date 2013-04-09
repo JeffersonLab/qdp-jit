@@ -122,13 +122,13 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
   // Build the function
   if (function == NULL)
     {
-      //std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
+      //QDPIO::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
       function = function_sca_sca_build(dest, op, rhs);
-      //std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
+      //QDPIO::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
     }
   else
     {
-      //std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
+      //QDPIO::cout << __PRETTY_FUNCTION__ << ": is already built\n";
     }
 
   // Execute the function
@@ -148,7 +148,7 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& 
 	      const Subset& s)
 {
 #if 1
-  //std::cout << __PRETTY_FUNCTION__ << "\n";
+  //QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
 
 // cerr << "In evaluateSubset(olattice,oscalar)\n";
 
@@ -162,13 +162,13 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& 
   // Build the function
   if (function == NULL)
     {
-      //std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
+      //QDPIO::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
       function = function_lat_sca_build(dest, op, rhs);
-      //std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
+      //QDPIO::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
     }
   else
     {
-      //std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
+      //QDPIO::cout << __PRETTY_FUNCTION__ << ": is already built\n";
     }
 
   // Execute the function
@@ -236,13 +236,13 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
   // Build the function
   if (function == NULL)
     {
-      //std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
+      //QDPIO::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
       function = function_build(dest0, op, rhs);
-      //std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
+      //QDPIO::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
     }
   else
     {
-      //std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
+      //QDPIO::cout << __PRETTY_FUNCTION__ << ": is already built\n";
     }
 
   // Execute the function
@@ -279,7 +279,7 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
 
       if (different) {
         diffs++;
-        std::cout << "site = " << i
+        QDPIO::cout << "site = " << i
                   << "   cpu = " << d_cpu
                   << "   gpu = " << d_gpu
                   << "   factor = " << d_cpu/d_gpu
@@ -291,7 +291,7 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
   }
 
   if (diffs > 0) {
-    std::cout << __PRETTY_FUNCTION__ << " numsitetable = " << s.numSiteTable() << "\n";
+    QDPIO::cout << __PRETTY_FUNCTION__ << " numsitetable = " << s.numSiteTable() << "\n";
     check_abort();
   }
 #else
@@ -300,13 +300,13 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
   // Build the function
   if (function == NULL)
     {
-      //std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
+      //QDPIO::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
       function = function_build(dest, op, rhs);
-      //std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
+      //QDPIO::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
     }
   else
     {
-      //std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
+      //QDPIO::cout << __PRETTY_FUNCTION__ << ": is already built\n";
     }
 
   // Execute the function
@@ -327,6 +327,8 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
 template<class T1, class T2>
 void copymask(OSubLattice<T2> d, const OLattice<T1>& mask, const OLattice<T2>& s1) 
 {
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
+
   OLattice<T2>& dest = d.field();
   const Subset& s = d.subset();
 
@@ -342,18 +344,18 @@ void copymask(OSubLattice<T2> d, const OLattice<T1>& mask, const OLattice<T2>& s
 template<class T1, class T2> 
 void copymask(OLattice<T2>& dest, const OLattice<T1>& mask, const OLattice<T2>& s1) 
 {
-  //std::cout << __PRETTY_FUNCTION__ << "\n";
+  //QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
   static CUfunction function;
   // Build the function
   if (function == NULL)
     {
-      //std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
+      //QDPIO::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
       function = function_copymask_build( dest , mask , s1 );
-      //std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
+      //QDPIO::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
     }
   else
     {
-      //std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
+      //QDPIO::cout << __PRETTY_FUNCTION__ << ": is already built\n";
     }
 
   // Execute the function
@@ -426,11 +428,11 @@ random(OLattice<T>& d, const Subset& s)
   RNG::ran_seed = seed;  // The seed from any site is the same as the new global seed
 
   if ( toBool( seed != seed_tmp ) ) {
-    std::cout << "seed from GPU and CPU different! seed_cpu = " 
+    QDPIO::cout << "seed from GPU and CPU different! seed_cpu = " 
 	      << seed
 	      << "    seed_gpu = "
 	      << seed_tmp << "\n";
-    std::cout << __PRETTY_FUNCTION__ << " numsitetable = " << s.numSiteTable() << "\n";
+    QDPIO::cout << __PRETTY_FUNCTION__ << " numsitetable = " << s.numSiteTable() << "\n";
     check_abort();
   }
 
@@ -457,7 +459,7 @@ random(OLattice<T>& d, const Subset& s)
 
       if (different) {
         diffs++;
-        std::cout << "site = " << i
+        QDPIO::cout << "site = " << i
                   << "   cpu = " << d_cpu
                   << "   gpu = " << d_gpu
                   << "   factor = " << d_cpu/d_gpu
@@ -469,7 +471,7 @@ random(OLattice<T>& d, const Subset& s)
   }
 
   if (diffs > 0) {
-    std::cout << __PRETTY_FUNCTION__ << " numsitetable = " << s.numSiteTable() << "\n";
+    QDPIO::cout << __PRETTY_FUNCTION__ << " numsitetable = " << s.numSiteTable() << "\n";
     check_abort();
   }
 #else
@@ -480,13 +482,13 @@ random(OLattice<T>& d, const Subset& s)
   // Build the function
   if (function == NULL)
     {
-      //std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
+      //QDPIO::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
       function = function_random_build( d , seed_tmp );
-      //std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
+      //QDPIO::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
     }
   else
     {
-      //std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
+      //QDPIO::cout << __PRETTY_FUNCTION__ << ": is already built\n";
     }
 
   // Execute the function
@@ -549,13 +551,13 @@ void gaussian(OLattice<T>& d, const Subset& s)
   // Build the function
   if (function == NULL)
     {
-      //std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
+      //QDPIO::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
       function = function_gaussian_build( d , r1 , r2 );
-      //std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
+      //QDPIO::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
     }
   else
     {
-      //std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
+      //QDPIO::cout << __PRETTY_FUNCTION__ << ": is already built\n";
     }
 
   // Execute the function
@@ -610,7 +612,7 @@ void zero_rep(OLattice<T>& dest, const Subset& s)
     }
   else
     {
-      //std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
+      //QDPIO::cout << __PRETTY_FUNCTION__ << ": is already built\n";
     }
 
   function_zero_rep_exec( function , dest , s );
@@ -775,7 +777,7 @@ template<class RHS, class T>
 typename UnaryReturn<OLattice<T>, FnSum>::Type_t
 sum(const QDPExpr<RHS,OLattice<T> >& s1)
 {
-  std::cout << __PRETTY_FUNCTION__ << "\n";
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
 
   typename UnaryReturn<OLattice<T>, FnSum>::Type_t  d;
 
@@ -856,7 +858,7 @@ template<class RHS, class T>
 typename UnaryReturn<OLattice<T>, FnSumMulti>::Type_t
 sumMulti(const QDPExpr<RHS,OLattice<T> >& s1, const Set& ss)
 {
-  std::cout << __PRETTY_FUNCTION__ << "\n";
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
 
   typename UnaryReturn<OLattice<T>, FnSumMulti>::Type_t  dest(ss.numSubsets());
 
@@ -954,6 +956,8 @@ template<class T>
 multi2d<typename UnaryReturn<OLattice<T>, FnSum>::Type_t>
 sumMulti(const multi1d< OLattice<T> >& s1, const Set& ss)
 {
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
+
   multi2d<typename UnaryReturn<OLattice<T>, FnSum>::Type_t> dest(s1.size(), ss.numSubsets());
 
 #if defined(QDP_USE_PROFILING)   
@@ -1005,7 +1009,7 @@ template<class T>
 inline typename UnaryReturn<OScalar<T>, FnNorm2>::Type_t
 norm2(const multi1d< OScalar<T> >& s1)
 {
-  std::cout << __PRETTY_FUNCTION__ << "\n";
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
 
   typename UnaryReturn<OScalar<T>, FnNorm2>::Type_t  d;
 
@@ -1053,7 +1057,7 @@ template<class T>
 inline typename UnaryReturn<OLattice<T>, FnNorm2>::Type_t
 norm2(const multi1d< OLattice<T> >& s1, const Subset& s)
 {
-  std::cout << __PRETTY_FUNCTION__ << "\n";
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
 
   typename UnaryReturn<OLattice<T>, FnNorm2>::Type_t  d;
 
@@ -1117,7 +1121,7 @@ template<class T1, class T2>
 inline typename BinaryReturn<OScalar<T1>, OScalar<T2>, FnInnerProduct>::Type_t
 innerProduct(const multi1d< OScalar<T1> >& s1, const multi1d< OScalar<T2> >& s2)
 {
-  std::cout << __PRETTY_FUNCTION__ << "\n";
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
 
   typename BinaryReturn<OScalar<T1>, OScalar<T2>, FnInnerProduct>::Type_t  d;
 
@@ -1169,7 +1173,7 @@ inline typename BinaryReturn<OLattice<T1>, OLattice<T2>, FnInnerProduct>::Type_t
 innerProduct(const multi1d< OLattice<T1> >& s1, const multi1d< OLattice<T2> >& s2,
 	     const Subset& s)
 {
-  std::cout << __PRETTY_FUNCTION__ << "\n";
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
 
   typename BinaryReturn<OLattice<T1>, OLattice<T2>, FnInnerProduct>::Type_t  d;
 
@@ -1234,7 +1238,7 @@ template<class T1, class T2>
 inline typename BinaryReturn<OScalar<T1>, OScalar<T2>, FnInnerProductReal>::Type_t
 innerProductReal(const multi1d< OScalar<T1> >& s1, const multi1d< OScalar<T2> >& s2)
 {
-  std::cout << __PRETTY_FUNCTION__ << "\n";
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
 
   typename BinaryReturn<OScalar<T1>, OScalar<T2>, FnInnerProductReal>::Type_t  d;
 
@@ -1286,7 +1290,7 @@ inline typename BinaryReturn<OLattice<T1>, OLattice<T2>, FnInnerProductReal>::Ty
 innerProductReal(const multi1d< OLattice<T1> >& s1, const multi1d< OLattice<T2> >& s2,
 		 const Subset& s)
 {
-  std::cout << __PRETTY_FUNCTION__ << "\n";
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
 
   typename BinaryReturn<OLattice<T1>, OLattice<T2>, FnInnerProductReal>::Type_t  d;
 
@@ -1352,7 +1356,7 @@ template<class RHS, class T>
 typename UnaryReturn<OScalar<T>, FnGlobalMax>::Type_t
 globalMax(const QDPExpr<RHS,OScalar<T> >& s1)
 {
-  std::cout << __PRETTY_FUNCTION__ << "\n";
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
 
   typename UnaryReturn<OScalar<T>, FnGlobalMax>::Type_t  d;
 
@@ -1377,7 +1381,7 @@ globalMax(const QDPExpr<RHS,OScalar<T> >& s1)
 /*!
  * Find the maximum an object has across the lattice
  */
-#if 0
+#if 1
 template<class RHS, class T>
 typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t
 globalMax(const QDPExpr<RHS,OLattice<T> >& s1)
@@ -1390,7 +1394,7 @@ template<class RHS, class T>
 typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t
 globalMax(const QDPExpr<RHS,OLattice<T> >& s1)
 {
-  std::cout << __PRETTY_FUNCTION__ << "\n";
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
 
   typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t  d;
 
@@ -1434,7 +1438,7 @@ template<class RHS, class T>
 typename UnaryReturn<OScalar<T>, FnGlobalMin>::Type_t
 globalMin(const QDPExpr<RHS,OScalar<T> >& s1)
 {
-  std::cout << __PRETTY_FUNCTION__ << "\n";
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
 
   typename UnaryReturn<OScalar<T>, FnGlobalMin>::Type_t  d;
 
@@ -1463,7 +1467,7 @@ template<class RHS, class T>
 typename UnaryReturn<OLattice<T>, FnGlobalMin>::Type_t
 globalMin(const QDPExpr<RHS,OLattice<T> >& s1)
 {
-  std::cout << __PRETTY_FUNCTION__ << "\n";
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
 
   typename UnaryReturn<OLattice<T>, FnGlobalMin>::Type_t  d;
 
@@ -1546,7 +1550,7 @@ template<class T1>
 inline OScalar<T1>
 peekSite(const OLattice<T1>& l, const multi1d<int>& coord)
 {
-  std::cout << __PRETTY_FUNCTION__ << "\n";
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
 
   OScalar<T1> dest;
   int nodenum = Layout::nodeNumber(coord);
@@ -1598,7 +1602,7 @@ template<class T1>
 inline OLattice<T1>&
 pokeSite(OLattice<T1>& l, const OScalar<T1>& r, const multi1d<int>& coord)
 {
-  std::cout << __PRETTY_FUNCTION__ << "\n";
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
 
   if (Layout::nodeNumber() == Layout::nodeNumber(coord))
     l.elem(Layout::linearSiteIndex(coord)) = r.elem();
