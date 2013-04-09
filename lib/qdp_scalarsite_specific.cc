@@ -18,20 +18,27 @@ namespace Layout
   /* Assumes no inner grid */
   LatticeInteger latticeCoordinate(int mu)
   {
-    const int nodeSites = Layout::sitesOnNode();
-    const int nodeNumber = Layout::nodeNumber();
-    LatticeInteger d;
+    static multi1d<LatticeInteger> latCoord(Nd);
+    static std::vector<bool> availCoord(Nd,false);
 
     if (mu < 0 || mu >= Nd)
       QDP_error_exit("dimension out of bounds");
 
-    for(int i=0; i < nodeSites; ++i) 
-    {
-      Integer cc = Layout::siteCoords(nodeNumber,i)[mu];
-      d.elem(i) = cc.elem();
+    if (!availCoord[mu]) {
+      QDPIO::cout << "creating latticeCoordinate " << mu << "\n";
+      const int nodeSites = Layout::sitesOnNode();
+      const int nodeNumber = Layout::nodeNumber();
+      LatticeInteger d;
+      for(int i=0; i < nodeSites; ++i) 
+	{
+	  Integer cc = Layout::siteCoords(nodeNumber,i)[mu];
+	  d.elem(i) = cc.elem();
+	}
+      latCoord[mu] = d;
+      availCoord[mu] = true;
     }
 
-    return d;
+    return latCoord[mu];
   }
 }
 
