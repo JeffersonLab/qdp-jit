@@ -13,6 +13,8 @@
 #include <map>
 #include <string>
 
+#include "cudaProfiler.h"
+
 using namespace std;
 
 
@@ -90,6 +92,8 @@ namespace QDP {
     //std::cout << "shmem = " << sharedMemBytes << "\n";
 
     CudaSyncTransferStream();
+    //CudaDeviceSynchronize();
+
     // This call is async
     if ( blockDimX * blockDimY * blockDimZ > 0  &&  gridDimX * gridDimY * gridDimZ > 0 ) {
       cuLaunchKernel(f, gridDimX, gridDimY, gridDimZ, 
@@ -121,6 +125,32 @@ namespace QDP {
       exit(1);
     }
   }
+
+
+  void CudaProfilerInitialize()
+  {
+    CUresult res;
+    std::cout << "CUDA Profiler Initializing ...\n";
+    res = cuProfilerInitialize( "prof.cfg" , "prof.out" , CU_OUT_CSV );
+    CudaRes("cuProfilerInitialize",res);
+  }
+
+  void CudaProfilerStart()
+  {
+    CUresult res;
+    res = cuProfilerStart();
+    CudaRes("cuProfilerStart",res);
+  }
+
+  void CudaProfilerStop()
+  {
+    CUresult res;
+    res = cuProfilerStop();
+    CudaRes("cuProfilerStop",res);
+  }
+
+
+
 
   //int CudaGetConfig(CUdevice_attribute what)
   int CudaGetConfig(int what)

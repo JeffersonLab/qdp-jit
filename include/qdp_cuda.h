@@ -50,6 +50,11 @@ namespace QDP {
 
   void CudaThreadSynchronize();
   void CudaDeviceSynchronize();
+
+  void CudaProfilerInitialize();
+  void CudaProfilerStart();
+  void CudaProfilerStop();
+
 }
 
 #endif
