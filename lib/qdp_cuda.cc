@@ -91,7 +91,7 @@ namespace QDP {
 
     //std::cout << "shmem = " << sharedMemBytes << "\n";
 
-    CudaSyncTransferStream();
+    //CudaSyncTransferStream();
     //CudaDeviceSynchronize();
 
     // This call is async
@@ -109,6 +109,11 @@ namespace QDP {
 #ifdef GPU_DEBUG_DEEP
     QDPCache::Instance().printLockSets();
 #endif
+
+    // For now, pull the brakes
+    // I've seen the GPU running away from CPU thread
+    // This call is probably too much, but it's safe to call it.
+    CudaDeviceSynchronize();
 
     if (DeviceParams::Instance().getSyncDevice()) {  
       QDP_info_primary("Pulling the brakes: device sync after kernel launch!");
