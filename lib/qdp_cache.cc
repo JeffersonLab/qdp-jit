@@ -410,7 +410,7 @@ namespace QDP
 
 	} else {
 	  //std::cout << "copy data to device (no layout change)\n";
-	  CudaMemcpyH2D( e.devPtr , e.hstPtr , e.size );
+	  CudaMemcpyH2DAsync( e.devPtr , e.hstPtr , e.size );
 	}
 	CudaSyncTransferStream();
 	if (e.flags != 2)

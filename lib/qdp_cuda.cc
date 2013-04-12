@@ -91,14 +91,14 @@ namespace QDP {
 
     //std::cout << "shmem = " << sharedMemBytes << "\n";
 
-    //CudaSyncTransferStream();
-    //CudaDeviceSynchronize();
+    CudaSyncTransferStream();
+    CudaSyncKernelStream();
 
     // This call is async
     if ( blockDimX * blockDimY * blockDimZ > 0  &&  gridDimX * gridDimY * gridDimZ > 0 ) {
       cuLaunchKernel(f, gridDimX, gridDimY, gridDimZ, 
 		     blockDimX, blockDimY, blockDimZ, 
-		     sharedMemBytes, hStream, kernelParams, extra);
+		     sharedMemBytes, QDPcudastreams[KERNEL], kernelParams, extra);
     } else {
       //std::cout << "skipping kernel launch due to zero block!!!\n";
     }
@@ -113,7 +113,7 @@ namespace QDP {
     // For now, pull the brakes
     // I've seen the GPU running away from CPU thread
     // This call is probably too much, but it's safe to call it.
-    CudaDeviceSynchronize();
+    //CudaDeviceSynchronize();
 
     if (DeviceParams::Instance().getSyncDevice()) {  
       QDP_info_primary("Pulling the brakes: device sync after kernel launch!");
@@ -249,9 +249,26 @@ namespace QDP {
 
     QDP_info_primary("GPU memory: free = %lld,  total = %lld",(unsigned long long)free ,(unsigned long long)total);
     if (!setPoolSize) {
+
       size_t val = (size_t)((double)(0.90) * (double)free);
-      QDP_info_primary("Using device pool size %lld, ",(unsigned long long)val);
-      CUDADevicePoolAllocator::Instance().setPoolSize(val);
+      int val_in_MB = val/1024/1024;
+
+      if (val_in_MB < 1)
+	QDP_error_exit("Less than 1MiB device memory available. Giving up.");
+
+      float val_min = (float)val_in_MB;
+
+      QDPInternal::globalMinValue( &val_min );
+
+      if ( val_min > (float)val_in_MB )
+	QDP_error_exit("Inconsistency: Global minimum %f larger than local value %d.",val_min,val_in_MB);
+
+      if ( val_min < (float)val_in_MB ) {
+	QDP_info("Global minimum %f of available GPU memory smaller than local value %d. Using global minimum.",val_min,val_in_MB);
+      }
+      int val_min_int = (int)val_min;
+      QDP_info_primary("Using device pool size %d MiB",(int)val_min_int);
+      CUDADevicePoolAllocator::Instance().setPoolSize( ((size_t)val_min_int) * 1024 * 1024 );
       setPoolSize = true;
     }
 

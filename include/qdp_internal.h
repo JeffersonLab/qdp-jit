@@ -213,7 +213,11 @@ namespace QDPInternal
   {
     typedef typename WordType<T>::Type_t  W;   // find the machine word type
 
-    globalMinValue((W *)dest.getF());
+    if (QMP_get_number_of_nodes() > 1) {
+      globalMinValue((W *)dest.getF());
+    } else {
+      QDP_debug("global min: no MPI reduction");
+    }
   }
 
 

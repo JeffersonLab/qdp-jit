@@ -175,9 +175,9 @@ namespace QDP {
       typename WordType<T>::Type_t * in_data  = (typename WordType<T>::Type_t *)inPtr;
       typename WordType<T>::Type_t * out_data = (typename WordType<T>::Type_t *)outPtr;
 
-      int lim_rea = GetLimit<T,2>::Limit_v; //T::ThisSize;
-      int lim_col = GetLimit<T,1>::Limit_v; //T::ThisSize;
-      int lim_spi = GetLimit<T,0>::Limit_v; //T::ThisSize;
+      size_t lim_rea = GetLimit<T,2>::Limit_v; //T::ThisSize;
+      size_t lim_col = GetLimit<T,1>::Limit_v; //T::ThisSize;
+      size_t lim_spi = GetLimit<T,0>::Limit_v; //T::ThisSize;
 
       QDP_info_primary("changing scalar data layout to %s format rea=%d col=%d spi=%d" , toDev? "device" : "host",lim_rea,lim_col,lim_spi);
 
@@ -186,14 +186,14 @@ namespace QDP {
 	std::cout << "my value = " << *((T*)(inPtr)) << "\n";
 #endif
 
-      for ( int reality = 0 ; reality < lim_rea ; reality++ ) {
-	for ( int color = 0 ; color < lim_col ; color++ ) {
-	  for ( int spin = 0 ; spin < lim_spi ; spin++ ) {
-	    int hst_idx = 
+      for ( size_t reality = 0 ; reality < lim_rea ; reality++ ) {
+	for ( size_t color = 0 ; color < lim_col ; color++ ) {
+	  for ( size_t spin = 0 ; spin < lim_spi ; spin++ ) {
+	    size_t hst_idx = 
 	      reality + 
 	      lim_rea * color +
 	      lim_rea * lim_col * spin;
-	    int dev_idx = 
+	    size_t dev_idx = 
 	      spin +
 	      lim_spi * color +
 	      lim_spi * lim_col * reality;
@@ -506,24 +506,24 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
       typename WordType<T>::Type_t * in_data  = (typename WordType<T>::Type_t *)inPtr;
       typename WordType<T>::Type_t * out_data = (typename WordType<T>::Type_t *)outPtr;
 
-      int lim_rea = GetLimit<T,2>::Limit_v; //T::ThisSize;
-      int lim_col = GetLimit<T,1>::Limit_v; //T::ThisSize;
-      int lim_spi = GetLimit<T,0>::Limit_v; //T::ThisSize;
+      size_t lim_rea = GetLimit<T,2>::Limit_v; //T::ThisSize;
+      size_t lim_col = GetLimit<T,1>::Limit_v; //T::ThisSize;
+      size_t lim_spi = GetLimit<T,0>::Limit_v; //T::ThisSize;
 
       // QDP_info_primary("lim_rea = %d" , lim_rea );
       // QDP_info_primary("lim_col = %d" , lim_col );
       // QDP_info_primary("lim_spi = %d" , lim_spi );
 
-      for ( int site = 0 ; site < Layout::sitesOnNode() ; site++ ) {
-	for ( int reality = 0 ; reality < lim_rea ; reality++ ) {
-	  for ( int color = 0 ; color < lim_col ; color++ ) {
-	    for ( int spin = 0 ; spin < lim_spi ; spin++ ) {
-	      int hst_idx = 
+      for ( size_t site = 0 ; site < Layout::sitesOnNode() ; site++ ) {
+	for ( size_t reality = 0 ; reality < lim_rea ; reality++ ) {
+	  for ( size_t color = 0 ; color < lim_col ; color++ ) {
+	    for ( size_t spin = 0 ; spin < lim_spi ; spin++ ) {
+	      size_t hst_idx = 
 		reality + 
 		lim_rea * color +
 		lim_rea * lim_col * spin +
 		lim_rea * lim_col * lim_spi * site;
-	      int dev_idx = 
+	      size_t dev_idx = 
 		site + 
 		Layout::sitesOnNode() * spin +
 		Layout::sitesOnNode() * lim_spi * color +
