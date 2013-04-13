@@ -28,10 +28,7 @@ void function_sum_exec( CUfunction function,
     jit_value r_lo     = jit_add_param( jit_ptx_type::s32 );
     jit_value r_hi     = jit_add_param( jit_ptx_type::s32 );
 
-    jit_value r_idx = jit_geom_get_linear_th_idx();  
-
-    jit_value r_out_of_range       = jit_ins_ge( r_idx , r_hi );
-    jit_ins_exit( r_out_of_range );
+    jit_value r_idx = jit_geom_get_linear_th_idx();
 
     // I'll do always a site perm here
     // Can eventually be optimized if orderedSubset
@@ -55,7 +52,15 @@ void function_sum_exec( CUfunction function,
 
     typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_elem;   // this is stupid
     reg_idata_elem.setup( idata.elem( input_layout ) );
+
+    jit_label_t label_zero_rep;
+    jit_label_t label_zero_rep_exit;
+    jit_ins_branch(  label_zero_rep , jit_ins_ge( r_idx , r_hi ) );
     sdata.elem( JitDeviceLayout::Scalar ) = reg_idata_elem; // This should do the precision conversion (SP->DP)
+    jit_ins_branch( label_zero_rep_exit );
+    jit_ins_label( label_zero_rep );
+    zero_rep( sdata.elem( JitDeviceLayout::Scalar ) );
+    jit_ins_label( label_zero_rep_exit );
 
     jit_ins_bar_sync( 0 );
 
@@ -146,8 +151,6 @@ void function_sum_exec( CUfunction function,
 
     jit_value r_idx = jit_geom_get_linear_th_idx();  
 
-    jit_value r_out_of_range       = jit_ins_ge( r_idx , r_hi );
-    jit_ins_exit(  r_out_of_range );
 
     jit_value r_idata      = jit_add_param(  jit_ptx_type::u64 );  // Input  array
     jit_value r_odata      = jit_add_param(  jit_ptx_type::u64 );  // output array
@@ -163,8 +166,19 @@ void function_sum_exec( CUfunction function,
 
 
     typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_elem;   // this is stupid
-    reg_idata_elem.setup( idata.elem( JitDeviceLayout::Scalar ) );
-    sdata.elem( JitDeviceLayout::Scalar ) = reg_idata_elem;
+    reg_idata_elem.setup( idata.elem( JitDeviceLayout::Scalar ) ); 
+
+    jit_label_t label_zero_rep;
+    jit_label_t label_zero_rep_exit;
+    jit_ins_branch(  label_zero_rep , jit_ins_ge( r_idx , r_hi ) );
+    sdata.elem( JitDeviceLayout::Scalar ) = reg_idata_elem; // This should do the precision conversion (SP->DP)
+    jit_ins_branch( label_zero_rep_exit );
+    jit_ins_label( label_zero_rep );
+    zero_rep( sdata.elem( JitDeviceLayout::Scalar ) );
+    jit_ins_label( label_zero_rep_exit );
+
+    /* 
+    /* sdata.elem( JitDeviceLayout::Scalar ) = reg_idata_elem; */
 
     jit_ins_bar_sync(  0 );
 
