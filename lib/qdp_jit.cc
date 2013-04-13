@@ -914,25 +914,37 @@ namespace QDP {
   // Thread Geometry
 
   jit_value jit_geom_get_tidx() {
-    jit_value tidx( jit_ptx_type::u16 );
-    jit_get_function()->get_prg() << "mov.u16 " 
-				  << jit_get_reg_name( tidx ) << ",%tid.x;\n";
+    jit_ptx_type th_reg = DeviceParams::Instance().getMajor() >= 2 ? jit_ptx_type::u32 : jit_ptx_type::u16;
+    jit_value tidx( th_reg );
+    jit_get_function()->get_prg() << "mov."
+				  << jit_get_ptx_type( th_reg )
+				  << " "
+				  << jit_get_reg_name( tidx ) 
+				  << ",%tid.x;\n";
     tidx.set_state_space( jit_state_space::state_default );
     tidx.set_ever_assigned();
     return tidx;
   }
   jit_value jit_geom_get_ntidx() {
-    jit_value tidx( jit_ptx_type::u16 );
-    jit_get_function()->get_prg() << "mov.u16 " 
-				  << jit_get_reg_name( tidx ) << ",%ntid.x;\n";
+    jit_ptx_type th_reg = DeviceParams::Instance().getMajor() >= 2 ? jit_ptx_type::u32 : jit_ptx_type::u16;
+    jit_value tidx( th_reg );
+    jit_get_function()->get_prg() << "mov."
+				  << jit_get_ptx_type( th_reg )
+				  << " "
+				  << jit_get_reg_name( tidx ) 
+				  << ",%ntid.x;\n";
     tidx.set_state_space( jit_state_space::state_default );
     tidx.set_ever_assigned();
     return tidx;
   }
   jit_value jit_geom_get_ctaidx() {
-    jit_value tidx( jit_ptx_type::u16 );
-    jit_get_function()->get_prg() << "mov.u16 " 
-				  << jit_get_reg_name( tidx ) << ",%ctaid.x;\n";
+    jit_ptx_type th_reg = DeviceParams::Instance().getMajor() >= 2 ? jit_ptx_type::u32 : jit_ptx_type::u16;
+    jit_value tidx( th_reg );
+    jit_get_function()->get_prg() << "mov."
+				  << jit_get_ptx_type( th_reg )
+				  << " "
+				  << jit_get_reg_name( tidx ) 
+				  << ",%ctaid.x;\n";
     tidx.set_state_space( jit_state_space::state_default );
     tidx.set_ever_assigned();
     return tidx;
@@ -1362,9 +1374,13 @@ namespace QDP {
 
 
   jit_value jit_geom_get_linear_th_idx() {
-    jit_value tmp  = jit_ins_mul_wide( jit_geom_get_ctaidx() , jit_geom_get_ntidx() );
-    jit_value tmp1 = jit_ins_add( tmp , jit_geom_get_tidx() );
-    return tmp1;
+    jit_value ctaidx = jit_geom_get_ctaidx();
+    jit_value ntidx  = jit_geom_get_ntidx();
+
+    if ( ctaidx.get_type() == jit_ptx_type::u16 )
+      return jit_ins_add( jit_ins_mul_wide( ctaidx , ntidx ) , jit_geom_get_tidx() );
+    else 
+      return jit_ins_add( jit_ins_mul( ctaidx , ntidx ) , jit_geom_get_tidx() );
   }
 
 

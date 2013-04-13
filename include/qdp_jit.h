@@ -378,7 +378,7 @@ namespace QDP {
     }
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
       std::string specifier_wide = 
-	jit_type_wide_promote( getDestType() ) != getDestType() ? 
+	getArgsType() != getDestType() ? 
 	"wide.":
 	jit_get_mul_specifier_lo_str( getDestType() );
       stream << "mul." 
