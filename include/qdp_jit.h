@@ -142,8 +142,9 @@ namespace QDP {
     explicit jit_value( jit_ptx_type type_ );
 
     jit_value( int val );
+    jit_value( size_t val );
     jit_value( double val );
-    explicit jit_value( size_t val );
+    //explicit jit_value( size_t val );
 
     // jit_value( double val )
     

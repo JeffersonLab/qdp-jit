@@ -357,23 +357,25 @@ namespace QDP {
 
   jit_value::jit_value( int val ): 
     ever_assigned(true), 
-    mem_state(jit_state_space::state_default), 
-    type(jit_ptx_type::s32) 
+    mem_state(jit_state_space::state_default)
   {
+    type = val < 0 ? jit_ptx_type::s32 : jit_ptx_type::u32;
     reg_alloc();
     std::ostringstream oss; oss << val;
     jit_ins_mov( *this , oss.str() );
   }
 
+
   jit_value::jit_value( size_t val ): 
     ever_assigned(true), 
-    mem_state(jit_state_space::state_default), 
-    type(jit_ptx_type::s32) 
+    mem_state(jit_state_space::state_default)
   {
+    type = val <= (size_t)std::numeric_limits<int32_t>::max() ? jit_ptx_type::u32 : jit_ptx_type::u64;
     reg_alloc();
     std::ostringstream oss; oss << val;
     jit_ins_mov( *this , oss.str() );
   }
+
 
   jit_value::jit_value( double val ): 
     ever_assigned(true), 
