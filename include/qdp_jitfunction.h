@@ -20,28 +20,50 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 
   //function.setPrettyFunction(__PRETTY_FUNCTION__);
 
-  jit_value r_lo     = jit_add_param(  jit_ptx_type::s32 );
-  jit_value r_hi     = jit_add_param(  jit_ptx_type::s32 );
+  jit_value r_ordered      = jit_add_param(  jit_ptx_type::pred );
+  jit_value r_th_count     = jit_add_param(  jit_ptx_type::s32 );
+  jit_value r_start        = jit_add_param(  jit_ptx_type::s32 );
+  jit_value r_end          = jit_add_param(  jit_ptx_type::s32 );
+  jit_value r_do_site_perm = jit_add_param(  jit_ptx_type::pred );
+  jit_value r_no_site_perm = jit_ins_not( r_do_site_perm );
 
-  jit_value r_idx = jit_geom_get_linear_th_idx();  
+  jit_value r_idx_thread = jit_geom_get_linear_th_idx();
 
-  jit_value r_out_of_range       = jit_ins_ge( r_idx , r_hi );
-  jit_ins_exit(  r_out_of_range );
+  jit_ins_exit( jit_ins_ge( r_idx_thread , r_th_count ) );
+
+  jit_value r_idx = jit_ins_add( r_idx_thread , r_start );
+
+  jit_label_t label_no_site_perm;
+  jit_ins_branch( label_no_site_perm , r_no_site_perm );
+  {
+    jit_value r_perm_array_addr      = jit_add_param(  jit_ptx_type::u64 );  // Site permutation array
+    jit_value r_idx_mul_4            = jit_ins_mul( r_idx_thread , jit_value(4) );
+    jit_value r_perm_array_addr_load = jit_ins_add( r_perm_array_addr , r_idx_mul_4 );
+    jit_value r_idx_perm             = jit_ins_load( r_perm_array_addr_load , 0 , jit_ptx_type::s32 );
+    jit_ins_mov( r_idx , r_idx_perm );
+  }
+  jit_ins_label(label_no_site_perm);
 
 
-  jit_value r_do_site_perm         = jit_add_param(  jit_ptx_type::s32 ); // Site permutation?, for inner sites
-  jit_value r_do_site_perm_pred    = jit_ins_ne( r_do_site_perm , jit_value(0) );
-  jit_value r_perm_array_addr      = jit_add_param(  jit_ptx_type::u64 );  // Site permutation array
-  jit_value r_idx_mul_4            = jit_ins_mul( r_idx , jit_value(4)  , r_do_site_perm_pred);
-  jit_value r_perm_array_addr_load = jit_ins_add( r_perm_array_addr , r_idx_mul_4      , r_do_site_perm_pred);
-  jit_value r_idx_perm             = jit_ins_load ( r_perm_array_addr_load , 0 , jit_ptx_type::s32 , r_do_site_perm_pred);
-  jit_ins_mov( r_idx , r_idx_perm                                              , r_do_site_perm_pred);
+  jit_label_t label_ordered;
+  jit_label_t label_ordered_exit;
+  jit_ins_branch( label_ordered , r_ordered );
+  {
+    jit_value r_member = jit_add_param(  jit_ptx_type::u64 );  // Subset
+    jit_value r_member_addr        = jit_ins_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
+    jit_value r_ismember           = jit_ins_load ( r_member_addr , 0 , jit_ptx_type::pred );
+    jit_value r_ismember_not       = jit_ins_not( r_ismember );
+    jit_ins_exit( r_ismember_not );
+    jit_ins_branch( label_ordered_exit );
+  }
+  jit_ins_label(label_ordered);
 
-  jit_value r_member = jit_add_param(  jit_ptx_type::u64 );  // Subset
-  jit_value r_member_addr        = jit_ins_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
-  jit_value r_ismember           = jit_ins_load ( r_member_addr , 0 , jit_ptx_type::pred );
-  jit_value r_ismember_not       = jit_ins_not( r_ismember );
-  jit_ins_exit( r_ismember_not );
+  jit_ins_exit( jit_ins_gt( r_idx , r_end ) );
+  jit_ins_exit( jit_ins_lt( r_idx , r_start ) );
+  
+  jit_ins_label(label_ordered_exit);
+
+
 
 
   ParamLeaf param_leaf(  r_idx );
@@ -397,25 +419,28 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
   void * idx_face_dev = NULL;
 
   // lo <= idx < hi
-  int lo = 0;
-  int hi;
-  int do_soffset_index;
-  int faceCount;
+  int start = s.start();
+  int end = s.end();
+  int th_count;
+  bool ordered = s.hasOrderedRep();
+  bool do_soffset_index;
+
+  int innerCount, faceCount;
 
   if (offnode_maps > 0) {
-    int innerId, innerCount, faceId;
+    int innerId, faceId;
     innerId = MasterMap::Instance().getIdInner(offnode_maps);
     innerCount = MasterMap::Instance().getCountInner(offnode_maps);
     faceId = MasterMap::Instance().getIdFace(offnode_maps);
     faceCount = MasterMap::Instance().getCountFace(offnode_maps);
     idx_inner_dev = QDPCache::Instance().getDevicePtr( innerId );
     idx_face_dev = QDPCache::Instance().getDevicePtr( faceId );
-    hi = innerCount;
-    do_soffset_index = 1;
+    th_count = innerCount;
+    do_soffset_index = true;
     //QDP_info("innerId = %d innerCount = %d faceId = %d  faceCount = %d",innerId,innerCount,faceId,faceCount);
   } else {
-    hi = Layout::sitesOnNode();
-    do_soffset_index = 0;
+    th_count = s.numSiteTable();
+    do_soffset_index = false;
   }
 
 
@@ -444,11 +469,18 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
 
   std::vector<void*> addr;
 
-  addr.push_back( &lo );
-  //std::cout << "addr lo = " << addr[0] << " lo=" << lo << "\n";
 
-  addr.push_back( &hi );
+  addr.push_back( &ordered );
   //std::cout << "addr hi = " << addr[1] << " hi=" << hi << "\n";
+
+  addr.push_back( &th_count );
+  //std::cout << "thread_count = " << th_count << "\n";
+
+  addr.push_back( &start );
+  //std::cout << "start        = " << start << "\n";
+
+  addr.push_back( &end );
+  //std::cout << "end          = " << end << "\n";
 
   addr.push_back( &do_soffset_index );
   //std::cout << "addr do_soffset_index =" << addr[2] << " " << do_soffset_index << "\n";
@@ -467,7 +499,7 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
 
   static std::map<int,int> threadsPerBlock;
 
-  if (!threadsPerBlock[hi-lo]) {
+  if (!threadsPerBlock[th_count]) {
     // Auto tuning
     // Fist get a data field of the same size as "dest" 
     // where it's safe to do autotuning on.
@@ -476,7 +508,7 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
     //QDPCache::Instance().printLockSets();
     addr[addr_dest] = &devPtr;
 
-    threadsPerBlock[hi-lo] = jit_autotuning(function,lo,hi,&addr[0]);
+    threadsPerBlock[th_count] = jit_autotuning(function,0,th_count,&addr[0]);
 
     // Restore original "dest" device address
     addr[addr_dest] = &addr_leaf.addr[0];
@@ -489,27 +521,27 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
 
   //QDP_info("Launching kernel with %d threads",hi-lo);
 
-  kernel_geom_t now = getGeom( hi-lo , threadsPerBlock[hi-lo] );
+  kernel_geom_t now = getGeom( th_count , threadsPerBlock[th_count] );
 
-  CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock[hi-lo],1,1,    0, 0, &addr[0] , 0);
+  CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock[th_count],1,1,    0, 0, &addr[0] , 0);
 
   if (offnode_maps > 0) {
     ShiftPhase2 phase2;
     forEach(rhs, phase2 , NullCombine());
 
-    hi = faceCount;
+    th_count = faceCount;
     idx_inner_dev = idx_face_dev;
 
-    if (!threadsPerBlock[hi-lo]) {
+    if (!threadsPerBlock[th_count]) {
       int tmpId = QDPCache::Instance().registrate( QDPCache::Instance().getSize( dest.getId() ) , 1 , NULL );
       void * devPtr = QDPCache::Instance().getDevicePtr( tmpId );
       addr[addr_dest] = &devPtr;
-      threadsPerBlock[hi-lo] = jit_autotuning(function,lo,hi,&addr[0]);
+      threadsPerBlock[th_count] = jit_autotuning(function,0,th_count,&addr[0]);
       addr[addr_dest] = &addr_leaf.addr[0];
       QDPCache::Instance().signoff( tmpId );
     }
-    now = getGeom( hi-lo , threadsPerBlock[hi-lo] );                                  
-    CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock[hi-lo],1,1,    0, 0, &addr[0] , 0);
+    now = getGeom( th_count , threadsPerBlock[th_count] );                                  
+    CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock[th_count],1,1,    0, 0, &addr[0] , 0);
   }
 }
 

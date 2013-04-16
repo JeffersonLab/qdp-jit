@@ -1,0 +1,63 @@
+.version 2.3
+.target sm_20
+.address_size 64
+.entry function (.param .u64 param0,
+.param .u64 param1,
+.param .u64 param2)
+{
+.reg .f64 d<9>;
+.reg .u32 u<19>;
+.reg .u64 w<21>;
+.reg .pred p<31>;
+mov.u32 u0,%ctaid.x;
+mov.u32 u1,%ntid.x;
+mov.u32 u2,%tid.x;
+mov.u32 u4,u0;
+mov.u32 u5,u4;
+mov.u32 u6,u1;
+mov.u32 u7,u6;
+mul.lo.u32 u3,u5,u7;
+mov.u32 u9,u3;
+mov.u32 u10,u9;
+mov.u32 u11,u2;
+mov.u32 u12,u11;
+add.u32 u8,u10,u12;
+ld.param.u64 w0,[param0];
+mov.u64 w1,w0;
+ld.param.u64 w2,[param1];
+mov.u64 w3,w2;
+ld.param.u64 w4,[param2];
+mov.u64 w5,w4;
+mov.u32 u13,8;
+mov.u32 u15,u8;
+mov.u32 u16,u15;
+mov.u32 u17,u13;
+mov.u32 u18,u17;
+mul.lo.u32 u14,u16,u18;
+mov.u64 w7,w1;
+mov.u64 w8,w7;
+cvt.u64.u32 w9,u14;
+mov.u64 w10,w9;
+add.u64 w6,w8,w10;
+ld.global.f64 d0,[w6 + 0];
+mov.f64 d1,d0;
+mov.u64 w12,w1;
+mov.u64 w13,w12;
+cvt.u64.u32 w14,u14;
+mov.u64 w15,w14;
+add.u64 w11,w13,w15;
+ld.global.f64 d2,[w11 + 0];
+mov.f64 d3,d2;
+mov.f64 d5,d1;
+mov.f64 d6,d5;
+mov.f64 d7,d3;
+mov.f64 d8,d7;
+mul.f64 d4,d6,d8;
+mov.u64 w17,w5;
+mov.u64 w18,w17;
+cvt.u64.u32 w19,u14;
+mov.u64 w20,w19;
+add.u64 w16,w18,w20;
+st.global.f64 [w16 + 0],d4;
+bra L0;
+}
