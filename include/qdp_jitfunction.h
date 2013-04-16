@@ -31,18 +31,27 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 
   jit_ins_exit( jit_ins_ge( r_idx_thread , r_th_count ) );
 
-  jit_value r_idx = jit_ins_add( r_idx_thread , r_start );
+  jit_value r_idx = r_idx_thread;
 
+  jit_label_t label_no_site_perm_exit;
   jit_label_t label_no_site_perm;
   jit_ins_branch( label_no_site_perm , r_no_site_perm );
   {
     jit_value r_perm_array_addr      = jit_add_param(  jit_ptx_type::u64 );  // Site permutation array
-    jit_value r_idx_mul_4            = jit_ins_mul( r_idx_thread , jit_value(4) );
+    jit_value r_idx_mul_4            = jit_ins_mul( r_idx_thread , jit_value(4) ); // Yes, r_idx_thread !!
     jit_value r_perm_array_addr_load = jit_ins_add( r_perm_array_addr , r_idx_mul_4 );
     jit_value r_idx_perm             = jit_ins_load( r_perm_array_addr_load , 0 , jit_ptx_type::s32 );
     jit_ins_mov( r_idx , r_idx_perm );
+    jit_ins_branch( label_no_site_perm_exit );
   }
   jit_ins_label(label_no_site_perm);
+  {
+    jit_value r_not_ordered = jit_ins_not(r_ordered);
+    jit_ins_branch( label_no_site_perm_exit , r_not_ordered );
+    r_idx = jit_ins_add( r_idx_thread , r_start );
+  }
+  jit_ins_label(label_no_site_perm_exit);
+
 
 
   jit_label_t label_ordered;
@@ -57,10 +66,10 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
     jit_ins_branch( label_ordered_exit );
   }
   jit_ins_label(label_ordered);
-
-  jit_ins_exit( jit_ins_gt( r_idx , r_end ) );
-  jit_ins_exit( jit_ins_lt( r_idx , r_start ) );
-  
+  {
+    jit_ins_exit( jit_ins_gt( r_idx , r_end ) );
+    jit_ins_exit( jit_ins_lt( r_idx , r_start ) );
+  }
   jit_ins_label(label_ordered_exit);
 
 
@@ -102,21 +111,33 @@ function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScala
 
   //function.setPrettyFunction(__PRETTY_FUNCTION__);
 
-  jit_value r_lo     = jit_add_param(  jit_ptx_type::s32 );
-  jit_value r_hi     = jit_add_param(  jit_ptx_type::s32 );
+  jit_value r_ordered      = jit_add_param(  jit_ptx_type::pred );
+  jit_value r_th_count     = jit_add_param(  jit_ptx_type::s32 );
+  jit_value r_start        = jit_add_param(  jit_ptx_type::s32 );
+  jit_value r_end          = jit_add_param(  jit_ptx_type::s32 );
 
-  jit_value r_idx = jit_geom_get_linear_th_idx();  
+  jit_value r_idx_thread = jit_geom_get_linear_th_idx();
 
-  jit_value r_out_of_range       = jit_ins_ge( r_idx , r_hi );
-  jit_ins_exit(  r_out_of_range );
+  jit_ins_exit( jit_ins_ge( r_idx_thread , r_th_count ) );
 
-#ifdef JIT_DO_MEMBER
-  jit_value r_member = jit_add_param(  jit_ptx_type::u64 );  // Subset
-  jit_value r_member_addr        = jit_ins_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
-  jit_value r_ismember           = jit_ins_load ( r_member_addr , 0 , jit_ptx_type::pred );
-  jit_value r_ismember_not       = jit_ins_not( r_ismember );
-  jit_ins_exit( r_ismember_not );
-#endif
+  jit_value r_idx = r_idx_thread;
+
+  jit_label_t label_ordered;
+  jit_label_t label_ordered_exit;
+  jit_ins_branch( label_ordered , r_ordered );
+  {
+    jit_value r_member = jit_add_param(  jit_ptx_type::u64 );  // Subset
+    jit_value r_member_addr        = jit_ins_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
+    jit_value r_ismember           = jit_ins_load ( r_member_addr , 0 , jit_ptx_type::pred );
+    jit_value r_ismember_not       = jit_ins_not( r_ismember );
+    jit_ins_exit( r_ismember_not );
+    jit_ins_branch( label_ordered_exit );
+  }
+  jit_ins_label(label_ordered);
+  {
+    r_idx = jit_ins_add( r_idx_thread , r_start );
+  }
+  jit_ins_label(label_ordered_exit);
 
   ParamLeaf param_leaf(  r_idx );
   
@@ -146,21 +167,33 @@ function_zero_rep_build(OLattice<T>& dest)
 
   jit_start_new_function();
 
-  jit_value r_lo     = jit_add_param(  jit_ptx_type::s32 );
-  jit_value r_hi     = jit_add_param(  jit_ptx_type::s32 );
+  jit_value r_ordered      = jit_add_param(  jit_ptx_type::pred );
+  jit_value r_th_count     = jit_add_param(  jit_ptx_type::s32 );
+  jit_value r_start        = jit_add_param(  jit_ptx_type::s32 );
+  jit_value r_end          = jit_add_param(  jit_ptx_type::s32 );
 
-  jit_value r_idx = jit_geom_get_linear_th_idx();
+  jit_value r_idx_thread = jit_geom_get_linear_th_idx();
 
-  jit_value r_out_of_range       = jit_ins_ge( r_idx , r_hi );
-  jit_ins_exit(  r_out_of_range );
+  jit_ins_exit( jit_ins_ge( r_idx_thread , r_th_count ) );
 
-#ifdef JIT_DO_MEMBER
-  jit_value r_member = jit_add_param(  jit_ptx_type::u64 );  // Subset
-  jit_value r_member_addr        = jit_ins_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
-  jit_value r_ismember           = jit_ins_load ( r_member_addr , 0 , jit_ptx_type::pred );
-  jit_value r_ismember_not       = jit_ins_not( r_ismember );
-  jit_ins_exit( r_ismember_not );
-#endif
+  jit_value r_idx = r_idx_thread;
+
+  jit_label_t label_ordered;
+  jit_label_t label_ordered_exit;
+  jit_ins_branch( label_ordered , r_ordered );
+  {
+    jit_value r_member = jit_add_param(  jit_ptx_type::u64 );  // Subset
+    jit_value r_member_addr        = jit_ins_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
+    jit_value r_ismember           = jit_ins_load ( r_member_addr , 0 , jit_ptx_type::pred );
+    jit_value r_ismember_not       = jit_ins_not( r_ismember );
+    jit_ins_exit( r_ismember_not );
+    jit_ins_branch( label_ordered_exit );
+  }
+  jit_ins_label(label_ordered);
+  {
+    r_idx = jit_ins_add( r_idx_thread , r_start );
+  }
+  jit_ins_label(label_ordered_exit);
 
   ParamLeaf param_leaf(  r_idx );
 
@@ -439,7 +472,7 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
     do_soffset_index = true;
     //QDP_info("innerId = %d innerCount = %d faceId = %d  faceCount = %d",innerId,innerCount,faceId,faceCount);
   } else {
-    th_count = s.numSiteTable();
+    th_count = s.hasOrderedRep() ? s.numSiteTable() : Layout::sitesOnNode();
     do_soffset_index = false;
   }
 
@@ -557,17 +590,23 @@ function_lat_sca_exec(CUfunction function, OLattice<T>& dest, const Op& op, cons
   AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
   int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
 
-  // lo <= idx < hi
-  int lo = 0;
-  int hi = Layout::sitesOnNode();
+  int start = s.start();
+  int end = s.end();
+  bool ordered = s.hasOrderedRep();
+  int th_count = ordered ? s.numSiteTable() : Layout::sitesOnNode();
+
   void * subset_member = QDPCache::Instance().getDevicePtr( s.getIdMemberTable() );
 
   std::vector<void*> addr;
 
-  addr.push_back( &lo );
+  addr.push_back( &ordered );
+
+  addr.push_back( &th_count );
+
+  addr.push_back( &start );
   //std::cout << "addr lo = " << addr[0] << " lo=" << lo << "\n";
 
-  addr.push_back( &hi );
+  addr.push_back( &end );
   //std::cout << "addr hi = " << addr[1] << " hi=" << hi << "\n";
 
   addr.push_back( &subset_member );
@@ -591,20 +630,18 @@ function_lat_sca_exec(CUfunction function, OLattice<T>& dest, const Op& op, cons
     //QDPCache::Instance().printLockSets();
     addr[addr_dest] = &devPtr;
 
-    threadsPerBlock = jit_autotuning(function,lo,hi,&addr[0]);
+    threadsPerBlock = jit_autotuning(function,0,th_count,&addr[0]);
 
     // Restore original "dest" device address
     addr[addr_dest] = &addr_leaf.addr[0];
     QDPCache::Instance().signoff( tmpId );
     //QDPCache::Instance().printLockSets();
 
-  } else {
-    //QDP_info_primary("Previous auto-tuning result = %d",threadsPerBlock);
   }
 
   //QDP_info("Launching kernel with %d threads",hi-lo);
 
-  kernel_geom_t now = getGeom( hi-lo , threadsPerBlock );
+  kernel_geom_t now = getGeom( th_count , threadsPerBlock );
 
   CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
 
@@ -625,23 +662,29 @@ function_zero_rep_exec(CUfunction function, OLattice<T>& dest, const Subset& s )
 
   int junk_0 = forEach(dest, addr_leaf, NullCombine());
 
-  // lo <= idx < hi
-  int lo = 0;
-  int hi = Layout::sitesOnNode();
+  int start = s.start();
+  int end = s.end();
+  bool ordered = s.hasOrderedRep();
+  int th_count = ordered ? s.numSiteTable() : Layout::sitesOnNode();
+
   void * subset_member = QDPCache::Instance().getDevicePtr( s.getIdMemberTable() );
 
   std::vector<void*> addr;
 
-  addr.push_back( &lo );
-  //std::cout << "addr lo = " << addr[0] << " lo=" << lo << "\n";
+  addr.push_back( &ordered );
+  //std::cout << "ordered = " << ordered << "\n";
 
-  addr.push_back( &hi );
-  //std::cout << "addr hi = " << addr[1] << " hi=" << hi << "\n";
+  addr.push_back( &th_count );
+  //std::cout << "thread_count = " << th_count << "\n";
 
-#ifdef JIT_DO_MEMBER
+  addr.push_back( &start );
+  //std::cout << "start        = " << start << "\n";
+
+  addr.push_back( &end );
+  //std::cout << "end          = " << end << "\n";
+
   addr.push_back( &subset_member );
-  //std::cout << "addr subset_member = " << addr[3] << " " << subset_member << "\n";
-#endif
+  //std::cout << "addr idx_inner_dev = " << addr[3] << " " << idx_inner_dev << "\n";
 
   int addr_dest=addr.size();
   for(int i=0; i < addr_leaf.addr.size(); ++i) {
@@ -652,15 +695,10 @@ function_zero_rep_exec(CUfunction function, OLattice<T>& dest, const Subset& s )
   static int threadsPerBlock = 0;
 
   if (!threadsPerBlock) {
-    // Auto tuning
-    threadsPerBlock = jit_autotuning(function,lo,hi,&addr[0]);
-  } else {
-    //QDP_info_primary("Previous auto-tuning result = %d",threadsPerBlock);
+    threadsPerBlock = jit_autotuning(function,0,th_count,&addr[0]);
   }
 
-  //QDP_info("Launching kernel with %d threads",hi-lo);
-
-  kernel_geom_t now = getGeom( hi-lo , threadsPerBlock );
+  kernel_geom_t now = getGeom( th_count , threadsPerBlock );
   CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
 }
 
