@@ -775,14 +775,14 @@ function_random_exec(CUfunction function, OLattice<T>& dest, const Subset& s , S
 
   if (!threadsPerBlock) {
     // Auto tuning
-    threadsPerBlock = jit_autotuning(function,lo,hi,&addr[0]);
+    threadsPerBlock = jit_autotuning(function,0,s.numSiteTable(),&addr[0]);
   } else {
     //QDP_info_primary("Previous auto-tuning result = %d",threadsPerBlock);
   }
 
   //QDP_info("Launching kernel with %d threads",hi-lo);
 
-  kernel_geom_t now = getGeom( hi-lo , threadsPerBlock );
+  kernel_geom_t now = getGeom( s.numSiteTable() , threadsPerBlock );
 
   CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
 }
