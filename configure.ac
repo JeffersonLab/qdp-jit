@@ -494,6 +494,35 @@ case ${PARALLEL_ARCH} in
 esac
 
 
+
+
+
+AC_ARG_WITH(nvvm,
+  AC_HELP_STRING(
+    [--with-nvvm=DIR],
+    [Specifies install path of NVVM]
+  ),
+  [NVVM_HOME=${with_nvvm}
+   NVVM_ENABLED="yes"],
+  [NVVM_HOME=""
+   NVVM_ENABLED="no"]
+)
+
+dnl echo Value of NVVM_ENABLED is X${NVVM_ENABLED}X
+dnl echo Value of NVVM_HOME is X${NVVM_HOME}X
+
+if test "X${NVVM_ENABLED}X" = "XyesX" ; then
+  AC_SUBST(NVVM_CXXFLAGS, [-I${NVVM_HOME}])
+  AC_SUBST(NVVM_LDFLAGS, [-L${NVVM_HOME}])
+  AC_SUBST(NVVM_LIBS, [-lnvvm])
+  AC_MSG_NOTICE([nvvm compile flags  : ${NVVM_CXXFLAGS}])
+  AC_MSG_NOTICE([nvvm link flags     : ${NVVM_LDFLAGS}])
+  AC_MSG_NOTICE([nvvm libraries flags: ${NVVM_LIBS}])
+fi
+
+
+
+
 dnl
 dnl
 dnl now libxml2
