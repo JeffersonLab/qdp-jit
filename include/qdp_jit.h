@@ -23,10 +23,14 @@ namespace QDP {
     jit_llvm_builtin bi;
     jit_llvm_ind     ind;
   public:
+    jit_llvm_builtin get_builtin() const { return bi; }
+    jit_llvm_ind     get_ind()     const { return ind; }
+
     jit_llvm_type( jit_llvm_builtin bi_, jit_llvm_ind ind_ ) : bi(bi_), ind(ind_) {}
     jit_llvm_type( jit_llvm_builtin bi_ )                    : bi(bi_), ind(jit_llvm_ind::no) {}
     bool operator<  (const jit_llvm_type &rhs) const { return std::tie(bi,ind) <  std::tie(rhs.bi,rhs.ind); }
     bool operator!= (const jit_llvm_type &rhs) const { return std::tie(bi,ind) != std::tie(rhs.bi,rhs.ind); }
+    bool operator== (const jit_llvm_type &rhs) const { return std::tie(bi,ind) == std::tie(rhs.bi,rhs.ind); }
     friend std::ostream& operator<< (std::ostream& stream, const jit_llvm_type& type ) {
       stream << jit_get_llvm_builtin(type.bi) << type.ind == jit_llvm_ind::yes ? "*" : "";
       return stream;
@@ -175,24 +179,29 @@ namespace QDP {
     ~jit_value() {}
 
     jit_llvm_type get_type() const;
-    void set_state_space( jit_state_space space );
-    jit_state_space get_state_space() const;
+
+    // void set_state_space( jit_state_space space );
+    // jit_state_space get_state_space() const;
     
     //int get_number() const;
     std::string get_name() const;
     bool get_ever_assigned() const { return ever_assigned; }
     void set_ever_assigned() { ever_assigned = true; }
 
+    friend std::ostream& operator<< (std::ostream& stream, const jit_value& op) {
+      stream << "%r" << op->number;
+      return stream;
+    }
     friend std::ostream& operator<< (std::ostream& stream, const jit_value_t& op) {
       if (!op)
 	QDP_error_exit("You are trying to get the name of a not-initialized jit value");
-      stream << "%r" << op->number;
+      stream << *op;
       return stream;
     }
     friend std::ostream& operator<< (std::ostream& stream, jit_value_t& op) {
       if (!op)
-	op = make_shared<jit_value>();
-      stream << "%r" << op->number;
+	op = create_jit_value();
+      stream << *op;
       return stream;
     }
 
@@ -233,14 +242,15 @@ namespace QDP {
 
 
 
-  
-  std::string jit_predicate( const jit_value_t& pred );
+
+  //jit_function_t jit_get_valid_func( jit_function_t f0 ,jit_function_t f1 );  
+  // std::string jit_predicate( const jit_value_t& pred );
+  // jit_llvm_type jit_bit_type(jit_llvm_type type);
+  // jit_llvm_type jit_type_wide_promote(jit_llvm_type t0);
+
 
   jit_state_space jit_state_promote( jit_state_space ss0 , jit_state_space ss1 );
   jit_llvm_builtin jit_type_promote(jit_llvm_builtin t0,jit_llvm_builtin t1);
-
-  // jit_llvm_type jit_bit_type(jit_llvm_type type);
-  // jit_llvm_type jit_type_wide_promote(jit_llvm_type t0);
 
   void jit_ins_bar_sync( int a );
 
@@ -248,10 +258,7 @@ namespace QDP {
   jit_value_t jit_allocate_local( jit_llvm_type type , int count );
   jit_value_t jit_get_shared_mem_ptr();
 
-
-  //jit_function_t jit_get_valid_func( jit_function_t f0 ,jit_function_t f1 );
-
-  std::string jit_get_reg_name( const jit_value_t& val );
+  //std::string jit_get_reg_name( const jit_value_t& val );
 
 
   // jit_value_t_reg_t jit_val_create_new( int type );
