@@ -9,10 +9,21 @@ namespace QDP {
   jit_function_t jit_internal_function;
   jit_block_t    jit_internal_block;
 
-  std::ostream& operator<< (std::ostream& stream, const jit_state_space& space ) {
-    stream << get_state_space_str(space);
-    return stream;
+  bool jit_type_is_float( jit_llvm_builtin bi ) {
+    return 
+      bi == jit_llvm_builtin::flt || 
+      bi == jit_llvm_builtin::dbl;
   }
+  bool jit_type_is_float( jit_llvm_type bi ) {
+    return 
+      bi.get_builtin() == jit_llvm_builtin::flt || 
+      bi.get_builtin() == jit_llvm_builtin::dbl;
+  }
+
+  // std::ostream& operator<< (std::ostream& stream, const jit_state_space& space ) {
+  //   stream << get_state_space_str(space);
+  //   return stream;
+  // }
 
   namespace PTX {
     // { "f32","f64","u16","u32","u64","s16","s32","s64", "u8","b16","b32","b64","pred" };
@@ -129,31 +140,33 @@ namespace QDP {
       // map_bit_type[ jit_llvm_builtin::pred ] = jit_llvm_builtin::pred;
       return map_bit_type;
     }
-    std::map< jit_state_space , 
-	      std::map< jit_state_space , 
-			jit_state_space > >
-    create_state_promote()
-    {
-      std::map< jit_state_space , 
-		std::map< jit_state_space , 
-			  jit_state_space > > map_state_promote;
-      // map_state_promote[ jit_state_space::state_default ][ jit_state_space::state_shared ] = jit_state_space::state_shared;
-      // map_state_promote[ jit_state_space::state_shared ][ jit_state_space::state_default ] = jit_state_space::state_shared;
-      // map_state_promote[ jit_state_space::state_default ][ jit_state_space::state_global ] = jit_state_space::state_global;
-      // map_state_promote[ jit_state_space::state_global ][ jit_state_space::state_default ] = jit_state_space::state_global;
-      // map_state_promote[ jit_state_space::state_default ][ jit_state_space::state_local ] = jit_state_space::state_local;
-      // map_state_promote[ jit_state_space::state_local ][ jit_state_space::state_default ] = jit_state_space::state_local;
+    // std::map< jit_state_space , 
+    // 	      std::map< jit_state_space , 
+    // 			jit_state_space > >
+    // create_state_promote()
+    // {
+    //   std::map< jit_state_space , 
+    // 		std::map< jit_state_space , 
+    // 			  jit_state_space > > map_state_promote;
+    //   // map_state_promote[ jit_state_space::state_default ][ jit_state_space::state_shared ] = jit_state_space::state_shared;
+    //   // map_state_promote[ jit_state_space::state_shared ][ jit_state_space::state_default ] = jit_state_space::state_shared;
+    //   // map_state_promote[ jit_state_space::state_default ][ jit_state_space::state_global ] = jit_state_space::state_global;
+    //   // map_state_promote[ jit_state_space::state_global ][ jit_state_space::state_default ] = jit_state_space::state_global;
+    //   // map_state_promote[ jit_state_space::state_default ][ jit_state_space::state_local ] = jit_state_space::state_local;
+    //   // map_state_promote[ jit_state_space::state_local ][ jit_state_space::state_default ] = jit_state_space::state_local;
 
-      // map_state_promote[ jit_state_space::state_shared ][ jit_state_space::state_shared ] = jit_state_space::state_shared;
-      // map_state_promote[ jit_state_space::state_shared ][ jit_state_space::state_global ] = jit_state_space::state_shared;
-      // map_state_promote[ jit_state_space::state_global ][ jit_state_space::state_shared ] = jit_state_space::state_shared;
-      // map_state_promote[ jit_state_space::state_local  ][ jit_state_space::state_local  ] = jit_state_space::state_local;
-      // map_state_promote[ jit_state_space::state_local  ][ jit_state_space::state_global ] = jit_state_space::state_local;
-      // map_state_promote[ jit_state_space::state_global ][ jit_state_space::state_local  ] = jit_state_space::state_local;
-      // map_state_promote[ jit_state_space::state_global ][ jit_state_space::state_global ] = jit_state_space::state_global;
-      return map_state_promote;
-    }
-    const std::map< jit_state_space , const char * > map_state_space = create_state_space_map();
+    //   // map_state_promote[ jit_state_space::state_shared ][ jit_state_space::state_shared ] = jit_state_space::state_shared;
+    //   // map_state_promote[ jit_state_space::state_shared ][ jit_state_space::state_global ] = jit_state_space::state_shared;
+    //   // map_state_promote[ jit_state_space::state_global ][ jit_state_space::state_shared ] = jit_state_space::state_shared;
+    //   // map_state_promote[ jit_state_space::state_local  ][ jit_state_space::state_local  ] = jit_state_space::state_local;
+    //   // map_state_promote[ jit_state_space::state_local  ][ jit_state_space::state_global ] = jit_state_space::state_local;
+    //   // map_state_promote[ jit_state_space::state_global ][ jit_state_space::state_local  ] = jit_state_space::state_local;
+    //   // map_state_promote[ jit_state_space::state_global ][ jit_state_space::state_global ] = jit_state_space::state_global;
+    //   return map_state_promote;
+    // }
+    // const std::map< jit_state_space , const char * > map_state_space = create_state_space_map();
+
+
     const std::map< int , std::pair<const char *,
 				    std::string> >     map_ptx_math_functions_unary = create_ptx_math_functions_unary();
     const std::map< int , std::pair<const char *,
@@ -161,9 +174,10 @@ namespace QDP {
     const std::map< jit_llvm_builtin , std::map<jit_llvm_builtin,jit_llvm_builtin> >          map_promote            = create_promote();
     const std::map< jit_llvm_builtin , jit_llvm_builtin >                        map_wide_promote       = create_wide_promote();
     const std::map< jit_llvm_builtin , jit_llvm_builtin >                        map_bit_type           = create_bit_type();
-    const std::map< jit_state_space , 
-		    std::map< jit_state_space , 
-			      jit_state_space > > map_state_promote  = create_state_promote();
+
+    // const std::map< jit_state_space , 
+    // 		    std::map< jit_state_space , 
+    // 			      jit_state_space > > map_state_promote  = create_state_promote();
   }
 
 
@@ -187,6 +201,12 @@ namespace QDP {
   }
 
 
+  template<class T> jit_value_t create_jit_value(T val) 
+  {
+    return std::make_shared<jit_value>(val);
+  }
+
+
   // jit_llvm_type jit_bit_type(jit_llvm_type type) {
   //   assert( PTX::map_bit_type.count( type ) > 0 );
   //   return PTX::map_bit_type.at( type );
@@ -206,6 +226,12 @@ namespace QDP {
     //assert((ret >= 0) && (ret < jit_number_of_types()));
     //std::cout << "         ->  " << PTX::ptx_type_matrix.at( ret )[0] << "\n";
     return ret;
+  }
+
+  jit_llvm_type    jit_type_promote(jit_llvm_type t0   ,jit_llvm_type t1) {
+    assert( t0.get_ind() == jit_llvm_ind::no );
+    assert( t1.get_ind() == jit_llvm_ind::no );
+    return jit_type_promote( t0.get_builtin() , t1.get_builtin() );
   }
 
 
@@ -261,16 +287,16 @@ namespace QDP {
 
 
 
-  jit_state_space jit_state_promote( jit_state_space ss0 , jit_state_space ss1 ) {
-    //std::cout << "state_promote: " << ss0 << " " << ss1 << "\n";
-    if ( ss0 == ss1 ) return ss0;
-    assert( PTX::map_state_promote.count( ss0 ) > 0 );
-    assert( PTX::map_state_promote.at( ss0 ).count( ss1 ) > 0 );
-    jit_state_space ret = PTX::map_state_promote.at( ss0 ).at( ss1 );
-    assert( ret == jit_state_space::state_global || ret == jit_state_space::state_shared || ret == jit_state_space::state_local );
-    //std::cout << "         ->  " << PTX::ptx_type_matrix.at( ret )[0] << "\n";
-    return ret;
-  }
+  // jit_state_space jit_state_promote( jit_state_space ss0 , jit_state_space ss1 ) {
+  //   //std::cout << "state_promote: " << ss0 << " " << ss1 << "\n";
+  //   if ( ss0 == ss1 ) return ss0;
+  //   assert( PTX::map_state_promote.count( ss0 ) > 0 );
+  //   assert( PTX::map_state_promote.at( ss0 ).count( ss1 ) > 0 );
+  //   jit_state_space ret = PTX::map_state_promote.at( ss0 ).at( ss1 );
+  //   assert( ret == jit_state_space::state_global || ret == jit_state_space::state_shared || ret == jit_state_space::state_local );
+  //   //std::cout << "         ->  " << PTX::ptx_type_matrix.at( ret )[0] << "\n";
+  //   return ret;
+  // }
 
 
   jit_llvm_type jit_type_wide_promote(jit_llvm_type t0) {
@@ -535,14 +561,13 @@ namespace QDP {
 
 
   jit_value::jit_value():   
-    ever_assigned(false) 
+    ever_assigned(false)
   {
     reg_alloc(); 
   }
 
   jit_value::jit_value( const jit_value& rhs ):
-    type(rhs.type), 
-    mem_state(rhs.mem_state),
+    type(rhs.type),
     ever_assigned(rhs.ever_assigned)
   {
     reg_alloc();
@@ -913,15 +938,15 @@ namespace QDP {
   jit_value_t jit_ins_fabs( const jit_value_t& rhs ) {
     return jit_ins_unary_op( rhs , JitUnaryOpAbs( rhs.get_type() ) );
   }
-  jit_value_t jit_ins_floor( const jit_value_t& rhs ) {
-    return jit_ins_unary_op( rhs , JitUnaryOpFloor( rhs.get_type() ) );
-  }
-  jit_value_t jit_ins_ceil( const jit_value_t& rhs ) {
-    return jit_ins_unary_op( rhs , JitUnaryOpCeil( rhs.get_type() ) );
-  }
-  jit_value_t jit_ins_sqrt( const jit_value_t& rhs ) { 
-    return jit_ins_unary_op( rhs , JitUnaryOpSqrt( rhs.get_type() ) );
-  }
+  // jit_value_t jit_ins_floor( const jit_value_t& rhs ) {
+  //   return jit_ins_unary_op( rhs , JitUnaryOpFloor( rhs.get_type() ) );
+  // }
+  // jit_value_t jit_ins_ceil( const jit_value_t& rhs ) {
+  //   return jit_ins_unary_op( rhs , JitUnaryOpCeil( rhs.get_type() ) );
+  // }
+  // jit_value_t jit_ins_sqrt( const jit_value_t& rhs ) { 
+  //   return jit_ins_unary_op( rhs , JitUnaryOpSqrt( rhs.get_type() ) );
+  // }
 
 
   //

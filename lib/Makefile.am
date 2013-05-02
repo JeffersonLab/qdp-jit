@@ -18,41 +18,6 @@ AM_CXXFLAGS = $(INCFLAGS) @BAGEL_QDP_CXXFLAGS@ @LIBXML2_CXXFLAGS@ @QMP_CFLAGS@  
 
 lib_LIBRARIES = libqdp.a
 
-.ptx.inc:
-	cp @top_srcdir@/lib/$*.ptx .
-	$(XXD) -i $*.ptx $*.inc
-
-#	
-
-
-BUILT_SOURCES = func_sin_f32.inc \
-		func_sin_f64.inc \
-		func_acos_f32.inc \
-		func_acos_f64.inc \
-		func_asin_f32.inc \
-		func_asin_f64.inc \
-		func_atan_f32.inc \
-		func_atan_f64.inc \
-		func_cos_f32.inc \
-		func_cos_f64.inc \
-		func_cosh_f32.inc \
-		func_cosh_f64.inc \
-		func_exp_f32.inc \
-		func_exp_f64.inc \
-		func_log_f32.inc \
-		func_log_f64.inc \
-		func_log10_f32.inc \
-		func_log10_f64.inc \
-		func_sinh_f32.inc \
-		func_sinh_f64.inc \
-		func_tan_f32.inc \
-		func_tan_f64.inc \
-		func_tanh_f32.inc \
-		func_tanh_f64.inc \
-		func_pow_f32.inc \
-		func_pow_f64.inc \
-		func_atan2_f32.inc \
-		func_atan2_f64.inc
 
 ## Base set of sources and conditionally included sources
 libqdp_a_SOURCES = qdp_map.cc qdp_subset.cc qdp_random.cc qdp.cc \
