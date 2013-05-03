@@ -20,30 +20,30 @@ namespace QDP {
     // Default constructing should be possible
     // then there is no need for MPL index when
     // construction a PMatrix<T,N>
-    WordREG(): val(jit_type<T>::value) {}
+    WordREG(): val(create_jit_value(jit_type<T>::value)) {}
 
-    WordREG(int i): val(i) {}
-    WordREG(double f): val(f) {}
+    WordREG(int i): val(create_jit_value(i)) {}
+    WordREG(double f): val(create_jit_value(f)) {}
 
-    WordREG(const WordREG& rhs): val(jit_type<T>::value) {
-      assert(rhs.get_val().get_ever_assigned());      
+    WordREG(const WordREG& rhs): val(create_jit_value(jit_type<T>::value)) {
+      assert(rhs.get_val()->get_ever_assigned());      
       val = rhs.get_val();
       //      setup_m=true;
     }
 
-    // WordREG(const jit_value& rhs): val(jit_type<T>::value) {
+    // WordREG(const jit_value_t& rhs): val(jit_type<T>::value) {
     //   setup(rhs);
     // }
 
-    void setup(const jit_value& v) {
-      if (val.get_type() == v.get_type())
-	jit_ins_mov(val,v);
+    void setup(const jit_value_t& v) {
+      if (jit_type<T>::value == v->get_type().get_builtin())
+	val = v;
       else
-	val = jit_val_convert( val.get_type() , v );
+	val = jit_val_convert( jit_type<T>::value , v );
     }
 
     void setup(const WordJIT<T>& wj) {
-      val = jit_ins_load( wj.getAddress() , 0 , jit_type<T>::value );
+      val = jit_ins_load( wj.getBaseReg() , wj.getOffset() , jit_type<T>::value );
       //setup_m=true;
     }
 
@@ -58,8 +58,8 @@ namespace QDP {
     // }
 
 
-    jit_value&       get_val()        { return val; }
-    const jit_value& get_val() const  { return val; }
+    jit_value_t&       get_val()        { return val; }
+    const jit_value_t& get_val() const  { return val; }
 
 
     WordREG& operator=(const WordREG& rhs) {
@@ -174,7 +174,7 @@ namespace QDP {
 
   private:
     //    bool setup_m;
-    jit_value    val;
+    jit_value_t    val;
   };
 
 
@@ -623,24 +623,27 @@ localInnerProductReal(const WordREG<T1>& s1, const WordREG<T2>& s2)
   inline void 
   zero_rep(WordREG<double>& dest) 
   {
-    jit_ins_mov( dest.get_val() , jit_value(0.0) );
+    //jit_ins_mov( dest.get_val() , 
+    dest.setup(create_jit_value(0.0));
   }
 
   inline void 
   zero_rep(WordREG<float>& dest) 
   {
-    jit_ins_mov( dest.get_val() , jit_value(0.0) );
+    //jit_ins_mov( dest.get_val() , create_jit_value(0.0) );
+    dest.setup(create_jit_value(0.0));
   }
 
   inline void 
-  zero_rep(WordREG<int>& dest) 
+  zero_rep(WordREG<int>& dest)
   {
-    jit_ins_mov( dest.get_val() , jit_value(0) );
+    //jit_ins_mov( dest.get_val() , create_jit_value(0) );
+    dest.setup(create_jit_value(0));
   }
 
 
 
-
+#if 0
 typename UnaryReturn<WordREG<float>, FnArcCos>::Type_t acos(const WordREG<float>& s1);
 typename UnaryReturn<WordREG<float>, FnArcSin>::Type_t asin(const WordREG<float>& s1);
 typename UnaryReturn<WordREG<float>, FnArcTan>::Type_t atan(const WordREG<float>& s1);
@@ -672,7 +675,7 @@ typename UnaryReturn<WordREG<double>, FnTan>::Type_t tan(const WordREG<double>& 
 typename UnaryReturn<WordREG<double>, FnHypTan>::Type_t tanh(const WordREG<double>& s1);
 typename BinaryReturn<WordREG<double>, WordREG<double>, FnPow>::Type_t pow(const WordREG<double>& s1, const WordREG<double>& s2);
 typename BinaryReturn<WordREG<double>, WordREG<double>, FnArcTan2>::Type_t atan2(const WordREG<double>& s1, const WordREG<double>& s2);
-
+#endif
 
 
 

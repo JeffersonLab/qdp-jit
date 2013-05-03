@@ -3,6 +3,7 @@
 namespace QDP 
 {
 
+#if 0
   typename UnaryReturn<WordREG<float>, FnArcCos>::Type_t
   acos(const WordREG<float>& s1)
   {
@@ -231,7 +232,7 @@ namespace QDP
     ret.setup( jit_ins_atan2_f64( s1.get_val() , s2.get_val() ) );
     return ret;
   }
-
+#endif
 
 
 

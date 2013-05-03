@@ -18,6 +18,9 @@ namespace QDP {
   CUfunction 
   function_global_max_build()
   {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
     //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
     CUfunction func;
@@ -121,6 +124,7 @@ namespace QDP {
     jit_ins_label( label_exit );
 
     return jit_get_cufunction("ptx_global_max.ptx");
+#endif
   }
 
 

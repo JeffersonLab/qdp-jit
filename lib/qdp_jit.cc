@@ -56,28 +56,28 @@ namespace QDP {
     std::map< jit_llvm_builtin , std::map<jit_llvm_builtin,const char *> > create_cvt_from_to()
     {
       std::map< jit_llvm_builtin , std::map<jit_llvm_builtin,const char *> > map_cvt_from_to;
-      map_cvt_from_to[jit_llvm_builtin::i1][jit_llvm_builtin::float] = "sitofp";
-      map_cvt_from_to[jit_llvm_builtin::i1][jit_llvm_builtin::double] = "sitofp";
+      map_cvt_from_to[jit_llvm_builtin::i1][jit_llvm_builtin::flt] = "sitofp";
+      map_cvt_from_to[jit_llvm_builtin::i1][jit_llvm_builtin::dbl] = "sitofp";
       map_cvt_from_to[jit_llvm_builtin::i1][jit_llvm_builtin::i64] = "sext";
       map_cvt_from_to[jit_llvm_builtin::i1][jit_llvm_builtin::i32] = "sext";
 
-      map_cvt_from_to[jit_llvm_builtin::i32][jit_llvm_builtin::float] = "sitofp";
-      map_cvt_from_to[jit_llvm_builtin::i32][jit_llvm_builtin::double] = "sitofp";
+      map_cvt_from_to[jit_llvm_builtin::i32][jit_llvm_builtin::flt] = "sitofp";
+      map_cvt_from_to[jit_llvm_builtin::i32][jit_llvm_builtin::dbl] = "sitofp";
       map_cvt_from_to[jit_llvm_builtin::i32][jit_llvm_builtin::i64] = "sext";
       map_cvt_from_to[jit_llvm_builtin::i32][jit_llvm_builtin::i1] = "trunc";
 
-      map_cvt_from_to[jit_llvm_builtin::i64][jit_llvm_builtin::float] = "sitofp";
-      map_cvt_from_to[jit_llvm_builtin::i64][jit_llvm_builtin::double] = "sitofp";
+      map_cvt_from_to[jit_llvm_builtin::i64][jit_llvm_builtin::flt] = "sitofp";
+      map_cvt_from_to[jit_llvm_builtin::i64][jit_llvm_builtin::dbl] = "sitofp";
       map_cvt_from_to[jit_llvm_builtin::i64][jit_llvm_builtin::i32] = "trunc";
       map_cvt_from_to[jit_llvm_builtin::i64][jit_llvm_builtin::i1] = "trunc";
 
-      map_cvt_from_to[jit_llvm_builtin::float][jit_llvm_builtin::double] = "fpext";
-      map_cvt_from_to[jit_llvm_builtin::float][jit_llvm_builtin::i32] = "fptosi";
-      map_cvt_from_to[jit_llvm_builtin::float][jit_llvm_builtin::i64] = "fptosi";
+      map_cvt_from_to[jit_llvm_builtin::flt][jit_llvm_builtin::dbl] = "fpext";
+      map_cvt_from_to[jit_llvm_builtin::flt][jit_llvm_builtin::i32] = "fptosi";
+      map_cvt_from_to[jit_llvm_builtin::flt][jit_llvm_builtin::i64] = "fptosi";
 
-      map_cvt_from_to[jit_llvm_builtin::double][jit_llvm_builtin::float] = "fptrunc";
-      map_cvt_from_to[jit_llvm_builtin::double][jit_llvm_builtin::i32] = "fptosi";
-      map_cvt_from_to[jit_llvm_builtin::double][jit_llvm_builtin::i64] = "fptosi";
+      map_cvt_from_to[jit_llvm_builtin::dbl][jit_llvm_builtin::flt] = "fptrunc";
+      map_cvt_from_to[jit_llvm_builtin::dbl][jit_llvm_builtin::i32] = "fptosi";
+      map_cvt_from_to[jit_llvm_builtin::dbl][jit_llvm_builtin::i64] = "fptosi";
 
       return map_cvt_from_to;
     }
@@ -167,10 +167,12 @@ namespace QDP {
     // const std::map< jit_state_space , const char * > map_state_space = create_state_space_map();
 
 
-    const std::map< int , std::pair<const char *,
-				    std::string> >     map_ptx_math_functions_unary = create_ptx_math_functions_unary();
-    const std::map< int , std::pair<const char *,
-				    std::string> >     map_ptx_math_functions_binary = create_ptx_math_functions_binary();
+    // const std::map< int , std::pair<const char *,
+    // 				    std::string> >     map_ptx_math_functions_unary = create_ptx_math_functions_unary();
+    // const std::map< int , std::pair<const char *,
+    // 				    std::string> >     map_ptx_math_functions_binary = create_ptx_math_functions_binary();
+
+
     const std::map< jit_llvm_builtin , std::map<jit_llvm_builtin,jit_llvm_builtin> >          map_promote            = create_promote();
     const std::map< jit_llvm_builtin , jit_llvm_builtin >                        map_wide_promote       = create_wide_promote();
     const std::map< jit_llvm_builtin , jit_llvm_builtin >                        map_bit_type           = create_bit_type();
@@ -245,9 +247,9 @@ namespace QDP {
 
 
   jit_value::jit_value( int val ): 
-    ever_assigned(true)
+    ever_assigned(true),
+    type(jit_type<int>::value)
   {
-    type = jit_llvm_type::i32;
     reg_alloc();
     // Workaround: NVVM has no support for constant assignment
     jit_get_function()->get_prg() << *this << " = "
@@ -278,7 +280,7 @@ namespace QDP {
     oss.precision(std::numeric_limits<double>::digits10 + 1);
     oss << val;
     jit_get_function()->get_prg() << *this << " = "
-				  << "fadd " << jit_get_ptx_type(*this) << " "
+				  << "fadd " << type << " "
 				  << oss.str() << ",0.0\n";
   }
 
@@ -299,10 +301,10 @@ namespace QDP {
   // }
 
 
-  jit_llvm_type jit_type_wide_promote(jit_llvm_type t0) {
-    assert( PTX::map_wide_promote.count(t0) > 0 );
-    return PTX::map_wide_promote.at(t0);
-  }
+  // jit_llvm_type jit_type_wide_promote(jit_llvm_type t0) {
+  //   assert( PTX::map_wide_promote.count(t0) > 0 );
+  //   return PTX::map_wide_promote.at(t0);
+  // }
 
   const char * jit_get_llvm_builtin( jit_llvm_builtin type ) {
     assert( PTX::ptx_type_matrix.count(type) > 0 );
@@ -348,9 +350,7 @@ namespace QDP {
   // FUNCTION
 
   jit_function::jit_function(): local_count(0),
-				m_shared(false),
-				m_include_math_ptx_unary(PTX::map_ptx_math_functions_unary.size(),false),
-				m_include_math_ptx_binary(PTX::map_ptx_math_functions_binary.size(),false)
+				m_shared(false)
   {
     entry_block = jit_ins_start_new_block();
   }
@@ -361,8 +361,8 @@ namespace QDP {
   }
 
 
-  int jit_function::reg_alloc( jit_llvm_type type ) {
-    return reg_count[type]++;
+  int jit_function::reg_alloc() {
+    return reg_count++;
   }
 
   std::ostringstream& jit_function::get_prg() { return oss_prg; }
@@ -406,18 +406,18 @@ namespace QDP {
     if (m_shared)
       final_ptx << ".extern .shared .align 4 .b8 sdata[];\n";
 
-    for( int i=0 ; i < PTX::map_ptx_math_functions_unary.size() ; i++ ) {
-      if (m_include_math_ptx_unary.at(i)) {
-	QDP_info_primary("including unary PTX math function %d",(int)i);
-	final_ptx << jit_get_map_ptx_math_functions_prg_unary(i) << "\n";
-      }
-    }
-    for( int i=0 ; i < PTX::map_ptx_math_functions_binary.size() ; i++ ) {
-      if (m_include_math_ptx_binary.at(i)) {
-	QDP_info_primary("including binary PTX math function %i",(int)i);
-	final_ptx << jit_get_map_ptx_math_functions_prg_binary(i) << "\n";
-      }
-    }
+    // for( int i=0 ; i < PTX::map_ptx_math_functions_unary.size() ; i++ ) {
+    //   if (m_include_math_ptx_unary.at(i)) {
+    // 	QDP_info_primary("including unary PTX math function %d",(int)i);
+    // 	final_ptx << jit_get_map_ptx_math_functions_prg_unary(i) << "\n";
+    //   }
+    // }
+    // for( int i=0 ; i < PTX::map_ptx_math_functions_binary.size() ; i++ ) {
+    //   if (m_include_math_ptx_binary.at(i)) {
+    // 	QDP_info_primary("including binary PTX math function %i",(int)i);
+    // 	final_ptx << jit_get_map_ptx_math_functions_prg_binary(i) << "\n";
+    //   }
+    // }
 
     final_ptx << ".entry function (" 
 	<< get_signature().str() 
@@ -441,7 +441,7 @@ namespace QDP {
       func->get_signature() << ",\n";
     first_param = false;
 
-    jit_value_t param(type);
+    jit_value_t param = create_jit_value(type);
     func->get_signature() << param->get_type() << " "
 			  << param << " ";
     param->set_ever_assigned();
@@ -560,11 +560,11 @@ namespace QDP {
   // VALUE REG
 
 
-  jit_value::jit_value():   
-    ever_assigned(false)
-  {
-    reg_alloc(); 
-  }
+  // jit_value::jit_value():   
+  //   ever_assigned(false)
+  // {
+  //   reg_alloc(); 
+  // }
 
   jit_value::jit_value( const jit_value& rhs ):
     type(rhs.type),
@@ -652,7 +652,7 @@ namespace QDP {
   jit_value_t jit_val_convert( jit_llvm_type type , const jit_value_t& rhs ) {
     assert(rhs);
     assert( type.get_ind() == rhs->get_type().get_ind() );
-    assert( type.get_ind() == jit_llvm_builtin::no );
+    assert( type.get_ind() == jit_llvm_ind::no );
 
     if (rhs->get_type() == type) {
       return rhs;
@@ -666,7 +666,7 @@ namespace QDP {
 				    << rhs->get_type().get_builtin() << " " 
 				    << rhs << " to "
 				    << type.get_builtin() << "\n";
-      ret.set_ever_assigned();
+      ret->set_ever_assigned();
       return ret;
     }
   }
@@ -767,7 +767,7 @@ namespace QDP {
     jit_get_function()->get_prg() << ret << " = call "
 				  << ret->get_type() << " " 
 				  << reg_name << "\n";
-    ret.set_ever_assigned();
+    ret->set_ever_assigned();
     return ret;
   }
 
@@ -848,7 +848,7 @@ namespace QDP {
 				  << op << " "
 				  << lhs_new << ","
 				  << rhs_new << ";\n";
-    ret.set_ever_assigned();
+    ret->set_ever_assigned();
     //// ret.set_state_space( jit_state_promote( lhs.get_state_space() , rhs.get_state_space() ) );
     return ret;
   }
@@ -873,9 +873,9 @@ namespace QDP {
   jit_value_t jit_ins_shr( const jit_value_t& lhs , const jit_value_t& rhs ) {
     return jit_ins_op( lhs , rhs , JitOpSHR( lhs , rhs ) );
   }
-  jit_value_t jit_ins_mul_wide( const jit_value_t& lhs , const jit_value_t& rhs) {
-    return jit_ins_op( lhs , rhs , JitOpMulWide( lhs , rhs ) );
-  }
+  // jit_value_t jit_ins_mul_wide( const jit_value_t& lhs , const jit_value_t& rhs) {
+  //   return jit_ins_op( lhs , rhs , JitOpMulWide( lhs , rhs ) );
+  // }
   jit_value_t jit_ins_and( const jit_value_t& lhs , const jit_value_t& rhs ) {
     return jit_ins_op( lhs , rhs , JitOpAnd( lhs , rhs ) );
   }
@@ -909,9 +909,9 @@ namespace QDP {
   }
 
 
-  jit_value_t jit_ins_or( const jit_value_t& lhs , const jit_value_t& rhs ) { assert(!"ni"); }
-  jit_value_t jit_ins_and( const jit_value_t& lhs , const jit_value_t& rhs ) { assert(!"ni"); }
-  jit_value_t jit_ins_xor( const jit_value_t& lhs , const jit_value_t& rhs ) { assert(!"ni"); }
+  // jit_value_t jit_ins_or( const jit_value_t& lhs , const jit_value_t& rhs ) { assert(!"ni"); }
+  // jit_value_t jit_ins_and( const jit_value_t& lhs , const jit_value_t& rhs ) { assert(!"ni"); }
+  // jit_value_t jit_ins_xor( const jit_value_t& lhs , const jit_value_t& rhs ) { assert(!"ni"); }
   jit_value_t jit_ins_mod( const jit_value_t& lhs , const jit_value_t& rhs ) { assert(!"ni"); }
 
 
@@ -923,20 +923,20 @@ namespace QDP {
     jit_get_function()->get_prg() << ret << " = "
 				  << op << " "
 				  << reg << ";\n";
-    ret.set_ever_assigned();
+    ret->set_ever_assigned();
     // ret.set_state_space( ret.get_state_space() );
     return ret;
   }
 
 
   jit_value_t jit_ins_neg( const jit_value_t& rhs ) {
-    return jit_ins_unary_op( rhs , JitUnaryOpNeg( rhs.get_type() ) );
+    return jit_ins_unary_op( rhs , JitUnaryOpNeg( rhs->get_type() ) );
   }
   jit_value_t jit_ins_not( const jit_value_t& rhs ) {
-    return jit_ins_unary_op( rhs , JitUnaryOpNot( rhs.get_type() ) );
+    return jit_ins_unary_op( rhs , JitUnaryOpNot( rhs->get_type() ) );
   }
   jit_value_t jit_ins_fabs( const jit_value_t& rhs ) {
-    return jit_ins_unary_op( rhs , JitUnaryOpAbs( rhs.get_type() ) );
+    return jit_ins_unary_op( rhs , JitUnaryOpAbs( rhs->get_type() ) );
   }
   // jit_value_t jit_ins_floor( const jit_value_t& rhs ) {
   //   return jit_ins_unary_op( rhs , JitUnaryOpFloor( rhs.get_type() ) );
@@ -953,7 +953,7 @@ namespace QDP {
   //   %arrayidx = getelementptr i32* %data, i64 %idxprom
   //
   jit_value_t jit_ins_getelementptr( const jit_value_t& base , const jit_value_t& offset ) {
-    assert( base->get_type().ind == jit_llvm_ind::yes );
+    assert( base->get_type().get_ind() == jit_llvm_ind::yes );
     jit_value_t ret = create_jit_value( base->get_type() );
     jit_get_function()->get_prg() << ret
 				  << " = getelementptr " 
@@ -968,7 +968,7 @@ namespace QDP {
   //  %val = load i32* %ptr                           ; yields {i32}:val = i32 3
   //
   jit_value_t jit_ins_load( const jit_value_t& base , const jit_value_t& offset , jit_llvm_type type ) {
-    assert( base->get_type().ind == jit_llvm_ind::yes );
+    assert( base->get_type().get_ind() == jit_llvm_ind::yes );
     assert( base->get_type() == type );
     jit_value_t ptr = jit_ins_getelementptr(base,offset);
     jit_value_t ret = create_jit_value( type );
@@ -976,6 +976,7 @@ namespace QDP {
 				  << " = load "
 				  << ptr->get_type() << " "
 				  << ptr << "\n";
+    ret->set_ever_assigned();
     return ret;
   }
 
@@ -983,7 +984,7 @@ namespace QDP {
   //  store i32 %call, i32* %arrayidx, align 4
   //
   void jit_ins_store(const jit_value_t& base, const jit_value_t& offset, jit_llvm_type type, const jit_value_t& reg ) {
-    assert( base->get_type().ind == jit_llvm_ind::yes );
+    assert( base->get_type().get_ind() == jit_llvm_ind::yes );
     assert( base->get_type() == type );
     jit_value_t ptr = jit_ins_getelementptr(base,offset);
     jit_get_function()->get_prg() << "store "
@@ -994,6 +995,11 @@ namespace QDP {
   }
 
 
+  jit_value_t jit_int_array_indirection( const jit_value_t& idx , jit_llvm_builtin type )
+  {
+    jit_value_t base = jit_add_param( jit_llvm_type( type , jit_llvm_ind::yes ) );
+    return jit_ins_load( base , idx , type );
+  }
 
 
   jit_value_t jit_geom_get_linear_th_idx() {
@@ -1019,6 +1025,15 @@ namespace QDP {
   }
 
 
+  void jit_ins_cond_exit( const jit_value_t& cond )
+  {
+    jit_block_t bl_exit,bl_cont;
+    jit_ins_branch( cond , bl_exit , bl_cont );
+    jit_ins_start_block( bl_exit );
+    jit_ins_exit();
+    jit_ins_start_block( bl_cont );
+  }
+
 
   void jit_ins_branch( const jit_value_t& cond,  jit_block_t& block_true , jit_block_t& block_false ) {
     assert(cond);
@@ -1029,7 +1044,7 @@ namespace QDP {
     jit_get_function()->get_prg() << "br "
 				  << cond->get_type() << " "
 				  << cond << ", "
-				  << "label " << *block_true << ", ";
+				  << "label " << *block_true << ", "
 				  << "label " << *block_false << "\n";
   }
 
@@ -1037,12 +1052,29 @@ namespace QDP {
     if (!block)
       block = jit_block_create();
     jit_get_function()->get_prg() << "br "
-				  << "label " << *block_false << "\n";
+				  << "label " << *block << "\n";
   }
 
   void jit_ins_comment( const char * comment ) {
     jit_get_function()->get_prg() << "; " << comment << "\n";
   }
+
+
+  jit_value_t jit_ins_phi( const jit_value_t& v0 , const jit_block_t& b0 ,
+			   const jit_value_t& v1 , const jit_block_t& b1 )
+  {
+    assert(v0);
+    assert(v1);
+    assert( v0->get_type() == v1->get_type() );
+    jit_value_t ret = create_jit_value( v0->get_type() );
+    jit_get_function()->get_prg() << ret << " = phi "
+				  << v0->get_type() << " "
+				  << "[" << v0 << " , %" << b0 << "], "
+				  << "[" << v1 << " , %" << b1 << "]\n";
+    ret->set_ever_assigned();
+    return ret;
+  }
+
 
 }
 

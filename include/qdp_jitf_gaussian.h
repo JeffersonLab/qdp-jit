@@ -9,6 +9,9 @@ template<class T>
 CUfunction
 function_gaussian_build(OLattice<T>& dest ,OLattice<T>& r1 ,OLattice<T>& r2 )
 {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
   //  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
   CUfunction func;
 
@@ -61,6 +64,7 @@ function_gaussian_build(OLattice<T>& dest ,OLattice<T>& r1 ,OLattice<T>& r2 )
   fill_gaussian( dest_jit.elem(JitDeviceLayout::Coalesced) , r1_reg , r2_reg );
 
   return jit_get_cufunction("ptx_gaussian.ptx");
+#endif
 }
 
 
@@ -68,6 +72,9 @@ template<class T>
 void 
 function_gaussian_exec(CUfunction function, OLattice<T>& dest,OLattice<T>& r1,OLattice<T>& r2, const Subset& s )
 {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   AddressLeaf addr_leaf;
@@ -120,6 +127,7 @@ function_gaussian_exec(CUfunction function, OLattice<T>& dest,OLattice<T>& r1,OL
   kernel_geom_t now = getGeom( th_count , threadsPerBlock );
 
   CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
+#endif
 }
 
 

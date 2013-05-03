@@ -22,15 +22,15 @@ namespace QDP {
     // then there is no need for MPL index when
     // construction a PMatrix<T,N>
     WordJIT(): 
-      setup_m(false),
-      r_base(jit_ptx_type::u64),
-      offset_full(jit_ptx_type::s32),
-      offset_level(jit_ptx_type::s32)
+      setup_m(false)
+      // r_base(jit_ptx_type::u64),
+      // offset_full(jit_ptx_type::s32),
+      // offset_level(jit_ptx_type::s32)
     {
     }
 
 
-    void setup( jit_value r_base_, jit_value full_, jit_value level_ ) {
+    void setup( jit_value_t r_base_, jit_value_t full_, jit_value_t level_ ) {
       r_base        = r_base_;
       offset_full   = full_;
       offset_level  = level_;
@@ -38,18 +38,24 @@ namespace QDP {
     }
 
 
-    jit_value getAddress() const {
-      jit_value ws         = jit_value( sizeof(typename WordType<T>::Type_t) );
-      jit_value lev_mul_ws = jit_ins_mul ( offset_level , ws );
-      jit_value address    = jit_ins_add( r_base , lev_mul_ws );
-      return address;
+    // jit_value_t getAddress() const {
+    //   jit_value_t ws         = jit_value_t( sizeof(typename WordType<T>::Type_t) );
+    //   jit_value_t lev_mul_ws = jit_ins_mul ( offset_level , ws );
+    //   jit_value_t address    = jit_ins_add( r_base , lev_mul_ws );
+    //   return address;
+    // }
+
+    jit_value_t getOffset() const {
+      jit_value_t ws         = create_jit_value( sizeof(typename WordType<T>::Type_t) );
+      jit_value_t lev_mul_ws = jit_ins_mul ( offset_level , ws );
+      return lev_mul_ws;
     }
 
 
     template<class T1>
     void operator=(const WordREG<T1>& s1) {
       assert(setup_m);
-      jit_ins_store( getAddress() , 0 , jit_type<T>::value , s1.get_val() );
+      jit_ins_store( r_base , getOffset() , jit_type<T>::value , s1.get_val() );
     }
 
 
@@ -58,9 +64,9 @@ namespace QDP {
     inline
     WordJIT& operator+=(const WordREG<T1>& rhs) 
     {
-      jit_value tmp = jit_ins_load( getAddress() , 0 , jit_type<T>::value );
-      jit_value tmp2 = jit_ins_add( tmp , rhs.get_val() );
-      jit_ins_store( getAddress() , 0 , jit_type<T>::value , tmp2 );
+      jit_value_t tmp = jit_ins_load( r_base , getOffset() , jit_type<T>::value );
+      jit_value_t tmp2 = jit_ins_add( tmp , rhs.get_val() );
+      jit_ins_store( r_base , getOffset() , jit_type<T>::value , tmp2 );
       return *this;
     }
 
@@ -69,9 +75,9 @@ namespace QDP {
     inline
     WordJIT& operator-=(const WordREG<T1>& rhs) 
     {
-      jit_value tmp = jit_ins_load( getAddress() , 0 , jit_type<T>::value );
-      jit_value tmp2 = jit_ins_sub( tmp , rhs.get_val() );
-      jit_ins_store( getAddress() , 0 , jit_type<T>::value , tmp2 );
+      jit_value_t tmp = jit_ins_load( r_base , getOffset() , jit_type<T>::value );
+      jit_value_t tmp2 = jit_ins_sub( tmp , rhs.get_val() );
+      jit_ins_store( r_base , getOffset() , jit_type<T>::value , tmp2 );
       return *this;
     }
 
@@ -80,9 +86,9 @@ namespace QDP {
     inline
     WordJIT& operator*=(const WordREG<T1>& rhs) 
     {
-      jit_value tmp = jit_ins_load( getAddress() , 0 , jit_type<T>::value );
-      jit_value tmp2 = jit_ins_mul( tmp , rhs.get_val() );
-      jit_ins_store( getAddress() , 0 , jit_type<T>::value , tmp2 );
+      jit_value_t tmp = jit_ins_load( r_base , getOffset() , jit_type<T>::value );
+      jit_value_t tmp2 = jit_ins_mul( tmp , rhs.get_val() );
+      jit_ins_store( r_base , getOffset() , jit_type<T>::value , tmp2 );
       return *this;
     }
 
@@ -91,9 +97,9 @@ namespace QDP {
     inline
     WordJIT& operator/=(const WordREG<T1>& rhs) 
     {
-      jit_value tmp = jit_ins_load( getAddress() , 0 , jit_type<T>::value );
-      jit_value tmp2 = jit_ins_div( tmp , rhs.get_val() );
-      jit_ins_store( getAddress() , 0 , jit_type<T>::value , tmp2 );
+      jit_value_t tmp = jit_ins_load( r_base , getOffset() , jit_type<T>::value );
+      jit_value_t tmp2 = jit_ins_div( tmp , rhs.get_val() );
+      jit_ins_store( r_base , getOffset() , jit_type<T>::value , tmp2 );
       return *this;
     }
 
@@ -102,9 +108,7 @@ namespace QDP {
     inline
     WordJIT& operator%=(const WordREG<T1>& rhs) 
     {
-      jit_value tmp = jit_ins_load( getAddress() , 0 , jit_type<T>::value );
-      jit_value tmp2 = jit_ins_mod( tmp , rhs.get_val() );
-      jit_ins_store( getAddress() , 0 , jit_type<T>::value , tmp2 );
+      std::cout << __PRETTY_FUNCTION__ << "\n"; QDP_error_exit("ni");
       return *this;
     }
 
@@ -113,9 +117,7 @@ namespace QDP {
     inline
     WordJIT& operator|=(const WordREG<T1>& rhs) 
     {
-      jit_value tmp = jit_ins_load( getAddress() , 0 , jit_type<T>::value );
-      jit_value tmp2 = jit_ins_or( tmp , rhs.get_val() );
-      jit_ins_store( getAddress() , 0 , jit_type<T>::value , tmp2 );
+      std::cout << __PRETTY_FUNCTION__ << "\n"; QDP_error_exit("ni");
       return *this;
     }
 
@@ -124,9 +126,7 @@ namespace QDP {
     inline
     WordJIT& operator&=(const WordREG<T1>& rhs) 
     {
-      jit_value tmp = jit_ins_load( getAddress() , 0 , jit_type<T>::value );
-      jit_value tmp2 = jit_ins_and( tmp , rhs.get_val() );
-      jit_ins_store( getAddress() , 0 , jit_type<T>::value , tmp2 );
+      std::cout << __PRETTY_FUNCTION__ << "\n"; QDP_error_exit("ni");
       return *this;
     }
 
@@ -135,9 +135,7 @@ namespace QDP {
     inline
     WordJIT& operator^=(const WordREG<T1>& rhs) 
     {
-      jit_value tmp = jit_ins_load( getAddress() , 0 , jit_type<T>::value );
-      jit_value tmp2 = jit_ins_xor( tmp , rhs.get_val() );
-      jit_ins_store( getAddress() , 0 , jit_type<T>::value , tmp2 );
+      std::cout << __PRETTY_FUNCTION__ << "\n"; QDP_error_exit("ni");
       return *this;
     }
 
@@ -146,9 +144,7 @@ namespace QDP {
     inline
     WordJIT& operator<<=(const WordREG<T1>& rhs) 
     {
-      jit_value tmp = jit_ins_load( getAddress() , 0 , jit_type<T>::value );
-      jit_value tmp2 = jit_ins_shl( tmp , rhs.get_val() );
-      jit_ins_store( getAddress() , 0 , jit_type<T>::value , tmp2 );
+      std::cout << __PRETTY_FUNCTION__ << "\n"; QDP_error_exit("ni");
       return *this;
     }
 
@@ -157,25 +153,23 @@ namespace QDP {
     inline
     WordJIT& operator>>=(const WordREG<T1>& rhs) 
     {
-      jit_value tmp = jit_ins_load( getAddress() , 0 , jit_type<T>::value );
-      jit_value tmp2 = jit_ins_shr( tmp , rhs.get_val() );
-      jit_ins_store( getAddress() , 0 , jit_type<T>::value , tmp2 );
+      std::cout << __PRETTY_FUNCTION__ << "\n"; QDP_error_exit("ni");
       return *this;
     }
 
 
-    jit_value getBaseReg() const { assert(setup_m); return r_base; }
-    jit_value getFull() const { assert(setup_m); return offset_full; }
-    jit_value getLevel() const { assert(setup_m); return offset_level; }
+    jit_value_t getBaseReg() const { assert(setup_m); return r_base; }
+    jit_value_t getFull() const { assert(setup_m); return offset_full; }
+    jit_value_t getLevel() const { assert(setup_m); return offset_level; }
 
   private:
     template<class T1>
     void operator=(const WordJIT<T1>& s1);
     void operator=(const WordJIT& s1);
 
-    jit_value    r_base;
-    jit_value    offset_full;
-    jit_value    offset_level;
+    jit_value_t    r_base;
+    jit_value_t    offset_full;
+    jit_value_t    offset_level;
     bool setup_m;
   };
 
@@ -217,7 +211,9 @@ namespace QDP {
   inline
   void copymask(WordJIT<T>& d, const WordREG<T1>& mask, const WordREG<T2>& s1)
   {
-    jit_ins_store( d.getAddress() , 0 , jit_type<T>::value , s1.get_val() , mask.get_val() );
+    std::cout << __PRETTY_FUNCTION__ << "\n"; QDP_error_exit("ni");
+
+    //jit_ins_store( d.getAddress() , 0 , jit_type<T>::value , s1.get_val() , mask.get_val() );
   }
 
 
@@ -225,19 +221,19 @@ namespace QDP {
   inline void 
   zero_rep(WordJIT<double>& dest)
   {
-    jit_ins_store( dest.getAddress() , 0 , jit_type<double>::value , jit_value( 0.0 ) );
+    jit_ins_store( dest.getBaseReg() , dest.getOffset() , jit_type<double>::value , create_jit_value( 0.0 ) );
   }
 
   inline void 
   zero_rep(WordJIT<float>& dest)
   {
-    jit_ins_store( dest.getAddress() , 0 , jit_type<float>::value , jit_value( 0.0 ) );
+    jit_ins_store( dest.getBaseReg() , dest.getOffset() , jit_type<float>::value , create_jit_value( 0.0 ) );
   }
 
   inline void 
   zero_rep(WordJIT<int>& dest)
   {
-    jit_ins_store( dest.getAddress() , 0 , jit_type<int>::value , jit_value( 0 ) );
+    jit_ins_store( dest.getBaseReg() , dest.getOffset() , jit_type<int>::value , create_jit_value( 0 ) );
   }
 
 

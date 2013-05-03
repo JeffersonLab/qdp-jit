@@ -19,6 +19,9 @@ void function_sum_exec( CUfunction function,
   CUfunction 
   function_sum_ind_build()
   {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
     //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
     CUfunction func;
@@ -131,6 +134,7 @@ void function_sum_exec( CUfunction function,
     jit_ins_label(  label_exit );
 
     return jit_get_cufunction("ptx_sum_ind.ptx");
+#endif
   }
 
 
@@ -140,6 +144,9 @@ void function_sum_exec( CUfunction function,
   CUfunction 
   function_sum_build()
   {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
     //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
     CUfunction func;
@@ -249,6 +256,7 @@ void function_sum_exec( CUfunction function,
     jit_ins_label(  label_exit );
 
     return jit_get_cufunction("ptx_sum.ptx");
+#endif
   }
 
 

@@ -22,6 +22,12 @@ namespace QDP {
 
   const char * jit_get_llvm_builtin( jit_llvm_builtin type );
 
+  std::ostream& operator<< (std::ostream& stream, const jit_llvm_builtin& type )
+  {
+    stream << jit_get_llvm_builtin( type );
+    return stream;
+  }
+
 
   class jit_llvm_type {
     jit_llvm_builtin bi;
@@ -36,7 +42,7 @@ namespace QDP {
     bool operator!= (const jit_llvm_type &rhs) const { return std::tie(bi,ind) != std::tie(rhs.bi,rhs.ind); }
     bool operator== (const jit_llvm_type &rhs) const { return std::tie(bi,ind) == std::tie(rhs.bi,rhs.ind); }
     friend std::ostream& operator<< (std::ostream& stream, const jit_llvm_type& type ) {
-      stream << jit_get_llvm_builtin(type.bi);
+      stream << type.get_builtin();
       if (type.ind == jit_llvm_ind::yes)
 	stream << "*";
       return stream;
@@ -91,9 +97,9 @@ namespace QDP {
   //const char * jit_get_identifier_local_memory();
 
   namespace PTX {
-    std::map< jit_llvm_type , std::array<const char*,4> > create_ptx_type_matrix(int cc);
-    extern std::map< jit_llvm_type , std::array<const char*,4> > ptx_type_matrix;
-    extern const std::map< jit_llvm_type , std::map<jit_llvm_type,jit_llvm_type> > map_promote;
+    std::map< jit_llvm_builtin , std::array<const char*,1> > create_ptx_type_matrix(int cc);
+    extern std::map< jit_llvm_builtin , std::array<const char*,1> > ptx_type_matrix;
+    extern const std::map< jit_llvm_builtin , std::map<jit_llvm_builtin,jit_llvm_builtin > > map_promote;
     //extern const std::map< jit_llvm_type , jit_llvm_type >               map_wide_promote;
   }
 
@@ -119,7 +125,7 @@ namespace QDP {
     int local_alloc( jit_llvm_type type, int count );
     void write_reg_defs();
     jit_function();
-    int reg_alloc( jit_llvm_type type );
+    int reg_alloc();
     std::ostringstream& get_prg();
     std::ostringstream& get_signature();
   };
@@ -169,7 +175,7 @@ namespace QDP {
 
     jit_value& operator=( const jit_value& rhs );    
 
-    jit_value();
+    //jit_value();
     jit_value( int val );
     jit_value( size_t val );
     jit_value( double val );
@@ -356,14 +362,23 @@ namespace QDP {
   void jit_ins_start_block(  jit_block_t& label );
   void jit_ins_comment(  const char * comment );
   void jit_ins_exit();
+  void jit_ins_cond_exit( const jit_value_t& cond );
 
-  jit_value_t jit_ins_load ( const jit_value_t& base , int offset , jit_llvm_type type  );
+  jit_value_t jit_int_array_indirection( const jit_value_t& idx , jit_llvm_builtin type );
 
+  jit_value_t jit_ins_load ( const jit_value_t& base , 
+			     const jit_value_t& offset , 
+			     jit_llvm_type type  );
 
-  void jit_ins_store( const jit_value_t& base , int offset , jit_llvm_type type , const jit_value_t& val  );
+  void jit_ins_store( const jit_value_t& base , 
+		      const jit_value_t& offset , 
+		      jit_llvm_type type , 
+		      const jit_value_t& val  );
 
   jit_value_t jit_geom_get_linear_th_idx();
 
+  jit_value_t jit_ins_phi( const jit_value_t& v0 , const jit_block_t& b0 ,
+			   const jit_value_t& v1 , const jit_block_t& b1 );
 
   class JitOp {
   protected:

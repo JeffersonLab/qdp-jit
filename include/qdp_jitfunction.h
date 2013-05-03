@@ -20,57 +20,61 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 
   //function.setPrettyFunction(__PRETTY_FUNCTION__);
 
-  jit_value r_ordered      = jit_add_param(  jit_ptx_type::pred );
-  jit_value r_th_count     = jit_add_param(  jit_ptx_type::s32 );
-  jit_value r_start        = jit_add_param(  jit_ptx_type::s32 );
-  jit_value r_end          = jit_add_param(  jit_ptx_type::s32 );
-  jit_value r_do_site_perm = jit_add_param(  jit_ptx_type::pred );
-  jit_value r_no_site_perm = jit_ins_not( r_do_site_perm );
+  jit_value_t r_ordered      = jit_add_param(  jit_llvm_builtin::i1 );
+  jit_value_t r_th_count     = jit_add_param(  jit_llvm_builtin::i32 );
+  jit_value_t r_start        = jit_add_param(  jit_llvm_builtin::i32 );
+  jit_value_t r_end          = jit_add_param(  jit_llvm_builtin::i32 );
+  jit_value_t r_do_site_perm = jit_add_param(  jit_llvm_builtin::i1 );
+  jit_value_t r_no_site_perm = jit_ins_not( r_do_site_perm );
 
-  jit_value r_idx_thread = jit_geom_get_linear_th_idx();
+  jit_value_t r_idx_thread = jit_geom_get_linear_th_idx();
 
-  jit_ins_exit( jit_ins_ge( r_idx_thread , r_th_count ) );
+  jit_ins_cond_exit( jit_ins_ge( r_idx_thread , r_th_count ) );
 
-  jit_value r_idx = r_idx_thread;
 
-  jit_label_t label_no_site_perm_exit;
-  jit_label_t label_no_site_perm;
-  jit_ins_branch( label_no_site_perm , r_no_site_perm );
+  jit_block_t block_no_site_perm_exit;
+  jit_block_t block_no_site_perm;
+  jit_block_t block_site_perm;
+  jit_block_t block_add_start;
+
+  jit_value_t r_idx_perm_phi0;
+  jit_value_t r_idx_perm_phi1;
+  jit_ins_branch( r_no_site_perm , block_no_site_perm , block_site_perm );
   {
-    jit_value r_perm_array_addr      = jit_add_param(  jit_ptx_type::u64 );  // Site permutation array
-    jit_value r_idx_mul_4            = jit_ins_mul( r_idx_thread , jit_value(4) ); // Yes, r_idx_thread !!
-    jit_value r_perm_array_addr_load = jit_ins_add( r_perm_array_addr , r_idx_mul_4 );
-    jit_value r_idx_perm             = jit_ins_load( r_perm_array_addr_load , 0 , jit_ptx_type::s32 );
-    jit_ins_mov( r_idx , r_idx_perm );
-    jit_ins_branch( label_no_site_perm_exit );
+    jit_ins_start_block(block_site_perm);
+    r_idx_perm_phi0 = jit_int_array_indirection( r_idx_thread , jit_llvm_builtin::i32 ); // PHI 0
+    jit_ins_branch( block_no_site_perm_exit );
   }
-  jit_ins_label(label_no_site_perm);
+  jit_ins_start_block(block_no_site_perm);
   {
-    jit_value r_not_ordered = jit_ins_not(r_ordered);
-    jit_ins_branch( label_no_site_perm_exit , r_not_ordered );
-    r_idx = jit_ins_add( r_idx_thread , r_start );
+    jit_value_t r_not_ordered = jit_ins_not(r_ordered);
+    jit_ins_branch( r_not_ordered , block_no_site_perm_exit , block_add_start );
+    jit_ins_start_block(block_add_start);
+    r_idx_perm_phi1 = jit_ins_add( r_idx_thread , r_start ); // PHI 1
+    jit_ins_branch( block_no_site_perm_exit );
   }
-  jit_ins_label(label_no_site_perm_exit);
+  jit_ins_start_block(block_no_site_perm_exit);
+
+  jit_value_t r_idx = jit_ins_phi( r_idx_perm_phi0 , block_site_perm , r_idx_perm_phi1 , block_add_start );
 
 
-
-  jit_label_t label_ordered;
-  jit_label_t label_ordered_exit;
-  jit_ins_branch( label_ordered , r_ordered );
+  jit_block_t block_ordered;
+  jit_block_t block_not_ordered;
+  jit_block_t block_ordered_exit;
+  jit_ins_branch( r_ordered , block_ordered , block_not_ordered );
   {
-    jit_value r_member = jit_add_param(  jit_ptx_type::u64 );  // Subset
-    jit_value r_member_addr        = jit_ins_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
-    jit_value r_ismember           = jit_ins_load ( r_member_addr , 0 , jit_ptx_type::pred );
-    jit_value r_ismember_not       = jit_ins_not( r_ismember );
-    jit_ins_exit( r_ismember_not );
-    jit_ins_branch( label_ordered_exit );
+    jit_ins_start_block(block_not_ordered);
+    jit_value_t r_ismember     = jit_int_array_indirection( r_idx , jit_llvm_builtin::i1 );
+    jit_value_t r_ismember_not = jit_ins_not( r_ismember );
+    jit_ins_cond_exit( r_ismember_not );
+    jit_ins_branch( block_ordered_exit );
   }
-  jit_ins_label(label_ordered);
   {
-    jit_ins_exit( jit_ins_gt( r_idx , r_end ) );
-    jit_ins_exit( jit_ins_lt( r_idx , r_start ) );
+    jit_ins_start_block(block_ordered);
+    jit_ins_cond_exit( jit_ins_gt( r_idx , r_end ) );
+    jit_ins_cond_exit( jit_ins_lt( r_idx , r_start ) );
   }
-  jit_ins_label(label_ordered_exit);
+  jit_ins_start_block(block_ordered_exit);
 
 
 
@@ -103,41 +107,42 @@ template<class T, class T1, class Op, class RHS>
 CUfunction
 function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
 {
-  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
   CUfunction func;
 
   jit_start_new_function();
 
   //function.setPrettyFunction(__PRETTY_FUNCTION__);
 
-  jit_value r_ordered      = jit_add_param(  jit_ptx_type::pred );
-  jit_value r_th_count     = jit_add_param(  jit_ptx_type::s32 );
-  jit_value r_start        = jit_add_param(  jit_ptx_type::s32 );
-  jit_value r_end          = jit_add_param(  jit_ptx_type::s32 );
+  jit_value_t r_ordered      = jit_add_param(  jit_llvm_builtin::i1 );
+  jit_value_t r_th_count     = jit_add_param(  jit_llvm_builtin::i32 );
+  jit_value_t r_start        = jit_add_param(  jit_llvm_builtin::i32 );
+  jit_value_t r_end          = jit_add_param(  jit_llvm_builtin::i32 );
 
-  jit_value r_idx_thread = jit_geom_get_linear_th_idx();
+  jit_value_t r_idx_thread = jit_geom_get_linear_th_idx();
 
   jit_ins_exit( jit_ins_ge( r_idx_thread , r_th_count ) );
 
-  jit_value r_idx = r_idx_thread;
+  jit_value_t r_idx = r_idx_thread;
 
-  jit_label_t label_ordered;
-  jit_label_t label_ordered_exit;
-  jit_ins_branch( label_ordered , r_ordered );
+  jit_block_t block_ordered;
+  jit_block_t block_ordered_exit;
+  jit_ins_branch( block_ordered , r_ordered );
   {
-    jit_value r_member = jit_add_param(  jit_ptx_type::u64 );  // Subset
-    jit_value r_member_addr        = jit_ins_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
-    jit_value r_ismember           = jit_ins_load ( r_member_addr , 0 , jit_ptx_type::pred );
-    jit_value r_ismember_not       = jit_ins_not( r_ismember );
+    jit_value_t r_member = jit_add_param(  jit_llvm_builtin::u64 );  // Subset
+    jit_value_t r_member_addr        = jit_ins_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
+    jit_value_t r_ismember           = jit_ins_load ( r_member_addr , 0 , jit_llvm_builtin::i1 );
+    jit_value_t r_ismember_not       = jit_ins_not( r_ismember );
     jit_ins_exit( r_ismember_not );
-    jit_ins_branch( label_ordered_exit );
+    jit_ins_branch( block_ordered_exit );
   }
-  jit_ins_label(label_ordered);
+  jit_ins_start_block(block_ordered);
   {
     r_idx = jit_ins_add( r_idx_thread , r_start );
   }
-  jit_ins_label(label_ordered_exit);
+  jit_ins_start_block(block_ordered_exit);
 
   ParamLeaf param_leaf(  r_idx );
   
@@ -152,6 +157,7 @@ function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScala
   op_jit(dest_jit.elem( JitDeviceLayout::Coalesced ), forEach(rhs_view, ViewLeaf( JitDeviceLayout::Scalar ), OpCombine()));
 
   return jit_get_cufunction("ptx_lat_sca.ptx");
+#endif
 }
 
 
@@ -163,37 +169,41 @@ template<class T>
 CUfunction
 function_zero_rep_build(OLattice<T>& dest)
 {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
+
   CUfunction func;
 
   jit_start_new_function();
 
-  jit_value r_ordered      = jit_add_param(  jit_ptx_type::pred );
-  jit_value r_th_count     = jit_add_param(  jit_ptx_type::s32 );
-  jit_value r_start        = jit_add_param(  jit_ptx_type::s32 );
-  jit_value r_end          = jit_add_param(  jit_ptx_type::s32 );
+  jit_value_t r_ordered      = jit_add_param(  jit_llvm_builtin::i1 );
+  jit_value_t r_th_count     = jit_add_param(  jit_llvm_builtin::i32 );
+  jit_value_t r_start        = jit_add_param(  jit_llvm_builtin::i32 );
+  jit_value_t r_end          = jit_add_param(  jit_llvm_builtin::i32 );
 
-  jit_value r_idx_thread = jit_geom_get_linear_th_idx();
+  jit_value_t r_idx_thread = jit_geom_get_linear_th_idx();
 
   jit_ins_exit( jit_ins_ge( r_idx_thread , r_th_count ) );
 
-  jit_value r_idx = r_idx_thread;
+  jit_value_t r_idx = r_idx_thread;
 
-  jit_label_t label_ordered;
-  jit_label_t label_ordered_exit;
-  jit_ins_branch( label_ordered , r_ordered );
+  jit_block_t block_ordered;
+  jit_block_t block_ordered_exit;
+  jit_ins_branch( block_ordered , r_ordered );
   {
-    jit_value r_member = jit_add_param(  jit_ptx_type::u64 );  // Subset
-    jit_value r_member_addr        = jit_ins_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
-    jit_value r_ismember           = jit_ins_load ( r_member_addr , 0 , jit_ptx_type::pred );
-    jit_value r_ismember_not       = jit_ins_not( r_ismember );
+    jit_value_t r_member = jit_add_param(  jit_llvm_builtin::u64 );  // Subset
+    jit_value_t r_member_addr        = jit_ins_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
+    jit_value_t r_ismember           = jit_ins_load ( r_member_addr , 0 , jit_llvm_builtin::i1 );
+    jit_value_t r_ismember_not       = jit_ins_not( r_ismember );
     jit_ins_exit( r_ismember_not );
-    jit_ins_branch( label_ordered_exit );
+    jit_ins_branch( block_ordered_exit );
   }
-  jit_ins_label(label_ordered);
+  jit_ins_start_block(block_ordered);
   {
     r_idx = jit_ins_add( r_idx_thread , r_start );
   }
-  jit_ins_label(label_ordered_exit);
+  jit_ins_start_block(block_ordered_exit);
 
   ParamLeaf param_leaf(  r_idx );
 
@@ -203,6 +213,7 @@ function_zero_rep_build(OLattice<T>& dest)
   zero_rep( dest_jit.elem(JitDeviceLayout::Coalesced) );
 
   return jit_get_cufunction("ptx_zero.ptx");
+#endif
 }
 
 
@@ -215,11 +226,15 @@ template<class T, class T1, class Op, class RHS>
 CUfunction
 function_sca_sca_build(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
 {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
+
   CUfunction func;
 
   jit_start_new_function();
 
-  jit_value r_idx = jit_geom_get_linear_th_idx();
+  jit_value_t r_idx = jit_geom_get_linear_th_idx();
 
   ParamLeaf param_leaf(  r_idx );
 
@@ -238,6 +253,7 @@ function_sca_sca_build(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar
   op_jit(dest_jit.elem( JitDeviceLayout::Scalar ), forEach(rhs_view, ViewLeaf( JitDeviceLayout::Scalar ), OpCombine()));
 
   return jit_get_cufunction("ptx_sca_sca.ptx");
+#endif
 }
 
 
@@ -247,6 +263,9 @@ template<class T>
 CUfunction
 function_random_build(OLattice<T>& dest , Seed& seed_tmp)
 {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   CUfunction func;
@@ -257,15 +276,15 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
   // If thread exists due to non-member
   // it possibly can't store the new seed at the end.
 
-  jit_value r_lo     = jit_add_param(  jit_ptx_type::s32 );
-  jit_value r_hi     = jit_add_param(  jit_ptx_type::s32 );
+  jit_value_t r_lo     = jit_add_param(  jit_llvm_builtin::i32 );
+  jit_value_t r_hi     = jit_add_param(  jit_llvm_builtin::i32 );
 
-  jit_value r_idx_thread = jit_geom_get_linear_th_idx();
+  jit_value_t r_idx_thread = jit_geom_get_linear_th_idx();
 
-  jit_value r_out_of_range       = jit_ins_gt( r_idx_thread , jit_ins_sub( r_hi , r_lo ) );
+  jit_value_t r_out_of_range       = jit_ins_gt( r_idx_thread , jit_ins_sub( r_hi , r_lo ) );
   jit_ins_exit(  r_out_of_range );
 
-  jit_value r_idx = jit_ins_add( r_lo , r_idx_thread );
+  jit_value_t r_idx = jit_ins_add( r_lo , r_idx_thread );
 
   ParamLeaf param_leaf(  r_idx );
 
@@ -297,14 +316,15 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
 
   fill_random( dest_jit.elem(JitDeviceLayout::Coalesced) , seed_reg , skewed_seed_reg , ran_mult_n_reg );
 
-  jit_value r_no_save = jit_ins_ne( r_idx_thread , jit_value(0) );
+  jit_value_t r_no_save = jit_ins_ne( r_idx_thread , jit_value_t(0) );
 
-  jit_label_t label_nosave;
-  jit_ins_branch(  label_nosave , r_no_save );
+  jit_block_t block_nosave;
+  jit_ins_branch(  block_nosave , r_no_save );
   seed_tmp_jit.elem() = seed_reg;
-  jit_ins_label(  label_nosave );
+  jit_ins_start_block(  block_nosave );
 
   return jit_get_cufunction("ptx_random.ptx");
+#endif
 }
 
 
@@ -318,26 +338,29 @@ template<class T, class T1, class RHS>
 CUfunction
 function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs )
 {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   CUfunction func;
 
   jit_start_new_function();
 
-  jit_value r_lo     = jit_add_param(  jit_ptx_type::s32 );
-  jit_value r_hi     = jit_add_param(  jit_ptx_type::s32 );
+  jit_value_t r_lo     = jit_add_param(  jit_llvm_builtin::i32 );
+  jit_value_t r_hi     = jit_add_param(  jit_llvm_builtin::i32 );
 
-  jit_value r_idx = jit_geom_get_linear_th_idx();  
+  jit_value_t r_idx = jit_geom_get_linear_th_idx();  
 
-  jit_value r_out_of_range       = jit_ins_ge( r_idx , r_hi );
+  jit_value_t r_out_of_range       = jit_ins_ge( r_idx , r_hi );
   jit_ins_exit(  r_out_of_range );
 
-  jit_value r_perm_array_addr      = jit_add_param(  jit_ptx_type::u64 );  // Site permutation array
-  jit_value r_idx_mul_4            = jit_ins_mul( r_idx , jit_value(4) );
-  jit_value r_perm_array_addr_load = jit_ins_add( r_perm_array_addr , r_idx_mul_4 );
-  jit_value r_idx_perm             = jit_ins_load ( r_perm_array_addr_load , 0 , jit_ptx_type::s32 );
+  jit_value_t r_perm_array_addr      = jit_add_param(  jit_llvm_builtin::u64 );  // Site permutation array
+  jit_value_t r_idx_mul_4            = jit_ins_mul( r_idx , jit_value_t(4) );
+  jit_value_t r_perm_array_addr_load = jit_ins_add( r_perm_array_addr , r_idx_mul_4 );
+  jit_value_t r_idx_perm             = jit_ins_load ( r_perm_array_addr_load , 0 , jit_llvm_builtin::i32 );
 
-  jit_value r_gather_buffer        = jit_add_param(  jit_ptx_type::u64 );  // Gather buffer
+  jit_value_t r_gather_buffer        = jit_add_param(  jit_llvm_builtin::u64 );  // Gather buffer
 
   //ParamLeaf param_leaf_idx(  r_idx );
   ParamLeaf param_leaf_idx_perm(  r_idx_perm );
@@ -366,6 +389,7 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
 	      forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced ) , OpCombine() ) );
 
   return jit_get_cufunction("ptx_gather.ptx");
+#endif
 }
 
 
@@ -373,6 +397,9 @@ template<class T1, class RHS>
 void
 function_gather_exec( CUfunction function, void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs )
 {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
   AddressLeaf addr_leaf;
 
   int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
@@ -433,7 +460,7 @@ function_gather_exec( CUfunction function, void* send_buf , const Map& map , con
   kernel_geom_t now = getGeom( hi-lo , threadsPerBlock[hi-lo] );
 
   CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock[hi-lo],1,1,    0, 0, &addr[0] , 0);
-
+#endif
 }
 
 
@@ -442,6 +469,9 @@ template<class T, class T1, class Op, class RHS>
 void 
 function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
 {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+
   //  std::cout << "function_exec 0\n";
 
   ShiftPhase1 phase1;
@@ -582,6 +612,9 @@ template<class T, class T1, class Op, class RHS>
 void 
 function_lat_sca_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs, const Subset& s)
 {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   AddressLeaf addr_leaf;
@@ -644,7 +677,7 @@ function_lat_sca_exec(CUfunction function, OLattice<T>& dest, const Op& op, cons
   kernel_geom_t now = getGeom( th_count , threadsPerBlock );
 
   CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
-
+#endif
 }
 
 
@@ -656,6 +689,9 @@ template<class T>
 void 
 function_zero_rep_exec(CUfunction function, OLattice<T>& dest, const Subset& s )
 {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   AddressLeaf addr_leaf;
@@ -700,6 +736,7 @@ function_zero_rep_exec(CUfunction function, OLattice<T>& dest, const Subset& s )
 
   kernel_geom_t now = getGeom( th_count , threadsPerBlock );
   CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
+#endif
 }
 
 
@@ -715,6 +752,9 @@ template<class T, class T1, class Op, class RHS>
 void 
 function_sca_sca_exec(CUfunction function, OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
 {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
   AddressLeaf addr_leaf;
 
   int junk_dest = forEach(dest, addr_leaf, NullCombine());
@@ -730,6 +770,7 @@ function_sca_sca_exec(CUfunction function, OScalar<T>& dest, const Op& op, const
   }
 
   CudaLaunchKernel(function,   1,1,1,    1,1,1,    0, 0, &addr[0] , 0);
+#endif
 }
 
 
@@ -739,6 +780,9 @@ template<class T>
 void 
 function_random_exec(CUfunction function, OLattice<T>& dest, const Subset& s , Seed& seed_tmp)
 {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
   if (!s.hasOrderedRep())
     QDP_error_exit("random on subset with unordered representation not implemented");
 
@@ -785,6 +829,7 @@ function_random_exec(CUfunction function, OLattice<T>& dest, const Subset& s , S
   kernel_geom_t now = getGeom( s.numSiteTable() , threadsPerBlock );
 
   CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
+#endif
 }
 
 

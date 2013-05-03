@@ -9,6 +9,9 @@ namespace QDP {
   CUfunction
   function_copymask_build( OLattice<T>& dest , const OLattice<T1>& mask , const OLattice<T>& src )
   {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
     CUfunction func;
 
     jit_start_new_function();
@@ -39,6 +42,7 @@ namespace QDP {
     copymask( dest_jit.elem( JitDeviceLayout::Coalesced ) , mask_reg , src_reg );
 
     return jit_get_cufunction("ptx_copymask.ptx");
+#endif
   }
 
 
@@ -47,6 +51,10 @@ namespace QDP {
   void 
   function_copymask_exec(CUfunction function, OLattice<T>& dest, const OLattice<T1>& mask, const OLattice<T>& src )
   {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
+
     AddressLeaf addr_leaf;
 
     int junk_0 = forEach(dest, addr_leaf, NullCombine());
@@ -85,6 +93,7 @@ namespace QDP {
     kernel_geom_t now = getGeom( hi-lo , threadsPerBlock );
 
     CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
+#endif
   }
 
 }

@@ -20,13 +20,13 @@ namespace QDP {
     typedef C Container_t;
 
 
-    QDPTypeJIT( jit_value base_ ,
-		jit_value index_ ): base_m(base_), index_m(index_) {
+    QDPTypeJIT( jit_value_t base_ ,
+		jit_value_t index_ ): base_m(base_), index_m(index_) {
       //std::cout << "QDPTypeJIT 3er ctor\n";
     }
 
     // QDPTypeJIT( jit_function_t func_ , 
-    // 		jit_value base_ ): func_m(func_), base_m(base_) {
+    // 		jit_value_t base_ ): func_m(func_), base_m(base_) {
     //   //std::cout << "QDPTypeJIT 2er ctor\n";
     //   assert(func_m);
     //   assert(base_m);
@@ -37,53 +37,53 @@ namespace QDP {
     ~QDPTypeJIT(){}
 
 
-    jit_value getThreadedBase( JitDeviceLayout lay ) const {
-      jit_value wordsize = jit_value( sizeof(typename WordType<T>::Type_t) );
-      jit_value ret0 = jit_ins_mul( index_m , wordsize );
+    jit_value_t getThreadedBase( JitDeviceLayout lay ) const {
+      jit_value_t wordsize = create_jit_value( sizeof(typename WordType<T>::Type_t) );
+      jit_value_t ret0 = jit_ins_mul( index_m , wordsize );
       if ( lay != JitDeviceLayout::Coalesced ) {
-	jit_value tsize = jit_value( T::Size_t );
-	jit_value ret1 = jit_ins_mul( ret0 , tsize );
-	jit_value ret2 = jit_ins_add( ret1 , base_m );
+	jit_value_t tsize = create_jit_value( T::Size_t );
+	jit_value_t ret1 = jit_ins_mul( ret0 , tsize );
+	jit_value_t ret2 = jit_ins_add( ret1 , base_m );
 	return ret2;
       }
-      jit_value ret1 = jit_ins_add( ret0 , base_m );
+      jit_value_t ret1 = jit_ins_add( ret0 , base_m );
       return ret1;
     }
 
 
-    jit_value getInnerSites( JitDeviceLayout lay) const {
+    jit_value_t getInnerSites( JitDeviceLayout lay) const {
       if ( lay == JitDeviceLayout::Coalesced )
-	return jit_value(Layout::sitesOnNode());
+	return create_jit_value(Layout::sitesOnNode());
       else 
-	return jit_value(1);
+	return create_jit_value(1);
     }
 
 
     T& elem( JitDeviceLayout lay ) {
-      F.setup(getThreadedBase(lay),getInnerSites(lay),jit_value(0));
+      F.setup(getThreadedBase(lay),getInnerSites(lay),create_jit_value(0));
       return F;
     }
 
     const T& elem( JitDeviceLayout lay ) const {
-      F.setup(getThreadedBase(lay),getInnerSites(lay),jit_value(0));
+      F.setup(getThreadedBase(lay),getInnerSites(lay),create_jit_value(0));
       return F;
     }
 
     T& elem() {
-      F.setup(getThreadedBase( JitDeviceLayout::Scalar ),jit_value(1),jit_value(0));
+      F.setup(getThreadedBase( JitDeviceLayout::Scalar ),create_jit_value(1),create_jit_value(0));
       return F;
     }
 
     const T& elem() const {
-      F.setup(getThreadedBase( JitDeviceLayout::Scalar ),jit_value(1),jit_value(0));
+      F.setup(getThreadedBase( JitDeviceLayout::Scalar ),create_jit_value(1),create_jit_value(0));
       return F;
     }
 
 
 
   private:
-    jit_value    base_m;
-    jit_value    index_m;
+    jit_value_t    base_m;
+    jit_value_t    index_m;
     mutable T F;
 
 
@@ -175,7 +175,8 @@ struct LeafFunctor<QDPTypeJIT<T,OLattice<T> >, ParamLeaf>
   typedef TypeA_t  Type_t;
   inline static Type_t apply(const QDPTypeJIT<T,OLattice<T> > &a, const ParamLeaf& p)
   {
-    return Type_t( jit_add_param( jit_ptx_type::u64 ) );
+    return Type_t( jit_add_param( jit_llvm_type( jit_type< typename WordType<T>::Type_t >::value , 
+						 jit_llvm_ind::yes ) ) );
   }
 };
 
@@ -187,7 +188,8 @@ struct LeafFunctor<QDPTypeJIT<T,OScalar<T> >, ParamLeaf>
   typedef TypeA_t  Type_t;
   inline static Type_t apply(const QDPTypeJIT<T,OScalar<T> > &a, const ParamLeaf& p)
   {
-    return Type_t( jit_add_param( jit_ptx_type::u64 ) );
+    return Type_t( jit_add_param( jit_llvm_type( jit_type< typename WordType<T>::Type_t >::value , 
+						 jit_llvm_ind::yes ) ) );
   }
 };
 
