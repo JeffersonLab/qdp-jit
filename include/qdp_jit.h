@@ -22,11 +22,7 @@ namespace QDP {
 
   const char * jit_get_llvm_builtin( jit_llvm_builtin type );
 
-  std::ostream& operator<< (std::ostream& stream, const jit_llvm_builtin& type )
-  {
-    stream << jit_get_llvm_builtin( type );
-    return stream;
-  }
+  std::ostream& operator<< (std::ostream& stream, const jit_llvm_builtin& type );
 
 
   class jit_llvm_type {
@@ -165,7 +161,9 @@ namespace QDP {
 
 
   jit_value_t create_jit_value();
-  template<class T> jit_value_t create_jit_value(T val);
+  jit_value_t create_jit_value(int val);
+  jit_value_t create_jit_value(float val);
+  jit_value_t create_jit_value(double val);
 
 
   class jit_value {

@@ -9,6 +9,12 @@ namespace QDP {
   jit_function_t jit_internal_function;
   jit_block_t    jit_internal_block;
 
+  std::ostream& operator<< (std::ostream& stream, const jit_llvm_builtin& type )
+  {
+    stream << jit_get_llvm_builtin( type );
+    return stream;
+  }
+
   bool jit_type_is_float( jit_llvm_builtin bi ) {
     return 
       bi == jit_llvm_builtin::flt || 
@@ -203,10 +209,11 @@ namespace QDP {
   }
 
 
-  template<class T> jit_value_t create_jit_value(T val) 
-  {
-    return std::make_shared<jit_value>(val);
-  }
+
+  jit_value_t create_jit_value()           { return std::make_shared<jit_value>(val); }
+  jit_value_t create_jit_value(int val)    { return std::make_shared<jit_value>(val); }
+  jit_value_t create_jit_value(float val)  { return std::make_shared<jit_value>(val); }
+  jit_value_t create_jit_value(double val) { return std::make_shared<jit_value>(val); }
 
 
   // jit_llvm_type jit_bit_type(jit_llvm_type type) {
