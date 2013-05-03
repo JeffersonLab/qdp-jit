@@ -17,8 +17,8 @@
 
 namespace QDP {
 
-  enum class jit_llvm_builtin { i1,i32,i64,flt,dbl };
-  enum class jit_llvm_ind { yes,no };
+  enum class jit_llvm_builtin { undef,i1,i32,i64,flt,dbl };
+  enum class jit_llvm_ind { undef,yes,no };
 
   const char * jit_get_llvm_builtin( jit_llvm_builtin type );
 
@@ -29,8 +29,9 @@ namespace QDP {
     jit_llvm_builtin bi;
     jit_llvm_ind     ind;
   public:
-    jit_llvm_builtin get_builtin() const { return bi; }
-    jit_llvm_ind     get_ind()     const { return ind; }
+    jit_llvm_type(): bi(jit_llvm_builtin::undef),ind(jit_llvm_ind::undef) {}
+    jit_llvm_builtin get_builtin() const { assert( bi  != jit_llvm_builtin::undef); return bi; }
+    jit_llvm_ind     get_ind()     const { assert( ind != jit_llvm_ind::undef );    return ind; }
 
     jit_llvm_type( jit_llvm_builtin bi_, jit_llvm_ind ind_ ) : bi(bi_), ind(ind_) {}
     jit_llvm_type( jit_llvm_builtin bi_ )                    : bi(bi_), ind(jit_llvm_ind::no) {}
@@ -93,7 +94,7 @@ namespace QDP {
   //const char * jit_get_identifier_local_memory();
 
   namespace PTX {
-    std::map< jit_llvm_builtin , std::array<const char*,1> > create_ptx_type_matrix(int cc);
+    std::map< jit_llvm_builtin , std::array<const char*,1> > create_ptx_type_matrix();
     extern std::map< jit_llvm_builtin , std::array<const char*,1> > ptx_type_matrix;
     extern const std::map< jit_llvm_builtin , std::map<jit_llvm_builtin,jit_llvm_builtin > > map_promote;
     //extern const std::map< jit_llvm_type , jit_llvm_type >               map_wide_promote;
@@ -162,18 +163,20 @@ namespace QDP {
 
   jit_value_t create_jit_value();
   jit_value_t create_jit_value(int val);
+  jit_value_t create_jit_value(size_t val);
   jit_value_t create_jit_value(float val);
   jit_value_t create_jit_value(double val);
+  jit_value_t create_jit_value(jit_llvm_type type);
 
 
   class jit_value {
-  public:
     jit_value( const jit_value& rhs );
+  public:
 
 
-    jit_value& operator=( const jit_value& rhs );    
+    jit_value& operator=( const jit_value& rhs );
 
-    //jit_value();
+    jit_value();
     jit_value( int val );
     jit_value( size_t val );
     jit_value( double val );
@@ -279,6 +282,17 @@ namespace QDP {
 
   // Binary operations
   //jit_value_t jit_ins_mul_wide( const jit_value_t& lhs , const jit_value_t& rhs  );
+  void jit_ins_mul( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  );
+  void jit_ins_div( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  );
+  void jit_ins_add( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  );
+  void jit_ins_sub( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  );
+  void jit_ins_shl( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  );
+  void jit_ins_shr( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  );
+  void jit_ins_and( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  );
+  void jit_ins_or ( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  );
+  void jit_ins_xor( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  );
+  void jit_ins_rem( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  );
+
   jit_value_t jit_ins_mul( const jit_value_t& lhs , const jit_value_t& rhs  );
   jit_value_t jit_ins_div( const jit_value_t& lhs , const jit_value_t& rhs  );
   jit_value_t jit_ins_add( const jit_value_t& lhs , const jit_value_t& rhs  );
@@ -291,7 +305,7 @@ namespace QDP {
   jit_value_t jit_ins_rem( const jit_value_t& lhs , const jit_value_t& rhs  );
 
   // ni
-  jit_value_t jit_ins_mod( const jit_value_t& lhs , const jit_value_t& rhs );
+  jit_value_t jit_ins_mod( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs );
 
   // Binary operations returning predicate
   jit_value_t jit_ins_lt( const jit_value_t& lhs , const jit_value_t& rhs  );

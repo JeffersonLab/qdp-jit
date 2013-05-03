@@ -272,9 +272,9 @@ namespace QDP {
       setPoolSize = true;
     }
 
-    int major = DeviceParams::Instance().getMajor();
-    int minor = DeviceParams::Instance().getMinor();
-    PTX::ptx_type_matrix = PTX::create_ptx_type_matrix( major*10+minor );
+    // int major = DeviceParams::Instance().getMajor();
+    // int minor = DeviceParams::Instance().getMinor();
+    PTX::ptx_type_matrix = PTX::create_ptx_type_matrix();
 
     ret = cuCtxSetCacheConfig(CU_FUNC_CACHE_PREFER_L1);
     CudaRes("cuCtxSetCacheConfig",ret);

@@ -210,10 +210,12 @@ namespace QDP {
 
 
 
-  jit_value_t create_jit_value()           { return std::make_shared<jit_value>(val); }
+  jit_value_t create_jit_value()           { return std::make_shared<jit_value>(); }
   jit_value_t create_jit_value(int val)    { return std::make_shared<jit_value>(val); }
+  jit_value_t create_jit_value(size_t val) { return std::make_shared<jit_value>(val); }
   jit_value_t create_jit_value(float val)  { return std::make_shared<jit_value>(val); }
   jit_value_t create_jit_value(double val) { return std::make_shared<jit_value>(val); }
+  jit_value_t create_jit_value(jit_llvm_type type) { return std::make_shared<jit_value>(type); }
 
 
   // jit_llvm_type jit_bit_type(jit_llvm_type type) {
@@ -244,6 +246,13 @@ namespace QDP {
   }
 
 
+  jit_value::jit_value():
+    ever_assigned(false)
+  {
+    reg_alloc(); 
+  }
+
+
   jit_value::jit_value( jit_llvm_type type_ ): 
     ever_assigned(true),
     type(type_)
@@ -254,6 +263,18 @@ namespace QDP {
 
 
   jit_value::jit_value( int val ): 
+    ever_assigned(true),
+    type(jit_type<int>::value)
+  {
+    reg_alloc();
+    // Workaround: NVVM has no support for constant assignment
+    jit_get_function()->get_prg() << *this << " = "
+				  << "add i32 " 
+				  << val << ",0\n";
+  }
+
+
+  jit_value::jit_value( size_t val ): 
     ever_assigned(true),
     type(jit_type<int>::value)
   {
@@ -573,13 +594,13 @@ namespace QDP {
   //   reg_alloc(); 
   // }
 
-  jit_value::jit_value( const jit_value& rhs ):
-    type(rhs.type),
-    ever_assigned(rhs.ever_assigned)
-  {
-    reg_alloc();
-    assign( rhs );
-  }
+  // jit_value::jit_value( const jit_value& rhs ):
+  //   type(rhs.type),
+  //   ever_assigned(rhs.ever_assigned)
+  // {
+  //   reg_alloc();
+  //   assign( rhs );
+  // }
     
   void jit_value::reg_alloc() {
     //assert( type != jit_llvm_type::u8 );
@@ -861,7 +882,6 @@ namespace QDP {
   }
 
 
-
   jit_value_t jit_ins_add( const jit_value_t& lhs , const jit_value_t& rhs ) {
     return jit_ins_op( lhs , rhs , JitOpAdd( lhs , rhs ) );
   }
@@ -880,9 +900,6 @@ namespace QDP {
   jit_value_t jit_ins_shr( const jit_value_t& lhs , const jit_value_t& rhs ) {
     return jit_ins_op( lhs , rhs , JitOpSHR( lhs , rhs ) );
   }
-  // jit_value_t jit_ins_mul_wide( const jit_value_t& lhs , const jit_value_t& rhs) {
-  //   return jit_ins_op( lhs , rhs , JitOpMulWide( lhs , rhs ) );
-  // }
   jit_value_t jit_ins_and( const jit_value_t& lhs , const jit_value_t& rhs ) {
     return jit_ins_op( lhs , rhs , JitOpAnd( lhs , rhs ) );
   }
@@ -895,6 +912,49 @@ namespace QDP {
   jit_value_t jit_ins_rem( const jit_value_t& lhs , const jit_value_t& rhs ) {
     return jit_ins_op( lhs , rhs , JitOpRem( lhs , rhs ) );
   }
+  // jit_value_t jit_ins_mul_wide( const jit_value_t& lhs , const jit_value_t& rhs) {
+  //   return jit_ins_op( lhs , rhs , JitOpMulWide( lhs , rhs ) );
+  // }
+
+
+
+  void jit_ins_op_rep( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs , const JitOp& op ) {
+    if (!dest)
+      dest = create_jit_value( op.getDestType() );
+    assert( dest->get_type() == op.getDestType() );
+    jit_llvm_type args_type = op.getArgsType();
+    jit_value_t lhs_new = jit_val_convert( args_type , lhs );
+    jit_value_t rhs_new = jit_val_convert( args_type , rhs );
+    jit_get_function()->get_prg() << dest << " = "
+				  << op << " "
+				  << lhs_new << ","
+				  << rhs_new << ";\n";
+    dest->set_ever_assigned();
+  }
+
+
+    void jit_ins_mul( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  ){ 
+      jit_ins_op_rep( dest, lhs , rhs , JitOpMul( lhs , rhs ) ); }
+    void jit_ins_div( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  ){ 
+      jit_ins_op_rep( dest, lhs , rhs , JitOpDiv( lhs , rhs ) ); }
+    void jit_ins_add( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  ){ 
+       jit_ins_op_rep( dest, lhs , rhs , JitOpAdd( lhs , rhs ) ); }
+    void jit_ins_sub( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  ){ 
+       jit_ins_op_rep( dest, lhs , rhs , JitOpSub( lhs , rhs ) ); }
+    void jit_ins_shl( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  ){ 
+       jit_ins_op_rep( dest, lhs , rhs , JitOpSHL( lhs , rhs ) ); }
+    void jit_ins_shr( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  ){ 
+       jit_ins_op_rep( dest, lhs , rhs , JitOpSHR( lhs , rhs ) ); }
+    void jit_ins_and( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  ){ 
+       jit_ins_op_rep( dest, lhs , rhs , JitOpAnd( lhs , rhs ) ); }
+    void jit_ins_or ( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  ){ 
+       jit_ins_op_rep( dest, lhs , rhs , JitOpOr( lhs , rhs ) ); }
+    void jit_ins_xor( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  ){ 
+       jit_ins_op_rep( dest, lhs , rhs , JitOpXOr( lhs , rhs ) ); }
+    void jit_ins_rem( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  ){ 
+      QDP_error_exit("rem not i"); }
+
+
 
   jit_value_t jit_ins_lt( const jit_value_t& lhs , const jit_value_t& rhs ) {
     return jit_ins_op( lhs , rhs , JitOpLT( lhs , rhs ) );
