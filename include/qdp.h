@@ -141,7 +141,7 @@ namespace QDP {
 
 #include "qdp_traits.h"
 #include "qdp_qdpexpr.h"
-#include "qdp_qdptypejit.h"
+#include "qdp_datalayout.h"
 #include "qdp_qdptype.h"
 #include "qdp_qdpsubtype.h"
 

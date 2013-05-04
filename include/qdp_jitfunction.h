@@ -27,10 +27,13 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   jit_value_t r_do_site_perm = jit_add_param(  jit_llvm_builtin::i1 );
   jit_value_t r_no_site_perm = jit_ins_not( r_do_site_perm );
 
+  std::cout << "1\n";
+
   jit_value_t r_idx_thread = jit_geom_get_linear_th_idx();
 
   jit_ins_cond_exit( jit_ins_ge( r_idx_thread , r_th_count ) );
 
+  std::cout << "2\n";
 
   jit_block_t block_no_site_perm_exit;
   jit_block_t block_no_site_perm;
@@ -45,6 +48,7 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
     r_idx_perm_phi0 = jit_int_array_indirection( r_idx_thread , jit_llvm_builtin::i32 ); // PHI 0
     jit_ins_branch( block_no_site_perm_exit );
   }
+  std::cout << "3\n";
   jit_ins_start_block(block_no_site_perm);
   {
     jit_value_t r_not_ordered = jit_ins_not(r_ordered);
@@ -54,6 +58,7 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
     jit_ins_branch( block_no_site_perm_exit );
   }
   jit_ins_start_block(block_no_site_perm_exit);
+  std::cout << "4\n";
 
   jit_value_t r_idx = jit_ins_phi( r_idx_perm_phi0 , block_site_perm , r_idx_perm_phi1 , block_add_start );
 
@@ -63,6 +68,7 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   jit_block_t block_ordered_exit;
   jit_ins_branch( r_ordered , block_ordered , block_not_ordered );
   {
+  std::cout << "5\n";
     jit_ins_start_block(block_not_ordered);
     jit_value_t r_ismember     = jit_int_array_indirection( r_idx , jit_llvm_builtin::i1 );
     jit_value_t r_ismember_not = jit_ins_not( r_ismember );
@@ -77,27 +83,32 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   jit_ins_start_block(block_ordered_exit);
 
 
+  std::cout << "6\n";
 
 
   ParamLeaf param_leaf(  r_idx );
   //ParamLeaf param_leaf_indexed(  param_leaf.getParamIndexFieldAndOption() );  // Optional soffset (inner/face)
   //function.addParamMemberArray( param_leaf.r_idx ); // Subset member
   
+  std::cout << "7\n";
+
   // Destination
   typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
   //FuncRet_t dest_jit(forEach(dest, param_leaf_indexed, TreeCombine()));
   FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
-
+  std::cout << "8\n";
   auto op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
-
+  std::cout << "9\n";
   // Now the arguments for the rhs
   typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
   //View_t rhs_view(forEach(rhs, param_leaf_indexed, TreeCombine()));
   View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
-
+  std::cout << "10\n";
   //printme<View_t>();
 
   op_jit(dest_jit.elem( JitDeviceLayout::Coalesced ), forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced ), OpCombine()));
+
+  std::cout << "11\n";
 
   return jit_get_cufunction("ptx_eval.ptx");
 }

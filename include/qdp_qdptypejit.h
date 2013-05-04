@@ -37,45 +37,65 @@ namespace QDP {
     ~QDPTypeJIT(){}
 
 
-    jit_value_t getThreadedBase( JitDeviceLayout lay ) const {
-      jit_value_t wordsize = create_jit_value( sizeof(typename WordType<T>::Type_t) );
-      jit_value_t ret0 = jit_ins_mul( index_m , wordsize );
-      if ( lay != JitDeviceLayout::Coalesced ) {
-	jit_value_t tsize = create_jit_value( T::Size_t );
-	jit_value_t ret1 = jit_ins_mul( ret0 , tsize );
-	jit_value_t ret2 = jit_ins_add( ret1 , base_m );
-	return ret2;
-      }
-      jit_value_t ret1 = jit_ins_add( ret0 , base_m );
-      return ret1;
-    }
+    // jit_value_t getThreadedBase( JitDeviceLayout lay ) const {
+    //   jit_value_t wordsize = create_jit_value( sizeof(typename WordType<T>::Type_t) );
+    //   jit_value_t ret0 = jit_ins_mul( index_m , wordsize );
+    //   if ( lay != JitDeviceLayout::Coalesced ) {
+    // 	jit_value_t tsize = create_jit_value( T::Size_t );
+    // 	jit_value_t ret1 = jit_ins_mul( ret0 , tsize );
+    // 	jit_value_t ret2 = jit_ins_add( ret1 , base_m );
+    // 	return ret2;
+    //   }
+    //   jit_value_t ret1 = jit_ins_add( ret0 , base_m );
+    //   return ret1;
+    // }
+
+    // jit_value_t getThreadedOffset( JitDeviceLayout lay ) const {
+    //   if ( lay != JitDeviceLayout::Coalesced ) {
+    // 	jit_value_t tsize = create_jit_value( T::Size_t );
+    // 	return jit_ins_mul( index_m , tsize );
+    //   }
+    //   return index_m;
+    // }
 
 
-    jit_value_t getInnerSites( JitDeviceLayout lay) const {
-      if ( lay == JitDeviceLayout::Coalesced )
-	return create_jit_value(Layout::sitesOnNode());
-      else 
-	return create_jit_value(1);
-    }
+    // jit_value_t getInnerSites( JitDeviceLayout lay) const {
+    //   if ( lay == JitDeviceLayout::Coalesced )
+    // 	return create_jit_value(Layout::sitesOnNode());
+    //   else 
+    // 	return create_jit_value(1);
+    // }
 
 
     T& elem( JitDeviceLayout lay ) {
-      F.setup(getThreadedBase(lay),getInnerSites(lay),create_jit_value(0));
+      IndexDomainVector args;
+      args.push_back( make_pair( Layout::sitesOnNode() , index_m ) );
+      F.setup( base_m , lay , args );
+      //F.setup(getThreadedBase(lay),getInnerSites(lay),create_jit_value(0));
       return F;
     }
 
     const T& elem( JitDeviceLayout lay ) const {
-      F.setup(getThreadedBase(lay),getInnerSites(lay),create_jit_value(0));
+      IndexDomainVector args;
+      args.push_back( make_pair( Layout::sitesOnNode() , index_m ) );
+      F.setup( base_m , lay , args );
+      //F.setup(getThreadedBase(lay),getInnerSites(lay),create_jit_value(0));
       return F;
     }
 
     T& elem() {
-      F.setup(getThreadedBase( JitDeviceLayout::Scalar ),create_jit_value(1),create_jit_value(0));
+      IndexDomainVector args;
+      args.push_back( make_pair( 1 , create_jit_value(0) ) );
+      F.setup( base_m , JitDeviceLayout::Scalar , args );
+      //F.setup(getThreadedBase( JitDeviceLayout::Scalar ),create_jit_value(1),create_jit_value(0));
       return F;
     }
 
     const T& elem() const {
-      F.setup(getThreadedBase( JitDeviceLayout::Scalar ),create_jit_value(1),create_jit_value(0));
+      IndexDomainVector args;
+      args.push_back( make_pair( 1 , create_jit_value(0) ) );
+      F.setup( base_m , JitDeviceLayout::Scalar , args );
+      //F.setup(getThreadedBase( JitDeviceLayout::Scalar ),create_jit_value(1),create_jit_value(0));
       return F;
     }
 

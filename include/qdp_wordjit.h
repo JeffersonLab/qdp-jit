@@ -30,12 +30,18 @@ namespace QDP {
     }
 
 
-    void setup( jit_value_t r_base_, jit_value_t full_, jit_value_t level_ ) {
-      r_base        = r_base_;
-      offset_full   = full_;
-      offset_level  = level_;
+    void setup( const jit_value_t& base_m , JitDeviceLayout lay , IndexDomainVector args ) {
+      r_base = base_m;
+      offset = datalayout( lay , args );
       setup_m = true;
     }
+
+    // void setup( jit_value_t r_base_, jit_value_t full_, jit_value_t level_ ) {
+    //   r_base        = r_base_;
+    //   offset_full   = full_;
+    //   offset_level  = level_;
+    //   setup_m = true;
+    // }
 
 
     // jit_value_t getAddress() const {
@@ -55,7 +61,9 @@ namespace QDP {
     template<class T1>
     void operator=(const WordREG<T1>& s1) {
       assert(setup_m);
+      std::cout << "a0\n";
       jit_ins_store( r_base , getOffset() , jit_type<T>::value , s1.get_val() );
+      std::cout << "a1\n";
     }
 
 
@@ -159,17 +167,19 @@ namespace QDP {
 
 
     jit_value_t getBaseReg() const { assert(setup_m); return r_base; }
-    jit_value_t getFull() const { assert(setup_m); return offset_full; }
-    jit_value_t getLevel() const { assert(setup_m); return offset_level; }
+    jit_value_t getOffset() const { assert(setup_m); return offset; }
+    // jit_value_t getFull() const { assert(setup_m); return offset_full; }
+    // jit_value_t getLevel() const { assert(setup_m); return offset_level; }
 
   private:
     template<class T1>
     void operator=(const WordJIT<T1>& s1);
     void operator=(const WordJIT& s1);
 
-    jit_value_t    r_base;
-    jit_value_t    offset_full;
-    jit_value_t    offset_level;
+    jit_value_t     r_base;
+    jit_value_t     offset;
+    // jit_value_t    offset_full;
+    // jit_value_t    offset_level;
     bool setup_m;
   };
 

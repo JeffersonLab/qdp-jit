@@ -109,8 +109,8 @@ namespace QDP {
 
     //typedef std::vector<std::pair<jit_llvm_type,int> > LocalCountVec;
     //LocalCountVec vec_local_count;
+    //int local_count;
 
-    int local_count;
     bool m_shared;
     std::vector<bool> m_include_math_ptx_unary;
     std::vector<bool> m_include_math_ptx_binary;
@@ -122,6 +122,7 @@ namespace QDP {
     int local_alloc( jit_llvm_type type, int count );
     void write_reg_defs();
     jit_function();
+    ~jit_function();
     int reg_alloc();
     std::ostringstream& get_prg();
     std::ostringstream& get_signature();

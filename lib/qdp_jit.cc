@@ -241,6 +241,8 @@ namespace QDP {
 
   jit_llvm_type    jit_type_promote(jit_llvm_type t0   ,jit_llvm_type t1) {
     assert( t0.get_ind() == jit_llvm_ind::no );
+    if (t1.get_ind() != jit_llvm_ind::no)
+      std::cout << t0 << " " << t1 << "\n";
     assert( t1.get_ind() == jit_llvm_ind::no );
     return jit_type_promote( t0.get_builtin() , t1.get_builtin() );
   }
@@ -376,11 +378,17 @@ namespace QDP {
 
 
   // FUNCTION
+  jit_function::~jit_function()
+  {
+    std::cout << __PRETTY_FUNCTION__ << "\n";
+  }
 
-  jit_function::jit_function(): local_count(0),
+  jit_function::jit_function(): reg_count(0),
 				m_shared(false)
   {
-    entry_block = jit_ins_start_new_block();
+    std::cout << __PRETTY_FUNCTION__ << "\n";
+    entry_block = jit_block_create();
+    this->get_prg() << *entry_block << ":\n";
   }
 
 
@@ -527,12 +535,14 @@ namespace QDP {
       //QDP_info_primary("Resetting old jit function (use_count = %d) ...",(int)jit_internal_function.use_count());
       //jit_internal_function.reset();
     }
-    QDP_info_primary("Starting new jit function");
+    QDP_info_primary("Starting new jit function here");
     jit_internal_function = make_shared<jit_function>();
+    std::cout << "here use count = " << jit_internal_function.use_count() << "\n";
   }
 
 
   jit_function_t jit_get_function() {
+    std::cout << "use count = " << jit_internal_function.use_count() << "\n";
     assert( jit_internal_function );
     return jit_internal_function;
   }
@@ -883,15 +893,19 @@ namespace QDP {
 
 
   jit_value_t jit_ins_add( const jit_value_t& lhs , const jit_value_t& rhs ) {
+    std::cout << "add: " << lhs->get_type() << " " << rhs->get_type() << "\n";
     return jit_ins_op( lhs , rhs , JitOpAdd( lhs , rhs ) );
   }
   jit_value_t jit_ins_sub( const jit_value_t& lhs , const jit_value_t& rhs) {
+    std::cout << "sub: " << lhs->get_type() << " " << rhs->get_type() << "\n";
     return jit_ins_op( lhs , rhs , JitOpSub( lhs , rhs ) );
   }
   jit_value_t jit_ins_mul( const jit_value_t& lhs , const jit_value_t& rhs) {
+    std::cout << "mul: " << lhs->get_type() << " " << rhs->get_type() << "\n";
     return jit_ins_op( lhs , rhs , JitOpMul( lhs , rhs ) );
   }
   jit_value_t jit_ins_div( const jit_value_t& lhs , const jit_value_t& rhs) {
+    std::cout << "div: " << lhs->get_type() << " " << rhs->get_type() << "\n";
     return jit_ins_op( lhs , rhs , JitOpDiv( lhs , rhs ) );
   }
   jit_value_t jit_ins_shl( const jit_value_t& lhs , const jit_value_t& rhs ) {
@@ -1035,8 +1049,10 @@ namespace QDP {
   //  %val = load i32* %ptr                           ; yields {i32}:val = i32 3
   //
   jit_value_t jit_ins_load( const jit_value_t& base , const jit_value_t& offset , jit_llvm_type type ) {
+    if (base->get_type().get_builtin() != type.get_builtin())
+      std::cout << base->get_type() << " " << type << "\n";
     assert( base->get_type().get_ind() == jit_llvm_ind::yes );
-    assert( base->get_type() == type );
+    assert( base->get_type().get_builtin() == type.get_builtin() );
     jit_value_t ptr = jit_ins_getelementptr(base,offset);
     jit_value_t ret = create_jit_value( type );
     jit_get_function()->get_prg() << ret
@@ -1044,6 +1060,7 @@ namespace QDP {
 				  << ptr->get_type() << " "
 				  << ptr << "\n";
     ret->set_ever_assigned();
+    std::cout << "loaded type = " << type << "\n";
     return ret;
   }
 
