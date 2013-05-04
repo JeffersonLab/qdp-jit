@@ -73,15 +73,6 @@ namespace QDP {
 
 
 
-  class jit_function;
-  class jit_block;
-  class jit_value;
-  class jit_value_reg;
-  typedef std::shared_ptr<jit_value>             jit_value_t;
-  typedef std::shared_ptr<jit_function>          jit_function_t;
-  typedef std::shared_ptr<jit_block>             jit_block_t;
-
-
   template<class T>
     std::shared_ptr<T> get(const jit_value & pA) {
     return std::dynamic_pointer_cast< T >( pA );
@@ -160,6 +151,12 @@ namespace QDP {
       return stream;
     }
   };
+
+
+  std::ostream& operator<< (std::ostream& stream, const jit_block_t& block );
+  std::ostream& operator<< (std::ostream& stream, jit_block_t& block );
+
+  jit_block_t jit_block_create();
 
 
   jit_value_t create_jit_value();
@@ -390,8 +387,8 @@ namespace QDP {
 
   jit_value_t jit_geom_get_linear_th_idx();
 
-  jit_value_t jit_ins_phi( const jit_value_t& v0 , const jit_block_t& b0 ,
-			   const jit_value_t& v1 , const jit_block_t& b1 );
+  jit_value_t jit_ins_phi( const jit_value_t& v0 , jit_block_t& b0 ,
+			   const jit_value_t& v1 , jit_block_t& b1 );
 
   class JitOp {
   protected:

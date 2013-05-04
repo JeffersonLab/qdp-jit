@@ -6,9 +6,6 @@
 namespace QDP {
 
   
-
-
-
   template<class T, class C> 
   class QDPTypeJIT
   {
@@ -100,13 +97,10 @@ namespace QDP {
     }
 
 
-
   private:
     jit_value_t    base_m;
     jit_value_t    index_m;
     mutable T F;
-
-
   };
   
 

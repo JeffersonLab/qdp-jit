@@ -51,11 +51,15 @@ namespace QDP {
     //   return address;
     // }
 
-    jit_value_t getOffset() const {
-      jit_value_t ws         = create_jit_value( sizeof(typename WordType<T>::Type_t) );
-      jit_value_t lev_mul_ws = jit_ins_mul ( offset_level , ws );
-      return lev_mul_ws;
-    }
+    // jit_value_t getOffset() const {
+    //   return offset;
+    // }
+
+    // jit_value_t getOffset() const {
+    //   jit_value_t ws         = create_jit_value( sizeof(typename WordType<T>::Type_t) );
+    //   jit_value_t lev_mul_ws = jit_ins_mul ( offset_level , ws );
+    //   return lev_mul_ws;
+    // }
 
 
     template<class T1>

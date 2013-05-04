@@ -9,6 +9,21 @@ namespace QDP {
   jit_function_t jit_internal_function;
   jit_block_t    jit_internal_block;
 
+  std::ostream& operator<< (std::ostream& stream, jit_block_t& block )
+  {
+    if (!block)
+      block = jit_block_create();
+    stream << *block;
+    return stream;
+  }
+  std::ostream& operator<< (std::ostream& stream, const jit_block_t& block )
+  {
+    if (!block)
+      QDP_error_exit("You are trying to pipe an undefined block");
+    stream << *block;
+    return stream;
+  }
+
   std::ostream& operator<< (std::ostream& stream, const jit_llvm_builtin& type )
   {
     stream << jit_get_llvm_builtin( type );
@@ -1049,6 +1064,8 @@ namespace QDP {
   //  %val = load i32* %ptr                           ; yields {i32}:val = i32 3
   //
   jit_value_t jit_ins_load( const jit_value_t& base , const jit_value_t& offset , jit_llvm_type type ) {
+    assert(base);
+    assert(offset);
     if (base->get_type().get_builtin() != type.get_builtin())
       std::cout << base->get_type() << " " << type << "\n";
     assert( base->get_type().get_ind() == jit_llvm_ind::yes );
@@ -1068,8 +1085,10 @@ namespace QDP {
   //  store i32 %call, i32* %arrayidx, align 4
   //
   void jit_ins_store(const jit_value_t& base, const jit_value_t& offset, jit_llvm_type type, const jit_value_t& reg ) {
+    assert(base);
+    assert(offset);
     assert( base->get_type().get_ind() == jit_llvm_ind::yes );
-    assert( base->get_type() == type );
+    assert( base->get_type().get_builtin() == type.get_builtin() );
     jit_value_t ptr = jit_ins_getelementptr(base,offset);
     jit_get_function()->get_prg() << "store "
 				  << type << " "
@@ -1144,8 +1163,8 @@ namespace QDP {
   }
 
 
-  jit_value_t jit_ins_phi( const jit_value_t& v0 , const jit_block_t& b0 ,
-			   const jit_value_t& v1 , const jit_block_t& b1 )
+  jit_value_t jit_ins_phi( const jit_value_t& v0 , jit_block_t& b0 ,
+			   const jit_value_t& v1 , jit_block_t& b1 )
   {
     assert(v0);
     assert(v1);

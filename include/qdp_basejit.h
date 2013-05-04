@@ -8,9 +8,9 @@ namespace QDP {
 
     T F[N];
     bool setup_m;
-    jit_value_t full;
-    jit_value_t level;
-    jit_value_t r_base;
+    // jit_value_t full;
+    // jit_value_t level;
+    jit_value_t m_base;
 
   public:
     BaseJIT(): 
@@ -31,11 +31,12 @@ namespace QDP {
 
 
 
-    void setup( const jit_value_t& base_m , JitDeviceLayout lay , IndexDomainVector args ) {
+    void setup( const jit_value_t& base , JitDeviceLayout lay , IndexDomainVector args ) {
+      m_base = base;
       for (int i = 0 ; i < N ; i++ ) {
 	IndexDomainVector args_curry(args);
 	args_curry.push_back( make_pair( N , create_jit_value(i) ) );
-	F[i].setup( r_base , lay , args_curry );
+	F[i].setup( m_base , lay , args_curry );
       }
       setup_m = true;
     }

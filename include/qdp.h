@@ -90,6 +90,8 @@
 #include <iostream>
 #include <utility>
 #include <memory>
+#include <vector>
+
 
 using namespace std;   // I do not like this - fix later
 
@@ -99,6 +101,7 @@ using std::ostream;
 
 #include "cuda.h"
 #include "qdp_forward.h"
+#include "qdp_datalayout.h"
 
 // Basic includes
 #define PETE_USER_DEFINED_EXPRESSION
@@ -113,8 +116,6 @@ namespace QDP {
 #include "qdp_cuda_allocator.h"
 #include "qdp_pool_allocator.h"
 #include "qdp_cache.h"
-
-
 
 #include "qdp_jit.h"
 
@@ -141,7 +142,7 @@ namespace QDP {
 
 #include "qdp_traits.h"
 #include "qdp_qdpexpr.h"
-#include "qdp_datalayout.h"
+#include "qdp_qdptypejit.h"
 #include "qdp_qdptype.h"
 #include "qdp_qdpsubtype.h"
 
