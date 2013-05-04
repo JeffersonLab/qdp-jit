@@ -72,6 +72,7 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
     jit_ins_start_block(block_ordered);
     jit_ins_cond_exit( jit_ins_gt( r_idx , r_end ) );
     jit_ins_cond_exit( jit_ins_lt( r_idx , r_start ) );
+    jit_ins_branch( block_ordered_exit );
   }
   jit_ins_start_block(block_ordered_exit);
 
@@ -91,6 +92,8 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   //printme<View_t>();
 
   op_jit(dest_jit.elem( JitDeviceLayout::Coalesced ), forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced ), OpCombine()));
+
+  jit_ins_exit();
 
   return jit_get_cufunction("ll_eval.ll");
 }
