@@ -1,5 +1,5 @@
 #include "qdp.h"
-
+#include "qdp_nvvm.h"
 
 
 namespace QDP {
@@ -440,22 +440,22 @@ namespace QDP {
   std::string jit_function::get_kernel_as_string()
   {
     std::ostringstream final_ptx;
-    write_reg_defs();
+    //    write_reg_defs();
 
-    int major = DeviceParams::Instance().getMajor();
-    int minor = DeviceParams::Instance().getMinor();
+    // int major = DeviceParams::Instance().getMajor();
+    // int minor = DeviceParams::Instance().getMinor();
     
-    if (major >= 2) {
-      final_ptx << ".version 3.1\n";
-      final_ptx << ".target sm_" << major << minor << "\n";
-      final_ptx << ".address_size 64\n";
-    } else {
-      final_ptx << ".version 1.4\n";
-      final_ptx << ".target sm_" << major << minor << "\n";
-    }
+    // if (major >= 2) {
+    //   final_ptx << ".version 3.1\n";
+    //   final_ptx << ".target sm_" << major << minor << "\n";
+    //   final_ptx << ".address_size 64\n";
+    // } else {
+    //   final_ptx << ".version 1.4\n";
+    //   final_ptx << ".target sm_" << major << minor << "\n";
+    // }
 
-    if (m_shared)
-      final_ptx << ".extern .shared .align 4 .b8 sdata[];\n";
+    // if (m_shared)
+    //   final_ptx << ".extern .shared .align 4 .b8 sdata[];\n";
 
     // for( int i=0 ; i < PTX::map_ptx_math_functions_unary.size() ; i++ ) {
     //   if (m_include_math_ptx_unary.at(i)) {
@@ -470,11 +470,16 @@ namespace QDP {
     //   }
     // }
 
-    final_ptx << ".entry function (" 
+    final_ptx << "target datalayout = \"e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v32:32:32-v64:64:64-v128:128:128-n16:32:64\"\n";
+
+    final_ptx << "declare i32 @llvm.nvvm.read.ptx.sreg.ctaid.x() nounwind readnone\n";
+    final_ptx << "declare i32 @llvm.nvvm.read.ptx.sreg.ntid.x() nounwind readnone\n";
+    final_ptx << "declare i32 @llvm.nvvm.read.ptx.sreg.tid.x() nounwind readnone\n";
+
+    final_ptx << "define void @function ("
 	<< get_signature().str() 
 	<< ")\n" 
 	<< "{\n" 
-	<< oss_reg_defs.str() 
 	<< oss_prg.str() 
 	<< "}\n";
 
@@ -574,16 +579,19 @@ namespace QDP {
     CUresult ret;
     CUmodule cuModule;
 
-    std::string ptx_kernel = jit_get_kernel_as_string();
+    std::string nvvm_kernel = jit_get_kernel_as_string();
 
 #if 1
     // Write kernel to file ?
     if (Layout::primaryNode()) {
       std::ofstream out(fname);
-      out << ptx_kernel;
+      out << nvvm_kernel;
       out.close();
     }
 #endif
+
+    std::string ptx_kernel = nvvm_compile( fname );
+
 
     QDP_error_exit("End");
 
@@ -1147,15 +1155,15 @@ namespace QDP {
     jit_get_function()->get_prg() << "br "
 				  << cond->get_type() << " "
 				  << cond << ", "
-				  << "label " << *block_true << ", "
-				  << "label " << *block_false << "\n";
+				  << "label %" << *block_true << ", "
+				  << "label %" << *block_false << "\n";
   }
 
   void jit_ins_branch( jit_block_t& block ) {
     if (!block)
       block = jit_block_create();
     jit_get_function()->get_prg() << "br "
-				  << "label " << *block << "\n";
+				  << "label %" << *block << "\n";
   }
 
   void jit_ins_comment( const char * comment ) {

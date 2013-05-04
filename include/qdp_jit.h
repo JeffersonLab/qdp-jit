@@ -636,8 +636,9 @@ namespace QDP {
       assert( type_.get_builtin() == jit_llvm_builtin::i1 );
     }
     virtual std::ostream& writeToStream( std::ostream& stream ) const {
-      stream << "not "
-	     << type;
+      stream << "xor "
+	     << type << " "
+	     << "-1, ";
       return stream;
     }
   };
