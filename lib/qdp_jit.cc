@@ -264,13 +264,15 @@ namespace QDP {
 
 
   jit_value::jit_value():
-    ever_assigned(false)
+    ever_assigned(false),
+    is_constant(false)
   {
     reg_alloc(); 
   }
 
 
   jit_value::jit_value( jit_llvm_type type_ ): 
+    is_constant(false),
     ever_assigned(true),
     type(type_)
   {
@@ -280,26 +282,32 @@ namespace QDP {
 
 
   jit_value::jit_value( int val ): 
+    is_constant(true),
+    is_int(true),
     ever_assigned(true),
     type(jit_type<int>::value)
   {
-    reg_alloc();
+    const_int = val;
+    //reg_alloc();
     // Workaround: NVVM has no support for constant assignment
-    jit_get_function()->get_prg() << *this << " = "
-				  << "add i32 " 
-				  << val << ",0\n";
+    // jit_get_function()->get_prg() << *this << " = "
+    // 				  << "add i32 " 
+    // 				  << val << ",0\n";
   }
 
 
   jit_value::jit_value( size_t val ): 
+    is_constant(true),
+    is_int(true),
     ever_assigned(true),
     type(jit_type<int>::value)
   {
-    reg_alloc();
+    const_int = (int)val;
+    //reg_alloc();
     // Workaround: NVVM has no support for constant assignment
-    jit_get_function()->get_prg() << *this << " = "
-				  << "add i32 " 
-				  << val << ",0\n";
+    // jit_get_function()->get_prg() << *this << " = "
+    // 				  << "add i32 " 
+    // 				  << val << ",0\n";
   }
 
 
@@ -315,18 +323,17 @@ namespace QDP {
 
 
   jit_value::jit_value( double val ): 
+    is_constant(true),
+    is_int(false),
     ever_assigned(true),
     type(jit_type<REAL>::value)
   {
-    reg_alloc();
+    const_double = val;
+    //reg_alloc();
     // Workaround: NVVM has no support for constant assignment
-    std::ostringstream oss; 
-    oss.setf(ios::scientific);
-    oss.precision(std::numeric_limits<double>::digits10 + 1);
-    oss << val;
-    jit_get_function()->get_prg() << *this << " = "
-				  << "fadd " << type << " "
-				  << oss.str() << ",0.0\n";
+    // jit_get_function()->get_prg() << *this << " = "
+    // 				  << "fadd " << type << " "
+    // 				  << oss.str() << ",0.0\n";
   }
 
 

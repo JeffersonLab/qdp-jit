@@ -197,7 +197,19 @@ namespace QDP {
     void set_ever_assigned() { ever_assigned = true; }
 
     friend std::ostream& operator<< (std::ostream& stream, const jit_value& op) {
-      stream << "%r" << op.number;
+      if (op.is_constant) {
+	if (op.is_int) 
+	  stream << op.const_int;
+	else {
+	  std::ostringstream oss; 
+	  oss.setf(ios::scientific);
+	  oss.precision(std::numeric_limits<double>::digits10 + 1);
+	  oss << op.const_double;
+	  stream << oss.str();
+	}
+      } else {
+	stream << "%r" << op.number;
+      }
       return stream;
     }
     friend std::ostream& operator<< (std::ostream& stream, const jit_value_t& op) {
@@ -214,7 +226,11 @@ namespace QDP {
     }
 
   private:
-    bool ever_assigned;
+    bool   ever_assigned;
+    bool   is_constant;
+    bool   is_int;
+    int    const_int;
+    double const_double;
     jit_llvm_type type;
     int number;
     jit_block_t block;
