@@ -425,6 +425,7 @@ namespace QDP {
 
   std::ostringstream& jit_function::get_prg() { return oss_prg; }
   std::ostringstream& jit_function::get_signature() { return oss_signature; }
+  std::ostringstream& jit_function::get_signature_meta() { return oss_signature_meta; }
 
 
 
@@ -490,6 +491,16 @@ namespace QDP {
 	<< oss_prg.str() 
 	<< "}\n";
 
+    //;!nvvm.annotations = !{!1}
+    //;!1 = metadata !{void (i32*,float,i1)* @simple, metadata !"kernel", i32 1}
+
+
+    final_ptx << "!nvvm.annotations = !{!0}\n";
+    //final_ptx << "!0 = metadata !{void (i1,i32,i32,i32,i1,i32*,i1*,float*,float*,float*)* @function, metadata !\"kernel\", i32 1}\n";
+    final_ptx << "!0 = metadata !{void (" << get_signature_meta().str() << ")* @function, metadata !\"kernel\", i32 1}\n";
+
+
+
     return final_ptx.str();
   }
 
@@ -500,13 +511,16 @@ namespace QDP {
     jit_function_t func = jit_get_function();
 
     static bool first_param = true;
-    if (!first_param)
+    if (!first_param) {
       func->get_signature() << ",\n";
+      func->get_signature_meta() << ",";
+    }
     first_param = false;
 
     jit_value_t param = create_jit_value(type);
     func->get_signature() << param->get_type() << " "
 			  << param << " ";
+    func->get_signature_meta() << param->get_type() << " ";
     param->set_ever_assigned();
     return param;
   }
@@ -915,7 +929,7 @@ namespace QDP {
     jit_get_function()->get_prg() << ret << " = "
 				  << op << " "
 				  << lhs_new << ","
-				  << rhs_new << ";\n";
+				  << rhs_new << "\n";
     ret->set_ever_assigned();
     //// ret.set_state_space( jit_state_promote( lhs.get_state_space() , rhs.get_state_space() ) );
     return ret;
@@ -972,7 +986,7 @@ namespace QDP {
     jit_get_function()->get_prg() << dest << " = "
 				  << op << " "
 				  << lhs_new << ","
-				  << rhs_new << ";\n";
+				  << rhs_new << "\n";
     dest->set_ever_assigned();
   }
 
@@ -1033,7 +1047,7 @@ namespace QDP {
     jit_value_t ret = create_jit_value( type );
     jit_get_function()->get_prg() << ret << " = "
 				  << op << " "
-				  << reg << ";\n";
+				  << reg << "\n";
     ret->set_ever_assigned();
     // ret.set_state_space( ret.get_state_space() );
     return ret;

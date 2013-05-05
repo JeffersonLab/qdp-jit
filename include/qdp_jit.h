@@ -95,6 +95,7 @@ namespace QDP {
   class jit_function {
     std::ostringstream oss_prg;
     std::ostringstream oss_signature;
+    std::ostringstream oss_signature_meta;
     std::ostringstream oss_reg_defs;
     int reg_count;
 
@@ -117,6 +118,7 @@ namespace QDP {
     int reg_alloc();
     std::ostringstream& get_prg();
     std::ostringstream& get_signature();
+    std::ostringstream& get_signature_meta();
   };
 
   extern jit_function_t jit_internal_function;
