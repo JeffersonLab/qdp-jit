@@ -533,6 +533,20 @@ namespace QDP {
   //   return ret;
   // }
   
+
+  jit_value_t jit_ins_alloca( jit_llvm_builtin type , int count ) {
+    jit_function_t func = jit_get_function();
+
+    jit_value_t ret = create_jit_value( jit_llvm_type(type,jit_llvm_ind::yes) );
+    func->get_prg() << ret 
+		    << " = alloca " 
+		    << type << ", "
+		    << jit_llvm_builtin::i32 << " "
+		    << count << "\n";
+
+    ret->set_ever_assigned();
+    return ret;
+  }
   
   // jit_value_t jit_allocate_local( jit_llvm_type type , int count ) {
   //   jit_function_t func = jit_get_function();
@@ -578,12 +592,10 @@ namespace QDP {
     }
     QDP_info_primary("Starting new jit function here");
     jit_internal_function = make_shared<jit_function>();
-    std::cout << "here use count = " << jit_internal_function.use_count() << "\n";
   }
 
 
   jit_function_t jit_get_function() {
-    std::cout << "use count = " << jit_internal_function.use_count() << "\n";
     assert( jit_internal_function );
     return jit_internal_function;
   }
@@ -937,19 +949,15 @@ namespace QDP {
 
 
   jit_value_t jit_ins_add( const jit_value_t& lhs , const jit_value_t& rhs ) {
-    std::cout << "add: " << lhs->get_type() << " " << rhs->get_type() << "\n";
     return jit_ins_op( lhs , rhs , JitOpAdd( lhs , rhs ) );
   }
   jit_value_t jit_ins_sub( const jit_value_t& lhs , const jit_value_t& rhs) {
-    std::cout << "sub: " << lhs->get_type() << " " << rhs->get_type() << "\n";
     return jit_ins_op( lhs , rhs , JitOpSub( lhs , rhs ) );
   }
   jit_value_t jit_ins_mul( const jit_value_t& lhs , const jit_value_t& rhs) {
-    std::cout << "mul: " << lhs->get_type() << " " << rhs->get_type() << "\n";
     return jit_ins_op( lhs , rhs , JitOpMul( lhs , rhs ) );
   }
   jit_value_t jit_ins_div( const jit_value_t& lhs , const jit_value_t& rhs) {
-    std::cout << "div: " << lhs->get_type() << " " << rhs->get_type() << "\n";
     return jit_ins_op( lhs , rhs , JitOpDiv( lhs , rhs ) );
   }
   jit_value_t jit_ins_shl( const jit_value_t& lhs , const jit_value_t& rhs ) {

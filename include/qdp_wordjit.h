@@ -30,6 +30,12 @@ namespace QDP {
     }
 
 
+    void stack_setup( const jit_value_t& base_m , IndexDomainVector args ) {
+      r_base = base_m;
+      offset = datalayout_stack( args );
+      setup_m = true;
+    }
+
     void setup( const jit_value_t& base_m , JitDeviceLayout lay , IndexDomainVector args ) {
       r_base = base_m;
       offset = datalayout( lay , args );
@@ -65,9 +71,7 @@ namespace QDP {
     template<class T1>
     void operator=(const WordREG<T1>& s1) {
       assert(setup_m);
-      std::cout << "a0\n";
       jit_ins_store( r_base , getOffset() , jit_type<T>::value , s1.get_val() );
-      std::cout << "a1\n";
     }
 
 

@@ -11,6 +11,7 @@ namespace QDP {
 
 
   jit_value_t datalayout( JitDeviceLayout lay , IndexDomainVector a );
+  jit_value_t datalayout_stack(IndexDomainVector a);
 
 } // namespace QDP
 

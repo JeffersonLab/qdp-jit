@@ -23,10 +23,24 @@ namespace QDP {
 
     // offset = ((ir * Ic + ic) * Is + is) * Iv + iv
 
-    if (lay == JitDeviceLayout::Coalesced)
+    if (lay == JitDeviceLayout::Coalesced) {
       return jit_ins_add(jit_ins_mul(jit_ins_add(jit_ins_mul( jit_ins_add(jit_ins_mul(ir,Ic),ic),Is),is),Iv),iv);
-    else
+    } else
       return jit_ins_add(jit_ins_mul(jit_ins_add(jit_ins_mul( jit_ins_add(jit_ins_mul(iv,Ir),ir),Ic),ic),Is),is);
+  }
+
+
+  jit_value_t datalayout_stack(IndexDomainVector a) {
+    assert(a.size() > 0);
+    jit_value_t offset = create_jit_value(0);
+    for( auto x = a.rbegin() ; x != a.rend() ; x++ ) {
+      int         Index;
+      jit_value_t index;
+      std::tie(Index,index) = *x;
+      jit_value_t Index_jit = create_jit_value(Index);
+      offset = jit_ins_add( jit_ins_mul( offset , Index_jit ) , index );
+    }
+    return offset;
   }
 
 } // namespace

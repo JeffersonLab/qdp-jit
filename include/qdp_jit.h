@@ -111,7 +111,7 @@ namespace QDP {
     jit_block_t get_entry_block() { return entry_block; }
     std::string get_kernel_as_string();
     void emitShared();
-    int local_alloc( jit_llvm_type type, int count );
+    //int local_alloc( jit_llvm_type type, int count );
     void write_reg_defs();
     jit_function();
     ~jit_function();
@@ -277,7 +277,7 @@ namespace QDP {
   void jit_ins_bar_sync( int a );
 
   jit_value_t jit_add_param( jit_llvm_type type );
-  jit_value_t jit_allocate_local( jit_llvm_type type , int count );
+  jit_value_t jit_ins_alloca( jit_llvm_builtin type , int count );
   jit_value_t jit_get_shared_mem_ptr();
 
   //std::string jit_get_reg_name( const jit_value_t& val );
