@@ -234,7 +234,7 @@ peekColor(const PColorVectorREG<T,N>& l, jit_value_t row)
   jit_value_t ptr_local = jit_ins_alloca( jit_type<typename WordType<T>::Type_t>::value , TTjit::Size_t );
 
   TTjit dj;
-  dj.stack_setup( ptr_local );
+  dj.setup( ptr_local , JitDeviceLayout::Scalar );
   dj=l;
 
   d.elem() = dj.getRegElem(row);

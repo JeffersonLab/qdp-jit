@@ -34,19 +34,19 @@ namespace QDP {
     const T& arrayF(int i) const { assert(setup_m); return F[i]; }
 
 
-    void stack_setup( const jit_value_t& stack_base , IndexDomainVector args = IndexDomainVector() ) {
-      m_base = stack_base;
-      partial_offset = args;
-      for (int i = 0 ; i < N ; i++ ) {
-	IndexDomainVector args_curry = args;
-	args_curry.push_back( make_pair( N , create_jit_value(i) ) );
-	F[i].stack_setup( m_base , args_curry );
-      }
-      setup_m = true;
-    }
+    // void stack_setup( const jit_value_t& stack_base , IndexDomainVector args = IndexDomainVector() ) {
+    //   m_base = stack_base;
+    //   partial_offset = args;
+    //   for (int i = 0 ; i < N ; i++ ) {
+    // 	IndexDomainVector args_curry = args;
+    // 	args_curry.push_back( make_pair( N , create_jit_value(i) ) );
+    // 	F[i].stack_setup( m_base , args_curry );
+    //   }
+    //   setup_m = true;
+    // }
 
 
-    void setup( const jit_value_t& base , JitDeviceLayout lay , IndexDomainVector args ) {
+    void setup( const jit_value_t& base , JitDeviceLayout lay , IndexDomainVector args = IndexDomainVector() ) {
       m_base = base;
       layout = lay;
       partial_offset = args;
@@ -91,7 +91,7 @@ namespace QDP {
       T jit;
       IndexDomainVector args = partial_offset;
       args.push_back( make_pair( N , index ) );
-      jit.stack_setup( m_base , args );
+      jit.setup( m_base , JitDeviceLayout::Scalar, args );
       typename REGType<T>::Type_t ret_reg;
       ret_reg.setup( jit );
       return ret_reg;

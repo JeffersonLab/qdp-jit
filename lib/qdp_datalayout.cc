@@ -2,6 +2,7 @@
 
 namespace QDP {
 
+#if 0
   jit_value_t datalayout( JitDeviceLayout lay , IndexDomainVector a ) {
     const size_t nIv = 0; // volume
     const size_t nIs = 1; // spin
@@ -28,9 +29,11 @@ namespace QDP {
     } else
       return jit_ins_add(jit_ins_mul(jit_ins_add(jit_ins_mul( jit_ins_add(jit_ins_mul(iv,Ir),ir),Ic),ic),Is),is);
   }
+#endif
 
 
-  jit_value_t datalayout_stack(IndexDomainVector a) {
+#if 0
+  jit_value_t datalayout_stack( JitDeviceLayout lay , IndexDomainVector a ) {
     assert(a.size() > 0);
     jit_value_t offset = create_jit_value(0);
     for( auto x = a.rbegin() ; x != a.rend() ; x++ ) {
@@ -42,5 +45,33 @@ namespace QDP {
     }
     return offset;
   }
+#endif
+
+
+  jit_value_t datalayout( JitDeviceLayout lay , IndexDomainVector a ) {
+    assert(a.size() > 0);
+
+    // In case of a coalesced layout (OLattice)
+    // We reverse the data layout given by the natural nesting order
+    // of aggregates, i.e. reality slowest, lattice fastest
+    // In case of a scalar layout (sums,comms buffers,OScalar)
+    // We actually use the index order/data layout given by the
+    // nesting order of aggregates
+    if ( lay == JitDeviceLayout::Coalesced ) {
+      std::reverse( a.begin() , a.end() );
+    }
+
+    jit_value_t offset = create_jit_value(0);
+    for( auto x = a.begin() ; x != a.end() ; x++ ) {
+      int         Index;
+      jit_value_t index;
+      std::tie(Index,index) = *x;
+      jit_value_t Index_jit = create_jit_value(Index);
+      offset = jit_ins_add( jit_ins_mul( offset , Index_jit ) , index );
+    }
+    return offset;
+  }
+
+
 
 } // namespace

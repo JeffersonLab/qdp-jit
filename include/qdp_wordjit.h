@@ -29,12 +29,13 @@ namespace QDP {
     {
     }
 
-
+#if 0
     void stack_setup( const jit_value_t& base_m , IndexDomainVector args ) {
       r_base = base_m;
       offset = datalayout_stack( args );
       setup_m = true;
     }
+#endif
 
     void setup( const jit_value_t& base_m , JitDeviceLayout lay , IndexDomainVector args ) {
       r_base = base_m;
