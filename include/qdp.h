@@ -92,6 +92,9 @@
 #include <memory>
 #include <vector>
 
+#include <string>
+#include <fstream>
+#include <streambuf>
 
 using namespace std;   // I do not like this - fix later
 
@@ -117,7 +120,7 @@ namespace QDP {
 #include "qdp_pool_allocator.h"
 #include "qdp_cache.h"
 
-#include "qdp_jit.h"
+//#include "qdp_llvm.h"
 
 #include "qdp_multi.h"
 #include "qdp_arrays.h"
