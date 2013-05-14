@@ -495,30 +495,34 @@ esac
 
 
 
-
-
-AC_ARG_WITH(nvvm,
+AC_ARG_WITH(llvm,
   AC_HELP_STRING(
-    [--with-nvvm=DIR],
-    [Specifies install path of NVVM]
+    [--with-llvm=DIR],
+    [Build QDP-JIT with LLVM installed in DIR]
   ),
-  [NVVM_HOME=${with_nvvm}
-   NVVM_ENABLED="yes"],
-  [NVVM_HOME=""
-   NVVM_ENABLED="no"]
+  [LLVM_HOME="$with_llvm"]
 )
 
-dnl echo Value of NVVM_ENABLED is X${NVVM_ENABLED}X
-dnl echo Value of NVVM_HOME is X${NVVM_HOME}X
 
-if test "X${NVVM_ENABLED}X" = "XyesX" ; then
-  AC_SUBST(NVVM_CXXFLAGS, [-I${NVVM_HOME}])
-  AC_SUBST(NVVM_LDFLAGS, [-L${NVVM_HOME}])
-  AC_SUBST(NVVM_LIBS, [-lnvvm])
-  AC_MSG_NOTICE([nvvm compile flags  : ${NVVM_CXXFLAGS}])
-  AC_MSG_NOTICE([nvvm link flags     : ${NVVM_LDFLAGS}])
-  AC_MSG_NOTICE([nvvm libraries flags: ${NVVM_LIBS}])
+
+if test "X${LLVM_HOME}X" = "XX" ; then
+  AC_PATH_PROG(LLVM_CONFIG, [llvm-config], [])
+else
+  AC_PATH_PROG(LLVM_CONFIG, [llvm-config], [], [${LLVM_HOME}/bin:${PATH}])
 fi
+
+if test "X${LLVM_CONFIG}X" = "XX" ; then
+  AC_MSG_ERROR([LLVM configuration program llvm-config not found.])
+fi
+
+AC_MSG_NOTICE([Found LLVM configuration program ${LLVM_CONFIG}])
+AC_SUBST(LLVM_CXXFLAGS, "`${LLVM_CONFIG} --cxxflags`")
+AC_MSG_NOTICE([LLVM compile flags: ${LLVM_CXXFLAGS}])
+AC_SUBST(LLVM_LDFLAGS,  "`${LLVM_CONFIG} --ldflags`")
+AC_MSG_NOTICE([LLVM linking flags: ${LLVM_LDFLAGS}])
+AC_SUBST(LLVM_LIBS,     "`${LLVM_CONFIG} --libs`")
+AC_MSG_NOTICE([LLVM libraries flags: ${LLVM_LIBS}])
+
 
 
 

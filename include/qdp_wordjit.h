@@ -30,20 +30,20 @@ namespace QDP {
     }
 
 #if 0
-    void stack_setup( const jit_value_t& base_m , IndexDomainVector args ) {
+    void stack_setup( const llvm::Value *& base_m , IndexDomainVector args ) {
       r_base = base_m;
       offset = datalayout_stack( args );
       setup_m = true;
     }
 #endif
 
-    void setup( const jit_value_t& base_m , JitDeviceLayout lay , IndexDomainVector args ) {
+    void setup( const llvm::Value *& base_m , JitDeviceLayout lay , IndexDomainVector args ) {
       r_base = base_m;
       offset = datalayout( lay , args );
       setup_m = true;
     }
 
-    // void setup( jit_value_t r_base_, jit_value_t full_, jit_value_t level_ ) {
+    // void setup( llvm::Value * r_base_, llvm::Value * full_, llvm::Value * level_ ) {
     //   r_base        = r_base_;
     //   offset_full   = full_;
     //   offset_level  = level_;
@@ -51,20 +51,20 @@ namespace QDP {
     // }
 
 
-    // jit_value_t getAddress() const {
-    //   jit_value_t ws         = jit_value_t( sizeof(typename WordType<T>::Type_t) );
-    //   jit_value_t lev_mul_ws = jit_ins_mul ( offset_level , ws );
-    //   jit_value_t address    = jit_ins_add( r_base , lev_mul_ws );
+    // llvm::Value * getAddress() const {
+    //   llvm::Value * ws         = llvm::Value *( sizeof(typename WordType<T>::Type_t) );
+    //   llvm::Value * lev_mul_ws = jit_ins_mul ( offset_level , ws );
+    //   llvm::Value * address    = jit_ins_add( r_base , lev_mul_ws );
     //   return address;
     // }
 
-    // jit_value_t getOffset() const {
+    // llvm::Value * getOffset() const {
     //   return offset;
     // }
 
-    // jit_value_t getOffset() const {
-    //   jit_value_t ws         = create_jit_value( sizeof(typename WordType<T>::Type_t) );
-    //   jit_value_t lev_mul_ws = jit_ins_mul ( offset_level , ws );
+    // llvm::Value * getOffset() const {
+    //   llvm::Value * ws         = llvm_create_value( sizeof(typename WordType<T>::Type_t) );
+    //   llvm::Value * lev_mul_ws = jit_ins_mul ( offset_level , ws );
     //   return lev_mul_ws;
     // }
 
@@ -81,8 +81,8 @@ namespace QDP {
     inline
     WordJIT& operator+=(const WordREG<T1>& rhs) 
     {
-      jit_value_t tmp = jit_ins_load( r_base , getOffset() , jit_type<T>::value );
-      jit_value_t tmp2 = jit_ins_add( tmp , rhs.get_val() );
+      llvm::Value * tmp = jit_ins_load( r_base , getOffset() , jit_type<T>::value );
+      llvm::Value * tmp2 = jit_ins_add( tmp , rhs.get_val() );
       jit_ins_store( r_base , getOffset() , jit_type<T>::value , tmp2 );
       return *this;
     }
@@ -92,8 +92,8 @@ namespace QDP {
     inline
     WordJIT& operator-=(const WordREG<T1>& rhs) 
     {
-      jit_value_t tmp = jit_ins_load( r_base , getOffset() , jit_type<T>::value );
-      jit_value_t tmp2 = jit_ins_sub( tmp , rhs.get_val() );
+      llvm::Value * tmp = jit_ins_load( r_base , getOffset() , jit_type<T>::value );
+      llvm::Value * tmp2 = jit_ins_sub( tmp , rhs.get_val() );
       jit_ins_store( r_base , getOffset() , jit_type<T>::value , tmp2 );
       return *this;
     }
@@ -103,8 +103,8 @@ namespace QDP {
     inline
     WordJIT& operator*=(const WordREG<T1>& rhs) 
     {
-      jit_value_t tmp = jit_ins_load( r_base , getOffset() , jit_type<T>::value );
-      jit_value_t tmp2 = jit_ins_mul( tmp , rhs.get_val() );
+      llvm::Value * tmp = jit_ins_load( r_base , getOffset() , jit_type<T>::value );
+      llvm::Value * tmp2 = jit_ins_mul( tmp , rhs.get_val() );
       jit_ins_store( r_base , getOffset() , jit_type<T>::value , tmp2 );
       return *this;
     }
@@ -114,8 +114,8 @@ namespace QDP {
     inline
     WordJIT& operator/=(const WordREG<T1>& rhs) 
     {
-      jit_value_t tmp = jit_ins_load( r_base , getOffset() , jit_type<T>::value );
-      jit_value_t tmp2 = jit_ins_div( tmp , rhs.get_val() );
+      llvm::Value * tmp = jit_ins_load( r_base , getOffset() , jit_type<T>::value );
+      llvm::Value * tmp2 = jit_ins_div( tmp , rhs.get_val() );
       jit_ins_store( r_base , getOffset() , jit_type<T>::value , tmp2 );
       return *this;
     }
@@ -175,20 +175,20 @@ namespace QDP {
     }
 
 
-    jit_value_t getBaseReg() const { assert(setup_m); return r_base; }
-    jit_value_t getOffset() const { assert(setup_m); return offset; }
-    // jit_value_t getFull() const { assert(setup_m); return offset_full; }
-    // jit_value_t getLevel() const { assert(setup_m); return offset_level; }
+    llvm::Value * getBaseReg() const { assert(setup_m); return r_base; }
+    llvm::Value * getOffset() const { assert(setup_m); return offset; }
+    // llvm::Value * getFull() const { assert(setup_m); return offset_full; }
+    // llvm::Value * getLevel() const { assert(setup_m); return offset_level; }
 
   private:
     template<class T1>
     void operator=(const WordJIT<T1>& s1);
     void operator=(const WordJIT& s1);
 
-    jit_value_t     r_base;
-    jit_value_t     offset;
-    // jit_value_t    offset_full;
-    // jit_value_t    offset_level;
+    llvm::Value *     r_base;
+    llvm::Value *     offset;
+    // llvm::Value *    offset_full;
+    // llvm::Value *    offset_level;
     bool setup_m;
   };
 
@@ -240,19 +240,19 @@ namespace QDP {
   inline void 
   zero_rep(WordJIT<double>& dest)
   {
-    jit_ins_store( dest.getBaseReg() , dest.getOffset() , jit_type<double>::value , create_jit_value( 0.0 ) );
+    jit_ins_store( dest.getBaseReg() , dest.getOffset() , jit_type<double>::value , llvm_create_value( 0.0 ) );
   }
 
   inline void 
   zero_rep(WordJIT<float>& dest)
   {
-    jit_ins_store( dest.getBaseReg() , dest.getOffset() , jit_type<float>::value , create_jit_value( 0.0 ) );
+    jit_ins_store( dest.getBaseReg() , dest.getOffset() , jit_type<float>::value , llvm_create_value( 0.0 ) );
   }
 
   inline void 
   zero_rep(WordJIT<int>& dest)
   {
-    jit_ins_store( dest.getBaseReg() , dest.getOffset() , jit_type<int>::value , create_jit_value( 0 ) );
+    jit_ins_store( dest.getBaseReg() , dest.getOffset() , jit_type<int>::value , llvm_create_value( 0 ) );
   }
 
 

@@ -6,12 +6,12 @@
 
 namespace QDP {
 
-  typedef std::pair< int , jit_value_t > IndexDomain;
+  typedef std::pair< int , llvm::Value * > IndexDomain;
   typedef std::vector< IndexDomain >     IndexDomainVector;
 
 
-  jit_value_t datalayout( JitDeviceLayout lay , IndexDomainVector a );
-  jit_value_t datalayout_stack(IndexDomainVector a);
+  llvm::Value * datalayout( JitDeviceLayout lay , IndexDomainVector a );
+  llvm::Value * datalayout_stack(IndexDomainVector a);
 
 } // namespace QDP
 

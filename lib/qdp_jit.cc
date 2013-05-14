@@ -225,12 +225,12 @@ namespace QDP {
 
 
 
-  jit_value_t create_jit_value()           { return std::make_shared<jit_value>(); }
-  jit_value_t create_jit_value(int val)    { return std::make_shared<jit_value>(val); }
-  jit_value_t create_jit_value(size_t val) { return std::make_shared<jit_value>(val); }
-  jit_value_t create_jit_value(float val)  { return std::make_shared<jit_value>(val); }
-  jit_value_t create_jit_value(double val) { return std::make_shared<jit_value>(val); }
-  jit_value_t create_jit_value(jit_llvm_type type) { return std::make_shared<jit_value>(type); }
+  jit_value_t llvm_create_value()           { return std::make_shared<jit_value>(); }
+  jit_value_t llvm_create_value(int val)    { return std::make_shared<jit_value>(val); }
+  jit_value_t llvm_create_value(size_t val) { return std::make_shared<jit_value>(val); }
+  jit_value_t llvm_create_value(float val)  { return std::make_shared<jit_value>(val); }
+  jit_value_t llvm_create_value(double val) { return std::make_shared<jit_value>(val); }
+  jit_value_t llvm_create_value(jit_llvm_type type) { return std::make_shared<jit_value>(type); }
 
 
   // jit_llvm_type jit_bit_type(jit_llvm_type type) {
@@ -506,7 +506,7 @@ namespace QDP {
 
 
 
-  jit_value_t jit_add_param( jit_llvm_type type ) {
+  jit_value_t llvm_add_param( jit_llvm_type type ) {
 
     jit_function_t func = jit_get_function();
 
@@ -517,7 +517,7 @@ namespace QDP {
     }
     first_param = false;
 
-    jit_value_t param = create_jit_value(type);
+    jit_value_t param = llvm_create_value(type);
     func->get_signature() << param->get_type() << " "
 			  << param << " ";
     func->get_signature_meta() << param->get_type() << " ";
@@ -537,7 +537,7 @@ namespace QDP {
   jit_value_t jit_ins_alloca( jit_llvm_builtin type , int count ) {
     jit_function_t func = jit_get_function();
 
-    jit_value_t ret = create_jit_value( jit_llvm_type(type,jit_llvm_ind::yes) );
+    jit_value_t ret = llvm_create_value( jit_llvm_type(type,jit_llvm_ind::yes) );
     func->get_prg() << ret 
 		    << " = alloca " 
 		    << type << ", "
@@ -752,7 +752,7 @@ namespace QDP {
       return rhs;
     } else {
 
-      jit_value_t ret = create_jit_value(type);
+      jit_value_t ret = llvm_create_value(type);
 
       //  %mul_i1 = sitofp i1 %param_i1 to double
       jit_get_function()->get_prg() << ret << " = "
@@ -857,7 +857,7 @@ namespace QDP {
   // Thread Geometry
 
   jit_value_t jit_geom_get_special( const char* reg_name ) {
-    jit_value_t ret = create_jit_value( jit_llvm_builtin::i32 );
+    jit_value_t ret = llvm_create_value( jit_llvm_builtin::i32 );
     jit_get_function()->get_prg() << ret << " = call "
 				  << ret->get_type() << " " 
 				  << reg_name << "\n";
@@ -874,16 +874,16 @@ namespace QDP {
 
   // jit_value_t jit_ins_selp( const jit_value_t& lhs ,  const jit_value_t& rhs , const jit_value_t& p ) {
   //   jit_llvm_type typebase = jit_type_promote( lhs.get_type() , rhs.get_type() );
-  //   jit_value_t ret = create_jit_value( typebase );
+  //   jit_value_t ret = llvm_create_value( typebase );
   //   std::ostringstream instr;
     
   //   if (typebase == jit_llvm_type::pred) {
   //     assert( lhs.get_type() == jit_llvm_type::pred );
   //     assert( rhs.get_type() == jit_llvm_type::pred );
   //     typebase = jit_llvm_type::s32;
-  //     jit_value_t lhs_s32 = create_jit_value(typebase);
-  //     jit_value_t rhs_s32 = create_jit_value(typebase);
-  //     jit_value_t ret_s32 = create_jit_value(typebase);
+  //     jit_value_t lhs_s32 = llvm_create_value(typebase);
+  //     jit_value_t rhs_s32 = llvm_create_value(typebase);
+  //     jit_value_t ret_s32 = llvm_create_value(typebase);
   //     lhs_s32 = jit_ins_selp( jit_value_t(1) , jit_value_t(0) , lhs );
   //     rhs_s32 = jit_ins_selp( jit_value_t(1) , jit_value_t(0) , rhs );
   //     instr << "selp." 
@@ -904,8 +904,8 @@ namespace QDP {
   //     return ret;
   //   }
 
-  //   jit_value_t lhs_tb = create_jit_value(typebase);
-  //   jit_value_t rhs_tb = create_jit_value(typebase);
+  //   jit_value_t lhs_tb = llvm_create_value(typebase);
+  //   jit_value_t rhs_tb = llvm_create_value(typebase);
 
   //   lhs_tb = lhs.get_type() != typebase ? jit_val_convert( typebase , lhs ) : lhs;
   //   rhs_tb = rhs.get_type() != typebase ? jit_val_convert( typebase , rhs ) : rhs;
@@ -935,7 +935,7 @@ namespace QDP {
   jit_value_t jit_ins_op( const jit_value_t& lhs , const jit_value_t& rhs , const JitOp& op ) {
     jit_llvm_type dest_type = op.getDestType();
     jit_llvm_type args_type = op.getArgsType();
-    jit_value_t ret = create_jit_value( dest_type );
+    jit_value_t ret = llvm_create_value( dest_type );
     jit_value_t lhs_new = jit_val_convert( args_type , lhs );
     jit_value_t rhs_new = jit_val_convert( args_type , rhs );
     jit_get_function()->get_prg() << ret << " = "
@@ -986,7 +986,7 @@ namespace QDP {
 
   void jit_ins_op_rep( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs , const JitOp& op ) {
     if (!dest)
-      dest = create_jit_value( op.getDestType() );
+      dest = llvm_create_value( op.getDestType() );
     assert( dest->get_type() == op.getDestType() );
     jit_llvm_type args_type = op.getArgsType();
     jit_value_t lhs_new = jit_val_convert( args_type , lhs );
@@ -1052,7 +1052,7 @@ namespace QDP {
 
   jit_value_t jit_ins_unary_op( const jit_value_t& reg , const JitUnaryOp& op ) {
     jit_llvm_type type = reg->get_type();
-    jit_value_t ret = create_jit_value( type );
+    jit_value_t ret = llvm_create_value( type );
     jit_get_function()->get_prg() << ret << " = "
 				  << op << " "
 				  << reg << "\n";
@@ -1087,7 +1087,7 @@ namespace QDP {
   //
   jit_value_t jit_ins_getelementptr( const jit_value_t& base , const jit_value_t& offset ) {
     assert( base->get_type().get_ind() == jit_llvm_ind::yes );
-    jit_value_t ret = create_jit_value( base->get_type() );
+    jit_value_t ret = llvm_create_value( base->get_type() );
     jit_get_function()->get_prg() << ret
 				  << " = getelementptr " 
 				  << ret->get_type() << " "
@@ -1108,7 +1108,7 @@ namespace QDP {
     assert( base->get_type().get_ind() == jit_llvm_ind::yes );
     assert( base->get_type().get_builtin() == type.get_builtin() );
     jit_value_t ptr = jit_ins_getelementptr(base,offset);
-    jit_value_t ret = create_jit_value( type );
+    jit_value_t ret = llvm_create_value( type );
     jit_get_function()->get_prg() << ret
 				  << " = load "
 				  << ptr->get_type() << " "
@@ -1137,7 +1137,7 @@ namespace QDP {
 
   jit_value_t jit_int_array_indirection( const jit_value_t& idx , jit_llvm_builtin type )
   {
-    jit_value_t base = jit_add_param( jit_llvm_type( type , jit_llvm_ind::yes ) );
+    jit_value_t base = llvm_add_param( jit_llvm_type( type , jit_llvm_ind::yes ) );
     return jit_ins_load( base , idx , type );
   }
 
@@ -1206,7 +1206,7 @@ namespace QDP {
     assert(v0);
     assert(v1);
     assert( v0->get_type() == v1->get_type() );
-    jit_value_t ret = create_jit_value( v0->get_type() );
+    jit_value_t ret = llvm_create_value( v0->get_type() );
     jit_get_function()->get_prg() << ret << " = phi "
 				  << v0->get_type() << " "
 				  << "[" << v0 << " , %" << b0 << "], "

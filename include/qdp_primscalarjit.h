@@ -1050,7 +1050,7 @@ pokeColor(PScalarJIT<T1>& l, const PScalarJIT<T2>& r, int row)
 
 template<class T1, class T2>
 inline PScalarJIT<T1>&
-pokeColor(PScalarJIT<T1>& l, const PScalarREG<T2>& r, jit_value_t row)
+pokeColor(PScalarJIT<T1>& l, const PScalarREG<T2>& r, llvm::Value * row)
 {
   pokeColor(l.elem(),r.elem(),row);
   return l;
@@ -1058,7 +1058,7 @@ pokeColor(PScalarJIT<T1>& l, const PScalarREG<T2>& r, jit_value_t row)
 
 template<class T1, class T2>
 inline PScalarJIT<T1>&
-pokeColor(PScalarJIT<T1>& l, const PScalarREG<T2>& r, jit_value_t row, jit_value_t col)
+pokeColor(PScalarJIT<T1>& l, const PScalarREG<T2>& r, llvm::Value * row, llvm::Value * col)
 {
   pokeColor(l.elem(),r.elem(),row,col);
   return l;

@@ -9,16 +9,6 @@ namespace QDP
 
   enum class JitDeviceLayout { Coalesced , Scalar };
 
-  class jit_function;
-  class jit_block;
-  class jit_value;
-  class jit_value_reg;
-  typedef std::shared_ptr<jit_value>             jit_value_t;
-  typedef std::shared_ptr<jit_function>          jit_function_t;
-  typedef std::shared_ptr<jit_block>             jit_block_t;
-
-
-
 
   // IO
   class TextReader;

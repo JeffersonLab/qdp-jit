@@ -159,15 +159,15 @@ public:
 
 
 public:
-  typename REGType<T>::Type_t getRegElem(jit_value_t row,jit_value_t col) {
-    jit_value_t tmp = jit_ins_mul( col , create_jit_value( N ) );
-    jit_value_t lin = jit_ins_add( tmp , row );
+  typename REGType<T>::Type_t getRegElem(llvm::Value * row,llvm::Value * col) {
+    llvm::Value * tmp = jit_ins_mul( col , llvm_create_value( N ) );
+    llvm::Value * lin = jit_ins_add( tmp , row );
     return BaseJIT<T,N*N>::getRegElem( lin );
   }
 
-  T getJitElem(jit_value_t row,jit_value_t col) {
-    jit_value_t tmp = jit_ins_mul( col , create_jit_value( N ) );
-    jit_value_t lin = jit_ins_add( tmp , row );
+  T getJitElem(llvm::Value * row,llvm::Value * col) {
+    llvm::Value * tmp = jit_ins_mul( col , llvm_create_value( N ) );
+    llvm::Value * lin = jit_ins_add( tmp , row );
     return BaseJIT<T,N*N>::getJitElem( lin );
   }
 
@@ -1391,7 +1391,7 @@ struct UnaryReturn<PMatrixJIT<T,N,C>, FnPokeColorMatrix> {
 /*! Generically, this is an identity operation. Defined differently under color */
 template<class T1, class T2, int N, template<class,int> class C, template<class,int> class C2>
 inline typename UnaryReturn<PMatrixJIT<T1,N,C>, FnPokeColorMatrixREG>::Type_t&
-pokeColor(PMatrixJIT<T1,N,C>& l, const PMatrixREG<T2,N,C2>& r, jit_value_t row, jit_value_t col)
+pokeColor(PMatrixJIT<T1,N,C>& l, const PMatrixREG<T2,N,C2>& r, llvm::Value * row, llvm::Value * col)
 {
   typedef typename UnaryReturn<PMatrixJIT<T1,N,C>, FnPokeColorMatrixREG>::Type_t  Return_t;
 

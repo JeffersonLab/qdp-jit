@@ -17,12 +17,12 @@ function_gaussian_build(OLattice<T>& dest ,OLattice<T>& r1 ,OLattice<T>& r2 )
 
   jit_start_new_function();
 
-  jit_value r_ordered      = jit_add_param(  jit_ptx_type::pred );
-  jit_value r_th_count     = jit_add_param(  jit_ptx_type::s32 );
-  jit_value r_start        = jit_add_param(  jit_ptx_type::s32 );
-  jit_value r_end          = jit_add_param(  jit_ptx_type::s32 );
+  jit_value r_ordered      = llvm_add_param(  jit_ptx_type::pred );
+  jit_value r_th_count     = llvm_add_param(  jit_ptx_type::s32 );
+  jit_value r_start        = llvm_add_param(  jit_ptx_type::s32 );
+  jit_value r_end          = llvm_add_param(  jit_ptx_type::s32 );
 
-  jit_value r_idx_thread = jit_geom_get_linear_th_idx();
+  jit_value r_idx_thread = llvm_thread_idx();
 
   jit_ins_exit( jit_ins_ge( r_idx_thread , r_th_count ) );
 
@@ -32,7 +32,7 @@ function_gaussian_build(OLattice<T>& dest ,OLattice<T>& r1 ,OLattice<T>& r2 )
   jit_label_t label_ordered_exit;
   jit_ins_branch( label_ordered , r_ordered );
   {
-    jit_value r_member = jit_add_param(  jit_ptx_type::u64 );  // Subset
+    jit_value r_member = llvm_add_param(  jit_ptx_type::u64 );  // Subset
     jit_value r_member_addr        = jit_ins_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
     jit_value r_ismember           = jit_ins_load ( r_member_addr , 0 , jit_ptx_type::pred );
     jit_value r_ismember_not       = jit_ins_not( r_ismember );

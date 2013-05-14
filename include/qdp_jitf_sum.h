@@ -28,20 +28,20 @@ void function_sum_exec( CUfunction function,
 
     jit_start_new_function();
 
-    jit_value r_lo     = jit_add_param( jit_ptx_type::s32 );
-    jit_value r_hi     = jit_add_param( jit_ptx_type::s32 );
+    jit_value r_lo     = llvm_add_param( jit_ptx_type::s32 );
+    jit_value r_hi     = llvm_add_param( jit_ptx_type::s32 );
 
-    jit_value r_idx = jit_geom_get_linear_th_idx();
+    jit_value r_idx = llvm_thread_idx();
 
     // I'll do always a site perm here
     // Can eventually be optimized if orderedSubset
-    jit_value r_perm_array_addr      = jit_add_param( jit_ptx_type::u64 );  // Site permutation array
+    jit_value r_perm_array_addr      = llvm_add_param( jit_ptx_type::u64 );  // Site permutation array
     jit_value r_idx_mul_4            = jit_ins_mul( r_idx , jit_value(4) );
     jit_value r_perm_array_addr_load = jit_ins_add( r_perm_array_addr , r_idx_mul_4 );
     jit_value r_idx_perm             = jit_ins_load ( r_perm_array_addr_load , 0 , jit_ptx_type::s32 );
 
-    jit_value r_idata      = jit_add_param( jit_ptx_type::u64 );  // Input  array
-    jit_value r_odata      = jit_add_param( jit_ptx_type::u64 );  // output array
+    jit_value r_idata      = llvm_add_param( jit_ptx_type::u64 );  // Input  array
+    jit_value r_odata      = llvm_add_param( jit_ptx_type::u64 );  // output array
     jit_value r_block_idx  = jit_geom_get_ctaidx();
     jit_value r_tidx       = jit_geom_get_tidx();
     jit_value r_shared     = jit_get_shared_mem_ptr();
@@ -153,14 +153,14 @@ void function_sum_exec( CUfunction function,
 
     jit_start_new_function();
 
-    jit_value r_lo     = jit_add_param(  jit_ptx_type::s32 );
-    jit_value r_hi     = jit_add_param(  jit_ptx_type::s32 );
+    jit_value r_lo     = llvm_add_param(  jit_ptx_type::s32 );
+    jit_value r_hi     = llvm_add_param(  jit_ptx_type::s32 );
 
-    jit_value r_idx = jit_geom_get_linear_th_idx();  
+    jit_value r_idx = llvm_thread_idx();  
 
 
-    jit_value r_idata      = jit_add_param(  jit_ptx_type::u64 );  // Input  array
-    jit_value r_odata      = jit_add_param(  jit_ptx_type::u64 );  // output array
+    jit_value r_idata      = llvm_add_param(  jit_ptx_type::u64 );  // Input  array
+    jit_value r_odata      = llvm_add_param(  jit_ptx_type::u64 );  // output array
     jit_value r_block_idx  = jit_geom_get_ctaidx();
     jit_value r_tidx       = jit_geom_get_tidx();
     jit_value r_shared     = jit_get_shared_mem_ptr();

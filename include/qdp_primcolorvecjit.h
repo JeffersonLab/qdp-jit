@@ -282,7 +282,7 @@ struct UnaryReturn<PColorVectorJIT<T,N>, FnPeekColorVectorREG > {
 //! Insert color vector components
 template<class T1, class T2, int N>
 inline PColorVectorJIT<T1,N>&
-pokeColor(PColorVectorJIT<T1,N>& l, const PScalarREG<T2>& r, jit_value_t row)
+pokeColor(PColorVectorJIT<T1,N>& l, const PScalarREG<T2>& r, llvm::Value * row)
 {
   l.getJitElem(row) = r.elem();
   return l;

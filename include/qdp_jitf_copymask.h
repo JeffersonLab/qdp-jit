@@ -16,9 +16,9 @@ namespace QDP {
 
     jit_start_new_function();
 
-    jit_value r_lo           = jit_add_param( jit_ptx_type::s32 );
-    jit_value r_hi           = jit_add_param( jit_ptx_type::s32 );
-    jit_value r_idx          = jit_geom_get_linear_th_idx();  
+    jit_value r_lo           = llvm_add_param( jit_ptx_type::s32 );
+    jit_value r_hi           = llvm_add_param( jit_ptx_type::s32 );
+    jit_value r_idx          = llvm_thread_idx();  
     jit_value r_out_of_range = jit_ins_ge( r_idx , r_hi );
     jit_ins_exit( r_out_of_range );
 

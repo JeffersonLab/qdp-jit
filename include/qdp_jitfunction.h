@@ -17,14 +17,14 @@ namespace QDP {
 
   //function.setPrettyFunction(__PRETTY_FUNCTION__);
 
-  jit_value_t r_ordered      = jit_add_param(  jit_llvm_builtin::i1 );
-  jit_value_t r_th_count     = jit_add_param(  jit_llvm_builtin::i32 );
-  jit_value_t r_start        = jit_add_param(  jit_llvm_builtin::i32 );
-  jit_value_t r_end          = jit_add_param(  jit_llvm_builtin::i32 );
-  jit_value_t r_do_site_perm = jit_add_param(  jit_llvm_builtin::i1 );
-  jit_value_t r_no_site_perm = jit_ins_not( r_do_site_perm );
+  llvm::Value * r_ordered      = llvm_add_param(  jit_llvm_builtin::i1 );
+  llvm::Value * r_th_count     = llvm_add_param(  jit_llvm_builtin::i32 );
+  llvm::Value * r_start        = llvm_add_param(  jit_llvm_builtin::i32 );
+  llvm::Value * r_end          = llvm_add_param(  jit_llvm_builtin::i32 );
+  llvm::Value * r_do_site_perm = llvm_add_param(  jit_llvm_builtin::i1 );
+  llvm::Value * r_no_site_perm = jit_ins_not( r_do_site_perm );
 
-  jit_value_t r_idx_thread = jit_geom_get_linear_th_idx();
+  llvm::Value * r_idx_thread = llvm_thread_idx();
 
   jit_ins_cond_exit( jit_ins_ge( r_idx_thread , r_th_count ) );
 
@@ -33,8 +33,8 @@ namespace QDP {
   jit_block_t block_site_perm;
   jit_block_t block_add_start;
 
-  jit_value_t r_idx_perm_phi0;
-  jit_value_t r_idx_perm_phi1;
+  llvm::Value * r_idx_perm_phi0;
+  llvm::Value * r_idx_perm_phi1;
   jit_ins_branch( r_no_site_perm , block_no_site_perm , block_site_perm );
   {
     jit_ins_start_block(block_site_perm);
@@ -43,7 +43,7 @@ namespace QDP {
   }
   jit_ins_start_block(block_no_site_perm);
   {
-    jit_value_t r_not_ordered = jit_ins_not(r_ordered);
+    llvm::Value * r_not_ordered = jit_ins_not(r_ordered);
     jit_ins_branch( r_not_ordered , block_no_site_perm_exit , block_add_start );
     jit_ins_start_block(block_add_start);
     r_idx_perm_phi1 = jit_ins_add( r_idx_thread , r_start ); // PHI 1
@@ -51,7 +51,7 @@ namespace QDP {
   }
   jit_ins_start_block(block_no_site_perm_exit);
 
-  jit_value_t r_idx = jit_ins_phi( r_idx_perm_phi0 , block_site_perm , r_idx_perm_phi1 , block_add_start );
+  llvm::Value * r_idx = jit_ins_phi( r_idx_perm_phi0 , block_site_perm , r_idx_perm_phi1 , block_add_start );
 
 
   jit_block_t block_ordered;
@@ -60,8 +60,8 @@ namespace QDP {
   jit_ins_branch( r_ordered , block_ordered , block_not_ordered );
   {
     jit_ins_start_block(block_not_ordered);
-    jit_value_t r_ismember     = jit_int_array_indirection( r_idx , jit_llvm_builtin::i1 );
-    jit_value_t r_ismember_not = jit_ins_not( r_ismember );
+    llvm::Value * r_ismember     = jit_int_array_indirection( r_idx , jit_llvm_builtin::i1 );
+    llvm::Value * r_ismember_not = jit_ins_not( r_ismember );
     jit_ins_cond_exit( r_ismember_not );
     jit_ins_branch( block_ordered_exit );
   }
@@ -145,10 +145,6 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   }
   llvm_set_insert_point(block_ordered_exit);
 
-
-
-
-
   ParamLeaf param_leaf(  r_idx );
   //ParamLeaf param_leaf_indexed(  param_leaf.getParamIndexFieldAndOption() );  // Optional soffset (inner/face)
   //function.addParamMemberArray( param_leaf.r_idx ); // Subset member
@@ -168,7 +164,7 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 
   llvm_exit();
 
-  return llvm_get_cufunction("ll_eval.ll");
+  return llvm_get_cufunction("eval.ptx");
 }
 
 
@@ -185,25 +181,25 @@ function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScala
 
   //function.setPrettyFunction(__PRETTY_FUNCTION__);
 
-  jit_value_t r_ordered      = jit_add_param(  jit_llvm_builtin::i1 );
-  jit_value_t r_th_count     = jit_add_param(  jit_llvm_builtin::i32 );
-  jit_value_t r_start        = jit_add_param(  jit_llvm_builtin::i32 );
-  jit_value_t r_end          = jit_add_param(  jit_llvm_builtin::i32 );
+  llvm::Value * r_ordered      = llvm_add_param(  jit_llvm_builtin::i1 );
+  llvm::Value * r_th_count     = llvm_add_param(  jit_llvm_builtin::i32 );
+  llvm::Value * r_start        = llvm_add_param(  jit_llvm_builtin::i32 );
+  llvm::Value * r_end          = llvm_add_param(  jit_llvm_builtin::i32 );
 
-  jit_value_t r_idx_thread = jit_geom_get_linear_th_idx();
+  llvm::Value * r_idx_thread = llvm_thread_idx();
 
   jit_ins_exit( jit_ins_ge( r_idx_thread , r_th_count ) );
 
-  jit_value_t r_idx = r_idx_thread;
+  llvm::Value * r_idx = r_idx_thread;
 
   jit_block_t block_ordered;
   jit_block_t block_ordered_exit;
   jit_ins_branch( block_ordered , r_ordered );
   {
-    jit_value_t r_member = jit_add_param(  jit_llvm_builtin::u64 );  // Subset
-    jit_value_t r_member_addr        = jit_ins_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
-    jit_value_t r_ismember           = jit_ins_load ( r_member_addr , 0 , jit_llvm_builtin::i1 );
-    jit_value_t r_ismember_not       = jit_ins_not( r_ismember );
+    llvm::Value * r_member = llvm_add_param(  jit_llvm_builtin::u64 );  // Subset
+    llvm::Value * r_member_addr        = jit_ins_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
+    llvm::Value * r_ismember           = jit_ins_load ( r_member_addr , 0 , jit_llvm_builtin::i1 );
+    llvm::Value * r_ismember_not       = jit_ins_not( r_ismember );
     jit_ins_exit( r_ismember_not );
     jit_ins_branch( block_ordered_exit );
   }
@@ -246,25 +242,25 @@ function_zero_rep_build(OLattice<T>& dest)
 
   jit_start_new_function();
 
-  jit_value_t r_ordered      = jit_add_param(  jit_llvm_builtin::i1 );
-  jit_value_t r_th_count     = jit_add_param(  jit_llvm_builtin::i32 );
-  jit_value_t r_start        = jit_add_param(  jit_llvm_builtin::i32 );
-  jit_value_t r_end          = jit_add_param(  jit_llvm_builtin::i32 );
+  llvm::Value * r_ordered      = llvm_add_param(  jit_llvm_builtin::i1 );
+  llvm::Value * r_th_count     = llvm_add_param(  jit_llvm_builtin::i32 );
+  llvm::Value * r_start        = llvm_add_param(  jit_llvm_builtin::i32 );
+  llvm::Value * r_end          = llvm_add_param(  jit_llvm_builtin::i32 );
 
-  jit_value_t r_idx_thread = jit_geom_get_linear_th_idx();
+  llvm::Value * r_idx_thread = llvm_thread_idx();
 
   jit_ins_exit( jit_ins_ge( r_idx_thread , r_th_count ) );
 
-  jit_value_t r_idx = r_idx_thread;
+  llvm::Value * r_idx = r_idx_thread;
 
   jit_block_t block_ordered;
   jit_block_t block_ordered_exit;
   jit_ins_branch( block_ordered , r_ordered );
   {
-    jit_value_t r_member = jit_add_param(  jit_llvm_builtin::u64 );  // Subset
-    jit_value_t r_member_addr        = jit_ins_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
-    jit_value_t r_ismember           = jit_ins_load ( r_member_addr , 0 , jit_llvm_builtin::i1 );
-    jit_value_t r_ismember_not       = jit_ins_not( r_ismember );
+    llvm::Value * r_member = llvm_add_param(  jit_llvm_builtin::u64 );  // Subset
+    llvm::Value * r_member_addr        = jit_ins_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
+    llvm::Value * r_ismember           = jit_ins_load ( r_member_addr , 0 , jit_llvm_builtin::i1 );
+    llvm::Value * r_ismember_not       = jit_ins_not( r_ismember );
     jit_ins_exit( r_ismember_not );
     jit_ins_branch( block_ordered_exit );
   }
@@ -303,7 +299,7 @@ function_sca_sca_build(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar
 
   jit_start_new_function();
 
-  jit_value_t r_idx = jit_geom_get_linear_th_idx();
+  llvm::Value * r_idx = llvm_thread_idx();
 
   ParamLeaf param_leaf(  r_idx );
 
@@ -345,15 +341,15 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
   // If thread exists due to non-member
   // it possibly can't store the new seed at the end.
 
-  jit_value_t r_lo     = jit_add_param(  jit_llvm_builtin::i32 );
-  jit_value_t r_hi     = jit_add_param(  jit_llvm_builtin::i32 );
+  llvm::Value * r_lo     = llvm_add_param(  jit_llvm_builtin::i32 );
+  llvm::Value * r_hi     = llvm_add_param(  jit_llvm_builtin::i32 );
 
-  jit_value_t r_idx_thread = jit_geom_get_linear_th_idx();
+  llvm::Value * r_idx_thread = llvm_thread_idx();
 
-  jit_value_t r_out_of_range       = jit_ins_gt( r_idx_thread , jit_ins_sub( r_hi , r_lo ) );
+  llvm::Value * r_out_of_range       = jit_ins_gt( r_idx_thread , jit_ins_sub( r_hi , r_lo ) );
   jit_ins_exit(  r_out_of_range );
 
-  jit_value_t r_idx = jit_ins_add( r_lo , r_idx_thread );
+  llvm::Value * r_idx = jit_ins_add( r_lo , r_idx_thread );
 
   ParamLeaf param_leaf(  r_idx );
 
@@ -385,7 +381,7 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
 
   fill_random( dest_jit.elem(JitDeviceLayout::Coalesced) , seed_reg , skewed_seed_reg , ran_mult_n_reg );
 
-  jit_value_t r_no_save = jit_ins_ne( r_idx_thread , jit_value_t(0) );
+  llvm::Value * r_no_save = jit_ins_ne( r_idx_thread , llvm::Value *(0) );
 
   jit_block_t block_nosave;
   jit_ins_branch(  block_nosave , r_no_save );
@@ -416,20 +412,20 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
 
   jit_start_new_function();
 
-  jit_value_t r_lo     = jit_add_param(  jit_llvm_builtin::i32 );
-  jit_value_t r_hi     = jit_add_param(  jit_llvm_builtin::i32 );
+  llvm::Value * r_lo     = llvm_add_param(  jit_llvm_builtin::i32 );
+  llvm::Value * r_hi     = llvm_add_param(  jit_llvm_builtin::i32 );
 
-  jit_value_t r_idx = jit_geom_get_linear_th_idx();  
+  llvm::Value * r_idx = llvm_thread_idx();  
 
-  jit_value_t r_out_of_range       = jit_ins_ge( r_idx , r_hi );
+  llvm::Value * r_out_of_range       = jit_ins_ge( r_idx , r_hi );
   jit_ins_exit(  r_out_of_range );
 
-  jit_value_t r_perm_array_addr      = jit_add_param(  jit_llvm_builtin::u64 );  // Site permutation array
-  jit_value_t r_idx_mul_4            = jit_ins_mul( r_idx , jit_value_t(4) );
-  jit_value_t r_perm_array_addr_load = jit_ins_add( r_perm_array_addr , r_idx_mul_4 );
-  jit_value_t r_idx_perm             = jit_ins_load ( r_perm_array_addr_load , 0 , jit_llvm_builtin::i32 );
+  llvm::Value * r_perm_array_addr      = llvm_add_param(  jit_llvm_builtin::u64 );  // Site permutation array
+  llvm::Value * r_idx_mul_4            = jit_ins_mul( r_idx , llvm::Value *(4) );
+  llvm::Value * r_perm_array_addr_load = jit_ins_add( r_perm_array_addr , r_idx_mul_4 );
+  llvm::Value * r_idx_perm             = jit_ins_load ( r_perm_array_addr_load , 0 , jit_llvm_builtin::i32 );
 
-  jit_value_t r_gather_buffer        = jit_add_param(  jit_llvm_builtin::u64 );  // Gather buffer
+  llvm::Value * r_gather_buffer        = llvm_add_param(  jit_llvm_builtin::u64 );  // Gather buffer
 
   //ParamLeaf param_leaf_idx(  r_idx );
   ParamLeaf param_leaf_idx_perm(  r_idx_perm );

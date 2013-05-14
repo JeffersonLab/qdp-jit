@@ -14,7 +14,7 @@ if BUILD_LIBINTRIN
 INCFLAGS += -I@top_srcdir@/other_libs/@LIBINTRIN_DIR@/include -I@top_builddir@/other_libs/@LIBINTRIN_DIR@/include
 endif
 
-AM_CXXFLAGS = $(INCFLAGS) @BAGEL_QDP_CXXFLAGS@ @LIBXML2_CXXFLAGS@ @QMP_CFLAGS@  @QMT_CXXFLAGS@  @NVVM_CXXFLAGS@ @CUDA_CXXFLAGS@
+AM_CXXFLAGS = $(INCFLAGS) @BAGEL_QDP_CXXFLAGS@ @LIBXML2_CXXFLAGS@ @QMP_CFLAGS@  @QMT_CXXFLAGS@  @LLVM_CXXFLAGS@ @CUDA_CXXFLAGS@
 
 lib_LIBRARIES = libqdp.a
 
@@ -28,7 +28,7 @@ libqdp_a_SOURCES = qdp_map.cc qdp_subset.cc qdp_random.cc qdp.cc \
         qdp_rannyu.cc \
 	qdp_cuda.cc qdp_cache.cc qdp_deviceparams.cc qdp_mapresource.cc \
 	qdp_llvm.cc qdp_mastermap.cc qdp_autotuning.cc \
-        qdp_jitf_sum.cc qdp_wordreg.cc qdp_datalayout.cc qdp_nvvm.cc
+        qdp_jitf_sum.cc qdp_wordreg.cc qdp_datalayout.cc
 
 
 if QDP_USE_LIBXML2

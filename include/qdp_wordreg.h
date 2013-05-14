@@ -20,22 +20,22 @@ namespace QDP {
     // Default constructing should be possible
     // then there is no need for MPL index when
     // construction a PMatrix<T,N>
-    WordREG(): val(create_jit_value(jit_type<T>::value)) {}
+    WordREG(): val(llvm_create_value(jit_type<T>::value)) {}
 
-    WordREG(int i): val(create_jit_value(i)) {}
-    WordREG(double f): val(create_jit_value(f)) {}
+    WordREG(int i): val(llvm_create_value(i)) {}
+    WordREG(double f): val(llvm_create_value(f)) {}
 
-    WordREG(const WordREG& rhs): val(create_jit_value(jit_type<T>::value)) {
+    WordREG(const WordREG& rhs): val(llvm_create_value(jit_type<T>::value)) {
       assert(rhs.get_val()->get_ever_assigned());      
       val = rhs.get_val();
       //      setup_m=true;
     }
 
-    // WordREG(const jit_value_t& rhs): val(jit_type<T>::value) {
+    // WordREG(const llvm::Value *& rhs): val(jit_type<T>::value) {
     //   setup(rhs);
     // }
 
-    void setup(const jit_value_t& v) {
+    void setup(const llvm::Value *& v) {
       if (jit_type<T>::value == v->get_type().get_builtin())
 	val = v;
       else
@@ -58,8 +58,8 @@ namespace QDP {
     // }
 
 
-    jit_value_t&       get_val()        { return val; }
-    const jit_value_t& get_val() const  { return val; }
+    llvm::Value *&       get_val()        { return val; }
+    const llvm::Value *& get_val() const  { return val; }
 
 
     WordREG& operator=(const WordREG& rhs) {
@@ -174,7 +174,7 @@ namespace QDP {
 
   private:
     //    bool setup_m;
-    jit_value_t    val;
+    llvm::Value *    val;
   };
 
 
@@ -624,21 +624,21 @@ localInnerProductReal(const WordREG<T1>& s1, const WordREG<T2>& s2)
   zero_rep(WordREG<double>& dest) 
   {
     //jit_ins_mov( dest.get_val() , 
-    dest.setup(create_jit_value(0.0));
+    dest.setup(llvm_create_value(0.0));
   }
 
   inline void 
   zero_rep(WordREG<float>& dest) 
   {
-    //jit_ins_mov( dest.get_val() , create_jit_value(0.0) );
-    dest.setup(create_jit_value(0.0));
+    //jit_ins_mov( dest.get_val() , llvm_create_value(0.0) );
+    dest.setup(llvm_create_value(0.0));
   }
 
   inline void 
   zero_rep(WordREG<int>& dest)
   {
-    //jit_ins_mov( dest.get_val() , create_jit_value(0) );
-    dest.setup(create_jit_value(0));
+    //jit_ins_mov( dest.get_val() , llvm_create_value(0) );
+    dest.setup(llvm_create_value(0));
   }
 
 

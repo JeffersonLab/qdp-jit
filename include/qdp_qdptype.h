@@ -467,9 +467,8 @@ struct LeafFunctor<QDPType<T,OLattice<T> >, ParamLeaf>
   typedef TypeA_t  Type_t;
   inline static Type_t apply(const QDPType<T,OLattice<T> > &a, const ParamLeaf& p)
   {
-    jit_value_t    base_addr = jit_add_param( jit_llvm_type( jit_type< typename WordType<T>::Type_t >::value , 
-							     jit_llvm_ind::yes ) );
-    jit_value_t    index     = p.getRegIdx();
+    llvm::Value *    base_addr = llvm_add_param< typename WordType<T>::Type_t * >();
+    llvm::Value *    index     = p.getRegIdx();
     //cout << "QDPTypeOLat ParamLeaf 3er\n";
     return Type_t( base_addr , index );
   }
@@ -483,10 +482,9 @@ struct LeafFunctor<QDPType<T,OScalar<T> >, ParamLeaf>
   typedef TypeA_t  Type_t;
   inline static Type_t apply(const QDPType<T,OScalar<T> > &a, const ParamLeaf& p)
   {
-    jit_value_t    base_addr = jit_add_param( jit_llvm_type( jit_type< typename WordType<T>::Type_t >::value , 
-							     jit_llvm_ind::yes ) );
+    llvm::Value *    base_addr = llvm_add_param< typename WordType<T>::Type_t * >();
     //cout << "QDPTypeOScalar ParamLeaf 2er\n";
-    return Type_t( base_addr , create_jit_value(0) );
+    return Type_t( base_addr , llvm_create_value(0) );
   }
 };
 

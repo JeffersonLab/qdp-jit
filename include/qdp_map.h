@@ -242,25 +242,25 @@ struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
 
 
 
-      //jit_value_t index_x_4         = jit_ins_mul( p.getRegIdx() , create_jit_value(4) );
+      //llvm::Value * index_x_4         = jit_ins_mul( p.getRegIdx() , llvm_create_value(4) );
       jit_ins_comment( "MAP INDEX" );
-      jit_value_t idx_array_ptr     = jit_add_param( jit_llvm_type( jit_llvm_builtin::i32 , jit_llvm_ind::yes ) );
-      jit_value_t new_index_local   = jit_ins_load( idx_array_ptr , p.getRegIdx() , jit_llvm_builtin::i32 );
+      llvm::Value * idx_array_ptr     = llvm_add_param( jit_llvm_type( jit_llvm_builtin::i32 , jit_llvm_ind::yes ) );
+      llvm::Value * new_index_local   = jit_ins_load( idx_array_ptr , p.getRegIdx() , jit_llvm_builtin::i32 );
 
-      //jit_value_t idx_array_adr_off = jit_ins_add( idx_array_address , index_x_4 );
-      //jit_value_t new_index_local   = jit_ins_load ( idx_array_adr_off , 0 , jit_ptx_type::s32 );
+      //llvm::Value * idx_array_adr_off = jit_ins_add( idx_array_address , index_x_4 );
+      //llvm::Value * new_index_local   = jit_ins_load ( idx_array_adr_off , 0 , jit_ptx_type::s32 );
 
-      jit_value_t pred_lt0          = jit_ins_lt( new_index_local , create_jit_value(0) );
+      llvm::Value * pred_lt0          = jit_ins_lt( new_index_local , llvm_create_value(0) );
 
-      jit_value_t new_index_tmp     = jit_ins_neg ( new_index_local );
-      jit_value_t new_index_buffer  = jit_ins_sub ( new_index_tmp , create_jit_value(1) );
+      llvm::Value * new_index_tmp     = jit_ins_neg ( new_index_local );
+      llvm::Value * new_index_buffer  = jit_ins_sub ( new_index_tmp , llvm_create_value(1) );
 
       IndexRet index_pack;
       index_pack.r_newidx_local  = new_index_local;
       index_pack.r_newidx_buffer = new_index_buffer;
       index_pack.r_pred_in_buf   = pred_lt0;
       jit_ins_comment( "RECEIVE BUFFER" );
-      index_pack.r_rcvbuf        = jit_add_param( jit_llvm_type( jit_type< REAL >::value , jit_llvm_ind::yes ) );
+      index_pack.r_rcvbuf        = llvm_add_param( jit_llvm_type( jit_type< REAL >::value , jit_llvm_ind::yes ) );
       
       ParamLeaf pp( new_index_local );
       return Type_t( FnMapJIT( expr.operation() , index_pack ) , 

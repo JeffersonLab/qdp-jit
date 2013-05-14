@@ -102,7 +102,11 @@ using std::iostream;
 using std::ostream;
 // END OF YUKKINESS
 
+
 #include "cuda.h"
+#include "qdp_llvm.h"
+
+
 #include "qdp_forward.h"
 #include "qdp_datalayout.h"
 
@@ -120,7 +124,7 @@ namespace QDP {
 #include "qdp_pool_allocator.h"
 #include "qdp_cache.h"
 
-//#include "qdp_llvm.h"
+//
 
 #include "qdp_multi.h"
 #include "qdp_arrays.h"
