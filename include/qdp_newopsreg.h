@@ -16,7 +16,8 @@ struct FnPeekColorMatrixREG
   }
 
 private:
-  llvm::Value * row, col;   // these are registers
+  llvm::Value *row;
+  llvm::Value *col;
 };
 
 
@@ -33,7 +34,8 @@ struct FnPokeColorMatrixREG
   }
 
 private:
-  llvm::Value * row, col;   // these are registers
+  llvm::Value * row;
+  llvm::Value *col;
 };
 
 
@@ -110,7 +112,8 @@ struct FnPeekSpinMatrixREG
   }
 
 private:
-  llvm::Value * row, col;   // these are registers
+  llvm::Value * row;
+  llvm::Value * col;
 };
 
 
@@ -127,7 +130,8 @@ struct FnPokeSpinMatrixREG
   }
 
 private:
-  llvm::Value * row, col;   // these are registers
+  llvm::Value * row;
+  llvm::Value * col;
 };
 
 

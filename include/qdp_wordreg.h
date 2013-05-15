@@ -20,12 +20,12 @@ namespace QDP {
     // Default constructing should be possible
     // then there is no need for MPL index when
     // construction a PMatrix<T,N>
-    WordREG(): val(llvm_create_value(jit_type<T>::value)) {}
+    WordREG() {}
 
     WordREG(int i): val(llvm_create_value(i)) {}
     WordREG(double f): val(llvm_create_value(f)) {}
 
-    WordREG(const WordREG& rhs): val(llvm_create_value(jit_type<T>::value)) {
+    WordREG(const WordREG& rhs) {
       assert(rhs.get_val()->get_ever_assigned());      
       val = rhs.get_val();
       //      setup_m=true;
@@ -35,22 +35,21 @@ namespace QDP {
     //   setup(rhs);
     // }
 
-    void setup(const llvm::Value *& v) {
-      if (jit_type<T>::value == v->get_type().get_builtin())
-	val = v;
-      else
-	val = jit_val_convert( jit_type<T>::value , v );
+    void setup(llvm::Value * v) {
+      val = llvm_cast( llvm_type<T>::value , v );
+      //setup_m=true;
     }
 
     void setup(const WordJIT<T>& wj) {
-      val = jit_ins_load( wj.getBaseReg() , wj.getOffset() , jit_type<T>::value );
-      //setup_m=true;
+      llvm::Value *val_j = llvm_load_ptr_idx( wj.getBaseReg() , wj.getOffset() );
+      setup( val_j );
+      //
     }
 
     // void replace(const WordREG& rhs ) {
     //   //assert( rhs.get_val()->get_type() == jit_type<T>::value );
     //   if (val) {
-    // 	jit_ins_mov_no_create( val , rhs.get_val() );	
+    // 	llvm_mov_no_create( val , rhs.get_val() );	
     //   } else {
     // 	val = rhs.get_val();
     //   }
@@ -58,8 +57,7 @@ namespace QDP {
     // }
 
 
-    llvm::Value *&       get_val()        { return val; }
-    const llvm::Value *& get_val() const  { return val; }
+    llvm::Value *       get_val()        { return val; }
 
 
     WordREG& operator=(const WordREG& rhs) {
@@ -87,7 +85,7 @@ namespace QDP {
     inline
     WordREG& operator+=(const WordREG<T1>& rhs) 
     {
-      val = jit_ins_add( val , rhs.get_val() );
+      val = llvm_add( val , rhs.get_val() );
       return *this;
     }
 
@@ -96,7 +94,7 @@ namespace QDP {
     inline
     WordREG& operator-=(const WordREG<T1>& rhs) 
     {
-      val = jit_ins_sub( val , rhs.get_val() );
+      val = llvm_sub( val , rhs.get_val() );
       return *this;
     }
 
@@ -105,7 +103,7 @@ namespace QDP {
     inline
     WordREG& operator*=(const WordREG<T1>& rhs) 
     {
-      val = jit_ins_mul( val , rhs.get_val() );
+      val = llvm_mul( val , rhs.get_val() );
       return *this;
     }
 
@@ -114,7 +112,7 @@ namespace QDP {
     inline
     WordREG& operator/=(const WordREG<T1>& rhs) 
     {
-      val = jit_ins_div( val , rhs.get_val() );
+      val = llvm_div( val , rhs.get_val() );
       return *this;
     }
 
@@ -123,8 +121,12 @@ namespace QDP {
     inline
     WordREG& operator%=(const WordREG<T1>& rhs) 
     {
-      val = jit_ins_mod( val , rhs.get_val() );
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
+      val = llvm_mod( val , rhs.get_val() );
       return *this;
+#endif
     }
 
     //! WordREG |= WordREG
@@ -132,8 +134,12 @@ namespace QDP {
     inline
     WordREG& operator|=(const WordREG<T1>& rhs) 
     {
-      val = jit_ins_or( val , rhs.get_val() );
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
+      val = llvm_or( val , rhs.get_val() );
       return *this;
+#endif
     }
 
     //! WordREG &= WordREG
@@ -141,8 +147,12 @@ namespace QDP {
     inline
     WordREG& operator&=(const WordREG<T1>& rhs) 
     {
-      val = jit_ins_and( val , rhs.get_val() );
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
+      val = llvm_and( val , rhs.get_val() );
       return *this;
+#endif
     }
 
     //! WordREG ^= WordREG
@@ -150,8 +160,12 @@ namespace QDP {
     inline
     WordREG& operator^=(const WordREG<T1>& rhs) 
     {
-      val = jit_ins_xor( val , rhs.get_val() );
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
+      val = llvm_xor( val , rhs.get_val() );
       return *this;
+#endif
     }
 
     //! WordREG <<= WordREG
@@ -159,8 +173,12 @@ namespace QDP {
     inline
     WordREG& operator<<=(const WordREG<T1>& rhs) 
     {
-      val = jit_ins_shl( val , rhs.get_val() );
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
+      val = llvm_shl( val , rhs.get_val() );
       return *this;
+#endif
     }
 
     //! WordREG >>= WordREG
@@ -168,8 +186,12 @@ namespace QDP {
     inline
     WordREG& operator>>=(const WordREG<T1>& rhs) 
     {
-      val = jit_ins_shr( val , rhs.get_val() );
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
+      val = llvm_shr( val , rhs.get_val() );
       return *this;
+#endif
     }
 
   private:
@@ -247,7 +269,7 @@ namespace QDP {
   operator!(const WordREG<T1>& l)
   {
     typename UnaryReturn<WordREG<T1>, OpNot>::Type_t ret;
-    ret.setup( jit_ins_not( l.get_val() ) );
+    ret.setup( llvm_not( l.get_val() ) );
     return ret;
   }
 
@@ -257,7 +279,7 @@ namespace QDP {
   operator+(const WordREG<T1>& l, const WordREG<T2>& r)
   {
     typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpAdd>::Type_t ret;
-    ret.setup( jit_ins_add( l.get_val() , r.get_val() ) );
+    ret.setup( llvm_add( l.get_val() , r.get_val() ) );
     return ret;
   }
 
@@ -267,7 +289,7 @@ namespace QDP {
   operator-(const WordREG<T1>& l, const WordREG<T2>& r)
   {
     typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpSubtract>::Type_t ret;
-    ret.setup( jit_ins_sub( l.get_val() , r.get_val() ) );
+    ret.setup( llvm_sub( l.get_val() , r.get_val() ) );
     return ret;
   }
 
@@ -277,7 +299,7 @@ namespace QDP {
   operator*(const WordREG<T1>& l, const WordREG<T2>& r)
   {
     typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpMultiply>::Type_t ret;
-    ret.setup( jit_ins_mul( l.get_val() , r.get_val() ) );
+    ret.setup( llvm_mul( l.get_val() , r.get_val() ) );
     return ret;
   }
 
@@ -287,7 +309,7 @@ namespace QDP {
   operator/(const WordREG<T1>& l, const WordREG<T2>& r)
   {
     typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpDivide>::Type_t ret;
-    ret.setup( jit_ins_div( l.get_val() , r.get_val() ) );
+    ret.setup( llvm_div( l.get_val() , r.get_val() ) );
     return ret;
   }
 
@@ -297,7 +319,7 @@ namespace QDP {
   operator-(const WordREG<T1>& l)
   {
     typename UnaryReturn<WordREG<T1>, OpUnaryMinus>::Type_t ret;
-    ret.setup( jit_ins_neg( l.get_val() ) );
+    ret.setup( llvm_neg( l.get_val() ) );
     return ret;
   }
 
@@ -316,7 +338,7 @@ inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpLeftShift>::Type_t
 operator<<(const WordREG<T1>& l, const WordREG<T2>& r)
 {
   typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpLeftShift>::Type_t ret;
-  ret.setup( jit_ins_shl( l.get_val() , r.get_val() ) );
+  ret.setup( llvm_shl( l.get_val() , r.get_val() ) );
   return ret;
 }
 
@@ -333,7 +355,7 @@ inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpRightShift>::Type_t
 operator>>(const WordREG<T1>& l, const WordREG<T2>& r)
 {
   typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpRightShift>::Type_t ret;
-  ret.setup( jit_ins_shr( l.get_val() , r.get_val() ) );
+  ret.setup( llvm_shr( l.get_val() , r.get_val() ) );
   return ret;
 }
 
@@ -344,7 +366,7 @@ inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpMod>::Type_t
 operator%(const WordREG<T1>& l, const WordREG<T2>& r)
 {
   typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpMod>::Type_t ret;
-  ret.setup( jit_ins_rem( l.get_val() , r.get_val() ) );
+  ret.setup( llvm_rem( l.get_val() , r.get_val() ) );
   return ret;
 }
 
@@ -356,7 +378,7 @@ inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseXor>::Type_t
 operator^(const WordREG<T1>& l, const WordREG<T2>& r)
 {
   typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseXor>::Type_t ret;
-  ret.setup( jit_ins_xor( l.get_val() , r.get_val() ) );
+  ret.setup( llvm_xor( l.get_val() , r.get_val() ) );
   return ret;
 }
 
@@ -366,7 +388,7 @@ inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseAnd>::Type_t
 operator&(const WordREG<T1>& l, const WordREG<T2>& r)
 {
   typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseAnd>::Type_t ret;
-  ret.setup( jit_ins_and( l.get_val() , r.get_val() ) );
+  ret.setup( llvm_and( l.get_val() , r.get_val() ) );
   return ret;
 }
 
@@ -379,7 +401,7 @@ inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseOr>::Type_t
 operator|(const WordREG<T1>& l, const WordREG<T2>& r)
 {
   typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseOr>::Type_t ret;
-  ret.setup( jit_ins_or( l.get_val() , r.get_val() ) );
+  ret.setup( llvm_or( l.get_val() , r.get_val() ) );
   return ret;
 }
 
@@ -396,7 +418,7 @@ inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpLT>::Type_t
 operator<(const WordREG<T1>& l, const WordREG<T2>& r)
 {
   typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpLT>::Type_t ret;
-  ret.setup( jit_ins_lt( l.get_val() , r.get_val() ) );
+  ret.setup( llvm_lt( l.get_val() , r.get_val() ) );
   return ret;
 }
 
@@ -411,7 +433,7 @@ inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpLE>::Type_t
 operator<=(const WordREG<T1>& l, const WordREG<T2>& r)
 {
   typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpLE>::Type_t ret;
-  ret.setup( jit_ins_le( l.get_val() , r.get_val() ) );
+  ret.setup( llvm_le( l.get_val() , r.get_val() ) );
   return ret;
 }
 
@@ -426,7 +448,7 @@ inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpGT>::Type_t
 operator>(const WordREG<T1>& l, const WordREG<T2>& r)
 {
   typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpGT>::Type_t ret;
-  ret.setup( jit_ins_gt( l.get_val() , r.get_val() ) );
+  ret.setup( llvm_gt( l.get_val() , r.get_val() ) );
   return ret;
 }
 
@@ -441,7 +463,7 @@ inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpGE>::Type_t
 operator>=(const WordREG<T1>& l, const WordREG<T2>& r)
 {
   typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpGE>::Type_t ret;
-  ret.setup( jit_ins_ge( l.get_val() , r.get_val() ) );
+  ret.setup( llvm_ge( l.get_val() , r.get_val() ) );
   return ret;
 }
 
@@ -456,7 +478,7 @@ inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpEQ>::Type_t
 operator==(const WordREG<T1>& l, const WordREG<T2>& r)
 {
   typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpEQ>::Type_t ret;
-  ret.setup( jit_ins_eq( l.get_val() , r.get_val() ) );
+  ret.setup( llvm_eq( l.get_val() , r.get_val() ) );
   return ret;
 }
 
@@ -471,7 +493,7 @@ inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpNE>::Type_t
 operator!=(const WordREG<T1>& l, const WordREG<T2>& r)
 {
   typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpNE>::Type_t ret;
-  ret.setup( jit_ins_ne( l.get_val() , r.get_val() ) );
+  ret.setup( llvm_ne( l.get_val() , r.get_val() ) );
   return ret;
 }
 
@@ -487,7 +509,7 @@ inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpAnd>::Type_t
 operator&&(const WordREG<T1>& l, const WordREG<T2>& r)
 {
   typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpAnd>::Type_t ret;
-  ret.setup( jit_ins_and( l.get_val() , r.get_val() ) );
+  ret.setup( llvm_and( l.get_val() , r.get_val() ) );
   return ret;
 }
 
@@ -502,7 +524,7 @@ inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpOr>::Type_t
 operator||(const WordREG<T1>& l, const WordREG<T2>& r)
 {
   typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpOr>::Type_t ret;
-  ret.setup( jit_ins_or( l.get_val() , r.get_val() ) );
+  ret.setup( llvm_or( l.get_val() , r.get_val() ) );
   return ret;
 }
 
@@ -511,9 +533,13 @@ operator||(const WordREG<T1>& l, const WordREG<T2>& r)
   inline typename TrinaryReturn<WordREG<T1>, WordREG<T2>, WordREG<T3>, FnWhere >::Type_t
   where(const WordREG<T1> &a, const WordREG<T2> &b, const WordREG<T3> &c)
   {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
     typename TrinaryReturn<WordREG<T1>, WordREG<T2>, WordREG<T3>, FnWhere >::Type_t ret;
-    ret.setup( jit_ins_selp( b.get_val() , c.get_val() , a.get_val() ) );
+    ret.setup( llvm_selp( b.get_val() , c.get_val() , a.get_val() ) );
     return ret;
+#endif
   }
 
 
@@ -522,9 +548,13 @@ template<class T1>
 inline typename UnaryReturn<WordREG<T1>, FnCeil>::Type_t
 ceil(const WordREG<T1>& s1)
 {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
   typename UnaryReturn<WordREG<T1>, FnCeil>::Type_t ret;
-  ret.setup( jit_ins_ceil( s1.get_val() ) );
+  ret.setup( llvm_ceil( s1.get_val() ) );
   return ret;
+#endif
 }
 
 
@@ -533,9 +563,13 @@ template<class T1>
 inline typename UnaryReturn<WordREG<T1>, FnFabs>::Type_t
 fabs(const WordREG<T1>& s1)
 {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
   typename UnaryReturn<WordREG<T1>, FnFabs>::Type_t ret;
-  ret.setup( jit_ins_fabs( s1.get_val() ) );
+  ret.setup( llvm_fabs( s1.get_val() ) );
   return ret;
+#endif
 }
 
 // Floor
@@ -543,9 +577,13 @@ template<class T1>
 inline typename UnaryReturn<WordREG<T1>, FnFloor>::Type_t
 floor(const WordREG<T1>& s1)
 {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
   typename UnaryReturn<WordREG<T1>, FnFloor>::Type_t ret;
-  ret.setup( jit_ins_floor( s1.get_val() ) );
+  ret.setup( llvm_floor( s1.get_val() ) );
   return ret;
+#endif
 }
 
 // Sqrt
@@ -553,9 +591,13 @@ template<class T1>
 inline typename UnaryReturn<WordREG<T1>, FnSqrt>::Type_t
 sqrt(const WordREG<T1>& s1)
 {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
   typename UnaryReturn<WordREG<T1>, FnSqrt>::Type_t ret;
-  ret.setup( jit_ins_sqrt( s1.get_val() ) );
+  ret.setup( llvm_sqrt( s1.get_val() ) );
   return ret;
+#endif
 }
 
 
@@ -570,7 +612,7 @@ inline typename UnaryReturn<WordREG<T>, FnLocalNorm2>::Type_t
 localNorm2(const WordREG<T>& s1)
 {
   typename UnaryReturn<WordREG<T>, FnLocalNorm2>::Type_t ret;
-  ret.setup( jit_ins_mul( s1.get_val() , s1.get_val() ) );
+  ret.setup( llvm_mul( s1.get_val() , s1.get_val() ) );
   return ret;
 }
 
@@ -593,7 +635,7 @@ inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, FnLocalInnerProduct>::Typ
 localInnerProduct(const WordREG<T1>& s1, const WordREG<T2>& s2)
 {
   typename BinaryReturn<WordREG<T1>, WordREG<T2>, FnLocalInnerProduct>::Type_t ret;
-  ret.setup( jit_ins_mul( s1.get_val() , s2.get_val() ) );
+  ret.setup( llvm_mul( s1.get_val() , s2.get_val() ) );
   return ret;
 }
 
@@ -615,7 +657,7 @@ inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, FnLocalInnerProductReal>:
 localInnerProductReal(const WordREG<T1>& s1, const WordREG<T2>& s2)
 {
   typename BinaryReturn<WordREG<T1>, WordREG<T2>, FnLocalInnerProductReal>::Type_t ret;
-  ret.setup( jit_ins_mul( s1.get_val() , s2.get_val() ) );
+  ret.setup( llvm_mul( s1.get_val() , s2.get_val() ) );
   return ret;
 }
 
@@ -623,21 +665,21 @@ localInnerProductReal(const WordREG<T1>& s1, const WordREG<T2>& s2)
   inline void 
   zero_rep(WordREG<double>& dest) 
   {
-    //jit_ins_mov( dest.get_val() , 
+    //llvm_mov( dest.get_val() , 
     dest.setup(llvm_create_value(0.0));
   }
 
   inline void 
   zero_rep(WordREG<float>& dest) 
   {
-    //jit_ins_mov( dest.get_val() , llvm_create_value(0.0) );
+    //llvm_mov( dest.get_val() , llvm_create_value(0.0) );
     dest.setup(llvm_create_value(0.0));
   }
 
   inline void 
   zero_rep(WordREG<int>& dest)
   {
-    //jit_ins_mov( dest.get_val() , llvm_create_value(0) );
+    //llvm_mov( dest.get_val() , llvm_create_value(0) );
     dest.setup(llvm_create_value(0));
   }
 

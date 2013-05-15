@@ -291,6 +291,23 @@ namespace QDP {
     return builder->CreateLoad( ptr );
   }
 
+  void llvm_store( llvm::Value * val , llvm::Value * ptr )
+  {
+    builder->CreateStore( val , ptr );
+  }
+
+
+  llvm::Value * llvm_load_ptr_idx( llvm::Value * ptr , llvm::Value * idx )
+  {
+    return llvm_load( llvm_createGEP( ptr , idx ) );
+  }
+
+
+  void llvm_store_ptr_idx( llvm::Value * val , llvm::Value * ptr , llvm::Value * idx )
+  {
+    llvm_store( val , llvm_createGEP( ptr , idx ) );
+  }
+
 
   template<class T>
   llvm::Value* llvm_array_type_indirection( llvm::Value* idx )

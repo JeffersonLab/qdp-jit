@@ -53,6 +53,13 @@ namespace QDP {
   template<> struct llvm_type<int*> { static llvm::Type* value; };
   template<> struct llvm_type<bool*> { static llvm::Type* value; };
 
+  struct IndexRet {
+    IndexRet(){}
+    llvm::Value * r_newidx_local;
+    llvm::Value * r_newidx_buffer;
+    llvm::Value * r_pred_in_buf;
+    llvm::Value * r_rcvbuf;
+  };
 
 
   void llvm_wrapper_init();
@@ -118,6 +125,10 @@ namespace QDP {
 
   llvm::Value * llvm_createGEP( llvm::Value * ptr , llvm::Value * idx );
   llvm::Value * llvm_load( llvm::Value * ptr );
+  void          llvm_store( llvm::Value * val , llvm::Value * ptr );
+
+  llvm::Value * llvm_load_ptr_idx( llvm::Value * ptr , llvm::Value * idx );
+  void          llvm_store_ptr_idx( llvm::Value * val , llvm::Value * ptr , llvm::Value * idx );
 
   template<class T>
   llvm::Value* llvm_array_type_indirection( llvm::Value* idx );

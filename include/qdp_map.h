@@ -235,6 +235,9 @@ struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
     inline
     static Type_t apply(const UnaryNode<FnMap, A>& expr, const ParamLeaf &p, const TreeCombine &c)
     {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
       //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
       const Map& map = expr.operation().map;
@@ -265,6 +268,7 @@ struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
       ParamLeaf pp( new_index_local );
       return Type_t( FnMapJIT( expr.operation() , index_pack ) , 
 		     ForEach< A, ParamLeaf, TreeCombine >::apply( expr.child() , pp , c ) );
+#endif
     }
   };
 
@@ -282,6 +286,9 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
     inline
     static Type_t apply(const UnaryNode<FnMapJIT, A>& expr, const ViewLeaf &v, const OpCombine &o)
     {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
       //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
       //const Map& map = expr.operation().map;
@@ -317,6 +324,7 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
       jit_ins_start_block( block_continue );
 
       return ret;
+#endif
     }
   };
 
