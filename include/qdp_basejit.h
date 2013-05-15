@@ -64,8 +64,8 @@ namespace QDP {
     //   r_base = r_base_;
     //   for (int i = 0 ; i < N ; i++ ) 
     // 	F[i].setup( r_base , 
-    // 		    jit_ins_mul( full  , llvm_create_value(N) ) ,
-    // 		    jit_ins_add( level , jit_ins_mul( full , llvm_create_value(i) ) ) );
+    // 		    llvm_mul( full  , llvm_create_value(N) ) ,
+    // 		    llvm_add( level , llvm_mul( full , llvm_create_value(i) ) ) );
     //   setup_m = true;
     // }
 
@@ -80,8 +80,8 @@ namespace QDP {
 #if 0
       T ret;
       ret.setup( r_base , 
-		 jit_ins_mul( full  , llvm_create_value(N) ) ,
-		 jit_ins_add( level , jit_ins_mul( full , index ) ) );
+		 llvm_mul( full  , llvm_create_value(N) ) ,
+		 llvm_add( level , llvm_mul( full , index ) ) );
       return ret;
 #endif
     }
@@ -98,11 +98,11 @@ namespace QDP {
 #if 0
       QDP_error_exit("getRegElem ni");
       llvm::Value * ws = llvm_create_value( sizeof(typename WordType<T>::Type_t) );
-      llvm::Value * idx_mul_length = jit_ins_mul( index  , jit_ins_mul( ws , full ) );
-      llvm::Value * base           = jit_ins_add( r_base , idx_mul_length );
+      llvm::Value * idx_mul_length = llvm_mul( index  , llvm_mul( ws , full ) );
+      llvm::Value * base           = llvm_add( r_base , idx_mul_length );
       T ret_jit;
       ret_jit.setup( base ,
-		     jit_ins_mul( full  , llvm_create_value(N) ) ,
+		     llvm_mul( full  , llvm_create_value(N) ) ,
 		     level );
       typename REGType<T>::Type_t ret_reg;
       ret_reg.setup( ret_jit );

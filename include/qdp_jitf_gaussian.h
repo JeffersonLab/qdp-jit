@@ -24,26 +24,26 @@ function_gaussian_build(OLattice<T>& dest ,OLattice<T>& r1 ,OLattice<T>& r2 )
 
   jit_value r_idx_thread = llvm_thread_idx();
 
-  jit_ins_exit( jit_ins_ge( r_idx_thread , r_th_count ) );
+  llvm_exit( llvm_ge( r_idx_thread , r_th_count ) );
 
   jit_value r_idx = r_idx_thread;
 
   jit_label_t label_ordered;
   jit_label_t label_ordered_exit;
-  jit_ins_branch( label_ordered , r_ordered );
+  llvm_branch( label_ordered , r_ordered );
   {
     jit_value r_member = llvm_add_param(  jit_ptx_type::u64 );  // Subset
-    jit_value r_member_addr        = jit_ins_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
-    jit_value r_ismember           = jit_ins_load ( r_member_addr , 0 , jit_ptx_type::pred );
-    jit_value r_ismember_not       = jit_ins_not( r_ismember );
-    jit_ins_exit( r_ismember_not );
-    jit_ins_branch( label_ordered_exit );
+    jit_value r_member_addr        = llvm_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
+    jit_value r_ismember           = llvm_load ( r_member_addr , 0 , jit_ptx_type::pred );
+    jit_value r_ismember_not       = llvm_not( r_ismember );
+    llvm_exit( r_ismember_not );
+    llvm_branch( label_ordered_exit );
   }
-  jit_ins_label(label_ordered);
+  llvm_label(label_ordered);
   {
-    r_idx = jit_ins_add( r_idx_thread , r_start );
+    r_idx = llvm_add( r_idx_thread , r_start );
   }
-  jit_ins_label(label_ordered_exit);
+  llvm_label(label_ordered_exit);
 
 
 

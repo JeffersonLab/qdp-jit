@@ -318,7 +318,7 @@ namespace QDP {
   //   type = val <= (size_t)std::numeric_limits<int32_t>::max() ? jit_llvm_type::u32 : jit_llvm_type::u64;
   //   reg_alloc();
   //   std::ostringstream oss; oss << val;
-  //   jit_ins_mov( *this , oss.str() );
+  //   llvm_mov( *this , oss.str() );
   // }
 
 
@@ -385,13 +385,13 @@ namespace QDP {
   }
 
 
-  void jit_ins_start_block( jit_block_t& block ) {
+  void llvm_start_block( jit_block_t& block ) {
     if (!block)
       block = jit_block_create();
     jit_get_function()->get_prg() << *block << ":\n";
   }
 
-  jit_block_t jit_ins_start_new_block() {
+  jit_block_t llvm_start_new_block() {
     jit_block_t block = jit_block_create();
     jit_get_function()->get_prg() << *block << ":\n";
   }
@@ -534,7 +534,7 @@ namespace QDP {
   // }
   
 
-  jit_value_t jit_ins_alloca( jit_llvm_builtin type , int count ) {
+  jit_value_t llvm_alloca( jit_llvm_builtin type , int count ) {
     jit_function_t func = jit_get_function();
 
     jit_value_t ret = llvm_create_value( jit_llvm_type(type,jit_llvm_ind::yes) );
@@ -686,9 +686,9 @@ namespace QDP {
   //   dest.set_ever_assigned();
 
   //   if ( type != rhs.get_type() ) {
-  //     jit_ins_assign( *this , jit_val_convert( type , rhs ) );
+  //     llvm_assign( *this , jit_val_convert( type , rhs ) );
   //   } else {
-  //     jit_ins_mov( *this , rhs );
+  //     llvm_mov( *this , rhs );
   //   }
   //   ever_assigned = rhs.ever_assigned;
   // }
@@ -709,7 +709,7 @@ namespace QDP {
 
 
 
-  void jit_ins_bar_sync( int a ) {
+  void llvm_bar_sync( int a ) {
     jit_function_t func = jit_get_function();
     assert( a >= 0 && a <= 15 );
     func->get_prg() << "bar.sync " << a << ";\n";
@@ -789,9 +789,9 @@ namespace QDP {
   // 		      << val->get_name() << ";\n";
   //   } else {
   //     if ( type == jit_llvm_type::pred ) {
-  // 	ret = get<jit_value_t_reg>(jit_ins_ne( val , jit_value_t(0) , pred ));
+  // 	ret = get<jit_value_t_reg>(llvm_ne( val , jit_value_t(0) , pred ));
   //     } else if ( val.get_type() == jit_llvm_type::pred ) {
-  // 	jit_value_t ret_s32 = jit_ins_selp( jit_value_t(1) , jit_value_t(0) , val );
+  // 	jit_value_t ret_s32 = llvm_selp( jit_value_t(1) , jit_value_t(0) , val );
   // 	if (type != jit_llvm_type::s32)
   // 	  return jit_val_create_convert( jit_llvm_type::s32 , ret_s32 , pred );
   // 	else
@@ -872,7 +872,7 @@ namespace QDP {
 
 
 
-  // jit_value_t jit_ins_selp( const jit_value_t& lhs ,  const jit_value_t& rhs , const jit_value_t& p ) {
+  // jit_value_t llvm_selp( const jit_value_t& lhs ,  const jit_value_t& rhs , const jit_value_t& p ) {
   //   jit_llvm_type typebase = jit_type_promote( lhs.get_type() , rhs.get_type() );
   //   jit_value_t ret = llvm_create_value( typebase );
   //   std::ostringstream instr;
@@ -884,8 +884,8 @@ namespace QDP {
   //     jit_value_t lhs_s32 = llvm_create_value(typebase);
   //     jit_value_t rhs_s32 = llvm_create_value(typebase);
   //     jit_value_t ret_s32 = llvm_create_value(typebase);
-  //     lhs_s32 = jit_ins_selp( jit_value_t(1) , jit_value_t(0) , lhs );
-  //     rhs_s32 = jit_ins_selp( jit_value_t(1) , jit_value_t(0) , rhs );
+  //     lhs_s32 = llvm_selp( jit_value_t(1) , jit_value_t(0) , lhs );
+  //     rhs_s32 = llvm_selp( jit_value_t(1) , jit_value_t(0) , rhs );
   //     instr << "selp." 
   // 	    << jit_get_ptx_type( typebase ) 
   // 	    << " "
@@ -898,7 +898,7 @@ namespace QDP {
   // 	    << jit_get_reg_name( p ) 
   // 	    << ";\n";
   //     jit_get_function()->get_prg() << instr.str();
-  //     ret = jit_ins_ne( ret_s32 , jit_value_t(0) );
+  //     ret = llvm_ne( ret_s32 , jit_value_t(0) );
   //     // ret.set_state_space( jit_state_promote( lhs.get_state_space() , rhs.get_state_space() ) );
   //     ret.set_ever_assigned();
   //     return ret;
@@ -932,7 +932,7 @@ namespace QDP {
 
 
 
-  jit_value_t jit_ins_op( const jit_value_t& lhs , const jit_value_t& rhs , const JitOp& op ) {
+  jit_value_t llvm_op( const jit_value_t& lhs , const jit_value_t& rhs , const JitOp& op ) {
     jit_llvm_type dest_type = op.getDestType();
     jit_llvm_type args_type = op.getArgsType();
     jit_value_t ret = llvm_create_value( dest_type );
@@ -948,43 +948,43 @@ namespace QDP {
   }
 
 
-  jit_value_t jit_ins_add( const jit_value_t& lhs , const jit_value_t& rhs ) {
-    return jit_ins_op( lhs , rhs , JitOpAdd( lhs , rhs ) );
+  jit_value_t llvm_add( const jit_value_t& lhs , const jit_value_t& rhs ) {
+    return llvm_op( lhs , rhs , JitOpAdd( lhs , rhs ) );
   }
-  jit_value_t jit_ins_sub( const jit_value_t& lhs , const jit_value_t& rhs) {
-    return jit_ins_op( lhs , rhs , JitOpSub( lhs , rhs ) );
+  jit_value_t llvm_sub( const jit_value_t& lhs , const jit_value_t& rhs) {
+    return llvm_op( lhs , rhs , JitOpSub( lhs , rhs ) );
   }
-  jit_value_t jit_ins_mul( const jit_value_t& lhs , const jit_value_t& rhs) {
-    return jit_ins_op( lhs , rhs , JitOpMul( lhs , rhs ) );
+  jit_value_t llvm_mul( const jit_value_t& lhs , const jit_value_t& rhs) {
+    return llvm_op( lhs , rhs , JitOpMul( lhs , rhs ) );
   }
-  jit_value_t jit_ins_div( const jit_value_t& lhs , const jit_value_t& rhs) {
-    return jit_ins_op( lhs , rhs , JitOpDiv( lhs , rhs ) );
+  jit_value_t llvm_div( const jit_value_t& lhs , const jit_value_t& rhs) {
+    return llvm_op( lhs , rhs , JitOpDiv( lhs , rhs ) );
   }
-  jit_value_t jit_ins_shl( const jit_value_t& lhs , const jit_value_t& rhs ) {
-    return jit_ins_op( lhs , rhs , JitOpSHL( lhs , rhs ) );
+  jit_value_t llvm_shl( const jit_value_t& lhs , const jit_value_t& rhs ) {
+    return llvm_op( lhs , rhs , JitOpSHL( lhs , rhs ) );
   }
-  jit_value_t jit_ins_shr( const jit_value_t& lhs , const jit_value_t& rhs ) {
-    return jit_ins_op( lhs , rhs , JitOpSHR( lhs , rhs ) );
+  jit_value_t llvm_shr( const jit_value_t& lhs , const jit_value_t& rhs ) {
+    return llvm_op( lhs , rhs , JitOpSHR( lhs , rhs ) );
   }
-  jit_value_t jit_ins_and( const jit_value_t& lhs , const jit_value_t& rhs ) {
-    return jit_ins_op( lhs , rhs , JitOpAnd( lhs , rhs ) );
+  jit_value_t llvm_and( const jit_value_t& lhs , const jit_value_t& rhs ) {
+    return llvm_op( lhs , rhs , JitOpAnd( lhs , rhs ) );
   }
-  jit_value_t jit_ins_or( const jit_value_t& lhs , const jit_value_t& rhs ) {
-    return jit_ins_op( lhs , rhs , JitOpOr( lhs , rhs ) );
+  jit_value_t llvm_or( const jit_value_t& lhs , const jit_value_t& rhs ) {
+    return llvm_op( lhs , rhs , JitOpOr( lhs , rhs ) );
   }
-  jit_value_t jit_ins_xor( const jit_value_t& lhs , const jit_value_t& rhs ) {
-    return jit_ins_op( lhs , rhs , JitOpXOr( lhs , rhs ) );
+  jit_value_t llvm_xor( const jit_value_t& lhs , const jit_value_t& rhs ) {
+    return llvm_op( lhs , rhs , JitOpXOr( lhs , rhs ) );
   }
-  jit_value_t jit_ins_rem( const jit_value_t& lhs , const jit_value_t& rhs ) {
-    return jit_ins_op( lhs , rhs , JitOpRem( lhs , rhs ) );
+  jit_value_t llvm_rem( const jit_value_t& lhs , const jit_value_t& rhs ) {
+    return llvm_op( lhs , rhs , JitOpRem( lhs , rhs ) );
   }
-  // jit_value_t jit_ins_mul_wide( const jit_value_t& lhs , const jit_value_t& rhs) {
-  //   return jit_ins_op( lhs , rhs , JitOpMulWide( lhs , rhs ) );
+  // jit_value_t llvm_mul_wide( const jit_value_t& lhs , const jit_value_t& rhs) {
+  //   return llvm_op( lhs , rhs , JitOpMulWide( lhs , rhs ) );
   // }
 
 
 
-  void jit_ins_op_rep( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs , const JitOp& op ) {
+  void llvm_op_rep( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs , const JitOp& op ) {
     if (!dest)
       dest = llvm_create_value( op.getDestType() );
     assert( dest->get_type() == op.getDestType() );
@@ -999,58 +999,58 @@ namespace QDP {
   }
 
 
-    void jit_ins_mul( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  ){ 
-      jit_ins_op_rep( dest, lhs , rhs , JitOpMul( lhs , rhs ) ); }
-    void jit_ins_div( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  ){ 
-      jit_ins_op_rep( dest, lhs , rhs , JitOpDiv( lhs , rhs ) ); }
-    void jit_ins_add( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  ){ 
-       jit_ins_op_rep( dest, lhs , rhs , JitOpAdd( lhs , rhs ) ); }
-    void jit_ins_sub( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  ){ 
-       jit_ins_op_rep( dest, lhs , rhs , JitOpSub( lhs , rhs ) ); }
-    void jit_ins_shl( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  ){ 
-       jit_ins_op_rep( dest, lhs , rhs , JitOpSHL( lhs , rhs ) ); }
-    void jit_ins_shr( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  ){ 
-       jit_ins_op_rep( dest, lhs , rhs , JitOpSHR( lhs , rhs ) ); }
-    void jit_ins_and( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  ){ 
-       jit_ins_op_rep( dest, lhs , rhs , JitOpAnd( lhs , rhs ) ); }
-    void jit_ins_or ( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  ){ 
-       jit_ins_op_rep( dest, lhs , rhs , JitOpOr( lhs , rhs ) ); }
-    void jit_ins_xor( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  ){ 
-       jit_ins_op_rep( dest, lhs , rhs , JitOpXOr( lhs , rhs ) ); }
-    void jit_ins_rem( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  ){ 
+    void llvm_mul( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  ){ 
+      llvm_op_rep( dest, lhs , rhs , JitOpMul( lhs , rhs ) ); }
+    void llvm_div( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  ){ 
+      llvm_op_rep( dest, lhs , rhs , JitOpDiv( lhs , rhs ) ); }
+    void llvm_add( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  ){ 
+       llvm_op_rep( dest, lhs , rhs , JitOpAdd( lhs , rhs ) ); }
+    void llvm_sub( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  ){ 
+       llvm_op_rep( dest, lhs , rhs , JitOpSub( lhs , rhs ) ); }
+    void llvm_shl( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  ){ 
+       llvm_op_rep( dest, lhs , rhs , JitOpSHL( lhs , rhs ) ); }
+    void llvm_shr( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  ){ 
+       llvm_op_rep( dest, lhs , rhs , JitOpSHR( lhs , rhs ) ); }
+    void llvm_and( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  ){ 
+       llvm_op_rep( dest, lhs , rhs , JitOpAnd( lhs , rhs ) ); }
+    void llvm_or ( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  ){ 
+       llvm_op_rep( dest, lhs , rhs , JitOpOr( lhs , rhs ) ); }
+    void llvm_xor( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  ){ 
+       llvm_op_rep( dest, lhs , rhs , JitOpXOr( lhs , rhs ) ); }
+    void llvm_rem( jit_value_t& dest, const jit_value_t& lhs , const jit_value_t& rhs  ){ 
       QDP_error_exit("rem not i"); }
 
 
 
-  jit_value_t jit_ins_lt( const jit_value_t& lhs , const jit_value_t& rhs ) {
-    return jit_ins_op( lhs , rhs , JitOpLT( lhs , rhs ) );
+  jit_value_t llvm_lt( const jit_value_t& lhs , const jit_value_t& rhs ) {
+    return llvm_op( lhs , rhs , JitOpLT( lhs , rhs ) );
   }
-  jit_value_t jit_ins_ne( const jit_value_t& lhs , const jit_value_t& rhs ) {
-    return jit_ins_op( lhs , rhs , JitOpNE( lhs , rhs ) );
+  jit_value_t llvm_ne( const jit_value_t& lhs , const jit_value_t& rhs ) {
+    return llvm_op( lhs , rhs , JitOpNE( lhs , rhs ) );
   }
-  jit_value_t jit_ins_eq( const jit_value_t& lhs , const jit_value_t& rhs ) {
-    return jit_ins_op( lhs , rhs , JitOpEQ( lhs , rhs ) );
+  jit_value_t llvm_eq( const jit_value_t& lhs , const jit_value_t& rhs ) {
+    return llvm_op( lhs , rhs , JitOpEQ( lhs , rhs ) );
   }
-  jit_value_t jit_ins_ge( const jit_value_t& lhs , const jit_value_t& rhs ) {
-    return jit_ins_op( lhs , rhs , JitOpGE( lhs , rhs ) );
+  jit_value_t llvm_ge( const jit_value_t& lhs , const jit_value_t& rhs ) {
+    return llvm_op( lhs , rhs , JitOpGE( lhs , rhs ) );
   }
-  jit_value_t jit_ins_le( const jit_value_t& lhs , const jit_value_t& rhs ) {
-    return jit_ins_op( lhs , rhs , JitOpLE( lhs , rhs ) );
+  jit_value_t llvm_le( const jit_value_t& lhs , const jit_value_t& rhs ) {
+    return llvm_op( lhs , rhs , JitOpLE( lhs , rhs ) );
   }
-  jit_value_t jit_ins_gt( const jit_value_t& lhs , const jit_value_t& rhs ) {
-    return jit_ins_op( lhs , rhs , JitOpGT( lhs , rhs ) );
+  jit_value_t llvm_gt( const jit_value_t& lhs , const jit_value_t& rhs ) {
+    return llvm_op( lhs , rhs , JitOpGT( lhs , rhs ) );
   }
 
 
-  // jit_value_t jit_ins_or( const jit_value_t& lhs , const jit_value_t& rhs ) { assert(!"ni"); }
-  // jit_value_t jit_ins_and( const jit_value_t& lhs , const jit_value_t& rhs ) { assert(!"ni"); }
-  // jit_value_t jit_ins_xor( const jit_value_t& lhs , const jit_value_t& rhs ) { assert(!"ni"); }
-  jit_value_t jit_ins_mod( const jit_value_t& lhs , const jit_value_t& rhs ) { assert(!"ni"); }
+  // jit_value_t llvm_or( const jit_value_t& lhs , const jit_value_t& rhs ) { assert(!"ni"); }
+  // jit_value_t llvm_and( const jit_value_t& lhs , const jit_value_t& rhs ) { assert(!"ni"); }
+  // jit_value_t llvm_xor( const jit_value_t& lhs , const jit_value_t& rhs ) { assert(!"ni"); }
+  jit_value_t llvm_mod( const jit_value_t& lhs , const jit_value_t& rhs ) { assert(!"ni"); }
 
 
 
 
-  jit_value_t jit_ins_unary_op( const jit_value_t& reg , const JitUnaryOp& op ) {
+  jit_value_t llvm_unary_op( const jit_value_t& reg , const JitUnaryOp& op ) {
     jit_llvm_type type = reg->get_type();
     jit_value_t ret = llvm_create_value( type );
     jit_get_function()->get_prg() << ret << " = "
@@ -1062,30 +1062,30 @@ namespace QDP {
   }
 
 
-  jit_value_t jit_ins_neg( const jit_value_t& rhs ) {
-    return jit_ins_unary_op( rhs , JitUnaryOpNeg( rhs->get_type() ) );
+  jit_value_t llvm_neg( const jit_value_t& rhs ) {
+    return llvm_unary_op( rhs , JitUnaryOpNeg( rhs->get_type() ) );
   }
-  jit_value_t jit_ins_not( const jit_value_t& rhs ) {
-    return jit_ins_unary_op( rhs , JitUnaryOpNot( rhs->get_type() ) );
+  jit_value_t llvm_not( const jit_value_t& rhs ) {
+    return llvm_unary_op( rhs , JitUnaryOpNot( rhs->get_type() ) );
   }
-  jit_value_t jit_ins_fabs( const jit_value_t& rhs ) {
-    return jit_ins_unary_op( rhs , JitUnaryOpAbs( rhs->get_type() ) );
+  jit_value_t llvm_fabs( const jit_value_t& rhs ) {
+    return llvm_unary_op( rhs , JitUnaryOpAbs( rhs->get_type() ) );
   }
-  // jit_value_t jit_ins_floor( const jit_value_t& rhs ) {
-  //   return jit_ins_unary_op( rhs , JitUnaryOpFloor( rhs.get_type() ) );
+  // jit_value_t llvm_floor( const jit_value_t& rhs ) {
+  //   return llvm_unary_op( rhs , JitUnaryOpFloor( rhs.get_type() ) );
   // }
-  // jit_value_t jit_ins_ceil( const jit_value_t& rhs ) {
-  //   return jit_ins_unary_op( rhs , JitUnaryOpCeil( rhs.get_type() ) );
+  // jit_value_t llvm_ceil( const jit_value_t& rhs ) {
+  //   return llvm_unary_op( rhs , JitUnaryOpCeil( rhs.get_type() ) );
   // }
-  // jit_value_t jit_ins_sqrt( const jit_value_t& rhs ) { 
-  //   return jit_ins_unary_op( rhs , JitUnaryOpSqrt( rhs.get_type() ) );
+  // jit_value_t llvm_sqrt( const jit_value_t& rhs ) { 
+  //   return llvm_unary_op( rhs , JitUnaryOpSqrt( rhs.get_type() ) );
   // }
 
 
   //
   //   %arrayidx = getelementptr i32* %data, i64 %idxprom
   //
-  jit_value_t jit_ins_getelementptr( const jit_value_t& base , const jit_value_t& offset ) {
+  jit_value_t llvm_getelementptr( const jit_value_t& base , const jit_value_t& offset ) {
     assert( base->get_type().get_ind() == jit_llvm_ind::yes );
     jit_value_t ret = llvm_create_value( base->get_type() );
     jit_get_function()->get_prg() << ret
@@ -1100,14 +1100,14 @@ namespace QDP {
   //
   //  %val = load i32* %ptr                           ; yields {i32}:val = i32 3
   //
-  jit_value_t jit_ins_load( const jit_value_t& base , const jit_value_t& offset , jit_llvm_type type ) {
+  jit_value_t llvm_load( const jit_value_t& base , const jit_value_t& offset , jit_llvm_type type ) {
     assert(base);
     assert(offset);
     if (base->get_type().get_builtin() != type.get_builtin())
       std::cout << base->get_type() << " " << type << "\n";
     assert( base->get_type().get_ind() == jit_llvm_ind::yes );
     assert( base->get_type().get_builtin() == type.get_builtin() );
-    jit_value_t ptr = jit_ins_getelementptr(base,offset);
+    jit_value_t ptr = llvm_getelementptr(base,offset);
     jit_value_t ret = llvm_create_value( type );
     jit_get_function()->get_prg() << ret
 				  << " = load "
@@ -1121,12 +1121,12 @@ namespace QDP {
   //
   //  store i32 %call, i32* %arrayidx, align 4
   //
-  void jit_ins_store(const jit_value_t& base, const jit_value_t& offset, jit_llvm_type type, const jit_value_t& reg ) {
+  void llvm_store(const jit_value_t& base, const jit_value_t& offset, jit_llvm_type type, const jit_value_t& reg ) {
     assert(base);
     assert(offset);
     assert( base->get_type().get_ind() == jit_llvm_ind::yes );
     assert( base->get_type().get_builtin() == type.get_builtin() );
-    jit_value_t ptr = jit_ins_getelementptr(base,offset);
+    jit_value_t ptr = llvm_getelementptr(base,offset);
     jit_get_function()->get_prg() << "store "
 				  << type << " "
 				  << reg << ", "
@@ -1138,14 +1138,14 @@ namespace QDP {
   jit_value_t jit_int_array_indirection( const jit_value_t& idx , jit_llvm_builtin type )
   {
     jit_value_t base = llvm_add_param( jit_llvm_type( type , jit_llvm_ind::yes ) );
-    return jit_ins_load( base , idx , type );
+    return llvm_load( base , idx , type );
   }
 
 
   jit_value_t jit_geom_get_linear_th_idx() {
     jit_value_t ctaidx = jit_geom_get_ctaidx();
     jit_value_t ntidx  = jit_geom_get_ntidx();
-    return jit_ins_add( jit_ins_mul( ctaidx , ntidx ) , jit_geom_get_tidx() );
+    return llvm_add( llvm_mul( ctaidx , ntidx ) , jit_geom_get_tidx() );
   }
 
 
@@ -1160,22 +1160,22 @@ namespace QDP {
 
 
 
-  void jit_ins_exit() {
+  void llvm_exit() {
     jit_get_function()->get_prg() << "ret void\n";
   }
 
 
-  void jit_ins_cond_exit( const jit_value_t& cond )
+  void llvm_cond_exit( const jit_value_t& cond )
   {
     jit_block_t bl_exit,bl_cont;
-    jit_ins_branch( cond , bl_exit , bl_cont );
-    jit_ins_start_block( bl_exit );
-    jit_ins_exit();
-    jit_ins_start_block( bl_cont );
+    llvm_branch( cond , bl_exit , bl_cont );
+    llvm_start_block( bl_exit );
+    llvm_exit();
+    llvm_start_block( bl_cont );
   }
 
 
-  void jit_ins_branch( const jit_value_t& cond,  jit_block_t& block_true , jit_block_t& block_false ) {
+  void llvm_branch( const jit_value_t& cond,  jit_block_t& block_true , jit_block_t& block_false ) {
     assert(cond);
     if (!block_true)
       block_true = jit_block_create();
@@ -1188,19 +1188,19 @@ namespace QDP {
 				  << "label %" << *block_false << "\n";
   }
 
-  void jit_ins_branch( jit_block_t& block ) {
+  void llvm_branch( jit_block_t& block ) {
     if (!block)
       block = jit_block_create();
     jit_get_function()->get_prg() << "br "
 				  << "label %" << *block << "\n";
   }
 
-  void jit_ins_comment( const char * comment ) {
+  void llvm_comment( const char * comment ) {
     jit_get_function()->get_prg() << "; " << comment << "\n";
   }
 
 
-  jit_value_t jit_ins_phi( const jit_value_t& v0 , jit_block_t& b0 ,
+  jit_value_t llvm_phi( const jit_value_t& v0 , jit_block_t& b0 ,
 			   const jit_value_t& v1 , jit_block_t& b1 )
   {
     assert(v0);

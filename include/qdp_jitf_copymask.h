@@ -19,8 +19,8 @@ namespace QDP {
     jit_value r_lo           = llvm_add_param( jit_ptx_type::s32 );
     jit_value r_hi           = llvm_add_param( jit_ptx_type::s32 );
     jit_value r_idx          = llvm_thread_idx();  
-    jit_value r_out_of_range = jit_ins_ge( r_idx , r_hi );
-    jit_ins_exit( r_out_of_range );
+    jit_value r_out_of_range = llvm_ge( r_idx , r_hi );
+    llvm_exit( r_out_of_range );
 
     ParamLeaf param_leaf( r_idx );
 

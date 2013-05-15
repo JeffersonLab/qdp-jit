@@ -245,24 +245,24 @@ struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
 
 
 
-      //llvm::Value * index_x_4         = jit_ins_mul( p.getRegIdx() , llvm_create_value(4) );
-      jit_ins_comment( "MAP INDEX" );
+      //llvm::Value * index_x_4         = llvm_mul( p.getRegIdx() , llvm_create_value(4) );
+      llvm_comment( "MAP INDEX" );
       llvm::Value * idx_array_ptr     = llvm_add_param( jit_llvm_type( jit_llvm_builtin::i32 , jit_llvm_ind::yes ) );
-      llvm::Value * new_index_local   = jit_ins_load( idx_array_ptr , p.getRegIdx() , jit_llvm_builtin::i32 );
+      llvm::Value * new_index_local   = llvm_load( idx_array_ptr , p.getRegIdx() , jit_llvm_builtin::i32 );
 
-      //llvm::Value * idx_array_adr_off = jit_ins_add( idx_array_address , index_x_4 );
-      //llvm::Value * new_index_local   = jit_ins_load ( idx_array_adr_off , 0 , jit_ptx_type::s32 );
+      //llvm::Value * idx_array_adr_off = llvm_add( idx_array_address , index_x_4 );
+      //llvm::Value * new_index_local   = llvm_load ( idx_array_adr_off , 0 , jit_ptx_type::s32 );
 
-      llvm::Value * pred_lt0          = jit_ins_lt( new_index_local , llvm_create_value(0) );
+      llvm::Value * pred_lt0          = llvm_lt( new_index_local , llvm_create_value(0) );
 
-      llvm::Value * new_index_tmp     = jit_ins_neg ( new_index_local );
-      llvm::Value * new_index_buffer  = jit_ins_sub ( new_index_tmp , llvm_create_value(1) );
+      llvm::Value * new_index_tmp     = llvm_neg ( new_index_local );
+      llvm::Value * new_index_buffer  = llvm_sub ( new_index_tmp , llvm_create_value(1) );
 
       IndexRet index_pack;
       index_pack.r_newidx_local  = new_index_local;
       index_pack.r_newidx_buffer = new_index_buffer;
       index_pack.r_pred_in_buf   = pred_lt0;
-      jit_ins_comment( "RECEIVE BUFFER" );
+      llvm_comment( "RECEIVE BUFFER" );
       index_pack.r_rcvbuf        = llvm_add_param( jit_llvm_type( jit_type< REAL >::value , jit_llvm_ind::yes ) );
       
       ParamLeaf pp( new_index_local );
@@ -302,26 +302,26 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
 
       Type_t ret;
 
-      jit_ins_branch( index.r_pred_in_buf , block_in_buffer , block_local );
+      llvm_branch( index.r_pred_in_buf , block_in_buffer , block_local );
       {
-	jit_ins_start_block( block_local );
+	llvm_start_block( block_local );
 	ret = Combine1<TypeA_t, 
 		       FnMapJIT , 
 		       OpCombine>::combine(ForEach<A, ViewLeaf, OpCombine>::apply(expr.child(), v, o) , 
 					   expr.operation(), o);
-	jit_ins_branch( block_continue );
+	llvm_branch( block_continue );
       }
       {
-	jit_ins_start_block( block_in_buffer );
+	llvm_start_block( block_in_buffer );
 
 	OLatticeJIT< typename JITType<Type_t>::Type_t > lattice_recv( index.r_rcvbuf , index.r_newidx_buffer );
 
 	Type_t ret_new;
 	ret_new.setup( lattice_recv.elem( JitDeviceLayout::Scalar ) );
 	ret = ret_new;
-	jit_ins_branch( block_continue );
+	llvm_branch( block_continue );
       }
-      jit_ins_start_block( block_continue );
+      llvm_start_block( block_continue );
 
       return ret;
 #endif

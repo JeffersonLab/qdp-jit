@@ -25,9 +25,9 @@ namespace QDP {
     // offset = ((ir * Ic + ic) * Is + is) * Iv + iv
 
     if (lay == JitDeviceLayout::Coalesced) {
-      return jit_ins_add(jit_ins_mul(jit_ins_add(jit_ins_mul( jit_ins_add(jit_ins_mul(ir,Ic),ic),Is),is),Iv),iv);
+      return llvm_add(llvm_mul(llvm_add(llvm_mul( llvm_add(llvm_mul(ir,Ic),ic),Is),is),Iv),iv);
     } else
-      return jit_ins_add(jit_ins_mul(jit_ins_add(jit_ins_mul( jit_ins_add(jit_ins_mul(iv,Ir),ir),Ic),ic),Is),is);
+      return llvm_add(llvm_mul(llvm_add(llvm_mul( llvm_add(llvm_mul(iv,Ir),ir),Ic),ic),Is),is);
   }
 #endif
 
@@ -41,7 +41,7 @@ namespace QDP {
       llvm::Value * index;
       std::tie(Index,index) = *x;
       llvm::Value * Index_jit = llvm_create_value(Index);
-      offset = jit_ins_add( jit_ins_mul( offset , Index_jit ) , index );
+      offset = llvm_add( llvm_mul( offset , Index_jit ) , index );
     }
     return offset;
   }
@@ -67,7 +67,7 @@ namespace QDP {
       llvm::Value * index;
       std::tie(Index,index) = *x;
       llvm::Value * Index_jit = llvm_create_value(Index);
-      offset = jit_ins_add( jit_ins_mul( offset , Index_jit ) , index );
+      offset = llvm_add( llvm_mul( offset , Index_jit ) , index );
     }
     return offset;
   }

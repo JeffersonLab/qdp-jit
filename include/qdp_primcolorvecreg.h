@@ -231,7 +231,7 @@ peekColor(const PColorVectorREG<T,N>& l, llvm::Value * row)
 
   typedef typename JITType< PColorVectorREG<T,N> >::Type_t TTjit;
 
-  llvm::Value * ptr_local = jit_ins_alloca( jit_type<typename WordType<T>::Type_t>::value , TTjit::Size_t );
+  llvm::Value * ptr_local = llvm_alloca( jit_type<typename WordType<T>::Type_t>::value , TTjit::Size_t );
 
   TTjit dj;
   dj.setup( ptr_local , JitDeviceLayout::Scalar );

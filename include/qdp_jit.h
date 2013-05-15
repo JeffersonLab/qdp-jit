@@ -274,10 +274,10 @@ namespace QDP {
   jit_llvm_builtin jit_type_promote(jit_llvm_builtin t0,jit_llvm_builtin t1);
   jit_llvm_type    jit_type_promote(jit_llvm_type t0   ,jit_llvm_type t1);
 
-  void jit_ins_bar_sync( int a );
+  void llvm_bar_sync( int a );
 
   llvm::Value * llvm_add_param( jit_llvm_type type );
-  llvm::Value * jit_ins_alloca( jit_llvm_builtin type , int count );
+  llvm::Value * llvm_alloca( jit_llvm_builtin type , int count );
   llvm::Value * jit_get_shared_mem_ptr();
 
   //std::string jit_get_reg_name( const llvm::Value *& val );
@@ -297,115 +297,115 @@ namespace QDP {
   llvm::Value * jit_geom_get_ctaidx( );
 
   // Binary operations
-  //llvm::Value * jit_ins_mul_wide( const llvm::Value *& lhs , const llvm::Value *& rhs  );
-  void jit_ins_mul( llvm::Value *& dest, const llvm::Value *& lhs , const llvm::Value *& rhs  );
-  void jit_ins_div( llvm::Value *& dest, const llvm::Value *& lhs , const llvm::Value *& rhs  );
-  void jit_ins_add( llvm::Value *& dest, const llvm::Value *& lhs , const llvm::Value *& rhs  );
-  void jit_ins_sub( llvm::Value *& dest, const llvm::Value *& lhs , const llvm::Value *& rhs  );
-  void jit_ins_shl( llvm::Value *& dest, const llvm::Value *& lhs , const llvm::Value *& rhs  );
-  void jit_ins_shr( llvm::Value *& dest, const llvm::Value *& lhs , const llvm::Value *& rhs  );
-  void jit_ins_and( llvm::Value *& dest, const llvm::Value *& lhs , const llvm::Value *& rhs  );
-  void jit_ins_or ( llvm::Value *& dest, const llvm::Value *& lhs , const llvm::Value *& rhs  );
-  void jit_ins_xor( llvm::Value *& dest, const llvm::Value *& lhs , const llvm::Value *& rhs  );
-  void jit_ins_rem( llvm::Value *& dest, const llvm::Value *& lhs , const llvm::Value *& rhs  );
+  //llvm::Value * llvm_mul_wide( const llvm::Value *& lhs , const llvm::Value *& rhs  );
+  void llvm_mul( llvm::Value *& dest, const llvm::Value *& lhs , const llvm::Value *& rhs  );
+  void llvm_div( llvm::Value *& dest, const llvm::Value *& lhs , const llvm::Value *& rhs  );
+  void llvm_add( llvm::Value *& dest, const llvm::Value *& lhs , const llvm::Value *& rhs  );
+  void llvm_sub( llvm::Value *& dest, const llvm::Value *& lhs , const llvm::Value *& rhs  );
+  void llvm_shl( llvm::Value *& dest, const llvm::Value *& lhs , const llvm::Value *& rhs  );
+  void llvm_shr( llvm::Value *& dest, const llvm::Value *& lhs , const llvm::Value *& rhs  );
+  void llvm_and( llvm::Value *& dest, const llvm::Value *& lhs , const llvm::Value *& rhs  );
+  void llvm_or ( llvm::Value *& dest, const llvm::Value *& lhs , const llvm::Value *& rhs  );
+  void llvm_xor( llvm::Value *& dest, const llvm::Value *& lhs , const llvm::Value *& rhs  );
+  void llvm_rem( llvm::Value *& dest, const llvm::Value *& lhs , const llvm::Value *& rhs  );
 
-  llvm::Value * jit_ins_mul( const llvm::Value *& lhs , const llvm::Value *& rhs  );
-  llvm::Value * jit_ins_div( const llvm::Value *& lhs , const llvm::Value *& rhs  );
-  llvm::Value * jit_ins_add( const llvm::Value *& lhs , const llvm::Value *& rhs  );
-  llvm::Value * jit_ins_sub( const llvm::Value *& lhs , const llvm::Value *& rhs  );
-  llvm::Value * jit_ins_shl( const llvm::Value *& lhs , const llvm::Value *& rhs  );
-  llvm::Value * jit_ins_shr( const llvm::Value *& lhs , const llvm::Value *& rhs  );
-  llvm::Value * jit_ins_and( const llvm::Value *& lhs , const llvm::Value *& rhs  );
-  llvm::Value * jit_ins_or ( const llvm::Value *& lhs , const llvm::Value *& rhs  );
-  llvm::Value * jit_ins_xor( const llvm::Value *& lhs , const llvm::Value *& rhs  );
-  llvm::Value * jit_ins_rem( const llvm::Value *& lhs , const llvm::Value *& rhs  );
+  llvm::Value * llvm_mul( const llvm::Value *& lhs , const llvm::Value *& rhs  );
+  llvm::Value * llvm_div( const llvm::Value *& lhs , const llvm::Value *& rhs  );
+  llvm::Value * llvm_add( const llvm::Value *& lhs , const llvm::Value *& rhs  );
+  llvm::Value * llvm_sub( const llvm::Value *& lhs , const llvm::Value *& rhs  );
+  llvm::Value * llvm_shl( const llvm::Value *& lhs , const llvm::Value *& rhs  );
+  llvm::Value * llvm_shr( const llvm::Value *& lhs , const llvm::Value *& rhs  );
+  llvm::Value * llvm_and( const llvm::Value *& lhs , const llvm::Value *& rhs  );
+  llvm::Value * llvm_or ( const llvm::Value *& lhs , const llvm::Value *& rhs  );
+  llvm::Value * llvm_xor( const llvm::Value *& lhs , const llvm::Value *& rhs  );
+  llvm::Value * llvm_rem( const llvm::Value *& lhs , const llvm::Value *& rhs  );
 
   // ni
-  llvm::Value * jit_ins_mod( llvm::Value *& dest, const llvm::Value *& lhs , const llvm::Value *& rhs );
+  llvm::Value * llvm_mod( llvm::Value *& dest, const llvm::Value *& lhs , const llvm::Value *& rhs );
 
   // Binary operations returning predicate
-  llvm::Value * jit_ins_lt( const llvm::Value *& lhs , const llvm::Value *& rhs  );
-  llvm::Value * jit_ins_ne( const llvm::Value *& lhs , const llvm::Value *& rhs  );
-  llvm::Value * jit_ins_eq( const llvm::Value *& lhs , const llvm::Value *& rhs  );
-  llvm::Value * jit_ins_ge( const llvm::Value *& lhs , const llvm::Value *& rhs  );
-  llvm::Value * jit_ins_le( const llvm::Value *& lhs , const llvm::Value *& rhs  );
-  llvm::Value * jit_ins_gt( const llvm::Value *& lhs , const llvm::Value *& rhs  );
+  llvm::Value * llvm_lt( const llvm::Value *& lhs , const llvm::Value *& rhs  );
+  llvm::Value * llvm_ne( const llvm::Value *& lhs , const llvm::Value *& rhs  );
+  llvm::Value * llvm_eq( const llvm::Value *& lhs , const llvm::Value *& rhs  );
+  llvm::Value * llvm_ge( const llvm::Value *& lhs , const llvm::Value *& rhs  );
+  llvm::Value * llvm_le( const llvm::Value *& lhs , const llvm::Value *& rhs  );
+  llvm::Value * llvm_gt( const llvm::Value *& lhs , const llvm::Value *& rhs  );
 
   // Native PTX Unary operations
-  llvm::Value * jit_ins_neg( const llvm::Value *& lhs  );
-  llvm::Value * jit_ins_not( const llvm::Value *& lhs  );
-  llvm::Value * jit_ins_fabs( const llvm::Value *& lhs  );
-  //llvm::Value * jit_ins_floor( const llvm::Value *& lhs  );
-  //llvm::Value * jit_ins_sqrt( const llvm::Value *& lhs  );
+  llvm::Value * llvm_neg( const llvm::Value *& lhs  );
+  llvm::Value * llvm_not( const llvm::Value *& lhs  );
+  llvm::Value * llvm_fabs( const llvm::Value *& lhs  );
+  //llvm::Value * llvm_floor( const llvm::Value *& lhs  );
+  //llvm::Value * llvm_sqrt( const llvm::Value *& lhs  );
 
   // Imported PTX Unary operations single precision
-  // llvm::Value * jit_ins_sin_f32( const llvm::Value *& lhs  );
-  // llvm::Value * jit_ins_acos_f32( const llvm::Value *& lhs  );
-  // llvm::Value * jit_ins_asin_f32( const llvm::Value *& lhs  );
-  // llvm::Value * jit_ins_atan_f32( const llvm::Value *& lhs  );
-  // //llvm::Value * jit_ins_ceil_f32( const llvm::Value *& lhs  );
-  // llvm::Value * jit_ins_cos_f32( const llvm::Value *& lhs  );
-  // llvm::Value * jit_ins_cosh_f32( const llvm::Value *& lhs  );
-  // llvm::Value * jit_ins_exp_f32( const llvm::Value *& lhs  );
-  // llvm::Value * jit_ins_log_f32( const llvm::Value *& lhs  );
-  // llvm::Value * jit_ins_log10_f32( const llvm::Value *& lhs  );
-  // llvm::Value * jit_ins_sinh_f32( const llvm::Value *& lhs  );
-  // llvm::Value * jit_ins_tan_f32( const llvm::Value *& lhs  );
-  // llvm::Value * jit_ins_tanh_f32( const llvm::Value *& lhs  );
+  // llvm::Value * llvm_sin_f32( const llvm::Value *& lhs  );
+  // llvm::Value * llvm_acos_f32( const llvm::Value *& lhs  );
+  // llvm::Value * llvm_asin_f32( const llvm::Value *& lhs  );
+  // llvm::Value * llvm_atan_f32( const llvm::Value *& lhs  );
+  // //llvm::Value * llvm_ceil_f32( const llvm::Value *& lhs  );
+  // llvm::Value * llvm_cos_f32( const llvm::Value *& lhs  );
+  // llvm::Value * llvm_cosh_f32( const llvm::Value *& lhs  );
+  // llvm::Value * llvm_exp_f32( const llvm::Value *& lhs  );
+  // llvm::Value * llvm_log_f32( const llvm::Value *& lhs  );
+  // llvm::Value * llvm_log10_f32( const llvm::Value *& lhs  );
+  // llvm::Value * llvm_sinh_f32( const llvm::Value *& lhs  );
+  // llvm::Value * llvm_tan_f32( const llvm::Value *& lhs  );
+  // llvm::Value * llvm_tanh_f32( const llvm::Value *& lhs  );
 
   // Imported PTX Binary operations single precision
-  // llvm::Value * jit_ins_pow_f32( const llvm::Value *& lhs , const llvm::Value *& rhs  );
-  // llvm::Value * jit_ins_atan2_f32( const llvm::Value *& lhs , const llvm::Value *& rhs  );
+  // llvm::Value * llvm_pow_f32( const llvm::Value *& lhs , const llvm::Value *& rhs  );
+  // llvm::Value * llvm_atan2_f32( const llvm::Value *& lhs , const llvm::Value *& rhs  );
 
   // Imported PTX Unary operations double precision
-  // llvm::Value * jit_ins_sin_f64( const llvm::Value *& lhs  );
-  // llvm::Value * jit_ins_acos_f64( const llvm::Value *& lhs  );
-  // llvm::Value * jit_ins_asin_f64( const llvm::Value *& lhs  );
-  // llvm::Value * jit_ins_atan_f64( const llvm::Value *& lhs  );
-  // llvm::Value * jit_ins_ceil_f64( const llvm::Value *& lhs  );
-  // llvm::Value * jit_ins_cos_f64( const llvm::Value *& lhs  );
-  // llvm::Value * jit_ins_cosh_f64( const llvm::Value *& lhs  );
-  // llvm::Value * jit_ins_exp_f64( const llvm::Value *& lhs  );
-  // llvm::Value * jit_ins_log_f64( const llvm::Value *& lhs  );
-  // llvm::Value * jit_ins_log10_f64( const llvm::Value *& lhs  );
-  // llvm::Value * jit_ins_sinh_f64( const llvm::Value *& lhs  );
-  // llvm::Value * jit_ins_tan_f64( const llvm::Value *& lhs  );
-  // llvm::Value * jit_ins_tanh_f64( const llvm::Value *& lhs  );
+  // llvm::Value * llvm_sin_f64( const llvm::Value *& lhs  );
+  // llvm::Value * llvm_acos_f64( const llvm::Value *& lhs  );
+  // llvm::Value * llvm_asin_f64( const llvm::Value *& lhs  );
+  // llvm::Value * llvm_atan_f64( const llvm::Value *& lhs  );
+  // llvm::Value * llvm_ceil_f64( const llvm::Value *& lhs  );
+  // llvm::Value * llvm_cos_f64( const llvm::Value *& lhs  );
+  // llvm::Value * llvm_cosh_f64( const llvm::Value *& lhs  );
+  // llvm::Value * llvm_exp_f64( const llvm::Value *& lhs  );
+  // llvm::Value * llvm_log_f64( const llvm::Value *& lhs  );
+  // llvm::Value * llvm_log10_f64( const llvm::Value *& lhs  );
+  // llvm::Value * llvm_sinh_f64( const llvm::Value *& lhs  );
+  // llvm::Value * llvm_tan_f64( const llvm::Value *& lhs  );
+  // llvm::Value * llvm_tanh_f64( const llvm::Value *& lhs  );
 
   // Imported PTX Binary operations single precision
-  // llvm::Value * jit_ins_pow_f64( const llvm::Value *& lhs , const llvm::Value *& rhs  );
-  // llvm::Value * jit_ins_atan2_f64( const llvm::Value *& lhs , const llvm::Value *& rhs  );
+  // llvm::Value * llvm_pow_f64( const llvm::Value *& lhs , const llvm::Value *& rhs  );
+  // llvm::Value * llvm_atan2_f64( const llvm::Value *& lhs , const llvm::Value *& rhs  );
 
 
   // Select
-  //llvm::Value * jit_ins_selp( const llvm::Value *& lhs , const llvm::Value *& rhs , const llvm::Value *& p );
+  //llvm::Value * llvm_selp( const llvm::Value *& lhs , const llvm::Value *& rhs , const llvm::Value *& p );
 
-  void jit_ins_mov( llvm::Value *& dest , const llvm::Value *& src  );
-  void jit_ins_mov( llvm::Value *& dest , const std::string& src  );
+  void llvm_mov( llvm::Value *& dest , const llvm::Value *& src  );
+  void llvm_mov( llvm::Value *& dest , const std::string& src  );
 
-  void jit_ins_branch( jit_block_t& block );
-  void jit_ins_branch( const llvm::Value *& cond,  jit_block_t& block_true , jit_block_t& block_false );
+  void llvm_branch( jit_block_t& block );
+  void llvm_branch( const llvm::Value *& cond,  jit_block_t& block_true , jit_block_t& block_false );
 
-  jit_block_t jit_ins_start_new_block();
-  void jit_ins_start_block(  jit_block_t& label );
-  void jit_ins_comment(  const char * comment );
-  void jit_ins_exit();
-  void jit_ins_cond_exit( const llvm::Value *& cond );
+  jit_block_t llvm_start_new_block();
+  void llvm_start_block(  jit_block_t& label );
+  void llvm_comment(  const char * comment );
+  void llvm_exit();
+  void llvm_cond_exit( const llvm::Value *& cond );
 
   llvm::Value * jit_int_array_indirection( const llvm::Value *& idx , jit_llvm_builtin type );
 
-  llvm::Value * jit_ins_load ( const llvm::Value *& base , 
+  llvm::Value * llvm_load ( const llvm::Value *& base , 
 			     const llvm::Value *& offset , 
 			     jit_llvm_type type  );
 
-  void jit_ins_store( const llvm::Value *& base , 
+  void llvm_store( const llvm::Value *& base , 
 		      const llvm::Value *& offset , 
 		      jit_llvm_type type , 
 		      const llvm::Value *& val  );
 
   llvm::Value * llvm_thread_idx();
 
-  llvm::Value * jit_ins_phi( const llvm::Value *& v0 , jit_block_t& b0 ,
+  llvm::Value * llvm_phi( const llvm::Value *& v0 , jit_block_t& b0 ,
 			   const llvm::Value *& v1 , jit_block_t& b1 );
 
   class JitOp {

@@ -8,7 +8,7 @@ namespace QDP
   acos(const WordREG<float>& s1)
   {
     typename UnaryReturn<WordREG<float>, FnArcCos>::Type_t ret;
-    ret.setup( jit_ins_acos_f32( s1.get_val() ) );
+    ret.setup( llvm_acos_f32( s1.get_val() ) );
     return ret;
   }
 
@@ -16,7 +16,7 @@ namespace QDP
   asin(const WordREG<float>& s1)
   {
     typename UnaryReturn<WordREG<float>, FnArcSin>::Type_t ret;
-    ret.setup( jit_ins_asin_f32( s1.get_val() ) );
+    ret.setup( llvm_asin_f32( s1.get_val() ) );
     return ret;
   }
 
@@ -24,7 +24,7 @@ namespace QDP
   atan(const WordREG<float>& s1)
   {
     typename UnaryReturn<WordREG<float>, FnArcTan>::Type_t ret;
-    ret.setup( jit_ins_atan_f32( s1.get_val() ) );
+    ret.setup( llvm_atan_f32( s1.get_val() ) );
     return ret;
   }
 
@@ -32,7 +32,7 @@ namespace QDP
   cos(const WordREG<float>& s1)
   {
     typename UnaryReturn<WordREG<float>, FnCos>::Type_t ret;
-    ret.setup( jit_ins_cos_f32( s1.get_val() ) );
+    ret.setup( llvm_cos_f32( s1.get_val() ) );
     return ret;
   }
 
@@ -40,7 +40,7 @@ namespace QDP
   cosh(const WordREG<float>& s1)
   {
     typename UnaryReturn<WordREG<float>, FnHypCos>::Type_t ret;
-    ret.setup( jit_ins_cosh_f32( s1.get_val() ) );
+    ret.setup( llvm_cosh_f32( s1.get_val() ) );
     return ret;
   }
 
@@ -48,7 +48,7 @@ namespace QDP
   exp(const WordREG<float>& s1)
   {
     typename UnaryReturn<WordREG<float>, FnExp>::Type_t ret;
-    ret.setup( jit_ins_exp_f32( s1.get_val() ) );
+    ret.setup( llvm_exp_f32( s1.get_val() ) );
     return ret;
   }
 
@@ -56,7 +56,7 @@ namespace QDP
   log(const WordREG<float>& s1)
   {
     typename UnaryReturn<WordREG<float>, FnLog>::Type_t ret;
-    ret.setup( jit_ins_log_f32( s1.get_val() ) );
+    ret.setup( llvm_log_f32( s1.get_val() ) );
     return ret;
   }
 
@@ -64,7 +64,7 @@ namespace QDP
   log10(const WordREG<float>& s1)
   {
     typename UnaryReturn<WordREG<float>, FnLog10>::Type_t ret;
-    ret.setup( jit_ins_log10_f32( s1.get_val() ) );
+    ret.setup( llvm_log10_f32( s1.get_val() ) );
     return ret;
   }
 
@@ -72,7 +72,7 @@ namespace QDP
   sin(const WordREG<float>& s1)
   {
     typename UnaryReturn<WordREG<float>, FnSin>::Type_t ret;
-    ret.setup( jit_ins_sin_f32( s1.get_val() ) );
+    ret.setup( llvm_sin_f32( s1.get_val() ) );
     return ret;
   }
 
@@ -80,7 +80,7 @@ namespace QDP
   sinh(const WordREG<float>& s1)
   {
     typename UnaryReturn<WordREG<float>, FnHypSin>::Type_t ret;
-    ret.setup( jit_ins_sinh_f32( s1.get_val() ) );
+    ret.setup( llvm_sinh_f32( s1.get_val() ) );
     return ret;
   }
 
@@ -88,7 +88,7 @@ namespace QDP
   tan(const WordREG<float>& s1)
   {
     typename UnaryReturn<WordREG<float>, FnTan>::Type_t ret;
-    ret.setup( jit_ins_tan_f32( s1.get_val() ) );
+    ret.setup( llvm_tan_f32( s1.get_val() ) );
     return ret;
   }
 
@@ -96,7 +96,7 @@ namespace QDP
   tanh(const WordREG<float>& s1)
   {
     typename UnaryReturn<WordREG<float>, FnHypTan>::Type_t ret;
-    ret.setup( jit_ins_tanh_f32( s1.get_val() ) );
+    ret.setup( llvm_tanh_f32( s1.get_val() ) );
     return ret;
   }
 
@@ -105,7 +105,7 @@ namespace QDP
   pow(const WordREG<float>& s1, const WordREG<float>& s2)
   {
     typename UnaryReturn<WordREG<float>, FnHypTan>::Type_t ret;
-    ret.setup( jit_ins_pow_f32( s1.get_val() , s2.get_val() ) );
+    ret.setup( llvm_pow_f32( s1.get_val() , s2.get_val() ) );
     return ret;
   }
 
@@ -113,7 +113,7 @@ namespace QDP
   atan2(const WordREG<float>& s1, const WordREG<float>& s2)
   {
     typename UnaryReturn<WordREG<float>, FnArcTan2>::Type_t ret;
-    ret.setup( jit_ins_atan2_f32( s1.get_val() , s2.get_val() ) );
+    ret.setup( llvm_atan2_f32( s1.get_val() , s2.get_val() ) );
     return ret;
   }
 
@@ -124,7 +124,7 @@ namespace QDP
   sin(const WordREG<double>& s1)
   {
     typename UnaryReturn<WordREG<double>, FnSin>::Type_t ret;
-    ret.setup( jit_ins_sin_f64( s1.get_val() ) );
+    ret.setup( llvm_sin_f64( s1.get_val() ) );
     return ret;
   }
 
@@ -132,7 +132,7 @@ namespace QDP
   acos(const WordREG<double>& s1)
   {
     typename UnaryReturn<WordREG<double>, FnArcCos>::Type_t ret;
-    ret.setup( jit_ins_acos_f64( s1.get_val() ) );
+    ret.setup( llvm_acos_f64( s1.get_val() ) );
     return ret;
   }
 
@@ -140,7 +140,7 @@ namespace QDP
   asin(const WordREG<double>& s1)
   {
     typename UnaryReturn<WordREG<double>, FnArcSin>::Type_t ret;
-    ret.setup( jit_ins_asin_f64( s1.get_val() ) );
+    ret.setup( llvm_asin_f64( s1.get_val() ) );
     return ret;
   }
 
@@ -148,7 +148,7 @@ namespace QDP
   atan(const WordREG<double>& s1)
   {
     typename UnaryReturn<WordREG<double>, FnArcTan>::Type_t ret;
-    ret.setup( jit_ins_atan_f64( s1.get_val() ) );
+    ret.setup( llvm_atan_f64( s1.get_val() ) );
     return ret;
   }
 
@@ -156,7 +156,7 @@ namespace QDP
   cos(const WordREG<double>& s1)
   {
     typename UnaryReturn<WordREG<double>, FnCos>::Type_t ret;
-    ret.setup( jit_ins_cos_f64( s1.get_val() ) );
+    ret.setup( llvm_cos_f64( s1.get_val() ) );
     return ret;
   }
   
@@ -164,7 +164,7 @@ namespace QDP
   cosh(const WordREG<double>& s1)
   {
     typename UnaryReturn<WordREG<double>, FnHypCos>::Type_t ret;
-    ret.setup( jit_ins_cosh_f64( s1.get_val() ) );
+    ret.setup( llvm_cosh_f64( s1.get_val() ) );
     return ret;
   }
 
@@ -172,7 +172,7 @@ namespace QDP
   exp(const WordREG<double>& s1)
   {
     typename UnaryReturn<WordREG<double>, FnExp>::Type_t ret;
-    ret.setup( jit_ins_exp_f64( s1.get_val() ) );
+    ret.setup( llvm_exp_f64( s1.get_val() ) );
     return ret;
   }
 
@@ -180,7 +180,7 @@ namespace QDP
   log(const WordREG<double>& s1)
   {
     typename UnaryReturn<WordREG<double>, FnLog>::Type_t ret;
-    ret.setup( jit_ins_log_f64( s1.get_val() ) );
+    ret.setup( llvm_log_f64( s1.get_val() ) );
     return ret;
   }
 
@@ -188,7 +188,7 @@ namespace QDP
   log10(const WordREG<double>& s1)
   {
     typename UnaryReturn<WordREG<double>, FnLog10>::Type_t ret;
-    ret.setup( jit_ins_log10_f64( s1.get_val() ) );
+    ret.setup( llvm_log10_f64( s1.get_val() ) );
     return ret;
   }
 
@@ -196,7 +196,7 @@ namespace QDP
   sinh(const WordREG<double>& s1)
   {
     typename UnaryReturn<WordREG<double>, FnHypSin>::Type_t ret;
-    ret.setup( jit_ins_sinh_f64( s1.get_val() ) );
+    ret.setup( llvm_sinh_f64( s1.get_val() ) );
     return ret;
   }
 
@@ -204,7 +204,7 @@ namespace QDP
   tan(const WordREG<double>& s1)
   {
     typename UnaryReturn<WordREG<double>, FnTan>::Type_t ret;
-    ret.setup( jit_ins_tan_f64( s1.get_val() ) );
+    ret.setup( llvm_tan_f64( s1.get_val() ) );
     return ret;
   }
 
@@ -212,7 +212,7 @@ namespace QDP
   tanh(const WordREG<double>& s1)
   {
     typename UnaryReturn<WordREG<double>, FnHypTan>::Type_t ret;
-    ret.setup( jit_ins_tanh_f64( s1.get_val() ) );
+    ret.setup( llvm_tanh_f64( s1.get_val() ) );
     return ret;
   }
 
@@ -221,7 +221,7 @@ namespace QDP
   pow(const WordREG<double>& s1, const WordREG<double>& s2)
   {
     typename UnaryReturn<WordREG<double>, FnHypTan>::Type_t ret;
-    ret.setup( jit_ins_pow_f64( s1.get_val() , s2.get_val() ) );
+    ret.setup( llvm_pow_f64( s1.get_val() , s2.get_val() ) );
     return ret;
   }
 
@@ -229,7 +229,7 @@ namespace QDP
   atan2(const WordREG<double>& s1, const WordREG<double>& s2)
   {
     typename UnaryReturn<WordREG<double>, FnArcTan2>::Type_t ret;
-    ret.setup( jit_ins_atan2_f64( s1.get_val() , s2.get_val() ) );
+    ret.setup( llvm_atan2_f64( s1.get_val() , s2.get_val() ) );
     return ret;
   }
 #endif

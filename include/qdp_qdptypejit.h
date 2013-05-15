@@ -36,21 +36,21 @@ namespace QDP {
 
     // llvm::Value * getThreadedBase( JitDeviceLayout lay ) const {
     //   llvm::Value * wordsize = llvm_create_value( sizeof(typename WordType<T>::Type_t) );
-    //   llvm::Value * ret0 = jit_ins_mul( index_m , wordsize );
+    //   llvm::Value * ret0 = llvm_mul( index_m , wordsize );
     //   if ( lay != JitDeviceLayout::Coalesced ) {
     // 	llvm::Value * tsize = llvm_create_value( T::Size_t );
-    // 	llvm::Value * ret1 = jit_ins_mul( ret0 , tsize );
-    // 	llvm::Value * ret2 = jit_ins_add( ret1 , base_m );
+    // 	llvm::Value * ret1 = llvm_mul( ret0 , tsize );
+    // 	llvm::Value * ret2 = llvm_add( ret1 , base_m );
     // 	return ret2;
     //   }
-    //   llvm::Value * ret1 = jit_ins_add( ret0 , base_m );
+    //   llvm::Value * ret1 = llvm_add( ret0 , base_m );
     //   return ret1;
     // }
 
     // llvm::Value * getThreadedOffset( JitDeviceLayout lay ) const {
     //   if ( lay != JitDeviceLayout::Coalesced ) {
     // 	llvm::Value * tsize = llvm_create_value( T::Size_t );
-    // 	return jit_ins_mul( index_m , tsize );
+    // 	return llvm_mul( index_m , tsize );
     //   }
     //   return index_m;
     // }

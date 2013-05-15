@@ -22,11 +22,11 @@ namespace QDP {
   llvm::Value * r_start        = llvm_add_param(  jit_llvm_builtin::i32 );
   llvm::Value * r_end          = llvm_add_param(  jit_llvm_builtin::i32 );
   llvm::Value * r_do_site_perm = llvm_add_param(  jit_llvm_builtin::i1 );
-  llvm::Value * r_no_site_perm = jit_ins_not( r_do_site_perm );
+  llvm::Value * r_no_site_perm = llvm_not( r_do_site_perm );
 
   llvm::Value * r_idx_thread = llvm_thread_idx();
 
-  jit_ins_cond_exit( jit_ins_ge( r_idx_thread , r_th_count ) );
+  llvm_cond_exit( llvm_ge( r_idx_thread , r_th_count ) );
 
   jit_block_t block_no_site_perm_exit;
   jit_block_t block_no_site_perm;
@@ -35,43 +35,43 @@ namespace QDP {
 
   llvm::Value * r_idx_perm_phi0;
   llvm::Value * r_idx_perm_phi1;
-  jit_ins_branch( r_no_site_perm , block_no_site_perm , block_site_perm );
+  llvm_branch( r_no_site_perm , block_no_site_perm , block_site_perm );
   {
-    jit_ins_start_block(block_site_perm);
+    llvm_start_block(block_site_perm);
     r_idx_perm_phi0 = jit_int_array_indirection( r_idx_thread , jit_llvm_builtin::i32 ); // PHI 0
-    jit_ins_branch( block_no_site_perm_exit );
+    llvm_branch( block_no_site_perm_exit );
   }
-  jit_ins_start_block(block_no_site_perm);
+  llvm_start_block(block_no_site_perm);
   {
-    llvm::Value * r_not_ordered = jit_ins_not(r_ordered);
-    jit_ins_branch( r_not_ordered , block_no_site_perm_exit , block_add_start );
-    jit_ins_start_block(block_add_start);
-    r_idx_perm_phi1 = jit_ins_add( r_idx_thread , r_start ); // PHI 1
-    jit_ins_branch( block_no_site_perm_exit );
+    llvm::Value * r_not_ordered = llvm_not(r_ordered);
+    llvm_branch( r_not_ordered , block_no_site_perm_exit , block_add_start );
+    llvm_start_block(block_add_start);
+    r_idx_perm_phi1 = llvm_add( r_idx_thread , r_start ); // PHI 1
+    llvm_branch( block_no_site_perm_exit );
   }
-  jit_ins_start_block(block_no_site_perm_exit);
+  llvm_start_block(block_no_site_perm_exit);
 
-  llvm::Value * r_idx = jit_ins_phi( r_idx_perm_phi0 , block_site_perm , r_idx_perm_phi1 , block_add_start );
+  llvm::Value * r_idx = llvm_phi( r_idx_perm_phi0 , block_site_perm , r_idx_perm_phi1 , block_add_start );
 
 
   jit_block_t block_ordered;
   jit_block_t block_not_ordered;
   jit_block_t block_ordered_exit;
-  jit_ins_branch( r_ordered , block_ordered , block_not_ordered );
+  llvm_branch( r_ordered , block_ordered , block_not_ordered );
   {
-    jit_ins_start_block(block_not_ordered);
+    llvm_start_block(block_not_ordered);
     llvm::Value * r_ismember     = jit_int_array_indirection( r_idx , jit_llvm_builtin::i1 );
-    llvm::Value * r_ismember_not = jit_ins_not( r_ismember );
-    jit_ins_cond_exit( r_ismember_not );
-    jit_ins_branch( block_ordered_exit );
+    llvm::Value * r_ismember_not = llvm_not( r_ismember );
+    llvm_cond_exit( r_ismember_not );
+    llvm_branch( block_ordered_exit );
   }
   {
-    jit_ins_start_block(block_ordered);
-    jit_ins_cond_exit( jit_ins_gt( r_idx , r_end ) );
-    jit_ins_cond_exit( jit_ins_lt( r_idx , r_start ) );
-    jit_ins_branch( block_ordered_exit );
+    llvm_start_block(block_ordered);
+    llvm_cond_exit( llvm_gt( r_idx , r_end ) );
+    llvm_cond_exit( llvm_lt( r_idx , r_start ) );
+    llvm_branch( block_ordered_exit );
   }
-  jit_ins_start_block(block_ordered_exit);
+  llvm_start_block(block_ordered_exit);
 #endif
 
 
@@ -188,26 +188,26 @@ function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScala
 
   llvm::Value * r_idx_thread = llvm_thread_idx();
 
-  jit_ins_exit( jit_ins_ge( r_idx_thread , r_th_count ) );
+  llvm_exit( llvm_ge( r_idx_thread , r_th_count ) );
 
   llvm::Value * r_idx = r_idx_thread;
 
   jit_block_t block_ordered;
   jit_block_t block_ordered_exit;
-  jit_ins_branch( block_ordered , r_ordered );
+  llvm_branch( block_ordered , r_ordered );
   {
     llvm::Value * r_member = llvm_add_param(  jit_llvm_builtin::u64 );  // Subset
-    llvm::Value * r_member_addr        = jit_ins_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
-    llvm::Value * r_ismember           = jit_ins_load ( r_member_addr , 0 , jit_llvm_builtin::i1 );
-    llvm::Value * r_ismember_not       = jit_ins_not( r_ismember );
-    jit_ins_exit( r_ismember_not );
-    jit_ins_branch( block_ordered_exit );
+    llvm::Value * r_member_addr        = llvm_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
+    llvm::Value * r_ismember           = llvm_load ( r_member_addr , 0 , jit_llvm_builtin::i1 );
+    llvm::Value * r_ismember_not       = llvm_not( r_ismember );
+    llvm_exit( r_ismember_not );
+    llvm_branch( block_ordered_exit );
   }
-  jit_ins_start_block(block_ordered);
+  llvm_start_block(block_ordered);
   {
-    r_idx = jit_ins_add( r_idx_thread , r_start );
+    r_idx = llvm_add( r_idx_thread , r_start );
   }
-  jit_ins_start_block(block_ordered_exit);
+  llvm_start_block(block_ordered_exit);
 
   ParamLeaf param_leaf(  r_idx );
   
@@ -249,26 +249,26 @@ function_zero_rep_build(OLattice<T>& dest)
 
   llvm::Value * r_idx_thread = llvm_thread_idx();
 
-  jit_ins_exit( jit_ins_ge( r_idx_thread , r_th_count ) );
+  llvm_exit( llvm_ge( r_idx_thread , r_th_count ) );
 
   llvm::Value * r_idx = r_idx_thread;
 
   jit_block_t block_ordered;
   jit_block_t block_ordered_exit;
-  jit_ins_branch( block_ordered , r_ordered );
+  llvm_branch( block_ordered , r_ordered );
   {
     llvm::Value * r_member = llvm_add_param(  jit_llvm_builtin::u64 );  // Subset
-    llvm::Value * r_member_addr        = jit_ins_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
-    llvm::Value * r_ismember           = jit_ins_load ( r_member_addr , 0 , jit_llvm_builtin::i1 );
-    llvm::Value * r_ismember_not       = jit_ins_not( r_ismember );
-    jit_ins_exit( r_ismember_not );
-    jit_ins_branch( block_ordered_exit );
+    llvm::Value * r_member_addr        = llvm_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
+    llvm::Value * r_ismember           = llvm_load ( r_member_addr , 0 , jit_llvm_builtin::i1 );
+    llvm::Value * r_ismember_not       = llvm_not( r_ismember );
+    llvm_exit( r_ismember_not );
+    llvm_branch( block_ordered_exit );
   }
-  jit_ins_start_block(block_ordered);
+  llvm_start_block(block_ordered);
   {
-    r_idx = jit_ins_add( r_idx_thread , r_start );
+    r_idx = llvm_add( r_idx_thread , r_start );
   }
-  jit_ins_start_block(block_ordered_exit);
+  llvm_start_block(block_ordered_exit);
 
   ParamLeaf param_leaf(  r_idx );
 
@@ -346,10 +346,10 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
 
   llvm::Value * r_idx_thread = llvm_thread_idx();
 
-  llvm::Value * r_out_of_range       = jit_ins_gt( r_idx_thread , jit_ins_sub( r_hi , r_lo ) );
-  jit_ins_exit(  r_out_of_range );
+  llvm::Value * r_out_of_range       = llvm_gt( r_idx_thread , llvm_sub( r_hi , r_lo ) );
+  llvm_exit(  r_out_of_range );
 
-  llvm::Value * r_idx = jit_ins_add( r_lo , r_idx_thread );
+  llvm::Value * r_idx = llvm_add( r_lo , r_idx_thread );
 
   ParamLeaf param_leaf(  r_idx );
 
@@ -381,12 +381,12 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
 
   fill_random( dest_jit.elem(JitDeviceLayout::Coalesced) , seed_reg , skewed_seed_reg , ran_mult_n_reg );
 
-  llvm::Value * r_no_save = jit_ins_ne( r_idx_thread , llvm::Value *(0) );
+  llvm::Value * r_no_save = llvm_ne( r_idx_thread , llvm::Value *(0) );
 
   jit_block_t block_nosave;
-  jit_ins_branch(  block_nosave , r_no_save );
+  llvm_branch(  block_nosave , r_no_save );
   seed_tmp_jit.elem() = seed_reg;
-  jit_ins_start_block(  block_nosave );
+  llvm_start_block(  block_nosave );
 
   return jit_get_cufunction("ll_random.ll");
 #endif
@@ -417,13 +417,13 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
 
   llvm::Value * r_idx = llvm_thread_idx();  
 
-  llvm::Value * r_out_of_range       = jit_ins_ge( r_idx , r_hi );
-  jit_ins_exit(  r_out_of_range );
+  llvm::Value * r_out_of_range       = llvm_ge( r_idx , r_hi );
+  llvm_exit(  r_out_of_range );
 
   llvm::Value * r_perm_array_addr      = llvm_add_param(  jit_llvm_builtin::u64 );  // Site permutation array
-  llvm::Value * r_idx_mul_4            = jit_ins_mul( r_idx , llvm::Value *(4) );
-  llvm::Value * r_perm_array_addr_load = jit_ins_add( r_perm_array_addr , r_idx_mul_4 );
-  llvm::Value * r_idx_perm             = jit_ins_load ( r_perm_array_addr_load , 0 , jit_llvm_builtin::i32 );
+  llvm::Value * r_idx_mul_4            = llvm_mul( r_idx , llvm::Value *(4) );
+  llvm::Value * r_perm_array_addr_load = llvm_add( r_perm_array_addr , r_idx_mul_4 );
+  llvm::Value * r_idx_perm             = llvm_load ( r_perm_array_addr_load , 0 , jit_llvm_builtin::i32 );
 
   llvm::Value * r_gather_buffer        = llvm_add_param(  jit_llvm_builtin::u64 );  // Gather buffer
 
