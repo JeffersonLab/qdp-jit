@@ -1306,7 +1306,7 @@ struct UnaryReturn<PMatrixREG<T,N,C>, FnPeekColorVectorREG> {
 
 template<class T, int N, template<class,int> class C>
 inline typename UnaryReturn<PMatrixREG<T,N,C>, FnPeekColorVectorREG>::Type_t
-peekColor(const PMatrixREG<T,N,C>& l, jit_value row)
+peekColor(const PMatrixREG<T,N,C>& l, llvm::Value* row)
 {
   typename UnaryReturn<PMatrixREG<T,N,C>, FnPeekColorVectorREG>::Type_t  d;
 
@@ -1325,7 +1325,7 @@ struct UnaryReturn<PMatrixREG<T,N,C>, FnPeekColorMatrixREG> {
 
 template<class T, int N, template<class,int> class C>
 inline typename UnaryReturn<PMatrixREG<T,N,C>, FnPeekColorMatrixREG>::Type_t
-peekColor(const PMatrixREG<T,N,C>& l, jit_value row, jit_value col)
+peekColor(const PMatrixREG<T,N,C>& l, llvm::Value* row, llvm::Value* col)
 {
   typename UnaryReturn<PMatrixREG<T,N,C>, FnPeekColorMatrixREG>::Type_t  d;
 

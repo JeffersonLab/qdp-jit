@@ -31,10 +31,10 @@
 
 namespace QDP {
 
-  llvm::IRBuilder<> *builder;
-  llvm::BasicBlock  *entry;
-  llvm::Function    *mainFunc;
-  llvm::Module      *Mod;
+  // llvm::IRBuilder<> *builder;
+  // llvm::BasicBlock  *entry;
+  extern llvm::Function    *mainFunc;
+  //extern llvm::Module      *Mod;
 
   llvm::Value * llvm_create_value( double v );
   llvm::Value * llvm_create_value( int v );
@@ -61,7 +61,7 @@ namespace QDP {
     llvm::Value * r_rcvbuf;
   };
 
-
+  void llvm_start_new_function();
   void llvm_wrapper_init();
   llvm::PHINode * llvm_phi( llvm::Type* type, unsigned num = 0 );
   llvm::Type* promote( llvm::Type* t0 , llvm::Type* t1 );
@@ -131,7 +131,12 @@ namespace QDP {
   void          llvm_store_ptr_idx( llvm::Value * val , llvm::Value * ptr , llvm::Value * idx );
 
   template<class T>
-  llvm::Value* llvm_array_type_indirection( llvm::Value* idx );
+  llvm::Value* llvm_array_type_indirection( llvm::Value* idx )
+  {
+    llvm::Value* base = llvm_add_param<T>();
+    llvm::Value* gep = llvm_createGEP( base , idx );
+    return llvm_load( gep );
+  }
 
   llvm::Value * llvm_special( const char * name );
 

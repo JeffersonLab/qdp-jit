@@ -74,7 +74,7 @@ namespace QDP {
 
 
   template<class T>
-    std::shared_ptr<T> get(const jit_value & pA) {
+    std::shared_ptr<T> get(const llvm::Value* & pA) {
     return std::dynamic_pointer_cast< T >( pA );
   }
 
@@ -169,24 +169,24 @@ namespace QDP {
   llvm::Value * llvm_create_value(jit_llvm_type type);
 
 
-  class jit_value {
-    jit_value( const jit_value& rhs );
+  class llvm::Value* {
+    llvm_create_value( const llvm::Value*& rhs );
   public:
 
 
-    jit_value& operator=( const jit_value& rhs );
+    llvm::Value*& operator=( const llvm::Value*& rhs );
 
-    jit_value();
-    jit_value( int val );
-    jit_value( size_t val );
-    jit_value( double val );
-    explicit jit_value( jit_llvm_type type_ );
+    llvm_create_value();
+    llvm_create_value( int val );
+    llvm_create_value( size_t val );
+    llvm_create_value( double val );
+    explicit llvm_create_value( jit_llvm_type type_ );
 
 
     
     void reg_alloc();
-    void assign( const jit_value& rhs );
-    ~jit_value() {}
+    void assign( const llvm::Value*& rhs );
+    ~llvm_create_value() {}
 
     jit_llvm_type get_type() const;
 
@@ -198,7 +198,7 @@ namespace QDP {
     bool get_ever_assigned() const { return ever_assigned; }
     void set_ever_assigned() { ever_assigned = true; }
 
-    friend std::ostream& operator<< (std::ostream& stream, const jit_value& op) {
+    friend std::ostream& operator<< (std::ostream& stream, const llvm::Value*& op) {
       if (op.is_constant) {
 	if (op.is_int) 
 	  stream << op.const_int;

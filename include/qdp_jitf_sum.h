@@ -28,23 +28,23 @@ void function_sum_exec( CUfunction function,
 
     jit_start_new_function();
 
-    jit_value r_lo     = llvm_add_param( jit_ptx_type::s32 );
-    jit_value r_hi     = llvm_add_param( jit_ptx_type::s32 );
+    llvm::Value* r_lo     = llvm_add_param( jit_ptx_type::s32 );
+    llvm::Value* r_hi     = llvm_add_param( jit_ptx_type::s32 );
 
-    jit_value r_idx = llvm_thread_idx();
+    llvm::Value* r_idx = llvm_thread_idx();
 
     // I'll do always a site perm here
     // Can eventually be optimized if orderedSubset
-    jit_value r_perm_array_addr      = llvm_add_param( jit_ptx_type::u64 );  // Site permutation array
-    jit_value r_idx_mul_4            = llvm_mul( r_idx , jit_value(4) );
-    jit_value r_perm_array_addr_load = llvm_add( r_perm_array_addr , r_idx_mul_4 );
-    jit_value r_idx_perm             = llvm_load ( r_perm_array_addr_load , 0 , jit_ptx_type::s32 );
+    llvm::Value* r_perm_array_addr      = llvm_add_param( jit_ptx_type::u64 );  // Site permutation array
+    llvm::Value* r_idx_mul_4            = llvm_mul( r_idx , llvm_create_value(4) );
+    llvm::Value* r_perm_array_addr_load = llvm_add( r_perm_array_addr , r_idx_mul_4 );
+    llvm::Value* r_idx_perm             = llvm_load ( r_perm_array_addr_load , 0 , jit_ptx_type::s32 );
 
-    jit_value r_idata      = llvm_add_param( jit_ptx_type::u64 );  // Input  array
-    jit_value r_odata      = llvm_add_param( jit_ptx_type::u64 );  // output array
-    jit_value r_block_idx  = jit_geom_get_ctaidx();
-    jit_value r_tidx       = jit_geom_get_tidx();
-    jit_value r_shared     = jit_get_shared_mem_ptr();
+    llvm::Value* r_idata      = llvm_add_param( jit_ptx_type::u64 );  // Input  array
+    llvm::Value* r_odata      = llvm_add_param( jit_ptx_type::u64 );  // output array
+    llvm::Value* r_block_idx  = jit_geom_get_ctaidx();
+    llvm::Value* r_tidx       = jit_geom_get_tidx();
+    llvm::Value* r_shared     = jit_get_shared_mem_ptr();
   
     OLatticeJIT<typename JITType<T1>::Type_t> idata( r_idata , r_idx_perm );   // want coal   access later
     OLatticeJIT<typename JITType<T2>::Type_t> odata( r_odata , r_block_idx );  // want scalar access later
@@ -67,25 +67,25 @@ void function_sum_exec( CUfunction function,
 
     llvm_bar_sync( 0 );
 
-    jit_value val_ntid = jit_geom_get_ntidx();
+    llvm::Value* val_ntid = jit_geom_get_ntidx();
 
     //
     // Find next power of 2 loop
     //
-    jit_value r_pred_pow(1);
+    llvm::Value* r_pred_pow(1);
     jit_label_t label_power_end;
     jit_label_t label_power_start;
     llvm_label(  label_power_start );
 
-    jit_value pred_ge = llvm_ge( r_pred_pow , val_ntid );
+    llvm::Value* pred_ge = llvm_ge( r_pred_pow , val_ntid );
     llvm_branch(  label_power_end , pred_ge );
-    jit_value new_pred = llvm_shl( r_pred_pow , jit_value(1) );
+    llvm::Value* new_pred = llvm_shl( r_pred_pow , llvm_create_value(1) );
     llvm_mov( r_pred_pow , new_pred );
   
     llvm_branch(  label_power_start );
     llvm_label(  label_power_end );
 
-    new_pred = llvm_shr( r_pred_pow , jit_value(1) );
+    new_pred = llvm_shr( r_pred_pow , llvm_create_value(1) );
     llvm_mov( r_pred_pow , new_pred );
 
     //
@@ -96,14 +96,14 @@ void function_sum_exec( CUfunction function,
     jit_label_t label_loop_end;
     llvm_label(  label_loop_start );
 
-    jit_value pred_branch_end = llvm_le( r_pred_pow , jit_value(0) );
+    llvm::Value* pred_branch_end = llvm_le( r_pred_pow , llvm_create_value(0) );
     llvm_branch(  label_loop_end , pred_branch_end );
 
-    jit_value pred_branch_sync = llvm_ge( jit_geom_get_tidx() , r_pred_pow );
+    llvm::Value* pred_branch_sync = llvm_ge( jit_geom_get_tidx() , r_pred_pow );
     llvm_branch(  label_loop_sync , pred_branch_sync );
 
-    jit_value val_s_plus_tid = llvm_add( r_pred_pow , jit_geom_get_tidx() );
-    jit_value pred_branch_sync2 = llvm_ge( val_s_plus_tid , jit_geom_get_ntidx() );
+    llvm::Value* val_s_plus_tid = llvm_add( r_pred_pow , jit_geom_get_tidx() );
+    llvm::Value* pred_branch_sync2 = llvm_ge( val_s_plus_tid , jit_geom_get_ntidx() );
     llvm_branch(  label_loop_sync , pred_branch_sync2 );
 
     OLatticeJIT<typename JITType<T2>::Type_t> sdata_plus_s(  r_shared , 
@@ -116,7 +116,7 @@ void function_sum_exec( CUfunction function,
     llvm_label(  label_loop_sync );  
     llvm_bar_sync(  0 );
 
-    new_pred = llvm_shr( r_pred_pow , jit_value(1) );
+    new_pred = llvm_shr( r_pred_pow , llvm_create_value(1) );
     llvm_mov( r_pred_pow , new_pred );
 
     llvm_branch(  label_loop_start );
@@ -124,7 +124,7 @@ void function_sum_exec( CUfunction function,
     llvm_label(  label_loop_end );  
 
     jit_label_t label_exit;
-    jit_value pred_branch_exit = llvm_ne( jit_geom_get_tidx() , jit_value(0) );
+    llvm::Value* pred_branch_exit = llvm_ne( jit_geom_get_tidx() , llvm_create_value(0) );
     llvm_branch(  label_exit , pred_branch_exit );
 
     typename REGType< typename JITType<T2>::Type_t >::Type_t sdata_reg;   // this is stupid
@@ -153,17 +153,17 @@ void function_sum_exec( CUfunction function,
 
     jit_start_new_function();
 
-    jit_value r_lo     = llvm_add_param(  jit_ptx_type::s32 );
-    jit_value r_hi     = llvm_add_param(  jit_ptx_type::s32 );
+    llvm::Value* r_lo     = llvm_add_param(  jit_ptx_type::s32 );
+    llvm::Value* r_hi     = llvm_add_param(  jit_ptx_type::s32 );
 
-    jit_value r_idx = llvm_thread_idx();  
+    llvm::Value* r_idx = llvm_thread_idx();  
 
 
-    jit_value r_idata      = llvm_add_param(  jit_ptx_type::u64 );  // Input  array
-    jit_value r_odata      = llvm_add_param(  jit_ptx_type::u64 );  // output array
-    jit_value r_block_idx  = jit_geom_get_ctaidx();
-    jit_value r_tidx       = jit_geom_get_tidx();
-    jit_value r_shared     = jit_get_shared_mem_ptr();
+    llvm::Value* r_idata      = llvm_add_param(  jit_ptx_type::u64 );  // Input  array
+    llvm::Value* r_odata      = llvm_add_param(  jit_ptx_type::u64 );  // output array
+    llvm::Value* r_block_idx  = jit_geom_get_ctaidx();
+    llvm::Value* r_tidx       = jit_geom_get_tidx();
+    llvm::Value* r_shared     = jit_get_shared_mem_ptr();
   
     OLatticeJIT<typename JITType<T1>::Type_t> idata(  r_idata , r_idx );   // want coal   access later
     OLatticeJIT<typename JITType<T1>::Type_t> odata(  r_odata , r_block_idx );  // want scalar access later
@@ -189,25 +189,25 @@ void function_sum_exec( CUfunction function,
 
     llvm_bar_sync(  0 );
 
-    jit_value val_ntid = jit_geom_get_ntidx();
+    llvm::Value* val_ntid = jit_geom_get_ntidx();
 
     //
     // Find next power of 2 loop
     //
-    jit_value r_pred_pow(1);
+    llvm::Value* r_pred_pow(1);
     jit_label_t label_power_end;
     jit_label_t label_power_start;
     llvm_label(  label_power_start );
 
-    jit_value pred_ge = llvm_ge( r_pred_pow , val_ntid );
+    llvm::Value* pred_ge = llvm_ge( r_pred_pow , val_ntid );
     llvm_branch(  label_power_end , pred_ge );
-    jit_value new_pred = llvm_shl( r_pred_pow , jit_value(1) );
+    llvm::Value* new_pred = llvm_shl( r_pred_pow , llvm_create_value(1) );
     llvm_mov( r_pred_pow , new_pred );
   
     llvm_branch(  label_power_start );
     llvm_label(  label_power_end );
 
-    new_pred = llvm_shr( r_pred_pow , jit_value(1) );
+    new_pred = llvm_shr( r_pred_pow , llvm_create_value(1) );
     llvm_mov( r_pred_pow , new_pred );
 
     //
@@ -218,14 +218,14 @@ void function_sum_exec( CUfunction function,
     jit_label_t label_loop_end;
     llvm_label(  label_loop_start );
 
-    jit_value pred_branch_end = llvm_le( r_pred_pow , jit_value(0) );
+    llvm::Value* pred_branch_end = llvm_le( r_pred_pow , llvm_create_value(0) );
     llvm_branch(  label_loop_end , pred_branch_end );
 
-    jit_value pred_branch_sync = llvm_ge( jit_geom_get_tidx() , r_pred_pow );
+    llvm::Value* pred_branch_sync = llvm_ge( jit_geom_get_tidx() , r_pred_pow );
     llvm_branch(  label_loop_sync , pred_branch_sync );
 
-    jit_value val_s_plus_tid = llvm_add( r_pred_pow , jit_geom_get_tidx() );
-    jit_value pred_branch_sync2 = llvm_ge( val_s_plus_tid , jit_geom_get_ntidx() );
+    llvm::Value* val_s_plus_tid = llvm_add( r_pred_pow , jit_geom_get_tidx() );
+    llvm::Value* pred_branch_sync2 = llvm_ge( val_s_plus_tid , jit_geom_get_ntidx() );
     llvm_branch(  label_loop_sync , pred_branch_sync2 );
 
     OLatticeJIT<typename JITType<T1>::Type_t> sdata_plus_s(  r_shared , 
@@ -238,7 +238,7 @@ void function_sum_exec( CUfunction function,
     llvm_label(  label_loop_sync );  
     llvm_bar_sync(  0 );
 
-    new_pred = llvm_shr( r_pred_pow , jit_value(1) );
+    new_pred = llvm_shr( r_pred_pow , llvm_create_value(1) );
     llvm_mov( r_pred_pow , new_pred );
 
     llvm_branch(  label_loop_start );
@@ -246,7 +246,7 @@ void function_sum_exec( CUfunction function,
     llvm_label(  label_loop_end );  
 
     jit_label_t label_exit;
-    jit_value pred_branch_exit = llvm_ne( jit_geom_get_tidx() , jit_value(0) );
+    llvm::Value* pred_branch_exit = llvm_ne( jit_geom_get_tidx() , llvm_create_value(0) );
     llvm_branch(  label_exit , pred_branch_exit );
 
     typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_reg;   // this is stupid

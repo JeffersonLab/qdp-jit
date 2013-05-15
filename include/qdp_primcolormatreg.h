@@ -464,20 +464,24 @@ struct UnaryReturn<PColorMatrixREG<T,N>, FnPeekColorMatrixREG > {
 
 template<class T, int N>
 inline typename UnaryReturn<PColorMatrixREG<T,N>, FnPeekColorMatrixREG>::Type_t
-peekColor(const PColorMatrixREG<T,N>& l, jit_value row, jit_value col)
+peekColor(const PColorMatrixREG<T,N>& l, llvm::Value* row, llvm::Value* col)
 {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
   typename UnaryReturn<PColorMatrixREG<T,N>, FnPeekColorMatrixREG>::Type_t  d;
 
   typedef typename JITType< PColorMatrixREG<T,N> >::Type_t TTjit;
 
-  jit_value ptr_local = jit_allocate_local( jit_type<typename WordType<T>::Type_t>::value , TTjit::Size_t );
+  llvm::Value* ptr_local = jit_allocate_local( jit_type<typename WordType<T>::Type_t>::value , TTjit::Size_t );
 
   TTjit dj;
-  dj.setup( ptr_local, jit_value(1) , jit_value(0) );
+  dj.setup( ptr_local, llvm_create_value(1) , llvm_create_value(0) );
   dj=l;
 
   d.elem() = dj.getRegElem(row,col);
   return d;
+#endif
 }
 
 //! Insert color matrix components

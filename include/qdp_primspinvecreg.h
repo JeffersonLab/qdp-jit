@@ -412,7 +412,7 @@ getSite(const PSpinVectorREG<T,N>& s1, int innersite)
 /*! Generically, this is an identity operation. Defined differently under color */
 template<class T, int N>
 inline typename UnaryReturn<PSpinVectorREG<T,N>, FnPeekColorVectorREG >::Type_t
-peekColor(const PSpinVectorREG<T,N>& l, jit_value row)
+peekColor(const PSpinVectorREG<T,N>& l, llvm::Value* row)
 {
   typename UnaryReturn<PSpinVectorREG<T,N>, FnPeekColorVectorREG >::Type_t  d;
 
@@ -425,7 +425,7 @@ peekColor(const PSpinVectorREG<T,N>& l, jit_value row)
 /*! Generically, this is an identity operation. Defined differently under color */
 template<class T, int N>
 inline typename UnaryReturn<PSpinVectorREG<T,N>, FnPeekColorMatrixREG >::Type_t
-peekColor(const PSpinVectorREG<T,N>& l, jit_value row, jit_value col)
+peekColor(const PSpinVectorREG<T,N>& l, llvm::Value* row, llvm::Value* col)
 {
   typename UnaryReturn<PSpinVectorREG<T,N>, FnPeekColorMatrixREG >::Type_t  d;
 
@@ -440,7 +440,7 @@ peekColor(const PSpinVectorREG<T,N>& l, jit_value row, jit_value col)
 #if 0
 template<class T, int N>
 inline typename UnaryReturn<PSpinVectorREG<T,N>, FnPeekSpinMatrixREG>::Type_t
-peekSpin(const PSpinVectorREG<T,N>& l, jit_value row, jit_value col)
+peekSpin(const PSpinVectorREG<T,N>& l, llvm::Value* row, llvm::Value* col)
 {
   typename UnaryReturn<PSpinVectorREG<T,N>, FnPeekSpinMatrixREG>::Type_t  d;
 
@@ -452,27 +452,31 @@ peekSpin(const PSpinVectorREG<T,N>& l, jit_value row, jit_value col)
 
 template<class T, int N>
 inline typename UnaryReturn<PSpinVectorREG<T,N>, FnPeekSpinVectorREG>::Type_t
-peekSpin(const PSpinVectorREG<T,N>& l, jit_value row)
+peekSpin(const PSpinVectorREG<T,N>& l, llvm::Value* row)
 {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
   typename UnaryReturn<PSpinVectorREG<T,N>, FnPeekSpinVectorREG>::Type_t  d;
 
   typedef typename JITType< PSpinVectorREG<T,N> >::Type_t TTjit;
 
-  jit_value ptr_local = jit_allocate_local( jit_type<typename WordType<T>::Type_t>::value , TTjit::Size_t );
+  llvm::Value* ptr_local = jit_allocate_local( jit_type<typename WordType<T>::Type_t>::value , TTjit::Size_t );
 
   TTjit dj;
-  dj.setup( ptr_local, jit_value(1) , jit_value(0) );
+  dj.setup( ptr_local, llvm_create_value(1) , llvm_create_value(0) );
   dj=l;
 
   d.elem() = dj.getRegElem(row);
   return d;
+#endif
 }
 
 //! Insert color vector components 
 /*! Generically, this is an identity operation. Defined differently under color */
 template<class T1, class T2, int N>
 inline typename UnaryReturn<PSpinVectorREG<T1,N>, FnPokeColorVectorREG >::Type_t&
-pokeColor(PSpinVectorREG<T1,N>& l, const PSpinVectorREG<T2,N>& r, jit_value row)
+pokeColor(PSpinVectorREG<T1,N>& l, const PSpinVectorREG<T2,N>& r, llvm::Value* row)
 {
   typedef typename UnaryReturn<PSpinVectorREG<T1,N>, FnPokeColorVectorREG >::Type_t  Return_t;
 
@@ -485,7 +489,7 @@ pokeColor(PSpinVectorREG<T1,N>& l, const PSpinVectorREG<T2,N>& r, jit_value row)
 /*! Generically, this is an identity operation. Defined differently under color */
 template<class T1, class T2, int N>
 inline typename UnaryReturn<PSpinVectorREG<T1,N>, FnPokeColorVectorREG>::Type_t&
-pokeColor(PSpinVectorREG<T1,N>& l, const PSpinVectorREG<T2,N>& r, jit_value row, jit_value col)
+pokeColor(PSpinVectorREG<T1,N>& l, const PSpinVectorREG<T2,N>& r, llvm::Value* row, llvm::Value* col)
 {
   typedef typename UnaryReturn<PSpinVectorREG<T1,N>, FnPokeColorVectorREG>::Type_t  Return_t;
 
@@ -498,7 +502,7 @@ pokeColor(PSpinVectorREG<T1,N>& l, const PSpinVectorREG<T2,N>& r, jit_value row,
 /*! Generically, this is an identity operation. Defined differently under spin */
 template<class T1, class T2, int N>
 inline typename UnaryReturn<PSpinVectorREG<T1,N>, FnPokeSpinVectorREG>::Type_t&
-pokeSpin(PSpinVectorREG<T1,N>& l, const PSpinVectorREG<T2,N>& r, jit_value row)
+pokeSpin(PSpinVectorREG<T1,N>& l, const PSpinVectorREG<T2,N>& r, llvm::Value* row)
 {
   typedef typename UnaryReturn<PSpinVectorREG<T1,N>, FnPokeSpinVectorREG>::Type_t  Return_t;
 
@@ -511,7 +515,7 @@ pokeSpin(PSpinVectorREG<T1,N>& l, const PSpinVectorREG<T2,N>& r, jit_value row)
 /*! Generically, this is an identity operation. Defined differently under spin */
 template<class T1, class T2, int N>
 inline typename UnaryReturn<PSpinVectorREG<T1,N>, FnPokeSpinVectorREG>::Type_t&
-pokeSpin(PSpinVectorREG<T1,N>& l, const PSpinVectorREG<T2,N>& r, jit_value row, jit_value col)
+pokeSpin(PSpinVectorREG<T1,N>& l, const PSpinVectorREG<T2,N>& r, llvm::Value* row, llvm::Value* col)
 {
   typedef typename UnaryReturn<PSpinVectorREG<T1,N>, FnPokeSpinVectorREG>::Type_t  Return_t;
 

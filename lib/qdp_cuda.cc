@@ -251,30 +251,30 @@ namespace QDP {
     if (!setPoolSize) {
 
       size_t val = (size_t)((double)(0.90) * (double)free);
-      int val_in_MB = val/1024/1024;
+      int val_in_MiBi = val/1024/1024;
 
-      if (val_in_MB < 1)
-	QDP_error_exit("Less than 1MiB device memory available. Giving up.");
+      if (val_in_MiBi < 1)
+	QDP_error_exit("Less than 1 MiBi device memory available. Giving up.");
 
-      float val_min = (float)val_in_MB;
+      float val_min = (float)val_in_MiBi;
 
       QDPInternal::globalMinValue( &val_min );
 
-      if ( val_min > (float)val_in_MB )
-	QDP_error_exit("Inconsistency: Global minimum %f larger than local value %d.",val_min,val_in_MB);
+      if ( val_min > (float)val_in_MiBi )
+	QDP_error_exit("Inconsistency: Global minimum %f larger than local value %d.",val_min,val_in_MiBi);
 
-      if ( val_min < (float)val_in_MB ) {
-	QDP_info("Global minimum %f of available GPU memory smaller than local value %d. Using global minimum.",val_min,val_in_MB);
+      if ( val_min < (float)val_in_MiBi ) {
+	QDP_info("Global minimum %f of available GPU memory smaller than local value %d. Using global minimum.",val_min,val_in_MiBi);
       }
       int val_min_int = (int)val_min;
-      QDP_info_primary("Using device pool size %d MiB",(int)val_min_int);
+      QDP_info_primary("Using device pool size: %d MiBi",(int)val_min_int);
       CUDADevicePoolAllocator::Instance().setPoolSize( ((size_t)val_min_int) * 1024 * 1024 );
       setPoolSize = true;
     }
 
     // int major = DeviceParams::Instance().getMajor();
     // int minor = DeviceParams::Instance().getMinor();
-    PTX::ptx_type_matrix = PTX::create_ptx_type_matrix();
+    // PTX::ptx_type_matrix = PTX::create_ptx_type_matrix();
 
     ret = cuCtxSetCacheConfig(CU_FUNC_CACHE_PREFER_L1);
     CudaRes("cuCtxSetCacheConfig",ret);

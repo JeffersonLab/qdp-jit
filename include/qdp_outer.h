@@ -633,7 +633,7 @@ struct LeafFunctor<OLattice<T>, ParamLeaf>
   inline static
   Type_t apply(const OLattice<T>& do_not_use, const ParamLeaf& p) 
   {
-    llvm::Value *    base_addr = llvm_add_param< typename WordType<T>::Type_t * >() );
+    llvm::Value *    base_addr = llvm_add_param< typename WordType<T>::Type_t * >();
     llvm::Value *    index     = p.getRegIdx();
     //cout << "OLat ParamLeaf 3er\n";
     return Type_t( base_addr , index );
@@ -648,7 +648,7 @@ struct LeafFunctor<OScalar<T>, ParamLeaf>
   inline static
   Type_t apply(const OScalar<T>& do_not_use, const ParamLeaf& p) 
   {
-    llvm::Value *    base_addr = llvm_add_param< typename WordType<T>::Type_t * >() );
+    llvm::Value *    base_addr = llvm_add_param< typename WordType<T>::Type_t * >();
     //cout << "OScalar ParamLeaf 2er\n";
     return Type_t( base_addr , llvm_create_value(0) );
   }

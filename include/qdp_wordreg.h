@@ -26,7 +26,7 @@ namespace QDP {
     WordREG(double f): val(llvm_create_value(f)) {}
 
     WordREG(const WordREG& rhs) {
-      assert(rhs.get_val()->get_ever_assigned());      
+      //assert(rhs.get_val()->get_ever_assigned());      
       val = rhs.get_val();
       //      setup_m=true;
     }
@@ -57,7 +57,7 @@ namespace QDP {
     // }
 
 
-    llvm::Value *       get_val()        { return val; }
+    llvm::Value *get_val() const { return val; }
 
 
     WordREG& operator=(const WordREG& rhs) {
@@ -337,9 +337,13 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpLeftShift>::Type_t
 operator<<(const WordREG<T1>& l, const WordREG<T2>& r)
 {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
   typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpLeftShift>::Type_t ret;
   ret.setup( llvm_shl( l.get_val() , r.get_val() ) );
   return ret;
+#endif
 }
 
 
@@ -354,9 +358,13 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpRightShift>::Type_t
 operator>>(const WordREG<T1>& l, const WordREG<T2>& r)
 {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
   typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpRightShift>::Type_t ret;
   ret.setup( llvm_shr( l.get_val() , r.get_val() ) );
   return ret;
+#endif
 }
 
 
@@ -365,9 +373,13 @@ template<class T1, class T2 >
 inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpMod>::Type_t
 operator%(const WordREG<T1>& l, const WordREG<T2>& r)
 {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
   typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpMod>::Type_t ret;
   ret.setup( llvm_rem( l.get_val() , r.get_val() ) );
   return ret;
+#endif
 }
 
 
@@ -377,9 +389,13 @@ template<class T1, class T2 >
 inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseXor>::Type_t
 operator^(const WordREG<T1>& l, const WordREG<T2>& r)
 {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
   typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseXor>::Type_t ret;
   ret.setup( llvm_xor( l.get_val() , r.get_val() ) );
   return ret;
+#endif
 }
 
 
@@ -387,9 +403,13 @@ template<class T1, class T2 >
 inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseAnd>::Type_t
 operator&(const WordREG<T1>& l, const WordREG<T2>& r)
 {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
   typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseAnd>::Type_t ret;
   ret.setup( llvm_and( l.get_val() , r.get_val() ) );
   return ret;
+#endif
 }
 
 
@@ -400,9 +420,13 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseOr>::Type_t
 operator|(const WordREG<T1>& l, const WordREG<T2>& r)
 {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
   typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseOr>::Type_t ret;
   ret.setup( llvm_or( l.get_val() , r.get_val() ) );
   return ret;
+#endif
 }
 
 
@@ -508,9 +532,13 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpAnd>::Type_t
 operator&&(const WordREG<T1>& l, const WordREG<T2>& r)
 {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
   typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpAnd>::Type_t ret;
   ret.setup( llvm_and( l.get_val() , r.get_val() ) );
   return ret;
+#endif
 }
 
 
@@ -523,9 +551,13 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpOr>::Type_t
 operator||(const WordREG<T1>& l, const WordREG<T2>& r)
 {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
   typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpOr>::Type_t ret;
   ret.setup( llvm_or( l.get_val() , r.get_val() ) );
   return ret;
+#endif
 }
 
 

@@ -18,18 +18,36 @@ namespace QDP {
 
 
   void llvm_wrapper_init() {
-    llvm_type<float>::value  = llvm::Type::getFloatTy(getGlobalContext());
-    llvm_type<double>::value = llvm::Type::getDoubleTy(getGlobalContext());
-    llvm_type<int>::value    = llvm::Type::getIntNTy(getGlobalContext(),32);
-    llvm_type<bool>::value   = llvm::Type::getIntNTy(getGlobalContext(),1);
-    llvm_type<float*>::value  = llvm::Type::getFloatPtrTy(getGlobalContext());
-    llvm_type<double*>::value = llvm::Type::getDoublePtrTy(getGlobalContext());
-    llvm_type<int*>::value    = llvm::Type::getIntNPtrTy(getGlobalContext(),32);
-    llvm_type<bool*>::value   = llvm::Type::getIntNPtrTy(getGlobalContext(),1);
+    llvm::InitializeAllTargets();
+    llvm::InitializeAllTargetMCs();
+    llvm::InitializeAllAsmPrinters();
+    llvm::InitializeAllAsmParsers();
+
+    llvm_type<float>::value  = llvm::Type::getFloatTy(llvm::getGlobalContext());
+    llvm_type<double>::value = llvm::Type::getDoubleTy(llvm::getGlobalContext());
+    llvm_type<int>::value    = llvm::Type::getIntNTy(llvm::getGlobalContext(),32);
+    llvm_type<bool>::value   = llvm::Type::getIntNTy(llvm::getGlobalContext(),1);
+    llvm_type<float*>::value  = llvm::Type::getFloatPtrTy(llvm::getGlobalContext());
+    llvm_type<double*>::value = llvm::Type::getDoublePtrTy(llvm::getGlobalContext());
+    llvm_type<int*>::value    = llvm::Type::getIntNPtrTy(llvm::getGlobalContext(),32);
+    llvm_type<bool*>::value   = llvm::Type::getIntNPtrTy(llvm::getGlobalContext(),1);
   }  
 
+  void llvm_start_new_function() {
+    llvm::outs() << "Staring new LLVM function ...\n";
 
-  llvm::PHINode * llvm_phi( llvm::Type* type, unsigned num = 0 )
+    Mod = new llvm::Module("module", llvm::getGlobalContext());
+    builder = new llvm::IRBuilder<>(llvm::getGlobalContext());
+    
+    llvm::FunctionType *funcType = llvm::FunctionType::get(builder->getVoidTy(), false);
+    mainFunc = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, "function", Mod);
+
+    llvm::BasicBlock* entry = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entrypoint", mainFunc);
+    builder->SetInsertPoint(entry);
+  }
+
+
+  llvm::PHINode * llvm_phi( llvm::Type* type, unsigned num )
   {
     return builder->CreatePHI( type , num );
   }
@@ -38,22 +56,26 @@ namespace QDP {
   llvm::Type* promote( llvm::Type* t0 , llvm::Type* t1 )
   {
     if ( t0->isFloatingPointTy() || t1->isFloatingPointTy() ) {
-      outs() << "promote floating " << t0->isFloatingPointTy() << " " << t1->isFloatingPointTy() << "\n";
+      llvm::outs() << "promote floating " << t0->isFloatingPointTy() << " " << t1->isFloatingPointTy() << "\n";
       if ( t0->isDoubleTy() || t1->isDoubleTy() ) {
-	return llvm::Type::getDoubleTy(getGlobalContext());
+	return llvm::Type::getDoubleTy(llvm::getGlobalContext());
       } else {
-	return llvm::Type::getFloatTy(getGlobalContext());
+	return llvm::Type::getFloatTy(llvm::getGlobalContext());
       }
     } else {
-      outs() << "promote int\n";
+      llvm::outs() << "promote int\n";
       unsigned upper = std::max( t0->getScalarSizeInBits() , t1->getScalarSizeInBits() );
-      return llvm::Type::getIntNTy(getGlobalContext() , upper );
+      return llvm::Type::getIntNTy(llvm::getGlobalContext() , upper );
     }
   }
 
 
   llvm::Value* llvm_cast( llvm::Type *dest_type , llvm::Value *src )
   {
+    assert( dest_type && "llvm_cast" );
+    assert( src       && "llvm_cast" );
+    dest_type->dump();
+    src->dump();
     if ( src->getType() == dest_type)
       return src;
 
@@ -68,11 +90,11 @@ namespace QDP {
   {
     llvm::Type* args_type = promote( lhs->getType() , rhs->getType() );
     if ( args_type != lhs->getType() ) {
-      outs() << "lhs needs conversion\n";
+      llvm::outs() << "lhs needs conversion\n";
       lhs = llvm_cast( args_type , lhs );
     }
     if ( args_type != rhs->getType() ) {
-      outs() << "rhs needs conversion\n";
+      llvm::outs() << "rhs needs conversion\n";
       rhs = llvm_cast( args_type , rhs );
     }
     return std::tie(lhs,rhs,args_type);
@@ -87,10 +109,10 @@ namespace QDP {
     llvm::Type* args_type;
     std::tie(lhs,rhs,args_type) = llvm_normalize_values(lhs,rhs);
     if ( args_type->isFloatingPointTy() ) {
-      outs() << "float binary op\n";
+      llvm::outs() << "float binary op\n";
       return func_float( lhs , rhs );  
     }  else {
-      outs() << "integer binary op\n";
+      llvm::outs() << "integer binary op\n";
       return func_int( lhs , rhs );  
     }
   }
@@ -101,21 +123,21 @@ namespace QDP {
 			  llvm::Value* lhs )
   {
     if ( lhs->getType()->isFloatingPointTy() ) {
-      outs() << "float unary op\n";
+      llvm::outs() << "float unary op\n";
       return func_float( lhs );  
     }  else {
-      outs() << "integer unary op\n";
+      llvm::outs() << "integer unary op\n";
       return func_int( lhs );  
     }
   }
 
 
   llvm::Value* llvm_xor( llvm::Value* lhs , llvm::Value* rhs ) {  
-    outs() << "xor lhs = ";
+    llvm::outs() << "xor lhs = ";
     lhs->getType()->dump();
-    outs() << " rhs = ";
+    llvm::outs() << " rhs = ";
     rhs->getType()->dump();
-    outs() << "\n";
+    llvm::outs() << "\n";
     return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{assert(!"Floating point Xor makes no sense.");}, 
 		      [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{ return builder->CreateXor( lhs , rhs ); } , 
 		      lhs , rhs ); }
@@ -171,7 +193,7 @@ namespace QDP {
   // Convenience function definitions
   //
   llvm::Value* llvm_not( llvm::Value* lhs ) {
-    outs() << "not\n";
+    llvm::outs() << "not\n";
     return llvm_xor( llvm_create_value(-1) , lhs );
   }
 
@@ -182,34 +204,34 @@ namespace QDP {
     static int counter = 0;
     std::ostringstream oss;
     oss << "arg" << counter++;
-    outs() << "param_name = " << oss.str() << "\n";
+    llvm::outs() << "param_name = " << oss.str() << "\n";
     return oss.str();
   }
 
 
   template<> llvm::Argument *llvm_add_param<bool>() { 
-    return new llvm::Argument( llvm::Type::getInt1Ty(getGlobalContext()) , param_next() , mainFunc ); 
+    return new llvm::Argument( llvm::Type::getInt1Ty(llvm::getGlobalContext()) , param_next() , mainFunc ); 
   }
   template<> llvm::Argument *llvm_add_param<bool*>() { 
-    return new llvm::Argument( llvm::Type::getInt1PtrTy(getGlobalContext()) , param_next() , mainFunc ); 
+    return new llvm::Argument( llvm::Type::getInt1PtrTy(llvm::getGlobalContext()) , param_next() , mainFunc ); 
   }
   template<> llvm::Argument *llvm_add_param<int>() { 
-    return new llvm::Argument( llvm::Type::getInt32Ty(getGlobalContext()) , param_next() , mainFunc ); 
+    return new llvm::Argument( llvm::Type::getInt32Ty(llvm::getGlobalContext()) , param_next() , mainFunc ); 
   }
   template<> llvm::Argument *llvm_add_param<int*>() { 
-    return new llvm::Argument( llvm::Type::getInt32PtrTy(getGlobalContext()) , param_next() , mainFunc ); 
+    return new llvm::Argument( llvm::Type::getInt32PtrTy(llvm::getGlobalContext()) , param_next() , mainFunc ); 
   }
   template<> llvm::Argument *llvm_add_param<float>() { 
-    return new llvm::Argument( llvm::Type::getFloatTy(getGlobalContext()) , param_next() , mainFunc ); 
+    return new llvm::Argument( llvm::Type::getFloatTy(llvm::getGlobalContext()) , param_next() , mainFunc ); 
   }
   template<> llvm::Argument *llvm_add_param<float*>() { 
-    return new llvm::Argument( llvm::Type::getFloatPtrTy(getGlobalContext()) , param_next() , mainFunc ); 
+    return new llvm::Argument( llvm::Type::getFloatPtrTy(llvm::getGlobalContext()) , param_next() , mainFunc ); 
   }
   template<> llvm::Argument *llvm_add_param<double>() { 
-    return new llvm::Argument( llvm::Type::getDoubleTy(getGlobalContext()) , param_next() , mainFunc ); 
+    return new llvm::Argument( llvm::Type::getDoubleTy(llvm::getGlobalContext()) , param_next() , mainFunc ); 
   }
   template<> llvm::Argument *llvm_add_param<double*>() { 
-    return new llvm::Argument( llvm::Type::getDoublePtrTy(getGlobalContext()) , param_next() , mainFunc ); 
+    return new llvm::Argument( llvm::Type::getDoublePtrTy(llvm::getGlobalContext()) , param_next() , mainFunc ); 
   }
 
 
@@ -219,7 +241,7 @@ namespace QDP {
     static unsigned counter = 0;
     std::ostringstream oss;
     oss << "L" << counter++;
-    llvm::BasicBlock *BB = llvm::BasicBlock::Create(getGlobalContext(), oss.str() );
+    llvm::BasicBlock *BB = llvm::BasicBlock::Create(llvm::getGlobalContext(), oss.str() );
     mainFunc->getBasicBlockList().push_back(BB);
     return BB;
   }
@@ -270,14 +292,14 @@ namespace QDP {
   llvm::Value * llvm_create_value( double v )
   {
     if (sizeof(REAL) == 4)
-      return llvm::ConstantFP::get( llvm::Type::getFloatTy(getGlobalContext()) , v );
+      return llvm::ConstantFP::get( llvm::Type::getFloatTy(llvm::getGlobalContext()) , v );
     else
-      return llvm::ConstantFP::get( llvm::Type::getDoubleTy(getGlobalContext()) , v );
+      return llvm::ConstantFP::get( llvm::Type::getDoubleTy(llvm::getGlobalContext()) , v );
   }
 
-  llvm::Value * llvm_create_value(int v )  {return llvm::ConstantInt::get( llvm::Type::getInt32Ty(getGlobalContext()) , v );}
-  llvm::Value * llvm_create_value(size_t v){return llvm::ConstantInt::get( llvm::Type::getInt32Ty(getGlobalContext()) , v );}
-  llvm::Value * llvm_create_value(bool v ) {return llvm::ConstantInt::get( llvm::Type::getInt1Ty(getGlobalContext()) , v );}
+  llvm::Value * llvm_create_value(int v )  {return llvm::ConstantInt::get( llvm::Type::getInt32Ty(llvm::getGlobalContext()) , v );}
+  llvm::Value * llvm_create_value(size_t v){return llvm::ConstantInt::get( llvm::Type::getInt32Ty(llvm::getGlobalContext()) , v );}
+  llvm::Value * llvm_create_value(bool v ) {return llvm::ConstantInt::get( llvm::Type::getInt1Ty(llvm::getGlobalContext()) , v );}
 
 
   llvm::Value * llvm_createGEP( llvm::Value * ptr , llvm::Value * idx )
@@ -309,29 +331,20 @@ namespace QDP {
   }
 
 
-  template<class T>
-  llvm::Value* llvm_array_type_indirection( llvm::Value* idx )
-  {
-    llvm::Value* base = llvm_add_param<T>();
-    llvm::Value* gep = llvm_createGEP( base , idx );
-    return llvm_load( gep );
-  }
-
-
 
   llvm::Value * llvm_special( const char * name )
   {
-    FunctionType *IntrinFnTy = FunctionType::get(Type::getInt32Ty(getGlobalContext()), false);
+    llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getInt32Ty(llvm::getGlobalContext()), false);
 
-    AttrBuilder ABuilder;
+    llvm::AttrBuilder ABuilder;
     ABuilder.addAttribute(llvm::Attribute::ReadNone);
 
-    Constant *ReadTidX = Mod->getOrInsertTargetIntrinsic( name , 
-							  IntrinFnTy , 
-							  AttributeSet::get(getGlobalContext(), 
-									    AttributeSet::FunctionIndex, 
-									    ABuilder)
-							  );
+    llvm::Constant *ReadTidX = Mod->getOrInsertTargetIntrinsic( name , 
+								IntrinFnTy , 
+								llvm::AttributeSet::get(llvm::getGlobalContext(), 
+											llvm::AttributeSet::FunctionIndex, 
+											ABuilder)
+								);
 
     return builder->CreateCall(ReadTidX);
   }
@@ -373,39 +386,39 @@ namespace QDP {
 
   std::string llvm_get_ptx_kernel(const char* fname)
   {
-    FunctionPassManager OurFPM( Mod );
-    OurFPM.add(createBasicAliasAnalysisPass());
-    OurFPM.add(createInstructionCombiningPass());
-    OurFPM.add(createReassociatePass());
-    OurFPM.add(createGVNPass());
+    llvm::FunctionPassManager OurFPM( Mod );
+    OurFPM.add(llvm::createBasicAliasAnalysisPass());
+    OurFPM.add(llvm::createInstructionCombiningPass());
+    OurFPM.add(llvm::createReassociatePass());
+    OurFPM.add(llvm::createGVNPass());
     OurFPM.doInitialization();
 
     auto& func_list = Mod->getFunctionList();
 
     for(auto& x : func_list) {
       std::string tt( x.getName() );
-      outs() << "running passes on: " << tt << "\n";
+      llvm::outs() << "running passes on: " << tt << "\n";
       OurFPM.run(x);
     }
 
     Mod->dump();
 
-#if 1
+
     //
     // Call NVPTX
     //
-    Triple TheTriple;
-    TheTriple.setArch(Triple::nvptx64);
-    TheTriple.setVendor(Triple::UnknownVendor);
-    TheTriple.setOS(Triple::Linux);
-    TheTriple.setEnvironment(Triple::ELF);
+    llvm::Triple TheTriple;
+    TheTriple.setArch(llvm::Triple::nvptx64);
+    TheTriple.setVendor(llvm::Triple::UnknownVendor);
+    TheTriple.setOS(llvm::Triple::Linux);
+    TheTriple.setEnvironment(llvm::Triple::ELF);
 
     //Mod->setTargetTriple(TheTriple);
 
     std::string Error;
-    const Target *TheTarget = TargetRegistry::lookupTarget( "nvptx64", TheTriple, Error);
+    const llvm::Target *TheTarget = llvm::TargetRegistry::lookupTarget( "nvptx64", TheTriple, Error);
     if (!TheTarget) {
-      errs() << "Error looking up target: " << Error;
+      llvm::errs() << "Error looking up target: " << Error;
       exit(1);
     }
 
@@ -413,13 +426,13 @@ namespace QDP {
     // OwningPtr<TargetMachine> target(TheTarget->createTargetMachine(TheTriple.getTriple(),
     // 								 MCPU, FeaturesStr, Options ));
 
-    TargetOptions Options;
-    OwningPtr<TargetMachine> target(TheTarget->createTargetMachine(TheTriple.getTriple(),
-								   "sm_20", "ptx31", Options ));
+    llvm::TargetOptions Options;
+    llvm::OwningPtr<llvm::TargetMachine> target(TheTarget->createTargetMachine(TheTriple.getTriple(),
+									       "sm_20", "ptx31", Options ));
 
   
     assert(target.get() && "Could not allocate target machine!");
-    TargetMachine &Target = *target.get();
+    llvm::TargetMachine &Target = *target.get();
 
     // Write ptx file
     {
@@ -428,38 +441,38 @@ namespace QDP {
       //  if (Binary) OpenFlags |= raw_fd_ostream::F_Binary;
       // tool_output_file *FDOut = 
     
-      OwningPtr<tool_output_file> Out( new tool_output_file( fname , error, OpenFlags) );
+      llvm::OwningPtr<llvm::tool_output_file> Out( new llvm::tool_output_file( fname , error, OpenFlags) );
       // (GetOutputStream(TheTarget->getName(), TheTriple.getOS(), argv[0] ));
       if (!Out) {
-	errs() << "Could not create OwningPtr<tool_output_file>\n";
-	return 1;
+	llvm::errs() << "Could not create OwningPtr<tool_output_file>\n";
+	exit(1);
       }
 
-      formatted_raw_ostream FOS(Out->os());
+      llvm::formatted_raw_ostream FOS(Out->os());
 
-      PassManager PM;
+      llvm::PassManager PM;
 
 #if 0
       // Add the target data from the target machine, if it exists, or the module.
       if (const DataLayout *TD = Target.getDataLayout()) {
-	outs() << "Using target's data layout\n";
+	llvm::outs() << "Using target's data layout\n";
 	PM.add(new DataLayout(*TD));
       }
       else {
-	outs() << "Using module's data layout\n";
+	llvm::outs() << "Using module's data layout\n";
 	PM.add(new DataLayout(Mod));
       }
 #endif
 
-      outs() << "Using module's data layout\n";
-      PM.add(new DataLayout(Mod));
+      llvm::outs() << "Using module's data layout\n";
+      PM.add(new llvm::DataLayout(Mod));
 
 
       // Ask the target to add backend passes as necessary.
-      if (Target.addPassesToEmitFile(PM, FOS,  TargetMachine::CGFT_AssemblyFile )) {
-	errs() << argv[0] << ": target does not support generation of this"
+      if (Target.addPassesToEmitFile(PM, FOS,  llvm::TargetMachine::CGFT_AssemblyFile )) {
+	llvm::errs() << ": target does not support generation of this"
 	       << " file type!\n";
-	return 1;
+	exit(1);
       }
 
       PM.run(*Mod);
@@ -482,7 +495,17 @@ namespace QDP {
     CUresult ret;
     CUmodule cuModule;
 
+    llvm::outs() << "Adding kernel metadata to function\n";
+    addKernelMetadata( mainFunc );
+
     std::string ptx_kernel = llvm_get_ptx_kernel(fname);
+
+    llvm::outs() << "Deleting mainFunc\n";
+    delete mainFunc;
+    llvm::outs() << "Deleting builder\n";
+    delete builder;
+    llvm::outs() << "Deleting Mod\n";
+    delete Mod;
 
     ret = cuModuleLoadDataEx( &cuModule , ptx_kernel.c_str() , 0 , 0 , 0 );
     if (ret) {

@@ -549,20 +549,24 @@ struct UnaryReturn<PSpinMatrixREG<T,N>, FnPeekSpinMatrixREG > {
 
 template<class T, int N>
 inline typename UnaryReturn<PSpinMatrixREG<T,N>, FnPeekSpinMatrixREG >::Type_t
-peekSpin(const PSpinMatrixREG<T,N>& l, jit_value row, jit_value col)
+peekSpin(const PSpinMatrixREG<T,N>& l, llvm::Value* row, llvm::Value* col)
 {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
   typename UnaryReturn<PSpinMatrixREG<T,N>, FnPeekSpinMatrixREG >::Type_t  d;
 
   typedef typename JITType< PSpinMatrixREG<T,N> >::Type_t TTjit;
 
-  jit_value ptr_local = jit_allocate_local( jit_type<typename WordType<T>::Type_t>::value , TTjit::Size_t );
+  llvm::Value* ptr_local = jit_allocate_local( jit_type<typename WordType<T>::Type_t>::value , TTjit::Size_t );
 
   TTjit dj;
-  dj.setup( ptr_local, jit_value(1) , jit_value(0) );
+  dj.setup( ptr_local, llvm_create_value(1) , llvm_create_value(0) );
   dj=l;
 
   d.elem() = dj.getRegElem(row,col);
   return d;
+#endif
 }
 
 //! Insert spin matrix components

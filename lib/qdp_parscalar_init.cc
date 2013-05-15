@@ -446,7 +446,8 @@ namespace QDP {
 			cout << "Failure... space for innerProd results failed "  << endl;
 			QDP_abort(1);
 		}
-		
+
+		llvm_wrapper_init();
 		
 		// initialize the global streams
 		QDPIO::cin.init(&std::cin);

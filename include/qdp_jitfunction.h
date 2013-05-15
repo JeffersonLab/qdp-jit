@@ -80,6 +80,8 @@ template<class T, class T1, class Op, class RHS>
 CUfunction
 function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs)
 {
+  llvm_start_new_function();
+
   llvm::Value* r_ordered      = llvm_add_param<bool>();
   llvm::Value* r_th_count     = llvm_add_param<int>();
   llvm::Value* r_start        = llvm_add_param<int>();
@@ -87,8 +89,9 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   llvm::Value* r_do_site_perm = llvm_add_param<bool>();
 
   llvm::Value* r_no_site_perm = llvm_not( r_do_site_perm );  
-
+  //mainFunc->dump();
   llvm::Value* r_idx_thread = llvm_thread_idx();
+  //mainFunc->dump();
 
   llvm_cond_exit( llvm_ge( r_idx_thread , r_th_count ) );
 
@@ -163,6 +166,8 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   op_jit(dest_jit.elem( JitDeviceLayout::Coalesced ), forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced ), OpCombine()));
 
   llvm_exit();
+
+  mainFunc->dump();
 
   return llvm_get_cufunction("eval.ptx");
 }

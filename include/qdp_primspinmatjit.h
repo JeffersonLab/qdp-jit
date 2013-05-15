@@ -635,7 +635,7 @@ struct UnaryReturn<PSpinMatrixJIT<T,N>, FnPeekSpinMatrixREG > {
 
 template<class T1, class T2, int N>
 inline PSpinMatrixJIT<T1,N>&
-pokeSpin(PSpinMatrixJIT<T1,N>& l, const PScalarREG<T2>& r, jit_value row, jit_value col)
+pokeSpin(PSpinMatrixJIT<T1,N>& l, const PScalarREG<T2>& r, llvm::Value* row, llvm::Value* col)
 {
   l.getJitElem(row,col) = r.elem();
   return l;
