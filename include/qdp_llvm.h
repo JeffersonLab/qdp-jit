@@ -97,16 +97,16 @@ namespace QDP {
   std::string param_next();
 
 
-  template<class T> llvm::Argument *llvm_add_param();
+  template<class T> llvm::Value *llvm_add_param();
 
-  template<> llvm::Argument *llvm_add_param<bool>();
-  template<> llvm::Argument *llvm_add_param<bool*>();
-  template<> llvm::Argument *llvm_add_param<int>();
-  template<> llvm::Argument *llvm_add_param<int*>();
-  template<> llvm::Argument *llvm_add_param<float>();
-  template<> llvm::Argument *llvm_add_param<float*>();
-  template<> llvm::Argument *llvm_add_param<double>();
-  template<> llvm::Argument *llvm_add_param<double*>();
+  template<> llvm::Value *llvm_add_param<bool>();
+  template<> llvm::Value *llvm_add_param<bool*>();
+  template<> llvm::Value *llvm_add_param<int>();
+  template<> llvm::Value *llvm_add_param<int*>();
+  template<> llvm::Value *llvm_add_param<float>();
+  template<> llvm::Value *llvm_add_param<float*>();
+  template<> llvm::Value *llvm_add_param<double>();
+  template<> llvm::Value *llvm_add_param<double*>();
 
 
   llvm::BasicBlock * llvm_new_basic_block();

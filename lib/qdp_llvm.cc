@@ -209,28 +209,29 @@ namespace QDP {
   }
 
 
-  template<> llvm::Argument *llvm_add_param<bool>() { 
-    return new llvm::Argument( llvm::Type::getInt1Ty(llvm::getGlobalContext()) , param_next() , mainFunc ); 
+  template<> llvm::Value *llvm_add_param<bool>() { 
+    llvm::Argument * u8 = new llvm::Argument( llvm::Type::getInt8Ty(llvm::getGlobalContext()) , param_next() , mainFunc );
+    return llvm_cast( llvm_type<bool>::value , u8 );
   }
-  template<> llvm::Argument *llvm_add_param<bool*>() { 
+  template<> llvm::Value *llvm_add_param<bool*>() { 
     return new llvm::Argument( llvm::Type::getInt1PtrTy(llvm::getGlobalContext()) , param_next() , mainFunc ); 
   }
-  template<> llvm::Argument *llvm_add_param<int>() { 
+  template<> llvm::Value *llvm_add_param<int>() { 
     return new llvm::Argument( llvm::Type::getInt32Ty(llvm::getGlobalContext()) , param_next() , mainFunc ); 
   }
-  template<> llvm::Argument *llvm_add_param<int*>() { 
+  template<> llvm::Value *llvm_add_param<int*>() { 
     return new llvm::Argument( llvm::Type::getInt32PtrTy(llvm::getGlobalContext()) , param_next() , mainFunc ); 
   }
-  template<> llvm::Argument *llvm_add_param<float>() { 
+  template<> llvm::Value *llvm_add_param<float>() { 
     return new llvm::Argument( llvm::Type::getFloatTy(llvm::getGlobalContext()) , param_next() , mainFunc ); 
   }
-  template<> llvm::Argument *llvm_add_param<float*>() { 
+  template<> llvm::Value *llvm_add_param<float*>() { 
     return new llvm::Argument( llvm::Type::getFloatPtrTy(llvm::getGlobalContext()) , param_next() , mainFunc ); 
   }
-  template<> llvm::Argument *llvm_add_param<double>() { 
+  template<> llvm::Value *llvm_add_param<double>() { 
     return new llvm::Argument( llvm::Type::getDoubleTy(llvm::getGlobalContext()) , param_next() , mainFunc ); 
   }
-  template<> llvm::Argument *llvm_add_param<double*>() { 
+  template<> llvm::Value *llvm_add_param<double*>() { 
     return new llvm::Argument( llvm::Type::getDoublePtrTy(llvm::getGlobalContext()) , param_next() , mainFunc ); 
   }
 
@@ -353,7 +354,7 @@ namespace QDP {
 
   llvm::Value * llvm_call_special_tidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.tid.x"); }
   llvm::Value * llvm_call_special_ntidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.ntid.x"); }
-  llvm::Value * llvm_call_special_ctaidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.ctaidx.x"); }
+  llvm::Value * llvm_call_special_ctaidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.x"); }
 
 
   llvm::Value * llvm_thread_idx() { 
@@ -386,6 +387,11 @@ namespace QDP {
 
   std::string llvm_get_ptx_kernel(const char* fname)
   {
+#if 1
+    Mod->dump();
+
+    // Do optimizations ?
+#if 1
     llvm::FunctionPassManager OurFPM( Mod );
     OurFPM.add(llvm::createBasicAliasAnalysisPass());
     OurFPM.add(llvm::createInstructionCombiningPass());
@@ -402,7 +408,7 @@ namespace QDP {
     }
 
     Mod->dump();
-
+#endif
 
     //
     // Call NVPTX
@@ -479,6 +485,7 @@ namespace QDP {
       Out->keep();
 
     } // Call Out's destructor
+#endif
     
     std::ifstream ifs( fname );
     std::string str((std::istreambuf_iterator<char>(ifs)),
@@ -500,20 +507,24 @@ namespace QDP {
 
     std::string ptx_kernel = llvm_get_ptx_kernel(fname);
 
-    llvm::outs() << "Deleting mainFunc\n";
-    delete mainFunc;
-    llvm::outs() << "Deleting builder\n";
-    delete builder;
-    llvm::outs() << "Deleting Mod\n";
-    delete Mod;
+    // llvm::outs() << "Deleting mainFunc\n";
+    // delete mainFunc;
+    // llvm::outs() << "Deleting builder\n";
+    // delete builder;
+    // llvm::outs() << "Deleting Mod\n";
+    // delete Mod;
 
-    ret = cuModuleLoadDataEx( &cuModule , ptx_kernel.c_str() , 0 , 0 , 0 );
+    ret = cuModuleLoadData(&cuModule, (void*)ptx_kernel.c_str());
+    //ret = cuModuleLoadDataEx( &cuModule , ptx_kernel.c_str() , 0 , 0 , 0 );
+
     if (ret) {
       if (Layout::primaryNode()) {
 	QDP_info_primary("Error loading external data. Dumping kernel to %s.",fname);
+#if 1
 	std::ofstream out(fname);
 	out << ptx_kernel;
 	out.close();
+#endif
 	QDP_error_exit("Abort.");
       }
     }
