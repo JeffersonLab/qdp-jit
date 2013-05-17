@@ -121,7 +121,9 @@ namespace QDP {
     inline
     WordJIT& operator%=(const WordREG<T1>& rhs) 
     {
-      std::cout << __PRETTY_FUNCTION__ << "\n"; QDP_error_exit("ni");
+      llvm::Value * tmp = llvm_load_ptr_idx( r_base , offset );
+      llvm::Value * tmp2 = llvm_rem( tmp , rhs.get_val() );
+      llvm_store_ptr_idx( tmp2 , r_base , offset );
       return *this;
     }
 
@@ -130,7 +132,9 @@ namespace QDP {
     inline
     WordJIT& operator|=(const WordREG<T1>& rhs) 
     {
-      std::cout << __PRETTY_FUNCTION__ << "\n"; QDP_error_exit("ni");
+      llvm::Value * tmp = llvm_load_ptr_idx( r_base , offset );
+      llvm::Value * tmp2 = llvm_or( tmp , rhs.get_val() );
+      llvm_store_ptr_idx( tmp2 , r_base , offset );
       return *this;
     }
 
@@ -139,7 +143,9 @@ namespace QDP {
     inline
     WordJIT& operator&=(const WordREG<T1>& rhs) 
     {
-      std::cout << __PRETTY_FUNCTION__ << "\n"; QDP_error_exit("ni");
+      llvm::Value * tmp = llvm_load_ptr_idx( r_base , offset );
+      llvm::Value * tmp2 = llvm_and( tmp , rhs.get_val() );
+      llvm_store_ptr_idx( tmp2 , r_base , offset );
       return *this;
     }
 
@@ -148,7 +154,9 @@ namespace QDP {
     inline
     WordJIT& operator^=(const WordREG<T1>& rhs) 
     {
-      std::cout << __PRETTY_FUNCTION__ << "\n"; QDP_error_exit("ni");
+      llvm::Value * tmp = llvm_load_ptr_idx( r_base , offset );
+      llvm::Value * tmp2 = llvm_xor( tmp , rhs.get_val() );
+      llvm_store_ptr_idx( tmp2 , r_base , offset );
       return *this;
     }
 
@@ -157,7 +165,9 @@ namespace QDP {
     inline
     WordJIT& operator<<=(const WordREG<T1>& rhs) 
     {
-      std::cout << __PRETTY_FUNCTION__ << "\n"; QDP_error_exit("ni");
+      llvm::Value * tmp = llvm_load_ptr_idx( r_base , offset );
+      llvm::Value * tmp2 = llvm_shl( tmp , rhs.get_val() );
+      llvm_store_ptr_idx( tmp2 , r_base , offset );
       return *this;
     }
 
@@ -166,7 +176,9 @@ namespace QDP {
     inline
     WordJIT& operator>>=(const WordREG<T1>& rhs) 
     {
-      std::cout << __PRETTY_FUNCTION__ << "\n"; QDP_error_exit("ni");
+      llvm::Value * tmp = llvm_load_ptr_idx( r_base , offset );
+      llvm::Value * tmp2 = llvm_shr( tmp , rhs.get_val() );
+      llvm_store_ptr_idx( tmp2 , r_base , offset );
       return *this;
     }
 
@@ -226,9 +238,20 @@ namespace QDP {
   inline
   void copymask(WordJIT<T>& d, const WordREG<T1>& mask, const WordREG<T2>& s1)
   {
-    std::cout << __PRETTY_FUNCTION__ << "\n"; QDP_error_exit("ni");
-
-    //llvm_store( d.getAddress() , 0 , jit_type<T>::value , s1.get_val() , mask.get_val() );
+    llvm::BasicBlock * block_copy      = llvm_new_basic_block();
+    llvm::BasicBlock * block_not_copy  = llvm_new_basic_block();
+    llvm::BasicBlock * block_copy_exit = llvm_new_basic_block();
+    llvm_cond_branch( mask.get_val() , block_copy , block_not_copy );
+    {
+      llvm_set_insert_point(block_not_copy);
+      llvm_branch( block_copy_exit );
+    }
+    {
+      llvm_set_insert_point(block_copy);
+      d = s1;
+      llvm_branch( block_copy_exit );
+    }
+    llvm_set_insert_point(block_copy_exit);
   }
 
 

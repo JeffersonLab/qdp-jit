@@ -9,18 +9,13 @@ namespace QDP {
   CUfunction
   function_copymask_build( OLattice<T>& dest , const OLattice<T1>& mask , const OLattice<T>& src )
   {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-  QDP_error_exit("ni");
-#if 0
-    CUfunction func;
-
     llvm_start_new_function();
 
-    llvm::Value* r_lo           = llvm_add_param( jit_ptx_type::s32 );
-    llvm::Value* r_hi           = llvm_add_param( jit_ptx_type::s32 );
+    llvm::Value* r_lo           = llvm_add_param<int>();
+    llvm::Value* r_hi           = llvm_add_param<int>();
     llvm::Value* r_idx          = llvm_thread_idx();  
     llvm::Value* r_out_of_range = llvm_ge( r_idx , r_hi );
-    llvm_exit( r_out_of_range );
+    llvm_cond_exit( r_out_of_range );
 
     ParamLeaf param_leaf( r_idx );
 
@@ -43,8 +38,7 @@ namespace QDP {
 
     llvm_exit();
 
-    return llvm_get_cufunction("ptx_copymask.ptx");
-#endif
+    return llvm_get_cufunction("jit_copymask.ptx");
   }
 
 
@@ -53,10 +47,6 @@ namespace QDP {
   void 
   function_copymask_exec(CUfunction function, OLattice<T>& dest, const OLattice<T1>& mask, const OLattice<T>& src )
   {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-  QDP_error_exit("ni");
-#if 0
-
     AddressLeaf addr_leaf;
 
     int junk_0 = forEach(dest, addr_leaf, NullCombine());
@@ -95,7 +85,6 @@ namespace QDP {
     kernel_geom_t now = getGeom( hi-lo , threadsPerBlock );
 
     CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
-#endif
   }
 
 }
