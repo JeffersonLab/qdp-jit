@@ -105,6 +105,7 @@ using std::ostream;
 
 #include "cuda.h"
 #include "qdp_llvm.h"
+#include "qdp_jit_util.h"
 
 
 #include "qdp_forward.h"
