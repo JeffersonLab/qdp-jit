@@ -15,7 +15,7 @@ function_gaussian_build(OLattice<T>& dest ,OLattice<T>& r1 ,OLattice<T>& r2 )
   //  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
   CUfunction func;
 
-  jit_start_new_function();
+  llvm_start_new_function();
 
   llvm::Value* r_ordered      = llvm_add_param(  jit_ptx_type::pred );
   llvm::Value* r_th_count     = llvm_add_param(  jit_ptx_type::s32 );
@@ -63,7 +63,9 @@ function_gaussian_build(OLattice<T>& dest ,OLattice<T>& r1 ,OLattice<T>& r2 )
 
   fill_gaussian( dest_jit.elem(JitDeviceLayout::Coalesced) , r1_reg , r2_reg );
 
-  return jit_get_cufunction("ptx_gaussian.ptx");
+  llvm_exit();
+
+  return llvm_get_cufunction("ptx_gaussian.ptx");
 #endif
 }
 

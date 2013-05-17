@@ -14,7 +14,7 @@ namespace QDP {
 #if 0
     CUfunction func;
 
-    jit_start_new_function();
+    llvm_start_new_function();
 
     llvm::Value* r_lo           = llvm_add_param( jit_ptx_type::s32 );
     llvm::Value* r_hi           = llvm_add_param( jit_ptx_type::s32 );
@@ -41,7 +41,9 @@ namespace QDP {
 
     copymask( dest_jit.elem( JitDeviceLayout::Coalesced ) , mask_reg , src_reg );
 
-    return jit_get_cufunction("ptx_copymask.ptx");
+    llvm_exit();
+
+    return llvm_get_cufunction("ptx_copymask.ptx");
 #endif
   }
 

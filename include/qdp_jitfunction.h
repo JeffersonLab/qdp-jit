@@ -13,7 +13,7 @@ namespace QDP {
 #if 0
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
-  jit_start_new_function();
+  llvm_start_new_function();
 
   //function.setPrettyFunction(__PRETTY_FUNCTION__);
 
@@ -177,44 +177,50 @@ template<class T, class T1, class Op, class RHS>
 CUfunction
 function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
 {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-  QDP_error_exit("ni");
-#if 0
+  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+
   CUfunction func;
 
-  jit_start_new_function();
+  llvm_start_new_function();
 
   //function.setPrettyFunction(__PRETTY_FUNCTION__);
 
-  llvm::Value * r_ordered      = llvm_add_param(  jit_llvm_builtin::i1 );
-  llvm::Value * r_th_count     = llvm_add_param(  jit_llvm_builtin::i32 );
-  llvm::Value * r_start        = llvm_add_param(  jit_llvm_builtin::i32 );
-  llvm::Value * r_end          = llvm_add_param(  jit_llvm_builtin::i32 );
+  llvm::Value * r_ordered      = llvm_add_param<bool>();
+  llvm::Value * r_th_count     = llvm_add_param<int>();
+  llvm::Value * r_start        = llvm_add_param<int>();
+  llvm::Value * r_end          = llvm_add_param<int>();
 
-  llvm::Value * r_idx_thread = llvm_thread_idx();
+  llvm::Value * r_idx_phi0 = llvm_thread_idx();
 
-  llvm_exit( llvm_ge( r_idx_thread , r_th_count ) );
+  llvm::Value * r_idx_phi1;
 
-  llvm::Value * r_idx = r_idx_thread;
+  llvm_cond_exit( llvm_ge( r_idx_phi0 , r_th_count ) );
 
-  jit_block_t block_ordered;
-  jit_block_t block_ordered_exit;
-  llvm_branch( block_ordered , r_ordered );
+  llvm::BasicBlock * block_ordered = llvm_new_basic_block();
+  llvm::BasicBlock * block_not_ordered = llvm_new_basic_block();
+  llvm::BasicBlock * block_ordered_exit = llvm_new_basic_block();
+  llvm::BasicBlock * cond_exit;
+  llvm_cond_branch( r_ordered , block_ordered , block_not_ordered );
   {
-    llvm::Value * r_member = llvm_add_param(  jit_llvm_builtin::u64 );  // Subset
-    llvm::Value * r_member_addr        = llvm_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
-    llvm::Value * r_ismember           = llvm_load ( r_member_addr , 0 , jit_llvm_builtin::i1 );
-    llvm::Value * r_ismember_not       = llvm_not( r_ismember );
-    llvm_exit( r_ismember_not );
+    llvm_set_insert_point(block_not_ordered);
+    llvm::Value* r_ismember     = llvm_array_type_indirection<bool*>( r_idx_phi0 );
+    llvm::Value* r_ismember_not = llvm_not( r_ismember );
+    cond_exit = llvm_cond_exit( r_ismember_not ); 
     llvm_branch( block_ordered_exit );
   }
-  llvm_start_block(block_ordered);
   {
-    r_idx = llvm_add( r_idx_thread , r_start );
+    llvm_set_insert_point(block_ordered);
+    r_idx_phi1 = llvm_add( r_idx_phi0 , r_start );
+    llvm_branch( block_ordered_exit );
   }
-  llvm_start_block(block_ordered_exit);
+  llvm_set_insert_point(block_ordered_exit);
 
-  ParamLeaf param_leaf(  r_idx );
+  llvm::PHINode* r_idx = llvm_phi( r_idx_phi0->getType() , 2 );
+
+  r_idx->addIncoming( r_idx_phi0 , cond_exit );
+  r_idx->addIncoming( r_idx_phi1 , block_ordered );
+
+  ParamLeaf param_leaf( r_idx );
   
   typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
   FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
@@ -226,8 +232,9 @@ function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScala
 
   op_jit(dest_jit.elem( JitDeviceLayout::Coalesced ), forEach(rhs_view, ViewLeaf( JitDeviceLayout::Scalar ), OpCombine()));
 
-  return jit_get_cufunction("ll_lat_sca.ll");
-#endif
+  llvm_exit();
+
+  return llvm_get_cufunction("ll_lat_sca.ll");
 }
 
 
@@ -245,7 +252,7 @@ function_zero_rep_build(OLattice<T>& dest)
 
   CUfunction func;
 
-  jit_start_new_function();
+  llvm_start_new_function();
 
   llvm::Value * r_ordered      = llvm_add_param(  jit_llvm_builtin::i1 );
   llvm::Value * r_th_count     = llvm_add_param(  jit_llvm_builtin::i32 );
@@ -282,7 +289,9 @@ function_zero_rep_build(OLattice<T>& dest)
 
   zero_rep( dest_jit.elem(JitDeviceLayout::Coalesced) );
 
-  return jit_get_cufunction("ll_zero.ll");
+  llvm_exit();
+
+  return llvm_get_cufunction("ll_zero.ll");
 #endif
 }
 
@@ -302,7 +311,7 @@ function_sca_sca_build(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar
 
   CUfunction func;
 
-  jit_start_new_function();
+  llvm_start_new_function();
 
   llvm::Value * r_idx = llvm_thread_idx();
 
@@ -322,7 +331,9 @@ function_sca_sca_build(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar
 
   op_jit(dest_jit.elem( JitDeviceLayout::Scalar ), forEach(rhs_view, ViewLeaf( JitDeviceLayout::Scalar ), OpCombine()));
 
-  return jit_get_cufunction("ll_sca_sca.ll");
+  llvm_exit();
+
+  return llvm_get_cufunction("ll_sca_sca.ll");
 #endif
 }
 
@@ -340,7 +351,7 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
 
   CUfunction func;
 
-  jit_start_new_function();
+  llvm_start_new_function();
 
   // No member possible here.
   // If thread exists due to non-member
@@ -393,7 +404,9 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
   seed_tmp_jit.elem() = seed_reg;
   llvm_start_block(  block_nosave );
 
-  return jit_get_cufunction("ll_random.ll");
+  llvm_exit();
+
+  return llvm_get_cufunction("ll_random.ll");
 #endif
 }
 
@@ -415,7 +428,7 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
 
   CUfunction func;
 
-  jit_start_new_function();
+  llvm_start_new_function();
 
   llvm::Value * r_lo     = llvm_add_param(  jit_llvm_builtin::i32 );
   llvm::Value * r_hi     = llvm_add_param(  jit_llvm_builtin::i32 );
@@ -458,7 +471,9 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
   OpAssign()( dest_jit.elem( JitDeviceLayout::Scalar ) , 
 	      forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced ) , OpCombine() ) );
 
-  return jit_get_cufunction("ll_gather.ll");
+  llvm_exit();
+
+  return llvm_get_cufunction("ll_gather.ll");
 #endif
 }
 
@@ -682,9 +697,6 @@ template<class T, class T1, class Op, class RHS>
 void 
 function_lat_sca_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs, const Subset& s)
 {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-  QDP_error_exit("ni");
-#if 0
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   AddressLeaf addr_leaf;
@@ -747,7 +759,6 @@ function_lat_sca_exec(CUfunction function, OLattice<T>& dest, const Op& op, cons
   kernel_geom_t now = getGeom( th_count , threadsPerBlock );
 
   CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
-#endif
 }
 
 

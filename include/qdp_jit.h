@@ -123,12 +123,12 @@ namespace QDP {
 
   extern jit_function_t jit_internal_function;
 
-  void jit_start_new_function();
+  void llvm_start_new_function();
   jit_function_t jit_get_function();
   jit_block_t jit_get_entry_block();
   jit_block_t jit_get_current_block();
   std::string jit_get_kernel_as_string();
-  CUfunction jit_get_cufunction(const char* fname);
+  CUfunction llvm_get_cufunction(const char* fname);
   
 
   // class jit_function_singleton

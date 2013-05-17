@@ -108,6 +108,7 @@ namespace QDP {
   template<> llvm::Value *llvm_add_param<double>();
   template<> llvm::Value *llvm_add_param<double*>();
 
+  llvm::BasicBlock * llvm_get_insert_block();
 
   llvm::BasicBlock * llvm_new_basic_block();
   void llvm_cond_branch(llvm::Value * cond, llvm::BasicBlock * thenBB, llvm::BasicBlock * elseBB);
@@ -115,7 +116,7 @@ namespace QDP {
   void llvm_set_insert_point( llvm::BasicBlock * BB );
   llvm::BasicBlock * llvm_get_insert_point();
   void llvm_exit();
-  void llvm_cond_exit( llvm::Value * cond );
+  llvm::BasicBlock * llvm_cond_exit( llvm::Value * cond );
 
   llvm::Value * llvm_create_value( double v );
   llvm::Value * llvm_create_value(int v );

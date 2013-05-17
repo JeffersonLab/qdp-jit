@@ -33,6 +33,12 @@ namespace QDP {
     llvm_type<bool*>::value   = llvm::Type::getIntNPtrTy(llvm::getGlobalContext(),1);
   }  
 
+
+  llvm::BasicBlock * llvm_get_insert_block() {
+    return builder->GetInsertBlock();
+  }
+
+
   void llvm_start_new_function() {
     llvm::outs() << "Staring new LLVM function ...\n";
 
@@ -278,7 +284,7 @@ namespace QDP {
   }
 
 
-  void llvm_cond_exit( llvm::Value * cond )
+  llvm::BasicBlock * llvm_cond_exit( llvm::Value * cond )
   {
     llvm::BasicBlock * thenBB = llvm_new_basic_block();
     llvm::BasicBlock * elseBB = llvm_new_basic_block();
@@ -286,6 +292,7 @@ namespace QDP {
     llvm_set_insert_point(thenBB);
     llvm_exit();
     llvm_set_insert_point(elseBB);
+    return elseBB;
   }
 
 

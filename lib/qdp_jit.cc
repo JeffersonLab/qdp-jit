@@ -584,7 +584,7 @@ namespace QDP {
   }
 
 
-  void jit_start_new_function() {
+  void llvm_start_new_function() {
     if (jit_internal_function) {
       QDP_error_exit("New jit function requested, but previous one not finished yet!");
       //QDP_info_primary("Resetting old jit function (use_count = %d) ...",(int)jit_internal_function.use_count());
@@ -606,7 +606,7 @@ namespace QDP {
   }
 
 
-  CUfunction jit_get_cufunction(const char* fname)
+  CUfunction llvm_get_cufunction(const char* fname)
   {
     CUfunction func;
     CUresult ret;

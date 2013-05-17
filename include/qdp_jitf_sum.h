@@ -26,7 +26,7 @@ void function_sum_exec( CUfunction function,
 
     CUfunction func;
 
-    jit_start_new_function();
+    llvm_start_new_function();
 
     llvm::Value* r_lo     = llvm_add_param( jit_ptx_type::s32 );
     llvm::Value* r_hi     = llvm_add_param( jit_ptx_type::s32 );
@@ -133,7 +133,9 @@ void function_sum_exec( CUfunction function,
 
     llvm_label(  label_exit );
 
-    return jit_get_cufunction("ptx_sum_ind.ptx");
+    llvm_exit();
+
+    return llvm_get_cufunction("ptx_sum_ind.ptx");
 #endif
   }
 
@@ -151,7 +153,7 @@ void function_sum_exec( CUfunction function,
 
     CUfunction func;
 
-    jit_start_new_function();
+    llvm_start_new_function();
 
     llvm::Value* r_lo     = llvm_add_param(  jit_ptx_type::s32 );
     llvm::Value* r_hi     = llvm_add_param(  jit_ptx_type::s32 );
@@ -255,7 +257,9 @@ void function_sum_exec( CUfunction function,
 
     llvm_label(  label_exit );
 
-    return jit_get_cufunction("ptx_sum.ptx");
+    llvm_exit();
+
+    return llvm_get_cufunction("ptx_sum.ptx");
 #endif
   }
 
