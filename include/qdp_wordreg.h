@@ -508,13 +508,9 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpAnd>::Type_t
 operator&&(const WordREG<T1>& l, const WordREG<T2>& r)
 {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-  QDP_error_exit("ni");
-#if 0
   typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpAnd>::Type_t ret;
   ret.setup( llvm_and( l.get_val() , r.get_val() ) );
   return ret;
-#endif
 }
 
 
@@ -527,13 +523,9 @@ template<class T1, class T2>
 inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpOr>::Type_t
 operator||(const WordREG<T1>& l, const WordREG<T2>& r)
 {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-  QDP_error_exit("ni");
-#if 0
   typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpOr>::Type_t ret;
   ret.setup( llvm_or( l.get_val() , r.get_val() ) );
   return ret;
-#endif
 }
 
 
@@ -541,13 +533,34 @@ operator||(const WordREG<T1>& l, const WordREG<T2>& r)
   inline typename TrinaryReturn<WordREG<T1>, WordREG<T2>, WordREG<T3>, FnWhere >::Type_t
   where(const WordREG<T1> &a, const WordREG<T2> &b, const WordREG<T3> &c)
   {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-  QDP_error_exit("ni");
-#if 0
     typename TrinaryReturn<WordREG<T1>, WordREG<T2>, WordREG<T3>, FnWhere >::Type_t ret;
-    ret.setup( llvm_selp( b.get_val() , c.get_val() , a.get_val() ) );
+
+    llvm::Value * ret_phi0;
+    llvm::Value * ret_phi1;
+
+    llvm::BasicBlock * block_take_b      = llvm_new_basic_block();
+    llvm::BasicBlock * block_not_take_b  = llvm_new_basic_block();
+    llvm::BasicBlock * block_take_b_exit = llvm_new_basic_block();
+    llvm_cond_branch( a.get_val() , block_take_b , block_not_take_b );
+    {
+      llvm_set_insert_point(block_not_take_b);
+      ret_phi0 = c.get_val();
+      llvm_branch( block_take_b_exit );
+    }
+    {
+      llvm_set_insert_point(block_take_b);
+      ret_phi1 = b.get_val();
+      llvm_branch( block_take_b_exit );
+    }
+    llvm_set_insert_point(block_take_b_exit);
+
+    llvm::PHINode* ret_val = llvm_phi( ret_phi0->getType() , 2 );
+
+    ret_val->addIncoming( ret_phi0 , block_not_take_b );
+    ret_val->addIncoming( ret_phi1 , block_take_b );
+
+    ret.setup( ret_val );
     return ret;
-#endif
   }
 
 

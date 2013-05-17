@@ -226,14 +226,11 @@ template<class T, int N>
 inline typename UnaryReturn<PColorVectorREG<T,N>, FnPeekColorVectorREG >::Type_t
 peekColor(const PColorVectorREG<T,N>& l, llvm::Value * row)
 {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-  QDP_error_exit("ni");
-#if 0
   typename UnaryReturn<PColorVectorREG<T,N>, FnPeekColorVectorREG >::Type_t  d;
 
   typedef typename JITType< PColorVectorREG<T,N> >::Type_t TTjit;
 
-  llvm::Value * ptr_local = llvm_alloca( jit_type<typename WordType<T>::Type_t>::value , TTjit::Size_t );
+  llvm::Value * ptr_local = llvm_alloca( llvm_type<typename WordType<T>::Type_t>::value , TTjit::Size_t );
 
   TTjit dj;
   dj.setup( ptr_local , JitDeviceLayout::Scalar );
@@ -241,7 +238,6 @@ peekColor(const PColorVectorREG<T,N>& l, llvm::Value * row)
 
   d.elem() = dj.getRegElem(row);
   return d;
-#endif
 }
 
 //! Insert color vector components

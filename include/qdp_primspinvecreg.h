@@ -450,27 +450,25 @@ peekSpin(const PSpinVectorREG<T,N>& l, llvm::Value* row, llvm::Value* col)
 }
 #endif
 
+
 template<class T, int N>
 inline typename UnaryReturn<PSpinVectorREG<T,N>, FnPeekSpinVectorREG>::Type_t
 peekSpin(const PSpinVectorREG<T,N>& l, llvm::Value* row)
 {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-  QDP_error_exit("ni");
-#if 0
   typename UnaryReturn<PSpinVectorREG<T,N>, FnPeekSpinVectorREG>::Type_t  d;
 
   typedef typename JITType< PSpinVectorREG<T,N> >::Type_t TTjit;
 
-  llvm::Value* ptr_local = jit_allocate_local( jit_type<typename WordType<T>::Type_t>::value , TTjit::Size_t );
+  llvm::Value* ptr_local = llvm_alloca( llvm_type< typename WordType<T>::Type_t >::value , TTjit::Size_t );
 
   TTjit dj;
-  dj.setup( ptr_local, llvm_create_value(1) , llvm_create_value(0) );
+  dj.setup( ptr_local, JitDeviceLayout::Scalar );
   dj=l;
 
   d.elem() = dj.getRegElem(row);
   return d;
-#endif
 }
+
 
 //! Insert color vector components 
 /*! Generically, this is an identity operation. Defined differently under color */

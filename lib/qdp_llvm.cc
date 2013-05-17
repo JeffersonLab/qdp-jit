@@ -16,6 +16,10 @@ namespace QDP {
   llvm::Type* llvm_type<int*>::value;
   llvm::Type* llvm_type<bool*>::value;
 
+  namespace llvm_counters {
+    int param_counter;
+    int label_counter;
+  }
 
   void llvm_wrapper_init() {
     llvm::InitializeAllTargets();
@@ -50,6 +54,9 @@ namespace QDP {
 
     llvm::BasicBlock* entry = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entrypoint", mainFunc);
     builder->SetInsertPoint(entry);
+
+    llvm_counters::param_counter = 0;
+    llvm_counters::label_counter = 0;
   }
 
 
@@ -223,14 +230,18 @@ namespace QDP {
   }
 
 
-
   std::string param_next()
   {
-    static int counter = 0;
     std::ostringstream oss;
-    oss << "arg" << counter++;
+    oss << "arg" << llvm_counters::param_counter++;
     llvm::outs() << "param_name = " << oss.str() << "\n";
     return oss.str();
+  }
+
+
+  llvm::Value * llvm_alloca( llvm::Type* type , int elements )
+  {
+    return builder->CreateAlloca( type , llvm_create_value(elements) );    // This can be a llvm::Value*
   }
 
 
@@ -264,9 +275,8 @@ namespace QDP {
 
   llvm::BasicBlock * llvm_new_basic_block()
   {
-    static unsigned counter = 0;
     std::ostringstream oss;
-    oss << "L" << counter++;
+    oss << "L" << llvm_counters::label_counter++;
     llvm::BasicBlock *BB = llvm::BasicBlock::Create(llvm::getGlobalContext(), oss.str() );
     mainFunc->getBasicBlockList().push_back(BB);
     return BB;

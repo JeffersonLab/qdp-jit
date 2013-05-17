@@ -150,6 +150,7 @@ namespace QDP {
   llvm::Value * llvm_call_special_ntidx();
   llvm::Value * llvm_call_special_ctaidx();
 
+  llvm::Value * llvm_alloca( llvm::Type* type , int elements );
 
   llvm::Value * llvm_thread_idx();
 
