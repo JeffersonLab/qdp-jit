@@ -243,26 +243,21 @@ template<class T>
 CUfunction
 function_random_build(OLattice<T>& dest , Seed& seed_tmp)
 {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-  QDP_error_exit("ni");
-#if 0
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-
-  CUfunction func;
 
   llvm_start_new_function();
 
   // No member possible here.
-  // If thread exists due to non-member
+  // If thread exits due to non-member
   // it possibly can't store the new seed at the end.
 
-  llvm::Value * r_lo     = llvm_add_param(  jit_llvm_builtin::i32 );
-  llvm::Value * r_hi     = llvm_add_param(  jit_llvm_builtin::i32 );
+  llvm::Value * r_lo     = llvm_add_param<int>();
+  llvm::Value * r_hi     = llvm_add_param<int>();
 
   llvm::Value * r_idx_thread = llvm_thread_idx();
 
   llvm::Value * r_out_of_range       = llvm_gt( r_idx_thread , llvm_sub( r_hi , r_lo ) );
-  llvm_exit(  r_out_of_range );
+  llvm_cond_exit(  r_out_of_range );
 
   llvm::Value * r_idx = llvm_add( r_lo , r_idx_thread );
 
@@ -296,17 +291,24 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
 
   fill_random( dest_jit.elem(JitDeviceLayout::Coalesced) , seed_reg , skewed_seed_reg , ran_mult_n_reg );
 
-  llvm::Value * r_no_save = llvm_ne( r_idx_thread , llvm::Value *(0) );
+  llvm::Value * r_save = llvm_eq( r_idx_thread , llvm_create_value(0) );
 
-  jit_block_t block_nosave;
-  llvm_branch(  block_nosave , r_no_save );
-  seed_tmp_jit.elem() = seed_reg;
-  llvm_start_block(  block_nosave );
+  llvm::BasicBlock * block_save = llvm_new_basic_block();
+  llvm::BasicBlock * block_not_save = llvm_new_basic_block();
+  llvm::BasicBlock * block_save_exit = llvm_new_basic_block();
+  llvm_cond_branch( r_save , block_save , block_not_save );
+  {
+    llvm_set_insert_point(block_save);
+    seed_tmp_jit.elem() = seed_reg;
+    llvm_branch( block_save_exit );
+  }
+  {
+    llvm_set_insert_point(block_not_save);
+    llvm_branch( block_save_exit );
+  }
+  llvm_set_insert_point(block_save_exit);
 
-  llvm_exit();
-
-  return llvm_get_cufunction("ll_random.ll");
-#endif
+  return jit_function_epilogue_get_cuf("jit_random.ptx");
 }
 
 
@@ -453,8 +455,7 @@ template<class T, class T1, class Op, class RHS>
 void 
 function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
 {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-  QDP_error_exit("ni");
+  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   //  std::cout << "function_exec 0\n";
 
@@ -756,9 +757,6 @@ template<class T>
 void 
 function_random_exec(CUfunction function, OLattice<T>& dest, const Subset& s , Seed& seed_tmp)
 {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-  QDP_error_exit("ni");
-#if 0
   if (!s.hasOrderedRep())
     QDP_error_exit("random on subset with unordered representation not implemented");
 
@@ -805,7 +803,6 @@ function_random_exec(CUfunction function, OLattice<T>& dest, const Subset& s , S
   kernel_geom_t now = getGeom( s.numSiteTable() , threadsPerBlock );
 
   CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
-#endif
 }
 
 

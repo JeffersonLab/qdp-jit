@@ -78,7 +78,12 @@ namespace QDP {
 			  std::function< llvm::Value *(llvm::Value *) > func_int,
 			  llvm::Value* lhs );
 
+  llvm::Value* llvm_shl( llvm::Value* lhs , llvm::Value* rhs );
+  llvm::Value* llvm_shr( llvm::Value* lhs , llvm::Value* rhs );
+  llvm::Value* llvm_rem( llvm::Value* lhs , llvm::Value* rhs );
   llvm::Value* llvm_xor( llvm::Value* lhs , llvm::Value* rhs );
+  llvm::Value* llvm_and( llvm::Value* lhs , llvm::Value* rhs );
+  llvm::Value* llvm_or( llvm::Value* lhs , llvm::Value* rhs );
   llvm::Value* llvm_mul( llvm::Value* lhs , llvm::Value* rhs );
   llvm::Value* llvm_add( llvm::Value* lhs , llvm::Value* rhs );
   llvm::Value* llvm_sub( llvm::Value* lhs , llvm::Value* rhs );

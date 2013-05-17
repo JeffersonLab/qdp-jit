@@ -138,16 +138,35 @@ namespace QDP {
   }
 
 
-  llvm::Value* llvm_xor( llvm::Value* lhs , llvm::Value* rhs ) {  
-    llvm::outs() << "xor lhs = ";
-    lhs->getType()->dump();
-    llvm::outs() << " rhs = ";
-    rhs->getType()->dump();
-    llvm::outs() << "\n";
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{assert(!"Floating point Xor makes no sense.");}, 
-		      [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{ return builder->CreateXor( lhs , rhs ); } , 
+  llvm::Value* llvm_rem( llvm::Value* lhs , llvm::Value* rhs ) {
+    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateFRem( lhs , rhs ); } , 
+		      [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateSRem( lhs , rhs ); } , 
 		      lhs , rhs ); }
 
+  llvm::Value* llvm_shr( llvm::Value* lhs , llvm::Value* rhs ) {  
+    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{assert(!"Flt-pnt SHR makes no sense.");},
+		      [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{ return builder->CreateAShr( lhs , rhs ); },
+		      lhs , rhs ); }
+
+  llvm::Value* llvm_shl( llvm::Value* lhs , llvm::Value* rhs ) {  
+    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{assert(!"Flt-pnt SHL makes no sense.");},
+		      [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{ return builder->CreateShl( lhs , rhs ); },
+		      lhs , rhs ); }
+
+  llvm::Value* llvm_and( llvm::Value* lhs , llvm::Value* rhs ) {  
+    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{assert(!"Flt-pnt AND makes no sense.");},
+		      [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{ return builder->CreateAnd( lhs , rhs ); },
+		      lhs , rhs ); }
+
+  llvm::Value* llvm_or( llvm::Value* lhs , llvm::Value* rhs ) {  
+    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{assert(!"Flt-pnt OR makes no sense.");},
+		      [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{ return builder->CreateOr( lhs , rhs ); },
+		      lhs , rhs ); }
+
+  llvm::Value* llvm_xor( llvm::Value* lhs , llvm::Value* rhs ) {  
+    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{assert(!"Flt-pnt XOR makes no sense.");},
+		      [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{ return builder->CreateXor( lhs , rhs ); },
+		      lhs , rhs ); }
 
   llvm::Value* llvm_mul( llvm::Value* lhs , llvm::Value* rhs ) {
     return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateFMul( lhs , rhs ); } , 
