@@ -101,7 +101,7 @@ namespace QDP {
   llvm::Value* llvm_lt( llvm::Value* lhs , llvm::Value* rhs );
 
 
-  llvm::Value* llvm_sin( llvm::Value* lhs );
+  llvm::Value* llvm_sin_f32( llvm::Value* lhs );
 
   //
   // Convenience function definitions
@@ -166,6 +166,48 @@ namespace QDP {
   void addKernelMetadata(llvm::Function *F);
 
   CUfunction llvm_get_cufunction(const char* fname);
+
+
+  llvm::Value* llvm_sin_f32( llvm::Value* lhs );
+  llvm::Value* llvm_acos_f32( llvm::Value* lhs );
+  llvm::Value* llvm_asin_f32( llvm::Value* lhs );
+  llvm::Value* llvm_atan_f32( llvm::Value* lhs );
+  llvm::Value* llvm_ceil_f32( llvm::Value* lhs );
+  llvm::Value* llvm_floor_f32( llvm::Value* lhs );
+  llvm::Value* llvm_cos_f32( llvm::Value* lhs );
+  llvm::Value* llvm_cosh_f32( llvm::Value* lhs );
+  llvm::Value* llvm_exp_f32( llvm::Value* lhs );
+  llvm::Value* llvm_log_f32( llvm::Value* lhs );
+  llvm::Value* llvm_log10_f32( llvm::Value* lhs );
+  llvm::Value* llvm_sinh_f32( llvm::Value* lhs );
+  llvm::Value* llvm_tan_f32( llvm::Value* lhs ); 
+  llvm::Value* llvm_tanh_f32( llvm::Value* lhs );
+  llvm::Value* llvm_fabs_f32( llvm::Value* lhs ); 
+  llvm::Value* llvm_sqrt_f32( llvm::Value* lhs );
+
+  llvm::Value* llvm_pow_f32( llvm::Value* lhs, llvm::Value* rhs ); 
+  llvm::Value* llvm_atan2_f32( llvm::Value* lhs, llvm::Value* rhs );
+
+  llvm::Value* llvm_sin_f64( llvm::Value* lhs );
+  llvm::Value* llvm_acos_f64( llvm::Value* lhs );
+  llvm::Value* llvm_asin_f64( llvm::Value* lhs );
+  llvm::Value* llvm_atan_f64( llvm::Value* lhs );
+  llvm::Value* llvm_ceil_f64( llvm::Value* lhs );
+  llvm::Value* llvm_floor_f64( llvm::Value* lhs );
+  llvm::Value* llvm_cos_f64( llvm::Value* lhs ); 
+  llvm::Value* llvm_cosh_f64( llvm::Value* lhs );
+  llvm::Value* llvm_exp_f64( llvm::Value* lhs ); 
+  llvm::Value* llvm_log_f64( llvm::Value* lhs ); 
+  llvm::Value* llvm_log10_f64( llvm::Value* lhs );
+  llvm::Value* llvm_sinh_f64( llvm::Value* lhs ); 
+  llvm::Value* llvm_tan_f64( llvm::Value* lhs ); 
+  llvm::Value* llvm_tanh_f64( llvm::Value* lhs );
+  llvm::Value* llvm_fabs_f64( llvm::Value* lhs ); 
+  llvm::Value* llvm_sqrt_f64( llvm::Value* lhs );
+
+  llvm::Value* llvm_pow_f64( llvm::Value* lhs, llvm::Value* rhs );
+  llvm::Value* llvm_atan2_f64( llvm::Value* lhs, llvm::Value* rhs );
+
 
 } // namespace QDP
 

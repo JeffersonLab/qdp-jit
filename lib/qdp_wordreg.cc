@@ -2,8 +2,39 @@
 
 namespace QDP 
 {
+  typename UnaryReturn<WordREG<float>, FnCeil>::Type_t 
+  ceil(const WordREG<float>& s1)
+  {
+    typename UnaryReturn<WordREG<float>, FnSin>::Type_t ret;
+    ret.setup( llvm_ceil_f32( s1.get_val() ) );
+    return ret;
+  }
 
-#if 0
+  typename UnaryReturn<WordREG<float>, FnFloor>::Type_t 
+  floor(const WordREG<float>& s1)
+  {
+    typename UnaryReturn<WordREG<float>, FnSin>::Type_t ret;
+    ret.setup( llvm_floor_f32( s1.get_val() ) );
+    return ret;
+  }
+
+  typename UnaryReturn<WordREG<float>, FnFabs>::Type_t 
+  fabs(const WordREG<float>& s1)
+  {
+    typename UnaryReturn<WordREG<float>, FnSin>::Type_t ret;
+    ret.setup( llvm_fabs_f32( s1.get_val() ) );
+    return ret;
+  }
+
+  typename UnaryReturn<WordREG<float>, FnSqrt>::Type_t 
+  sqrt(const WordREG<float>& s1)
+  {
+    typename UnaryReturn<WordREG<float>, FnSin>::Type_t ret;
+    ret.setup( llvm_sqrt_f32( s1.get_val() ) );
+    return ret;
+  }
+ 
+
   typename UnaryReturn<WordREG<float>, FnArcCos>::Type_t
   acos(const WordREG<float>& s1)
   {
@@ -120,6 +151,41 @@ namespace QDP
 
 
 
+
+
+  typename UnaryReturn<WordREG<double>, FnCeil>::Type_t 
+  ceil(const WordREG<double>& s1)
+  {
+    typename UnaryReturn<WordREG<double>, FnSin>::Type_t ret;
+    ret.setup( llvm_ceil_f64( s1.get_val() ) );
+    return ret;
+  }
+
+  typename UnaryReturn<WordREG<double>, FnFloor>::Type_t 
+  floor(const WordREG<double>& s1)
+  {
+    typename UnaryReturn<WordREG<double>, FnSin>::Type_t ret;
+    ret.setup( llvm_floor_f64( s1.get_val() ) );
+    return ret;
+  }
+
+  typename UnaryReturn<WordREG<double>, FnFabs>::Type_t 
+  fabs(const WordREG<double>& s1)
+  {
+    typename UnaryReturn<WordREG<double>, FnSin>::Type_t ret;
+    ret.setup( llvm_fabs_f64( s1.get_val() ) );
+    return ret;
+  }
+
+  typename UnaryReturn<WordREG<double>, FnSqrt>::Type_t 
+  sqrt(const WordREG<double>& s1)
+  {
+    typename UnaryReturn<WordREG<double>, FnSin>::Type_t ret;
+    ret.setup( llvm_sqrt_f64( s1.get_val() ) );
+    return ret;
+  }
+
+
   typename UnaryReturn<WordREG<double>, FnSin>::Type_t
   sin(const WordREG<double>& s1)
   {
@@ -232,7 +298,7 @@ namespace QDP
     ret.setup( llvm_atan2_f64( s1.get_val() , s2.get_val() ) );
     return ret;
   }
-#endif
+
 
 
 

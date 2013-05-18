@@ -41,7 +41,7 @@ namespace QDP {
   llvm::Function *func_sinh_f32;
   llvm::Function *func_tan_f32;
   llvm::Function *func_tanh_f32;
-  llvm::Function *func_abs_f32;
+  llvm::Function *func_fabs_f32;
   llvm::Function *func_sqrt_f32;
 
   //Imported PTX Binary operations single precision
@@ -63,7 +63,7 @@ namespace QDP {
   llvm::Function *func_sinh_f64;
   llvm::Function *func_tan_f64;
   llvm::Function *func_tanh_f64;
-  llvm::Function *func_abs_f64;
+  llvm::Function *func_fabs_f64;
   llvm::Function *func_sqrt_f64;
 
   //Imported PTX Binary operations double precision
@@ -112,7 +112,7 @@ namespace QDP {
     func_sinh_f32 = llvm_get_func( M , "__nv_sinhf" );
     func_tan_f32 = llvm_get_func( M , "__nv_tanf" );
     func_tanh_f32 = llvm_get_func( M , "__nv_tanhf" );
-    func_abs_f32 = llvm_get_func( M , "__nv_fabsf" );
+    func_fabs_f32 = llvm_get_func( M , "__nv_fabsf" );
     func_sqrt_f32 = llvm_get_func( M , "__nv_fsqrt_rn" );
 
 
@@ -134,7 +134,7 @@ namespace QDP {
     func_sinh_f64 = llvm_get_func( M , "__nv_sinh" );
     func_tan_f64 = llvm_get_func( M , "__nv_tan" );
     func_tanh_f64 = llvm_get_func( M , "__nv_tanh" );
-    func_abs_f64 = llvm_get_func( M , "__nv_fabs" );
+    func_fabs_f64 = llvm_get_func( M , "__nv_fabs" );
     func_sqrt_f64 = llvm_get_func( M , "__nv_dsqrt_rn" );
 
     func_pow_f64 = llvm_get_func( M , "__nv_pow" );
@@ -694,6 +694,72 @@ namespace QDP {
 
     return func;
   }
+
+  llvm::Value* llvm_call_f32( llvm::Function* func , llvm::Value* lhs )
+  {
+    llvm::Value* lhs_f32 = llvm_cast( llvm_type<float>::value , lhs );
+    return builder->CreateCall(func,lhs_f32);
+  }
+
+  llvm::Value* llvm_call_f32( llvm::Function* func , llvm::Value* lhs , llvm::Value* rhs )
+  {
+    llvm::Value* lhs_f32 = llvm_cast( llvm_type<float>::value , lhs );
+    llvm::Value* rhs_f32 = llvm_cast( llvm_type<float>::value , rhs );
+    return builder->CreateCall2(func,lhs_f32,rhs_f32);
+  }
+
+  llvm::Value* llvm_call_f64( llvm::Function* func , llvm::Value* lhs )
+  {
+    llvm::Value* lhs_f64 = llvm_cast( llvm_type<double>::value , lhs );
+    return builder->CreateCall(func,lhs_f64);
+  }
+
+  llvm::Value* llvm_call_f64( llvm::Function* func , llvm::Value* lhs , llvm::Value* rhs )
+  {
+    llvm::Value* lhs_f64 = llvm_cast( llvm_type<float>::value , lhs );
+    llvm::Value* rhs_f64 = llvm_cast( llvm_type<float>::value , rhs );
+    return builder->CreateCall2(func,lhs_f64,rhs_f64);
+  }
+
+  llvm::Value* llvm_sin_f32( llvm::Value* lhs ) { return llvm_call_f32( func_sin_f32 , lhs ); }
+  llvm::Value* llvm_acos_f32( llvm::Value* lhs ) { return llvm_call_f32( func_acos_f32 , lhs ); }
+  llvm::Value* llvm_asin_f32( llvm::Value* lhs ) { return llvm_call_f32( func_asin_f32 , lhs ); }
+  llvm::Value* llvm_atan_f32( llvm::Value* lhs ) { return llvm_call_f32( func_atan_f32 , lhs ); }
+  llvm::Value* llvm_ceil_f32( llvm::Value* lhs ) { return llvm_call_f32( func_ceil_f32 , lhs ); }
+  llvm::Value* llvm_floor_f32( llvm::Value* lhs ) { return llvm_call_f32( func_floor_f32 , lhs ); }
+  llvm::Value* llvm_cos_f32( llvm::Value* lhs ) { return llvm_call_f32( func_cos_f32 , lhs ); }
+  llvm::Value* llvm_cosh_f32( llvm::Value* lhs ) { return llvm_call_f32( func_cosh_f32 , lhs ); }
+  llvm::Value* llvm_exp_f32( llvm::Value* lhs ) { return llvm_call_f32( func_exp_f32 , lhs ); }
+  llvm::Value* llvm_log_f32( llvm::Value* lhs ) { return llvm_call_f32( func_log_f32 , lhs ); }
+  llvm::Value* llvm_log10_f32( llvm::Value* lhs ) { return llvm_call_f32( func_log10_f32 , lhs ); }
+  llvm::Value* llvm_sinh_f32( llvm::Value* lhs ) { return llvm_call_f32( func_sinh_f32 , lhs ); }
+  llvm::Value* llvm_tan_f32( llvm::Value* lhs ) { return llvm_call_f32( func_tan_f32 , lhs ); }
+  llvm::Value* llvm_tanh_f32( llvm::Value* lhs ) { return llvm_call_f32( func_tanh_f32 , lhs ); }
+  llvm::Value* llvm_fabs_f32( llvm::Value* lhs ) { return llvm_call_f32( func_fabs_f32 , lhs ); }
+  llvm::Value* llvm_sqrt_f32( llvm::Value* lhs ) { return llvm_call_f32( func_sqrt_f32 , lhs ); }
+
+  llvm::Value* llvm_pow_f32( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f32( func_pow_f32 , lhs , rhs ); }
+  llvm::Value* llvm_atan2_f32( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f32( func_atan2_f32 , lhs , rhs ); }
+
+  llvm::Value* llvm_sin_f64( llvm::Value* lhs ) { return llvm_call_f64( func_sin_f64 , lhs ); }
+  llvm::Value* llvm_acos_f64( llvm::Value* lhs ) { return llvm_call_f64( func_acos_f64 , lhs ); }
+  llvm::Value* llvm_asin_f64( llvm::Value* lhs ) { return llvm_call_f64( func_asin_f64 , lhs ); }
+  llvm::Value* llvm_atan_f64( llvm::Value* lhs ) { return llvm_call_f64( func_atan_f64 , lhs ); }
+  llvm::Value* llvm_ceil_f64( llvm::Value* lhs ) { return llvm_call_f64( func_ceil_f64 , lhs ); }
+  llvm::Value* llvm_floor_f64( llvm::Value* lhs ) { return llvm_call_f64( func_floor_f64 , lhs ); }
+  llvm::Value* llvm_cos_f64( llvm::Value* lhs ) { return llvm_call_f64( func_cos_f64 , lhs ); }
+  llvm::Value* llvm_cosh_f64( llvm::Value* lhs ) { return llvm_call_f64( func_cosh_f64 , lhs ); }
+  llvm::Value* llvm_exp_f64( llvm::Value* lhs ) { return llvm_call_f64( func_exp_f64 , lhs ); }
+  llvm::Value* llvm_log_f64( llvm::Value* lhs ) { return llvm_call_f64( func_log_f64 , lhs ); }
+  llvm::Value* llvm_log10_f64( llvm::Value* lhs ) { return llvm_call_f64( func_log10_f64 , lhs ); }
+  llvm::Value* llvm_sinh_f64( llvm::Value* lhs ) { return llvm_call_f64( func_sinh_f64 , lhs ); }
+  llvm::Value* llvm_tan_f64( llvm::Value* lhs ) { return llvm_call_f64( func_tan_f64 , lhs ); }
+  llvm::Value* llvm_tanh_f64( llvm::Value* lhs ) { return llvm_call_f64( func_tanh_f64 , lhs ); }
+  llvm::Value* llvm_fabs_f64( llvm::Value* lhs ) { return llvm_call_f64( func_fabs_f64 , lhs ); }
+  llvm::Value* llvm_sqrt_f64( llvm::Value* lhs ) { return llvm_call_f64( func_sqrt_f64 , lhs ); }
+
+  llvm::Value* llvm_pow_f64( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f64( func_pow_f64 , lhs , rhs ); }
+  llvm::Value* llvm_atan2_f64( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f64( func_atan2_f64 , lhs , rhs ); }
 
 
 
