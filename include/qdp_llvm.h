@@ -28,6 +28,12 @@
 #include "llvm/IR/Attributes.h"
 #include "llvm/Support/raw_os_ostream.h"
 
+#include "llvm/Support/DataStream.h"
+#include "llvm/ADT/Statistic.h"
+#include "llvm/Support/Program.h"
+#include "llvm/Support/system_error.h"
+#include "llvm/Support/MemoryBuffer.h"
+
 
 namespace QDP {
 
@@ -93,6 +99,9 @@ namespace QDP {
   llvm::Value* llvm_gt( llvm::Value* lhs , llvm::Value* rhs );
   llvm::Value* llvm_le( llvm::Value* lhs , llvm::Value* rhs );
   llvm::Value* llvm_lt( llvm::Value* lhs , llvm::Value* rhs );
+
+
+  llvm::Value* llvm_sin( llvm::Value* lhs );
 
   //
   // Convenience function definitions
