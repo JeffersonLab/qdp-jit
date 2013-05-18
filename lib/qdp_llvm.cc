@@ -24,7 +24,7 @@ namespace QDP {
     int label_counter;
   }
 
-
+  llvm::OwningPtr<llvm::Module> module_libdevice;
 
   //Imported PTX Unary operations single precision
   llvm::Function *func_sin_f32;
@@ -71,9 +71,9 @@ namespace QDP {
   llvm::Function *func_atan2_f64;
 
 
-  llvm::Function *llvm_get_func( llvm::OwningPtr<llvm::Module>& M , const char * name )
+  llvm::Function *llvm_get_func( const char * name )
   {
-    llvm::Function *func = M->getFunction(name);
+    llvm::Function *func = module_libdevice->getFunction(name);
     if (!func)
       QDP_error_exit("Function %s not found.\n",name);
     QDP_info_primary("Found libdevice function: %s",name);
@@ -83,7 +83,6 @@ namespace QDP {
 
   void llvm_init_libdevice()
   {
-    llvm::OwningPtr<llvm::Module> M;
     std::string ErrorMessage;
 
     llvm::outs() << "mapping " << (size_t)_usr_local_cuda_5_5_nvvm_libdevice_libdevice_compute_20_10_bc_len << " bytes\n";
@@ -91,54 +90,54 @@ namespace QDP {
     llvm::StringRef libdevice_20( (const char *)_usr_local_cuda_5_5_nvvm_libdevice_libdevice_compute_20_10_bc, 
 				  (size_t)_usr_local_cuda_5_5_nvvm_libdevice_libdevice_compute_20_10_bc_len );
 
-    M.reset( llvm::ParseBitcodeFile( llvm::MemoryBuffer::getMemBufferCopy( libdevice_20 ) ,
-				     llvm::getGlobalContext() , 
-				     &ErrorMessage ) 
-	     );
+    module_libdevice.reset( llvm::ParseBitcodeFile( llvm::MemoryBuffer::getMemBufferCopy( libdevice_20 ) ,
+						    llvm::getGlobalContext() , 
+						    &ErrorMessage ) 
+			    );
 
     llvm::outs() << ErrorMessage << "\n";
 
-    func_sin_f32 = llvm_get_func( M , "__nv_sinf" );
-    func_acos_f32 = llvm_get_func( M , "__nv_acosf" );
-    func_asin_f32 = llvm_get_func( M , "__nv_asinf" );
-    func_atan_f32 = llvm_get_func( M , "__nv_atanf" );
-    func_ceil_f32 = llvm_get_func( M , "__nv_ceilf" );
-    func_floor_f32 = llvm_get_func( M , "__nv_floorf" );
-    func_cos_f32 = llvm_get_func( M , "__nv_cosf" );
-    func_cosh_f32 = llvm_get_func( M , "__nv_coshf" );
-    func_exp_f32 = llvm_get_func( M , "__nv_expf" );
-    func_log_f32 = llvm_get_func( M , "__nv_logf" );
-    func_log10_f32 = llvm_get_func( M , "__nv_log10f" );
-    func_sinh_f32 = llvm_get_func( M , "__nv_sinhf" );
-    func_tan_f32 = llvm_get_func( M , "__nv_tanf" );
-    func_tanh_f32 = llvm_get_func( M , "__nv_tanhf" );
-    func_fabs_f32 = llvm_get_func( M , "__nv_fabsf" );
-    func_sqrt_f32 = llvm_get_func( M , "__nv_fsqrt_rn" );
+    func_sin_f32 = llvm_get_func( "__nv_sinf" );
+    func_acos_f32 = llvm_get_func( "__nv_acosf" );
+    func_asin_f32 = llvm_get_func( "__nv_asinf" );
+    func_atan_f32 = llvm_get_func( "__nv_atanf" );
+    func_ceil_f32 = llvm_get_func( "__nv_ceilf" );
+    func_floor_f32 = llvm_get_func( "__nv_floorf" );
+    func_cos_f32 = llvm_get_func( "__nv_cosf" );
+    func_cosh_f32 = llvm_get_func( "__nv_coshf" );
+    func_exp_f32 = llvm_get_func( "__nv_expf" );
+    func_log_f32 = llvm_get_func( "__nv_logf" );
+    func_log10_f32 = llvm_get_func( "__nv_log10f" );
+    func_sinh_f32 = llvm_get_func( "__nv_sinhf" );
+    func_tan_f32 = llvm_get_func( "__nv_tanf" );
+    func_tanh_f32 = llvm_get_func( "__nv_tanhf" );
+    func_fabs_f32 = llvm_get_func( "__nv_fabsf" );
+    func_sqrt_f32 = llvm_get_func( "__nv_fsqrt_rn" );
 
 
-    func_pow_f32 = llvm_get_func( M , "__nv_powf" );
-    func_atan2_f32 = llvm_get_func( M , "__nv_atan2f" );
+    func_pow_f32 = llvm_get_func( "__nv_powf" );
+    func_atan2_f32 = llvm_get_func( "__nv_atan2f" );
 
 
-    func_sin_f64 = llvm_get_func( M , "__nv_sin" );
-    func_acos_f64 = llvm_get_func( M , "__nv_acos" );
-    func_asin_f64 = llvm_get_func( M , "__nv_asin" );
-    func_atan_f64 = llvm_get_func( M , "__nv_atan" );
-    func_ceil_f64 = llvm_get_func( M , "__nv_ceil" );
-    func_floor_f64 = llvm_get_func( M , "__nv_floor" );
-    func_cos_f64 = llvm_get_func( M , "__nv_cos" );
-    func_cosh_f64 = llvm_get_func( M , "__nv_cosh" );
-    func_exp_f64 = llvm_get_func( M , "__nv_exp" );
-    func_log_f64 = llvm_get_func( M , "__nv_log" );
-    func_log10_f64 = llvm_get_func( M , "__nv_log10" );
-    func_sinh_f64 = llvm_get_func( M , "__nv_sinh" );
-    func_tan_f64 = llvm_get_func( M , "__nv_tan" );
-    func_tanh_f64 = llvm_get_func( M , "__nv_tanh" );
-    func_fabs_f64 = llvm_get_func( M , "__nv_fabs" );
-    func_sqrt_f64 = llvm_get_func( M , "__nv_dsqrt_rn" );
+    func_sin_f64 = llvm_get_func( "__nv_sin" );
+    func_acos_f64 = llvm_get_func( "__nv_acos" );
+    func_asin_f64 = llvm_get_func( "__nv_asin" );
+    func_atan_f64 = llvm_get_func( "__nv_atan" );
+    func_ceil_f64 = llvm_get_func( "__nv_ceil" );
+    func_floor_f64 = llvm_get_func( "__nv_floor" );
+    func_cos_f64 = llvm_get_func( "__nv_cos" );
+    func_cosh_f64 = llvm_get_func( "__nv_cosh" );
+    func_exp_f64 = llvm_get_func( "__nv_exp" );
+    func_log_f64 = llvm_get_func( "__nv_log" );
+    func_log10_f64 = llvm_get_func( "__nv_log10" );
+    func_sinh_f64 = llvm_get_func( "__nv_sinh" );
+    func_tan_f64 = llvm_get_func( "__nv_tan" );
+    func_tanh_f64 = llvm_get_func( "__nv_tanh" );
+    func_fabs_f64 = llvm_get_func( "__nv_fabs" );
+    func_sqrt_f64 = llvm_get_func( "__nv_dsqrt_rn" );
 
-    func_pow_f64 = llvm_get_func( M , "__nv_pow" );
-    func_atan2_f64 = llvm_get_func( M , "__nv_atan2" );
+    func_pow_f64 = llvm_get_func( "__nv_pow" );
+    func_atan2_f64 = llvm_get_func( "__nv_atan2" );
   }
 
 
@@ -716,8 +715,8 @@ namespace QDP {
 
   llvm::Value* llvm_call_f64( llvm::Function* func , llvm::Value* lhs , llvm::Value* rhs )
   {
-    llvm::Value* lhs_f64 = llvm_cast( llvm_type<float>::value , lhs );
-    llvm::Value* rhs_f64 = llvm_cast( llvm_type<float>::value , rhs );
+    llvm::Value* lhs_f64 = llvm_cast( llvm_type<double>::value , lhs );
+    llvm::Value* rhs_f64 = llvm_cast( llvm_type<double>::value , rhs );
     return builder->CreateCall2(func,lhs_f64,rhs_f64);
   }
 
