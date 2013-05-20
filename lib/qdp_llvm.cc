@@ -10,6 +10,8 @@ namespace QDP {
   llvm::Function    *mainFunc;
   llvm::Module      *Mod;
 
+  llvm::OwningPtr<llvm::Module> module_libdevice;
+
   llvm::Type* llvm_type<float>::value;
   llvm::Type* llvm_type<double>::value;
   llvm::Type* llvm_type<int>::value;
@@ -23,8 +25,6 @@ namespace QDP {
     int param_counter;
     int label_counter;
   }
-
-  llvm::OwningPtr<llvm::Module> module_libdevice;
 
   //Imported PTX Unary operations single precision
   llvm::Function *func_sin_f32;
@@ -172,7 +172,7 @@ namespace QDP {
     builder = new llvm::IRBuilder<>(llvm::getGlobalContext());
     
     llvm::FunctionType *funcType = llvm::FunctionType::get(builder->getVoidTy(), false);
-    mainFunc = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, "function", Mod);
+    mainFunc = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, "main", Mod);
 
     llvm::BasicBlock* entry = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entrypoint", mainFunc);
     builder->SetInsertPoint(entry);
@@ -498,12 +498,12 @@ namespace QDP {
     llvm::AttrBuilder ABuilder;
     ABuilder.addAttribute(llvm::Attribute::ReadNone);
 
-    llvm::Constant *ReadTidX = Mod->getOrInsertTargetIntrinsic( name , 
-								IntrinFnTy , 
-								llvm::AttributeSet::get(llvm::getGlobalContext(), 
-											llvm::AttributeSet::FunctionIndex, 
-											ABuilder)
-								);
+    llvm::Constant *ReadTidX = Mod->getOrInsertFunction( name , 
+							 IntrinFnTy , 
+							 llvm::AttributeSet::get(llvm::getGlobalContext(), 
+										 llvm::AttributeSet::FunctionIndex, 
+										 ABuilder)
+							 );
 
     return builder->CreateCall(ReadTidX);
   }
@@ -546,11 +546,49 @@ namespace QDP {
   std::string llvm_get_ptx_kernel(const char* fname)
   {
 #if 1
-    Mod->dump();
+    // llvm::outs() << "------------------------- jit module\n";
+    // Mod->dump();
+
+    // Link libdevice to current module
+    std::string ErrorMsg;
+    if (llvm::Linker::LinkModules( Mod , module_libdevice.get() ,  llvm::Linker::PreserveSource , &ErrorMsg)) {
+      QDP_error_exit("Linking libdevice failed: %s",ErrorMsg.c_str());
+    }
+
+    // llvm::outs() << "------------------------- linked module\n";
+    // Mod->dump();
+
+    QDP_info("Linking in libdevice done.");
 
     // Do optimizations ?
 #if 1
+    QDP_info("Running internalize on module...");
+
+    const char *ExportList[] = { "main" };
+
+    llvm::StringMap<int> Mapping;
+    Mapping["__CUDA_FTZ"] = 1;
+
+    llvm::raw_fd_ostream outfd("out.ll",ErrorMsg);
+    llvm::raw_fd_ostream outfd2("out2.ll",ErrorMsg);
+    std::string banner;
+
+    llvm::PassManager OurPM;
+    OurPM.add( llvm::createInternalizePass( llvm::ArrayRef<const char *>(ExportList, 1)));
+    OurPM.add( llvm::createNVVMReflectPass(Mapping));
+    OurPM.add( llvm::createPrintModulePass( &outfd, true, banner ) ); 
+    OurPM.add( llvm::createStripDeadPrototypesPass() );
+    OurPM.add( llvm::createPrintModulePass( &outfd2, true, banner ) ); 
+
+
+    OurPM.run( *Mod );
+    QDP_info("Internalize done.");
+
+    
+
+
     llvm::FunctionPassManager OurFPM( Mod );
+    OurFPM.add(llvm::createCFGSimplificationPass());
     OurFPM.add(llvm::createBasicAliasAnalysisPass());
     OurFPM.add(llvm::createInstructionCombiningPass());
     OurFPM.add(llvm::createReassociatePass());
@@ -560,13 +598,21 @@ namespace QDP {
     auto& func_list = Mod->getFunctionList();
 
     for(auto& x : func_list) {
-      std::string tt( x.getName() );
-      llvm::outs() << "running passes on: " << tt << "\n";
+      QDP_info("Running all optimization passes on function %s",x.getName());
       OurFPM.run(x);
     }
+    QDP_info("All passes run successfully");
 
-    Mod->dump();
+    // llvm::raw_fd_ostream outfd3("out3.ll",ErrorMsg);
+    // llvm::PassManager OurPM2;
+    // OurPM2.add( llvm::createPrintModulePass( &outfd3, true, banner ) );
+    // OurPM2.run( *Mod );
+
+
+
+    //Mod->dump();
 #endif
+
 
     //
     // Call NVPTX
@@ -626,10 +672,11 @@ namespace QDP {
 	llvm::outs() << "Using module's data layout\n";
 	PM.add(new DataLayout(Mod));
       }
-#endif
-
+#else
       llvm::outs() << "Using module's data layout\n";
       PM.add(new llvm::DataLayout(Mod));
+#endif
+
 
 
       // Ask the target to add backend passes as necessary.
@@ -639,7 +686,9 @@ namespace QDP {
 	exit(1);
       }
 
+      QDP_info("Run codegen");
       PM.run(*Mod);
+      QDP_info("done");
       Out->keep();
 
     } // Call Out's destructor
@@ -687,7 +736,7 @@ namespace QDP {
       }
     }
 
-    ret = cuModuleGetFunction(&func, cuModule, "function");
+    ret = cuModuleGetFunction(&func, cuModule, "main");
     if (ret)
       QDP_error_exit("Error returned from cuModuleGetFunction. Abort.");
 

@@ -12,6 +12,7 @@
 #include "llvm/Pass.h"
 #include "llvm/Analysis/Passes.h"
 #include "llvm/Transforms/Scalar.h"
+#include "llvm/Transforms/IPO.h"
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Target/TargetMachine.h"
@@ -21,6 +22,7 @@
 #include "llvm/IR/DataLayout.h"
 
 #include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/StringSet.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/IRBuilder.h"
@@ -33,6 +35,14 @@
 #include "llvm/Support/Program.h"
 #include "llvm/Support/system_error.h"
 #include "llvm/Support/MemoryBuffer.h"
+
+#include "llvm/Linker.h"
+#include "llvm/Assembly/PrintModulePass.h"
+
+
+namespace llvm {
+ModulePass *createNVVMReflectPass(const StringMap<int>&);
+}
 
 
 namespace QDP {
