@@ -569,16 +569,16 @@ namespace QDP {
     llvm::StringMap<int> Mapping;
     Mapping["__CUDA_FTZ"] = 1;
 
-    llvm::raw_fd_ostream outfd("out.ll",ErrorMsg);
-    llvm::raw_fd_ostream outfd2("out2.ll",ErrorMsg);
+    // llvm::raw_fd_ostream outfd("out.ll",ErrorMsg);
+    // llvm::raw_fd_ostream outfd2("out2.ll",ErrorMsg);
     std::string banner;
 
     llvm::PassManager OurPM;
     OurPM.add( llvm::createInternalizePass( llvm::ArrayRef<const char *>(ExportList, 1)));
     OurPM.add( llvm::createNVVMReflectPass(Mapping));
-    OurPM.add( llvm::createPrintModulePass( &outfd, true, banner ) ); 
-    OurPM.add( llvm::createStripDeadPrototypesPass() );
-    OurPM.add( llvm::createPrintModulePass( &outfd2, true, banner ) ); 
+    //OurPM.add( llvm::createPrintModulePass( &outfd, true, banner ) ); 
+    OurPM.add( llvm::createGlobalDCEPass() );
+    //OurPM.add( llvm::createPrintModulePass( &outfd2, true, banner ) ); 
 
 
     OurPM.run( *Mod );
