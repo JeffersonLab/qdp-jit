@@ -19,11 +19,31 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 {
   llvm_start_new_function();
 
-  llvm::Value* r_ordered      = llvm_add_param<bool>();
-  llvm::Value* r_th_count     = llvm_add_param<int>();
-  llvm::Value* r_start        = llvm_add_param<int>();
-  llvm::Value* r_end          = llvm_add_param<int>();
-  llvm::Value* r_do_site_perm = llvm_add_param<bool>();
+  ParamRef p_ordered      = llvm_add_param<bool>();
+  ParamRef p_th_count     = llvm_add_param<int>();
+  ParamRef p_start        = llvm_add_param<int>();
+  ParamRef p_end          = llvm_add_param<int>();
+  ParamRef p_do_site_perm = llvm_add_param<bool>();
+  ParamRef p_site_table   = llvm_add_param<int*>();
+  ParamRef p_member_array = llvm_add_param<bool*>();
+
+
+  ParamLeaf param_leaf;
+
+  typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
+  FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
+
+  auto op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
+
+  typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
+  View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
+
+
+  llvm::Value * r_ordered      = llvm_derefParam( p_ordered );
+  llvm::Value * r_th_count     = llvm_derefParam( p_th_count );
+  llvm::Value * r_start        = llvm_derefParam( p_start );
+  llvm::Value * r_end          = llvm_derefParam( p_end );
+  llvm::Value * r_do_site_perm = llvm_derefParam( p_do_site_perm );
 
   llvm::Value* r_no_site_perm = llvm_not( r_do_site_perm );  
   //mainFunc->dump();
@@ -44,7 +64,7 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   llvm_cond_branch( r_no_site_perm , block_no_site_perm , block_site_perm ); 
   {
     llvm_set_insert_point(block_site_perm);
-    r_idx_perm_phi0 = llvm_array_type_indirection<int*>( r_idx_thread ); // PHI 0
+    r_idx_perm_phi0 = llvm_array_type_indirection( p_site_table , r_idx_thread ); // PHI 0
     llvm_branch( block_no_site_perm_exit );
   }
   {
@@ -72,7 +92,7 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   llvm_cond_branch( r_ordered , block_ordered , block_not_ordered );
   {
     llvm_set_insert_point(block_not_ordered);
-    llvm::Value* r_ismember     = llvm_array_type_indirection<bool*>( r_idx );
+    llvm::Value* r_ismember     = llvm_array_type_indirection( p_member_array , r_idx );
     llvm::Value* r_ismember_not = llvm_not( r_ismember );
     llvm_cond_exit( r_ismember_not ); 
     llvm_branch( block_ordered_exit );
@@ -85,18 +105,10 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   }
   llvm_set_insert_point(block_ordered_exit);
 
-  ParamLeaf param_leaf(  r_idx );
-
-  typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
-  FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
-
-  auto op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
-
-  typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
-  View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
 
-  op_jit(dest_jit.elem( JitDeviceLayout::Coalesced ), forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced ), OpCombine()));
+  op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ), 
+	  forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , r_idx ), OpCombine()));
 
 
   return jit_function_epilogue_get_cuf("jit_eval.ptx");
@@ -107,6 +119,7 @@ template<class T, class T1, class Op, class RHS>
 CUfunction
 function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
 {
+#if 0
 #if 0
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
@@ -167,6 +180,7 @@ function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScala
   op_jit(dest_jit.elem( JitDeviceLayout::Coalesced ), forEach(rhs_view, ViewLeaf( JitDeviceLayout::Scalar ), OpCombine()));
 
   return jit_function_epilogue_get_cuf("jit_lat_sca.ptx");
+#endif
 }
 
 
@@ -178,6 +192,7 @@ template<class T>
 CUfunction
 function_zero_rep_build(OLattice<T>& dest)
 {
+#if 0
   llvm::Value * r_idx = jit_function_preamble_get_idx();
 
   ParamLeaf param_leaf(  r_idx );
@@ -188,6 +203,7 @@ function_zero_rep_build(OLattice<T>& dest)
   zero_rep( dest_jit.elem(JitDeviceLayout::Coalesced) );
 
   return jit_function_epilogue_get_cuf("jit_zero.ptx");
+#endif
 }
 
 
@@ -239,6 +255,7 @@ template<class T>
 CUfunction
 function_random_build(OLattice<T>& dest , Seed& seed_tmp)
 {
+#if 0
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   llvm_start_new_function();
@@ -305,6 +322,7 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
   llvm_set_insert_point(block_save_exit);
 
   return jit_function_epilogue_get_cuf("jit_random.ptx");
+#endif
 }
 
 

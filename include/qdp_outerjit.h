@@ -8,7 +8,7 @@ namespace QDP {
   class OLatticeJIT: public QDPTypeJIT<T, OLatticeJIT<T> >
   {
   public:
-    OLatticeJIT( llvm::Value * base_, llvm::Value * index_) : QDPTypeJIT<T, OLatticeJIT<T> >(base_,index_) {}
+    OLatticeJIT( ParamRef base_ ) : QDPTypeJIT<T, OLatticeJIT<T> >(base_) {}
     OLatticeJIT( const OLatticeJIT& rhs ) : QDPTypeJIT<T, OLatticeJIT<T> >(rhs) {}
 
   private:
@@ -23,8 +23,7 @@ namespace QDP {
   class OScalarJIT: public QDPTypeJIT<T, OScalarJIT<T> >
   {
   public:
-    OScalarJIT( llvm::Value * base_,
-		llvm::Value * index_) : QDPTypeJIT<T, OScalarJIT<T> >(base_,index_) {}
+    OScalarJIT( ParamRef base_ ) : QDPTypeJIT<T, OScalarJIT<T> >(base_) {}
 
     OScalarJIT(const OScalarJIT& rhs) : QDPTypeJIT<T, OScalarJIT<T> >(rhs) {}
 

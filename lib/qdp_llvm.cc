@@ -11,6 +11,11 @@ namespace QDP {
   //llvm::Value    *mainFunc;
   llvm::Module      *Mod;
 
+  bool function_created;
+
+  std::vector< llvm::Type* > vecParamType;
+  std::vector< llvm::Argument* > vecArgument;
+
   llvm::OwningPtr<llvm::Module> module_libdevice;
 
   llvm::Type* llvm_type<float>::value;
@@ -23,7 +28,6 @@ namespace QDP {
   llvm::Type* llvm_type<bool*>::value;
 
   namespace llvm_counters {
-    int param_counter;
     int label_counter;
   }
 
@@ -148,6 +152,8 @@ namespace QDP {
 
 
   void llvm_wrapper_init() {
+    function_created = false;
+
     llvm::InitializeAllTargets();
     llvm::InitializeAllTargetMCs();
     llvm::InitializeAllAsmPrinters();
@@ -176,16 +182,54 @@ namespace QDP {
 
     Mod = new llvm::Module("module", llvm::getGlobalContext());
     builder = new llvm::IRBuilder<>(llvm::getGlobalContext());
-    
-    llvm::FunctionType *funcType = llvm::FunctionType::get(builder->getVoidTy(), false);
+
+    vecParamType.clear();
+    vecArgument.clear();
+    function_created = false;
+  }
+
+
+  void llvm_create_function() {
+    assert(!function_created && "Function already created");
+    assert(vecParamType.size()>0 && "vecParamType.size()>0");
+    llvm::FunctionType *funcType = 
+      llvm::FunctionType::get( builder->getVoidTy() , 
+			       llvm::ArrayRef<llvm::Type*>( vecParamType.data() , vecParamType.size() ) , 
+			       false); // no vararg
     mainFunc = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, "main", Mod);
+
+    unsigned Idx = 0;
+    for (llvm::Function::arg_iterator AI = mainFunc->arg_begin(), AE = mainFunc->arg_end() ; AI != AE ; ++AI, ++Idx) {
+      AI->setName( std::string("arg")+std::to_string(Idx) );
+      vecArgument.push_back( AI );
+    }
 
     llvm::BasicBlock* entry = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entrypoint", mainFunc);
     builder->SetInsertPoint(entry);
 
-    llvm_counters::param_counter = 0;
     llvm_counters::label_counter = 0;
+    function_created = true;
   }
+
+
+
+  llvm::Value * llvm_derefParam( ParamRef r ) {
+    if (!function_created)
+      llvm_create_function();
+    assert( vecArgument.size() > (int)r && "derefParam out of range");
+    return vecArgument.at(r);
+  }
+
+
+  llvm::Value* llvm_array_type_indirection( ParamRef p , llvm::Value* idx )
+  {
+    llvm::Value* base = llvm_derefParam( p );
+    llvm::Value* gep = llvm_createGEP( base , idx );
+    return llvm_load( gep );
+  }
+
+
+
 
 
   llvm::PHINode * llvm_phi( llvm::Type* type, unsigned num )
@@ -358,13 +402,13 @@ namespace QDP {
   }
 
 
-  std::string param_next()
-  {
-    std::ostringstream oss;
-    oss << "arg" << llvm_counters::param_counter++;
-    llvm::outs() << "param_name = " << oss.str() << "\n";
-    return oss.str();
-  }
+  // std::string param_next()
+  // {
+  //   std::ostringstream oss;
+  //   oss << "arg" << llvm_counters::param_counter++;
+  //   llvm::outs() << "param_name = " << oss.str() << "\n";
+  //   return oss.str();
+  // }
 
 
   llvm::Value * llvm_alloca( llvm::Type* type , int elements )
@@ -373,30 +417,39 @@ namespace QDP {
   }
 
 
-  template<> llvm::Value *llvm_add_param<bool>() { 
-    llvm::Argument * u8 = new llvm::Argument( llvm::Type::getInt8Ty(llvm::getGlobalContext()) , param_next() , mainFunc );
-    return llvm_cast( llvm_type<bool>::value , u8 );
+  template<> ParamRef llvm_add_param<bool>() { 
+    vecParamType.push_back( llvm::Type::getInt1Ty(llvm::getGlobalContext()) );
+    return vecParamType.size()-1;
+    // llvm::Argument * u8 = new llvm::Argument( llvm::Type::getInt8Ty(llvm::getGlobalContext()) , param_next() , mainFunc );
+    // return llvm_cast( llvm_type<bool>::value , u8 );
   }
-  template<> llvm::Value *llvm_add_param<bool*>() { 
-    return new llvm::Argument( llvm::Type::getInt1PtrTy(llvm::getGlobalContext()) , param_next() , mainFunc ); 
+  template<> ParamRef llvm_add_param<bool*>() { 
+    vecParamType.push_back( llvm::Type::getInt1PtrTy(llvm::getGlobalContext()) );
+    return vecParamType.size()-1;
   }
-  template<> llvm::Value *llvm_add_param<int>() { 
-    return new llvm::Argument( llvm::Type::getInt32Ty(llvm::getGlobalContext()) , param_next() , mainFunc ); 
+  template<> ParamRef llvm_add_param<int>() { 
+    vecParamType.push_back( llvm::Type::getInt32Ty(llvm::getGlobalContext()) );
+    return vecParamType.size()-1;
   }
-  template<> llvm::Value *llvm_add_param<int*>() { 
-    return new llvm::Argument( llvm::Type::getInt32PtrTy(llvm::getGlobalContext()) , param_next() , mainFunc ); 
+  template<> ParamRef llvm_add_param<int*>() { 
+    vecParamType.push_back( llvm::Type::getInt32PtrTy(llvm::getGlobalContext()) );
+    return vecParamType.size()-1;
   }
-  template<> llvm::Value *llvm_add_param<float>() { 
-    return new llvm::Argument( llvm::Type::getFloatTy(llvm::getGlobalContext()) , param_next() , mainFunc ); 
+  template<> ParamRef llvm_add_param<float>() { 
+    vecParamType.push_back( llvm::Type::getFloatTy(llvm::getGlobalContext()) );
+    return vecParamType.size()-1;
   }
-  template<> llvm::Value *llvm_add_param<float*>() { 
-    return new llvm::Argument( llvm::Type::getFloatPtrTy(llvm::getGlobalContext()) , param_next() , mainFunc ); 
+  template<> ParamRef llvm_add_param<float*>() { 
+    vecParamType.push_back( llvm::Type::getFloatPtrTy(llvm::getGlobalContext()) );
+    return vecParamType.size()-1;
   }
-  template<> llvm::Value *llvm_add_param<double>() { 
-    return new llvm::Argument( llvm::Type::getDoubleTy(llvm::getGlobalContext()) , param_next() , mainFunc ); 
+  template<> ParamRef llvm_add_param<double>() { 
+    vecParamType.push_back( llvm::Type::getDoubleTy(llvm::getGlobalContext()) );
+    return vecParamType.size()-1;
   }
-  template<> llvm::Value *llvm_add_param<double*>() { 
-    return new llvm::Argument( llvm::Type::getDoublePtrTy(llvm::getGlobalContext()) , param_next() , mainFunc ); 
+  template<> ParamRef llvm_add_param<double*>() { 
+    vecParamType.push_back( llvm::Type::getDoublePtrTy(llvm::getGlobalContext()) );
+    return vecParamType.size()-1;
   }
 
 

@@ -467,10 +467,8 @@ struct LeafFunctor<QDPType<T,OLattice<T> >, ParamLeaf>
   typedef TypeA_t  Type_t;
   inline static Type_t apply(const QDPType<T,OLattice<T> > &a, const ParamLeaf& p)
   {
-    llvm::Value *    base_addr = llvm_add_param< typename WordType<T>::Type_t * >();
-    llvm::Value *    index     = p.getRegIdx();
-    //cout << "QDPTypeOLat ParamLeaf 3er\n";
-    return Type_t( base_addr , index );
+    ParamRef    base_addr = llvm_add_param< typename WordType<T>::Type_t * >();
+    return Type_t( base_addr );
   }
 };
 
@@ -482,9 +480,9 @@ struct LeafFunctor<QDPType<T,OScalar<T> >, ParamLeaf>
   typedef TypeA_t  Type_t;
   inline static Type_t apply(const QDPType<T,OScalar<T> > &a, const ParamLeaf& p)
   {
-    llvm::Value *    base_addr = llvm_add_param< typename WordType<T>::Type_t * >();
+    ParamRef    base_addr = llvm_add_param< typename WordType<T>::Type_t * >();
     //cout << "QDPTypeOScalar ParamLeaf 2er\n";
-    return Type_t( base_addr , llvm_create_value(0) );
+    return Type_t( base_addr );
   }
 };
 

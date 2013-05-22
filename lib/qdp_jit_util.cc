@@ -9,7 +9,7 @@ namespace QDP {
   }
 
 
-
+#if 0
   llvm::Value *jit_function_preamble_get_idx() 
   {
 
@@ -52,5 +52,7 @@ namespace QDP {
 
     return r_idx;
   }
+#endif
+
 
 } //namespace

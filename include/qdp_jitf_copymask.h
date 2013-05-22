@@ -9,6 +9,7 @@ namespace QDP {
   CUfunction
   function_copymask_build( OLattice<T>& dest , const OLattice<T1>& mask , const OLattice<T>& src )
   {
+#if 0
     llvm_start_new_function();
 
     llvm::Value* r_lo           = llvm_add_param<int>();
@@ -39,6 +40,7 @@ namespace QDP {
     llvm_exit();
 
     return llvm_get_cufunction("jit_copymask.ptx");
+#endif
   }
 
 

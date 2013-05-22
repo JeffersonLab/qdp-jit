@@ -11,7 +11,7 @@ struct LeafFunctor<QDPTypeJIT<T,OLatticeJIT<T> >, ViewLeaf>
   Type_t apply(const QDPTypeJIT<T,OLatticeJIT<T> > & s, const ViewLeaf& v)
   {
     Type_t reg;
-    reg.setup( s.elem( v.getLayout() ) );
+    reg.setup( s.elem( v.getLayout() , v.getIndex() ) );
     return reg;
   }
 };

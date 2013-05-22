@@ -6,36 +6,36 @@ namespace QDP {
 
 struct FnPeekColorMatrixREG
 {
-  FnPeekColorMatrixREG(llvm::Value * _row, llvm::Value * _col): row(_row), col(_col) {}
+  FnPeekColorMatrixREG(ParamRef  _row, ParamRef  _col): row(_row), col(_col) {}
 
   template<class T>
   inline typename UnaryReturn<T, FnPeekColorMatrixREG>::Type_t
   operator()(const T &a) const
   {
-    return (peekColor(a,row,col));
+    return (peekColor(a,llvm_derefParam(row),llvm_derefParam(col)));
   }
 
 private:
-  llvm::Value *row;
-  llvm::Value *col;
+  ParamRef row;
+  ParamRef col;
 };
 
 
 struct FnPokeColorMatrixREG
 {
-  FnPokeColorMatrixREG(llvm::Value * _row, llvm::Value * _col): row(_row), col(_col) {}
+  FnPokeColorMatrixREG(ParamRef  _row, ParamRef  _col): row(_row), col(_col) {}
   
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, FnPokeColorMatrixREG>::Type_t
   operator()(const T1 &a, const T2 &b) const
   {
-    pokeColor(const_cast<T1&>(a),b,row,col);
+    pokeColor(const_cast<T1&>(a),b,llvm_derefParam(row),llvm_derefParam(col));
     return const_cast<T1&>(a);
   }
 
 private:
-  llvm::Value * row;
-  llvm::Value *col;
+  ParamRef  row;
+  ParamRef col;
 };
 
 
@@ -72,7 +72,7 @@ struct ForEach<UnaryNode<FnPeekColorMatrix, A>, ParamLeaf, TreeCombine>
       //std::cout << __PRETTY_FUNCTION__ << "\n";
       int row = p.getRow();
       int col = p.getCol();
-      //std::cout << "set poke color matrix row,col = " << row << " " << col << "\n";
+      //std::cout << "set poke color matrix row,llvm_derefParam(col) = " << row << " " << col << "\n";
       a.setLit( row );
       a.setLit( col );
     }
@@ -90,7 +90,7 @@ struct ForEach<UnaryNode<FnPeekColorMatrix, A>, AddressLeaf, NullCombine>
     {
       int row = expr.operation().getRow();
       int col = expr.operation().getCol();
-      //std::cout << "set peek color matrix row,col = " << row << " " << col << "\n";
+      //std::cout << "set peek color matrix row,llvm_derefParam(col) = " << row << " " << col << "\n";
       a.setLit( row );
       a.setLit( col );
       return Type_t( ForEach<A, AddressLeaf, NullCombine>::apply( expr.child() , a , n ) );
@@ -102,36 +102,36 @@ struct ForEach<UnaryNode<FnPeekColorMatrix, A>, AddressLeaf, NullCombine>
 
 struct FnPeekSpinMatrixREG
 {
-  FnPeekSpinMatrixREG(llvm::Value * _row, llvm::Value * _col): row(_row), col(_col) {}
+  FnPeekSpinMatrixREG(ParamRef  _row, ParamRef  _col): row(_row), col(_col) {}
 
   template<class T>
   inline typename UnaryReturn<T, FnPeekSpinMatrixREG>::Type_t
   operator()(const T &a) const
   {
-    return (peekSpin(a,row,col));
+    return (peekSpin(a,llvm_derefParam(row),llvm_derefParam(col)));
   }
 
 private:
-  llvm::Value * row;
-  llvm::Value * col;
+  ParamRef  row;
+  ParamRef  col;
 };
 
 
 struct FnPokeSpinMatrixREG
 {
-  FnPokeSpinMatrixREG(llvm::Value * _row, llvm::Value * _col): row(_row), col(_col) {}
+  FnPokeSpinMatrixREG(ParamRef  _row, ParamRef  _col): row(_row), col(_col) {}
   
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, FnPokeSpinMatrixREG>::Type_t
   operator()(const T1 &a, const T2 &b) const
   {
-    pokeSpin(const_cast<T1&>(a),b,row,col);
+    pokeSpin(const_cast<T1&>(a),b,llvm_derefParam(row),llvm_derefParam(col));
     return const_cast<T1&>(a);
   }
 
 private:
-  llvm::Value * row;
-  llvm::Value * col;
+  ParamRef  row;
+  ParamRef  col;
 };
 
 
@@ -169,7 +169,7 @@ struct ForEach<UnaryNode<FnPeekSpinMatrix, A>, ParamLeaf, TreeCombine>
       //std::cout << __PRETTY_FUNCTION__ << "\n";
       int row = p.getRow();
       int col = p.getCol();
-      //std::cout << "set poke spin matrix row,col = " << row << " " << col << "\n";
+      //std::cout << "set poke spin matrix row,llvm_derefParam(col) = " << row << " " << col << "\n";
       a.setLit( row );
       a.setLit( col );
     }
@@ -187,7 +187,7 @@ struct ForEach<UnaryNode<FnPeekSpinMatrix, A>, AddressLeaf, NullCombine>
     {
       int row = expr.operation().getRow();
       int col = expr.operation().getCol();
-      //std::cout << "set peek spin matrix row,col = " << row << " " << col << "\n";
+      //std::cout << "set peek spin matrix row,llvm_derefParam(col) = " << row << " " << col << "\n";
       a.setLit( row );
       a.setLit( col );
       return Type_t( ForEach<A, AddressLeaf, NullCombine>::apply( expr.child() , a , n ) );
@@ -203,34 +203,34 @@ struct ForEach<UnaryNode<FnPeekSpinMatrix, A>, AddressLeaf, NullCombine>
 
 struct FnPeekColorVectorREG
 {
-  FnPeekColorVectorREG(llvm::Value * _row): row(_row) {}
+  FnPeekColorVectorREG(ParamRef  _row): row(_row) {}
 
   template<class T>
   inline typename UnaryReturn<T, FnPeekColorVectorREG>::Type_t
   operator()(const T &a) const
   {
-    return (peekColor(a,row));
+    return (peekColor(a,llvm_derefParam(row)));
   }
 
 private:
-  llvm::Value * row;   // these are registers
+  ParamRef  row;   // these are registers
 };
 
 
 struct FnPokeColorVectorREG
 {
-  FnPokeColorVectorREG(llvm::Value * _row): row(_row) {}
+  FnPokeColorVectorREG(ParamRef  _row): row(_row) {}
   
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, FnPokeColorVectorREG>::Type_t
   operator()(const T1 &a, const T2 &b) const
   {
-    pokeColor(const_cast<T1&>(a),b,row);
+    pokeColor(const_cast<T1&>(a),b,llvm_derefParam(row));
     return const_cast<T1&>(a);
   }
 
 private:
-  llvm::Value * row;   // these are registers
+  ParamRef  row;   // these are registers
 };
 
 
@@ -266,7 +266,7 @@ struct ForEach<UnaryNode<FnPeekColorVector, A>, ParamLeaf, TreeCombine>
     static void apply( const FnPokeColorVector& p, const AddressLeaf& a) {
       //std::cout << __PRETTY_FUNCTION__ << "\n";
       int row = p.getRow();
-      //std::cout << "set poke color vector row,col = " << row << "\n";
+      //std::cout << "set poke color vector row,llvm_derefParam(col) = " << row << "\n";
       a.setLit( row );
     }
   };
@@ -293,34 +293,34 @@ struct ForEach<UnaryNode<FnPeekColorVector, A>, AddressLeaf, NullCombine>
 
 struct FnPeekSpinVectorREG
 {
-  FnPeekSpinVectorREG(llvm::Value * _row): row(_row) {}
+  FnPeekSpinVectorREG(ParamRef  _row): row(_row) {}
 
   template<class T>
   inline typename UnaryReturn<T, FnPeekSpinVectorREG>::Type_t
   operator()(const T &a) const
   {
-    return (peekSpin(a,row));
+    return (peekSpin(a,llvm_derefParam(row)));
   }
 
 private:
-  llvm::Value * row;   // these are registers
+  ParamRef  row;   // these are registers
 };
 
 
 struct FnPokeSpinVectorREG
 {
-  FnPokeSpinVectorREG(llvm::Value * _row): row(_row) {}
+  FnPokeSpinVectorREG(ParamRef  _row): row(_row) {}
   
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, FnPokeSpinVectorREG>::Type_t
   operator()(const T1 &a, const T2 &b) const
   {
-    pokeSpin(const_cast<T1&>(a),b,row);
+    pokeSpin(const_cast<T1&>(a),b,llvm_derefParam(row));
     return const_cast<T1&>(a);
   }
 
 private:
-  llvm::Value * row;   // these are registers
+  ParamRef  row;   // these are registers
 };
 
 

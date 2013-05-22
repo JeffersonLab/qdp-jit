@@ -17,8 +17,7 @@ namespace QDP {
     typedef C Container_t;
 
 
-    QDPTypeJIT( llvm::Value * base_ ,
-		llvm::Value * index_ ): base_m(base_), index_m(index_) {
+    QDPTypeJIT( ParamRef base_ ): base_m(base_) {
       //std::cout << "QDPTypeJIT 3er ctor\n";
     }
 
@@ -29,7 +28,7 @@ namespace QDP {
     //   assert(base_m);
     // }
 
-    QDPTypeJIT(const QDPTypeJIT& a) : base_m(a.base_m), index_m(a.index_m) { }
+    QDPTypeJIT(const QDPTypeJIT& a) : base_m(a.base_m) {}
 
     ~QDPTypeJIT(){}
 
@@ -64,18 +63,18 @@ namespace QDP {
     // }
 
 
-    T& elem( JitDeviceLayout lay ) {
+    T& elem( JitDeviceLayout lay , llvm::Value * index ) {
       IndexDomainVector args;
-      args.push_back( make_pair( Layout::sitesOnNode() , index_m ) );
-      F.setup( base_m , lay , args );
+      args.push_back( make_pair( Layout::sitesOnNode() , index ) );
+      F.setup( llvm_derefParam(base_m) , lay , args );
       //F.setup(getThreadedBase(lay),getInnerSites(lay),llvm_create_value(0));
       return F;
     }
 
-    const T& elem( JitDeviceLayout lay ) const {
+    const T& elem( JitDeviceLayout lay , llvm::Value * index ) const {
       IndexDomainVector args;
-      args.push_back( make_pair( Layout::sitesOnNode() , index_m ) );
-      F.setup( base_m , lay , args );
+      args.push_back( make_pair( Layout::sitesOnNode() , index ) );
+      F.setup( llvm_derefParam(base_m) , lay , args );
       //F.setup(getThreadedBase(lay),getInnerSites(lay),llvm_create_value(0));
       return F;
     }
@@ -83,7 +82,7 @@ namespace QDP {
     T& elem() {
       IndexDomainVector args;
       args.push_back( make_pair( 1 , llvm_create_value(0) ) );
-      F.setup( base_m , JitDeviceLayout::Scalar , args );
+      F.setup( llvm_derefParam(base_m) , JitDeviceLayout::Scalar , args );
       //F.setup(getThreadedBase( JitDeviceLayout::Scalar ),llvm_create_value(1),llvm_create_value(0));
       return F;
     }
@@ -91,15 +90,15 @@ namespace QDP {
     const T& elem() const {
       IndexDomainVector args;
       args.push_back( make_pair( 1 , llvm_create_value(0) ) );
-      F.setup( base_m , JitDeviceLayout::Scalar , args );
+      F.setup( llvm_derefParam(base_m) , JitDeviceLayout::Scalar , args );
       //F.setup(getThreadedBase( JitDeviceLayout::Scalar ),llvm_create_value(1),llvm_create_value(0));
       return F;
     }
 
 
   private:
-    llvm::Value *    base_m;
-    llvm::Value *    index_m;
+    ParamRef    base_m;
+    
     mutable T F;
   };
   

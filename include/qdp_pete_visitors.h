@@ -23,19 +23,17 @@ struct ShiftPhase2
 struct ViewLeaf
 {
   JitDeviceLayout layout_m;
-  inline ViewLeaf( JitDeviceLayout layout ) : layout_m(layout) { }
-  inline JitDeviceLayout getLayout() const { return layout_m; }
+  llvm::Value * index_m;
+  ViewLeaf( JitDeviceLayout layout , llvm::Value * index ) : layout_m(layout), index_m(index) { }
+  JitDeviceLayout getLayout() const { return layout_m; }
+  llvm::Value    *getIndex() const  { return index_m; }
 };
   
 
 
 
-struct ParamLeaf
-{
-  llvm::Value *    index;
-  ParamLeaf( llvm::Value * index_ ) : index(index_) {}
-  llvm::Value * getRegIdx() const {return index;}
-};
+struct ParamLeaf {};
+
 
   // int getParamLattice( int idx_multiplier ) const {
   //   return func.addParamLatticeBaseAddr( r_idx , idx_multiplier );

@@ -120,19 +120,22 @@ namespace QDP {
   //
   llvm::Value* llvm_not( llvm::Value* lhs );
 
-  std::string param_next();
+  //  std::string param_next();
 
+  typedef int ParamRef;
 
-  template<class T> llvm::Value *llvm_add_param();
+  template<class T> ParamRef llvm_add_param();
 
-  template<> llvm::Value *llvm_add_param<bool>();
-  template<> llvm::Value *llvm_add_param<bool*>();
-  template<> llvm::Value *llvm_add_param<int>();
-  template<> llvm::Value *llvm_add_param<int*>();
-  template<> llvm::Value *llvm_add_param<float>();
-  template<> llvm::Value *llvm_add_param<float*>();
-  template<> llvm::Value *llvm_add_param<double>();
-  template<> llvm::Value *llvm_add_param<double*>();
+  template<> ParamRef llvm_add_param<bool>();
+  template<> ParamRef llvm_add_param<bool*>();
+  template<> ParamRef llvm_add_param<int>();
+  template<> ParamRef llvm_add_param<int*>();
+  template<> ParamRef llvm_add_param<float>();
+  template<> ParamRef llvm_add_param<float*>();
+  template<> ParamRef llvm_add_param<double>();
+  template<> ParamRef llvm_add_param<double*>();
+
+  llvm::Value * llvm_derefParam( ParamRef r );
 
   llvm::BasicBlock * llvm_get_insert_block();
 
@@ -157,13 +160,7 @@ namespace QDP {
   llvm::Value * llvm_load_ptr_idx( llvm::Value * ptr , llvm::Value * idx );
   void          llvm_store_ptr_idx( llvm::Value * val , llvm::Value * ptr , llvm::Value * idx );
 
-  template<class T>
-  llvm::Value* llvm_array_type_indirection( llvm::Value* idx )
-  {
-    llvm::Value* base = llvm_add_param<T>();
-    llvm::Value* gep = llvm_createGEP( base , idx );
-    return llvm_load( gep );
-  }
+  llvm::Value * llvm_array_type_indirection( ParamRef p , llvm::Value* idx );
 
   llvm::Value * llvm_special( const char * name );
 
