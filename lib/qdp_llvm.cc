@@ -81,7 +81,7 @@ namespace QDP {
     llvm::Function *func = Mod->getFunction(name);
     if (!func)
       QDP_error_exit("Function %s not found.\n",name);
-    QDP_info_primary("Found libdevice function: %s",name);
+    //QDP_info_primary("Found libdevice function: %s",name);
     return func;
   }
 
@@ -112,10 +112,15 @@ namespace QDP {
   void llvm_setup_math_functions() 
   {
     // Link libdevice to current module
+
+    QDP_info_primary("Linking libdevice to new module");
+
     std::string ErrorMsg;
     if (llvm::Linker::LinkModules( Mod , module_libdevice.get() ,  llvm::Linker::PreserveSource , &ErrorMsg)) {
       QDP_error_exit("Linking libdevice failed: %s",ErrorMsg.c_str());
     }
+
+    QDP_info_primary("Initializing math functions");
 
     func_sin_f32 = llvm_get_func( "__nv_sinf" );
     func_acos_f32 = llvm_get_func( "__nv_acosf" );
@@ -188,7 +193,7 @@ namespace QDP {
 
 
   void llvm_start_new_function() {
-    llvm::outs() << "Staring new LLVM function ...\n";
+    QDP_info_primary( "Staring new LLVM function ...");
 
     Mod = new llvm::Module("module", llvm::getGlobalContext());
     builder = new llvm::IRBuilder<>(llvm::getGlobalContext());
@@ -257,14 +262,14 @@ namespace QDP {
   llvm::Type* promote( llvm::Type* t0 , llvm::Type* t1 )
   {
     if ( t0->isFloatingPointTy() || t1->isFloatingPointTy() ) {
-      llvm::outs() << "promote floating " << t0->isFloatingPointTy() << " " << t1->isFloatingPointTy() << "\n";
+      //llvm::outs() << "promote floating " << t0->isFloatingPointTy() << " " << t1->isFloatingPointTy() << "\n";
       if ( t0->isDoubleTy() || t1->isDoubleTy() ) {
 	return llvm::Type::getDoubleTy(llvm::getGlobalContext());
       } else {
 	return llvm::Type::getFloatTy(llvm::getGlobalContext());
       }
     } else {
-      llvm::outs() << "promote int\n";
+      //llvm::outs() << "promote int\n";
       unsigned upper = std::max( t0->getScalarSizeInBits() , t1->getScalarSizeInBits() );
       return llvm::Type::getIntNTy(llvm::getGlobalContext() , upper );
     }
@@ -275,8 +280,8 @@ namespace QDP {
   {
     assert( dest_type && "llvm_cast" );
     assert( src       && "llvm_cast" );
-    dest_type->dump();
-    src->dump();
+    //dest_type->dump();
+    //src->dump();
     if ( src->getType() == dest_type)
       return src;
 
@@ -291,11 +296,11 @@ namespace QDP {
   {
     llvm::Type* args_type = promote( lhs->getType() , rhs->getType() );
     if ( args_type != lhs->getType() ) {
-      llvm::outs() << "lhs needs conversion\n";
+      //llvm::outs() << "lhs needs conversion\n";
       lhs = llvm_cast( args_type , lhs );
     }
     if ( args_type != rhs->getType() ) {
-      llvm::outs() << "rhs needs conversion\n";
+      //llvm::outs() << "rhs needs conversion\n";
       rhs = llvm_cast( args_type , rhs );
     }
     return std::tie(lhs,rhs,args_type);
@@ -310,10 +315,10 @@ namespace QDP {
     llvm::Type* args_type;
     std::tie(lhs,rhs,args_type) = llvm_normalize_values(lhs,rhs);
     if ( args_type->isFloatingPointTy() ) {
-      llvm::outs() << "float binary op\n";
+      //llvm::outs() << "float binary op\n";
       return func_float( lhs , rhs );  
     }  else {
-      llvm::outs() << "integer binary op\n";
+      //llvm::outs() << "integer binary op\n";
       return func_int( lhs , rhs );  
     }
   }
@@ -413,7 +418,7 @@ namespace QDP {
   // Convenience function definitions
   //
   llvm::Value* llvm_not( llvm::Value* lhs ) {
-    llvm::outs() << "not\n";
+    //llvm::outs() << "not\n";
     return llvm_xor( llvm_create_value(-1) , lhs );
   }
 
@@ -634,17 +639,11 @@ namespace QDP {
   std::string llvm_get_ptx_kernel(const char* fname)
   {
 #if 1
-    llvm::outs() << "------------------------- jit module\n";
-
-    llvm_print_module(Mod,"ir_kernel.ll");
-    //Mod->dump();
-
-
-    QDP_info("Linking in libdevice done.");
+    //llvm_print_module(Mod,"ir_kernel.ll");
 
     // Do optimizations ?
 #if 1
-    QDP_info("Running internalize on module...");
+    QDP_info_primary("Internalizing module");
 
     const char *ExportList[] = { "main" };
 
@@ -659,20 +658,19 @@ namespace QDP {
     OurPM.add( llvm::createInternalizePass( llvm::ArrayRef<const char *>(ExportList, 1)));
     OurPM.add( llvm::createNVVMReflectPass(Mapping));
     OurPM.run( *Mod );
-    QDP_info("Internalize done.");
 
-    llvm_print_module(Mod,"ir_internalized_reflected.ll");
+    //llvm_print_module(Mod,"ir_internalized_reflected.ll");
+
+    QDP_info_primary("Running optimization passes on module");
 
     llvm::PassManager PM;
     PM.add( llvm::createGlobalDCEPass() );
     PM.run( *Mod );
-    QDP_info("Optimization done.");
 
     //
 
 
-    llvm::outs() << "------------------------- optimized module\n";
-    llvm_print_module(Mod,"ir_optimized.ll");
+    //llvm_print_module(Mod,"ir_optimized.ll");
     //Mod->dump();
 
 
@@ -686,11 +684,12 @@ namespace QDP {
 
     auto& func_list = Mod->getFunctionList();
 
+    QDP_info_primary("Running optimization passes on functions");
+
     for(auto& x : func_list) {
-      QDP_info("Running all optimization passes on function %s",x.getName());
+      //QDP_info("Running all optimization passes on function %s",x.getName());
       OurFPM.run(x);
     }
-    QDP_info("All passes run successfully");
 
     // llvm::raw_fd_ostream outfd3("out3.ll",ErrorMsg);
     // llvm::PassManager OurPM2;
@@ -754,15 +753,15 @@ namespace QDP {
 #if 0
       // Add the target data from the target machine, if it exists, or the module.
       if (const DataLayout *TD = Target.getDataLayout()) {
-	llvm::outs() << "Using target's data layout\n";
+	QDP_info_primary( "Using targets's data layout" );
 	PM.add(new DataLayout(*TD));
       }
       else {
-	llvm::outs() << "Using module's data layout\n";
+	QDP_info_primary( "Using module's data layout" );
 	PM.add(new DataLayout(Mod));
       }
 #else
-      llvm::outs() << "Using module's data layout\n";
+      QDP_info_primary( "Using module's data layout" );
       PM.add(new llvm::DataLayout(Mod));
 #endif
 
@@ -775,9 +774,8 @@ namespace QDP {
 	exit(1);
       }
 
-      QDP_info("Run codegen");
+      QDP_info_primary("PTX code generation");
       PM.run(*Mod);
-      QDP_info("done");
       Out->keep();
 
     } // Call Out's destructor
@@ -798,25 +796,14 @@ namespace QDP {
     CUresult ret;
     CUmodule cuModule;
 
-    llvm::outs() << "Adding kernel metadata to function\n";
-
-    llvm::outs() << "------------dump start\n";
-    mainFunc->dump();
-    llvm::outs() << "------------dump end\n";
-
     addKernelMetadata( mainFunc );
 
-    llvm::FunctionType *funcType = mainFunc->getFunctionType();
-    funcType->dump();
+    // llvm::FunctionType *funcType = mainFunc->getFunctionType();
+    // funcType->dump();
 
     std::string ptx_kernel = llvm_get_ptx_kernel(fname);
 
-    // llvm::outs() << "Deleting mainFunc\n";
-    // delete mainFunc;
-    // llvm::outs() << "Deleting builder\n";
-    // delete builder;
-    // llvm::outs() << "Deleting Mod\n";
-    // delete Mod;
+    QDP_info_primary("Loading PTX kernel with driver");
 
     ret = cuModuleLoadData(&cuModule, (void*)ptx_kernel.c_str());
     //ret = cuModuleLoadDataEx( &cuModule , ptx_kernel.c_str() , 0 , 0 , 0 );
