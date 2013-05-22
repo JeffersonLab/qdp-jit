@@ -20,6 +20,8 @@
 #include "llvm/ADT/OwningPtr.h"
 #include "llvm/Support/FormattedStream.h"
 #include "llvm/IR/DataLayout.h"
+#include "llvm/Support/SourceMgr.h"
+#include "llvm/Assembly/Parser.h"
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/StringSet.h"
@@ -49,7 +51,7 @@ namespace QDP {
 
   // llvm::IRBuilder<> *builder;
   // llvm::BasicBlock  *entry;
-  extern llvm::Function    *mainFunc;
+  // extern llvm::Function    *mainFunc;
   //extern llvm::Module      *Mod;
 
   llvm::Value * llvm_create_value( double v );

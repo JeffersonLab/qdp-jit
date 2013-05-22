@@ -86,19 +86,15 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   llvm_set_insert_point(block_ordered_exit);
 
   ParamLeaf param_leaf(  r_idx );
-  //ParamLeaf param_leaf_indexed(  param_leaf.getParamIndexFieldAndOption() );  // Optional soffset (inner/face)
-  //function.addParamMemberArray( param_leaf.r_idx ); // Subset member
-  
-  // Destination
+
   typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
-  //FuncRet_t dest_jit(forEach(dest, param_leaf_indexed, TreeCombine()));
   FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
+
   auto op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
-  // Now the arguments for the rhs
+
   typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
-  //View_t rhs_view(forEach(rhs, param_leaf_indexed, TreeCombine()));
   View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
-  //printme<View_t>();
+
 
   op_jit(dest_jit.elem( JitDeviceLayout::Coalesced ), forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced ), OpCombine()));
 

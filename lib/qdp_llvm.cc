@@ -8,6 +8,7 @@ namespace QDP {
   llvm::IRBuilder<> *builder;
   llvm::BasicBlock  *entry;
   llvm::Function    *mainFunc;
+  //llvm::Value    *mainFunc;
   llvm::Module      *Mod;
 
   llvm::OwningPtr<llvm::Module> module_libdevice;
@@ -85,6 +86,10 @@ namespace QDP {
   {
     std::string ErrorMessage;
 
+#if 0
+    llvm::SMDiagnostic Err;
+    module_libdevice.reset(llvm::ParseAssemblyFile("libdevice_sm20.ll", Err, llvm::getGlobalContext() ));
+#else
     llvm::outs() << "mapping " << (size_t)_usr_local_cuda_5_5_nvvm_libdevice_libdevice_compute_20_10_bc_len << " bytes\n";
 
     llvm::StringRef libdevice_20( (const char *)_usr_local_cuda_5_5_nvvm_libdevice_libdevice_compute_20_10_bc, 
@@ -94,6 +99,7 @@ namespace QDP {
 						    llvm::getGlobalContext() , 
 						    &ErrorMessage ) 
 			    );
+#endif
 
     llvm::outs() << ErrorMessage << "\n";
 
@@ -542,12 +548,27 @@ namespace QDP {
 
 
 
+  void llvm_print_module( llvm::Module* m , const char * fname ) {
+    std::string ErrorMsg;
+    llvm::raw_fd_ostream outfd( fname ,ErrorMsg);
+    llvm::outs() << ErrorMsg << "\n";
+    std::string banner;
+    {
+      llvm::PassManager PM;
+      PM.add( llvm::createPrintModulePass( &outfd, false, banner ) ); 
+      PM.run( *m );
+    }
+  }
+
+
 
   std::string llvm_get_ptx_kernel(const char* fname)
   {
 #if 1
-    // llvm::outs() << "------------------------- jit module\n";
-    // Mod->dump();
+    llvm::outs() << "------------------------- jit module\n";
+
+    llvm_print_module(Mod,"ir_kernel.ll");
+    //Mod->dump();
 
     // Link libdevice to current module
     std::string ErrorMsg;
@@ -555,8 +576,9 @@ namespace QDP {
       QDP_error_exit("Linking libdevice failed: %s",ErrorMsg.c_str());
     }
 
-    // llvm::outs() << "------------------------- linked module\n";
-    // Mod->dump();
+    llvm::outs() << "------------------------- linked module\n";
+    llvm_print_module(Mod,"ir_linked.ll");
+    //Mod->dump();
 
     QDP_info("Linking in libdevice done.");
 
@@ -576,15 +598,22 @@ namespace QDP {
     llvm::PassManager OurPM;
     OurPM.add( llvm::createInternalizePass( llvm::ArrayRef<const char *>(ExportList, 1)));
     OurPM.add( llvm::createNVVMReflectPass(Mapping));
-    //OurPM.add( llvm::createPrintModulePass( &outfd, true, banner ) ); 
-    OurPM.add( llvm::createGlobalDCEPass() );
-    //OurPM.add( llvm::createPrintModulePass( &outfd2, true, banner ) ); 
-
-
     OurPM.run( *Mod );
     QDP_info("Internalize done.");
 
-    
+    llvm_print_module(Mod,"ir_internalized_reflected.ll");
+
+    llvm::PassManager PM;
+    PM.add( llvm::createGlobalDCEPass() );
+    PM.run( *Mod );
+    QDP_info("Optimization done.");
+
+    //
+
+
+    llvm::outs() << "------------------------- optimized module\n";
+    llvm_print_module(Mod,"ir_optimized.ll");
+    //Mod->dump();
 
 
     llvm::FunctionPassManager OurFPM( Mod );
@@ -710,7 +739,15 @@ namespace QDP {
     CUmodule cuModule;
 
     llvm::outs() << "Adding kernel metadata to function\n";
+
+    llvm::outs() << "------------dump start\n";
+    mainFunc->dump();
+    llvm::outs() << "------------dump end\n";
+
     addKernelMetadata( mainFunc );
+
+    llvm::FunctionType *funcType = mainFunc->getFunctionType();
+    funcType->dump();
 
     std::string ptx_kernel = llvm_get_ptx_kernel(fname);
 
