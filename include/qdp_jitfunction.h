@@ -120,7 +120,6 @@ CUfunction
 function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
 {
 #if 0
-#if 0
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   CUfunction func;
@@ -165,10 +164,10 @@ function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScala
   r_idx->addIncoming( r_idx_phi1 , block_ordered );
 #endif
 
-  llvm::Value * r_idx = jit_function_preamble_get_idx();
+  std::vector<ParamRef> params = jit_function_preamble_param();
 
-  ParamLeaf param_leaf( r_idx );
-  
+  ParamLeaf param_leaf;
+
   typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
   FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
 
@@ -177,10 +176,13 @@ function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScala
   typedef typename ForEach<QDPExpr<RHS,OScalar<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
   View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
-  op_jit(dest_jit.elem( JitDeviceLayout::Coalesced ), forEach(rhs_view, ViewLeaf( JitDeviceLayout::Scalar ), OpCombine()));
+  llvm::Value * r_idx = jit_function_preamble_get_idx( params );
+
+  
+  op_jit(dest_jit.elem( JitDeviceLayout::Coalesced , r_idx), 
+	 forEach(rhs_view, ViewLeaf( JitDeviceLayout::Scalar , r_idx ), OpCombine()));
 
   return jit_function_epilogue_get_cuf("jit_lat_sca.ptx");
-#endif
 }
 
 
@@ -192,18 +194,18 @@ template<class T>
 CUfunction
 function_zero_rep_build(OLattice<T>& dest)
 {
-#if 0
-  llvm::Value * r_idx = jit_function_preamble_get_idx();
+  std::vector<ParamRef> params = jit_function_preamble_param();
 
-  ParamLeaf param_leaf(  r_idx );
+  ParamLeaf param_leaf;
 
   typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
   FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
 
-  zero_rep( dest_jit.elem(JitDeviceLayout::Coalesced) );
+  llvm::Value * r_idx = jit_function_preamble_get_idx( params );
+
+  zero_rep( dest_jit.elem(JitDeviceLayout::Coalesced,r_idx) );
 
   return jit_function_epilogue_get_cuf("jit_zero.ptx");
-#endif
 }
 
 
@@ -255,7 +257,6 @@ template<class T>
 CUfunction
 function_random_build(OLattice<T>& dest , Seed& seed_tmp)
 {
-#if 0
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   llvm_start_new_function();
@@ -264,17 +265,10 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
   // If thread exits due to non-member
   // it possibly can't store the new seed at the end.
 
-  llvm::Value * r_lo     = llvm_add_param<int>();
-  llvm::Value * r_hi     = llvm_add_param<int>();
+  ParamRef p_lo     = llvm_add_param<int>();
+  ParamRef p_hi     = llvm_add_param<int>();
 
-  llvm::Value * r_idx_thread = llvm_thread_idx();
-
-  llvm::Value * r_out_of_range       = llvm_gt( r_idx_thread , llvm_sub( r_hi , r_lo ) );
-  llvm_cond_exit(  r_out_of_range );
-
-  llvm::Value * r_idx = llvm_add( r_lo , r_idx_thread );
-
-  ParamLeaf param_leaf(  r_idx );
+  ParamLeaf param_leaf;
 
   typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
   FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
@@ -289,6 +283,16 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
   SeedJIT ran_mult_n_jit(forEach(RNG::ran_mult_n, param_leaf, TreeCombine()));
   LatticeSeedJIT lattice_ran_mult_jit(forEach( *RNG::lattice_ran_mult , param_leaf, TreeCombine()));
 
+  llvm::Value * r_lo     = llvm_derefParam( p_lo );
+  llvm::Value * r_hi     = llvm_derefParam( p_hi );
+
+  llvm::Value * r_idx_thread = llvm_thread_idx();
+
+  llvm::Value * r_out_of_range       = llvm_gt( r_idx_thread , llvm_sub( r_hi , r_lo ) );
+  llvm_cond_exit(  r_out_of_range );
+
+  llvm::Value * r_idx = llvm_add( r_lo , r_idx_thread );
+
   PSeedREG seed_reg;
   PSeedREG skewed_seed_reg;
   PSeedREG ran_mult_n_reg;
@@ -296,13 +300,13 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
 
   seed_reg.setup( ran_seed_jit.elem() );
 
-  lattice_ran_mult_reg.setup( lattice_ran_mult_jit.elem( JitDeviceLayout::Coalesced ) );
+  lattice_ran_mult_reg.setup( lattice_ran_mult_jit.elem( JitDeviceLayout::Coalesced , r_idx ) );
 
   skewed_seed_reg = seed_reg * lattice_ran_mult_reg;
 
   ran_mult_n_reg.setup( ran_mult_n_jit.elem() );
 
-  fill_random( dest_jit.elem(JitDeviceLayout::Coalesced) , seed_reg , skewed_seed_reg , ran_mult_n_reg );
+  fill_random( dest_jit.elem(JitDeviceLayout::Coalesced,r_idx) , seed_reg , skewed_seed_reg , ran_mult_n_reg );
 
   llvm::Value * r_save = llvm_eq( r_idx_thread , llvm_create_value(0) );
 
@@ -322,7 +326,6 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
   llvm_set_insert_point(block_save_exit);
 
   return jit_function_epilogue_get_cuf("jit_random.ptx");
-#endif
 }
 
 
