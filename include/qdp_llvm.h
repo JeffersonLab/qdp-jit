@@ -41,6 +41,8 @@
 #include "llvm/Linker.h"
 #include "llvm/Assembly/PrintModulePass.h"
 
+#include "llvm/ExecutionEngine/ObjectBuffer.h"
+
 
 namespace llvm {
 ModulePass *createNVVMReflectPass(const StringMap<int>&);

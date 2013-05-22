@@ -638,11 +638,6 @@ namespace QDP {
 
   std::string llvm_get_ptx_kernel(const char* fname)
   {
-#if 1
-    //llvm_print_module(Mod,"ir_kernel.ll");
-
-    // Do optimizations ?
-#if 1
     QDP_info_primary("Internalizing module");
 
     const char *ExportList[] = { "main" };
@@ -650,8 +645,6 @@ namespace QDP {
     llvm::StringMap<int> Mapping;
     Mapping["__CUDA_FTZ"] = 1;
 
-    // llvm::raw_fd_ostream outfd("out.ll",ErrorMsg);
-    // llvm::raw_fd_ostream outfd2("out2.ll",ErrorMsg);
     std::string banner;
 
     llvm::PassManager OurPM;
@@ -666,13 +659,6 @@ namespace QDP {
     llvm::PassManager PM;
     PM.add( llvm::createGlobalDCEPass() );
     PM.run( *Mod );
-
-    //
-
-
-    //llvm_print_module(Mod,"ir_optimized.ll");
-    //Mod->dump();
-
 
     llvm::FunctionPassManager OurFPM( Mod );
     OurFPM.add(llvm::createCFGSimplificationPass());
@@ -691,15 +677,6 @@ namespace QDP {
       OurFPM.run(x);
     }
 
-    // llvm::raw_fd_ostream outfd3("out3.ll",ErrorMsg);
-    // llvm::PassManager OurPM2;
-    // OurPM2.add( llvm::createPrintModulePass( &outfd3, true, banner ) );
-    // OurPM2.run( *Mod );
-
-
-
-    //Mod->dump();
-#endif
 
 
     //
@@ -732,59 +709,41 @@ namespace QDP {
     assert(target.get() && "Could not allocate target machine!");
     llvm::TargetMachine &Target = *target.get();
 
-    // Write ptx file
-    {
-      std::string error;
-      unsigned OpenFlags = 0;
-      //  if (Binary) OpenFlags |= raw_fd_ostream::F_Binary;
-      // tool_output_file *FDOut = 
-    
-      llvm::OwningPtr<llvm::tool_output_file> Out( new llvm::tool_output_file( fname , error, OpenFlags) );
-      // (GetOutputStream(TheTarget->getName(), TheTriple.getOS(), argv[0] ));
-      if (!Out) {
-	llvm::errs() << "Could not create OwningPtr<tool_output_file>\n";
-	exit(1);
-      }
 
-      llvm::formatted_raw_ostream FOS(Out->os());
+    std::string str;
+    llvm::raw_string_ostream rss(str);
+    llvm::formatted_raw_ostream FOS(rss);
 
-      llvm::PassManager PM;
+    llvm::PassManager PMTM;
+
 
 #if 0
-      // Add the target data from the target machine, if it exists, or the module.
-      if (const DataLayout *TD = Target.getDataLayout()) {
-	QDP_info_primary( "Using targets's data layout" );
-	PM.add(new DataLayout(*TD));
-      }
-      else {
-	QDP_info_primary( "Using module's data layout" );
-	PM.add(new DataLayout(Mod));
-      }
-#else
+    // Add the target data from the target machine, if it exists, or the module.
+    if (const DataLayout *TD = Target.getDataLayout()) {
+      QDP_info_primary( "Using targets's data layout" );
+      PMTM.add(new DataLayout(*TD));
+    }
+    else {
       QDP_info_primary( "Using module's data layout" );
-      PM.add(new llvm::DataLayout(Mod));
+      PMTM.add(new DataLayout(Mod));
+    }
+#else
+    QDP_info_primary( "Using module's data layout" );
+    PMTM.add(new llvm::DataLayout(Mod));
 #endif
 
 
+    // Ask the target to add backend passes as necessary.
+    if (Target.addPassesToEmitFile(PMTM, FOS,  llvm::TargetMachine::CGFT_AssemblyFile )) {
+      llvm::errs() << ": target does not support generation of this"
+		   << " file type!\n";
+      exit(1);
+    }
 
-      // Ask the target to add backend passes as necessary.
-      if (Target.addPassesToEmitFile(PM, FOS,  llvm::TargetMachine::CGFT_AssemblyFile )) {
-	llvm::errs() << ": target does not support generation of this"
-	       << " file type!\n";
-	exit(1);
-      }
+    QDP_info_primary("PTX code generation");
+    PMTM.run(*Mod);
+    FOS.flush();
 
-      QDP_info_primary("PTX code generation");
-      PM.run(*Mod);
-      Out->keep();
-
-    } // Call Out's destructor
-#endif
-    
-    std::ifstream ifs( fname );
-    std::string str((std::istreambuf_iterator<char>(ifs)),
-		    std::istreambuf_iterator<char>());
-    
     return str;
   }
 
