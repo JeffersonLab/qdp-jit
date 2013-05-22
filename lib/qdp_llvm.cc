@@ -78,7 +78,7 @@ namespace QDP {
 
   llvm::Function *llvm_get_func( const char * name )
   {
-    llvm::Function *func = module_libdevice->getFunction(name);
+    llvm::Function *func = Mod->getFunction(name);
     if (!func)
       QDP_error_exit("Function %s not found.\n",name);
     QDP_info_primary("Found libdevice function: %s",name);
@@ -106,6 +106,16 @@ namespace QDP {
 #endif
 
     llvm::outs() << ErrorMessage << "\n";
+  }
+
+
+  void llvm_setup_math_functions() 
+  {
+    // Link libdevice to current module
+    std::string ErrorMsg;
+    if (llvm::Linker::LinkModules( Mod , module_libdevice.get() ,  llvm::Linker::PreserveSource , &ErrorMsg)) {
+      QDP_error_exit("Linking libdevice failed: %s",ErrorMsg.c_str());
+    }
 
     func_sin_f32 = llvm_get_func( "__nv_sinf" );
     func_acos_f32 = llvm_get_func( "__nv_acosf" );
@@ -186,6 +196,12 @@ namespace QDP {
     vecParamType.clear();
     vecArgument.clear();
     function_created = false;
+
+    llvm_setup_math_functions();
+
+    // llvm::outs() << "------------------------- linked module\n";
+    // llvm_print_module(Mod,"ir_linked.ll");
+    //Mod->dump();
   }
 
 
@@ -623,15 +639,6 @@ namespace QDP {
     llvm_print_module(Mod,"ir_kernel.ll");
     //Mod->dump();
 
-    // Link libdevice to current module
-    std::string ErrorMsg;
-    if (llvm::Linker::LinkModules( Mod , module_libdevice.get() ,  llvm::Linker::PreserveSource , &ErrorMsg)) {
-      QDP_error_exit("Linking libdevice failed: %s",ErrorMsg.c_str());
-    }
-
-    llvm::outs() << "------------------------- linked module\n";
-    llvm_print_module(Mod,"ir_linked.ll");
-    //Mod->dump();
 
     QDP_info("Linking in libdevice done.");
 
