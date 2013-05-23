@@ -554,7 +554,9 @@ namespace QDP {
 
   void llvm_store( llvm::Value * val , llvm::Value * ptr )
   {
-    builder->CreateStore( val , ptr );
+    assert(ptr->getType()->isPointerTy() && "llvm_store: not a pointer type");
+    llvm::Value * val_cast = llvm_cast( ptr->getType()->getPointerElementType() , val );
+    builder->CreateStore( val_cast , ptr );
   }
 
 
