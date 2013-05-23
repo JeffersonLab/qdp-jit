@@ -169,6 +169,9 @@ namespace QDP {
 
   private:
 
+    // OScalar uses the same data layout on the device
+    // and the host.
+#if 0
     void static changeLayout(bool toDev,void * outPtr,void * inPtr)
     {
 
@@ -208,9 +211,11 @@ namespace QDP {
 	}
       }
     }
+#endif
 
 
     inline void alloc_mem() {
+#if 0
       int lim_rea = GetLimit<T,2>::Limit_v; //T::ThisSize;
       int lim_col = GetLimit<T,1>::Limit_v; //T::ThisSize;
       int lim_spi = GetLimit<T,0>::Limit_v; //T::ThisSize;
@@ -222,6 +227,8 @@ namespace QDP {
       }
       else
       myId = QDPCache::Instance().registrate( sizeof(T) , 0 , &changeLayout );
+#endif
+      myId = QDPCache::Instance().registrate( sizeof(T) , 0 , NULL );
     }
     inline void free_mem() {
       if (myId >= 0)
