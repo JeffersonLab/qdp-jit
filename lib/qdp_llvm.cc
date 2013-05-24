@@ -8,8 +8,9 @@ namespace QDP {
   llvm::IRBuilder<> *builder;
   llvm::BasicBlock  *entry;
   llvm::Function    *mainFunc;
-  //llvm::Value    *mainFunc;
   llvm::Module      *Mod;
+  llvm::Function    *func_seed2float;
+  //llvm::Value      *mainFunc;
 
   bool function_created;
 
@@ -94,7 +95,7 @@ namespace QDP {
     llvm::SMDiagnostic Err;
     module_libdevice.reset(llvm::ParseAssemblyFile("libdevice_sm20.ll", Err, llvm::getGlobalContext() ));
 #else
-    llvm::outs() << "mapping " << (size_t)_usr_local_cuda_5_5_nvvm_libdevice_libdevice_compute_20_10_bc_len << " bytes\n";
+    //llvm::outs() << "mapping " << (size_t)_usr_local_cuda_5_5_nvvm_libdevice_libdevice_compute_20_10_bc_len << " bytes\n";
 
     llvm::StringRef libdevice_20( (const char *)_usr_local_cuda_5_5_nvvm_libdevice_libdevice_compute_20_10_bc, 
 				  (size_t)_usr_local_cuda_5_5_nvvm_libdevice_libdevice_compute_20_10_bc_len );
@@ -105,7 +106,7 @@ namespace QDP {
 			    );
 #endif
 
-    llvm::outs() << ErrorMessage << "\n";
+    //llvm::outs() << ErrorMessage << "\n";
   }
 
 
@@ -198,6 +199,8 @@ namespace QDP {
     Mod = new llvm::Module("module", llvm::getGlobalContext());
     builder = new llvm::IRBuilder<>(llvm::getGlobalContext());
 
+    func_seed2float = jit_build_seedToFloat();
+
     vecParamType.clear();
     vecArgument.clear();
     function_created = false;
@@ -209,6 +212,14 @@ namespace QDP {
     //Mod->dump();
   }
 
+  llvm::Value * llvm_seedToFloat( llvm::Value* a0 , llvm::Value* a1 , llvm::Value* a2 , llvm::Value* a3 ) {
+    assert(a0 && "llvm_seedToFloat a0");
+    assert(a1 && "llvm_seedToFloat a1");
+    assert(a2 && "llvm_seedToFloat a2");
+    assert(a3 && "llvm_seedToFloat a3");
+    assert(func_seed2float && "llvm_seedToFloat func_seed2float");
+    return builder->CreateCall4( func_seed2float , a0,a1,a2,a3 );
+  }
 
   void llvm_create_function() {
     assert(!function_created && "Function already created");
@@ -281,17 +292,17 @@ namespace QDP {
     assert( dest_type && "llvm_cast" );
     assert( src       && "llvm_cast" );
 
-    llvm::outs() << "\ncast: dest_type  = "; dest_type->dump();
-    llvm::outs() << "\ncast: src->getType  = "; src->getType()->dump();
+    // llvm::outs() << "\ncast: dest_type  = "; dest_type->dump();
+    // llvm::outs() << "\ncast: src->getType  = "; src->getType()->dump();
     
     if ( src->getType() == dest_type)
       return src;
 
-    llvm::outs() << "\ncast: dest_type is array = " << dest_type->isArrayTy() << "\n";
-
-    if (dest_type->isArrayTy()) {
-      llvm::outs() << "\ncast: dest_type->getArrayElementTy() = "; dest_type->getArrayElementType()->dump();
-    }
+    // llvm::outs() << "\ncast: dest_type is array = " << dest_type->isArrayTy() << "\n";
+    // if (dest_type->isArrayTy()) {
+    //   llvm::outs() << "\ncast: dest_type->getArrayElementTy() = "; 
+    //   dest_type->getArrayElementType()->dump();
+    // }
 
     if ( dest_type->isArrayTy() )
       if ( dest_type->getArrayElementType() == src->getType() )
@@ -345,10 +356,8 @@ namespace QDP {
 			  llvm::Value* lhs )
   {
     if ( lhs->getType()->isFloatingPointTy() ) {
-      llvm::outs() << "float unary op\n";
       return func_float( lhs );  
     }  else {
-      llvm::outs() << "integer unary op\n";
       return func_int( lhs );  
     }
   }
@@ -592,8 +601,8 @@ namespace QDP {
   {
     assert(ptr->getType()->isPointerTy() && "llvm_store: not a pointer type");
     llvm::Value * val_cast = llvm_cast( ptr->getType()->getPointerElementType() , val );
-    llvm::outs() << "\nstore: val_cast  = "; val_cast->dump();
-    llvm::outs() << "\nstore: ptr  = "; ptr->dump();
+    // llvm::outs() << "\nstore: val_cast  = "; val_cast->dump();
+    // llvm::outs() << "\nstore: ptr  = "; ptr->dump();
     builder->CreateStore( val_cast , ptr );
   }
 
@@ -606,9 +615,9 @@ namespace QDP {
 
   void llvm_store_ptr_idx( llvm::Value * val , llvm::Value * ptr , llvm::Value * idx )
   {
-    llvm::outs() << "\nstore_ptr: val->getType  = "; val->getType()->dump();
-    llvm::outs() << "\nstore_ptr: ptr->getType  = "; ptr->getType()->dump();
-    llvm::outs() << "\nstore_ptr: idx->getType  = "; idx->getType()->dump();
+    // llvm::outs() << "\nstore_ptr: val->getType  = "; val->getType()->dump();
+    // llvm::outs() << "\nstore_ptr: ptr->getType  = "; ptr->getType()->dump();
+    // llvm::outs() << "\nstore_ptr: idx->getType  = "; idx->getType()->dump();
 
     llvm_store( val , llvm_createGEP( ptr , idx ) );
   }

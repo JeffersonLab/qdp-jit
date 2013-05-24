@@ -10,6 +10,9 @@ namespace QDP {
 
   CUfunction jit_function_epilogue_get_cuf(const char *);
 
+  llvm::Function *jit_build_seedToFloat();
+
+
 } // namespace
 
 #endif

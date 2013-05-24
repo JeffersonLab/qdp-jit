@@ -390,10 +390,19 @@ inline typename UnaryReturn<PSeedREG<T>, FnSeedToFloat>::Type_t
 seedToFloat(const PSeedREG<T>& s1)
 {
   typename UnaryReturn<PSeedREG<T>, FnSeedToFloat>::Type_t  d; // QDP::PScalarREG<QDP::RScalarREG<QDP::WordREG<float> > >
-  typedef typename RealScalar<T>::Type_t  S;                                   // QDP::RScalarREG<QDP::WordREG<float> >
 
-  // printme<typename UnaryReturn<PSeedREG<T>, FnSeedToFloat>::Type_t>(); 
-  // printme<typename RealScalar<T>::Type_t>(); 
+  llvm::Value *i0 = s1.elem(0).elem().get_val();
+  llvm::Value *i1 = s1.elem(1).elem().get_val();
+  llvm::Value *i2 = s1.elem(2).elem().get_val();
+  llvm::Value *i3 = s1.elem(3).elem().get_val();
+
+  llvm::Value *fl = llvm_seedToFloat(i0,i1,i2,i3);
+
+  d.elem().elem().setup( fl );
+
+  return d;
+#if 0
+  typedef typename RealScalar<T>::Type_t  S;                                   // QDP::RScalarREG<QDP::WordREG<float> >
 
   S  twom11(1.0 / 2048.0);
   S  twom12(1.0 / 4096.0);
@@ -419,6 +428,7 @@ seedToFloat(const PSeedREG<T>& s1)
   d.elem() = twom11 * fs2;
 
   return d;
+#endif
 
 #if 0
   typename UnaryReturn<PSeedREG<T>, FnSeedToFloat>::Type_t  d;

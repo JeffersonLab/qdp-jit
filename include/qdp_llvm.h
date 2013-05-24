@@ -139,6 +139,7 @@ namespace QDP {
   template<> ParamRef llvm_add_param<double>();
   template<> ParamRef llvm_add_param<double*>();
 
+  llvm::Value * llvm_seedToFloat( llvm::Value* a0,llvm::Value* a1,llvm::Value* a2,llvm::Value* a3);
   llvm::Value * llvm_derefParam( ParamRef r );
 
   llvm::BasicBlock * llvm_get_insert_block();
