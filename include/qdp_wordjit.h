@@ -265,6 +265,7 @@ namespace QDP {
   inline void 
   zero_rep(WordJIT<float>& dest)
   {
+    llvm::outs() << "dest.getBaseReg()->dump(); = "; dest.getBaseReg()->dump();
     llvm_store_ptr_idx( llvm_create_value( 0.0 ) , dest.getBaseReg() , dest.getOffset() );
   }
 

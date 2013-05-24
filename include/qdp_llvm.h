@@ -30,6 +30,7 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Attributes.h"
+#include "llvm/IR/DerivedTypes.h"
 #include "llvm/Support/raw_os_ostream.h"
 
 #include "llvm/Support/DataStream.h"
@@ -42,6 +43,7 @@
 #include "llvm/Assembly/PrintModulePass.h"
 
 #include "llvm/ExecutionEngine/ObjectBuffer.h"
+#include "llvm/IR/GlobalVariable.h"
 
 
 namespace llvm {
@@ -171,6 +173,9 @@ namespace QDP {
   llvm::Value * llvm_call_special_ctaidx();
 
   llvm::Value * llvm_alloca( llvm::Type* type , int elements );
+  llvm::Value * llvm_get_shared_ptr( llvm::Type *ty );
+
+  void llvm_bar_sync();
 
   llvm::Value * llvm_thread_idx();
 

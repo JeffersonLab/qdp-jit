@@ -280,13 +280,29 @@ namespace QDP {
   {
     assert( dest_type && "llvm_cast" );
     assert( src       && "llvm_cast" );
-    //dest_type->dump();
-    //src->dump();
+
+    llvm::outs() << "\ncast: dest_type  = "; dest_type->dump();
+    llvm::outs() << "\ncast: src->getType  = "; src->getType()->dump();
+    
     if ( src->getType() == dest_type)
       return src;
 
-    return builder->CreateCast( llvm::CastInst::getCastOpcode( src , true , dest_type , true ) , 
+    llvm::outs() << "\ncast: dest_type is array = " << dest_type->isArrayTy() << "\n";
+
+    if (dest_type->isArrayTy()) {
+      llvm::outs() << "\ncast: dest_type->getArrayElementTy() = "; dest_type->getArrayElementType()->dump();
+    }
+
+    if ( dest_type->isArrayTy() )
+      if ( dest_type->getArrayElementType() == src->getType() )
+	return src;
+
+    if (!llvm::CastInst::isCastable( src->getType() , dest_type ))
+      QDP_error_exit("not castable");
+
+    llvm::Value* ret = builder->CreateCast( llvm::CastInst::getCastOpcode( src , true , dest_type , true ) , 
 				src , dest_type , "" );
+    return ret;
   }
 
 
@@ -431,6 +447,26 @@ namespace QDP {
   //   return oss.str();
   // }
 
+  llvm::Value* llvm_get_shared_ptr( llvm::Type *ty ) {
+
+    //
+
+    llvm::GlobalVariable *gv = new llvm::GlobalVariable ( *Mod , 
+							  llvm::ArrayType::get(ty,0) ,
+							  false , 
+							  llvm::GlobalVariable::ExternalLinkage, 
+							  0, 
+							  "shared_buffer", 
+							  0, //GlobalVariable *InsertBefore=0, 
+							  llvm::GlobalVariable::NotThreadLocal, //ThreadLocalMode=NotThreadLocal
+							  3, // unsigned AddressSpace=0, 
+							  false); //bool isExternallyInitialized=false)
+    return builder->CreatePointerCast(gv, llvm::PointerType::get(ty,3) );
+    //return builder->CreatePointerCast(gv,llvm_type<double*>::value);
+    //return gv;
+  }
+
+
 
   llvm::Value * llvm_alloca( llvm::Type* type , int elements )
   {
@@ -556,6 +592,8 @@ namespace QDP {
   {
     assert(ptr->getType()->isPointerTy() && "llvm_store: not a pointer type");
     llvm::Value * val_cast = llvm_cast( ptr->getType()->getPointerElementType() , val );
+    llvm::outs() << "\nstore: val_cast  = "; val_cast->dump();
+    llvm::outs() << "\nstore: ptr  = "; ptr->dump();
     builder->CreateStore( val_cast , ptr );
   }
 
@@ -568,9 +606,34 @@ namespace QDP {
 
   void llvm_store_ptr_idx( llvm::Value * val , llvm::Value * ptr , llvm::Value * idx )
   {
+    llvm::outs() << "\nstore_ptr: val->getType  = "; val->getType()->dump();
+    llvm::outs() << "\nstore_ptr: ptr->getType  = "; ptr->getType()->dump();
+    llvm::outs() << "\nstore_ptr: idx->getType  = "; idx->getType()->dump();
+
     llvm_store( val , llvm_createGEP( ptr , idx ) );
   }
 
+
+
+  void llvm_bar_sync()
+  {
+    llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getVoidTy(llvm::getGlobalContext()), false);
+
+    llvm::AttrBuilder ABuilder;
+    ABuilder.addAttribute(llvm::Attribute::ReadNone);
+
+    llvm::Constant *Bar = Mod->getOrInsertFunction( "llvm.nvvm.barrier0" , 
+						    IntrinFnTy , 
+						    llvm::AttributeSet::get(llvm::getGlobalContext(), 
+									    llvm::AttributeSet::FunctionIndex, 
+									    ABuilder)
+						    );
+
+    builder->CreateCall(Bar);
+  }
+
+
+  
 
 
   llvm::Value * llvm_special( const char * name )
@@ -654,7 +717,7 @@ namespace QDP {
     OurPM.add( llvm::createNVVMReflectPass(Mapping));
     OurPM.run( *Mod );
 
-    //llvm_print_module(Mod,"ir_internalized_reflected.ll");
+    llvm_print_module(Mod,"ir_internalized_reflected.ll");
 
     QDP_info_primary("Running optimization passes on module");
 
@@ -745,6 +808,8 @@ namespace QDP {
     QDP_info_primary("PTX code generation");
     PMTM.run(*Mod);
     FOS.flush();
+
+    llvm::outs() << str << "\n";
 
     return str;
   }

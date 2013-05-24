@@ -8,9 +8,6 @@ namespace QDP {
 			 int size, int threads, int blocks, int shared_mem_usage,
 			 void *d_idata, void *d_odata, void *siteTable)
   {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-  QDP_error_exit("ni");
-#if 0
     // lo <= idx < hi
     int lo = 0;
     int hi = size;
@@ -42,7 +39,6 @@ namespace QDP {
     //QDP_info("launing block=(%d,1,1)  grid=(%d,%d,1)",threads,now.Nblock_x,now.Nblock_y);
 
     CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threads,1,1,    shared_mem_usage, 0, &addr[0] , 0);
-#endif
   }
 
 
@@ -52,10 +48,6 @@ namespace QDP {
 		     int size, int threads, int blocks, int shared_mem_usage,
 		     void *d_idata, void *d_odata)
   {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-  QDP_error_exit("ni");
-#if 0
-
     //  QDP_info("function_sum_ind_coal_exec size=%d threads=%d blocks=%d shared_mem=%d idata=%p odata=%p ",	   size,threads,blocks,shared_mem_usage,d_idata,d_odata);
 
     // lo <= idx < hi
@@ -89,7 +81,6 @@ namespace QDP {
     //QDP_info("launing block=(%d,1,1)  grid=(%d,%d,1)",threads,now.Nblock_x,now.Nblock_y);
 
     CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threads,1,1,    shared_mem_usage, 0, &addr[0] , 0);
-#endif
   }
 
 
