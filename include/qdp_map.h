@@ -235,23 +235,20 @@ struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
     inline
     static Type_t apply(const UnaryNode<FnMap, A>& expr, const ParamLeaf &p, const TreeCombine &c)
     {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-  QDP_error_exit("ni");
-#if 0
       //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
       const Map& map = expr.operation().map;
       FnMap& fnmap = const_cast<FnMap&>(expr.operation());
 
+      IndexRet index_pack;
+      index_pack.p_multi_index = llvm_add_param<int*>();
+      index_pack.p_recv_buf    = llvm_add_param<REAL*>(); // This should deduce it's type from A somehow
 
-
-      //llvm::Value * index_x_4         = llvm_mul( p.getRegIdx() , llvm_create_value(4) );
-      llvm_comment( "MAP INDEX" );
+      return Type_t( FnMapJIT( expr.operation() , index_pack ) , 
+		     ForEach< A, ParamLeaf, TreeCombine >::apply( expr.child() , p , c ) );
+#if 0
       llvm::Value * idx_array_ptr     = llvm_add_param( jit_llvm_type( jit_llvm_builtin::i32 , jit_llvm_ind::yes ) );
       llvm::Value * new_index_local   = llvm_load( idx_array_ptr , p.getRegIdx() , jit_llvm_builtin::i32 );
-
-      //llvm::Value * idx_array_adr_off = llvm_add( idx_array_address , index_x_4 );
-      //llvm::Value * new_index_local   = llvm_load ( idx_array_adr_off , 0 , jit_ptx_type::s32 );
 
       llvm::Value * pred_lt0          = llvm_lt( new_index_local , llvm_create_value(0) );
 
@@ -262,13 +259,14 @@ struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
       index_pack.r_newidx_local  = new_index_local;
       index_pack.r_newidx_buffer = new_index_buffer;
       index_pack.r_pred_in_buf   = pred_lt0;
-      llvm_comment( "RECEIVE BUFFER" );
+
       index_pack.r_rcvbuf        = llvm_add_param( jit_llvm_type( jit_type< REAL >::value , jit_llvm_ind::yes ) );
-      
+
       ParamLeaf pp( new_index_local );
       return Type_t( FnMapJIT( expr.operation() , index_pack ) , 
 		     ForEach< A, ParamLeaf, TreeCombine >::apply( expr.child() , pp , c ) );
 #endif
+      
     }
   };
 
@@ -286,8 +284,56 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
     inline
     static Type_t apply(const UnaryNode<FnMapJIT, A>& expr, const ViewLeaf &v, const OpCombine &o)
     {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-  QDP_error_exit("ni");
+      Type_t ret;
+      Type_t ret_phi0;
+      Type_t ret_phi1;
+
+      IndexRet index = expr.operation().index;
+
+      llvm::Value * r_multi_index = llvm_array_type_indirection( index.p_multi_index , v.index_m );
+      
+      llvm::BasicBlock * block_in_buffer = llvm_new_basic_block();
+      llvm::BasicBlock * block_not_in_buffer = llvm_new_basic_block();
+      llvm::BasicBlock * block_in_buffer_exit = llvm_new_basic_block();
+      llvm::BasicBlock * cond_exit;
+      llvm_cond_branch( llvm_lt( r_multi_index , 
+				 llvm_create_value(0) ) , 
+			block_in_buffer , 
+			block_not_in_buffer );
+      {
+	llvm_set_insert_point(block_in_buffer);
+	llvm::Value *idx_buf = llvm_sub ( llvm_neg ( r_multi_index ) , llvm_create_value(1) );
+
+	IndexDomainVector args;
+	args.push_back( make_pair( Layout::sitesOnNode() , idx_buf ) );
+
+	typename JITType<Type_t>::Type_t t_jit_recv;
+	t_jit_recv.setup( llvm_derefParam(index.p_recv_buf) ,
+			  JitDeviceLayout::Scalar ,
+			  args );
+
+	ret_phi0.setup( t_jit_recv );
+	
+	llvm_branch( block_in_buffer_exit );
+      }
+      {
+	llvm_set_insert_point(block_not_in_buffer);
+
+	ViewLeaf vv( JitDeviceLayout::Coalesced , r_multi_index );
+	ret_phi1 = Combine1<TypeA_t, 
+			    FnMapJIT , 
+			    OpCombine>::combine(ForEach<A, ViewLeaf, OpCombine>::apply(expr.child(), vv, o) , 
+						expr.operation(), o);
+
+	llvm_branch( block_in_buffer_exit );
+      }
+      llvm_set_insert_point(block_in_buffer_exit);
+
+      qdpPHI( ret , 
+	      ret_phi0 , block_in_buffer ,
+	      ret_phi1 , block_not_in_buffer );
+
+      return ret;
 #if 0
       //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 

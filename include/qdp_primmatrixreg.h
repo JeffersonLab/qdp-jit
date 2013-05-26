@@ -1740,6 +1740,23 @@ where(const PScalarREG<T1>& a, const PMatrixREG<T2,N,C>& b, const PMatrixREG<T3,
   return d;
 }
 
+
+template<class T, int N, template<class,int> class C>
+inline void 
+qdpPHI(PMatrixREG<T,N,C>& d, 
+       const PMatrixREG<T,N,C>& phi0, llvm::BasicBlock* bb0 ,
+       const PMatrixREG<T,N,C>& phi1, llvm::BasicBlock* bb1 )
+{
+  for(int i=0; i < N; ++i)
+    for(int j=0; j < N; ++j)
+      qdpPHI(d.elem(i,j),
+	     phi0.elem(i,j),bb0,
+	     phi1.elem(i,j),bb1);
+}
+
+
+
+
 /*! @} */  // end of group primmatrix
 
 } // namespace QDP

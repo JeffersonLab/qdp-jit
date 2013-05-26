@@ -53,6 +53,8 @@ ModulePass *createNVVMReflectPass(const StringMap<int>&);
 
 namespace QDP {
 
+  typedef int ParamRef;
+
   // llvm::IRBuilder<> *builder;
   // llvm::BasicBlock  *entry;
   // extern llvm::Function    *mainFunc;
@@ -77,10 +79,12 @@ namespace QDP {
 
   struct IndexRet {
     IndexRet(){}
-    llvm::Value * r_newidx_local;
-    llvm::Value * r_newidx_buffer;
-    llvm::Value * r_pred_in_buf;
-    llvm::Value * r_rcvbuf;
+    ParamRef p_multi_index;  // if neg. -> recv. buffer, otherwise it's the local index
+    ParamRef p_recv_buf;
+    // llvm::Value * r_newidx_local;
+    // llvm::Value * r_newidx_buffer;
+    // llvm::Value * r_pred_in_buf;
+    // llvm::Value * r_rcvbuf;
   };
 
   void llvm_start_new_function();
@@ -116,6 +120,7 @@ namespace QDP {
   llvm::Value* llvm_le( llvm::Value* lhs , llvm::Value* rhs );
   llvm::Value* llvm_lt( llvm::Value* lhs , llvm::Value* rhs );
 
+  llvm::Value* llvm_neg( llvm::Value* lhs );
 
   llvm::Value* llvm_sin_f32( llvm::Value* lhs );
 
@@ -125,8 +130,6 @@ namespace QDP {
   llvm::Value* llvm_not( llvm::Value* lhs );
 
   //  std::string param_next();
-
-  typedef int ParamRef;
 
   template<class T> ParamRef llvm_add_param();
 

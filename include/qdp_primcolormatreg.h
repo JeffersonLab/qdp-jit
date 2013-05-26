@@ -803,6 +803,8 @@ quarkContractXX(const PColorMatrixREG<T1,4>& s1, const PColorMatrixREG<T2,4>& s2
 }
 
 
+
+
 /*! @} */   // end of group primcolormatrix
 
 } // namespace QDP

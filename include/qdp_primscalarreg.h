@@ -1517,6 +1517,20 @@ gather_sites(PScalarREG<T>& d,
   gather_sites(d.elem(), s0.elem(), i0, s1.elem(), i1, s2.elem(), i2, s3.elem(), i3);
 }
 
+
+template<class T>
+inline void 
+qdpPHI(PScalarREG<T>& d, 
+       const PScalarREG<T>& phi0, llvm::BasicBlock* bb0 ,
+       const PScalarREG<T>& phi1, llvm::BasicBlock* bb1 )
+{
+  qdpPHI(d.elem(),
+	 phi0.elem(),bb0,
+	 phi1.elem(),bb1);
+}
+
+
+
 /*! @} */  // end of group primscalar
 
 } // namespace QDP

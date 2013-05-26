@@ -363,6 +363,12 @@ namespace QDP {
   }
 
 
+  llvm::Value* llvm_neg( llvm::Value* src ) {
+    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateFSub( lhs , rhs ); } , 
+		      [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateSub( lhs , rhs ); } , 
+		      llvm_create_value(0) , src ); }
+
+
   llvm::Value* llvm_rem( llvm::Value* lhs , llvm::Value* rhs ) {
     return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateFRem( lhs , rhs ); } , 
 		      [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateSRem( lhs , rhs ); } , 
@@ -726,7 +732,7 @@ namespace QDP {
     OurPM.add( llvm::createNVVMReflectPass(Mapping));
     OurPM.run( *Mod );
 
-    //llvm_print_module(Mod,"ir_internalized_reflected.ll");
+    llvm_print_module(Mod,"ir_internalized_reflected.ll");
 
     QDP_info_primary("Running optimization passes on module");
 
@@ -818,7 +824,7 @@ namespace QDP {
     PMTM.run(*Mod);
     FOS.flush();
 
-    //llvm::outs() << str << "\n";
+    llvm::outs() << str << "\n";
 
     return str;
   }
