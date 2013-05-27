@@ -9,8 +9,9 @@ namespace QDP {
   llvm::BasicBlock  *entry;
   llvm::Function    *mainFunc;
   llvm::Module      *Mod;
-  llvm::Function    *func_seed2float;
   //llvm::Value      *mainFunc;
+
+
 
   bool function_created;
 
@@ -199,7 +200,8 @@ namespace QDP {
     Mod = new llvm::Module("module", llvm::getGlobalContext());
     builder = new llvm::IRBuilder<>(llvm::getGlobalContext());
 
-    func_seed2float = jit_build_seedToFloat();
+    jit_build_seedToFloat();
+    jit_build_seedMultiply();
 
     vecParamType.clear();
     vecArgument.clear();
@@ -212,14 +214,6 @@ namespace QDP {
     //Mod->dump();
   }
 
-  llvm::Value * llvm_seedToFloat( llvm::Value* a0 , llvm::Value* a1 , llvm::Value* a2 , llvm::Value* a3 ) {
-    assert(a0 && "llvm_seedToFloat a0");
-    assert(a1 && "llvm_seedToFloat a1");
-    assert(a2 && "llvm_seedToFloat a2");
-    assert(a3 && "llvm_seedToFloat a3");
-    assert(func_seed2float && "llvm_seedToFloat func_seed2float");
-    return builder->CreateCall4( func_seed2float , a0,a1,a2,a3 );
-  }
 
   void llvm_create_function() {
     assert(!function_created && "Function already created");

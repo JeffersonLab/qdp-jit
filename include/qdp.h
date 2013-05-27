@@ -105,11 +105,12 @@ using std::ostream;
 
 #include "cuda.h"
 #include "qdp_llvm.h"
-#include "qdp_jit_util.h"
 
 
 #include "qdp_forward.h"
 #include "qdp_datalayout.h"
+
+#include "qdp_jit_util.h"
 
 // Basic includes
 #define PETE_USER_DEFINED_EXPRESSION
