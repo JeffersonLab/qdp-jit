@@ -294,60 +294,37 @@ template<class T, class T1, class RHS>
 CUfunction
 function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs )
 {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-  QDP_error_exit("ni");
-#if 0
-  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  typedef typename WordType<T1>::Type_t WT;
 
   CUfunction func;
 
   llvm_start_new_function();
 
-  llvm::Value * r_lo     = llvm_add_param(  jit_llvm_builtin::i32 );
-  llvm::Value * r_hi     = llvm_add_param(  jit_llvm_builtin::i32 );
+  ParamRef p_lo      = llvm_add_param<int>();
+  ParamRef p_hi      = llvm_add_param<int>();
+  ParamRef p_soffset = llvm_add_param<int*>();
+  ParamRef p_sndbuf  = llvm_add_param<WT*>();
 
-  llvm::Value * r_idx = llvm_thread_idx();  
+  ParamLeaf param_leaf;
 
-  llvm::Value * r_out_of_range       = llvm_ge( r_idx , r_hi );
-  llvm_exit(  r_out_of_range );
-
-  llvm::Value * r_perm_array_addr      = llvm_add_param(  jit_llvm_builtin::u64 );  // Site permutation array
-  llvm::Value * r_idx_mul_4            = llvm_mul( r_idx , llvm::Value *(4) );
-  llvm::Value * r_perm_array_addr_load = llvm_add( r_perm_array_addr , r_idx_mul_4 );
-  llvm::Value * r_idx_perm             = llvm_load ( r_perm_array_addr_load , 0 , jit_llvm_builtin::i32 );
-
-  llvm::Value * r_gather_buffer        = llvm_add_param(  jit_llvm_builtin::u64 );  // Gather buffer
-
-  //ParamLeaf param_leaf_idx(  r_idx );
-  ParamLeaf param_leaf_idx_perm(  r_idx_perm );
-  
-  // ParamLeaf param_leaf_0(  function.getRegIdx() , Jit::LatticeLayout::SCAL );
-  // ParamLeaf param_leaf_soffset(  param_leaf_0.getParamIndexFieldAndOption() , Jit::LatticeLayout::COAL );
-
-  // Destination
-  typedef typename JITType< OLattice<T> >::Type_t DestView_t;
-
-  DestView_t dest_jit(  r_gather_buffer , r_idx );
-
-		       // param_leaf_0.getParamLattice( JITType<T>::Type_t::Size_t * WordSize<T>::Size ) ,
-		       // Jit::LatticeLayout::SCAL );
-
-  // typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
-  // FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
-
-  // Now the arguments for the rhs
   typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
-  View_t rhs_view( forEach( rhs , param_leaf_idx_perm , TreeCombine() ) );
+  View_t rhs_view( forEach( rhs , param_leaf , TreeCombine() ) );
 
-  //printme<View_t>();
+  typedef typename JITType< OLattice<T> >::Type_t DestView_t;
+  DestView_t dest_jit( p_sndbuf );
 
-  OpAssign()( dest_jit.elem( JitDeviceLayout::Scalar ) , 
-	      forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced ) , OpCombine() ) );
+  llvm::Value * r_lo      = llvm_derefParam( p_lo );
+  llvm::Value * r_hi      = llvm_derefParam( p_hi );
+  llvm::Value * r_idx     = llvm_thread_idx();  
 
-  llvm_exit();
+  llvm_cond_exit( llvm_ge( r_idx , r_hi ) );
 
-  return llvm_get_cufunction("ll_gather.ll");
-#endif
+  llvm::Value * r_idx_site = llvm_array_type_indirection( p_soffset , r_idx );
+  
+  OpAssign()( dest_jit.elem( JitDeviceLayout::Scalar , r_idx ) , 
+	      forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , r_idx_site ) , OpCombine() ) );
+
+  return jit_function_epilogue_get_cuf("jit_gather.ll");
 }
 
 
@@ -355,9 +332,6 @@ template<class T1, class RHS>
 void
 function_gather_exec( CUfunction function, void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs )
 {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-  QDP_error_exit("ni");
-#if 0
   AddressLeaf addr_leaf;
 
   int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
@@ -418,7 +392,6 @@ function_gather_exec( CUfunction function, void* send_buf , const Map& map , con
   kernel_geom_t now = getGeom( hi-lo , threadsPerBlock[hi-lo] );
 
   CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock[hi-lo],1,1,    0, 0, &addr[0] , 0);
-#endif
 }
 
 

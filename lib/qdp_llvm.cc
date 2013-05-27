@@ -732,7 +732,7 @@ namespace QDP {
     OurPM.add( llvm::createNVVMReflectPass(Mapping));
     OurPM.run( *Mod );
 
-    llvm_print_module(Mod,"ir_internalized_reflected.ll");
+    //llvm_print_module(Mod,"ir_internalized_reflected.ll");
 
     QDP_info_primary("Running optimization passes on module");
 
@@ -824,7 +824,7 @@ namespace QDP {
     PMTM.run(*Mod);
     FOS.flush();
 
-    llvm::outs() << str << "\n";
+    //llvm::outs() << str << "\n";
 
     return str;
   }
