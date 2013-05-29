@@ -726,7 +726,6 @@ namespace QDP {
     OurPM.add( llvm::createNVVMReflectPass(Mapping));
     OurPM.run( *Mod );
 
-    //llvm_print_module(Mod,"ir_internalized_reflected.ll");
 
     QDP_info_primary("Running optimization passes on module");
 
@@ -734,10 +733,12 @@ namespace QDP {
     PM.add( llvm::createGlobalDCEPass() );
     PM.run( *Mod );
 
+    //llvm_print_module(Mod,"ir_internalized_reflected_globalDCE.ll");
+
     llvm::FunctionPassManager OurFPM( Mod );
     OurFPM.add(llvm::createCFGSimplificationPass());
     OurFPM.add(llvm::createBasicAliasAnalysisPass());
-    //OurFPM.add(llvm::createInstructionCombiningPass()); // this causes problems!!
+    OurFPM.add(llvm::createInstructionCombiningPass()); // this causes problems!!
     OurFPM.add(llvm::createReassociatePass());
     OurFPM.add(llvm::createGVNPass());
     OurFPM.doInitialization();
