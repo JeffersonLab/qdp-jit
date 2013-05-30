@@ -98,19 +98,13 @@ namespace QDP {
     llvm::PHINode * r_pow = llvm_phi( llvm_type<int>::value , 2 );
     r_pow->addIncoming( llvm_create_value(1) , block_zero_exit );
 
-    llvm_cond_branch( llvm_ge( r_pow , val_ntid ) , block_power_loop_not_inc , block_power_loop_inc );
+    llvm_cond_branch( llvm_ge( r_pow , val_ntid ) , block_power_loop_exit , block_power_loop_inc );
     {
       llvm_set_insert_point(block_power_loop_inc);
       r_pow_phi = llvm_shl( r_pow , llvm_create_value(1) );
-      r_pow->addIncoming( r_pow_phi , block_power_loop_inc_exit );
-      llvm_branch( block_power_loop_inc_exit );
+      r_pow->addIncoming( r_pow_phi , block_power_loop_inc );
+      llvm_branch( block_power_loop_start );
     }
-    {
-      llvm_set_insert_point(block_power_loop_not_inc);
-      llvm_branch( block_power_loop_exit );
-    }
-    llvm_set_insert_point(block_power_loop_inc_exit);
-    llvm_branch( block_power_loop_start );
 
     llvm_set_insert_point(block_power_loop_exit);
 
@@ -266,20 +260,14 @@ namespace QDP {
 
     llvm::PHINode * r_pow = llvm_phi( llvm_type<int>::value , 2 );
     r_pow->addIncoming( llvm_create_value(1) , block_zero_exit );
-    r_pow->addIncoming( r_pow_phi , block_power_loop_inc_exit );
 
-    llvm_cond_branch( llvm_ge( r_pow , val_ntid ) , block_power_loop_not_inc , block_power_loop_inc );
+    llvm_cond_branch( llvm_ge( r_pow , val_ntid ) , block_power_loop_exit , block_power_loop_inc );
     {
       llvm_set_insert_point(block_power_loop_inc);
       r_pow_phi = llvm_shl( r_pow , llvm_create_value(1) );
-      llvm_branch( block_power_loop_inc_exit );
+      r_pow->addIncoming( r_pow_phi , block_power_loop_inc );
+      llvm_branch( block_power_loop_start );
     }
-    {
-      llvm_set_insert_point(block_power_loop_not_inc);
-      llvm_branch( block_power_loop_inc_exit );
-    }
-    llvm_set_insert_point(block_power_loop_inc_exit);
-    llvm_branch( block_power_loop_start );
 
     llvm_set_insert_point(block_power_loop_exit);
 

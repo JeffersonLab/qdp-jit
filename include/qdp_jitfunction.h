@@ -133,7 +133,6 @@ function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScala
 
   llvm::Value * r_idx = jit_function_preamble_get_idx( params );
 
-  
   op_jit(dest_jit.elem( JitDeviceLayout::Coalesced , r_idx), 
 	 forEach(rhs_view, ViewLeaf( JitDeviceLayout::Scalar , r_idx ), OpCombine()));
 
