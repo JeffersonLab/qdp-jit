@@ -9,64 +9,26 @@ template<class T>
 CUfunction
 function_gaussian_build(OLattice<T>& dest ,OLattice<T>& r1 ,OLattice<T>& r2 )
 {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-  QDP_error_exit("ni");
-#if 0
-  //  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-  CUfunction func;
+  std::vector<ParamRef> params = jit_function_preamble_param();
 
-  llvm_start_new_function();
-
-  llvm::Value* r_ordered      = llvm_add_param(  jit_ptx_type::pred );
-  llvm::Value* r_th_count     = llvm_add_param(  jit_ptx_type::s32 );
-  llvm::Value* r_start        = llvm_add_param(  jit_ptx_type::s32 );
-  llvm::Value* r_end          = llvm_add_param(  jit_ptx_type::s32 );
-
-  llvm::Value* r_idx_thread = llvm_thread_idx();
-
-  llvm_exit( llvm_ge( r_idx_thread , r_th_count ) );
-
-  llvm::Value* r_idx = r_idx_thread;
-
-  jit_label_t label_ordered;
-  jit_label_t label_ordered_exit;
-  llvm_branch( label_ordered , r_ordered );
-  {
-    llvm::Value* r_member = llvm_add_param(  jit_ptx_type::u64 );  // Subset
-    llvm::Value* r_member_addr        = llvm_add( r_member , r_idx );   // I don't have to multiply with wordsize, since 1
-    llvm::Value* r_ismember           = llvm_load ( r_member_addr , 0 , jit_ptx_type::pred );
-    llvm::Value* r_ismember_not       = llvm_not( r_ismember );
-    llvm_exit( r_ismember_not );
-    llvm_branch( label_ordered_exit );
-  }
-  llvm_label(label_ordered);
-  {
-    r_idx = llvm_add( r_idx_thread , r_start );
-  }
-  llvm_label(label_ordered_exit);
-
-
-
-  ParamLeaf param_leaf( r_idx );
+  ParamLeaf param_leaf;
 
   typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
   FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
   FuncRet_t r1_jit(forEach(r1, param_leaf, TreeCombine()));
   FuncRet_t r2_jit(forEach(r2, param_leaf, TreeCombine()));
 
+  llvm::Value * r_idx = jit_function_preamble_get_idx( params );
 
   typedef typename REGType< typename JITType<T>::Type_t >::Type_t TREG;
   TREG r1_reg;
   TREG r2_reg;
-  r1_reg.setup( r1_jit.elem( JitDeviceLayout::Coalesced ) );
-  r2_reg.setup( r2_jit.elem( JitDeviceLayout::Coalesced ) );
+  r1_reg.setup( r1_jit.elem( JitDeviceLayout::Coalesced , r_idx ) );
+  r2_reg.setup( r2_jit.elem( JitDeviceLayout::Coalesced , r_idx ) );
 
-  fill_gaussian( dest_jit.elem(JitDeviceLayout::Coalesced) , r1_reg , r2_reg );
+  fill_gaussian( dest_jit.elem(JitDeviceLayout::Coalesced , r_idx ) , r1_reg , r2_reg );
 
-  llvm_exit();
-
-  return llvm_get_cufunction("ptx_gaussian.ptx");
-#endif
+  return llvm_get_cufunction("jit_gaussian.ptx");
 }
 
 
@@ -74,11 +36,6 @@ template<class T>
 void 
 function_gaussian_exec(CUfunction function, OLattice<T>& dest,OLattice<T>& r1,OLattice<T>& r2, const Subset& s )
 {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-  QDP_error_exit("ni");
-#if 0
-  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-
   AddressLeaf addr_leaf;
 
   int junk_0 = forEach(dest, addr_leaf, NullCombine());
@@ -129,7 +86,6 @@ function_gaussian_exec(CUfunction function, OLattice<T>& dest,OLattice<T>& r1,OL
   kernel_geom_t now = getGeom( th_count , threadsPerBlock );
 
   CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
-#endif
 }
 
 
