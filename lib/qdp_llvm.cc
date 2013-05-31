@@ -733,7 +733,7 @@ namespace QDP {
     PM.add( llvm::createGlobalDCEPass() );
     PM.run( *Mod );
 
-    //llvm_print_module(Mod,"ir_internalized_reflected_globalDCE.ll");
+    llvm_print_module(Mod,"ir_internalized_reflected_globalDCE.ll");
 
     llvm::FunctionPassManager OurFPM( Mod );
     //OurFPM.add(llvm::createCFGSimplificationPass());  // skip this for now. causes problems with CUDA generic pointers
@@ -836,7 +836,6 @@ namespace QDP {
     ptxfile.close();
     str = buffer.str();
 #endif
-
 
     //llvm::outs() << str << "\n";
 

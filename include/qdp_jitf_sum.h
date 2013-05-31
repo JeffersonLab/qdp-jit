@@ -86,8 +86,6 @@ namespace QDP {
     //
     llvm::BasicBlock * block_power_loop_start = llvm_new_basic_block();
     llvm::BasicBlock * block_power_loop_inc = llvm_new_basic_block();
-    llvm::BasicBlock * block_power_loop_not_inc = llvm_new_basic_block();
-    llvm::BasicBlock * block_power_loop_inc_exit = llvm_new_basic_block();
     llvm::BasicBlock * block_power_loop_exit = llvm_new_basic_block();
     llvm::Value* r_pow_phi;
 
@@ -249,8 +247,6 @@ namespace QDP {
     //
     llvm::BasicBlock * block_power_loop_start = llvm_new_basic_block();
     llvm::BasicBlock * block_power_loop_inc = llvm_new_basic_block();
-    llvm::BasicBlock * block_power_loop_not_inc = llvm_new_basic_block();
-    llvm::BasicBlock * block_power_loop_inc_exit = llvm_new_basic_block();
     llvm::BasicBlock * block_power_loop_exit = llvm_new_basic_block();
     llvm::Value* r_pow_phi;
 
