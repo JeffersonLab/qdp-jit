@@ -736,7 +736,7 @@ namespace QDP {
     //llvm_print_module(Mod,"ir_internalized_reflected_globalDCE.ll");
 
     llvm::FunctionPassManager OurFPM( Mod );
-    OurFPM.add(llvm::createCFGSimplificationPass());
+    //OurFPM.add(llvm::createCFGSimplificationPass());  // skip this for now. causes problems with CUDA generic pointers
     OurFPM.add(llvm::createBasicAliasAnalysisPass());
     OurFPM.add(llvm::createInstructionCombiningPass()); // this causes problems. Not anymore!
     OurFPM.add(llvm::createReassociatePass());
@@ -818,6 +818,25 @@ namespace QDP {
     QDP_info_primary("PTX code generation");
     PMTM.run(*Mod);
     FOS.flush();
+
+#if 0
+    // Write PTX string to file
+    std::ofstream ptxfile;
+    ptxfile.open ( fname );
+    ptxfile << str << "\n";
+    ptxfile.close();
+#endif
+
+
+#if 0
+    // Read PTX string from file
+    std::ifstream ptxfile(fname);
+    std::stringstream buffer;
+    buffer << ptxfile.rdbuf();
+    ptxfile.close();
+    str = buffer.str();
+#endif
+
 
     //llvm::outs() << str << "\n";
 
