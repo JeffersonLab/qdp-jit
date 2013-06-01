@@ -53,7 +53,7 @@ namespace QDP {
     llvm::Value* r_ntidx       = llvm_call_special_ntidx(); // needed later
 
     typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_elem;   // this is stupid
-    reg_idata_elem.setup( idata.elem( input_layout , r_idx ) );
+    reg_idata_elem.setup( idata.elem( input_layout , r_idx_perm ) );
 
     IndexDomainVector args;
     args.push_back( make_pair( Layout::sitesOnNode() , r_tidx ) );  // sitesOnNode irrelevant since Scalar access later
