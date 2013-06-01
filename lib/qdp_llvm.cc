@@ -737,9 +737,9 @@ namespace QDP {
 
     llvm::FunctionPassManager OurFPM( Mod );
     //OurFPM.add(llvm::createCFGSimplificationPass());  // skip this for now. causes problems with CUDA generic pointers
-    OurFPM.add(llvm::createBasicAliasAnalysisPass());
-    OurFPM.add(llvm::createInstructionCombiningPass()); // this causes problems. Not anymore!
-    OurFPM.add(llvm::createReassociatePass());
+    //OurFPM.add(llvm::createBasicAliasAnalysisPass());
+    //OurFPM.add(llvm::createInstructionCombiningPass()); // this causes problems. Not anymore!
+    //OurFPM.add(llvm::createReassociatePass());
     OurFPM.add(llvm::createGVNPass());
     OurFPM.doInitialization();
 

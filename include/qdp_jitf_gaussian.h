@@ -28,7 +28,7 @@ function_gaussian_build(OLattice<T>& dest ,OLattice<T>& r1 ,OLattice<T>& r2 )
 
   fill_gaussian( dest_jit.elem(JitDeviceLayout::Coalesced , r_idx ) , r1_reg , r2_reg );
 
-  return llvm_get_cufunction("jit_gaussian.ptx");
+  return jit_function_epilogue_get_cuf("jit_gaussian.ptx");
 }
 
 
