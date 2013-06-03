@@ -30,6 +30,13 @@ void function_sum_exec( CUfunction function,
 
     jit_value r_idx = jit_geom_get_linear_th_idx();
 
+    jit_value r_tidx       = jit_geom_get_tidx();
+    jit_value r_shared     = jit_get_shared_mem_ptr();
+    OLatticeJIT<typename JITType<T2>::Type_t> sdata( r_shared , r_tidx );      // want scalar access later
+    zero_rep( sdata.elem( JitDeviceLayout::Scalar ) );
+
+    jit_ins_exit(  jit_ins_ge( r_idx , r_hi ) );
+
     // I'll do always a site perm here
     // Can eventually be optimized if orderedSubset
     jit_value r_perm_array_addr      = jit_add_param( jit_ptx_type::u64 );  // Site permutation array
@@ -40,12 +47,9 @@ void function_sum_exec( CUfunction function,
     jit_value r_idata      = jit_add_param( jit_ptx_type::u64 );  // Input  array
     jit_value r_odata      = jit_add_param( jit_ptx_type::u64 );  // output array
     jit_value r_block_idx  = jit_geom_get_ctaidx();
-    jit_value r_tidx       = jit_geom_get_tidx();
-    jit_value r_shared     = jit_get_shared_mem_ptr();
   
     OLatticeJIT<typename JITType<T1>::Type_t> idata( r_idata , r_idx_perm );   // want coal   access later
     OLatticeJIT<typename JITType<T2>::Type_t> odata( r_odata , r_block_idx );  // want scalar access later
-    OLatticeJIT<typename JITType<T2>::Type_t> sdata( r_shared , r_tidx );      // want scalar access later
 
     // zero_rep() branch should be redundant
 
@@ -53,14 +57,7 @@ void function_sum_exec( CUfunction function,
     typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_elem;   // this is stupid
     reg_idata_elem.setup( idata.elem( input_layout ) );
 
-    jit_label_t label_zero_rep;
-    jit_label_t label_zero_rep_exit;
-    jit_ins_branch(  label_zero_rep , jit_ins_ge( r_idx , r_hi ) );
     sdata.elem( JitDeviceLayout::Scalar ) = reg_idata_elem; // This should do the precision conversion (SP->DP)
-    jit_ins_branch( label_zero_rep_exit );
-    jit_ins_label( label_zero_rep );
-    zero_rep( sdata.elem( JitDeviceLayout::Scalar ) );
-    jit_ins_label( label_zero_rep_exit );
 
     jit_ins_bar_sync( 0 );
 
