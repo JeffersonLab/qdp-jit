@@ -93,6 +93,8 @@ namespace QDP {
   llvm::Type* promote( llvm::Type* t0 , llvm::Type* t1 );
   llvm::Value* llvm_cast( llvm::Type *dest_type , llvm::Value *src );
 
+  llvm::SwitchInst * llvm_switch( llvm::Value* val , llvm::BasicBlock* bb_default );
+
   std::tuple<llvm::Value*,llvm::Value*,llvm::Type*>
   llvm_normalize_values(llvm::Value* lhs , llvm::Value* rhs);
 
@@ -153,6 +155,8 @@ namespace QDP {
   llvm::BasicBlock * llvm_get_insert_point();
   void llvm_exit();
   llvm::BasicBlock * llvm_cond_exit( llvm::Value * cond );
+
+  llvm::ConstantInt * llvm_create_const_int(int i);
 
   llvm::Value * llvm_create_value( double v );
   llvm::Value * llvm_create_value(int v );

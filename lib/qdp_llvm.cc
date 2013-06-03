@@ -255,7 +255,10 @@ namespace QDP {
   }
 
 
-
+  llvm::SwitchInst * llvm_switch( llvm::Value* val , llvm::BasicBlock* bb_default ) 
+  {
+    return builder->CreateSwitch( val , bb_default );
+  }
 
 
   llvm::PHINode * llvm_phi( llvm::Type* type, unsigned num )
@@ -572,6 +575,9 @@ namespace QDP {
   }
 
 
+  llvm::ConstantInt * llvm_create_const_int(int i) {
+    return llvm::ConstantInt::getSigned( llvm::Type::getIntNTy(llvm::getGlobalContext(),32) , i );
+  }
 
   llvm::Value * llvm_create_value( double v )
   {
