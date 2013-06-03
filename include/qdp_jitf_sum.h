@@ -46,41 +46,30 @@ namespace QDP {
 
     llvm::Value* r_idx = llvm_thread_idx();
 
-    llvm::Value* r_idx_perm = llvm_array_type_indirection( p_site_perm , r_idx );
-
     llvm::Value* r_block_idx  = llvm_call_special_ctaidx();
     llvm::Value* r_tidx       = llvm_call_special_tidx();
     llvm::Value* r_ntidx       = llvm_call_special_ntidx(); // needed later
 
+    IndexDomainVector args;
+    args.push_back( make_pair( Layout::sitesOnNode() , r_tidx ) );  // sitesOnNode irrelevant since Scalar access later
+    T2JIT sdata_jit;
+    sdata_jit.setup( r_shared , JitDeviceLayout::Scalar , args );
+    zero_rep( sdata_jit );
+
+    llvm_cond_exit( llvm_ge( r_idx , r_hi ) );
+
+    llvm::Value* r_idx_perm = llvm_array_type_indirection( p_site_perm , r_idx );
+
     typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_elem;   // this is stupid
     reg_idata_elem.setup( idata.elem( input_layout , r_idx_perm ) );
 
-    IndexDomainVector args;
-    args.push_back( make_pair( Layout::sitesOnNode() , r_tidx ) );  // sitesOnNode irrelevant since Scalar access later
-
-    T2JIT sdata_jit;
-    sdata_jit.setup( r_shared , JitDeviceLayout::Scalar , args );
-
-    llvm::BasicBlock * block_zero = llvm_new_basic_block();
-    llvm::BasicBlock * block_not_zero = llvm_new_basic_block();
-    llvm::BasicBlock * block_zero_exit = llvm_new_basic_block();
-    llvm_cond_branch( llvm_ge( r_idx , r_hi ) , block_zero , block_not_zero );
-    {
-      llvm_set_insert_point(block_zero);
-      zero_rep( sdata_jit );
-      llvm_branch( block_zero_exit );
-    }
-    {
-      llvm_set_insert_point(block_not_zero);
-      sdata_jit = reg_idata_elem; // This should do the precision conversion (SP->DP)
-      llvm_branch( block_zero_exit );
-    }
-    llvm_set_insert_point(block_zero_exit);
+    sdata_jit = reg_idata_elem; // This should do the precision conversion (SP->DP)
 
     llvm_bar_sync();
 
     llvm::Value* val_ntid = llvm_call_special_ntidx();
 
+    llvm::BasicBlock * entry_block = llvm_get_insert_block();
     //
     // Find next power of 2 loop
     //
@@ -94,7 +83,7 @@ namespace QDP {
     llvm_set_insert_point( block_power_loop_start );
 
     llvm::PHINode * r_pow = llvm_phi( llvm_type<int>::value , 2 );
-    r_pow->addIncoming( llvm_create_value(1) , block_zero_exit );
+    r_pow->addIncoming( llvm_create_value(1) , entry_block );
 
     llvm_cond_branch( llvm_ge( r_pow , val_ntid ) , block_power_loop_exit , block_power_loop_inc );
     {
