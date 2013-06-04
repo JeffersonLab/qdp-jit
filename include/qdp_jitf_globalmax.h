@@ -29,9 +29,6 @@ namespace QDP {
 
     jit_value r_idx = jit_geom_get_linear_th_idx();  
 
-    jit_value r_out_of_range       = jit_ins_ge( r_idx , r_hi );
-    jit_ins_exit( r_out_of_range );
-
     jit_value r_idata      = jit_add_param( jit_ptx_type::u64 );  // Input  array
     jit_value r_odata      = jit_add_param( jit_ptx_type::u64 );  // output array
     jit_value r_block_idx  = jit_geom_get_ctaidx();
@@ -39,12 +36,19 @@ namespace QDP {
     jit_value r_shared     = jit_get_shared_mem_ptr();
   
     OLatticeJIT<typename JITType<T1>::Type_t> idata( r_idata , r_idx );       // want coal/scalar (templ. param)
+    OLatticeJIT<typename JITType<T1>::Type_t> idata_1st( r_idata , jit_value(0) );  // Use this to replicate 
     OLatticeJIT<typename JITType<T1>::Type_t> odata( r_odata , r_block_idx ); // want scalar access later
     OLatticeJIT<typename JITType<T1>::Type_t> sdata( r_shared , r_tidx );     // want scalar access later
 
-    // zero_rep() branch should be redundant
+    // Initialize the whole shared memory with the 1st element of input
+    typename REGType< typename JITType<T1>::Type_t >::Type_t idata_reg_1st; // this is stupid
+    idata_reg_1st.setup( idata_1st.elem( JitDeviceLayout::Scalar ) );            // Scalar is fine, because it's a scalar data type
+    sdata.elem( JitDeviceLayout::Scalar ) = idata_reg_1st;
 
+    jit_value r_out_of_range       = jit_ins_ge( r_idx , r_hi );
+    jit_ins_exit( r_out_of_range );
 
+    // Now put in the real data, don't need sync here
     typename REGType< typename JITType<T1>::Type_t >::Type_t idata_reg; // this is stupid
     idata_reg.setup( idata.elem( JitDeviceLayout::Scalar ) );            // Scalar is fine, because it's a scalar data type
     sdata.elem( JitDeviceLayout::Scalar ) = idata_reg;
