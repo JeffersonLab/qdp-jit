@@ -95,6 +95,7 @@ namespace QDP {
 
     llvm_set_insert_point(block_power_loop_exit);
 
+    llvm::Value* r_pow_shr1 = llvm_shr( r_pow , llvm_create_value(1) );
 
     //
     // Shared memory reduction loop
@@ -110,7 +111,7 @@ namespace QDP {
     llvm_set_insert_point(block_red_loop_start);
     
     llvm::PHINode * r_red_pow = llvm_phi( llvm_type<int>::value , 2 );    
-    r_red_pow->addIncoming( r_pow , block_power_loop_exit );
+    r_red_pow->addIncoming( r_pow_shr1 , block_power_loop_exit );
     llvm_cond_branch( llvm_le( r_red_pow , llvm_create_value(0) ) , block_red_loop_end , block_red_loop_start_1 );
 
     llvm_set_insert_point(block_red_loop_start_1);
@@ -256,6 +257,8 @@ namespace QDP {
 
     llvm_set_insert_point(block_power_loop_exit);
 
+    llvm::Value* r_pow_shr1 = llvm_shr( r_pow , llvm_create_value(1) );
+
     //
     // Shared memory reduction loop
     //
@@ -270,7 +273,7 @@ namespace QDP {
     llvm_set_insert_point(block_red_loop_start);
     
     llvm::PHINode * r_red_pow = llvm_phi( llvm_type<int>::value , 2 );    
-    r_red_pow->addIncoming( r_pow , block_power_loop_exit );
+    r_red_pow->addIncoming( r_pow_shr1 , block_power_loop_exit );
     llvm_cond_branch( llvm_le( r_red_pow , llvm_create_value(0) ) , block_red_loop_end , block_red_loop_start_1 );
 
     llvm_set_insert_point(block_red_loop_start_1);

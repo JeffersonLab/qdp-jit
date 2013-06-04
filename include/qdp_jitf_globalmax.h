@@ -35,7 +35,7 @@ namespace QDP {
     llvm::Value* r_hi     = llvm_derefParam( p_hi );
 
     llvm::Value* r_idx = llvm_thread_idx();   
-    llvm_cond_exit( llvm_ge( r_idx , r_hi ) );
+    // llvm_cond_exit( llvm_ge( r_idx , r_hi ) );  // We can't exit, because we have to initialize shared data
 
     llvm::Value* r_idata      = llvm_derefParam( p_idata );  // Input  array
     llvm::Value* r_odata      = llvm_derefParam( p_odata );  // output array
@@ -110,7 +110,7 @@ namespace QDP {
 
     llvm_set_insert_point(block_power_loop_exit);
 
-    r_pow = llvm_shr( r_pow , llvm_create_value(1) );
+    llvm::Value* r_pow_shr1 = llvm_shr( r_pow , llvm_create_value(1) );
 
     //
     // Shared memory maximizing loop
@@ -126,7 +126,7 @@ namespace QDP {
     llvm_set_insert_point(block_red_loop_start);
     
     llvm::PHINode * r_red_pow = llvm_phi( llvm_type<int>::value , 2 );    
-    r_red_pow->addIncoming( r_pow , block_power_loop_exit );
+    r_red_pow->addIncoming( r_pow_shr1 , block_power_loop_exit );
     llvm_cond_branch( llvm_le( r_red_pow , llvm_create_value(0) ) , block_red_loop_end , block_red_loop_start_1 );
 
     llvm_set_insert_point(block_red_loop_start_1);
@@ -142,16 +142,20 @@ namespace QDP {
 
 
     IndexDomainVector args_new;
-    args_new.push_back( make_pair( Layout::sitesOnNode() , 
-				   llvm_add( r_tidx , r_red_pow ) ) );  // sitesOnNode irrelevant since Scalar access later
+    args_new.push_back( make_pair( Layout::sitesOnNode(),v ) );  // sitesOnNode irrelevant since Scalar access later
 
     typename JITType<T1>::Type_t sdata_jit_plus;
     sdata_jit_plus.setup( r_shared , JitDeviceLayout::Scalar , args_new );
 
-    typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_reg_plus;    // 
+    typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_reg_plus;    
     sdata_reg_plus.setup( sdata_jit_plus );
 
-    sdata_jit += sdata_reg_plus;
+    typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_reg;   
+    sdata_reg.setup( sdata_jit );
+
+    sdata_jit = where( sdata_reg > sdata_reg_plus , sdata_reg , sdata_reg_plus );
+
+    //sdata_jit += sdata_reg_plus;
 
 
     llvm_branch( block_red_loop_sync );
@@ -171,7 +175,7 @@ namespace QDP {
 		      block_store_global , 
 		      block_not_store_global );
     llvm_set_insert_point(block_store_global);
-    typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_reg;   // this is stupid
+    //typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_reg;   // this is stupid
     sdata_reg.setup( sdata_jit );
     odata.elem( JitDeviceLayout::Scalar , r_block_idx ) = sdata_reg;
     llvm_branch( block_not_store_global );
