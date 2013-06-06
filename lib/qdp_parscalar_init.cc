@@ -253,6 +253,10 @@ namespace QDP {
 			  {
 			    DeviceParams::Instance().setSyncDevice(true);
 			  }
+			else if (strcmp((*argv)[i], "-gpudirect")==0) 
+			  {
+			    DeviceParams::Instance().setGPUDirect(true);
+			  }
 			else if (strcmp((*argv)[i], "-poolsize")==0) 
 			  {
 			    float f;

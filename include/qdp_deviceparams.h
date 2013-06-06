@@ -41,9 +41,14 @@ namespace QDP {
 
     bool getDivRnd() { return divRnd; }
     bool getSyncDevice() { return syncDevice; }
+    bool getGPUDirect() { return GPUDirect; }
     void setSyncDevice(bool sync) { 
-      QDP_info_primary("Setting device sync = %u",sync);
+      QDP_info_primary("Setting device sync = %d",(int)sync);
       syncDevice = sync;
+    };
+    void setGPUDirect(bool direct) { 
+      QDP_info_primary("Setting GPU Direct = %d",(int)direct);
+      GPUDirect = direct;
     };
 
     int& getMaxKernelArg() { return maxKernelArg; }
@@ -55,13 +60,14 @@ namespace QDP {
     void autoDetect();
 
   private:
-    DeviceParams(): syncDevice(false), maxKernelArg(512) {};   // Private constructor
-    DeviceParams(const DeviceParams&);                            // Prevent copy-construction
+    DeviceParams(): GPUDirect(false), syncDevice(false), maxKernelArg(512) {};   // Private constructor
+    DeviceParams(const DeviceParams&);                                           // Prevent copy-construction
     DeviceParams& operator=(const DeviceParams&);
     size_t roundDown2pow(size_t x);
 
   private:
     int device;
+    bool GPUDirect;
     bool syncDevice;
     bool asyncTransfers;
     bool unifiedAddressing;
