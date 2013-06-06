@@ -42,6 +42,12 @@ namespace QDP {
     bool getDivRnd() { return divRnd; }
     bool getSyncDevice() { return syncDevice; }
     bool getGPUDirect() { return GPUDirect; }
+    void setENVVAR(const char * envvar_) {
+      envvar = envvar_;
+    } 
+    const char* getENVVAR() {
+      return envvar.c_str();
+    }
     void setSyncDevice(bool sync) { 
       QDP_info_primary("Setting device sync = %d",(int)sync);
       syncDevice = sync;
@@ -67,6 +73,7 @@ namespace QDP {
 
   private:
     int device;
+    std::string envvar;
     bool GPUDirect;
     bool syncDevice;
     bool asyncTransfers;

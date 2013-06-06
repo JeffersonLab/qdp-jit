@@ -117,6 +117,7 @@ namespace QDP {
     //   ((float*)recv_buf)[i]=-1.11;
 
     if (!DeviceParams::Instance().getGPUDirect()) {
+      //QDPIO::cout << "no GPU Direct: H2D copy!\n";
       CudaMemcpyH2D( recv_buf_dev , recv_buf , srcnum );
     }
 
@@ -152,6 +153,7 @@ namespace QDP {
 #endif
 
     if (!DeviceParams::Instance().getGPUDirect()) {
+      //QDPIO::cout << "no GPU Direct: D2H copy!\n";
       CudaMemcpyD2H( send_buf , send_buf_dev , dstnum );
     }
 

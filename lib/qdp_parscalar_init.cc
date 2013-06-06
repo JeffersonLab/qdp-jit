@@ -27,6 +27,11 @@ namespace QDP {
   //! Private flag for status
   static bool isInit = false;
   bool setPoolSize = false;
+  bool setGeomP = false;
+  bool setIOGeomP = false;
+  multi1d<int> logical_geom(Nd);   // apriori logical geometry of the machine
+  multi1d<int> logical_iogeom(Nd); // apriori logical 	
+
 
 #if 1
   int gamma_degrand_rossi[5][4][4][2] = 
@@ -96,14 +101,24 @@ namespace QDP {
     if (deviceCount == 0) {
       QDP_error_exit("No CUDA devices found");
     }
-    
-    int rank_QMP = QMP_get_node_number();
-    int dev      = rank_QMP % deviceCount;
-    
-    QDP_info("JIT: Setting active CUDA device to %d",dev);
-    CudaSetDevice( dev );
-  }
 
+    const char *rank = getenv( DeviceParams::Instance().getENVVAR() );
+    if (rank) {
+      int local_rank = atoi(rank);
+      int dev = local_rank % deviceCount;
+      std::cout << "Setting CUDA device to " << dev << "\n";
+      CudaSetDevice( dev );
+    } else {
+      std::cerr << "Env. var. "
+		<< DeviceParams::Instance().getENVVAR() 
+		<< "not found! Will use device no. 0 (this would be bad for a multi-GPU node run)\n";
+      std::cout << "Setting CUDA device to " << 0 << "\n";
+      CudaSetDevice( 0 );
+    }
+      // int rank_QMP = QMP_get_node_number();
+      // int dev      = rank_QMP % deviceCount;
+
+  }
 
 
 	
@@ -161,6 +176,8 @@ namespace QDP {
 
 		CudaInit();
 
+		// This defaults to mvapich2
+		DeviceParams::Instance().setENVVAR("MV2_COMM_WORLD_LOCAL_RANK");
 		
 		//
 		// Process command line
@@ -174,12 +191,10 @@ namespace QDP {
 				help_flag = true;
 		}
 		
-		bool setGeomP = false;
-		multi1d<int> logical_geom(Nd);   // apriori logical geometry of the machine
+		setGeomP = false;
 		logical_geom = 0;
 		
-		bool setIOGeomP = false;
-		multi1d<int> logical_iogeom(Nd); // apriori logical 	
+		setIOGeomP = false;
 		logical_iogeom = 0;
 		
 #ifdef USE_REMOTE_QIO
@@ -256,6 +271,12 @@ namespace QDP {
 			else if (strcmp((*argv)[i], "-gpudirect")==0) 
 			  {
 			    DeviceParams::Instance().setGPUDirect(true);
+			  }
+			else if (strcmp((*argv)[i], "-envvar")==0) 
+			  {
+			    char buffer[1024];
+			    sscanf((*argv)[++i],"%s",&buffer);
+			    DeviceParams::Instance().setENVVAR(buffer);
 			  }
 			else if (strcmp((*argv)[i], "-poolsize")==0) 
 			  {
@@ -356,111 +377,123 @@ namespace QDP {
 			QDP_info("QDP_init: arg[%d] = XX%sXX",i,(*argv)[i]);
 #endif
 		
+	}
+
+
+
+
+		// -------------------------------------------------------------------------------------------
+
+	void QDP_initialize_QMP(int *argc, char ***argv)
+	{
+
 #if QDP_DEBUG >= 1
-		QDP_info("Now initialize QMP");
+	  QDP_info("Now initialize QMP");
 #endif
 		
-		if (QMP_is_initialized() == QMP_FALSE)
+	  if (QMP_is_initialized() == QMP_FALSE)
+	    {
+	      QMP_thread_level_t prv;
+	      if (QMP_init_msg_passing(argc, argv, QMP_THREAD_SINGLE, &prv) != QMP_SUCCESS)
 		{
-			QMP_thread_level_t prv;
-			if (QMP_init_msg_passing(argc, argv, QMP_THREAD_SINGLE, &prv) != QMP_SUCCESS)
-			{
-				QDPIO::cerr << __func__ << ": QMP_init_msg_passing failed" << endl;
-				QDP_abort(1);
-			}
+		  QDPIO::cerr << __func__ << ": QMP_init_msg_passing failed" << endl;
+		  QDP_abort(1);
 		}
+	    }
 		
 #if QDP_DEBUG >= 1
-		QDP_info("QMP inititalized");
+	  QDP_info("QMP inititalized");
 #endif
 		
-		if (setGeomP)
-			if (QMP_declare_logical_topology(logical_geom.slice(), Nd) != QMP_SUCCESS)
-			{
-				QDPIO::cerr << __func__ << ": QMP_declare_logical_topology failed" << endl;
-				QDP_abort(1);
-			}
+	  if (setGeomP)
+	    if (QMP_declare_logical_topology(logical_geom.slice(), Nd) != QMP_SUCCESS)
+	      {
+		QDPIO::cerr << __func__ << ": QMP_declare_logical_topology failed" << endl;
+		QDP_abort(1);
+	      }
 		
 #if QDP_DEBUG >= 1
-		QDP_info("Some layout init");
+	  QDP_info("Some layout init");
 #endif
 		
-		Layout::init();   // setup extremely basic functionality in Layout
+	  Layout::init();   // setup extremely basic functionality in Layout
 		
-		isInit = true;
+	  isInit = true;
 		
 #if QDP_DEBUG >= 1
-		QDP_info("Init qio");
+	  QDP_info("Init qio");
 #endif
-		// OK, I need to set up the IO geometry here...
-		// I should make it part of layout...
-		if( setIOGeomP ) { 
+	  // OK, I need to set up the IO geometry here...
+	  // I should make it part of layout...
+	  if( setIOGeomP ) { 
 #if QDP_DEBUG >=1
-			std::ostringstream outbuf;
-			for(int mu=0; mu < Nd; mu++) { 
-				outbuf << " " << logical_iogeom[mu];
-			}
+	    std::ostringstream outbuf;
+	    for(int mu=0; mu < Nd; mu++) { 
+	      outbuf << " " << logical_iogeom[mu];
+	    }
 			
-			QDP_info("Setting IO Geometry: %s\n", outbuf.str().c_str());
+	    QDP_info("Setting IO Geometry: %s\n", outbuf.str().c_str());
 #endif
 			
-			Layout::setIONodeGrid(logical_iogeom);
+	    Layout::setIONodeGrid(logical_iogeom);
 			
-		}
-		//
-		// add qmt inilisisation
-		//
+	  }
+	  //
+	  // add qmt inilisisation
+	  //
 #ifdef QDP_USE_QMT_THREADS
 		
-		// Initialize threads
-		if( Layout::primaryNode() ) { 
-			cout << "QDP use qmt threading: Initializing threads..." ;
-		} 
-		int thread_status = qmt_init();
+	  // Initialize threads
+	  if( Layout::primaryNode() ) { 
+	    cout << "QDP use qmt threading: Initializing threads..." ;
+	  } 
+	  int thread_status = qmt_init();
 		
-		if( thread_status == 0 ) { 
-			if (  Layout::primaryNode() ) { 
-				cout << "Success. We have " << qdpNumThreads() << " threads \n";
-			} 
-		}
-		else { 
-			cout << "Failure... qmt_init() returned " << thread_status << endl;
-			QDP_abort(1);
-		}
+	  if( thread_status == 0 ) { 
+	    if (  Layout::primaryNode() ) { 
+	      cout << "Success. We have " << qdpNumThreads() << " threads \n";
+	    } 
+	  }
+	  else { 
+	    cout << "Failure... qmt_init() returned " << thread_status << endl;
+	    QDP_abort(1);
+	  }
 		
 #else
 #ifdef QDP_USE_OMP_THREADS
 		
-		if( Layout::primaryNode()) {
-			cout << "QDP use OpenMP threading. We have " << qdpNumThreads() << " threads\n"; 
-		}
+	  if( Layout::primaryNode()) {
+	    cout << "QDP use OpenMP threading. We have " << qdpNumThreads() << " threads\n"; 
+	  }
 		
 #endif
 #endif
 		
-		// Alloc space for reductions
-		ThreadReductions::norm2_results = new REAL64 [ qdpNumThreads() ];
-		if( ThreadReductions::norm2_results == 0x0 ) { 
-			cout << "Failure... space for norm2 results failed "  << endl;
-			QDP_abort(1);
-		}
+	  // Alloc space for reductions
+	  ThreadReductions::norm2_results = new REAL64 [ qdpNumThreads() ];
+	  if( ThreadReductions::norm2_results == 0x0 ) { 
+	    cout << "Failure... space for norm2 results failed "  << endl;
+	    QDP_abort(1);
+	  }
 		
-		ThreadReductions::innerProd_results = new REAL64 [ 2*qdpNumThreads() ];
-		if( ThreadReductions::innerProd_results == 0x0 ) { 
-			cout << "Failure... space for innerProd results failed "  << endl;
-			QDP_abort(1);
-		}
+	  ThreadReductions::innerProd_results = new REAL64 [ 2*qdpNumThreads() ];
+	  if( ThreadReductions::innerProd_results == 0x0 ) { 
+	    cout << "Failure... space for innerProd results failed "  << endl;
+	    QDP_abort(1);
+	  }
 		
 		
-		// initialize the global streams
-		QDPIO::cin.init(&std::cin);
-		QDPIO::cout.init(&std::cout);
-		QDPIO::cerr.init(&std::cerr);
+	  // initialize the global streams
+	  QDPIO::cin.init(&std::cin);
+	  QDPIO::cout.init(&std::cout);
+	  QDPIO::cerr.init(&std::cerr);
 		
-		initProfile(__FILE__, __func__, __LINE__);
+	  initProfile(__FILE__, __func__, __LINE__);
 		
-		QDPIO::cout << "Initialize done" << std::endl;
+	  QDPIO::cout << "Initialize done" << std::endl;
 	}
+
+
 	
 	//! Is the machine initialized?
 	bool QDP_isInitialized() {return isInit;}

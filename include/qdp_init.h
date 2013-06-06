@@ -23,6 +23,7 @@ namespace QDP {
 
 //! Turn on the machine
 void QDP_initialize (int *argc, char ***argv);
+void QDP_initialize_QMP (int *argc, char ***argv);
 
 //! Is the machine initialized?
 bool QDP_isInitialized ();
