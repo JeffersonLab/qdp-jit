@@ -120,7 +120,7 @@ namespace QDP
   void QDPCache::enlargeStack()
   {
     const int portion = 1024;
-    QDP_info_primary("enlarging stack by %d entries",portion);
+    //QDP_info_primary("enlarging stack by %d entries",portion);
     vecEntry.resize( vecEntry.size() + portion );
     for ( int i = 0 ; i < portion ; i++ ) {
       stackFree.push( vecEntry.size()-i-1 );
