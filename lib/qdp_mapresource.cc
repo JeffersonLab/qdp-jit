@@ -37,14 +37,36 @@ namespace QDP {
     send_buf=QMP_get_memory_pointer(send_buf_mem);
     recv_buf=QMP_get_memory_pointer(recv_buf_mem);
 #endif
-    CudaHostAlloc(&send_buf,dstnum,0);
-    CudaHostAlloc(&recv_buf,srcnum,0);
+    if (!DeviceParams::Instance().getGPUDirect()) {
+      CudaHostAlloc(&send_buf,dstnum,0);
+      CudaHostAlloc(&recv_buf,srcnum,0);
+    }
 
-    msg[0] = QMP_declare_msgmem(recv_buf, srcnum);
+    QDPIO::cout << "Allocating receive buffer on device: " << srcnum << " bytes\n";
+    if (!QDPCache::Instance().allocate_device_static( &recv_buf_dev , srcnum))
+      QDP_error_exit("Error allocating GPU memory for receive buffer");
+
+    QDPIO::cout << "Allocating send buffer on device: " << dstnum << " bytes\n";
+    if (!QDPCache::Instance().allocate_device_static( &send_buf_dev , dstnum))
+      QDP_error_exit("Error allocating GPU memory for send buffer");
+
+    if (!DeviceParams::Instance().getGPUDirect()) {
+      msg[0] = QMP_declare_msgmem( recv_buf , srcnum );
+    } else {
+      msg[0] = QMP_declare_msgmem( recv_buf_dev , srcnum );
+    }
+
     if( msg[0] == (QMP_msgmem_t)NULL ) { 
       QDP_error_exit("QMP_declare_msgmem for msg[0] failed in Map::operator()\n");
     }
-    msg[1] = QMP_declare_msgmem(send_buf, dstnum);
+
+    if (!DeviceParams::Instance().getGPUDirect()) {
+      msg[1] = QMP_declare_msgmem( send_buf , dstnum );
+    } else {
+      msg[1] = QMP_declare_msgmem( send_buf_dev , dstnum );
+    }
+
+
     if( msg[1] == (QMP_msgmem_t)NULL ) {
       QDP_error_exit("QMP_declare_msgmem for msg[1] failed in Map::operator()\n");
     }
@@ -64,9 +86,6 @@ namespace QDP {
       QDP_error_exit("QMP_declare_multiple for mh failed in Map::operator()\n");
     }
 
-    srcId = QDPCache::Instance().registrate( srcnum , 1 , NULL );
-    dstId = QDPCache::Instance().registrate( dstnum , 1 , NULL );
-
   }
 
   void FnMapRsrc::cleanup() {
@@ -80,8 +99,8 @@ namespace QDP {
       QMP_free_memory(recv_buf_mem);
       QMP_free_memory(send_buf_mem);
 #endif
-      QDPCache::Instance().signoff( srcId );
-      QDPCache::Instance().signoff( dstId );
+      QDPCache::Instance().free_device_static( send_buf_dev );
+      QDPCache::Instance().free_device_static( recv_buf_dev );
       CudaHostFree(send_buf);
       CudaHostFree(recv_buf);
     }
@@ -92,14 +111,15 @@ namespace QDP {
     QMP_status_t err;
     if ((err = QMP_wait(mh)) != QMP_SUCCESS)
       QDP_error_exit(QMP_error_string(err));
-    
-    void * rcv_buf_dev = QDPCache::Instance().getDevicePtr( srcId );
-#ifdef GPU_DEBUG_DEEP
-#endif
+
     //QDP_info("H2D %d bytes receive buffer p = %p",srcnum,rcv_buf_dev);
     // for (int i=0;i<srcnum/4;i++)
     //   ((float*)recv_buf)[i]=-1.11;
-    CudaMemcpyH2D( rcv_buf_dev , recv_buf , srcnum );
+
+    if (!DeviceParams::Instance().getGPUDirect()) {
+      //QDPIO::cout << "no GPU Direct: H2D copy!\n";
+      CudaMemcpyH2D( recv_buf_dev , recv_buf , srcnum );
+    }
 
 #if QDP_DEBUG >= 3
     QDP_info("Map: calling free msgs");
@@ -131,7 +151,11 @@ namespace QDP {
 #ifdef GPU_DEBUG_DEEP
     QDP_info("D2H %d bytes receive buffer",dstnum);
 #endif
-    CudaMemcpyD2H( send_buf , QDPCache::Instance().getDevicePtr( dstId ) , dstnum );
+
+    if (!DeviceParams::Instance().getGPUDirect()) {
+      //QDPIO::cout << "no GPU Direct: D2H copy!\n";
+      CudaMemcpyD2H( send_buf , send_buf_dev , dstnum );
+    }
 
     // Launch the faces
     if ((err = QMP_start(mh)) != QMP_SUCCESS)

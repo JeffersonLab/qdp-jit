@@ -30,16 +30,15 @@ public:
   void qmp_wait() const;
   void send_receive() const;
 
-  void * getSendBufDevPtr() const { return QDPCache::Instance().getDevicePtr( dstId ); }
-  void * getRecvBufDevPtr() const { return QDPCache::Instance().getDevicePtr( srcId ); }
-
-  int getRcvId() const { return srcId; }
+  void * getSendBufDevPtr() const { return send_buf_dev; }
+  void * getRecvBufDevPtr() const { return recv_buf_dev; }
 
   bool bSet;
   mutable void * send_buf;
   mutable void * recv_buf;
+  void * send_buf_dev;
+  void * recv_buf_dev;
   int srcnum, dstnum;
-  int srcId,dstId;
   QMP_msgmem_t msg[2];
   QMP_msghandle_t mh_a[2], mh;
   QMP_mem_t *send_buf_mem;

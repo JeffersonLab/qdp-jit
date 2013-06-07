@@ -174,7 +174,7 @@ namespace QDP {
   }
 
   void CudaInit() {
-    QDP_info_primary("CUDA initialization");
+    //QDP_info_primary("CUDA initialization");
     cuInit(0);
 
     int deviceCount = 0;

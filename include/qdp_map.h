@@ -337,13 +337,10 @@ struct ForEach<UnaryNode<FnMap, A>, AddressLeaf, NullCombine>
       //QDP_info("Map:AddressLeaf: add goffset p=%p",goffsetsDev);
       a.setAddr(goffsetsDev);
 
-      void * rcvBufDev;
+      void * rcvBufDev = NULL;
       if (map.hasOffnode()) {
-      const FnMapRsrc& rRSrc = fnmap.getCached();
-      int rcvId = rRSrc.getRcvId();
-      rcvBufDev = QDPCache::Instance().getDevicePtr( rcvId );
-      } else {
-	rcvBufDev = NULL;
+	const FnMapRsrc& rRSrc = fnmap.getCached();
+	rcvBufDev = rRSrc.getRecvBufDevPtr();
       }
       //QDP_info("Map:AddressLeaf: add recv buf p=%p",rcvBufDev);
       a.setAddr(rcvBufDev);

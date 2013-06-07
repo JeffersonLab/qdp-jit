@@ -151,7 +151,7 @@ namespace QDP
   template<class Allocator>
   void QDPPoolAllocator<Allocator>::allocateInternalBuffer()
   {
-    QDP_info_primary("Pool allocator: allocate internal buffer (%lld)",(unsigned long long)poolSize);
+    //QDP_info_primary("Pool allocator: allocate internal buffer (%lld)",(unsigned long long)poolSize);
 
     if (bufferAllocated) {
       QDP_debug("memory was allocated before, I will free it first..");
@@ -364,7 +364,7 @@ namespace QDP
 
   template<class Allocator>
   void QDPPoolAllocator<Allocator>::setPoolSize(size_t s) {
-    QDP_info_primary("Pool allocator: set pool size %lu bytes" , (unsigned long)s );
+    //QDP_info_primary("Pool allocator: set pool size %lu bytes" , (unsigned long)s );
     poolSize = s;
   }
 
