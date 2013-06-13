@@ -154,7 +154,7 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& 
 
 #if defined(QDP_USE_PROFILING)   
   static QDPProfile_t prof(dest, op, rhs);
-  prof.time -= getClockTime();
+  prof.stime(getClockTime());
 #endif
 
   static CUfunction function;
@@ -194,12 +194,12 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& 
     op(dest.elem(i), forEach(rhs, ElemLeaf(), OpCombine()));
     //  op(dest.elem(i), forEach(rhs, EvalLeaf1(0), OpCombine()));
   }
+#endif
 
 #if defined(QDP_USE_PROFILING)   
-  prof.time += getClockTime();
+  prof.etime(getClockTime());
   prof.count++;
   prof.print();
-#endif
 #endif
 }
 
@@ -216,7 +216,7 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
 {
 #if defined(QDP_USE_PROFILING)   
   static QDPProfile_t prof(dest, op, rhs);
-  prof.time -= getClockTime();
+  prof.stime(getClockTime());
 #endif
 
   //
@@ -315,7 +315,7 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
 
 
 #if defined(QDP_USE_PROFILING)   
-  prof.time += getClockTime();
+  prof.etime(getClockTime());
   prof.count++;
   prof.print();
 #endif
@@ -718,7 +718,8 @@ template<class RHS, class T>
 typename UnaryReturn<OLattice<T>, FnSum>::Type_t
 sum(const QDPExpr<RHS,OLattice<T> >& s1, const Subset& s)
 {
-  //QDP_info("sum(Expr,Subset)");
+  // We don't profile this because this is a combination of eval and sum
+
   OLattice<T> l;
   l[s]=s1;
   return sum(l,s);
@@ -768,6 +769,8 @@ template<class RHS, class T>
 typename UnaryReturn<OLattice<T>, FnSum>::Type_t
 sum(const QDPExpr<RHS,OLattice<T> >& s1)
 {
+  // We don't profile this because this is a combination of eval and sum
+
   OLattice<T> l;
   l=s1;
   return sum(l,all);

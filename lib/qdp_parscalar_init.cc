@@ -257,15 +257,6 @@ namespace QDP {
 				setProgramProfileLevel(lev);
 			}
 #endif
-#if 0
-			else if (strcmp((*argv)[i], "-sm")==0) 
-			  {
-			    int uu;
-			    sscanf((*argv)[++i], "%d", &uu);
-			    paramCC=true;
-			    DeviceParams::Instance().setCC(uu);
-			  }
-#endif
 			else if (strcmp((*argv)[i], "-sync")==0) 
 			  {
 			    DeviceParams::Instance().setSyncDevice(true);

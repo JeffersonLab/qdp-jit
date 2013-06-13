@@ -73,6 +73,11 @@ namespace QDP {
 
     typename UnaryReturn<OLattice<T1>, FnSum>::Type_t  d;
 
+#if defined(QDP_USE_PROFILING)   
+    static QDPProfile_t prof(d, OpAssign(), FnSum(), s1);
+    prof.stime(getClockTime());
+#endif
+
     int actsize=s.numSiteTable();
     bool first=true;
     while (1) {
@@ -135,6 +140,12 @@ namespace QDP {
     QDPCache::Instance().free_device_static( out_dev );
 
     QDPInternal::globalSum(d);
+
+#if defined(QDP_USE_PROFILING)   
+    prof.etime(getClockTime());
+    prof.count++;
+    prof.print();
+#endif
 
     return d;
   }
@@ -411,6 +422,11 @@ namespace QDP {
 
 	  typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t  d;
 
+#if defined(QDP_USE_PROFILING)   
+	  static QDPProfile_t prof(d, OpAssign(), FnGlobalMax(), s1);
+	  prof.stime(getClockTime());
+#endif
+
 	  int actsize=nodeSites;
 	  bool first=true;
 	  while (1) {
@@ -468,6 +484,12 @@ namespace QDP {
 	  QDPCache::Instance().free_device_static( out_dev );
 
 	  QDPInternal::globalMax(d);
+
+#if defined(QDP_USE_PROFILING)   
+	  prof.etime( getClockTime() );
+	  prof.count++;
+	  prof.print();
+#endif
 
 	  return d;
 	}

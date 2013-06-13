@@ -165,6 +165,7 @@ namespace QDP {
 #include "qdp_optops.h"
 #include "qdp_mastermap.h"
 
+#include "qdp_profile.h"
 
 #include "qdp_mapresource.h"
 #include "qdp_handle.h"
@@ -172,7 +173,6 @@ namespace QDP {
 #include "qdp_autotuning.h"
 
 
-#include "qdp_profile.h"
 #include "qdp_simpleword.h"
 #include "qdp_wordjit.h"
 #include "qdp_wordreg.h"
