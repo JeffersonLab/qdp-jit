@@ -121,6 +121,7 @@ namespace QDP {
     }
   }
 
+
   void CudaRes(const std::string& s,CUresult ret) {
     if (ret != CUDA_SUCCESS) {
       if (mapCuErrorString.count(ret)) 
@@ -129,6 +130,31 @@ namespace QDP {
 	std::cout << s << " Error: (not known)\n";
       exit(1);
     }
+  }
+
+
+  int CudaAttributeNumRegs( CUfunction f ) {
+    int pi;
+    CUresult res;
+    res = cuFuncGetAttribute ( &pi, CU_FUNC_ATTRIBUTE_NUM_REGS , f );
+    CudaRes("CudaAttributeNumRegs",res);
+    return pi;
+  }
+
+  int CudaAttributeLocalSize( CUfunction f ) {
+    int pi;
+    CUresult res;
+    res = cuFuncGetAttribute ( &pi, CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES , f );
+    CudaRes("CudaAttributeLocalSize",res);
+    return pi;
+  }
+
+  int CudaAttributeConstSize( CUfunction f ) {
+    int pi;
+    CUresult res;
+    res = cuFuncGetAttribute ( &pi, CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES , f );
+    CudaRes("CudaAttributeConstSize",res);
+    return pi;
   }
 
 

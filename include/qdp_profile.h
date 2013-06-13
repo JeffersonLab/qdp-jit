@@ -63,6 +63,9 @@ struct QDPProfile_t
   QDPTime_t     first_time;
   std::string   expr;
   int           count;
+  int           num_regs;
+  int           local_size;
+  int           const_size;
   QDPProfile_t* next;
   bool          first;
 
@@ -81,6 +84,19 @@ struct QDPProfile_t
     else
       time += t;
     first=false;
+  }
+
+  // End time
+  void etime(QDPTime_t t, CUfunction f) {
+    if (first) {
+      first_time += t;
+      num_regs = CudaAttributeNumRegs(f);
+      local_size = CudaAttributeLocalSize(f);
+      const_size = CudaAttributeConstSize(f);
+      first=false;
+    } else {
+      time += t;
+    }
   }
 
   void print();

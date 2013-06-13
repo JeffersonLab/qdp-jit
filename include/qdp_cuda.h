@@ -16,6 +16,9 @@ namespace QDP {
 			 unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
 			 unsigned int  sharedMemBytes, CUstream hStream, void** kernelParams, void** extra );
 
+  int CudaAttributeNumRegs( CUfunction f );
+  int CudaAttributeLocalSize( CUfunction f );
+  int CudaAttributeConstSize( CUfunction f );
 
   bool CudaHostRegister(void * ptr , size_t size);
   void CudaHostUnregister(void * ptr );

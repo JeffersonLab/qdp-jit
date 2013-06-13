@@ -315,7 +315,7 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
 
 
 #if defined(QDP_USE_PROFILING)   
-  prof.etime(getClockTime());
+  prof.etime(getClockTime(),function);
   prof.count++;
   prof.print();
 #endif

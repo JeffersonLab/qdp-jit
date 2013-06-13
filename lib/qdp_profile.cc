@@ -80,6 +80,9 @@ QDPProfile_t::init()
   expr = "";
   count = 0;
   next = 0;
+  num_regs = -1;
+  local_size = -1;
+  const_size = -1;
 }
 
 void 
@@ -143,7 +146,8 @@ printProfile()
 	  // is not really a stream instantiation, hence the needed member functions
 	  // are not there. Sigh.
 	  char lin[80*10];  // more than adequate
-	  sprintf(lin, "  %7d   [%8d][%8d] ", qp->count, qp->first_time, qp->time);
+	  sprintf(lin, "  %7d   [%8d][%8d][%3d][%5d][%4d] ", qp->count, qp->first_time, qp->time, 
+		  qp->num_regs, qp->local_size, qp->const_size );
 	  QDPIO::cout << lin << qp->expr << endl;
 	}
 
