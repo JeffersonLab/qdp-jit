@@ -75,6 +75,8 @@ void
 QDPProfile_t::init()
 {
   time = 0;
+  first_time = 0;
+  first=true;
   expr = "";
   count = 0;
   next = 0;
@@ -140,8 +142,8 @@ printProfile()
 	  // the bleaping thing. Note: the real problem is the QDPIO::cout class
 	  // is not really a stream instantiation, hence the needed member functions
 	  // are not there. Sigh.
-	  char lin[80];  // more than adequate
-	  sprintf(lin, "  %7d   [%8d]  ", qp->count, qp->time);
+	  char lin[80*10];  // more than adequate
+	  sprintf(lin, "  %7d   [%8d][%8d] ", qp->count, qp->first_time, qp->time);
 	  QDPIO::cout << lin << qp->expr << endl;
 	}
 

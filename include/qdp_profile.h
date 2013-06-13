@@ -60,9 +60,28 @@ void registerProfile(QDPProfile_t* qp);
 struct QDPProfile_t
 {
   QDPTime_t     time;
+  QDPTime_t     first_time;
   std::string   expr;
   int           count;
   QDPProfile_t* next;
+  bool          first;
+
+  // Start time
+  void stime(QDPTime_t t) {
+    if (first)
+      first_time -= t;
+    else
+      time -= t;
+  }
+
+  // End time
+  void etime(QDPTime_t t) {
+    if (first)
+      first_time += t;
+    else
+      time += t;
+    first=false;
+  }
 
   void print();
 
@@ -201,7 +220,7 @@ void printExprTree(ostream& os,
 
 struct PrintTag
 {
-  mutable ostream &os_m;
+  ostream &os_m;
   PrintTag(ostream &os) : os_m(os) {}
 };
 
@@ -322,6 +341,17 @@ struct LeafFunctor<RScalar<T>, PrintTag>
       f.os_m << "RScal<"; 
       LeafFunctor<T,PrintTag>::apply(s.elem(),f);
       f.os_m << ">"; 
+      return 0;
+    }
+};
+
+template<class T>
+struct LeafFunctor<Word<T>, PrintTag>
+{
+  typedef int Type_t;
+  static int apply(const Word<T> &s, const PrintTag &f)
+    { 
+      LeafFunctor<T,PrintTag>::apply(s.elem(),f);
       return 0;
     }
 };
@@ -1314,6 +1344,13 @@ struct TagVisitor<FnColorContract, PrintTag> : public ParenPrinter<FnColorContra
 //-----------------------------------------------------------------------------
 // Additional operator tags 
 //-----------------------------------------------------------------------------
+
+template <>
+struct TagVisitor<FnGlobalMax, PrintTag> : public ParenPrinter<FnGlobalMax>
+{ 
+  static void visit(FnGlobalMax op, PrintTag t) 
+    { t.os_m << "max"; }
+};
 
 template <>
 struct TagVisitor<FnSum, PrintTag> : public ParenPrinter<FnSum>

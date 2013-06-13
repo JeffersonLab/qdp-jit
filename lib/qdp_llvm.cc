@@ -723,7 +723,7 @@ namespace QDP {
     const char *ExportList[] = { "main" };
 
     llvm::StringMap<int> Mapping;
-    Mapping["__CUDA_FTZ"] = 1;
+    Mapping["__CUDA_FTZ"] = 0;
 
     std::string banner;
 
