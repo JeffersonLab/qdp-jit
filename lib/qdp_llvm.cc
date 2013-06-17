@@ -825,7 +825,7 @@ namespace QDP {
     PMTM.run(*Mod);
     FOS.flush();
 
-#if 0
+#if 1
     // Write PTX string to file
     std::ofstream ptxfile;
     ptxfile.open ( fname );
