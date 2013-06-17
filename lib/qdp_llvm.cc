@@ -1,7 +1,9 @@
 #include "qdp.h"
 
 #include "qdp_libdevice_20.h"
+#include "nvvm.h"
 
+#include "llvm/Support/raw_ostream.h"
 
 namespace QDP {
 
@@ -715,32 +717,8 @@ namespace QDP {
   }
 
 
-
-  std::string llvm_get_ptx_kernel(const char* fname)
+  std::string get_PTX_from_Module_using_llvm( llvm::Module *Mod )
   {
-    QDP_info_primary("Internalizing module");
-
-    const char *ExportList[] = { "main" };
-
-    llvm::StringMap<int> Mapping;
-    Mapping["__CUDA_FTZ"] = 0;
-
-    std::string banner;
-
-    llvm::PassManager OurPM;
-    OurPM.add( llvm::createInternalizePass( llvm::ArrayRef<const char *>(ExportList, 1)));
-    OurPM.add( llvm::createNVVMReflectPass(Mapping));
-    OurPM.run( *Mod );
-
-
-    QDP_info_primary("Running optimization passes on module");
-
-    llvm::PassManager PM;
-    PM.add( llvm::createGlobalDCEPass() );
-    PM.run( *Mod );
-
-    llvm_print_module(Mod,"ir_internalized_reflected_globalDCE.ll");
-
     llvm::FunctionPassManager OurFPM( Mod );
     //OurFPM.add(llvm::createCFGSimplificationPass());  // skip this for now. causes problems with CUDA generic pointers
     //OurFPM.add(llvm::createBasicAliasAnalysisPass());
@@ -825,6 +803,194 @@ namespace QDP {
     PMTM.run(*Mod);
     FOS.flush();
 
+    return str;
+  }
+
+
+  void str_replace(std::string& str, const std::string& oldStr, const std::string& newStr)
+  {
+    size_t pos = 0;
+    while((pos = str.find(oldStr, pos)) != std::string::npos)
+      {
+	str.replace(pos, oldStr.length(), newStr);
+	pos += newStr.length();
+      }
+  }
+
+
+  std::string get_PTX_from_Module_using_nvvm( llvm::Module *Mod )
+  {
+    llvm::PassManager PMTM;
+#if 0
+    // Add the target data from the target machine, if it exists, or the module.
+    if (const DataLayout *TD = Target.getDataLayout()) {
+      QDP_info_primary( "Using targets's data layout" );
+      PMTM.add(new DataLayout(*TD));
+    }
+    else {
+      QDP_info_primary( "Using module's data layout" );
+      PMTM.add(new DataLayout(Mod));
+    }
+#else
+    QDP_info_primary( "Using module's data layout" );
+    PMTM.add(new llvm::DataLayout(Mod));
+#endif
+    QDP_info_primary("Adding data layout");
+    PMTM.run(*Mod);
+
+#if 1
+    std::string str;
+    llvm::raw_string_ostream rsos(str);
+    llvm::formatted_raw_ostream fros(rsos);
+
+    Mod->print(fros,NULL);
+
+    // std::cout << "Do we need the ostream in binary mode?\n";
+    // llvm::WriteBitcodeToFile(Mod,fros);
+    fros.flush();
+
+    str_replace(str,
+		"declare i32 @llvm.nvvm.read.ptx.sreg.tid.x() #0",
+		"declare i32 @llvm.nvvm.read.ptx.sreg.tid.x() nounwind readnone");
+    str_replace(str,
+		"declare i32 @llvm.nvvm.read.ptx.sreg.ntid.x() #0",
+		"declare i32 @llvm.nvvm.read.ptx.sreg.ntid.x() nounwind readnone");
+    str_replace(str,
+		"declare i32 @llvm.nvvm.read.ptx.sreg.ctaid.x() #0",
+		"declare i32 @llvm.nvvm.read.ptx.sreg.ctaid.x() nounwind readnone");
+    str_replace(str,
+		"attributes #0 = { nounwind readnone }",
+		"target datalayout = \"e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v32:32:32-v64:64:64-v128:128:128-n16:32:64\"");
+#endif
+
+
+#if 0
+    std::string error;
+    unsigned OpenFlags = 0;
+    OpenFlags |= llvm::raw_fd_ostream::F_Binary;
+    llvm::OwningPtr<llvm::tool_output_file> Out( new llvm::tool_output_file( "test.bc" , error, OpenFlags) );
+    if (!Out) {
+      llvm::errs() << "Could not create OwningPtr<tool_output_file>\n";
+      exit(1);
+    }
+    llvm::formatted_raw_ostream fros(Out->os());
+    llvm::WriteBitcodeToFile(Mod,fros);
+    fros.flush();
+    // open the file:
+    std::streampos fileSize;
+    std::ifstream file("test.bc", std::ios::binary);
+    // get its size:
+    file.seekg(0, std::ios::end);
+    fileSize = file.tellg();
+    file.seekg(0, std::ios::beg);
+    // read the data:
+    std::vector<char> buffer(fileSize);
+    file.read((char*) &buffer[0], fileSize);
+    file.close();
+#endif
+
+
+#if 0
+    std::ifstream input( "test.bc", std::ios::binary );
+    // copies all data into buffer
+    std::vector<unsigned char> buffer( std::istreambuf_iterator<unsigned char>(input) ,  
+				       std::istreambuf_iterator<unsigned char>() );
+#endif
+
+    //exit(1);
+
+    std::cout << str << "\n";
+
+    nvvmResult result;
+    nvvmProgram program;
+    size_t PTXSize;
+    char *PTX = NULL;
+
+    result = nvvmCreateProgram(&program);
+    if (result != NVVM_SUCCESS) {
+      fprintf(stderr, "nvvmCreateProgram: Failed\n");
+      exit(1); 
+    }
+
+    result = nvvmAddModuleToProgram(program, str.c_str() , str.size() , "module" );
+    //result = nvvmAddModuleToProgram(program, (const char*)buffer.data() , buffer.size() , "module" );
+    if (result != NVVM_SUCCESS) {
+        fprintf(stderr, "nvvmAddModuleToProgram: Failed\n");
+        exit(-1);
+    }
+ 
+    result = nvvmCompileProgram(program,  0, NULL);
+    if (result != NVVM_SUCCESS) {
+        char *Msg = NULL;
+        size_t LogSize;
+        fprintf(stderr, "nvvmCompileProgram: Failed\n");
+        nvvmGetProgramLogSize(program, &LogSize);
+        Msg = (char*)malloc(LogSize);
+        nvvmGetProgramLog(program, Msg);
+        fprintf(stderr, "%s\n", Msg);
+        free(Msg);
+        exit(-1);
+    }
+    
+    result = nvvmGetCompiledResultSize(program, &PTXSize);
+    if (result != NVVM_SUCCESS) {
+        fprintf(stderr, "nvvmGetCompiledResultSize: Failed\n");
+        exit(-1);
+    }
+    
+    PTX = (char*)malloc(PTXSize);
+    result = nvvmGetCompiledResult(program, PTX);
+    if (result != NVVM_SUCCESS) {
+        fprintf(stderr, "nvvmGetCompiledResult: Failed\n");
+        free(PTX);
+        exit(-1);
+    }
+    
+    result = nvvmDestroyProgram(&program);
+    if (result != NVVM_SUCCESS) {
+      fprintf(stderr, "nvvmDestroyProgram: Failed\n");
+      free(PTX);
+      exit(-1);
+    }
+
+    std::string ret(PTX);
+    std::cout << ret << "\n";
+
+    return ret;
+    //
+  }
+
+
+
+
+
+  std::string llvm_get_ptx_kernel(const char* fname)
+  {
+    QDP_info_primary("Internalizing module");
+
+    const char *ExportList[] = { "main" };
+
+    llvm::StringMap<int> Mapping;
+    Mapping["__CUDA_FTZ"] = 0;
+
+    std::string banner;
+
+    llvm::PassManager OurPM;
+    OurPM.add( llvm::createInternalizePass( llvm::ArrayRef<const char *>(ExportList, 1)));
+    OurPM.add( llvm::createNVVMReflectPass(Mapping));
+    OurPM.run( *Mod );
+
+
+    QDP_info_primary("Running optimization passes on module");
+
+    llvm::PassManager PM;
+    PM.add( llvm::createGlobalDCEPass() );
+    PM.run( *Mod );
+
+    llvm_print_module(Mod,"ir_internalized_reflected_globalDCE.ll");
+
+    std::string str = get_PTX_from_Module_using_nvvm( Mod );
+
 #if 1
     // Write PTX string to file
     std::ofstream ptxfile;
@@ -847,6 +1013,8 @@ namespace QDP {
 
     return str;
   }
+
+
 
 
 
