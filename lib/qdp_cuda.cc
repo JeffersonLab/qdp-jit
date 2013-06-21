@@ -96,9 +96,13 @@ namespace QDP {
 
     // This call is async
     if ( blockDimX * blockDimY * blockDimZ > 0  &&  gridDimX * gridDimY * gridDimZ > 0 ) {
-      cuLaunchKernel(f, gridDimX, gridDimY, gridDimZ, 
-		     blockDimX, blockDimY, blockDimZ, 
-		     sharedMemBytes, QDPcudastreams[KERNEL], kernelParams, extra);
+      CUresult result = cuLaunchKernel(f, gridDimX, gridDimY, gridDimZ, 
+				       blockDimX, blockDimY, blockDimZ, 
+				       sharedMemBytes, QDPcudastreams[KERNEL], kernelParams, extra);
+      if (result != CUDA_SUCCESS) {
+	QDP_error_exit("CUDA launch error: grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
+		       gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes );
+      }
     } else {
       //std::cout << "skipping kernel launch due to zero block!!!\n";
     }
@@ -113,7 +117,12 @@ namespace QDP {
     // For now, pull the brakes
     // I've seen the GPU running away from CPU thread
     // This call is probably too much, but it's safe to call it.
-    CudaDeviceSynchronize();
+    CUresult result = cuCtxSynchronize();
+    if (result != CUDA_SUCCESS) {
+      QDP_error_exit("CUDA launch error (on sync): grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
+		     gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes );
+    }
+    //CudaDeviceSynchronize();
 
     if (DeviceParams::Instance().getSyncDevice()) {  
       QDP_info_primary("Pulling the brakes: device sync after kernel launch!");
