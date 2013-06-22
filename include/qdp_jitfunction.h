@@ -379,18 +379,7 @@ function_gather_exec( CUfunction function, void* send_buf , const Map& map , con
     //std::cout << "addr rhs =" << addr[addr.size()-1] << " " << addr_leaf.addr[i] << "\n";
   }
 
-
-  static std::map<int,int> threadsPerBlock;
-
-  if (!threadsPerBlock[hi-lo]) {
-    threadsPerBlock[hi-lo] = jit_autotuning(function,lo,hi,&addr[0]);
-  } else {
-    //QDP_info_primary("Previous gather_function auto-tuning result = %d",threadsPerBlock);
-  }
-
-  kernel_geom_t now = getGeom( hi-lo , threadsPerBlock[hi-lo] );
-
-  CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock[hi-lo],1,1,    0, 0, &addr[0] , 0);
+  jit_launch(function,hi-lo,&addr[0]);
 }
 
 
@@ -489,33 +478,8 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
     //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
   }
 
-  static std::map<int,int> threadsPerBlock;
+  jit_launch(function,th_count,&addr[0]);
 
-  if (!threadsPerBlock[th_count]) {
-    // Auto tuning
-    // Fist get a data field of the same size as "dest" 
-    // where it's safe to do autotuning on.
-    int tmpId = QDPCache::Instance().registrate( QDPCache::Instance().getSize( dest.getId() ) , 1 , NULL );
-    void * devPtr = QDPCache::Instance().getDevicePtr( tmpId );
-    //QDPCache::Instance().printLockSets();
-    addr[addr_dest] = &devPtr;
-
-    threadsPerBlock[th_count] = jit_autotuning(function,0,th_count,&addr[0]);
-
-    // Restore original "dest" device address
-    addr[addr_dest] = &addr_leaf.addr[0];
-    QDPCache::Instance().signoff( tmpId );
-    //QDPCache::Instance().printLockSets();
-
-  } else {
-    //QDP_info_primary("Previous auto-tuning result = %d",threadsPerBlock);
-  }
-
-  //QDP_info("Launching kernel with %d threads",hi-lo);
-
-  kernel_geom_t now = getGeom( th_count , threadsPerBlock[th_count] );
-
-  CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock[th_count],1,1,    0, 0, &addr[0] , 0);
 
   if (offnode_maps > 0) {
     ShiftPhase2 phase2;
@@ -524,16 +488,7 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
     th_count = faceCount;
     idx_inner_dev = idx_face_dev;
 
-    if (!threadsPerBlock[th_count]) {
-      int tmpId = QDPCache::Instance().registrate( QDPCache::Instance().getSize( dest.getId() ) , 1 , NULL );
-      void * devPtr = QDPCache::Instance().getDevicePtr( tmpId );
-      addr[addr_dest] = &devPtr;
-      threadsPerBlock[th_count] = jit_autotuning(function,0,th_count,&addr[0]);
-      addr[addr_dest] = &addr_leaf.addr[0];
-      QDPCache::Instance().signoff( tmpId );
-    }
-    now = getGeom( th_count , threadsPerBlock[th_count] );                                  
-    CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock[th_count],1,1,    0, 0, &addr[0] , 0);
+    jit_launch(function,th_count,&addr[0]);
   }
 }
 
@@ -577,32 +532,7 @@ function_lat_sca_exec(CUfunction function, OLattice<T>& dest, const Op& op, cons
     //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
   }
 
-  static int threadsPerBlock = 0;
-
-  if (!threadsPerBlock) {
-    // Auto tuning
-
-    // Fist get a data field of the same size as "dest" where we can play on
-    // (in case the final operator is an OpAddAssign, etc.)
-    int tmpId = QDPCache::Instance().registrate( QDPCache::Instance().getSize( dest.getId() ) , 1 , NULL );
-    void * devPtr = QDPCache::Instance().getDevicePtr( tmpId );
-    //QDPCache::Instance().printLockSets();
-    addr[addr_dest] = &devPtr;
-
-    threadsPerBlock = jit_autotuning(function,0,th_count,&addr[0]);
-
-    // Restore original "dest" device address
-    addr[addr_dest] = &addr_leaf.addr[0];
-    QDPCache::Instance().signoff( tmpId );
-    //QDPCache::Instance().printLockSets();
-
-  }
-
-  //QDP_info("Launching kernel with %d threads",hi-lo);
-
-  kernel_geom_t now = getGeom( th_count , threadsPerBlock );
-
-  CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
+  jit_launch(function,th_count,&addr[0]);
 }
 
 
@@ -650,14 +580,7 @@ function_zero_rep_exec(CUfunction function, OLattice<T>& dest, const Subset& s )
     //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
   }
 
-  static int threadsPerBlock = 0;
-
-  if (!threadsPerBlock) {
-    threadsPerBlock = jit_autotuning(function,0,th_count,&addr[0]);
-  }
-
-  kernel_geom_t now = getGeom( th_count , threadsPerBlock );
-  CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
+  jit_launch(function,th_count,&addr[0]);
 }
 
 
@@ -733,20 +656,7 @@ function_random_exec(CUfunction function, OLattice<T>& dest, const Subset& s , S
     //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
   }
 
-  static int threadsPerBlock = 0;
-
-  if (!threadsPerBlock) {
-    // Auto tuning
-    threadsPerBlock = jit_autotuning(function,0,s.numSiteTable(),&addr[0]);
-  } else {
-    //QDP_info_primary("Previous auto-tuning result = %d",threadsPerBlock);
-  }
-
-  //QDP_info("Launching kernel with %d threads",hi-lo);
-
-  kernel_geom_t now = getGeom( s.numSiteTable() , threadsPerBlock );
-
-  CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
+  jit_launch(function,s.numSiteTable(),&addr[0]);
 }
 
 

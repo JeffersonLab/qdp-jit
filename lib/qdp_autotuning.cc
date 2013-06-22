@@ -2,6 +2,89 @@
 
 namespace QDP {
 
+  struct tune_t {
+    tune_t(): cfg(0),best(0),best_time(0.0) {}
+    tune_t(int cfg,int best,double best_time): cfg(cfg),best(best),best_time(best_time) {}
+    int    cfg;
+    int    best;
+    double best_time;
+  };
+
+  std::map< CUfunction , tune_t > mapTune;
+
+
+  void jit_launch(CUfunction function,int th_count,void ** param)
+  {
+    // Check for thread count equals zero
+    // This can happen, when inner count is zero
+    if ( th_count == 0 )
+      return;
+
+    if (mapTune.count(function) == 0) {
+      mapTune[function] = tune_t( DeviceParams::Instance().getMaxBlockX() , 0 , 0.0 );
+    }
+
+
+    tune_t& tune = mapTune[function];
+
+
+    if (tune.cfg == -1) {
+      kernel_geom_t now = getGeom( th_count , tune.best );
+
+      //QDP_info("CUDA launch (settled): grid=(%u,%u,%u), block=(%d,%u,%u) ",now.Nblock_x,now.Nblock_y,1,    tune.best,1,1 );
+	
+      CUresult result = cuLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    tune.best,1,1,    0, 0, param , 0);
+      if (result != CUDA_SUCCESS) 
+	QDP_error_exit("CUDA direct launch error: grid=(%u,%u,%u), block=(%d,%u,%u) ",
+		       now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1 );
+
+      QDPCache::Instance().releasePrevLockSet();
+      QDPCache::Instance().beginNewLockSet();
+
+      result = cuCtxSynchronize();
+      if (result != CUDA_SUCCESS) 
+	QDP_error_exit("CUDA delayed launch error: grid=(%u,%u,%u), block=(%d,%u,%u) ",
+		       now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1 );
+    } else {
+
+      CUresult result = CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES;
+      double time;
+
+      while (result != CUDA_SUCCESS && tune.cfg > 0) {
+	kernel_geom_t now = getGeom( th_count , tune.cfg );
+	StopWatch w;
+	w.start();
+
+	//QDP_info("CUDA launch (trying): grid=(%u,%u,%u), block=(%d,%u,%u) ",now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1 );
+
+	result = cuLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1,    0, 0, param , 0);
+	CudaDeviceSynchronize();
+	w.stop();
+	time = w.getTimeInMicroseconds();
+	if (result != CUDA_SUCCESS)
+	  tune.cfg >>= 1;
+      }
+
+      if (result != CUDA_SUCCESS && tune.cfg == 1)
+	QDP_error_exit("Kernel launch failed even for block size 1. Giving up.");
+
+      if (time < tune.best_time || tune.best_time == 0.0) {
+	tune.best_time = time;
+	tune.best = tune.cfg;
+      }
+
+      // If time is much greater than our best time
+      // we are in the rising part of the performance 
+      // profile and stop searching any further
+      tune.cfg = time > 1.33 * tune.best_time || tune.cfg == 1 ? -1 : tune.cfg >> 1;
+
+      //QDP_info("time = %f,  cfg = %d,  best = %d,  best_time = %f ", time,tune.cfg,tune.best,tune.best_time );
+    }
+  }
+
+
+
+
   int jit_autotuning(CUfunction function,int lo,int hi,void ** param)
   {
     // Check for thread count equals zero
@@ -51,6 +134,8 @@ namespace QDP {
     QDP_info_primary("Threads per block favored = %d  (time=%f micro secs)",best_cfg,best_time);
     return best_cfg;
   }
+
+
 
 
 }

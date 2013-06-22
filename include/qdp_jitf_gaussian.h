@@ -72,20 +72,7 @@ function_gaussian_exec(CUfunction function, OLattice<T>& dest,OLattice<T>& r1,OL
     //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
   }
 
-  static int threadsPerBlock = 0;
-
-  if (!threadsPerBlock) {
-    // Auto tuning
-    threadsPerBlock = jit_autotuning(function,0,th_count,&addr[0]);
-  } else {
-    //QDP_info_primary("Previous auto-tuning result = %d",threadsPerBlock);
-  }
-
-  //QDP_info("Launching kernel with %d threads",hi-lo);
-
-  kernel_geom_t now = getGeom( th_count , threadsPerBlock );
-
-  CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threadsPerBlock,1,1,    0, 0, &addr[0] , 0);
+  jit_launch(function,th_count,&addr[0]);
 }
 
 
