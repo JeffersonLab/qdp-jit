@@ -520,13 +520,13 @@ namespace QDP {
 
     for( int i=0 ; i < PTX::map_ptx_math_functions_unary.size() ; i++ ) {
       if (m_include_math_ptx_unary.at(i)) {
-	QDP_info_primary("including unary PTX math function %d",(int)i);
+	//QDP_info_primary("including unary PTX math function %d",(int)i);
 	final_ptx << jit_get_map_ptx_math_functions_prg_unary(i) << "\n";
       }
     }
     for( int i=0 ; i < PTX::map_ptx_math_functions_binary.size() ; i++ ) {
       if (m_include_math_ptx_binary.at(i)) {
-	QDP_info_primary("including binary PTX math function %i",(int)i);
+	//QDP_info_primary("including binary PTX math function %i",(int)i);
 	final_ptx << jit_get_map_ptx_math_functions_prg_binary(i) << "\n";
       }
     }
@@ -638,7 +638,7 @@ namespace QDP {
 
   std::string jit_get_kernel_as_string() {
     std::string ret = jit_get_function()->get_kernel_as_string();
-    QDP_info_primary("Resetting jit function");
+    //QDP_info_primary("Resetting jit function");
     jit_internal_function.reset();
     return ret;
   }
@@ -650,7 +650,7 @@ namespace QDP {
       //QDP_info_primary("Resetting old jit function (use_count = %d) ...",(int)jit_internal_function.use_count());
       //jit_internal_function.reset();
     }
-    QDP_info_primary("Starting new jit function");
+    //QDP_info_primary("Starting new jit function");
     jit_internal_function = make_shared<jit_function>();
   }
 

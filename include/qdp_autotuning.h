@@ -3,6 +3,8 @@
 
 namespace QDP {
 
+  void jit_launch(CUfunction function,int th_count,void ** param);
+
   int jit_autotuning(CUfunction function,int lo,int hi,void ** param);
 
 }
