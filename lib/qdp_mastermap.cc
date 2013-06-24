@@ -86,27 +86,28 @@ namespace QDP {
 
     for (int i = 0 ; i < id ; ++i ) {
 
-      multi1d<int> ct(Layout::sitesOnNode());
-      for(int q=0 ; q<Layout::sitesOnNode() ; ++q) 
+      multi1d<int> ct(Layout::sitesOnNode()); // complement, inner region
+      multi1d<int> pt(Layout::sitesOnNode()); // positive, union of receive sites
+      for(int q=0 ; q<Layout::sitesOnNode() ; ++q) {
 	ct[q]=q;
-
-      multi1d<int> join(powerSet[i]->size() + map.roffset().size());
-      for (int q = 0 ; q < powerSet[i]->size() ; ++q ) {
-	join[q]=(*powerSet[i])[q];
-	ct[ (*powerSet[i])[q] ] = -1;
+	pt[q]=-1;
       }
 
-      for (int q = 0, pos = powerSet[i]->size() ; q < map.roffset().size() ; ++q ) {
-	join[pos++]=map.roffset()[q];
+      for (int q = 0 ; q < powerSet[i]->size() ; ++q ) {
+	ct[ (*powerSet[i])[q] ] = -1;
+	pt[ (*powerSet[i])[q] ] = (*powerSet[i])[q];
+      }
+
+      for (int q = 0; q < map.roffset().size() ; ++q ) {
 	ct[ map.roffset()[q] ] = -1;
+	pt[ map.roffset()[q] ] = map.roffset()[q];
       }
 
       powerSet[i|id] = new multi1d<int>;
       powerSetC[i|id]= new multi1d<int>;
 
-      uniquify_list_inplace( *powerSet[i|id] , join );
-
       remove_neg( *powerSetC[i|id] , ct );
+      remove_neg( *powerSet[i|id] , pt );
 
       idFace[i|id] = QDPCache::Instance().registrateOwnHostMem( powerSet[i|id]->size() * sizeof(int) , (void*)powerSet[i|id]->slice() , NULL );
       idInner[i|id] = QDPCache::Instance().registrateOwnHostMem( powerSetC[i|id]->size() * sizeof(int) , (void*)powerSetC[i|id]->slice() , NULL );
