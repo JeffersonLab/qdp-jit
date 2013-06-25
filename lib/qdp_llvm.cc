@@ -817,9 +817,37 @@ namespace QDP {
       }
   }
 
+  std::map<std::string,std::string> mapAttr;
+  std::map<std::string,std::string>::iterator mapAttrIter;
+
+  bool find_attr(std::string& str)
+  {
+    mapAttr.clear();
+    size_t pos = 0;
+    while((pos = str.find("attributes #", pos)) != std::string::npos)
+      {
+	size_t pos_space = str.find(" ", pos+12);
+	std::string num = str.substr(pos+12,pos_space-pos-12);
+	num = " #"+num;
+	std::cout << "# num found = " << num << "()\n";
+	size_t pos_open = str.find("{", pos_space);
+	size_t pos_close = str.find("}", pos_open);
+	std::string val = str.substr(pos_open+1,pos_close-pos_open-1);
+	std::cout << "# val found = " << val << "\n";
+	str.replace(pos, pos_close-pos+1, "");
+	if (mapAttr.count(num) > 0)
+	  QDP_error_exit("unexp.");
+	mapAttr[num]=val;
+      }
+  }
+
+
+
 
   std::string get_PTX_from_Module_using_nvvm( llvm::Module *Mod )
   {
+    Mod->setDataLayout("e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v32:32:32-v64:64:64-v128:128:128-n16:32:64");
+
     llvm::PassManager PMTM;
 #if 0
     // Add the target data from the target machine, if it exists, or the module.
@@ -849,18 +877,10 @@ namespace QDP {
     // llvm::WriteBitcodeToFile(Mod,fros);
     fros.flush();
 
-    str_replace(str,
-		"declare i32 @llvm.nvvm.read.ptx.sreg.tid.x() #0",
-		"declare i32 @llvm.nvvm.read.ptx.sreg.tid.x() nounwind readnone");
-    str_replace(str,
-		"declare i32 @llvm.nvvm.read.ptx.sreg.ntid.x() #0",
-		"declare i32 @llvm.nvvm.read.ptx.sreg.ntid.x() nounwind readnone");
-    str_replace(str,
-		"declare i32 @llvm.nvvm.read.ptx.sreg.ctaid.x() #0",
-		"declare i32 @llvm.nvvm.read.ptx.sreg.ctaid.x() nounwind readnone");
-    str_replace(str,
-		"attributes #0 = { nounwind readnone }",
-		"target datalayout = \"e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v32:32:32-v64:64:64-v128:128:128-n16:32:64\"");
+    find_attr(str);
+    for (mapAttrIter=mapAttr.begin(); mapAttrIter!=mapAttr.end(); ++mapAttrIter)
+      str_replace(str, mapAttrIter->first, mapAttrIter->second );
+
 #endif
 
 
