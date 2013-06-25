@@ -938,8 +938,16 @@ namespace QDP {
         fprintf(stderr, "nvvmAddModuleToProgram: Failed\n");
         exit(-1);
     }
- 
-    result = nvvmCompileProgram(program,  0, NULL);
+
+    std::stringstream ss;
+    ss << "-arch=compute_" << DeviceParams::Instance().getMajor() << DeviceParams::Instance().getMinor();
+
+    std::string sm_str = ss.str();
+
+    const char * arch = sm_str.c_str();
+    const char * opt_val[] = {arch};
+
+    result = nvvmCompileProgram(program,  1, opt_val );
     if (result != NVVM_SUCCESS) {
         char *Msg = NULL;
         size_t LogSize;
