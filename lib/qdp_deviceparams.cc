@@ -35,7 +35,8 @@ namespace QDP {
     max_blocky = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y ) );
     max_blockz = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Z ) );
 
-    CudaGetSM(&major,&minor);
+    if (!boolNoReadSM)
+      CudaGetSM(&major,&minor);
     divRnd = major >= 2;
 
     QDP_info_primary("Compute capability (major)              = %d",major);
@@ -53,39 +54,11 @@ namespace QDP {
     QDP_info_primary("max_blockz                              = %d",max_blockz);
   }
 
-  void DeviceParams::setCC(int sm) {
-    switch(sm) {
-    case 12:
-      asyncTransfers = false;
-      smem = 16*1024;
-      smem_default = 0;
-      max_gridx  = max_gridy = 32768; // We need a power of 2 here!
-      max_gridz = 1;
-      max_blockx = max_blocky = 512;
-      max_blockz = 64;
-      break;
-    case 20:
-    case 21:
-      asyncTransfers = true;
-      smem = 48*1024;
-      smem_default = 0;
-      max_gridx  = max_gridy = max_gridz = 32768; // We need a power of 2 here!
-      max_blockx = max_blocky = 1024;
-      max_blockz = 64;
-      break;
-    case 30:
-      asyncTransfers = true;
-      smem = 48*1024;
-      smem_default = 0;
-      max_gridx  = max_gridy = max_gridz = 512 * 1024; // Its 2^31-1, but this value is large enough
-      max_blockx = max_blocky = 1024;
-      max_blockz = 64;
-      break;
-    default:
-      QDP_error_exit("DeviceParams::setCC compute capability %d not known!",sm);
-    }
-    if (Layout::primaryNode())
-      QDP_info_primary("CUDA device compute capability set to sm_%d",sm);
+  void DeviceParams::setSM(int sm) {
+    QDP_info_primary("Compiling LLVM IR to PTX for compute capability sm_%d (instead of autodetect)",sm);
+    major = sm / 10;
+    minor = sm % 10;
+    boolNoReadSM = true;
   }
 
 }

@@ -26,7 +26,7 @@ namespace QDP {
       return singleton;
     }
 
-    void setCC(int sm);
+    void setSM(int sm);
 
     size_t getMaxGridX() const {return max_gridx;}
     size_t getMaxGridY() const {return max_gridy;}
@@ -66,12 +66,13 @@ namespace QDP {
     void autoDetect();
 
   private:
-    DeviceParams(): GPUDirect(false), syncDevice(false), maxKernelArg(512) {};   // Private constructor
+    DeviceParams(): GPUDirect(false), syncDevice(false), maxKernelArg(512), boolNoReadSM(false) {}; // Private constructor
     DeviceParams(const DeviceParams&);                                           // Prevent copy-construction
     DeviceParams& operator=(const DeviceParams&);
     size_t roundDown2pow(size_t x);
 
   private:
+    bool boolNoReadSM;
     int device;
     std::string envvar;
     bool GPUDirect;

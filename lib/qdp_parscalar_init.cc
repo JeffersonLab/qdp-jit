@@ -261,6 +261,12 @@ namespace QDP {
 			  {
 			    DeviceParams::Instance().setSyncDevice(true);
 			  }
+			else if (strcmp((*argv)[i], "-sm")==0) 
+			  {
+			    int sm;
+			    sscanf((*argv)[++i], "%d", &sm);
+			    DeviceParams::Instance().setSM(sm);
+			  }
 			else if (strcmp((*argv)[i], "-gpudirect")==0) 
 			  {
 			    DeviceParams::Instance().setGPUDirect(true);
