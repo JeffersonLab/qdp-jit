@@ -885,6 +885,7 @@ namespace QDP {
     for (mapAttrIter=mapAttr.begin(); mapAttrIter!=mapAttr.end(); ++mapAttrIter)
       str_replace(str, mapAttrIter->first, mapAttrIter->second );
 
+    str_replace( str , "!nvvm.internalize.after.link = !{}" , "" );
 #endif
 
 
