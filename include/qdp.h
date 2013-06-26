@@ -91,6 +91,8 @@
 #include <utility>
 #include <memory>
 
+#include <map>
+
 using namespace std;   // I do not like this - fix later
 
 using std::iostream;

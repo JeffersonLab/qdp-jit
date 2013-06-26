@@ -421,7 +421,7 @@ function_gather_exec( CUfunction function, void* send_buf , const Map& map , con
     //std::cout << "addr rhs =" << addr[addr.size()-1] << " " << addr_leaf.addr[i] << "\n";
   }
 
-  jit_launch(function,hi-lo,&addr[0]);
+  jit_launch(function,hi-lo,addr);
 }
 
 
@@ -518,7 +518,7 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
     //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
   }
 
-  jit_launch(function,th_count,&addr[0]);
+  jit_launch(function,th_count,addr);
 
 
   if (offnode_maps > 0) {
@@ -528,7 +528,7 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
     th_count = faceCount;
     idx_inner_dev = idx_face_dev;
 
-    jit_launch(function,th_count,&addr[0]);
+    jit_launch(function,th_count,addr);
   }
 }
 
@@ -572,7 +572,7 @@ function_lat_sca_exec(CUfunction function, OLattice<T>& dest, const Op& op, cons
     //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
   }
 
-  jit_launch(function,th_count,&addr[0]);
+  jit_launch(function,th_count,addr);
 }
 
 
@@ -620,7 +620,7 @@ function_zero_rep_exec(CUfunction function, OLattice<T>& dest, const Subset& s )
     //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
   }
 
-  jit_launch(function,th_count,&addr[0]);
+  jit_launch(function,th_count,addr);
 }
 
 
@@ -692,7 +692,7 @@ function_random_exec(CUfunction function, OLattice<T>& dest, const Subset& s , S
     //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
   }
 
-  jit_launch(function,s.numSiteTable(),&addr[0]);
+  jit_launch(function,s.numSiteTable(),addr);
 }
 
 

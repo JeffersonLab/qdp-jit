@@ -10,7 +10,7 @@
 // #include "qdp_deviceparams.h"
 // #include "qdp_cuda.h"
 // #include "cuda.h"
-#include <map>
+
 #include <string>
 
 #include "cudaProfiler.h"
@@ -127,6 +127,13 @@ namespace QDP {
     if (DeviceParams::Instance().getSyncDevice()) {  
       QDP_info_primary("Pulling the brakes: device sync after kernel launch!");
       //CudaDeviceSynchronize();
+    }
+  }
+
+
+  void CudaCheckResult(CUresult result) {
+    if (result != CUDA_SUCCESS) {
+      QDP_info("CUDA error %d (%s)", (int)result , mapCuErrorString[result].c_str());
     }
   }
 
