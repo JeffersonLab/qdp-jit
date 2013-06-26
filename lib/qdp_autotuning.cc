@@ -50,6 +50,7 @@ namespace QDP {
       if (result != CUDA_SUCCESS) {
 	CudaCheckResult(result);
 	LaunchPrintArgs(args);
+	QDPIO::cout << getPTXfromCUFunc(function);
 	QDP_error_exit("CUDA launch error: grid=(%u,%u,%u), block=(%d,%u,%u) ",
 		       now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1 );
       }
@@ -61,6 +62,7 @@ namespace QDP {
       if (result != CUDA_SUCCESS) {
 	CudaCheckResult(result);
 	LaunchPrintArgs(args);
+	QDPIO::cout << getPTXfromCUFunc(function);
 	QDP_error_exit("CUDA launch error (on sync): grid=(%u,%u,%u), block=(%d,%u,%u) ",
 		       now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1 );
       }
@@ -83,6 +85,7 @@ namespace QDP {
 	if (result != CUDA_SUCCESS && result != CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES) {
 	  CudaCheckResult(result);
 	  LaunchPrintArgs(args);
+	  QDPIO::cout << getPTXfromCUFunc(function);
 	  QDP_error_exit("CUDA launch error: grid=(%u,%u,%u), block=(%d,%u,%u) ",
 			 now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1 );
   	}
@@ -92,6 +95,7 @@ namespace QDP {
 	  if (result_sync != CUDA_SUCCESS) {
 	    CudaCheckResult(result_sync);
 	    LaunchPrintArgs(args);
+	    QDPIO::cout << getPTXfromCUFunc(function);
 	    QDP_error_exit("CUDA launch error (on sync): grid=(%u,%u,%u), block=(%d,%u,%u) ",
 			   now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1 );
 	  }

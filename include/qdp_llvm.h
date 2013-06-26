@@ -87,6 +87,8 @@ namespace QDP {
     // llvm::Value * r_rcvbuf;
   };
 
+  std::string getPTXfromCUFunc(CUfunction f);
+
   void llvm_start_new_function();
   void llvm_wrapper_init();
   llvm::PHINode * llvm_phi( llvm::Type* type, unsigned num = 0 );

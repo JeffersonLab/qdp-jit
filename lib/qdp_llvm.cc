@@ -13,7 +13,11 @@ namespace QDP {
   llvm::Module      *Mod;
   //llvm::Value      *mainFunc;
 
+  std::map<CUfunction,std::string> mapCUFuncPTX;
 
+  std::string getPTXfromCUFunc(CUfunction f) {
+    return mapCUFuncPTX[f];
+  }
 
   bool function_created;
 
@@ -1079,6 +1083,8 @@ namespace QDP {
     ret = cuModuleGetFunction(&func, cuModule, "main");
     if (ret)
       QDP_error_exit("Error returned from cuModuleGetFunction. Abort.");
+
+    mapCUFuncPTX[func] = ptx_kernel;
 
     return func;
   }
