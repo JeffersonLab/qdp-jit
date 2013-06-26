@@ -2,9 +2,15 @@
 #define QDP_CUDA_H
 
 
+
+
 namespace QDP {
 
   enum QDPCudaStream { TRANSFER=0 , KERNEL=1 };
+
+  extern std::map<CUresult,std::string> mapCuErrorString;
+
+  void CudaCheckResult(CUresult ret);
 
   void CudaInit();
   //int CudaGetConfig(CUdevice_attribute what);

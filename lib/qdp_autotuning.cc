@@ -13,7 +13,19 @@ namespace QDP {
   std::map< CUfunction , tune_t > mapTune;
 
 
-  void jit_launch(CUfunction function,int th_count,void ** param)
+  void LaunchPrintArgs( std::vector<void*>& args )
+  {
+    QDP_info("Number of kernel arguments: %d",(int)args.size());
+    int i=0;
+    QDP_info("            bool          int     pointer");
+    for (void *addr : args)	
+      QDP_info("%2d: %12d %12d %p",i++,*(bool*)addr,*(int*)addr,*(void**)addr);
+    QDP_info("Device pool info:");
+    CUDADevicePoolAllocator::Instance().printPoolInfo();
+  }
+
+
+  void jit_launch(CUfunction function,int th_count,std::vector<void*>& args)
   {
     // Check for thread count equals zero
     // This can happen, when inner count is zero
@@ -33,33 +45,60 @@ namespace QDP {
 
       //QDP_info("CUDA launch (settled): grid=(%u,%u,%u), block=(%d,%u,%u) ",now.Nblock_x,now.Nblock_y,1,    tune.best,1,1 );
 	
-      CUresult result = cuLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    tune.best,1,1,    0, 0, param , 0);
-      if (result != CUDA_SUCCESS) 
-	QDP_error_exit("CUDA direct launch error: grid=(%u,%u,%u), block=(%d,%u,%u) ",
+      CUresult result = cuLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    tune.best,1,1,    0, 0, &args[0] , 0);
+
+      if (result != CUDA_SUCCESS) {
+	CudaCheckResult(result);
+	LaunchPrintArgs(args);
+	QDP_error_exit("CUDA launch error: grid=(%u,%u,%u), block=(%d,%u,%u) ",
 		       now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1 );
+      }
 
       QDPCache::Instance().releasePrevLockSet();
       QDPCache::Instance().beginNewLockSet();
 
       result = cuCtxSynchronize();
-      if (result != CUDA_SUCCESS) 
-	QDP_error_exit("CUDA delayed launch error: grid=(%u,%u,%u), block=(%d,%u,%u) ",
+      if (result != CUDA_SUCCESS) {
+	CudaCheckResult(result);
+	LaunchPrintArgs(args);
+	QDP_error_exit("CUDA launch error (on sync): grid=(%u,%u,%u), block=(%d,%u,%u) ",
 		       now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1 );
+      }
     } else {
 
       CUresult result = CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES;
+      CUresult result_sync;
       double time;
 
       while (result != CUDA_SUCCESS && tune.cfg > 0) {
 	kernel_geom_t now = getGeom( th_count , tune.cfg );
 	StopWatch w;
+
 	w.start();
 
-	//QDP_info("CUDA launch (trying): grid=(%u,%u,%u), block=(%d,%u,%u) ",now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1 );
+	QDP_info("CUDA launch (trying): grid=(%u,%u,%u), block=(%d,%u,%u) ",now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1 );
 
-	result = cuLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1,    0, 0, param , 0);
-	CudaDeviceSynchronize();
+	result = cuLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1,    0, 0, &args[0] , 0);
+
+	if (result != CUDA_SUCCESS && result != CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES) {
+	  CudaCheckResult(result);
+	  LaunchPrintArgs(args);
+	  QDP_error_exit("CUDA launch error: grid=(%u,%u,%u), block=(%d,%u,%u) ",
+			 now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1 );
+  	}
+
+	if (result == CUDA_SUCCESS) {
+	  result_sync = cuCtxSynchronize();
+	  if (result_sync != CUDA_SUCCESS) {
+	    CudaCheckResult(result_sync);
+	    LaunchPrintArgs(args);
+	    QDP_error_exit("CUDA launch error (on sync): grid=(%u,%u,%u), block=(%d,%u,%u) ",
+			   now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1 );
+	  }
+	}
+
 	w.stop();
+
 	time = w.getTimeInMicroseconds();
 	if (result != CUDA_SUCCESS)
 	  tune.cfg >>= 1;

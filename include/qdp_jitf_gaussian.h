@@ -72,7 +72,7 @@ function_gaussian_exec(CUfunction function, OLattice<T>& dest,OLattice<T>& r1,OL
     //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
   }
 
-  jit_launch(function,th_count,&addr[0]);
+  jit_launch(function,th_count,addr);
 }
 
 

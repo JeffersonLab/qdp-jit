@@ -32,6 +32,7 @@ namespace QDP
     void unregisterMemory();
 
     void   printListPool();
+    void   printPoolInfo();
     size_t getPoolSize();
 
     bool allocate( void** ptr, size_t n_bytes );
@@ -190,6 +191,10 @@ namespace QDP
   }
     
 
+  template<class Allocator>
+  void QDPPoolAllocator<Allocator>::printPoolInfo() {
+    QDP_info("CUDA memory allocated: start pointer = %p, size = %lu" , (void*)unaligned , (unsigned long)bytes_allocated );
+  }
 
 
   template<class Allocator>
