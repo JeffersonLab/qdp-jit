@@ -117,7 +117,7 @@ namespace QDP {
   //   };
 
 
-
+  std::string getPTXfromCUFunc(CUfunction f);
 
 
   class jit_label {

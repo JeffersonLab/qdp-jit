@@ -40,6 +40,12 @@ namespace QDP {
 
   jit_function_t jit_internal_function;
 
+  std::map<CUfunction,std::string> mapCUFuncPTX;
+
+  std::string getPTXfromCUFunc(CUfunction f) {
+    return mapCUFuncPTX[f];
+  }
+
   std::ostream& operator<< (std::ostream& stream, const jit_ptx_type& type ) {
     stream << jit_get_ptx_type(type);
     return stream;
@@ -692,6 +698,8 @@ namespace QDP {
     ret = cuModuleGetFunction(&func, cuModule, "function");
     if (ret)
       QDP_error_exit("Error returned from cuModuleGetFunction. Abort.");
+
+    mapCUFuncPTX[func]=ptx_kernel;
 
     return func;
   }
