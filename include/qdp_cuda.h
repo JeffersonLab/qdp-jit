@@ -2,6 +2,7 @@
 #define QDP_CUDA_H
 
 
+#include <map>
 
 
 namespace QDP {
