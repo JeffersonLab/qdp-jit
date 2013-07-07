@@ -91,6 +91,10 @@ namespace QDP {
   	}
 
 	if (result == CUDA_SUCCESS) {
+
+	  QDPCache::Instance().releasePrevLockSet();
+	  QDPCache::Instance().beginNewLockSet();
+
 	  result_sync = cuCtxSynchronize();
 	  if (result_sync != CUDA_SUCCESS) {
 	    CudaCheckResult(result_sync);
@@ -108,8 +112,10 @@ namespace QDP {
 	  tune.cfg >>= 1;
       }
 
-      if (result != CUDA_SUCCESS && tune.cfg == 1)
+      if (tune.cfg == 0) {
+	CudaCheckResult(result);
 	QDP_error_exit("Kernel launch failed even for block size 1. Giving up.");
+      }
 
       if (time < tune.best_time || tune.best_time == 0.0) {
 	tune.best_time = time;
