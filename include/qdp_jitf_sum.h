@@ -174,9 +174,6 @@ void function_sum_exec( CUfunction function,
     zero_rep( sdata.elem( JitDeviceLayout::Scalar ) );
     jit_ins_label( label_zero_rep_exit );
 
-    /* 
-    /* sdata.elem( JitDeviceLayout::Scalar ) = reg_idata_elem; */
-
     jit_ins_bar_sync(  0 );
 
     jit_value val_ntid = jit_geom_get_ntidx();
