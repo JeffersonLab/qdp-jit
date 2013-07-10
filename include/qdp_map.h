@@ -58,6 +58,38 @@ public:
 /** @} */ // end of group map
 
 
+struct FnMap
+{
+  //PETE_EMPTY_CONSTRUCTORS(FnMap)
+private:
+  FnMap& operator=(const FnMap& f);
+
+public:
+  const Map& map;
+  std::shared_ptr<RsrcWrapper> pRsrc;
+  //QDPHandle::Handle<RsrcWrapper> pRsrc;
+
+  FnMap(const Map& m);
+  FnMap(const FnMap& f);
+
+  const FnMapRsrc& getResource(int srcnum_, int dstnum_) {
+    assert(pRsrc);
+    return pRsrc->getResource( srcnum_ , dstnum_ );
+  }
+
+  const FnMapRsrc& getCached() const {
+    assert(pRsrc);
+    return pRsrc->get();
+  }
+  
+  template<class T>
+  inline typename UnaryReturn<T, FnMap>::Type_t
+  operator()(const T &a) const
+  {
+    return (a);
+  }
+
+};
 
 
 
@@ -157,38 +189,6 @@ private:
 
 
 
-struct FnMap
-{
-  //PETE_EMPTY_CONSTRUCTORS(FnMap)
-private:
-  FnMap& operator=(const FnMap& f);
-
-public:
-  const Map& map;
-  std::shared_ptr<RsrcWrapper> pRsrc;
-  //QDPHandle::Handle<RsrcWrapper> pRsrc;
-
-  FnMap(const Map& m): map(m), pRsrc(new RsrcWrapper( m.destnodes , m.srcenodes )) {}
-  FnMap(const FnMap& f) : map(f.map) , pRsrc(f.pRsrc) {}
-
-  const FnMapRsrc& getResource(int srcnum_, int dstnum_) {
-    assert(pRsrc);
-    return pRsrc->getResource( srcnum_ , dstnum_ );
-  }
-
-  const FnMapRsrc& getCached() const {
-    assert(pRsrc);
-    return pRsrc->get();
-  }
-  
-  template<class T>
-  inline typename UnaryReturn<T, FnMap>::Type_t
-  operator()(const T &a) const
-  {
-    return (a);
-  }
-
-};
 
 
 struct FnMapJIT
