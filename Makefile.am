@@ -3,7 +3,7 @@
 #                   examples (build examples)
 #                   includes (to install includes)
 #
-SUBDIRS = lib examples include other_libs tests
+SUBDIRS = lib examples include other_libs
 
 #
 # The end user's configuration script

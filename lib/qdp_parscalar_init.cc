@@ -123,9 +123,16 @@ namespace QDP {
   }
 
 
+  void QDP_initialize(int *argc, char ***argv) 
+  {
+    QDP_initialize_CUDA(argc, argv);
+    QDP_setGPU();
+    QDP_initialize_QMP(argc, argv);
+    QDP_startGPU();
+  }
 	
 	//! Turn on the machine
-	void QDP_initialize(int *argc, char ***argv)
+	void QDP_initialize_CUDA(int *argc, char ***argv)
 	{
 	  if (sizeof(bool) != 1)
 	    {

@@ -9,7 +9,7 @@ AM_CXXFLAGS = -I@top_srcdir@/include -I@top_builddir@/include \
               -I@top_srcdir@/other_libs/qio/other_libs/c-lime/include \
               -I@top_builddir@/other_libs/qio/other_libs/c-lime/include \
               -I@top_srcdir@/other_libs/xpath_reader/include \
-              @BAGEL_QDP_CXXFLAGS@ @LIBXML2_CXXFLAGS@ @QMP_CFLAGS@ @QMT_CXXFLAGS@
+              @BAGEL_QDP_CXXFLAGS@ @LIBXML2_CXXFLAGS@ @QMP_CFLAGS@ @QMT_CXXFLAGS@ @CUDA_CXXFLAGS@
 
 if BUILD_LIBINTRIN
 AM_CXXFLAGS += -I@top_srcdir@/other_libs/@LIBINTRIN_DIR@/include \
@@ -21,7 +21,7 @@ AM_CXXFLAGS += -I@top_srcdir@/other_libs/filedb/src \
                -I@top_srcdir@/other_libs/filedb/filehash
 endif
 
-AM_LDFLAGS = -L@top_builddir@/lib
+AM_LDFLAGS = -L@top_builddir@/lib @CUDA_LDFLAGS@ @CUDA_LIBS@
 
 if QDP_USE_LIBXML2
 AM_LDFLAGS += -L@top_builddir@/other_libs/qio/lib \
