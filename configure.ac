@@ -169,6 +169,7 @@ dnl then
      AC_DEFINE_UNQUOTED(QDP_IS_QDPJIT, ${gpu_enabled}, [Enable GPU/JIT])
      AC_SUBST(CUDA_LIBS, [-lcuda])
      AC_SUBST(CUDA_CXXFLAGS, [-I${cuda_home}/include])
+     AC_SUBST(CUDA_LDFLAGS, [-L${cuda_home}/lib64])
 dnl else
 dnl     AC_MSG_NOTICE([Not using GPUs ])
 dnl fi
