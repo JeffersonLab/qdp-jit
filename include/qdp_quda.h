@@ -6,9 +6,6 @@
 #warning "Using QDP-JIT/PTX memory allocator"
 
 #include <iostream>
-using namespace std;   // I do not like this - fix later
-
-//#include <qdp_quda.h>
 
 #define QDP_IS_QDPJIT
 
