@@ -273,7 +273,7 @@ namespace QDP {
     CudaRes("",ret);
 
     QDP_info_primary("trying to create a context");
-    ret = cuCtxCreate(&cuContext, 0, cuDevice);
+    ret = cuCtxCreate(&cuContext, CU_CTX_MAP_HOST, cuDevice);
     CudaRes("",ret);
   }
 
