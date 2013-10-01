@@ -337,6 +337,16 @@ void read(XMLReader& xml, const string& path, OScalar<T>& d)
 /*! @} */  // end of group oscalar
 
 
+// Empty leaf functor tag
+struct ElemLeaf
+{
+  inline ElemLeaf() { }
+};
+
+
+
+
+
 //! OScalar Op OScalar(Expression(source))
 /*! 
  * OScalar Op Expression, where Op is some kind of binary operation 
@@ -712,12 +722,6 @@ struct CreateLeaf<OLattice<T> >
 // tag to a OScalar and OLattice. The apply method simply returns the array
 // evaluated at the point.
 //-----------------------------------------------------------------------------
-
-// Empty leaf functor tag
-struct ElemLeaf
-{
-  inline ElemLeaf() { }
-};
 
 template<class T>
 struct LeafFunctor<OScalar<T>, ElemLeaf>
