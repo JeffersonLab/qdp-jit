@@ -924,7 +924,7 @@ namespace QDP {
 
     //exit(1);
 
-    std::cout << str << "\n";
+    //std::cout << str << "\n";
 
     nvvmResult result;
     nvvmProgram program;
@@ -987,7 +987,7 @@ namespace QDP {
     }
 
     std::string ret(PTX);
-    std::cout << ret << "\n";
+    //std::cout << ret << "\n";
 
     return ret;
     //

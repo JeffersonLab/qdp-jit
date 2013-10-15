@@ -361,18 +361,16 @@ public:
   inline
   RComplexJIT& operator*=(const RComplexREG<T1>& rhs) 
     {
-      assert(!"ni");
-      // RComplexJIT<T> d(rhs.func());
-      // d = *this * rhs;
-
-      // real() = d.real();
-      // imag() = d.imag();
-      //return *this;
+      typename REGType<RComplexJIT>::Type_t me(*this);
+      *this = me * rhs;
+      return *this;
     }
 
   RComplexJIT& operator*=(const typename REGType<RComplexJIT>::Type_t& rhs) 
     {
-      assert(!"ni");
+      typename REGType<RComplexJIT>::Type_t me(*this);
+      *this = me * rhs;
+      return *this;
     }
 
   //! RComplexJIT /= RComplexJIT
@@ -380,18 +378,16 @@ public:
   inline
   RComplexJIT& operator/=(const RComplexREG<T1>& rhs) 
     {
-      assert(!"ni");
-      // RComplexJIT<T> d(rhs.func());
-      // d = *this / rhs;
-
-      // real() = d.real();
-      // imag() = d.imag();
-      // return *this;
+      typename REGType<RComplexJIT>::Type_t me(*this);
+      *this = me / rhs;
+      return *this;
     }
 
   RComplexJIT& operator/=(const typename REGType<RComplexJIT>::Type_t& rhs) 
     {
-      assert(!"ni");
+      typename REGType<RComplexJIT>::Type_t me(*this);
+      *this = me / rhs;
+      return *this;
     }
 
   template<class T1>
