@@ -363,12 +363,14 @@ public:
     {
       typename REGType<RComplexJIT>::Type_t me(*this);
       *this = me * rhs;
+      return *this;
     }
 
   RComplexJIT& operator*=(const typename REGType<RComplexJIT>::Type_t& rhs) 
     {
       typename REGType<RComplexJIT>::Type_t me(*this);
       *this = me * rhs;
+      return *this;
     }
 
 
@@ -379,6 +381,7 @@ public:
     {
       typename REGType<RComplexJIT>::Type_t me(*this);
       *this = me / rhs;
+      return *this;
     }
 
 
@@ -386,6 +389,7 @@ public:
     {
       typename REGType<RComplexJIT>::Type_t me(*this);
       *this = me / rhs;
+      return *this;
     }
 
 
