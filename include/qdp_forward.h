@@ -137,6 +137,15 @@ namespace QDP
   struct FnMap;
   class ArrayBiDirectionalMap;
 
+
+  template<class T> void *function_layout_to_jit_build( const OLattice<T>& dest );
+  template<class T> void  function_layout_to_jit_exec(void * function, T *dest, T *src );
+
+  template<class T> void *function_layout_to_native_build( const OLattice<T>& dest );
+  template<class T> void  function_layout_to_native_exec(void * function, T *dest, T *src );
+
+
+
 #if 0
   template<class T, class T1, class RHS>
   CUfunction
@@ -166,6 +175,7 @@ namespace QDP
 		   OScalarJIT<PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > >& skewed_seed, 
 		   const OScalarJIT<PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > >& seed_mult);
 #endif
+
   }
 
 

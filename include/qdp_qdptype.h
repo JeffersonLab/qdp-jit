@@ -372,6 +372,7 @@ public:
 
 public:
   T* getF() const   { return static_cast<const C*>(this)->getF();}
+  T* getFjit() const   { return static_cast<const C*>(this)->getFjit();}
 
   //int getId() const   { return static_cast<const C*>(this)->getId();}
 
@@ -496,7 +497,7 @@ struct LeafFunctor<QDPType<T,C>, AddressLeaf>
   Type_t apply(const QDPType<T,C>& s, const AddressLeaf& p) 
   {
     //p.setAddr( s.getFdev() );
-    p.setAddr( s.getF() );
+    p.setAddr( s.getFjit() );
     return 0;
   }
 };

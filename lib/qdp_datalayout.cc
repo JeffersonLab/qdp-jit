@@ -58,8 +58,8 @@ namespace QDP {
     // We actually use the index order/data layout given by the
     // nesting order of aggregates
     if ( lay == JitDeviceLayout::Coalesced ) {
-      QDPIO::cerr << "not applying special data layout\n";
-      //std::reverse( a.begin() , a.end() );
+      //QDPIO::cerr << "not applying special data layout\n";
+      std::reverse( a.begin() , a.end() );
     }
 
     llvm::Value * offset = llvm_create_value(0);

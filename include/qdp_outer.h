@@ -120,101 +120,16 @@ namespace QDP {
   public:
 
     inline T* getF() const { return &F; };
-    //inline T* getF() const { assert_on_host(); return F; };
-
+    inline T* getFjit() const { return &F; };
 
     inline T& elem() { return F;  }
     inline const T& elem() const { return F; }
     inline T& elem(int i) { return F; }
     inline const T& elem(int i) const { return F; }
 
-    // inline T& elem() { assert_on_host(); return *F;  }
-    // inline const T& elem() const { assert_on_host(); return *F; }
-    // inline T& elem(int i) { assert_on_host(); return *F; }
-    // inline const T& elem(int i) const { assert_on_host(); return *F; }
-
-    //int getId() const { return myId; }
-
   private:
 
-    // OScalar uses the same data layout on the device
-    // and the host.
-#if 0
-    void static changeLayout(bool toDev,void * outPtr,void * inPtr)
-    {
-
-      typename WordType<T>::Type_t * in_data  = (typename WordType<T>::Type_t *)inPtr;
-      typename WordType<T>::Type_t * out_data = (typename WordType<T>::Type_t *)outPtr;
-
-      size_t lim_rea = GetLimit<T,2>::Limit_v; //T::ThisSize;
-      size_t lim_col = GetLimit<T,1>::Limit_v; //T::ThisSize;
-      size_t lim_spi = GetLimit<T,0>::Limit_v; //T::ThisSize;
-
-      QDP_info_primary("changing scalar data layout to %s format rea=%d col=%d spi=%d" , toDev? "device" : "host",lim_rea,lim_col,lim_spi);
-
-#if 0      
-      if (toDev)
-	std::cout << "my value = " << *((T*)(inPtr)) << "\n";
-#endif
-
-      for ( size_t reality = 0 ; reality < lim_rea ; reality++ ) {
-	for ( size_t color = 0 ; color < lim_col ; color++ ) {
-	  for ( size_t spin = 0 ; spin < lim_spi ; spin++ ) {
-	    size_t hst_idx = 
-	      reality + 
-	      lim_rea * color +
-	      lim_rea * lim_col * spin;
-	    size_t dev_idx = 
-	      spin +
-	      lim_spi * color +
-	      lim_spi * lim_col * reality;
-	    //QDP_info_primary("dev_idx=%d hst_idx=%d",dev_idx,hst_idx);
-	    if (toDev)
-	      out_data[dev_idx] = in_data[hst_idx];
-	    else {
-	      //std::cout << hst_idx  << " <= " << dev_idx << "\n";
-	      out_data[hst_idx] = in_data[dev_idx];
-	    }
-	  }
-	}
-      }
-    }
-#endif
-
-
-//     inline void alloc_mem() {
-// #if 0
-//       int lim_rea = GetLimit<T,2>::Limit_v; //T::ThisSize;
-//       int lim_col = GetLimit<T,1>::Limit_v; //T::ThisSize;
-//       int lim_spi = GetLimit<T,0>::Limit_v; //T::ThisSize;
-//       if ( (lim_rea*lim_col == 1) || 
-//       	   (lim_rea*lim_spi == 1) || 
-//       	   (lim_col*lim_spi == 1) ) {
-//       	//QDP_info_primary("OScalar::alloc_mem: no layout change: rea=%d col=%d spi=%d" ,lim_rea,lim_col,lim_spi);
-//       	myId = QDPCache::Instance().registrate( sizeof(T) , 0 , NULL );
-//       }
-//       else
-//       myId = QDPCache::Instance().registrate( sizeof(T) , 0 , &changeLayout );
-// #endif
-//       myId = QDPCache::Instance().registrate( sizeof(T) , 0 , NULL );
-//     }
-//     inline void free_mem() {
-//       if (myId >= 0)
-// 	QDPCache::Instance().signoff( myId );
-//     }
-//     inline void assert_on_host() const {
-//       // Here or somewhere we sould make sure that 
-//       // if the pointer is still valid, we do not too much
-//       if (myId >= 0)
-// 	QDPCache::Instance().getHostPtr( (void**)&F , myId );
-//       else
-// 	QDP_error_exit("Oscalar assert on host, but resource moved");
-//     }
-
-
     mutable T F;
-    //mutable int myId;
-
   };
 
 
@@ -347,14 +262,18 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
   template<class T> 
   class OLattice: public QDPType<T, OLattice<T> >
   {
+  private:
+    enum class MemoryUsage { native = 0 , jit = 1 };
+
   public:
     //typedef T Subtype;
-    //enum class MemStatus { NIL , MEM0 , MEM1 };
+
+
     typedef T SubType_t;
 
     OLattice()
     {
-      alloc_mem("create");
+      //alloc_mem("create");
     }
 
 
@@ -368,7 +287,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
     template<class T1>
     OLattice(const OScalar<T1>& rhs)
     {
-      alloc_mem("construct from OScalar");
+      //alloc_mem("construct from OScalar");
       this->assign(rhs);
     }
 
@@ -376,7 +295,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
     template<class T1>
     OLattice(const OLattice<T1>& rhs)
     {
-      alloc_mem("construct from OLattice");
+      //alloc_mem("construct from OLattice");
       this->assign(rhs);
     }
 
@@ -384,14 +303,14 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
     template<class RHS, class T1>
     OLattice(const QDPExpr<RHS, OLattice<T1> >& rhs)
     {
-      alloc_mem("construct from expr");
+      //alloc_mem("construct from expr");
       this->assign(rhs);
     }
 
 
     OLattice(const typename WordType<T>::Type_t& rhs)
     {
-      alloc_mem("construct from const");
+      //alloc_mem("construct from const");
 
       typedef OScalar<typename InternalScalar<T>::Type_t>  Scalar_t;
       this->assign(Scalar_t(rhs));
@@ -400,7 +319,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 
     OLattice(const Zero& rhs)
     {
-      alloc_mem("construct from zero");
+      //alloc_mem("construct from zero");
       this->assign(rhs);
     }
 
@@ -449,151 +368,129 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 
     OLattice(const OLattice& rhs)
     {
-      alloc_mem("copy");
+      //alloc_mem("copy");
       this->assign(rhs);
     }
 
 
 
     inline T* getF() const { 
-      //assert_on_host(); 
-      return F; 
+      assert_valid_native(); 
+      return F;
     }
-    // inline T* getFdev() const { 
-    //   assert_on_device();
-    //   return F_d;
-    // }
+
+    inline T* getFjit() const { 
+      assert_valid_jit(); 
+      return F_jit;
+    }
+
 
     inline T& elem(int i) { 
-      //assert_on_host(); 
+      assert_valid_native(); 
       return F[i]; 
     }
     inline const T& elem(int i) const { 
-      //assert_on_host(); 
+      assert_valid_native(); 
       return F[i]; 
     }
 
 
-  inline void moveToFastMemoryHint(bool copy=false) {}
-  inline void revertFromFastMemoryHint(bool copy=false) {}
+    inline void moveToFastMemoryHint(bool copy=false) {}
+    inline void revertFromFastMemoryHint(bool copy=false) {}
 
 
-#if 0
-    void static changeLayout(bool toDev,void * outPtr,void * inPtr)
+
+    void change_layout_to_jit(void * outPtr,void * inPtr) const
     {
-      QDP_info_primary("changing data layout to %s format" , toDev? "device" : "host");
+      static void* function;
+      if (function == NULL)
+	function = function_layout_to_jit_build( *this );
+      function_layout_to_jit_exec(function, outPtr , inPtr );
+    }
 
-      typename WordType<T>::Type_t * in_data  = (typename WordType<T>::Type_t *)inPtr;
-      typename WordType<T>::Type_t * out_data = (typename WordType<T>::Type_t *)outPtr;
+    void change_layout_to_native(void * outPtr,void * inPtr) const
+    {
+      static void* function;
+      if (function == NULL)
+	function = function_layout_to_native_build( *this );
+      function_layout_to_native_exec(function, outPtr , inPtr );
+    }
 
-      size_t lim_rea = GetLimit<T,2>::Limit_v; //T::ThisSize;
-      size_t lim_col = GetLimit<T,1>::Limit_v; //T::ThisSize;
-      size_t lim_spi = GetLimit<T,0>::Limit_v; //T::ThisSize;
 
-      // QDP_info_primary("lim_rea = %d" , lim_rea );
-      // QDP_info_primary("lim_col = %d" , lim_col );
-      // QDP_info_primary("lim_spi = %d" , lim_spi );
+  private:
 
-      for ( size_t site = 0 ; site < Layout::sitesOnNode() ; site++ ) {
-	for ( size_t reality = 0 ; reality < lim_rea ; reality++ ) {
-	  for ( size_t color = 0 ; color < lim_col ; color++ ) {
-	    for ( size_t spin = 0 ; spin < lim_spi ; spin++ ) {
-	      size_t hst_idx = 
-		reality + 
-		lim_rea * color +
-		lim_rea * lim_col * spin +
-		lim_rea * lim_col * lim_spi * site;
-	      size_t dev_idx = 
-		site + 
-		Layout::sitesOnNode() * spin +
-		Layout::sitesOnNode() * lim_spi * color +
-		Layout::sitesOnNode() * lim_spi * lim_col * reality;
-	      if (toDev)
-		out_data[dev_idx] = in_data[hst_idx];
-	      else {
-		//std::cout << hst_idx  << " <= " << dev_idx << "\n";
-		out_data[hst_idx] = in_data[dev_idx];
-	      }
-	    }
-	  }
-	}
+
+    inline void alloc_mem(MemoryUsage where, const char* msg) const {
+      if (where == MemoryUsage::jit)
+	assert( !F_alloc[1] && "alloc_mem already allocated (jit)");
+      else
+	assert( !F_alloc[0] && "alloc_mem already allocated (native)");
+
+      T* tmp;
+      try {
+	 tmp = (T*)QDP::Allocator::theQDPAllocator::Instance().allocate( sizeof(T) * Layout::sitesOnNode() ,
+									 QDP::Allocator::DEFAULT ); }
+      catch(std::bad_alloc) {
+	QDPIO::cerr << "Allocation failed in OLattice alloc_mem" << endl;
+	QDP::Allocator::theQDPAllocator::Instance().dump();
+	QDP_abort(1);
       }
-    }
-#endif
+      if (where == MemoryUsage::jit) {
+	F_jit = tmp;
+	F_alloc[1] = true;
+      } else {
+	F = tmp;
+	F_alloc[0] = true;
+      }
 
-    //int getId() const { return myId; }
+    }
+
+    inline void free_mem() {
+      if (F_alloc[1])
+	QDP::Allocator::theQDPAllocator::Instance().free( F_jit );
+      if (F_alloc[0])
+	QDP::Allocator::theQDPAllocator::Instance().free( F );
+    }
+
+
+    inline void assert_valid_jit() const {
+      if (F_alloc[1] && F_jit_valid)
+	return;
+
+      if (!F_alloc[1])
+	alloc_mem(MemoryUsage::jit,"assert_valid_jit");
+
+      if (F_alloc[0]) 
+	change_layout_to_jit(F_jit,F);
+
+      F_jit_valid = true;
+    }
+
+
+    inline void assert_valid_native() const {
+      if (F_alloc[0] && !F_jit_valid)
+	return;
+
+      if (!F_alloc[0])
+	alloc_mem(MemoryUsage::native,"assert_valid_native");
+
+      if (F_alloc[1])
+	change_layout_to_native(F,F_jit);
+
+      F_jit_valid = false;
+    }
+
 
   private:
 
+    mutable T* F;
+    mutable T* F_jit;
 
-    inline void alloc_mem(const char* msg) {
-      try 
-	{
-	  F = (T*)QDP::Allocator::theQDPAllocator::Instance().allocate( sizeof(T) * Layout::sitesOnNode() ,
-									QDP::Allocator::DEFAULT );
-	}
-      catch(std::bad_alloc) 
-	{
-	  QDPIO::cerr << "Allocation failed in OLattice alloc_mem" << endl;
-	  QDP::Allocator::theQDPAllocator::Instance().dump();
-	  QDP_abort(1);
-	}
-    }
-    inline void free_mem()  { 
-      QDP::Allocator::theQDPAllocator::Instance().free( F );
-    }
-
-
-
-    // inline void assert_mem0() const {
-    //   if ( mem_status == MemStatus::MEM0 ) 
-    // 	return;
-
-    //   if ( mem_status == MemStatus::NIL ) {
-    // 	try 
-    // 	  {
-    // 	    F_mem0 = (T*)QDP::Allocator::theQDPAllocator::Instance().allocate( sizeof(T) * Layout::sitesOnNode() ,
-    // 									       QDP::Allocator::DEFAULT );
-    // 	  }
-    // 	catch(std::bad_alloc) 
-    // 	  {
-    // 	    QDPIO::cerr << "Allocation failed in OLattice alloc_mem" << endl;
-    // 	    QDP::Allocator::theQDPAllocator::Instance().dump();
-    // 	    QDP_abort(1);
-    // 	  }
-    // 	mem_status = MemStatus::MEM0;
-    // 	return;
-    //   }
-
-    //   if ( mem_status == MemStatus::MEM1 ) {
-    // 	try 
-    // 	  {
-    // 	    F_mem0 = (T*)QDP::Allocator::theQDPAllocator::Instance().allocate( sizeof(T) * Layout::sitesOnNode() ,
-    // 									       QDP::Allocator::DEFAULT );
-    // 	  }
-    // 	catch(std::bad_alloc) 
-    // 	  {
-    // 	    QDPIO::cerr << "Allocation failed in OLattice alloc_mem" << endl;
-    // 	    QDP::Allocator::theQDPAllocator::Instance().dump();
-    // 	    QDP_abort(1);
-    // 	  }
-
-    // 	changeLayout( false , F_mem0 , F_mem1 );
-
-    // 	QDP::Allocator::theQDPAllocator::Instance().free( F_mem1 );
-    // 	mem_status = MemStatus::MEM0;
-    // 	return
-    //   }
-    //   QDP_error_exit("shouldn't be here");
-    // }
-
-  private:
-
-    mutable T *F;
-    // mutable T *F_mem0;
-    // mutable T *F_mem1;
-    // mutable MemStatus mem_status = MemStatus::NIL;
+    mutable std::array<bool,2> F_alloc = {{ false , false }};
+    mutable bool F_jit_valid = false;
   };
+
+
 
 
 template<class T>
@@ -688,7 +585,7 @@ struct LeafFunctor<OLattice<T>, AddressLeaf>
   Type_t apply(const OLattice<T>& s, const AddressLeaf& p) 
   {
     //p.setAddr( QDPCache::Instance().getDevicePtr( s.getId() ) );
-    p.setAddr( s.getF() );
+    p.setAddr( s.getFjit() );
     return 0;
   }
 };
