@@ -107,8 +107,8 @@ void Set::make(const SetFunc& fun)
   }
 
 
-  largest_subset = 0;
-  enableGPU = true;
+  // largest_subset = 0;
+  // enableGPU = true;
 
 
   /*
@@ -184,13 +184,13 @@ void Set::make(const SetFunc& fun)
     sub[cb].make(ordRep, start, end, &(sitetables[cb]), cb, this, &(membertables[cb]) );
 
 
-    if (largest_subset < sitetables[cb].size()) {
-      if (largest_subset > 0) {
-	QDP_error("Warning: Set found with changing subset sizes. This will cause problems when using with CUDA! Disable device calculation for this set.");
-	enableGPU = false;
-      }
-      largest_subset = sitetables[cb].size();
-    }
+    // if (largest_subset < sitetables[cb].size()) {
+    //   if (largest_subset > 0) {
+    // 	QDP_error("Warning: Set found with changing subset sizes. This will cause problems when using with CUDA! Disable device calculation for this set.");
+    // 	enableGPU = false;
+    //   }
+    //   largest_subset = sitetables[cb].size();
+    // }
 
 
 #if QDP_DEBUG >= 2
@@ -199,28 +199,23 @@ void Set::make(const SetFunc& fun)
   }
 
 
+#if 0
   QDPIO::cout << "Set: Building strided sitetables...\n";
-
   int ss_size = sitetables[0].size();
-
   int strided=0;
   sitetables_strided.resize( largest_subset * sitetables.size() );
   bool first=true;
   bool hill0=false;
   bool valley0=false;
   bool hill1=false;
-
   nonEmptySubsetsOnNode = 0;
-
   for (int n = 0 ; n < sitetables.size() ; n++) {
-
     if ((ss_size > 0) && 
 	(sitetables[n].size() > 0) && 
 	(sitetables[n].size() != ss_size)) {
       QDPIO::cout << "Warning: This set has subsets which sizes are different accross nodes. Disabling it for GPU\n";
       enableGPU = false;
     }
-
     if (sitetables[n].size() > 0) {
       if (first) {
 	first = false;
@@ -242,23 +237,19 @@ void Set::make(const SetFunc& fun)
       sitetables_strided[strided++]=sitetables[n][i];
     }
   }
-
   unsigned dsize = sitetables_strided.size() * sizeof(int);
-
   QDPIO::cout << "Set: Registering this set ...\n";
-
   if (registered) {
     QDPIO::cout << "Set: Already registered, will sign it off first ...\n";
     QDPCache::Instance().signoff( idStrided );
   }
-
   idStrided = QDPCache::Instance().registrateOwnHostMem( dsize , (void*)sitetables_strided.slice() , NULL );
   registered=true;
-  
   QDP_debug("nonEmptySubsetsOnNode  = %d" , nonEmptySubsetsOnNode );  
   QDP_debug("stride_offset = %d" , stride_offset );
-  
-#if 1
+#endif  
+
+#if 0
   // Now check across nodes
   Integer yo = enableGPU ? 1 : 0;
   QDPInternal::globalSum(yo);

@@ -182,10 +182,10 @@ namespace QDP {
   }
 
 
-  CUfunction jit_function_epilogue_get_cuf(const char * fname)
+  void * jit_function_epilogue_get(const char * fname)
   {
     llvm_exit();
-    return llvm_get_cufunction( fname );
+    return llvm_get_function( fname );
   }
 
 
@@ -193,16 +193,19 @@ namespace QDP {
   {
     llvm_start_new_function();
 
-    ParamRef p_ordered      = llvm_add_param<bool>();
-    ParamRef p_th_count     = llvm_add_param<int>();
+    QDPIO::cerr << "jit_function_preamble_param: unordered Subsets not supported yet\n";
+
+    //ParamRef p_ordered      = llvm_add_param<bool>();
+    //ParamRef p_th_count     = llvm_add_param<int>();
     ParamRef p_start        = llvm_add_param<int>();
     ParamRef p_end          = llvm_add_param<int>();
-    ParamRef p_member_array = llvm_add_param<bool*>();
+    //ParamRef p_member_array = llvm_add_param<bool*>();
 
-    return { p_ordered , p_th_count , p_start , p_end , p_member_array };
+    //return { p_ordered , p_th_count , p_start , p_end , p_member_array };
+    return { p_start , p_end };
   }
 
-
+#if 0
   llvm::Value *jit_function_preamble_get_idx( const std::vector<ParamRef>& vec )
   {
     llvm::Value * r_ordered      = llvm_derefParam( vec[0] );
@@ -243,6 +246,7 @@ namespace QDP {
 
     return r_idx;
   }
+#endif
 
 
 } //namespace

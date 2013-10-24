@@ -11,6 +11,7 @@
 
 namespace QDP {
 
+
 // Use separate defs here. This will cause subroutine calls under g++
 
 //-----------------------------------------------------------------------------
@@ -24,117 +25,8 @@ namespace Layout
   LatticeInteger latticeCoordinate(int mu);
 }
 
-//-----------------------------------------------------------------------------
-// Internal ops with ties to QMP
-
-/////////////////////////////////////////////////////////
-// Threading evaluate with openmp and qmt implementation
-//
-// by Xu Guo, EPCC, 16 June 2008
-/////////////////////////////////////////////////////////
-
-//! user argument for the evaluate function:
-// "OLattice Op Scalar(Expression(source)) under an Subset"
-//
-template<class T, class T1, class Op, class RHS>
-struct u_arg{
-    u_arg(
-        OLattice<T>& d_,
-        const QDPExpr<RHS,OScalar<T1> >& r_,
-        const Op& op_,
-        const int *tab_
-    ) : d(d_), r(r_), op(op_), tab(tab_) {}
-    
-    OLattice<T>& d;
-    const QDPExpr<RHS,OScalar<T1> >& r;
-    const Op& op;
-    const int *tab;
-   };
-
-//! user function for the evaluate function:
-// "OLattice Op Scalar(Expression(source)) under an Subset"
-//
-template<class T, class T1, class Op, class RHS>
-void ev_userfunc(int lo, int hi, int myId, u_arg<T,T1,Op,RHS> *a)
-{
-   OLattice<T>& dest = a->d;
-   const QDPExpr<RHS,OScalar<T1> >&rhs = a->r;
-   const int* tab = a->tab;
-   const Op& op= a->op;
-
-      
-   for(int j=lo; j < hi; ++j)
-   {
-     int i = tab[j];
-     op(dest.elem(i), forEach(rhs, EvalLeaf1(0), OpCombine()));
-   }
-}
-
-//! user argument for the evaluate function:
-// "OLattice Op OLattice(Expression(source)) under an Subset"
-//
-template<class T, class T1, class Op, class RHS>
-struct user_arg{
-    user_arg(
-        OLattice<T>& d_,
-        const QDPExpr<RHS,OLattice<T1> >& r_,
-        const Op& op_,
-        const int *tab_ ) : d(d_), r(r_), op(op_), tab(tab_) {}
-
-        OLattice<T>& d;
-        const QDPExpr<RHS,OLattice<T1> >& r;
-        const Op& op;
-        const int *tab;
-   };
-
-//! user function for the evaluate function:
-// "OLattice Op OLattice(Expression(source)) under an Subset"
-//
-template<class T, class T1, class Op, class RHS>
-void evaluate_userfunc(int lo, int hi, int myId, user_arg<T,T1,Op,RHS> *a)
-{
-
-   OLattice<T>& dest = a->d;
-   const QDPExpr<RHS,OLattice<T1> >&rhs = a->r;
-   const int* tab = a->tab;
-   const Op& op= a->op;
-
-      
-   for(int j=lo; j < hi; ++j)
-   {
-     int i = tab[j];
-     op(dest.elem(i), forEach(rhs, EvalLeaf1(i), OpCombine()));
-   }
-}
-
-//! include the header file for dispatch
-#include "qdp_dispatch.h"
 
 
-#if 0
-template<class T, class T1, class Op, class RHS>
-inline
-void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs,
-	      const Subset& s)
-{
-  static CUfunction function;
-
-  // Build the function
-  if (function == NULL)
-    {
-      //QDPIO::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
-      function = function_sca_sca_build(dest, op, rhs);
-      //QDPIO::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
-    }
-  else
-    {
-      //QDPIO::cout << __PRETTY_FUNCTION__ << ": is already built\n";
-    }
-
-  // Execute the function
-  function_sca_sca_exec(function, dest, op, rhs);
-}
-#endif
 
 //-----------------------------------------------------------------------------
 //! OLattice Op Scalar(Expression(source)) under an Subset
@@ -147,7 +39,6 @@ template<class T, class T1, class Op, class RHS>
 void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs,
 	      const Subset& s)
 {
-#if 1
   //QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
 
 // cerr << "In evaluateSubset(olattice,oscalar)\n";
@@ -157,7 +48,7 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& 
   prof.stime(getClockTime());
 #endif
 
-  static CUfunction function;
+  static void * function;
 
   // Build the function
   if (function == NULL)
@@ -179,7 +70,6 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& 
   // u_arg<T,T1,Op,RHS> a(dest, rhs, op, s.siteTable().slice());
   // dispatch_to_threads< u_arg<T,T1,Op,RHS> >(numSiteTable, a, ev_userfunc);
 
-#endif
 
 #if 0
   ///////////////////
@@ -219,83 +109,7 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
   prof.stime(getClockTime());
 #endif
 
-  //
-  // Do the cross check with CPU result ?
-  //
-#if 0
-  OLattice<T> dest0;
-  const int *tab = s.siteTable().slice();
-  for(int j=0; j < s.numSiteTable(); ++j) 
-    {
-      int i = tab[j];
-      OpAssign()( dest0.elem(i) , dest.elem(i) );
-    }
-
-  static CUfunction function;
-
-  // Build the function
-  if (function == NULL)
-    {
-      //QDPIO::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
-      function = function_build(dest0, op, rhs);
-      //QDPIO::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
-    }
-  else
-    {
-      //QDPIO::cout << __PRETTY_FUNCTION__ << ": is already built\n";
-    }
-
-  // Execute the function
-  function_exec(function, dest0, op, rhs, s);
-
-  //const int *tab = s.siteTable().slice();
-  for(int j=0; j < s.numSiteTable(); ++j) 
-    {
-      int i = tab[j];
-      op(dest.elem(i), forEach(rhs, EvalLeaf1(i), OpCombine()));
-    }
-
-
-  size_t diffs=0;
-  for(int j=0; j < s.numSiteTable(); ++j) {
-    int i = tab[j];
-    typename WordType<T>::Type_t * f_cpu = (typename WordType<T>::Type_t *)&dest0.elem(i);
-    typename WordType<T>::Type_t * f_gpu = (typename WordType<T>::Type_t *)&dest.elem(i);
-    for(int w=0 ; w < sizeof(T)/sizeof(typename WordType<T>::Type_t) ; w++ ) {
-      bool different = false;
-
-      double d_cpu = (double)f_cpu[w];
-      double d_gpu = (double)f_gpu[w];
-
-      if ( fabs( d_gpu ) > 1.0e-9 ) {
-        if ( fabs( d_cpu / d_gpu - 1.0 ) > 1.0e-5 ) {
-          different = true;
-        }
-      } else {
-        if ( fabs( d_cpu ) > 1.0e-8 ) {
-          different = true;
-        }
-      }
-
-      if (different) {
-        diffs++;
-        QDPIO::cout << "site = " << i
-                  << "   cpu = " << d_cpu
-                  << "   gpu = " << d_gpu
-                  << "   factor = " << d_cpu/d_gpu
-                  << "    diff = " << d_cpu - d_gpu << "\n";
-      }
-    }
-    if (diffs > 1000)
-      break;
-  }
-
-  if (diffs > 0) {
-    QDPIO::cout << __PRETTY_FUNCTION__ << " numsitetable = " << s.numSiteTable() << "\n";
-    check_abort();
-  }
-#else
-  static CUfunction function;
+  static void * function;
 
   // Build the function
   if (function == NULL)
@@ -311,8 +125,6 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
 
   // Execute the function
   function_exec(function, dest, op, rhs, s);
-#endif
-
 
 #if defined(QDP_USE_PROFILING)   
   prof.etime(getClockTime(),function);
@@ -345,7 +157,7 @@ template<class T1, class T2>
 void copymask(OLattice<T2>& dest, const OLattice<T1>& mask, const OLattice<T2>& s1) 
 {
   //QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
-  static CUfunction function;
+  static void* function;
   // Build the function
   if (function == NULL)
     {
@@ -400,81 +212,8 @@ template<class T>
 void 
 random(OLattice<T>& d, const Subset& s)
 {
-
-  // Do cross check with CPU
+  QDPIO::cerr << "RNG native\n";
 #if 0
-  OLattice<T> dest0;
-  dest0 = d;
-
-  // GPU
-  static CUfunction function;
-  Seed seed_tmp;
-  if (function == NULL)
-    function = function_random_build( d , seed_tmp );
-  function_random_exec(function, d, s , seed_tmp );
-  //RNG::ran_seed = seed_tmp;  // The seed from any site is the same as the new global seed
-
-  // CPU
-  Seed seed;
-  Seed skewed_seed;
-  const int *tab = s.siteTable().slice();
-  for(int j=0; j < s.numSiteTable(); ++j) 
-  {
-    int i = tab[j];
-    seed = RNG::ran_seed;
-    skewed_seed.elem() = RNG::ran_seed.elem() * RNG::lattice_ran_mult->elem(i);
-    fill_random(dest0.elem(i), seed, skewed_seed, RNG::ran_mult_n);
-  }
-  RNG::ran_seed = seed;  // The seed from any site is the same as the new global seed
-
-  if ( toBool( seed != seed_tmp ) ) {
-    QDPIO::cout << "seed from GPU and CPU different! seed_cpu = " 
-	      << seed
-	      << "    seed_gpu = "
-	      << seed_tmp << "\n";
-    QDPIO::cout << __PRETTY_FUNCTION__ << " numsitetable = " << s.numSiteTable() << "\n";
-    check_abort();
-  }
-
-  size_t diffs=0;
-  for(int j=0; j < s.numSiteTable(); ++j) {
-    int i = tab[j];
-    typename WordType<T>::Type_t * f_cpu = (typename WordType<T>::Type_t *)&dest0.elem(i);
-    typename WordType<T>::Type_t * f_gpu = (typename WordType<T>::Type_t *)&d.elem(i);
-    for(int w=0 ; w < sizeof(T)/sizeof(typename WordType<T>::Type_t) ; w++ ) {
-      bool different = false;
-
-      double d_cpu = (double)f_cpu[w];
-      double d_gpu = (double)f_gpu[w];
-
-      if ( fabs( d_gpu ) > 1.0e-9 ) {
-        if ( fabs( d_cpu / d_gpu - 1.0 ) > 1.0e-5 ) {
-          different = true;
-        }
-      } else {
-        if ( fabs( d_cpu ) > 1.0e-8 ) {
-          different = true;
-        }
-      }
-
-      if (different) {
-        diffs++;
-        QDPIO::cout << "site = " << i
-                  << "   cpu = " << d_cpu
-                  << "   gpu = " << d_gpu
-                  << "   factor = " << d_cpu/d_gpu
-                  << "    diff = " << d_cpu - d_gpu << "\n";
-      }
-    }
-    if (diffs > 1000)
-      break;
-  }
-
-  if (diffs > 0) {
-    QDPIO::cout << __PRETTY_FUNCTION__ << " numsitetable = " << s.numSiteTable() << "\n";
-    check_abort();
-  }
-#else
   static CUfunction function;
 
   Seed seed_tmp;
@@ -495,9 +234,7 @@ random(OLattice<T>& d, const Subset& s)
   function_random_exec(function, d, s , seed_tmp );
 
   RNG::ran_seed = seed_tmp;
-#endif
-
-#if 0
+#else
   Seed seed;
   Seed skewed_seed;
 
@@ -539,8 +276,8 @@ void random(OLattice<T>& d)
 template<class T>
 void gaussian(OLattice<T>& d, const Subset& s)
 {
-  //assert(!"ni");
-#if 1
+  assert(!"ni");
+#if 0
   OLattice<T>  r1, r2;
 
   random(r1,s);
@@ -603,7 +340,8 @@ template<class T>
 inline
 void zero_rep(OLattice<T>& dest, const Subset& s) 
 {
-#if 1
+  assert(!"ni");
+#if 0
   static CUfunction function;
 
   if (function == NULL)
@@ -616,14 +354,6 @@ void zero_rep(OLattice<T>& dest, const Subset& s)
     }
 
   function_zero_rep_exec( function , dest , s );
-
-#else
-  const int *tab = s.siteTable().slice();
-  for(int j=0; j < s.numSiteTable(); ++j) 
-  {
-    int i = tab[j];
-    zero_rep(dest.elem(i));
-  }
 #endif
 }
 
@@ -713,58 +443,25 @@ sum(const QDPExpr<RHS,OScalar<T> >& s1)
  * Allow a global sum that sums over the lattice, but returns an object
  * of the same primitive type. E.g., contract only over lattice indices
  */
-#if 1
+
+
 template<class RHS, class T>
 typename UnaryReturn<OLattice<T>, FnSum>::Type_t
 sum(const QDPExpr<RHS,OLattice<T> >& s1, const Subset& s)
 {
   // We don't profile this because this is a combination of eval and sum
-
   OLattice<T> l;
   l[s]=s1;
   return sum(l,s);
 }
-#else
-template<class RHS, class T>
-typename UnaryReturn<OLattice<T>, FnSum>::Type_t
-sum(const QDPExpr<RHS,OLattice<T> >& s1, const Subset& s)
-{
-  typename UnaryReturn<OLattice<T>, FnSum>::Type_t  d;
 
-#if defined(QDP_USE_PROFILING)   
-  static QDPProfile_t prof(d, OpAssign(), FnSum(), s1);
-  prof.time -= getClockTime();
-#endif
-
-  // Must initialize to zero since we do not know if the loop will be entered
-  zero_rep(d.elem());
-
-  const int *tab = s.siteTable().slice();
-  for(int j=0; j < s.numSiteTable(); ++j) 
-  {
-    int i = tab[j];
-    d.elem() += forEach(s1, EvalLeaf1(i), OpCombine());
-  }
-
-  // Do a global sum on the result
-  QDPInternal::globalSum(d);
-
-#if defined(QDP_USE_PROFILING)   
-  prof.time += getClockTime();
-  prof.count++;
-  prof.print();
-#endif
-
-  return d;
-}
-#endif
 
 //! OScalar = sum(OLattice)
 /*!
  * Allow a global sum that sums over the lattice, but returns an object
  * of the same primitive type. E.g., contract only over lattice indices
  */
-#if 1
+
 template<class RHS, class T>
 typename UnaryReturn<OLattice<T>, FnSum>::Type_t
 sum(const QDPExpr<RHS,OLattice<T> >& s1)
@@ -775,39 +472,7 @@ sum(const QDPExpr<RHS,OLattice<T> >& s1)
   l=s1;
   return sum(l,all);
 }
-#else
-template<class RHS, class T>
-typename UnaryReturn<OLattice<T>, FnSum>::Type_t
-sum(const QDPExpr<RHS,OLattice<T> >& s1)
-{
-  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
 
-  typename UnaryReturn<OLattice<T>, FnSum>::Type_t  d;
-
-#if defined(QDP_USE_PROFILING)   
-  static QDPProfile_t prof(d, OpAssign(), FnSum(), s1);
-  prof.time -= getClockTime();
-#endif
-
-  // Loop always entered - could unroll
-  zero_rep(d.elem());
-  const int nodeSites = Layout::sitesOnNode();
-
-  for(int i=0; i < nodeSites; ++i) 
-    d.elem() += forEach(s1, EvalLeaf1(i), OpCombine());
-
-  // Do a global sum on the result
-  QDPInternal::globalSum(d);
-
-#if defined(QDP_USE_PROFILING)   
-  prof.time += getClockTime();
-  prof.count++;
-  prof.print();
-#endif
-
-  return d;
-}
-#endif
 
 //-----------------------------------------------------------------------------
 // Multiple global sums 
@@ -854,7 +519,7 @@ sumMulti(const QDPExpr<RHS,OScalar<T> >& s1, const Set& ss)
  * slow. Otherwise, generalized sums happen so infrequently the slow
  * version is fine.
  */
-#if 0
+#if 1
 // If you want to deactive sumMulti GPU evaluation
 // then deactivate sumMulti( OLattice , Set ) in qdp_sum.h as well!
 template<class RHS, class T>
@@ -895,7 +560,10 @@ sumMulti(const QDPExpr<RHS,OLattice<T> >& s1, const Set& ss)
 
   return dest;
 }
-#else
+#endif
+
+
+#if 0
 template<class RHS, class T>
 typename UnaryReturn<OLattice<T>, FnSumMulti>::Type_t
 sumMulti(const QDPExpr<RHS,OLattice<T> >& s1, const Set& ss)

@@ -141,13 +141,7 @@ MEMORY_HDRS = qdp_allocator.h \
 	      qdp_default_allocator.h \
 	      qdp_qcdoc_allocator.h
 
-CUDA_HDRS = qdp_cuda.h \
-	    qdp_cache.h \
-	    qdp_quda.h \
-	    qdp_mapresource.h \
-            qdp_pool_allocator.h \
-	    qdp_cuda_allocator.h \
-	    qdp_deviceparams.h \
+CUDA_HDRS = qdp_mapresource.h \
 	    qdp_llvm.h qdp_viewleaf.h \
 	    qdp_word.h qdp_wordjit.h qdp_wordreg.h \
 	    qdp_jitfunction.h qdp_jit_util.h qdp_pete_visitors.h qdp_qdptypejit.h \
@@ -159,7 +153,7 @@ CUDA_HDRS = qdp_cuda.h \
             qdp_primseedreg.h \
             qdp_primvectorjit.h qdp_primspinvecjit.h qdp_primcolorvecjit.h \
             qdp_primvectorreg.h qdp_primspinvecreg.h qdp_primcolorvecreg.h \
-            qdp_handle.h qdp_mastermap.h qdp_autotuning.h qdp_sum.h qdp_datalayout.h \
+            qdp_handle.h qdp_mastermap.h qdp_sum.h qdp_datalayout.h \
             qdp_jitf_copymask.h qdp_jitf_sum.h qdp_jitf_globalmax.h qdp_jitf_gaussian.h qdp_internal.h qdp_newopsreg.h
 
 

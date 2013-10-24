@@ -15,15 +15,6 @@ dnl defines...
 AC_CONFIG_HEADERS([include/qdp_config_internal.h])
 
 
-AC_ARG_WITH(cuda,
-  AC_HELP_STRING([--with-cuda=CUDADIR], [ Specify CUDA installation directory (default: /usr/local/cuda)]),
-  [ cuda_home="${withval}" ],
-  [ cuda_home="/usr/local/cuda" ]
-)
-AC_MSG_NOTICE([Configuring with CUDA installed in = ${cuda_home}])
-AC_DEFINE_UNQUOTED(CUDA_DIR,"${cuda_home}",[CUDA install path])
-AC_SUBST(SUBST_CUDA_DIR,"${cuda_home}")
-
 
 dnl
 dnl
@@ -524,29 +515,6 @@ AC_MSG_NOTICE([LLVM linking flags: ${LLVM_LDFLAGS}])
 AC_SUBST(LLVM_LIBS,     "`${LLVM_CONFIG} --libs`")
 AC_MSG_NOTICE([LLVM libraries flags: ${LLVM_LIBS}])
 
-
-AC_ARG_WITH(nvvm,
-  AC_HELP_STRING(
-    [--with-nvvm=DIR],
-    [Specifies install path of NVVM]
-  ),
-  [NVVM_HOME="$with_nvvm"],
-  [NVVM_HOME=""]
-)
-
-dnl echo Value of NVVM_ENABLED is X${NVVM_ENABLED}X
-dnl echo Value of NVVM_HOME is X${NVVM_HOME}X
-
-if test "X${NVVM_HOME}X" = "XX" ; then
-  AC_MSG_ERROR([libnvvm required])
-else
-  AC_SUBST(NVVM_CXXFLAGS, [-I${NVVM_HOME}/include])
-  AC_SUBST(NVVM_LDFLAGS, [-L${NVVM_HOME}/lib64])
-  AC_SUBST(NVVM_LIBS, [-lnvvm])
-  AC_MSG_NOTICE([nvvm compile flags  : ${NVVM_CXXFLAGS}])
-  AC_MSG_NOTICE([nvvm link flags     : ${NVVM_LDFLAGS}])
-  AC_MSG_NOTICE([nvvm libraries flags: ${NVVM_LIBS}])
-fi
 
 
 

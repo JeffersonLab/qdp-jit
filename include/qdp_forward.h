@@ -137,9 +137,11 @@ namespace QDP
   struct FnMap;
   class ArrayBiDirectionalMap;
 
+#if 0
   template<class T, class T1, class RHS>
   CUfunction
   function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs );
+#endif
 
   namespace RNG 
   {

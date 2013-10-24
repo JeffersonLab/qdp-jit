@@ -30,19 +30,10 @@ namespace QDP
   //! Odd subset
   Subset odd;
 
-  Set::~Set() {
-
-    if (registered) {
-      QDP_debug("Set::~Set: Strided:  Will sign off now...");
-      QDPCache::Instance().signoff( idStrided );
-    }
-
-  }
+  Set::~Set() { }
 
 
-
-  Subset::Subset():registered(false) {
-    QDPCache::Instance().sayHi();
+  Subset::Subset() {
   }
 
 
@@ -50,33 +41,23 @@ namespace QDP
 
   Subset::Subset(const Subset& s):
     ordRep(s.ordRep), startSite(s.startSite), endSite(s.endSite), 
-    sub_index(s.sub_index), sitetable(s.sitetable), membertable(s.membertable), set(s.set) , registered(false) { 
-    QDPCache::Instance().sayHi();
+    sub_index(s.sub_index), sitetable(s.sitetable), membertable(s.membertable), set(s.set) { 
   }
 
 
 
   Subset::~Subset()
   {
-
-    if (registered) {
-      QDP_debug("Subet::~Subset: Will sign off now...");
-      QDPCache::Instance().signoff( idSiteTable );
-      QDPCache::Instance().signoff( idMemberTable );
-    }
-
   }
 
 
-  Set::Set(): registered(false) {
-    QDPCache::Instance().sayHi();
+  Set::Set() {
   }
 
 
 
   //! Constructor from a function object
-  Set::Set(const SetFunc& fn): registered(false) {
-    QDPCache::Instance().sayHi();
+  Set::Set(const SetFunc& fn) {
     make(fn);    
   }
 
@@ -188,33 +169,11 @@ namespace QDP
     sitetable = ind;
     set       = _set;
     membertable = _memb;
-
-
-    if (ind->size() == 0) 
-      QDP_debug("At least one subset has zero size on at least one node. (rep=%d,start=%d,end=%d)",
-	       (int)ordRep,(int)startSite,(int)endSite);
-    else {
-      if (registered) {
-	QDP_info("Subset::make:  Already registered, will sign off the old memory ...");
-	QDPCache::Instance().signoff( idSiteTable );
-	QDPCache::Instance().signoff( idMemberTable );
-      }
-      QDP_debug("Subset::make: Will register memory now...");
-      idSiteTable = QDPCache::Instance().registrateOwnHostMem( ind->size() * sizeof(int) , (void*)ind->slice() , NULL );
-      idMemberTable = QDPCache::Instance().registrateOwnHostMem( membertable->size() * sizeof(bool) , (void*)membertable->slice() , NULL );
-      registered=true;
-    }
-
-
   }
 
   //! Simple constructor called to produce a Subset from inside a Set
   void Subset::make(const Subset& s)
   {
-
-    QDP_debug("Subset::make(Subset) Will reserve device memory now...");
-
-
     ordRep    = s.ordRep;
     startSite = s.startSite;
     endSite   = s.endSite;
@@ -222,23 +181,6 @@ namespace QDP
     sitetable = s.sitetable;
     set       = s.set;
     membertable = s.membertable;
-
-
-    if (s.sitetable->size() == 0)
-      QDP_debug("At least one subset has zero size on at least one node. (Subset,rep=%d,start=%d,end=%d)",
-	       (int)ordRep,(int)startSite,(int)endSite);
-    else {
-      if (registered) {
-	QDP_info("Subset::make:  Already registered, will sign off the old memory ...");
-	QDPCache::Instance().signoff( idSiteTable );
-	QDPCache::Instance().signoff( idMemberTable );
-      }
-      QDP_debug("Subset::make: Will register memory now...");
-      idSiteTable = QDPCache::Instance().registrateOwnHostMem( s.sitetable->size() * sizeof(int) , (void*)s.sitetable->slice() , NULL );
-      idMemberTable = QDPCache::Instance().registrateOwnHostMem( s.membertable->size() * sizeof(bool) , (void*)s.membertable->slice() , NULL );
-      registered=true;
-    }
-
   }
 
   //! Simple constructor called to produce a Subset from inside a Set
@@ -258,7 +200,6 @@ namespace QDP
     membertables = s.membertables;
 
     QDP_error_exit("Sub::op= not yet implemented for GPU 3");
-
 
     return *this;
   }

@@ -1,7 +1,5 @@
 #include "qdp.h"
 
-#include "qdp_libdevice_20.h"
-#include "nvvm.h"
 
 #include "llvm/Support/raw_ostream.h"
 
@@ -11,18 +9,21 @@ namespace QDP {
   llvm::BasicBlock  *entry;
   llvm::Function    *mainFunc;
   llvm::Module      *Mod;
+  llvm::ExecutionEngine *TheExecutionEngine;
+
   //llvm::Value      *mainFunc;
 
+#if 0
   std::map<CUfunction,std::string> mapCUFuncPTX;
-
   std::string getPTXfromCUFunc(CUfunction f) {
     return mapCUFuncPTX[f];
   }
+#endif
 
   bool function_created;
 
   std::vector< llvm::Type* > vecParamType;
-  std::vector< llvm::Argument* > vecArgument;
+  std::vector< llvm::Value* > vecArgument;
 
   llvm::OwningPtr<llvm::Module> module_libdevice;
 
@@ -94,29 +95,8 @@ namespace QDP {
   }
 
 
-  void llvm_init_libdevice()
-  {
-    std::string ErrorMessage;
 
 #if 0
-    llvm::SMDiagnostic Err;
-    module_libdevice.reset(llvm::ParseAssemblyFile("libdevice_sm20.ll", Err, llvm::getGlobalContext() ));
-#else
-    //llvm::outs() << "mapping " << (size_t)_usr_local_cuda_5_5_nvvm_libdevice_libdevice_compute_20_10_bc_len << " bytes\n";
-
-    llvm::StringRef libdevice_20( (const char *)_usr_local_cuda_5_5_nvvm_libdevice_libdevice_compute_20_10_bc, 
-				  (size_t)_usr_local_cuda_5_5_nvvm_libdevice_libdevice_compute_20_10_bc_len );
-
-    module_libdevice.reset( llvm::ParseBitcodeFile( llvm::MemoryBuffer::getMemBufferCopy( libdevice_20 ) ,
-						    llvm::getGlobalContext() , 
-						    &ErrorMessage ) 
-			    );
-#endif
-
-    //llvm::outs() << ErrorMessage << "\n";
-  }
-
-
   void llvm_setup_math_functions() 
   {
     // Link libdevice to current module
@@ -172,13 +152,26 @@ namespace QDP {
     func_pow_f64 = llvm_get_func( "__nv_pow" );
     func_atan2_f64 = llvm_get_func( "__nv_atan2" );
   }
+#endif
 
 
   void llvm_wrapper_init() {
+    llvm::InitializeNativeTarget();
+    Mod = new llvm::Module("module", llvm::getGlobalContext());
+
+    // Create the JIT.  This takes ownership of the module.
+    std::string ErrStr;
+    TheExecutionEngine = llvm::EngineBuilder(Mod).setErrorStr(&ErrStr).create();
+    if (!TheExecutionEngine) {
+      fprintf(stderr, "Could not create ExecutionEngine: %s\n", ErrStr.c_str());
+      exit(1);
+    }
+
+
     function_created = false;
 
-    llvm::InitializeAllTargets();
-    llvm::InitializeAllTargetMCs();
+    //llvm::InitializeAllTargets();
+    //llvm::InitializeAllTargetMCs();
     llvm::InitializeAllAsmPrinters();
     llvm::InitializeAllAsmParsers();
 
@@ -191,7 +184,7 @@ namespace QDP {
     llvm_type<int*>::value    = llvm::Type::getIntNPtrTy(llvm::getGlobalContext(),32);
     llvm_type<bool*>::value   = llvm::Type::getIntNPtrTy(llvm::getGlobalContext(),1);
 
-    llvm_init_libdevice();
+    //llvm_init_libdevice();
   }  
 
 
@@ -203,7 +196,6 @@ namespace QDP {
   void llvm_start_new_function() {
     QDP_info_primary( "Staring new LLVM function ...");
 
-    Mod = new llvm::Module("module", llvm::getGlobalContext());
     builder = new llvm::IRBuilder<>(llvm::getGlobalContext());
 
     jit_build_seedToFloat();
@@ -213,7 +205,7 @@ namespace QDP {
     vecArgument.clear();
     function_created = false;
 
-    llvm_setup_math_functions();
+    //llvm_setup_math_functions();
 
     // llvm::outs() << "------------------------- linked module\n";
     // llvm_print_module(Mod,"ir_linked.ll");
@@ -221,6 +213,53 @@ namespace QDP {
   }
 
 
+#if 1
+  void llvm_create_function() {
+    assert(!function_created && "Function already created");
+    assert(vecParamType.size()>0 && "vecParamType.size()>0");
+
+    llvm::FunctionType *funcType = 
+      llvm::FunctionType::get( builder->getVoidTy() , 
+			       llvm::PointerType::get( 
+						 llvm::ArrayType::get( llvm::Type::getInt8Ty(llvm::getGlobalContext()) , 
+								       8 ) , 0  ),
+			       false); // no vararg
+    mainFunc = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, "main", Mod);
+
+    // Convert Parameter to Argument
+
+    llvm::Argument* arg_ptr = mainFunc->arg_begin();
+    arg_ptr->setName( "arg_ptr" );
+
+
+
+    // Create entry basic block
+
+    llvm::BasicBlock* entry = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entrypoint", mainFunc);
+    builder->SetInsertPoint(entry);
+
+    llvm_counters::label_counter = 0;
+    function_created = true;
+
+
+
+    // Extract each parameter
+
+    int i=0;
+    for( std::vector< llvm::Type* >::const_iterator param_type = vecParamType.begin() ; 
+	 param_type != vecParamType.end() ; 
+	 param_type++,i++ ) {
+      (*param_type)->dump(); std::cout << "\n";
+      llvm::Value* gep = builder->CreateGEP( arg_ptr , llvm_create_value(i) );
+      llvm::Type* param_ptr_type = llvm::PointerType::get( *param_type , 0  );
+      llvm::Value* ptr_to_arg = builder->CreatePointerCast( gep , param_ptr_type );
+      llvm::Value* arg = builder->CreateLoad( ptr_to_arg );
+      vecArgument.push_back( arg );      
+    }
+
+    mainFunc->dump();
+  }
+#else
   void llvm_create_function() {
     assert(!function_created && "Function already created");
     assert(vecParamType.size()>0 && "vecParamType.size()>0");
@@ -242,7 +281,7 @@ namespace QDP {
     llvm_counters::label_counter = 0;
     function_created = true;
   }
-
+#endif
 
 
   llvm::Value * llvm_derefParam( ParamRef r ) {
@@ -676,19 +715,19 @@ namespace QDP {
 
 
 
-  llvm::Value * llvm_call_special_tidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.tid.x"); }
-  llvm::Value * llvm_call_special_ntidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.ntid.x"); }
-  llvm::Value * llvm_call_special_ctaidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.x"); }
+  // llvm::Value * llvm_call_special_tidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.tid.x"); }
+  // llvm::Value * llvm_call_special_ntidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.ntid.x"); }
+  // llvm::Value * llvm_call_special_ctaidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.x"); }
 
 
-  llvm::Value * llvm_thread_idx() { 
-    return llvm_add( llvm_mul( llvm_call_special_ctaidx() , 
-			       llvm_call_special_ntidx() ) , 
-		     llvm_call_special_tidx() );
-  }
+  // llvm::Value * llvm_thread_idx() { 
+  //   return llvm_add( llvm_mul( llvm_call_special_ctaidx() , 
+  // 			       llvm_call_special_ntidx() ) , 
+  // 		     llvm_call_special_tidx() );
+  // }
 
 
-
+#if 0
   void addKernelMetadata(llvm::Function *F) {
     llvm::Module *M = F->getParent();
     llvm::LLVMContext &Ctx = M->getContext();
@@ -705,7 +744,7 @@ namespace QDP {
     // Append metadata to nvvm.annotations
     MD->addOperand(llvm::MDNode::get(Ctx, MDVals));
   }
-
+#endif
 
 
   void llvm_print_module( llvm::Module* m , const char * fname ) {
@@ -847,7 +886,7 @@ namespace QDP {
 
 
 
-
+#if 0
   std::string get_PTX_from_Module_using_nvvm( llvm::Module *Mod )
   {
     Mod->setDataLayout("e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v32:32:32-v64:64:64-v128:128:128-n16:32:64");
@@ -992,11 +1031,12 @@ namespace QDP {
     return ret;
     //
   }
+#endif
 
 
 
 
-
+#if 0
   std::string llvm_get_ptx_kernel(const char* fname)
   {
     QDP_info_primary("Internalizing module");
@@ -1046,49 +1086,59 @@ namespace QDP {
 
     return str;
   }
-
-
-
-
-
-  CUfunction llvm_get_cufunction(const char* fname)
-  {
-    CUfunction func;
-    CUresult ret;
-    CUmodule cuModule;
-
-    addKernelMetadata( mainFunc );
-
-    // llvm::FunctionType *funcType = mainFunc->getFunctionType();
-    // funcType->dump();
-
-    std::string ptx_kernel = llvm_get_ptx_kernel(fname);
-
-    QDP_info_primary("Loading PTX kernel with driver");
-
-    ret = cuModuleLoadData(&cuModule, (void*)ptx_kernel.c_str());
-    //ret = cuModuleLoadDataEx( &cuModule , ptx_kernel.c_str() , 0 , 0 , 0 );
-
-    if (ret) {
-      if (Layout::primaryNode()) {
-	QDP_info_primary("Error loading external data. Dumping kernel to %s.",fname);
-#if 1
-	std::ofstream out(fname);
-	out << ptx_kernel;
-	out.close();
 #endif
-	QDP_error_exit("Abort.");
-      }
-    }
 
-    ret = cuModuleGetFunction(&func, cuModule, "main");
-    if (ret)
-      QDP_error_exit("Error returned from cuModuleGetFunction. Abort.");
 
-    mapCUFuncPTX[func] = ptx_kernel;
 
-    return func;
+
+  void * llvm_get_function(const char* fname)
+  {
+    //addKernelMetadata( mainFunc );
+
+    QDPIO::cerr << "LLVM IR function\n";
+    mainFunc->dump();
+
+    QDPIO::cerr << "Verifying function\n";
+    llvm::verifyFunction(*mainFunc);
+
+    void *FPtr = TheExecutionEngine->getPointerToFunction( mainFunc );
+
+    // union types {
+    //   int i32;
+    //   float *ptr_float;
+    // };
+    // std::array<types,5> args;
+
+    // void (*FP)(void*) = (void (*)(void*))(intptr_t)FPtr;
+
+    // std::cerr << FPtr << "\n";
+
+    // LatticeReal a,b,c;
+    // a.elem(1)=1.0;
+    // b.elem(1)=2.0;
+    // c.elem(1)=3.0;
+
+    // args[0].i32 = 0;
+    // args[1].i32 = 10;
+    // args[2].ptr_float = (float*)a.getF();
+    // args[3].ptr_float = (float*)b.getF();
+    // args[4].ptr_float = (float*)c.getF();
+
+    // std::cout << "calling...\n";
+
+    // FP( (void*)&args );
+
+    // std::cerr << a.elem(1) << " " << b.elem(1) << " " << c.elem(1) << "\n";
+
+    // QDP_error_exit("let's see");
+
+    //mapCUFuncPTX[func] = ptx_kernel;
+
+    return FPtr;
   }
+
+
+
 
   llvm::Value* llvm_call_f32( llvm::Function* func , llvm::Value* lhs )
   {

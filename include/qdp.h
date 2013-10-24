@@ -104,9 +104,7 @@ using std::ostream;
 // END OF YUKKINESS
 
 
-#include "cuda.h"
 #include "qdp_llvm.h"
-
 
 #include "qdp_forward.h"
 #include "qdp_datalayout.h"
@@ -120,14 +118,6 @@ namespace QDP {
 }
 
 #include "qdp_init.h"
-
-#include "qdp_deviceparams.h"
-#include "qdp_cuda.h"
-#include "qdp_cuda_allocator.h"
-#include "qdp_pool_allocator.h"
-#include "qdp_cache.h"
-
-//
 
 #include "qdp_multi.h"
 #include "qdp_arrays.h"
@@ -181,7 +171,6 @@ namespace QDP {
 #include "qdp_mapresource.h"
 #include "qdp_handle.h"
 #include "qdp_map.h"
-#include "qdp_autotuning.h"
 
 
 #include "qdp_simpleword.h"
@@ -211,9 +200,9 @@ namespace QDP {
 #include "qdp_internal.h"
 #include "qdp_jitfunction.h"
 #include "qdp_jitf_copymask.h"
-#include "qdp_jitf_sum.h"
-#include "qdp_jitf_globalmax.h"
-#include "qdp_jitf_gaussian.h"
+// #include "qdp_jitf_sum.h"
+// #include "qdp_jitf_globalmax.h"
+// #include "qdp_jitf_gaussian.h"
 
 // Include threading code here if applicable
 #include "qdp_dispatch.h"
@@ -221,6 +210,9 @@ namespace QDP {
 namespace ThreadReductions { 
  
 }
+
+
+
 
 
 #if defined(ARCH_SCALAR)

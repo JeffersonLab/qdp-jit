@@ -329,6 +329,8 @@ struct ForEach<UnaryNode<FnMap, A>, AddressLeaf, NullCombine>
     inline
     static Type_t apply(const UnaryNode<FnMap, A>& expr, const AddressLeaf &a, const NullCombine &n)
     {
+      QDP_error_exit("ni addressleaf map apply");
+#if 0
       const Map& map = expr.operation().map;
       FnMap& fnmap = const_cast<FnMap&>(expr.operation());
 
@@ -344,7 +346,7 @@ struct ForEach<UnaryNode<FnMap, A>, AddressLeaf, NullCombine>
       }
       //QDP_info("Map:AddressLeaf: add recv buf p=%p",rcvBufDev);
       a.setAddr(rcvBufDev);
-
+#endif
       return Type_t( ForEach<A, AddressLeaf, NullCombine>::apply( expr.child() , a , n ) );
     }
   };
@@ -363,6 +365,8 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
   inline static
   Type_t apply(const UnaryNode<FnMap, A> &expr, const ShiftPhase1 &f, const BitOrCombine &c)
   {
+    QDP_error_exit("ni addressleaf map apply");
+#if 0
     const Map& map = expr.operation().map;
     FnMap& fnmap = const_cast<FnMap&>(expr.operation());
 
@@ -420,6 +424,7 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
 	returnVal = ForEach<A, ShiftPhase1, BitOrCombine>::apply(expr.child(), f, c);
       }
     return returnVal;
+#endif
   }
 };
 

@@ -3,6 +3,7 @@
 
 namespace QDP {
 
+#if 0
   void
   function_sum_ind_exec( CUfunction function, 
 			 int size, int threads, int blocks, int shared_mem_usage,
@@ -112,6 +113,7 @@ namespace QDP {
 
     CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threads,1,1,    shared_mem_usage, 0, &addr[0] , 0);
   }
+#endif
 
 }
 

@@ -3,10 +3,11 @@
 
 namespace QDP {
 
-  llvm::Value *jit_function_preamble_get_idx( const std::vector<ParamRef>& vec );
+  //llvm::Value *jit_function_preamble_get_idx( const std::vector<ParamRef>& vec );
+
   std::vector<ParamRef> jit_function_preamble_param();
 
-  CUfunction jit_function_epilogue_get_cuf(const char *);
+  void * jit_function_epilogue_get(const char *);
 
   void jit_build_seedToFloat();
   void jit_build_seedMultiply();

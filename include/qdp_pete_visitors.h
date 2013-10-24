@@ -51,6 +51,8 @@ struct ParamLeaf {};
 struct AddressLeaf
 {
   union Types {
+    Types() {}
+    Types(int i):in(i) {}
     void * ptr;
     float  fl;
     int    in;

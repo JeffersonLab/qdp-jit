@@ -38,19 +38,14 @@ namespace QDP {
     typedef T SubType_t;
 
     OScalar() {
-      QDPCache::Instance().sayHi();
-      alloc_mem();
     }
 
     virtual ~OScalar() {
-      free_mem();
     }
 
 
     OScalar(const typename WordType<T>::Type_t& rhs)
     {
-      QDPCache::Instance().sayHi();
-      alloc_mem();
       typedef typename InternalScalar<T>::Type_t  Scalar_t;
       elem() = Scalar_t(rhs);
     }
@@ -58,8 +53,6 @@ namespace QDP {
 
     OScalar(const Zero& rhs)
     {
-      QDPCache::Instance().sayHi();
-      alloc_mem();
       this->assign(rhs);
     }
 
@@ -67,8 +60,6 @@ namespace QDP {
     template<class T1>
     OScalar(const OScalar<T1>& rhs)
     {
-      QDPCache::Instance().sayHi();
-      alloc_mem();
       this->assign(rhs);
     }
 
@@ -76,8 +67,6 @@ namespace QDP {
     template<class RHS, class T1>
     OScalar(const QDPExpr<RHS, OScalar<T1> >& rhs)
     {
-      QDPCache::Instance().sayHi();
-      alloc_mem();
       this->assign(rhs);
     }
 
@@ -122,50 +111,29 @@ namespace QDP {
 
 
 
-
     OScalar(const OScalar& rhs) {
-      QDPCache::Instance().sayHi();
-      alloc_mem();
       this->assign(rhs);
     }
-
-#if 0
-    OScalar(const OScalar&& rhs) {
-      QDP_error_exit("OScalar(const OScalar&& rhs)");
-    }
-
-    OScalar( OScalar&& rhs) {
-      QDPCache::Instance().sayHi();
-      myId = rhs.myId;
-      F = rhs.F;
-      rhs.myId = -1;
-      //alloc_mem();
-      //this->assign(rhs);
-    }
-#endif
 
 
 
   public:
 
-#if 0
-    inline bool onDevice() const {
-      return QDPCache::Instance().onDevice( myId );
-    }
-    inline T* getFdev() const {
-      return (T*)QDPCache::Instance().getDevicePtr( myId );
-    }
-#endif
-
-    inline T* getF() const { assert_on_host(); return F; };
+    inline T* getF() const { return &F; };
+    //inline T* getF() const { assert_on_host(); return F; };
 
 
-    inline T& elem() { assert_on_host(); return *F;  }
-    inline const T& elem() const { assert_on_host(); return *F; }
-    inline T& elem(int i) { assert_on_host(); return *F; }
-    inline const T& elem(int i) const { assert_on_host(); return *F; }
+    inline T& elem() { return F;  }
+    inline const T& elem() const { return F; }
+    inline T& elem(int i) { return F; }
+    inline const T& elem(int i) const { return F; }
 
-    int getId() const { return myId; }
+    // inline T& elem() { assert_on_host(); return *F;  }
+    // inline const T& elem() const { assert_on_host(); return *F; }
+    // inline T& elem(int i) { assert_on_host(); return *F; }
+    // inline const T& elem(int i) const { assert_on_host(); return *F; }
+
+    //int getId() const { return myId; }
 
   private:
 
@@ -214,38 +182,38 @@ namespace QDP {
 #endif
 
 
-    inline void alloc_mem() {
-#if 0
-      int lim_rea = GetLimit<T,2>::Limit_v; //T::ThisSize;
-      int lim_col = GetLimit<T,1>::Limit_v; //T::ThisSize;
-      int lim_spi = GetLimit<T,0>::Limit_v; //T::ThisSize;
-      if ( (lim_rea*lim_col == 1) || 
-      	   (lim_rea*lim_spi == 1) || 
-      	   (lim_col*lim_spi == 1) ) {
-      	//QDP_info_primary("OScalar::alloc_mem: no layout change: rea=%d col=%d spi=%d" ,lim_rea,lim_col,lim_spi);
-      	myId = QDPCache::Instance().registrate( sizeof(T) , 0 , NULL );
-      }
-      else
-      myId = QDPCache::Instance().registrate( sizeof(T) , 0 , &changeLayout );
-#endif
-      myId = QDPCache::Instance().registrate( sizeof(T) , 0 , NULL );
-    }
-    inline void free_mem() {
-      if (myId >= 0)
-	QDPCache::Instance().signoff( myId );
-    }
-    inline void assert_on_host() const {
-      // Here or somewhere we sould make sure that 
-      // if the pointer is still valid, we do not too much
-      if (myId >= 0)
-	QDPCache::Instance().getHostPtr( (void**)&F , myId );
-      else
-	QDP_error_exit("Oscalar assert on host, but resource moved");
-    }
+//     inline void alloc_mem() {
+// #if 0
+//       int lim_rea = GetLimit<T,2>::Limit_v; //T::ThisSize;
+//       int lim_col = GetLimit<T,1>::Limit_v; //T::ThisSize;
+//       int lim_spi = GetLimit<T,0>::Limit_v; //T::ThisSize;
+//       if ( (lim_rea*lim_col == 1) || 
+//       	   (lim_rea*lim_spi == 1) || 
+//       	   (lim_col*lim_spi == 1) ) {
+//       	//QDP_info_primary("OScalar::alloc_mem: no layout change: rea=%d col=%d spi=%d" ,lim_rea,lim_col,lim_spi);
+//       	myId = QDPCache::Instance().registrate( sizeof(T) , 0 , NULL );
+//       }
+//       else
+//       myId = QDPCache::Instance().registrate( sizeof(T) , 0 , &changeLayout );
+// #endif
+//       myId = QDPCache::Instance().registrate( sizeof(T) , 0 , NULL );
+//     }
+//     inline void free_mem() {
+//       if (myId >= 0)
+// 	QDPCache::Instance().signoff( myId );
+//     }
+//     inline void assert_on_host() const {
+//       // Here or somewhere we sould make sure that 
+//       // if the pointer is still valid, we do not too much
+//       if (myId >= 0)
+// 	QDPCache::Instance().getHostPtr( (void**)&F , myId );
+//       else
+// 	QDP_error_exit("Oscalar assert on host, but resource moved");
+//     }
 
 
-    mutable T* F;
-    mutable int myId;
+    mutable T F;
+    //mutable int myId;
 
   };
 
@@ -381,6 +349,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
   {
   public:
     //typedef T Subtype;
+    //enum class MemStatus { NIL , MEM0 , MEM1 };
     typedef T SubType_t;
 
     OLattice()
@@ -485,29 +454,22 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
     }
 
 
-#if 0
-    inline bool onDevice() const {
-      return QDPCache::Instance().onDevice( myId );
-    }
-    inline T* getFdev() const {
-      return (T*)QDPCache::Instance().getDevicePtr( myId );
-    }
-    inline T* elem_devptr(int i) const {
-      return &((T*)QDPCache::Instance().getDevicePtr( myId ))[i];
-    }
-#endif
 
     inline T* getF() const { 
-      assert_on_host(); 
+      //assert_on_host(); 
       return F; 
     }
+    // inline T* getFdev() const { 
+    //   assert_on_device();
+    //   return F_d;
+    // }
 
     inline T& elem(int i) { 
-      assert_on_host(); 
+      //assert_on_host(); 
       return F[i]; 
     }
     inline const T& elem(int i) const { 
-      assert_on_host(); 
+      //assert_on_host(); 
       return F[i]; 
     }
 
@@ -516,6 +478,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
   inline void revertFromFastMemoryHint(bool copy=false) {}
 
 
+#if 0
     void static changeLayout(bool toDev,void * outPtr,void * inPtr)
     {
       QDP_info_primary("changing data layout to %s format" , toDev? "device" : "host");
@@ -556,32 +519,80 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 	}
       }
     }
+#endif
 
-    int getId() const { return myId; }
+    //int getId() const { return myId; }
 
   private:
 
 
     inline void alloc_mem(const char* msg) {
-      myId = QDPCache::Instance().registrate( Layout::sitesOnNode() * sizeof(T) , 1 , &changeLayout ); 
+      try 
+	{
+	  F = (T*)QDP::Allocator::theQDPAllocator::Instance().allocate( sizeof(T) * Layout::sitesOnNode() ,
+									QDP::Allocator::DEFAULT );
+	}
+      catch(std::bad_alloc) 
+	{
+	  QDPIO::cerr << "Allocation failed in OLattice alloc_mem" << endl;
+	  QDP::Allocator::theQDPAllocator::Instance().dump();
+	  QDP_abort(1);
+	}
     }
     inline void free_mem()  { 
-      QDPCache::Instance().signoff( myId ); 
+      QDP::Allocator::theQDPAllocator::Instance().free( F );
     }
 
 
 
-    inline void assert_on_host() const {
-      // Here or somewhere we sould make sure that 
-      // if the pointer is still valid, we do not too much
-      QDPCache::Instance().getHostPtr( (void**)&F , myId );
-    }
+    // inline void assert_mem0() const {
+    //   if ( mem_status == MemStatus::MEM0 ) 
+    // 	return;
+
+    //   if ( mem_status == MemStatus::NIL ) {
+    // 	try 
+    // 	  {
+    // 	    F_mem0 = (T*)QDP::Allocator::theQDPAllocator::Instance().allocate( sizeof(T) * Layout::sitesOnNode() ,
+    // 									       QDP::Allocator::DEFAULT );
+    // 	  }
+    // 	catch(std::bad_alloc) 
+    // 	  {
+    // 	    QDPIO::cerr << "Allocation failed in OLattice alloc_mem" << endl;
+    // 	    QDP::Allocator::theQDPAllocator::Instance().dump();
+    // 	    QDP_abort(1);
+    // 	  }
+    // 	mem_status = MemStatus::MEM0;
+    // 	return;
+    //   }
+
+    //   if ( mem_status == MemStatus::MEM1 ) {
+    // 	try 
+    // 	  {
+    // 	    F_mem0 = (T*)QDP::Allocator::theQDPAllocator::Instance().allocate( sizeof(T) * Layout::sitesOnNode() ,
+    // 									       QDP::Allocator::DEFAULT );
+    // 	  }
+    // 	catch(std::bad_alloc) 
+    // 	  {
+    // 	    QDPIO::cerr << "Allocation failed in OLattice alloc_mem" << endl;
+    // 	    QDP::Allocator::theQDPAllocator::Instance().dump();
+    // 	    QDP_abort(1);
+    // 	  }
+
+    // 	changeLayout( false , F_mem0 , F_mem1 );
+
+    // 	QDP::Allocator::theQDPAllocator::Instance().free( F_mem1 );
+    // 	mem_status = MemStatus::MEM0;
+    // 	return
+    //   }
+    //   QDP_error_exit("shouldn't be here");
+    // }
 
   private:
 
     mutable T *F;
-    mutable int myId;
-
+    // mutable T *F_mem0;
+    // mutable T *F_mem1;
+    // mutable MemStatus mem_status = MemStatus::NIL;
   };
 
 
@@ -676,7 +687,8 @@ struct LeafFunctor<OLattice<T>, AddressLeaf>
   inline static
   Type_t apply(const OLattice<T>& s, const AddressLeaf& p) 
   {
-    p.setAddr( QDPCache::Instance().getDevicePtr( s.getId() ) );
+    //p.setAddr( QDPCache::Instance().getDevicePtr( s.getId() ) );
+    p.setAddr( s.getF() );
     return 0;
   }
 };
@@ -688,7 +700,8 @@ struct LeafFunctor<OScalar<T>, AddressLeaf>
   inline static
   Type_t apply(const OScalar<T>& s, const AddressLeaf& p) 
   {
-    p.setAddr( QDPCache::Instance().getDevicePtr( s.getId() ) );
+    //p.setAddr( QDPCache::Instance().getDevicePtr( s.getId() ) );
+    p.setAddr( s.getF() );
     return 0;
   }
 };

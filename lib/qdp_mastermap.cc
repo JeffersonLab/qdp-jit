@@ -109,8 +109,10 @@ namespace QDP {
       remove_neg( *powerSetC[i|id] , ct );
       remove_neg( *powerSet[i|id] , pt );
 
-      idFace[i|id] = QDPCache::Instance().registrateOwnHostMem( powerSet[i|id]->size() * sizeof(int) , (void*)powerSet[i|id]->slice() , NULL );
-      idInner[i|id] = QDPCache::Instance().registrateOwnHostMem( powerSetC[i|id]->size() * sizeof(int) , (void*)powerSetC[i|id]->slice() , NULL );
+      QDPIO::cerr << "not registering any mastermap!\n";
+
+      //idFace[i|id] = QDPCache::Instance().registrateOwnHostMem( powerSet[i|id]->size() * sizeof(int) , (void*)powerSet[i|id]->slice() , NULL );
+      //idInner[i|id] = QDPCache::Instance().registrateOwnHostMem( powerSetC[i|id]->size() * sizeof(int) , (void*)powerSetC[i|id]->slice() , NULL );
 
     }
     return id;

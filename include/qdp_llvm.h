@@ -45,6 +45,9 @@
 #include "llvm/ExecutionEngine/ObjectBuffer.h"
 #include "llvm/IR/GlobalVariable.h"
 
+#include "llvm/ExecutionEngine/ExecutionEngine.h"
+#include "llvm/ExecutionEngine/JIT.h"
+#include "llvm/Analysis/Verifier.h"
 
 namespace llvm {
 ModulePass *createNVVMReflectPass(const StringMap<int>&);
@@ -57,8 +60,8 @@ namespace QDP {
 
   // llvm::IRBuilder<> *builder;
   // llvm::BasicBlock  *entry;
-  // extern llvm::Function    *mainFunc;
-  //extern llvm::Module      *Mod;
+  extern llvm::Function    *mainFunc;
+  extern llvm::Module      *Mod;
 
   llvm::Value * llvm_create_value( double v );
   llvm::Value * llvm_create_value( int v );
@@ -87,7 +90,7 @@ namespace QDP {
     // llvm::Value * r_rcvbuf;
   };
 
-  std::string getPTXfromCUFunc(CUfunction f);
+  //std::string getPTXfromCUFunc(CUfunction f);
 
   void llvm_start_new_function();
   void llvm_wrapper_init();
@@ -186,11 +189,10 @@ namespace QDP {
 
   void llvm_bar_sync();
 
-  llvm::Value * llvm_thread_idx();
-
   void addKernelMetadata(llvm::Function *F);
 
-  CUfunction llvm_get_cufunction(const char* fname);
+
+  void * llvm_get_function(const char* fname);
 
 
   llvm::Value* llvm_sin_f32( llvm::Value* lhs );

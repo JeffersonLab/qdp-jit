@@ -143,8 +143,8 @@ namespace QDP {
     // If no srce/dest nodes, then we know no off-node communications
     offnodeP = (cnt_srcenodes > 0) ? true : false;
 
-    goffsetsId = QDPCache::Instance().registrateOwnHostMem( sizeof(int)*goffsets.size() , (void*)goffsets.slice() , NULL );
-    QDP_info_primary("Map::make goffsetsId=%d",goffsetsId);
+    //goffsetsId = QDPCache::Instance().registrateOwnHostMem( sizeof(int)*goffsets.size() , (void*)goffsets.slice() , NULL );
+    QDP_info_primary("Not registering memory!! Map::make goffsetsId=%d",goffsetsId);
 
     //
     // The rest of the routine is devoted to supporting off-node communications
@@ -273,8 +273,9 @@ namespace QDP {
     if (goffsets.size()==0)
       QDP_error_exit("gsoffsets empty");
 
-    roffsetsId = QDPCache::Instance().registrateOwnHostMem( sizeof(int)*roffsets.size() , (void*)roffsets.slice() , NULL );
-    soffsetsId = QDPCache::Instance().registrateOwnHostMem( sizeof(int)*soffsets.size() , (void*)soffsets.slice() , NULL );
+    QDPIO::cerr << "not registering memory Map::make!!\n";
+    // roffsetsId = QDPCache::Instance().registrateOwnHostMem( sizeof(int)*roffsets.size() , (void*)roffsets.slice() , NULL );
+    // soffsetsId = QDPCache::Instance().registrateOwnHostMem( sizeof(int)*soffsets.size() , (void*)soffsets.slice() , NULL );
 
 
 #if QDP_DEBUG >= 3

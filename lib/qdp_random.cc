@@ -27,8 +27,8 @@ namespace RNG
   //! The lattice of skewed RNG multipliers
   LatticeSeed *lattice_ran_mult;
 
-  LatticeSeed *lat_ran_mult_n;
-  LatticeSeed *lat_ran_seed;
+  // LatticeSeed *lat_ran_mult_n;
+  // LatticeSeed *lat_ran_seed;
 
     //! Find the number of bits required to represent x.
   int numbits(int x)
@@ -161,8 +161,11 @@ namespace RNG
     }
 
     *lattice_ran_mult = lattice_ran_mult_tmp;
-    QDPIO::cout << "Finished init of RNG" << endl; 
+    QDPIO::cout << "Finished init of native RNG" << endl; 
 
+    QDPIO::cerr << "skipping init of JIT RNG\n";
+
+#if 0
     lat_ran_seed = new LatticeSeed;
     if( lat_ran_seed == 0x0 ) { 
       QDP_error_exit("Unable to allocate lat_run_seed\n");
@@ -178,6 +181,7 @@ namespace RNG
     }
 
     *lat_ran_mult_n = ran_mult_n;
+#endif
 
     setProfileLevel(old_profile_level);
   }

@@ -51,17 +51,17 @@ public:
   //! Destructor for a subset
   ~Subset();
 
-  int getId() const {
-    if (!registered) 
-      return -1;
-    else
-      return idSiteTable;
-  }
-  int getIdMemberTable() const {
-    if (!registered) 
-      QDP_error_exit("Subset not registered");
-    return idMemberTable;
-  }
+  // int getId() const {
+  //   if (!registered) 
+  //     return -1;
+  //   else
+  //     return idSiteTable;
+  // }
+  // int getIdMemberTable() const {
+  //   if (!registered) 
+  //     QDP_error_exit("Subset not registered");
+  //   return idMemberTable;
+  // }
 
   //! The = operator
   Subset& operator=(const Subset& s);
@@ -88,9 +88,9 @@ private:
 
 
   // Cache registered
-  int idSiteTable;
-  int idMemberTable;
-  bool registered;
+  // int idSiteTable;
+  // int idMemberTable;
+  // bool registered;
 
 
   //! Original set
@@ -141,11 +141,11 @@ public:
   Set& operator=(const Set& s);
 
 
-  int getIdStrided() const {
-    if (!registered)
-      QDP_error_exit("You are trying to use a Set which was not set up properly.");
-    return idStrided;
-  }
+  // int getIdStrided() const {
+  //   if (!registered)
+  //     QDP_error_exit("You are trying to use a Set which was not set up properly.");
+  //   return idStrided;
+  // }
 
 
 protected:
@@ -163,11 +163,11 @@ protected:
 
 
   //! This is part of an attempt to port sumMulti to GPUs -- really not made for them
-  multi1d<int> sitetables_strided;
+  //multi1d<int> sitetables_strided;
 
   // Cache registered
-  int idStrided;
-  bool registered;
+  // int idStrided;
+  // bool registered;
 
 
 
@@ -178,10 +178,10 @@ public:
   const multi1d<int>& latticeColoring() const {return lat_color;}
 
 
-  int stride_offset;
-  int nonEmptySubsetsOnNode;
-  int largest_subset;
-  bool enableGPU;
+  // int stride_offset;
+  // int nonEmptySubsetsOnNode;
+  // int largest_subset;
+  // bool enableGPU;
 
 };
 

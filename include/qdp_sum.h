@@ -8,6 +8,8 @@ namespace QDP {
   void reduce_convert(int size, int threads, int blocks, int shared_mem_usage,
 		      T2 *d_idata, T2 *d_odata )
   {
+    assert(!"ni");
+#if 0
     static CUfunction function;
 
     // Build the function
@@ -23,6 +25,7 @@ namespace QDP {
       }
 
     function_sum_exec(function, size, threads, blocks, shared_mem_usage, (void*)d_idata, (void*)d_odata );
+#endif
   }
 
 
@@ -37,6 +40,8 @@ namespace QDP {
 				  T2 *d_odata, 
 				  int * siteTable)
   {
+    assert(!"ni");
+#if 0
     static CUfunction function;
 
     // Build the function
@@ -54,6 +59,7 @@ namespace QDP {
     // Execute the function
     function_sum_ind_exec(function, size, threads, blocks, shared_mem_usage, 
 			  (void*)d_idata, (void*)d_odata, (void*)siteTable );
+#endif
   }
 
 
@@ -64,6 +70,8 @@ namespace QDP {
   typename UnaryReturn<OLattice<T1>, FnSum>::Type_t
   sum(const OLattice<T1>& s1, const Subset& s)
   {
+    assert(!"ni");
+#if 0
     typedef typename UnaryReturn<OLattice<T1>, FnSum>::Type_t::SubType_t T2;
     
     //QDP_info("sum(lat,subset) dev");
@@ -148,6 +156,7 @@ namespace QDP {
 #endif
 
     return d;
+#endif
   }
 
 
@@ -157,6 +166,8 @@ namespace QDP {
   template <class T>
   void globalMax_kernel(int size, int threads, int blocks, T *d_idata, T *d_odata)
   {
+    assert(!"ni");
+#if 0
     int shared_mem_usage = threads * sizeof(T);
 
     static CUfunction function;
@@ -174,6 +185,7 @@ namespace QDP {
       }
 
     function_global_max_exec(function, size, threads, blocks, shared_mem_usage, (void*)d_idata, (void*)d_odata );
+#endif
   }
 
 
@@ -187,6 +199,8 @@ namespace QDP {
     typename UnaryReturn<OLattice<T1>, FnSumMulti>::Type_t
     sumMulti( const OLattice<T1>& s1 , const Set& ss )
     {
+    assert(!"ni");
+#if 0
       typename UnaryReturn<OLattice<T1>, FnSumMulti>::Type_t  dest(ss.numSubsets());
       const int nodeSites = Layout::sitesOnNode();
 
@@ -402,6 +416,7 @@ namespace QDP {
 #endif
 
 	return dest;
+#endif
     }
 
 
@@ -414,6 +429,8 @@ namespace QDP {
 	typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t
 	globalMax(const OLattice<T>& s1)
 	{
+	  assert(!"ni");
+#if 0
 	  //    QDP_info("globalMax(lat) dev");
 
 	  T * out_dev;
@@ -492,9 +509,10 @@ namespace QDP {
 #endif
 
 	  return d;
+#endif
 	}
 
 
-    }
+}
 
 #endif

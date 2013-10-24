@@ -26,7 +26,6 @@ namespace QDP {
 
   //! Private flag for status
   static bool isInit = false;
-  bool setPoolSize = false;
   bool setGeomP = false;
   bool setIOGeomP = false;
   multi1d<int> logical_geom(Nd);   // apriori logical geometry of the machine
@@ -77,62 +76,10 @@ namespace QDP {
   }
 #endif
 
-  //! Public flag for using the GPU or not
-  bool QDPuseGPU = false;
 
-  void QDP_startGPU()
-  {
-    QDP_info_primary("Getting GPU device properties");
-    CudaGetDeviceProps();
-
-    QDP_info_primary("Trigger GPU evaluation");
-    QDPuseGPU=true;
-    
-    CudaCreateStreams();
-    CUDAHostPoolAllocator::Instance().registerMemory();
-  }
-
-
-  //! Set the GPU device
-  int QDP_setGPU()
-  {
-    int deviceCount;
-    int ret = 0;
-    CudaGetDeviceCount(&deviceCount);
-    if (deviceCount == 0) {
-      QDP_error_exit("No CUDA devices found");
-    }
-
-    const char *rank = getenv( DeviceParams::Instance().getENVVAR() );
-    if (rank) {
-      int local_rank = atoi(rank);
-      int dev = local_rank % deviceCount;
-      std::cout << "Setting CUDA device to " << dev << "\n";
-      CudaSetDevice( dev );
-      ret = dev;
-    } else {
-      std::cerr << "Env. var. "
-		<< DeviceParams::Instance().getENVVAR() 
-		<< "not found! Will use device no. 0 (this would be bad for a multi-GPU node run)\n";
-      std::cout << "Setting CUDA device to " << 0 << "\n";
-      CudaSetDevice( 0 );
-    }
-    // int rank_QMP = QMP_get_node_number();
-    // int dev      = rank_QMP % deviceCount;
-    return ret;
-  }
-
-
-  void QDP_initialize(int *argc, char ***argv) 
-  {
-    QDP_initialize_CUDA(argc, argv);
-    QDP_setGPU();
-    QDP_initialize_QMP(argc, argv);
-    QDP_startGPU();
-  }
 	
 	//! Turn on the machine
-	void QDP_initialize_CUDA(int *argc, char ***argv)
+	void QDP_initialize(int *argc, char ***argv)
 	{
 	  if (sizeof(bool) != 1)
 	    {
@@ -183,11 +130,6 @@ namespace QDP {
 		//QDP_info_primary("Finished multiplying gamma matrices");
 #endif
 
-		CudaInit();
-
-		// This defaults to mvapich2
-		DeviceParams::Instance().setENVVAR("MV2_COMM_WORLD_LOCAL_RANK");
-		
 		//
 		// Process command line
 		//
@@ -264,54 +206,6 @@ namespace QDP {
 				setProgramProfileLevel(lev);
 			}
 #endif
-			else if (strcmp((*argv)[i], "-sync")==0) 
-			  {
-			    DeviceParams::Instance().setSyncDevice(true);
-			  }
-			else if (strcmp((*argv)[i], "-sm")==0) 
-			  {
-			    int sm;
-			    sscanf((*argv)[++i], "%d", &sm);
-			    DeviceParams::Instance().setSM(sm);
-			  }
-			else if (strcmp((*argv)[i], "-gpudirect")==0) 
-			  {
-			    DeviceParams::Instance().setGPUDirect(true);
-			  }
-			else if (strcmp((*argv)[i], "-envvar")==0) 
-			  {
-			    char buffer[1024];
-			    sscanf((*argv)[++i],"%s",&buffer);
-			    DeviceParams::Instance().setENVVAR(buffer);
-			  }
-			else if (strcmp((*argv)[i], "-poolsize")==0) 
-			  {
-			    float f;
-			    char c;
-			    sscanf((*argv)[++i],"%f%c",&f,&c);
-			    double mul;
-			    switch (tolower(c)) {
-			    case 'k': 
-			      mul=1024.; 
-			      break;
-			    case 'm': 
-			      mul=1024.*1024; 
-			      break;
-			    case 'g': 
-			      mul=1024.*1024*1024; 
-			      break;
-			    case 't':
-			      mul=1024.*1024*1024*1024;
-			      break;
-			    case '\0':
-			      break;
-			    default:
-			      QDP_error_exit("unknown multiplication factor");
-			    }
-			    size_t val = (size_t)((double)(f) * mul);
-			    CUDADevicePoolAllocator::Instance().setPoolSize(val);
-			    setPoolSize = true;
-			  }
 			else if (strcmp((*argv)[i], "-geom")==0) 
 			{
 				setGeomP = true;
@@ -369,12 +263,6 @@ namespace QDP {
 		}
 		
 
-		if (!setPoolSize) {
-		  // It'll be set later in CudaGetDeviceProps
-		  //QDP_error_exit("Run-time argument -poolsize <size> missing. Please consult README.");
-		}
-
-		
 		QMP_verbose (QMP_verboseP);
 		
 #if QDP_DEBUG >= 1
@@ -382,6 +270,8 @@ namespace QDP {
 		for (int i=0; i<*argc; i++) 
 			QDP_info("QDP_init: arg[%d] = XX%sXX",i,(*argv)[i]);
 #endif
+
+		QDP_initialize_QMP(argc, argv);
 		
 	}
 
@@ -518,7 +408,7 @@ namespace QDP {
 		FnMapRsrcMatrix::Instance().cleanup();
 
 
-		CUDAHostPoolAllocator::Instance().unregisterMemory();
+		//CUDAHostPoolAllocator::Instance().unregisterMemory();
 
 	
 		//
