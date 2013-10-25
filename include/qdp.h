@@ -109,7 +109,7 @@ using std::ostream;
 #include "qdp_forward.h"
 #include "qdp_datalayout.h"
 
-#include "qdp_jit_util.h"
+
 
 // Basic includes
 #define PETE_USER_DEFINED_EXPRESSION
@@ -139,6 +139,7 @@ namespace QDP {
 #include "qdp_stopwatch.h"
 
 #include "qdp_pete_visitors.h"
+#include "qdp_jit_util.h"
 
 #include "qdp_traits.h"
 #include "qdp_qdpexpr.h"

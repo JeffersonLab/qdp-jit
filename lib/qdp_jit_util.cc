@@ -249,4 +249,10 @@ namespace QDP {
 #endif
 
 
+  void jit_get_empty_arguments(AddressLeaf& addr_leaf) {
+    addr_leaf.addr.push_back(AddressLeaf::Types(0)); // 'lo' is inserted by autotuner
+    addr_leaf.addr.push_back(AddressLeaf::Types(0)); // 'hi' is inserted by autotuner
+  }
+
+
 } //namespace

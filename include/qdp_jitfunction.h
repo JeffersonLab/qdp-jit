@@ -10,23 +10,36 @@
 namespace QDP {
 
 
+#if 0
+void bf()
+{
+  JitMainLoop loop;
+
+  ParamLeaf param_leaf;
+  // add dest, op, RHS
+
+  llvm::Value * r_idx = loop.getIdx();
+
+  // my custom operation
+
+  loop.done();
+
+}
+#endif
+
 
 template<class T, class T1, class Op, class RHS>
 void *
 function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs)
 {
-  llvm_start_new_function();
+  JitMainLoop loop;
 
-
-  ParamRef p_lo           = llvm_add_param<int>();
-  ParamRef p_hi           = llvm_add_param<int>();
   // ParamRef p_ordered      = llvm_add_param<bool>();
   // ParamRef p_start        = llvm_add_param<int>();
 
   // ParamRef p_do_site_perm = llvm_add_param<bool>();
   // ParamRef p_site_table   = llvm_add_param<int*>();
   // ParamRef p_member_array = llvm_add_param<bool*>();
-
 
   ParamLeaf param_leaf;
 
@@ -38,11 +51,8 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
   View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
-
-  llvm::Value * r_lo        = llvm_derefParam( p_lo );
-  llvm::Value * r_hi          = llvm_derefParam( p_hi );
-  //llvm::Value * r_ordered      = llvm_derefParam( p_ordered );
-  //llvm::Value * r_th_count     = llvm_derefParam( p_th_count );
+  // llvm::Value * r_ordered      = llvm_derefParam( p_ordered );
+  // llvm::Value * r_th_count     = llvm_derefParam( p_th_count );
   // llvm::Value * r_do_site_perm = llvm_derefParam( p_do_site_perm );
 
 
@@ -50,21 +60,6 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   //mainFunc->dump();
   //llvm::Value* r_idx = llvm_thread_idx();
   ////llvm_cond_exit( llvm_ge( r_idx , r_th_count ) );
-
-  llvm::BasicBlock * block_entry_point = llvm_get_insert_point();
-  llvm::BasicBlock * block_site_loop = llvm_new_basic_block();
-  llvm::BasicBlock * block_site_loop_exit = llvm_new_basic_block();
-
-
-
-
-  llvm_branch( block_site_loop );
-  llvm_set_insert_point(block_site_loop);
-
-  llvm::PHINode* r_idx      = llvm_phi( r_lo->getType() , 2 );
-  llvm::Value*   r_idx_new;
-
-
 
 
   // llvm::BasicBlock * block_no_site_perm_exit = llvm_new_basic_block();
@@ -120,21 +115,12 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   // }
   // llvm_set_insert_point(block_ordered_exit);
 
-
+  llvm::Value * r_idx = loop.getIdx();
 
   op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ), 
    	  forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , r_idx ), OpCombine()));
 
-  r_idx_new = llvm_add( r_idx , llvm_create_value(1) );
-
-  r_idx->addIncoming( r_idx_new , block_site_loop );
-  r_idx->addIncoming( r_lo , block_entry_point );
-
-  llvm::Value * r_exit_cond = llvm_ge( r_idx_new , r_hi );
-
-  llvm_cond_branch( r_exit_cond , block_site_loop_exit , block_site_loop );
-
-  llvm_set_insert_point(block_site_loop_exit);
+  loop.done();
 
   return jit_function_epilogue_get("jit_eval.ptx");
 }
@@ -198,9 +184,10 @@ function_exec(void * function, OLattice<T>& dest, const Op& op, const QDPExpr<RH
   
 
   AddressLeaf addr_leaf;
+  jit_get_empty_arguments(addr_leaf);
 
-  addr_leaf.addr.push_back(AddressLeaf::Types(0)); // 'lo' is inserted by autotuner
-  addr_leaf.addr.push_back(AddressLeaf::Types(0)); // 'hi' is inserted by autotuner
+  // addr_leaf.addr.push_back(AddressLeaf::Types(0)); // 'lo' is inserted by autotuner
+  // addr_leaf.addr.push_back(AddressLeaf::Types(0)); // 'hi' is inserted by autotuner
 
   // addr_leaf.addr.push_back(AddressLeaf::Types(s.start()));
 
@@ -244,7 +231,7 @@ function_exec(void * function, OLattice<T>& dest, const Op& op, const QDPExpr<RH
   //FP( addr_leaf.addr.data() );
   //std::cout << "..done\n";
 
-  
+  std::cout << "calling eval(Lattice,Lattice)..\n";  
   jit_call(function,th_count,addr_leaf);
 
 
@@ -269,12 +256,12 @@ template<class T, class T1, class Op, class RHS>
 void *
 function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
 {
-  llvm_start_new_function();
+  JitMainLoop loop;
+
 
   //ParamRef p_ordered      = llvm_add_param<bool>();
   //ParamRef p_th_count     = llvm_add_param<int>();
-  ParamRef p_start        = llvm_add_param<int>();
-  ParamRef p_end          = llvm_add_param<int>();
+  //  ParamRef p_start        = llvm_add_param<int>();
   //ParamRef p_member_array = llvm_add_param<bool*>();
 
   ParamLeaf param_leaf;
@@ -287,40 +274,16 @@ function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScala
   typedef typename ForEach<QDPExpr<RHS,OScalar<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
   View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
-  llvm::Value * r_start        = llvm_derefParam( p_start );
-  llvm::Value * r_end          = llvm_derefParam( p_end );
+  // llvm::Value * r_start        = llvm_derefParam( p_start );
 
-  llvm::BasicBlock * block_entry_point = llvm_get_insert_point();
-  llvm::BasicBlock * block_site_loop = llvm_new_basic_block();
-  llvm::BasicBlock * block_site_loop_exit = llvm_new_basic_block();
-  llvm_branch( block_site_loop );
-  llvm_set_insert_point(block_site_loop);
-
-  llvm::PHINode* r_idx      = llvm_phi( r_start->getType() , 2 );
-  llvm::Value*   r_idx_new;
+  llvm::Value * r_idx = loop.getIdx();
 
   op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ), 
    	  forEach(rhs_view, ViewLeaf( JitDeviceLayout::Scalar , r_idx ), OpCombine()));
 
-  r_idx_new = llvm_add( r_idx , llvm_create_value(1) );
-
-  r_idx->addIncoming( r_idx_new , block_site_loop );
-  r_idx->addIncoming( r_start , block_entry_point );
-
-  llvm::Value * r_exit_cond = llvm_ge( r_idx_new , r_end );
-
-  llvm_cond_branch( r_exit_cond , block_site_loop_exit , block_site_loop );
-
-  llvm_set_insert_point(block_site_loop_exit);
+  loop.done();
 
   return jit_function_epilogue_get("jit_lat_sca.ptx");
-
-  // llvm::Value * r_idx = jit_function_preamble_get_idx( params );
-
-  // op_jit(dest_jit.elem( JitDeviceLayout::Coalesced , r_idx), 
-  // 	 forEach(rhs_view, ViewLeaf( JitDeviceLayout::Scalar , r_idx ), OpCombine()));
-
-  // return jit_function_epilogue_get_cuf("jit_lat_sca.ptx");
 }
 
 
@@ -333,19 +296,22 @@ function_lat_sca_exec(void* function, OLattice<T>& dest, const Op& op, const QDP
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   AddressLeaf addr_leaf;
-
-  addr_leaf.addr.push_back(AddressLeaf::Types(s.start()));
-  addr_leaf.addr.push_back(AddressLeaf::Types(s.end()));
+  jit_get_empty_arguments(addr_leaf);
 
   int junk_dest = forEach(dest, addr_leaf, NullCombine());
   AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
   int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
 
-  void (*FP)(void*) = (void (*)(void*))(intptr_t)function;
+  int th_count = s.hasOrderedRep() ? s.numSiteTable() : Layout::sitesOnNode();
 
   std::cout << "calling eval(Lattice,Scalar)..\n";
-  FP( addr_leaf.addr.data() );
-  std::cout << "..done\n";
+  jit_call(function,th_count,addr_leaf);
+
+  // void (*FP)(void*) = (void (*)(void*))(intptr_t)function;
+
+  // std::cout << "calling eval(Lattice,Scalar)..\n";
+  // FP( addr_leaf.addr.data() );
+  // std::cout << "..done\n";
 
 }
 

@@ -9,6 +9,7 @@ namespace QDP {
     int    cfg;
     int    best;
     double best_time;
+    std::vector< std::pair<int,double> > tune;
   };
 
   std::map< void* , tune_t > mapTune;
@@ -72,20 +73,27 @@ namespace QDP {
 
       time = w.getTimeInMicroseconds();
 
+      tune.tune.push_back( make_pair(tune.cfg,time) );
+
       if (time < tune.best_time || tune.best_time == 0.0) {
       	tune.best_time = time;
       	tune.best = tune.cfg;
       }
 
-      QDPIO::cerr << "time = " << time 
-		  << ",  cfg = " << tune.cfg 
-		  << ",  best = " << tune.best 
-		  << ",  best_time = " << tune.best_time << "\n";
 
       // If time is much greater than our best time
       // we are in the rising part of the performance 
       // profile and stop searching any further
       tune.cfg = time > 1.33 * tune.best_time || tune.cfg == 1 ? -1 : tune.cfg >> 1;
+
+      if (tune.cfg == -1) {
+	for (auto& t : tune.tune )
+	  QDPIO::cerr << t.first << "\t" << t.second << "\n";
+	QDPIO::cerr << "time = " << time 
+		    << ",  cfg = " << tune.cfg 
+		    << ",  best = " << tune.best 
+		    << ",  best_time = " << tune.best_time << "\n";
+      }
 
     }
 
