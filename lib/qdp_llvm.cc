@@ -10,6 +10,7 @@ namespace QDP {
   llvm::Function    *mainFunc;
   llvm::Module      *Mod;
   llvm::ExecutionEngine *TheExecutionEngine;
+  //llvm::Function    *jit_omp_get_num_threads;
 
   //llvm::Value      *mainFunc;
 
@@ -185,6 +186,12 @@ namespace QDP {
     llvm_type<bool*>::value   = llvm::Type::getIntNPtrTy(llvm::getGlobalContext(),1);
 
     //llvm_init_libdevice();
+
+    // jit_omp_get_num_threads
+    //   = llvm::cast<llvm::Function>(Mod->getOrInsertFunction("omp_get_num_threads",
+    // 							    llvm::TypeBuilder<int(void), false>::get(Mod->getContext())));
+
+    // TheExecutionEngine->addGlobalMapping(jit_omp_get_num_threads, (void*)(intptr_t)&omp_get_num_threads);
   }  
 
 
@@ -720,10 +727,10 @@ namespace QDP {
   // llvm::Value * llvm_call_special_ctaidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.x"); }
 
 
-  // llvm::Value * llvm_thread_idx() { 
-  //   return llvm_add( llvm_mul( llvm_call_special_ctaidx() , 
-  // 			       llvm_call_special_ntidx() ) , 
-  // 		     llvm_call_special_tidx() );
+
+
+  // llvm::Value * llvm_omp_get_num_threads() { 
+  //   return builder->CreateCall( jit_omp_get_num_threads );
   // }
 
 

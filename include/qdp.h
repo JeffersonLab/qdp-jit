@@ -198,6 +198,7 @@ namespace QDP {
 
 //#include "qdp_newopsjit.h"
 #include "qdp_internal.h"
+#include "qdp_autotuning.h"
 #include "qdp_jitfunction.h"
 #include "qdp_jitf_copymask.h"
 #include "qdp_jitf_layout.h"

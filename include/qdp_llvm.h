@@ -22,6 +22,7 @@
 #include "llvm/IR/DataLayout.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Assembly/Parser.h"
+#include "llvm/IR/TypeBuilder.h"
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/StringSet.h"
@@ -179,6 +180,8 @@ namespace QDP {
   llvm::Value * llvm_array_type_indirection( ParamRef p , llvm::Value* idx );
 
   llvm::Value * llvm_special( const char * name );
+
+  //  llvm::Value * llvm_omp_get_num_threads();
 
   llvm::Value * llvm_call_special_tidx();
   llvm::Value * llvm_call_special_ntidx();

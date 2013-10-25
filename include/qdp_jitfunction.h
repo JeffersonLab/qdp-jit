@@ -11,8 +11,6 @@ namespace QDP {
 
 
 
-
-
 template<class T, class T1, class Op, class RHS>
 void *
 function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs)
@@ -20,10 +18,11 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   llvm_start_new_function();
 
 
-  //ParamRef p_ordered      = llvm_add_param<bool>();
-  //ParamRef p_th_count     = llvm_add_param<int>();
-  ParamRef p_start        = llvm_add_param<int>();
-  ParamRef p_end          = llvm_add_param<int>();
+  ParamRef p_lo           = llvm_add_param<int>();
+  ParamRef p_hi           = llvm_add_param<int>();
+  // ParamRef p_ordered      = llvm_add_param<bool>();
+  // ParamRef p_start        = llvm_add_param<int>();
+
   // ParamRef p_do_site_perm = llvm_add_param<bool>();
   // ParamRef p_site_table   = llvm_add_param<int*>();
   // ParamRef p_member_array = llvm_add_param<bool*>();
@@ -40,11 +39,12 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
 
+  llvm::Value * r_lo        = llvm_derefParam( p_lo );
+  llvm::Value * r_hi          = llvm_derefParam( p_hi );
   //llvm::Value * r_ordered      = llvm_derefParam( p_ordered );
   //llvm::Value * r_th_count     = llvm_derefParam( p_th_count );
-  llvm::Value * r_start        = llvm_derefParam( p_start );
-  llvm::Value * r_end          = llvm_derefParam( p_end );
   // llvm::Value * r_do_site_perm = llvm_derefParam( p_do_site_perm );
+
 
   //llvm::Value* r_no_site_perm = llvm_not( r_do_site_perm );  
   //mainFunc->dump();
@@ -54,10 +54,14 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   llvm::BasicBlock * block_entry_point = llvm_get_insert_point();
   llvm::BasicBlock * block_site_loop = llvm_new_basic_block();
   llvm::BasicBlock * block_site_loop_exit = llvm_new_basic_block();
+
+
+
+
   llvm_branch( block_site_loop );
   llvm_set_insert_point(block_site_loop);
 
-  llvm::PHINode* r_idx      = llvm_phi( r_start->getType() , 2 );
+  llvm::PHINode* r_idx      = llvm_phi( r_lo->getType() , 2 );
   llvm::Value*   r_idx_new;
 
 
@@ -124,9 +128,9 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   r_idx_new = llvm_add( r_idx , llvm_create_value(1) );
 
   r_idx->addIncoming( r_idx_new , block_site_loop );
-  r_idx->addIncoming( r_start , block_entry_point );
+  r_idx->addIncoming( r_lo , block_entry_point );
 
-  llvm::Value * r_exit_cond = llvm_ge( r_idx_new , r_end );
+  llvm::Value * r_exit_cond = llvm_ge( r_idx_new , r_hi );
 
   llvm_cond_branch( r_exit_cond , block_site_loop_exit , block_site_loop );
 
@@ -141,7 +145,7 @@ template<class T, class T1, class Op, class RHS>
 void 
 function_exec(void * function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
 {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
 #if 1
   //  std::cout << "function_exec 0\n";
@@ -154,8 +158,8 @@ function_exec(void * function, OLattice<T>& dest, const Op& op, const QDPExpr<RH
   void * idx_face_dev = NULL;
 
   // lo <= idx < hi
-  int start = 0;//s.start();
-  int end = 10;//s.end();
+  int start = s.start();
+  int end = s.end();
   int th_count;
   bool ordered = s.hasOrderedRep();
   bool do_soffset_index;
@@ -193,18 +197,16 @@ function_exec(void * function, OLattice<T>& dest, const Op& op, const QDPExpr<RH
   // std::cout << "member true = " << co << "   of " << hi << "\n";
   
 
-  
-
   AddressLeaf addr_leaf;
 
-  addr_leaf.addr.push_back(AddressLeaf::Types(s.start()));
-  addr_leaf.addr.push_back(AddressLeaf::Types(s.end()));
+  addr_leaf.addr.push_back(AddressLeaf::Types(0)); // 'lo' is inserted by autotuner
+  addr_leaf.addr.push_back(AddressLeaf::Types(0)); // 'hi' is inserted by autotuner
+
+  // addr_leaf.addr.push_back(AddressLeaf::Types(s.start()));
 
   int junk_dest = forEach(dest, addr_leaf, NullCombine());
   AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
   int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
-
-
 
   //std::vector<void*> addr;
 
@@ -236,12 +238,14 @@ function_exec(void * function, OLattice<T>& dest, const Op& op, const QDPExpr<RH
   //   std::cout << "addr = " << &addr_leaf.addr[i] << "\n";
   // }
 
-  void (*FP)(void*) = (void (*)(void*))(intptr_t)function;
+  //void (*FP)(void*) = (void (*)(void*))(intptr_t)function;
 
-  std::cout << "calling..\n";
-  FP( addr_leaf.addr.data() );
-  std::cout << "..done\n";
-  //jit_launch(function,th_count,addr);
+  //std::cout << "calling..\n";
+  //FP( addr_leaf.addr.data() );
+  //std::cout << "..done\n";
+
+  
+  jit_call(function,th_count,addr_leaf);
 
 
   if (offnode_maps > 0) {
@@ -252,7 +256,7 @@ function_exec(void * function, OLattice<T>& dest, const Op& op, const QDPExpr<RH
     th_count = faceCount;
     idx_inner_dev = idx_face_dev;
 
-    //jit_launch(function,th_count,addr);
+    //jit_call(function,th_count,addr);
   }
 #endif
 }

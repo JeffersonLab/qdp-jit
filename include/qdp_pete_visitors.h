@@ -60,6 +60,20 @@ struct AddressLeaf
     bool   bl;
   };
 
+  AddressLeaf() {    
+    //std::cout << "AddressLeaf default ctor\n";
+  }
+
+  AddressLeaf(const AddressLeaf& cp) {
+    addr = cp.addr;
+    //std::cout << "AddressLeaf copy ctor my_size = " << addr.size() << "\n";
+  }
+
+  AddressLeaf& operator=(const AddressLeaf& cp) {
+    addr = cp.addr;
+    //std::cout << "AddressLeaf assignment my_size = " << addr.size() << "\n";
+  }
+
   mutable std::vector<Types> addr;
   void setAddr(void* p) const {
     //std::cout << "AddressLeaf::setAddr " << p << "\n";
