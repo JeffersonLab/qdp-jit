@@ -24,8 +24,8 @@ namespace QDP {
 
     JitMainLoop() {
       llvm_start_new_function();
-      p_lo           = llvm_add_param<int>();
-      p_hi           = llvm_add_param<int>();
+      p_lo           = llvm_add_param<std::int64_t>();
+      p_hi           = llvm_add_param<std::int64_t>();
     }
 
     llvm::Value* getIdx() {

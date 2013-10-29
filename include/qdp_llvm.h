@@ -13,9 +13,12 @@
 #include "llvm/Analysis/Passes.h"
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/IPO.h"
+#include "llvm/Transforms/Vectorize.h"
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Target/TargetMachine.h"
+#include "llvm/Target/TargetLowering.h"
+#include "llvm/Target/TargetLibraryInfo.h"
 #include "llvm/Support/ToolOutputFile.h"
 #include "llvm/ADT/OwningPtr.h"
 #include "llvm/Support/FormattedStream.h"
@@ -32,6 +35,8 @@
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Attributes.h"
 #include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/Attributes.h"
+
 #include "llvm/Support/raw_os_ostream.h"
 
 #include "llvm/Support/DataStream.h"
@@ -39,6 +44,8 @@
 #include "llvm/Support/Program.h"
 #include "llvm/Support/system_error.h"
 #include "llvm/Support/MemoryBuffer.h"
+#include "llvm/Support/Debug.h"
+#include "llvm/Support/Host.h"
 
 #include "llvm/Linker.h"
 #include "llvm/Assembly/PrintModulePass.h"
@@ -62,6 +69,7 @@ namespace QDP {
   // llvm::IRBuilder<> *builder;
   // llvm::BasicBlock  *entry;
   extern llvm::Function    *mainFunc;
+  extern llvm::Function    *mainFunc_extern;
   extern llvm::Module      *Mod;
 
   llvm::Value * llvm_create_value( double v );
@@ -143,6 +151,7 @@ namespace QDP {
 
   template<> ParamRef llvm_add_param<bool>();
   template<> ParamRef llvm_add_param<bool*>();
+  template<> ParamRef llvm_add_param<std::int64_t>();
   template<> ParamRef llvm_add_param<int>();
   template<> ParamRef llvm_add_param<int*>();
   template<> ParamRef llvm_add_param<float>();

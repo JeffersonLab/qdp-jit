@@ -8,18 +8,17 @@ namespace QDP {
   llvm::IRBuilder<> *builder;
   llvm::BasicBlock  *entry;
   llvm::Function    *mainFunc;
+  llvm::Function    *mainFunc_extern;
   llvm::Module      *Mod;
   llvm::ExecutionEngine *TheExecutionEngine;
-  //llvm::Function    *jit_omp_get_num_threads;
 
-  //llvm::Value      *mainFunc;
+  llvm::TargetMachine *targetMachine;
 
-#if 0
-  std::map<CUfunction,std::string> mapCUFuncPTX;
-  std::string getPTXfromCUFunc(CUfunction f) {
-    return mapCUFuncPTX[f];
-  }
-#endif
+  llvm::FunctionPassManager *TheFPM;
+
+  void * fptr_mainFunc_extern;
+
+
 
   bool function_created;
 
@@ -84,6 +83,9 @@ namespace QDP {
   //Imported PTX Binary operations double precision
   llvm::Function *func_pow_f64;
   llvm::Function *func_atan2_f64;
+
+
+
 
 
   llvm::Function *llvm_get_func( const char * name )
@@ -157,22 +159,41 @@ namespace QDP {
 
 
   void llvm_wrapper_init() {
+    // llvm::InitializeAllTargets();
+    // llvm::InitializeAllTargetMCs();
+
     llvm::InitializeNativeTarget();
+
     Mod = new llvm::Module("module", llvm::getGlobalContext());
 
-    // Create the JIT.  This takes ownership of the module.
-    std::string ErrStr;
-    TheExecutionEngine = llvm::EngineBuilder(Mod).setErrorStr(&ErrStr).create();
-    if (!TheExecutionEngine) {
-      fprintf(stderr, "Could not create ExecutionEngine: %s\n", ErrStr.c_str());
-      exit(1);
-    }
+    // llvm::Triple TheTriple;
+    // TheTriple.setArch(llvm::Triple::x86_64);
+    // TheTriple.setVendor(llvm::Triple::UnknownVendor);
+    // TheTriple.setOS(llvm::Triple::Linux);
+    // TheTriple.setEnvironment(llvm::Triple::ELF);
+
+    // Mod->setTargetTriple(TheTriple.getTriple());
+
+
+    Mod->setTargetTriple(llvm::sys::getProcessTriple());
+
+    string error;
+    llvm::EngineBuilder engineBuilder(Mod);
+    engineBuilder.setMCPU(llvm::sys::getHostCPUName());
+    engineBuilder.setEngineKind(llvm::EngineKind::JIT);
+    engineBuilder.setOptLevel(llvm::CodeGenOpt::Aggressive);
+    engineBuilder.setErrorStr(&error);
+
+    TheExecutionEngine = engineBuilder.create();
+    
+    assert(TheExecutionEngine && "failed to create LLVM ExecutionEngine with error");
+
+    targetMachine = engineBuilder.selectTarget();
 
 
     function_created = false;
 
-    //llvm::InitializeAllTargets();
-    //llvm::InitializeAllTargetMCs();
+
     llvm::InitializeAllAsmPrinters();
     llvm::InitializeAllAsmParsers();
 
@@ -184,14 +205,6 @@ namespace QDP {
     llvm_type<double*>::value = llvm::Type::getDoublePtrTy(llvm::getGlobalContext());
     llvm_type<int*>::value    = llvm::Type::getIntNPtrTy(llvm::getGlobalContext(),32);
     llvm_type<bool*>::value   = llvm::Type::getIntNPtrTy(llvm::getGlobalContext(),1);
-
-    //llvm_init_libdevice();
-
-    // jit_omp_get_num_threads
-    //   = llvm::cast<llvm::Function>(Mod->getOrInsertFunction("omp_get_num_threads",
-    // 							    llvm::TypeBuilder<int(void), false>::get(Mod->getContext())));
-
-    // TheExecutionEngine->addGlobalMapping(jit_omp_get_num_threads, (void*)(intptr_t)&omp_get_num_threads);
   }  
 
 
@@ -205,8 +218,8 @@ namespace QDP {
 
     builder = new llvm::IRBuilder<>(llvm::getGlobalContext());
 
-    jit_build_seedToFloat();
-    jit_build_seedMultiply();
+    // jit_build_seedToFloat();
+    // jit_build_seedMultiply();
 
     vecParamType.clear();
     vecArgument.clear();
@@ -220,75 +233,47 @@ namespace QDP {
   }
 
 
-#if 1
+
   void llvm_create_function() {
     assert(!function_created && "Function already created");
     assert(vecParamType.size()>0 && "vecParamType.size()>0");
 
-    llvm::FunctionType *funcType = 
-      llvm::FunctionType::get( builder->getVoidTy() , 
-			       llvm::PointerType::get( 
-						 llvm::ArrayType::get( llvm::Type::getInt8Ty(llvm::getGlobalContext()) , 
-								       8 ) , 0  ),
-			       false); // no vararg
-    mainFunc = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, "main", Mod);
 
-    // Convert Parameter to Argument
+    // Create the main function
 
-    llvm::Argument* arg_ptr = mainFunc->arg_begin();
-    arg_ptr->setName( "arg_ptr" );
-
-
-
-    // Create entry basic block
-
-    llvm::BasicBlock* entry = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entrypoint", mainFunc);
-    builder->SetInsertPoint(entry);
-
-    llvm_counters::label_counter = 0;
-    function_created = true;
-
-
-
-    // Extract each parameter
-
-    int i=0;
-    for( std::vector< llvm::Type* >::const_iterator param_type = vecParamType.begin() ; 
-	 param_type != vecParamType.end() ; 
-	 param_type++,i++ ) {
-      (*param_type)->dump(); std::cout << "\n";
-      llvm::Value* gep = builder->CreateGEP( arg_ptr , llvm_create_value(i) );
-      llvm::Type* param_ptr_type = llvm::PointerType::get( *param_type , 0  );
-      llvm::Value* ptr_to_arg = builder->CreatePointerCast( gep , param_ptr_type );
-      llvm::Value* arg = builder->CreateLoad( ptr_to_arg );
-      vecArgument.push_back( arg );      
-    }
-
-    mainFunc->dump();
-  }
-#else
-  void llvm_create_function() {
-    assert(!function_created && "Function already created");
-    assert(vecParamType.size()>0 && "vecParamType.size()>0");
     llvm::FunctionType *funcType = 
       llvm::FunctionType::get( builder->getVoidTy() , 
 			       llvm::ArrayRef<llvm::Type*>( vecParamType.data() , vecParamType.size() ) , 
 			       false); // no vararg
     mainFunc = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, "main", Mod);
 
+    // Set argument names in 'main'
+
+    std::cout << "setting argument names in 'main'\n";
+
     unsigned Idx = 0;
     for (llvm::Function::arg_iterator AI = mainFunc->arg_begin(), AE = mainFunc->arg_end() ; AI != AE ; ++AI, ++Idx) {
       AI->setName( std::string("arg")+std::to_string(Idx) );
+
+      if ( vecParamType.at(Idx)->isPointerTy() ) {
+      	llvm::AttrBuilder B;
+      	B.addAttribute(llvm::Attribute::NoAlias);
+      	AI->addAttr( llvm::AttributeSet::get( llvm::getGlobalContext() , 0 ,  B ) );
+      }
+
       vecArgument.push_back( AI );
     }
 
-    llvm::BasicBlock* entry = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entrypoint", mainFunc);
-    builder->SetInsertPoint(entry);
+    llvm::BasicBlock* entry_main = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entrypoint", mainFunc);
+    builder->SetInsertPoint(entry_main);
+
+    mainFunc->dump();
 
     llvm_counters::label_counter = 0;
     function_created = true;
+
   }
-#endif
+
 
 
   llvm::Value * llvm_derefParam( ParamRef r ) {
@@ -455,7 +440,7 @@ namespace QDP {
 
   llvm::Value* llvm_add( llvm::Value* lhs , llvm::Value* rhs ) {
     return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateFAdd( lhs , rhs ); } , 
-		      [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateAdd( lhs , rhs ); } , 
+		      [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateNSWAdd( lhs , rhs ); } , 
 		      lhs , rhs ); }
 
   llvm::Value* llvm_sub( llvm::Value* lhs , llvm::Value* rhs ) {
@@ -546,6 +531,10 @@ namespace QDP {
   }
   template<> ParamRef llvm_add_param<bool*>() { 
     vecParamType.push_back( llvm::Type::getInt1PtrTy(llvm::getGlobalContext()) );
+    return vecParamType.size()-1;
+  }
+  template<> ParamRef llvm_add_param<std::int64_t>() { 
+    vecParamType.push_back( llvm::Type::getInt64Ty(llvm::getGlobalContext()) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<int>() { 
@@ -727,11 +716,6 @@ namespace QDP {
   // llvm::Value * llvm_call_special_ctaidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.x"); }
 
 
-
-
-  // llvm::Value * llvm_omp_get_num_threads() { 
-  //   return builder->CreateCall( jit_omp_get_num_threads );
-  // }
 
 
 #if 0
@@ -1102,46 +1086,105 @@ namespace QDP {
   {
     //addKernelMetadata( mainFunc );
 
-    QDPIO::cerr << "LLVM IR function\n";
+    QDPIO::cerr << "LLVM IR function (before passes)\n";
+    //mainFunc->dump();
+    Mod->dump();
+
+    QDPIO::cerr << "Verifying main function\n";
+    llvm::verifyFunction(*mainFunc);
+    //QDPIO::cerr << "Verifying main_extern function\n";
+    //assert( mainFunc_extern && "mainFunc_extern is NULL");
+    //mainFunc_extern->dump();
+    //llvm::verifyFunction(*mainFunc_extern);
+
+    QDPIO::cerr << "running passes ...\n";
+
+    static llvm::FunctionPassManager *functionPassManager = NULL;
+    if (functionPassManager == NULL) {
+      llvm::PassRegistry &registry = *llvm::PassRegistry::getPassRegistry();
+      initializeScalarOpts(registry);
+
+      functionPassManager = new llvm::FunctionPassManager(Mod);
+      functionPassManager->add(llvm::createVerifierPass(llvm::PrintMessageAction));
+      targetMachine->addAnalysisPasses(*functionPassManager);
+      functionPassManager->add(new llvm::TargetLibraryInfo(llvm::Triple(Mod->getTargetTriple())));
+      functionPassManager->add(new llvm::DataLayout(Mod));
+      functionPassManager->add(llvm::createBasicAliasAnalysisPass());
+      functionPassManager->add(llvm::createLICMPass());
+      functionPassManager->add(llvm::createGVNPass());
+      functionPassManager->add(llvm::createLoopVectorizePass());
+      functionPassManager->add(llvm::createInstructionCombiningPass());
+      functionPassManager->add(llvm::createEarlyCSEPass());
+      functionPassManager->add(llvm::createCFGSimplificationPass());
+
+    }
+    llvm::DebugFlag = true;
+    llvm::setCurrentDebugType("loop-vectorize");
+
+    functionPassManager->run(*mainFunc);
+
     mainFunc->dump();
 
-    QDPIO::cerr << "Verifying function\n";
-    llvm::verifyFunction(*mainFunc);
 
-    void *FPtr = TheExecutionEngine->getPointerToFunction( mainFunc );
+    // Right now a trampoline function which calls the main function
+    // is necessary. For the auto-vectorizer we need the arguments to
+    // to be noalias. Adding this attribute to a pointer is only possible
+    // to function arguments. Since from host code I can only call
+    // functions with a static signature, this cannot be done in one
+    // step.
 
-    // union types {
-    //   int i32;
-    //   float *ptr_float;
-    // };
-    // std::array<types,5> args;
+    // Create the 'trampoline' function
 
-    // void (*FP)(void*) = (void (*)(void*))(intptr_t)FPtr;
+    llvm::FunctionType *funcType = 
+      llvm::FunctionType::get( builder->getVoidTy() , 
+			       llvm::PointerType::get( 
+						 llvm::ArrayType::get( llvm::Type::getInt8Ty(llvm::getGlobalContext()) , 
+								       8 ) , 0  ),
+			       false); // no vararg
 
-    // std::cerr << FPtr << "\n";
+    llvm::Function *mainFunc_extern = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, "main_extern", Mod);
 
-    // LatticeReal a,b,c;
-    // a.elem(1)=1.0;
-    // b.elem(1)=2.0;
-    // c.elem(1)=3.0;
+    // Convert Parameter to Argument
 
-    // args[0].i32 = 0;
-    // args[1].i32 = 10;
-    // args[2].ptr_float = (float*)a.getF();
-    // args[3].ptr_float = (float*)b.getF();
-    // args[4].ptr_float = (float*)c.getF();
+    llvm::Argument* arg_ptr = mainFunc_extern->arg_begin();
+    arg_ptr->setName( "arg_ptr" );
 
-    // std::cout << "calling...\n";
+    // Create entry basic block
 
-    // FP( (void*)&args );
+    llvm::BasicBlock* entry = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entrypoint", mainFunc_extern);
+    builder->SetInsertPoint(entry);
 
-    // std::cerr << a.elem(1) << " " << b.elem(1) << " " << c.elem(1) << "\n";
+    // Extract each parameter
 
-    // QDP_error_exit("let's see");
+    std::vector<llvm::Value*> vecCallArgument;
 
-    //mapCUFuncPTX[func] = ptx_kernel;
+    std::cout << "Building trampoline with the following arguments:\n";
 
-    return FPtr;
+    int i=0;
+    for( std::vector< llvm::Type* >::const_iterator param_type = vecParamType.begin() ; 
+    	 param_type != vecParamType.end() ; 
+    	 param_type++,i++ ) {
+      (*param_type)->dump(); std::cout << "\n";
+      llvm::Value* gep = builder->CreateGEP( arg_ptr , llvm_create_value(i) );
+      llvm::Type* param_ptr_type = llvm::PointerType::get( *param_type , 0  );
+      llvm::Value* ptr_to_arg = builder->CreatePointerCast( gep , param_ptr_type );
+      llvm::Value* arg = builder->CreateLoad( ptr_to_arg );
+      vecCallArgument.push_back( arg );      
+    }
+
+    // Call 'main' from 'main_extern'
+    
+    builder->CreateCall( mainFunc , llvm::ArrayRef<llvm::Value*>( vecCallArgument.data() , vecCallArgument.size() ) );
+    builder->CreateRetVoid();
+
+    mainFunc_extern->dump();
+
+    std::cout << "in get function: Verifying main_extern function\n";
+    llvm::verifyFunction(*mainFunc_extern);
+    std::cout << "in get function: JIT compiling main_extern ...\n";
+    fptr_mainFunc_extern = TheExecutionEngine->getPointerToFunction( mainFunc_extern );
+
+    return fptr_mainFunc_extern; 
   }
 
 

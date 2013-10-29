@@ -51,11 +51,10 @@ struct ParamLeaf {};
 struct AddressLeaf
 {
   union Types {
-    Types() {}
-    Types(int i):in(i) {}
     void * ptr;
     float  fl;
     int    in;
+    std::int64_t in64;
     double db;
     bool   bl;
   };
@@ -94,9 +93,15 @@ struct AddressLeaf
     addr.push_back(t);
   }
   void setLit( int i ) const {
-    //std::cout << "AddressLeaf::setLit int " << i << "\n";
+    std::cout << "AddressLeaf::setLit int " << i << "\n";
     Types t;
     t.in = i;
+    addr.push_back(t);
+  }
+  void setLit( std::int64_t i ) const {
+    std::cout << "AddressLeaf::setLit std::int64_t " << i << "\n";
+    Types t;
+    t.in64 = i;
     addr.push_back(t);
   }
   void setLit( bool b ) const {

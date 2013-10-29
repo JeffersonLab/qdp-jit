@@ -23,8 +23,8 @@ namespace QDP {
 
     int threads_num;
     int myId;
-    int lo = 0;
-    int hi = site_count;
+    std::int64_t lo = 0;
+    std::int64_t hi = site_count;
     AddressLeaf my_args;
 
     omp_set_num_threads(th_count);
@@ -37,8 +37,8 @@ namespace QDP {
       hi = site_count*(myId+1)/threads_num;
 
       my_args = args;
-      my_args.addr[0] = lo;
-      my_args.addr[1] = hi;
+      my_args.addr[0].in64 = lo;
+      my_args.addr[1].in64 = hi;
 
       FP( my_args.addr.data() );
 #pragma omp barrier

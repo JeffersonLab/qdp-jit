@@ -231,7 +231,7 @@ function_exec(void * function, OLattice<T>& dest, const Op& op, const QDPExpr<RH
   //FP( addr_leaf.addr.data() );
   //std::cout << "..done\n";
 
-  std::cout << "calling eval(Lattice,Lattice)..\n";  
+  std::cout << "calling eval(Lattice,Lattice).. " << addr_leaf.addr.size() << "\n";  
   jit_call(function,th_count,addr_leaf);
 
 
