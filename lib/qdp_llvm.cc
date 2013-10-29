@@ -18,9 +18,9 @@ namespace QDP {
 
   void * fptr_mainFunc_extern;
 
-
-
+  bool function_started;
   bool function_created;
+
 
   std::vector< llvm::Type* > vecParamType;
   std::vector< llvm::Value* > vecArgument;
@@ -192,6 +192,7 @@ namespace QDP {
 
 
     function_created = false;
+    function_started = false;
 
 
     llvm::InitializeAllAsmPrinters();
@@ -214,6 +215,10 @@ namespace QDP {
 
 
   void llvm_start_new_function() {
+    assert( !function_started && "Function already started");
+    function_started = true;
+    function_created = false;
+
     QDP_info_primary( "Staring new LLVM function ...");
 
     builder = new llvm::IRBuilder<>(llvm::getGlobalContext());
@@ -223,7 +228,6 @@ namespace QDP {
 
     vecParamType.clear();
     vecArgument.clear();
-    function_created = false;
 
     //llvm_setup_math_functions();
 
@@ -236,6 +240,7 @@ namespace QDP {
 
   void llvm_create_function() {
     assert(!function_created && "Function already created");
+    assert(function_started && "Function not started");
     assert(vecParamType.size()>0 && "vecParamType.size()>0");
 
 
@@ -1084,6 +1089,9 @@ namespace QDP {
 
   void * llvm_get_function(const char* fname)
   {
+    assert(function_created && "Function not created");
+    assert(function_started && "Function not started");
+
     //addKernelMetadata( mainFunc );
 
     QDPIO::cerr << "LLVM IR function (before passes)\n";
@@ -1183,6 +1191,9 @@ namespace QDP {
     llvm::verifyFunction(*mainFunc_extern);
     std::cout << "in get function: JIT compiling main_extern ...\n";
     fptr_mainFunc_extern = TheExecutionEngine->getPointerToFunction( mainFunc_extern );
+
+    function_created = false;
+    function_started = false;
 
     return fptr_mainFunc_extern; 
   }
