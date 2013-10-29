@@ -252,6 +252,12 @@ namespace QDP {
   void jit_get_empty_arguments(AddressLeaf& addr_leaf) {
     addr_leaf.addr.push_back( AddressLeaf::Types() ); // 'lo' is inserted by autotuner
     addr_leaf.addr.push_back( AddressLeaf::Types() ); // 'hi' is inserted by autotuner
+
+    addr_leaf.addr.push_back( AddressLeaf::Types() );
+    addr_leaf.addr.back().bl = true; // ordered Subset ?
+
+    addr_leaf.addr.push_back( AddressLeaf::Types() );
+    addr_leaf.addr.back().in64 = 0;  // Subset.start
   }
 
 

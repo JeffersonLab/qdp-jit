@@ -26,11 +26,43 @@ namespace QDP {
       llvm_start_new_function();
       p_lo           = llvm_add_param<std::int64_t>();
       p_hi           = llvm_add_param<std::int64_t>();
+      p_ordered      = llvm_add_param<bool>();
+      p_start        = llvm_add_param<std::int64_t>();
     }
 
     llvm::Value* getIdx() {
-      r_lo        = llvm_derefParam( p_lo );
-      r_hi          = llvm_derefParam( p_hi );
+      r_lo_in = llvm_derefParam( p_lo );
+      r_hi_in = llvm_derefParam( p_hi );
+
+      llvm::Value * r_ordered      = llvm_derefParam( p_ordered );
+      llvm::Value * r_start        = llvm_derefParam( p_start );
+
+      llvm::BasicBlock * block_ordered = llvm_new_basic_block();
+      llvm::BasicBlock * block_not_ordered = llvm_new_basic_block();
+      llvm::BasicBlock * block_ordered_exit = llvm_new_basic_block();
+      llvm::Value* r_lo_added;
+      llvm::Value* r_hi_added;
+      llvm_cond_branch( r_ordered , block_ordered , block_not_ordered );
+      {
+	llvm_set_insert_point(block_not_ordered);
+	llvm_branch( block_ordered_exit );
+      }
+      {
+	llvm_set_insert_point(block_ordered);
+	r_lo_added = llvm_add( r_lo_in , r_start );
+	r_hi_added = llvm_add( r_hi_in , r_start );
+	llvm_branch( block_ordered_exit );
+      }
+      llvm_set_insert_point(block_ordered_exit);
+
+      r_lo = llvm_phi( r_lo_in->getType() , 2 );
+      r_hi = llvm_phi( r_hi_in->getType() , 2 );
+
+      r_lo->addIncoming( r_lo_in , block_not_ordered );
+      r_hi->addIncoming( r_hi_in , block_not_ordered );
+
+      r_lo->addIncoming( r_lo_added , block_ordered );
+      r_hi->addIncoming( r_hi_added , block_ordered );
 
       block_entry_point = llvm_get_insert_point();
       block_site_loop = llvm_new_basic_block();
@@ -43,6 +75,32 @@ namespace QDP {
       r_idx      = llvm_phi( r_lo->getType() , 2 );
       return r_idx;
     }
+
+
+    // llvm::Value* getIdx() {
+    //   r_lo_in = llvm_derefParam( p_lo );
+    //   r_hi_in = llvm_derefParam( p_hi );
+
+    //   r_lo = llvm_phi( r_lo_in->getType() , 1 );
+    //   r_hi = llvm_phi( r_hi_in->getType() , 1 );
+
+    //   block_entry_point = llvm_get_insert_point();
+    //   block_site_loop = llvm_new_basic_block();
+    //   block_site_loop_exit = llvm_new_basic_block();
+    //   block_end_loop_body = llvm_new_basic_block();
+
+    //   llvm_branch( block_site_loop );
+    //   llvm_set_insert_point(block_site_loop);
+
+    //   r_lo->addIncoming( r_lo_in , block_site_loop );
+    //   r_hi->addIncoming( r_hi_in , block_site_loop );
+
+    //   r_idx      = llvm_phi( r_lo->getType() , 2 );
+    //   return r_idx;
+    // }
+
+
+
 
     void done() {
       llvm_branch( block_end_loop_body );
@@ -63,14 +121,18 @@ namespace QDP {
   private:
     ParamRef p_lo;
     ParamRef p_hi;
+    ParamRef p_ordered;
+    ParamRef p_start;
     llvm::PHINode* r_idx;
     llvm::Value*   r_idx_new;
     llvm::BasicBlock * block_end_loop_body;
     llvm::BasicBlock * block_entry_point;
     llvm::BasicBlock * block_site_loop;
     llvm::BasicBlock * block_site_loop_exit;
-    llvm::Value * r_lo;
-    llvm::Value * r_hi;
+    llvm::Value * r_lo_in;
+    llvm::Value * r_hi_in;
+    llvm::PHINode * r_lo;
+    llvm::PHINode * r_hi;
 
   };
 

@@ -110,6 +110,12 @@ struct AddressLeaf
     t.bl = b;
     addr.push_back(t);
   }
+  void setOrdered( bool o ) {
+    addr[2].bl = o;
+  }
+  void setStart( std::int64_t s ) {
+    addr[3].in64 = s;
+  }
 };
 
 

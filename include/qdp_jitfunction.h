@@ -10,23 +10,6 @@
 namespace QDP {
 
 
-#if 0
-void bf()
-{
-  JitMainLoop loop;
-
-  ParamLeaf param_leaf;
-  // add dest, op, RHS
-
-  llvm::Value * r_idx = loop.getIdx();
-
-  // my custom operation
-
-  loop.done();
-
-}
-#endif
-
 
 template<class T, class T1, class Op, class RHS>
 void *
@@ -34,12 +17,10 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 {
   JitMainLoop loop;
 
-  // ParamRef p_ordered      = llvm_add_param<bool>();
-  // ParamRef p_start        = llvm_add_param<int>();
 
-  // ParamRef p_do_site_perm = llvm_add_param<bool>();
-  // ParamRef p_site_table   = llvm_add_param<int*>();
-  // ParamRef p_member_array = llvm_add_param<bool*>();
+  //ParamRef p_do_site_perm = llvm_add_param<bool>();
+  //ParamRef p_site_table   = llvm_add_param<int*>();
+  //ParamRef p_member_array = llvm_add_param<bool*>();
 
   ParamLeaf param_leaf;
 
@@ -52,15 +33,14 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
   // llvm::Value * r_ordered      = llvm_derefParam( p_ordered );
-  // llvm::Value * r_th_count     = llvm_derefParam( p_th_count );
-  // llvm::Value * r_do_site_perm = llvm_derefParam( p_do_site_perm );
+  // llvm::Value * r_start        = llvm_derefParam( p_start );
 
-
+  //llvm::Value * r_do_site_perm = llvm_derefParam( p_do_site_perm );
   //llvm::Value* r_no_site_perm = llvm_not( r_do_site_perm );  
+
   //mainFunc->dump();
   //llvm::Value* r_idx = llvm_thread_idx();
   ////llvm_cond_exit( llvm_ge( r_idx , r_th_count ) );
-
 
   // llvm::BasicBlock * block_no_site_perm_exit = llvm_new_basic_block();
   // llvm::BasicBlock * block_no_site_perm = llvm_new_basic_block();
@@ -71,10 +51,14 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   // llvm::Value* r_idx_perm_phi0;
   // llvm::Value* r_idx_perm_phi1;
 
+  llvm::Value * r_idx = loop.getIdx();
+
+
   // llvm_cond_branch( r_no_site_perm , block_no_site_perm , block_site_perm ); 
   // {
   //   llvm_set_insert_point(block_site_perm);
-  //   r_idx_perm_phi0 = llvm_array_type_indirection( p_site_table , r_idx_thread ); // PHI 0
+  //   r_idx_perm_phi0 = llvm_cast( r_idx_thread->getType() , 
+  // 				 llvm_array_type_indirection( p_site_table , r_idx_thread ) ); // PHI 0
   //   llvm_branch( block_no_site_perm_exit );
   // }
   // {
@@ -96,6 +80,7 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   // r_idx->addIncoming( r_idx_perm_phi1 , block_add_start );
   // r_idx->addIncoming( r_idx_thread , block_add_start_else );
 
+
   // llvm::BasicBlock * block_ordered = llvm_new_basic_block();
   // llvm::BasicBlock * block_not_ordered = llvm_new_basic_block();
   // llvm::BasicBlock * block_ordered_exit = llvm_new_basic_block();
@@ -115,7 +100,7 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   // }
   // llvm_set_insert_point(block_ordered_exit);
 
-  llvm::Value * r_idx = loop.getIdx();
+
 
   op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ), 
    	  forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , r_idx ), OpCombine()));
@@ -185,6 +170,46 @@ function_exec(void * function, OLattice<T>& dest, const Op& op, const QDPExpr<RH
 
   AddressLeaf addr_leaf;
   jit_get_empty_arguments(addr_leaf);
+
+  addr_leaf.setOrdered( s.hasOrderedRep() );
+  addr_leaf.setStart( s.start() );
+
+  // ParamRef p_ordered      = llvm_add_param<bool>();
+  // ParamRef p_start        = llvm_add_param<int>();
+  // ParamRef p_do_site_perm = llvm_add_param<bool>();
+  // //ParamRef p_site_table   = llvm_add_param<int*>();
+  // //ParamRef p_member_array = llvm_add_param<bool*>();
+
+
+
+  //addr_leaf.addr.push_back( AddressLeaf::Types() );
+  //addr_leaf.addr.back().bl = do_soffset_index;
+
+  // addr_leaf.addr.push_back( AddressLeaf::Types() );
+  // addr_leaf.addr.back().ptr = idx_inner_dev;
+
+
+  //addr.push_back( &th_count );
+  //std::cout << "thread_count = " << th_count << "\n";
+
+  // addr.push_back( &start );
+  // std::cout << "start        = " << start << "\n";
+
+  // addr.push_back( &end );
+  // std::cout << "end          = " << end << "\n";
+
+  //addr.push_back( &do_soffset_index );
+  //std::cout << "addr do_soffset_index =" << addr[2] << " " << do_soffset_index << "\n";
+
+  //addr.push_back( &idx_inner_dev );
+  //std::cout << "addr idx_inner_dev = " << addr[3] << " " << idx_inner_dev << "\n";
+
+  //addr.push_back( &subset_member );
+  //std::cout << "addr subset_dev (member_array) = " << addr[3] << " " << subset_member << "\n";
+
+
+
+
 
   // addr_leaf.addr.push_back(AddressLeaf::Types(0)); // 'lo' is inserted by autotuner
   // addr_leaf.addr.push_back(AddressLeaf::Types(0)); // 'hi' is inserted by autotuner
@@ -297,6 +322,9 @@ function_lat_sca_exec(void* function, OLattice<T>& dest, const Op& op, const QDP
 
   AddressLeaf addr_leaf;
   jit_get_empty_arguments(addr_leaf);
+
+  addr_leaf.setOrdered( s.hasOrderedRep() );
+  addr_leaf.setStart( s.start() );
 
   int junk_dest = forEach(dest, addr_leaf, NullCombine());
   AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
