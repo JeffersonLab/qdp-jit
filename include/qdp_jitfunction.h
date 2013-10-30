@@ -146,67 +146,51 @@ function_lat_sca_exec(void* function, OLattice<T>& dest, const Op& op, const QDP
 
 
 
-#if 0
+
 template<class T>
-CUfunction
+void *
 function_zero_rep_build(OLattice<T>& dest)
 {
-  std::vector<ParamRef> params = jit_function_preamble_param();
+  JitMainLoop loop;
 
   ParamLeaf param_leaf;
 
   typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
   FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
 
-  llvm::Value * r_idx = jit_function_preamble_get_idx( params );
+  llvm::Value * r_idx = loop.getIdx();
 
   zero_rep( dest_jit.elem(JitDeviceLayout::Coalesced,r_idx) );
 
-  return jit_function_epilogue_get_cuf("jit_zero.ptx");
+  loop.done();
+
+  return jit_function_epilogue_get("jit_zero.ptx");
 }
-#endif
 
 
 
 
 
-#if 0
-template<class T, class T1, class Op, class RHS>
-CUfunction
-function_sca_sca_build(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
+template<class T>
+void 
+function_zero_rep_exec(void * function, OLattice<T>& dest, const Subset& s )
 {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-  QDP_error_exit("ni");
-#if 0
+  AddressLeaf addr_leaf;
+  jit_get_empty_arguments(addr_leaf);
 
-  CUfunction func;
+  addr_leaf.setOrdered( s.hasOrderedRep() );
+  addr_leaf.setStart( s.start() );
 
-  llvm_start_new_function();
+  int junk_0 = forEach(dest, addr_leaf, NullCombine());
 
-  llvm::Value * r_idx = llvm_thread_idx();
-
-  ParamLeaf param_leaf(  r_idx );
-
-  typedef typename LeafFunctor<OScalar<T>, ParamLeaf>::Type_t  FuncRet_t;
-  FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
-
-  auto op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
-
-  // Now the arguments for the rhs
-  typedef typename ForEach<QDPExpr<RHS,OScalar<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
-  //View_t rhs_view(forEach(rhs, param_leaf_indexed, TreeCombine()));
-  View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
-
-  //printme<View_t>();
-
-  op_jit(dest_jit.elem( JitDeviceLayout::Scalar ), forEach(rhs_view, ViewLeaf( JitDeviceLayout::Scalar ), OpCombine()));
-
-  llvm_exit();
-
-  return llvm_get_cufunction("ll_sca_sca.ll");
-#endif
+  std::cout << "calling zero_rep(Lattice,Subset)..\n";
+  jit_call( function , s.numSiteTable() , addr_leaf );
 }
-#endif
+
+
+
+
+
 
 
 
@@ -333,46 +317,6 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
 
 
 
-#if 0
-template<class T, class T1, class RHS>
-CUfunction
-function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs )
-{
-  typedef typename WordType<T1>::Type_t WT;
-
-  CUfunction func;
-
-  llvm_start_new_function();
-
-  ParamRef p_lo      = llvm_add_param<int>();
-  ParamRef p_hi      = llvm_add_param<int>();
-  ParamRef p_soffset = llvm_add_param<int*>();
-  ParamRef p_sndbuf  = llvm_add_param<WT*>();
-
-  ParamLeaf param_leaf;
-
-  typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
-  View_t rhs_view( forEach( rhs , param_leaf , TreeCombine() ) );
-
-  typedef typename JITType< OLattice<T> >::Type_t DestView_t;
-  DestView_t dest_jit( p_sndbuf );
-
-  llvm::Value * r_lo      = llvm_derefParam( p_lo );
-  llvm::Value * r_hi      = llvm_derefParam( p_hi );
-  llvm::Value * r_idx     = llvm_thread_idx();  
-
-  llvm_cond_exit( llvm_ge( r_idx , r_hi ) );
-
-  llvm::Value * r_idx_site = llvm_array_type_indirection( p_soffset , r_idx );
-  
-  OpAssign()( dest_jit.elem( JitDeviceLayout::Scalar , r_idx ) , 
-	      forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , r_idx_site ) , OpCombine() ) );
-
-  return jit_function_epilogue_get_cuf("jit_gather.ll");
-}
-#endif
-
-
 
 
 template<class T1, class RHS>
@@ -400,152 +344,6 @@ function_gather_exec( void * function, void * send_buf , const Map& map , const 
 
 
 
-#if 0
-template<class T1, class RHS>
-void
-function_gather_exec( CUfunction function, void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs )
-{
-  AddressLeaf addr_leaf;
-
-  int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
-
-  //QDPCache::Instance().printLockSets();
-
-  // lo <= idx < hi
-  int lo = 0;
-  int hi = map.soffset().size();
-
-  //QDP_info("gather sites into send_buf lo=%d hi=%d",lo,hi);
-
-  int soffsetsId = map.getSoffsetsId();
-  void * soffsetsDev = QDPCache::Instance().getDevicePtr( soffsetsId );
-
-#if 0
-  int size = QDPCache::Instance().getSize( soffsetsId );
-  std::cout << "allocating host memory for soffset, size = " << size << "\n";
-  unsigned char * soff_host = new unsigned char[ size ];
-  std::cout << "copying...\n";
-  CudaMemcpyD2H(soff_host,soffsetsDev,size);
-  for(int i=0;i<size/4;i++)
-    std::cout << ((int*)soff_host)[i] << " ";
-  std::cout << "\n";
-  delete[] soff_host;
-#endif
-
-  //QDPCache::Instance().printLockSets();
-
-  std::vector<void*> addr;
-
-  addr.push_back( &lo );
-  //std::cout << "addr lo =" << addr[0] << "\n";
-
-  addr.push_back( &hi );
-  //std::cout << "addr hi =" << addr[1] << "\n";
-
-  addr.push_back( &soffsetsDev );
-  //std::cout << "addr soffsetsDev =" << addr[3] << " " << soffsetsDev << "\n";
-
-  addr.push_back( &send_buf );
-  //std::cout << "addr send_buf =" << addr[4] << " " << send_buf << "\n";
-
-  for(int i=0; i < addr_leaf.addr.size(); ++i) {
-    addr.push_back( &addr_leaf.addr[i] );
-    //std::cout << "addr rhs =" << addr[addr.size()-1] << " " << addr_leaf.addr[i] << "\n";
-  }
-
-  jit_launch(function,hi-lo,addr);
-
-  std::cout << "calling gather.. " << addr_leaf.addr.size() << "\n";  
-  jit_call(function,th_count,addr_leaf);
-
-}
-#endif
-
-
-#if 0
-#endif
-
-
-
-
-#if 0
-template<class T>
-void 
-function_zero_rep_exec(CUfunction function, OLattice<T>& dest, const Subset& s )
-{
-  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-
-  AddressLeaf addr_leaf;
-
-  int junk_0 = forEach(dest, addr_leaf, NullCombine());
-
-  int start = s.start();
-  int end = s.end();
-  bool ordered = s.hasOrderedRep();
-  int th_count = ordered ? s.numSiteTable() : Layout::sitesOnNode();
-
-  void * subset_member = QDPCache::Instance().getDevicePtr( s.getIdMemberTable() );
-
-  std::vector<void*> addr;
-
-  addr.push_back( &ordered );
-  //std::cout << "ordered = " << ordered << "\n";
-
-  addr.push_back( &th_count );
-  //std::cout << "thread_count = " << th_count << "\n";
-
-  addr.push_back( &start );
-  //std::cout << "start        = " << start << "\n";
-
-  addr.push_back( &end );
-  //std::cout << "end          = " << end << "\n";
-
-  addr.push_back( &subset_member );
-  //std::cout << "addr idx_inner_dev = " << addr[3] << " " << idx_inner_dev << "\n";
-
-  int addr_dest=addr.size();
-  for(int i=0; i < addr_leaf.addr.size(); ++i) {
-    addr.push_back( &addr_leaf.addr[i] );
-    //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
-  }
-
-  jit_launch(function,th_count,addr);
-}
-#endif
-
-
-
-
-
-
-
-
-#if 0
-template<class T, class T1, class Op, class RHS>
-void 
-function_sca_sca_exec(CUfunction function, OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
-{
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-  QDP_error_exit("ni");
-#if 0
-  AddressLeaf addr_leaf;
-
-  int junk_dest = forEach(dest, addr_leaf, NullCombine());
-  AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
-  int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
-
-  std::vector<void*> addr;
-
-  int addr_dest=addr.size();
-  for(int i=0; i < addr_leaf.addr.size(); ++i) {
-    addr.push_back( &addr_leaf.addr[i] );
-    //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
-  }
-
-  CudaLaunchKernel(function,   1,1,1,    1,1,1,    0, 0, &addr[0] , 0);
-#endif
-}
-#endif
 
 
 

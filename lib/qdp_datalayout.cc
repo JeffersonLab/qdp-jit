@@ -10,7 +10,7 @@ namespace QDP {
     const size_t nIr = 3; // reality
 
     int         Lv,Ls,Lc,Lr;
-    llvm::Value * iv,is,ic,ir;
+    llvm::Value *iv,*is,*ic,*ir;
 
     std::tie(Lv,iv) = a.at(nIv);
     std::tie(Ls,is) = a.at(nIs);
@@ -48,6 +48,7 @@ namespace QDP {
 #endif
 
 
+#if 1
   llvm::Value * datalayout( JitDeviceLayout lay , IndexDomainVector a ) {
     assert(a.size() > 0);
 
@@ -72,7 +73,7 @@ namespace QDP {
     }
     return offset;
   }
-
+#endif
 
 
 } // namespace
