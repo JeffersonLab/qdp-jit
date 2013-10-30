@@ -27,7 +27,7 @@ namespace QDP {
     if (lay == JitDeviceLayout::Coalesced) {
       return llvm_add(llvm_mul(llvm_add(llvm_mul( llvm_add(llvm_mul(ir,Ic),ic),Is),is),Iv),iv);
     } else
-      return llvm_add(llvm_mul(llvm_add(llvm_mul( llvm_add(llvm_mul(iv,Ir),ir),Ic),ic),Is),is);
+      return llvm_add(llvm_mul(llvm_add(llvm_mul( llvm_add(llvm_mul(iv,Is),is),Ic),ic),Ir),ir);
   }
 #endif
 
