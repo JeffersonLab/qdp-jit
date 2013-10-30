@@ -140,9 +140,12 @@ public:
   const multi1d<int>& goffset() const {return goffsets;}
   const multi1d<int>& soffset() const {return soffsets;}
   const multi1d<int>& roffset() const {return roffsets;}
-  int getRoffsetsId() const { return roffsetsId;}
-  int getSoffsetsId() const { return soffsetsId;}
-  int getGoffsetsId() const { return goffsetsId;}
+
+  multi1d<int>& soffset() {return soffsets;}
+
+  // int getRoffsetsId() const { return roffsetsId;}
+  // int getSoffsetsId() const { return soffsetsId;}
+  // int getGoffsetsId() const { return goffsetsId;}
 
   int getId() const {return myId;}
   bool hasOffnode() const { return offnodeP; }
@@ -329,24 +332,22 @@ struct ForEach<UnaryNode<FnMap, A>, AddressLeaf, NullCombine>
     inline
     static Type_t apply(const UnaryNode<FnMap, A>& expr, const AddressLeaf &a, const NullCombine &n)
     {
-      QDP_error_exit("ni addressleaf map apply");
-#if 0
       const Map& map = expr.operation().map;
       FnMap& fnmap = const_cast<FnMap&>(expr.operation());
 
-      int goffsetsId = expr.operation().map.getGoffsetsId();
-      void * goffsetsDev = QDPCache::Instance().getDevicePtr( goffsetsId );
+      // int goffsetsId = 
+      // void * goffsetsDev = QDPCache::Instance().getDevicePtr( goffsetsId );
       //QDP_info("Map:AddressLeaf: add goffset p=%p",goffsetsDev);
-      a.setAddr(goffsetsDev);
+      a.setAddr( const_cast<int*>(expr.operation().map.goffset().slice()) );
 
-      void * rcvBufDev = NULL;
+      void * rcvBuf = NULL;
       if (map.hasOffnode()) {
 	const FnMapRsrc& rRSrc = fnmap.getCached();
-	rcvBufDev = rRSrc.getRecvBufDevPtr();
+	rcvBuf = rRSrc.getRecvBufPtr();
       }
       //QDP_info("Map:AddressLeaf: add recv buf p=%p",rcvBufDev);
-      a.setAddr(rcvBufDev);
-#endif
+      a.setAddr(rcvBuf);
+
       return Type_t( ForEach<A, AddressLeaf, NullCombine>::apply( expr.child() , a , n ) );
     }
   };
@@ -365,8 +366,8 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
   inline static
   Type_t apply(const UnaryNode<FnMap, A> &expr, const ShiftPhase1 &f, const BitOrCombine &c)
   {
-    QDP_error_exit("ni addressleaf map apply");
-#if 0
+    //QDP_error_exit("ni addressleaf map apply");
+#if 1
     const Map& map = expr.operation().map;
     FnMap& fnmap = const_cast<FnMap&>(expr.operation());
 
@@ -397,13 +398,13 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
 	}
 
 #if 1
-	static CUfunction function;
+	static void * function;
 
 	// Build the function
 	if (function == NULL)
 	  {
 	    //std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
-	    function = function_gather_build<InnerType_t>( rRSrc.getSendBufDevPtr() , map , subexpr );
+	    function = function_gather_build<InnerType_t>( rRSrc.getSendBufPtr() , map , subexpr );
 	    //std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
 	  }
 	else
@@ -412,7 +413,7 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
 	  }
 
 	// Execute the function
-	function_gather_exec(function, rRSrc.getSendBufDevPtr() , map , subexpr );
+	function_gather_exec(function, rRSrc.getSendBufPtr() , map , subexpr );
 
 	rRSrc.send_receive();
 	

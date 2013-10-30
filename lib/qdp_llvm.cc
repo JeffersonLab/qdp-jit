@@ -272,7 +272,8 @@ namespace QDP {
     llvm::BasicBlock* entry_main = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entrypoint", mainFunc);
     builder->SetInsertPoint(entry_main);
 
-    mainFunc->dump();
+    if (Layout::primaryNode())
+      mainFunc->dump();
 
     llvm_counters::label_counter = 0;
     function_created = true;
@@ -1096,7 +1097,8 @@ namespace QDP {
 
     QDPIO::cerr << "LLVM IR function (before passes)\n";
     //mainFunc->dump();
-    Mod->dump();
+    if (Layout::primaryNode())
+      mainFunc->dump();
 
     QDPIO::cerr << "Verifying main function\n";
     llvm::verifyFunction(*mainFunc);
@@ -1131,7 +1133,9 @@ namespace QDP {
 
     functionPassManager->run(*mainFunc);
 
-    mainFunc->dump();
+    QDPIO::cerr << "LLVM IR function (after passes)\n";
+    if (Layout::primaryNode())
+      mainFunc->dump();
 
 
     // Right now a trampoline function which calls the main function

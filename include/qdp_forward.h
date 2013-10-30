@@ -146,9 +146,9 @@ namespace QDP
 
 
 
-#if 0
+#if 1
   template<class T, class T1, class RHS>
-  CUfunction
+  void *
   function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs );
 #endif
 

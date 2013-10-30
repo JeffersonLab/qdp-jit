@@ -30,8 +30,8 @@ public:
   void qmp_wait() const;
   void send_receive() const;
 
-  // void * getSendBufDevPtr() const { return send_buf_dev; }
-  // void * getRecvBufDevPtr() const { return recv_buf_dev; }
+  void * getSendBufPtr() const { return send_buf; }
+  void * getRecvBufPtr() const { return recv_buf; }
 
   bool bSet;
   mutable void * send_buf;

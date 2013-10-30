@@ -15,12 +15,11 @@ template<class T, class T1, class Op, class RHS>
 void *
 function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs)
 {
+  std::cout << __PRETTY_FUNCTION__ << "\n";
+
   JitMainLoop loop;
 
-
-  //ParamRef p_do_site_perm = llvm_add_param<bool>();
   //ParamRef p_site_table   = llvm_add_param<int*>();
-  //ParamRef p_member_array = llvm_add_param<bool*>();
 
   ParamLeaf param_leaf;
 
@@ -32,75 +31,7 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
   View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
-  // llvm::Value * r_ordered      = llvm_derefParam( p_ordered );
-  // llvm::Value * r_start        = llvm_derefParam( p_start );
-
-  //llvm::Value * r_do_site_perm = llvm_derefParam( p_do_site_perm );
-  //llvm::Value* r_no_site_perm = llvm_not( r_do_site_perm );  
-
-  //mainFunc->dump();
-  //llvm::Value* r_idx = llvm_thread_idx();
-  ////llvm_cond_exit( llvm_ge( r_idx , r_th_count ) );
-
-  // llvm::BasicBlock * block_no_site_perm_exit = llvm_new_basic_block();
-  // llvm::BasicBlock * block_no_site_perm = llvm_new_basic_block();
-  // llvm::BasicBlock * block_site_perm = llvm_new_basic_block();
-  // llvm::BasicBlock * block_add_start = llvm_new_basic_block();
-  // llvm::BasicBlock * block_add_start_else = llvm_new_basic_block();
-
-  // llvm::Value* r_idx_perm_phi0;
-  // llvm::Value* r_idx_perm_phi1;
-
   llvm::Value * r_idx = loop.getIdx();
-
-
-  // llvm_cond_branch( r_no_site_perm , block_no_site_perm , block_site_perm ); 
-  // {
-  //   llvm_set_insert_point(block_site_perm);
-  //   r_idx_perm_phi0 = llvm_cast( r_idx_thread->getType() , 
-  // 				 llvm_array_type_indirection( p_site_table , r_idx_thread ) ); // PHI 0
-  //   llvm_branch( block_no_site_perm_exit );
-  // }
-  // {
-  //   llvm_set_insert_point(block_no_site_perm);
-  //   llvm_cond_branch( r_ordered , block_add_start , block_add_start_else );
-  //   {
-  //     llvm_set_insert_point(block_add_start);
-  //     r_idx_perm_phi1 = llvm_add( r_idx_thread , r_start ); // PHI 1
-  //     llvm_branch( block_no_site_perm_exit );
-  //     llvm_set_insert_point(block_add_start_else);
-  //     llvm_branch( block_no_site_perm_exit );
-  //   }
-  // }
-  // llvm_set_insert_point(block_no_site_perm_exit);
-
-  // llvm::PHINode* r_idx = llvm_phi( r_idx_perm_phi0->getType() , 3 );
-
-  // r_idx->addIncoming( r_idx_perm_phi0 , block_site_perm );
-  // r_idx->addIncoming( r_idx_perm_phi1 , block_add_start );
-  // r_idx->addIncoming( r_idx_thread , block_add_start_else );
-
-
-  // llvm::BasicBlock * block_ordered = llvm_new_basic_block();
-  // llvm::BasicBlock * block_not_ordered = llvm_new_basic_block();
-  // llvm::BasicBlock * block_ordered_exit = llvm_new_basic_block();
-  // llvm_cond_branch( r_ordered , block_ordered , block_not_ordered );
-  // {
-  //   llvm_set_insert_point(block_not_ordered);
-  //   llvm::Value* r_ismember     = llvm_array_type_indirection( p_member_array , r_idx );
-  //   llvm::Value* r_ismember_not = llvm_not( r_ismember );
-  //   llvm_cond_exit( r_ismember_not ); 
-  //   llvm_branch( block_ordered_exit );
-  // }
-  // {
-  //   llvm_set_insert_point(block_ordered);
-  //   llvm_cond_exit( llvm_gt( r_idx , r_end ) );
-  //   llvm_cond_exit( llvm_lt( r_idx , r_start ) );
-  //   llvm_branch( block_ordered_exit );
-  // }
-  // llvm_set_insert_point(block_ordered_exit);
-
-
 
   op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ), 
    	  forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , r_idx ), OpCombine()));
@@ -116,57 +47,13 @@ template<class T, class T1, class Op, class RHS>
 void 
 function_exec(void * function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
 {
-  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-
-#if 1
-  //  std::cout << "function_exec 0\n";
-
   ShiftPhase1 phase1;
   int offnode_maps = forEach(rhs, phase1 , BitOrCombine());
-  //QDP_info("offnode_maps = %d",offnode_maps);
-
-  void * idx_inner_dev = NULL;
-  void * idx_face_dev = NULL;
-
-  // lo <= idx < hi
-  int start = s.start();
-  int end = s.end();
-  int th_count;
-  bool ordered = s.hasOrderedRep();
-  bool do_soffset_index;
-
-  int innerCount, faceCount;
-
-  if (offnode_maps > 0) {
-    assert(!"ni");
-    // int innerId, faceId;
-    // innerId = MasterMap::Instance().getIdInner(offnode_maps);
-    // innerCount = MasterMap::Instance().getCountInner(offnode_maps);
-    // faceId = MasterMap::Instance().getIdFace(offnode_maps);
-    // faceCount = MasterMap::Instance().getCountFace(offnode_maps);
-    // idx_inner_dev = QDPCache::Instance().getDevicePtr( innerId );
-    // idx_face_dev = QDPCache::Instance().getDevicePtr( faceId );
-    // th_count = innerCount;
-    // do_soffset_index = true;
-    //QDP_info("innerId = %d innerCount = %d faceId = %d  faceCount = %d",innerId,innerCount,faceId,faceCount);
-  } else {
-    th_count = s.hasOrderedRep() ? s.numSiteTable() : Layout::sitesOnNode();
-    do_soffset_index = false;
-  }
-
-
-
-  //void * subset_member = QDPCache::Instance().getDevicePtr( s.getIdMemberTable() );
-
-
-  // bool * member = new bool[QDPCache::Instance().getSize( s.getIdMemberTable() ) / sizeof(bool) ];
-  // CudaMemcpyD2H( member , subset_member , QDPCache::Instance().getSize( s.getIdMemberTable() ) );
-  // int co=0;
-  // for (int i=0;i<hi;i++)
-  //   if (member[i])
-  //     co++;
-  // std::cout << "member true = " << co << "   of " << hi << "\n";
   
+  QDP_info("offnode_maps = %d",offnode_maps);
+
+  ShiftPhase2 phase2;
+  forEach(rhs, phase2 , NullCombine());
 
   AddressLeaf addr_leaf;
   jit_get_empty_arguments(addr_leaf);
@@ -174,103 +61,12 @@ function_exec(void * function, OLattice<T>& dest, const Op& op, const QDPExpr<RH
   addr_leaf.setOrdered( s.hasOrderedRep() );
   addr_leaf.setStart( s.start() );
 
-  // ParamRef p_ordered      = llvm_add_param<bool>();
-  // ParamRef p_start        = llvm_add_param<int>();
-  // ParamRef p_do_site_perm = llvm_add_param<bool>();
-  // //ParamRef p_site_table   = llvm_add_param<int*>();
-  // //ParamRef p_member_array = llvm_add_param<bool*>();
-
-
-
-  //addr_leaf.addr.push_back( AddressLeaf::Types() );
-  //addr_leaf.addr.back().bl = do_soffset_index;
-
-  // addr_leaf.addr.push_back( AddressLeaf::Types() );
-  // addr_leaf.addr.back().ptr = idx_inner_dev;
-
-
-  //addr.push_back( &th_count );
-  //std::cout << "thread_count = " << th_count << "\n";
-
-  // addr.push_back( &start );
-  // std::cout << "start        = " << start << "\n";
-
-  // addr.push_back( &end );
-  // std::cout << "end          = " << end << "\n";
-
-  //addr.push_back( &do_soffset_index );
-  //std::cout << "addr do_soffset_index =" << addr[2] << " " << do_soffset_index << "\n";
-
-  //addr.push_back( &idx_inner_dev );
-  //std::cout << "addr idx_inner_dev = " << addr[3] << " " << idx_inner_dev << "\n";
-
-  //addr.push_back( &subset_member );
-  //std::cout << "addr subset_dev (member_array) = " << addr[3] << " " << subset_member << "\n";
-
-
-
-
-
-  // addr_leaf.addr.push_back(AddressLeaf::Types(0)); // 'lo' is inserted by autotuner
-  // addr_leaf.addr.push_back(AddressLeaf::Types(0)); // 'hi' is inserted by autotuner
-
-  // addr_leaf.addr.push_back(AddressLeaf::Types(s.start()));
-
   int junk_dest = forEach(dest, addr_leaf, NullCombine());
   AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
   int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
 
-  //std::vector<void*> addr;
-
-
-  //addr.push_back( &ordered );
-  //std::cout << "addr hi = " << addr[1] << " hi=" << hi << "\n";
-
-  //addr.push_back( &th_count );
-  //std::cout << "thread_count = " << th_count << "\n";
-
-  // addr.push_back( &start );
-  // std::cout << "start        = " << start << "\n";
-
-  // addr.push_back( &end );
-  // std::cout << "end          = " << end << "\n";
-
-  //addr.push_back( &do_soffset_index );
-  //std::cout << "addr do_soffset_index =" << addr[2] << " " << do_soffset_index << "\n";
-
-  //addr.push_back( &idx_inner_dev );
-  //std::cout << "addr idx_inner_dev = " << addr[3] << " " << idx_inner_dev << "\n";
-
-  //addr.push_back( &subset_member );
-  //std::cout << "addr subset_dev (member_array) = " << addr[3] << " " << subset_member << "\n";
-
-  // int addr_dest=addr.size();
-  // for(int i=0; i < addr_leaf.addr.size(); ++i) {
-  //   addr.push_back( &addr_leaf.addr[i] );
-  //   std::cout << "addr = " << &addr_leaf.addr[i] << "\n";
-  // }
-
-  //void (*FP)(void*) = (void (*)(void*))(intptr_t)function;
-
-  //std::cout << "calling..\n";
-  //FP( addr_leaf.addr.data() );
-  //std::cout << "..done\n";
-
   std::cout << "calling eval(Lattice,Lattice).. " << addr_leaf.addr.size() << "\n";  
-  jit_call(function,th_count,addr_leaf);
-
-
-  if (offnode_maps > 0) {
-    assert(!"ni");
-    ShiftPhase2 phase2;
-    forEach(rhs, phase2 , NullCombine());
-
-    th_count = faceCount;
-    idx_inner_dev = idx_face_dev;
-
-    //jit_call(function,th_count,addr);
-  }
-#endif
+  jit_call(function,s.numSiteTable(),addr_leaf);
 }
 
 
@@ -281,6 +77,8 @@ template<class T, class T1, class Op, class RHS>
 void *
 function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
 {
+  std::cout << __PRETTY_FUNCTION__ << "\n";
+
   JitMainLoop loop;
 
 
@@ -492,6 +290,47 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
 
 
 
+template<class T, class T1, class RHS>
+void *
+function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs )
+{
+  std::cout << __PRETTY_FUNCTION__ << "\n";
+
+  typedef typename WordType<T1>::Type_t WT;
+
+  JitMainLoop loop;
+
+  // ParamRef p_lo      = llvm_add_param<int>();
+  // ParamRef p_hi      = llvm_add_param<int>();
+
+  ParamRef p_soffset = llvm_add_param<int*>();
+  ParamRef p_sndbuf  = llvm_add_param<WT*>();
+
+  ParamLeaf param_leaf;
+
+  typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
+  View_t rhs_view( forEach( rhs , param_leaf , TreeCombine() ) );
+
+  typedef typename JITType< OLattice<T> >::Type_t DestView_t;
+  DestView_t dest_jit( p_sndbuf );
+
+  //llvm_cond_exit( llvm_ge( r_idx , r_hi ) );
+
+  llvm::Value * r_idx = loop.getIdx();
+
+  llvm::Value * r_idx_site = llvm_array_type_indirection( p_soffset , r_idx );
+
+  OpAssign()( dest_jit.elem( JitDeviceLayout::Scalar , r_idx ) , 
+	      forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , r_idx_site ) , OpCombine() ) );
+
+  loop.done();
+
+  return jit_function_epilogue_get("jit_gather.ll");
+}
+
+
+
+
 
 
 #if 0
@@ -532,6 +371,32 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
   return jit_function_epilogue_get_cuf("jit_gather.ll");
 }
 #endif
+
+
+
+
+template<class T1, class RHS>
+void
+function_gather_exec( void * function, void * send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs )
+{
+  AddressLeaf addr_leaf;
+  jit_get_empty_arguments(addr_leaf);
+
+  AddressLeaf::Types t;
+  t.ptr = const_cast<int*>(map.soffset().slice());
+  addr_leaf.addr.push_back(t);
+
+  t.ptr = send_buf;
+  addr_leaf.addr.push_back(t);
+
+  int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
+
+  //QDP_info("gather sites into send_buf lo=%d hi=%d",lo,hi);
+
+  std::cout << "calling gather.. " << addr_leaf.addr.size() << "\n";  
+  jit_call( function , map.soffset().size() , addr_leaf);
+}
+
 
 
 
@@ -589,6 +454,10 @@ function_gather_exec( CUfunction function, void* send_buf , const Map& map , con
   }
 
   jit_launch(function,hi-lo,addr);
+
+  std::cout << "calling gather.. " << addr_leaf.addr.size() << "\n";  
+  jit_call(function,th_count,addr_leaf);
+
 }
 #endif
 
