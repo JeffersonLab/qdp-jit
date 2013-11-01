@@ -63,17 +63,16 @@ namespace QDP {
     // }
 
 
-    T& elem( JitDeviceLayout lay , llvm::Value * index ) {
-      IndexDomainVector args;
-      args.push_back( make_pair( Layout::sitesOnNode() , index ) );
+    T& elem( JitDeviceLayout lay , IndexDomainVector args ) {
+      // IndexDomainVector args;
+      // args.push_back( make_pair( Layout::sitesOnNode() , index ) );
       F.setup( llvm_derefParam(base_m) , lay , args );
-      //F.setup(getThreadedBase(lay),getInnerSites(lay),llvm_create_value(0));
       return F;
     }
 
-    const T& elem( JitDeviceLayout lay , llvm::Value * index ) const {
-      IndexDomainVector args;
-      args.push_back( make_pair( Layout::sitesOnNode() , index ) );
+    const T& elem( JitDeviceLayout lay , IndexDomainVector args ) const {
+      // IndexDomainVector args;
+      // args.push_back( make_pair( Layout::sitesOnNode() , index ) );
       F.setup( llvm_derefParam(base_m) , lay , args );
       //F.setup(getThreadedBase(lay),getInnerSites(lay),llvm_create_value(0));
       return F;
@@ -82,6 +81,7 @@ namespace QDP {
     T& elem() {
       IndexDomainVector args;
       args.push_back( make_pair( 1 , llvm_create_value(0) ) );
+      args.push_back( make_pair( 1 , llvm_create_value(0) ) );
       F.setup( llvm_derefParam(base_m) , JitDeviceLayout::Scalar , args );
       //F.setup(getThreadedBase( JitDeviceLayout::Scalar ),llvm_create_value(1),llvm_create_value(0));
       return F;
@@ -89,6 +89,7 @@ namespace QDP {
 
     const T& elem() const {
       IndexDomainVector args;
+      args.push_back( make_pair( 1 , llvm_create_value(0) ) );
       args.push_back( make_pair( 1 , llvm_create_value(0) ) );
       F.setup( llvm_derefParam(base_m) , JitDeviceLayout::Scalar , args );
       //F.setup(getThreadedBase( JitDeviceLayout::Scalar ),llvm_create_value(1),llvm_create_value(0));

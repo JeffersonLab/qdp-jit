@@ -20,6 +20,9 @@ namespace QDP {
 
 
   class JitMainLoop {
+  private:
+      const int inner = 4;
+
   public:
 
     JitMainLoop() {
@@ -30,7 +33,8 @@ namespace QDP {
       p_start        = llvm_add_param<std::int64_t>();
     }
 
-    llvm::Value* getIdx() {
+    IndexDomainVector getIdx() {
+
       r_lo_in = llvm_derefParam( p_lo );
       r_hi_in = llvm_derefParam( p_hi );
 
@@ -64,16 +68,33 @@ namespace QDP {
       r_lo->addIncoming( r_lo_added , block_ordered );
       r_hi->addIncoming( r_hi_added , block_ordered );
 
+      r_inner = llvm_create_value( std::int64_t(inner) );
+
+      r_lo_outer = llvm_div( r_lo , r_inner );
+      r_hi_outer = llvm_div( r_hi , r_inner );
+
       block_entry_point = llvm_get_insert_point();
-      block_site_loop = llvm_new_basic_block();
-      block_site_loop_exit = llvm_new_basic_block();
+      block_site_loop_inner = llvm_new_basic_block();
+      block_site_loop_inner_exit = llvm_new_basic_block();
+      block_site_loop_outer = llvm_new_basic_block();
+      block_site_loop_outer_exit = llvm_new_basic_block();
       block_end_loop_body = llvm_new_basic_block();
 
-      llvm_branch( block_site_loop );
-      llvm_set_insert_point(block_site_loop);
+      llvm_branch( block_site_loop_outer );
+      llvm_set_insert_point(block_site_loop_outer);
 
-      r_idx      = llvm_phi( r_lo->getType() , 2 );
-      return r_idx;
+      r_idx_outer      = llvm_phi( r_lo_outer->getType() , 2 );
+
+      llvm_branch( block_site_loop_inner );
+      llvm_set_insert_point(block_site_loop_inner);
+
+      r_idx_inner      = llvm_phi( r_inner->getType() , 2 );
+
+      IndexDomainVector args;
+      args.push_back( make_pair( Layout::sitesOnNode()/inner , r_idx_outer ) );
+      args.push_back( make_pair( inner , r_idx_inner ) );
+
+      return args;
     }
 
 
@@ -103,19 +124,25 @@ namespace QDP {
 
 
     void done() {
-      llvm_branch( block_end_loop_body );
+      llvm_branch(           block_end_loop_body );
       llvm_set_insert_point( block_end_loop_body );
 
-      r_idx_new = llvm_add( r_idx , llvm_create_value(1) );
+      r_idx_inner_new = llvm_add( r_idx_inner , llvm_create_value(std::int64_t(1)) );
+      r_idx_inner->addIncoming( r_idx_inner_new , block_end_loop_body );
+      r_idx_inner->addIncoming( llvm_create_value(std::int64_t(0)) , block_site_loop_outer );
 
-      r_idx->addIncoming( r_idx_new , block_end_loop_body );
-      r_idx->addIncoming( r_lo , block_entry_point );
+      llvm::Value * r_exit_cond_inner = llvm_ge( r_idx_inner_new , llvm_create_value( inner ) );
+      llvm_cond_branch( r_exit_cond_inner , block_site_loop_inner_exit , block_site_loop_inner );
+      llvm_set_insert_point(block_site_loop_inner_exit);
 
-      llvm::Value * r_exit_cond = llvm_ge( r_idx_new , r_hi );
+      r_idx_outer_new = llvm_add( r_idx_outer , llvm_create_value(std::int64_t(1)) );
+      r_idx_outer->addIncoming( r_idx_outer_new , block_site_loop_inner_exit );
+      r_idx_outer->addIncoming( r_lo_outer , block_entry_point );
 
-      llvm_cond_branch( r_exit_cond , block_site_loop_exit , block_site_loop );
+      llvm::Value * r_exit_cond_outer = llvm_ge( r_idx_outer_new , r_hi_outer );
+      llvm_cond_branch( r_exit_cond_outer , block_site_loop_outer_exit , block_site_loop_outer );
 
-      llvm_set_insert_point(block_site_loop_exit);
+      llvm_set_insert_point(block_site_loop_outer_exit);
     }
 
   private:
@@ -123,16 +150,23 @@ namespace QDP {
     ParamRef p_hi;
     ParamRef p_ordered;
     ParamRef p_start;
-    llvm::PHINode* r_idx;
-    llvm::Value*   r_idx_new;
-    llvm::BasicBlock * block_end_loop_body;
+    llvm::PHINode* r_idx_inner;
+    llvm::PHINode* r_idx_outer;
+    llvm::Value*   r_idx_inner_new;
+    llvm::Value*   r_idx_outer_new;
     llvm::BasicBlock * block_entry_point;
-    llvm::BasicBlock * block_site_loop;
-    llvm::BasicBlock * block_site_loop_exit;
+    llvm::BasicBlock * block_site_loop_inner;
+    llvm::BasicBlock * block_site_loop_inner_exit;
+    llvm::BasicBlock * block_site_loop_outer;
+    llvm::BasicBlock * block_site_loop_outer_exit;
+    llvm::BasicBlock * block_end_loop_body;
     llvm::Value * r_lo_in;
     llvm::Value * r_hi_in;
+    llvm::Value * r_lo_outer;
+    llvm::Value * r_hi_outer;
     llvm::PHINode * r_lo;
     llvm::PHINode * r_hi;
+    llvm::Value * r_inner;
 
   };
 

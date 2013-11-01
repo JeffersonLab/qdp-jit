@@ -266,6 +266,8 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
     inline
     static Type_t apply(const UnaryNode<FnMapJIT, A>& expr, const ViewLeaf &v, const OpCombine &o)
     {
+      assert(!"ni");
+#if 0
       Type_t ret;
       Type_t ret_phi0;
       Type_t ret_phi1;
@@ -316,6 +318,7 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
 	      ret_phi1 , block_not_in_buffer );
 
       return ret;
+#endif
     }
   };
 
@@ -366,8 +369,8 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
   inline static
   Type_t apply(const UnaryNode<FnMap, A> &expr, const ShiftPhase1 &f, const BitOrCombine &c)
   {
-    //QDP_error_exit("ni addressleaf map apply");
-#if 1
+    QDP_error_exit("ni addressleaf map apply");
+#if 0
     const Map& map = expr.operation().map;
     FnMap& fnmap = const_cast<FnMap&>(expr.operation());
 

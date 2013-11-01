@@ -20,7 +20,7 @@ namespace QDP {
 
     typedef typename REGType<typename FuncRet_t::Subtype_t>::Type_t REGFuncRet_t;
 
-    llvm::Value * r_idx = loop.getIdx();
+    IndexDomainVector r_idx = loop.getIdx();
 
     REGFuncRet_t src_reg;
     src_reg.setup ( src_jit.elem( JitDeviceLayout::Scalar , r_idx ) );
@@ -74,7 +74,7 @@ namespace QDP {
 
     typedef typename REGType<typename FuncRet_t::Subtype_t>::Type_t REGFuncRet_t;
 
-    llvm::Value * r_idx = loop.getIdx();
+    IndexDomainVector r_idx = loop.getIdx();
 
     REGFuncRet_t src_reg;
     src_reg.setup ( src_jit.elem( JitDeviceLayout::Coalesced , r_idx ) );

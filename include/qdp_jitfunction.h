@@ -31,10 +31,10 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
   View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
-  llvm::Value * r_idx = loop.getIdx();
+  IndexDomainVector idx = loop.getIdx();
 
-  op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ), 
-   	  forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , r_idx ), OpCombine()));
+  op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , idx ), 
+   	  forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , idx ), OpCombine()));
 
   loop.done();
 

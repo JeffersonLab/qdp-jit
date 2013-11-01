@@ -74,6 +74,7 @@ namespace QDP {
 
   llvm::Value * llvm_create_value( double v );
   llvm::Value * llvm_create_value( int v );
+  llvm::Value * llvm_create_value( std::int64_t v );
   llvm::Value * llvm_create_value( size_t v );
   llvm::Value * llvm_create_value( bool v );
 

@@ -8,6 +8,8 @@
 #include "qdp.h"
 #include "qdp_util.h"
 
+#if 1
+
 namespace QDP {
 
 
@@ -180,3 +182,6 @@ void ArrayBiDirectionalMap::make(const ArrayMapFunc& func)
 
 
 } // namespace QDP;
+
+
+#endif

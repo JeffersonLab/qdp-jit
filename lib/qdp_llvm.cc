@@ -634,6 +634,7 @@ namespace QDP {
       return llvm::ConstantFP::get( llvm::Type::getDoubleTy(llvm::getGlobalContext()) , v );
   }
 
+  llvm::Value * llvm_create_value(std::int64_t v )  {return llvm::ConstantInt::get( llvm::Type::getInt64Ty(llvm::getGlobalContext()) , v );}
   llvm::Value * llvm_create_value(int v )  {return llvm::ConstantInt::get( llvm::Type::getInt32Ty(llvm::getGlobalContext()) , v );}
   llvm::Value * llvm_create_value(size_t v){return llvm::ConstantInt::get( llvm::Type::getInt32Ty(llvm::getGlobalContext()) , v );}
   llvm::Value * llvm_create_value(bool v ) {return llvm::ConstantInt::get( llvm::Type::getInt1Ty(llvm::getGlobalContext()) , v );}
