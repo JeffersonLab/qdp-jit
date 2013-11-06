@@ -99,10 +99,11 @@ function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScala
 
   // llvm::Value * r_start        = llvm_derefParam( p_start );
 
-  llvm::Value * r_idx = loop.getIdx();
+  //llvm::Value * r_idx = loop.getIdx();
+  IndexDomainVector idx = loop.getIdx();
 
-  op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ), 
-   	  forEach(rhs_view, ViewLeaf( JitDeviceLayout::Scalar , r_idx ), OpCombine()));
+  op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , idx ), 
+   	  forEach(rhs_view, ViewLeaf( JitDeviceLayout::Scalar , idx ), OpCombine()));
 
   loop.done();
 
@@ -158,9 +159,10 @@ function_zero_rep_build(OLattice<T>& dest)
   typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
   FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
 
-  llvm::Value * r_idx = loop.getIdx();
+  //llvm::Value * r_idx = loop.getIdx();
+  IndexDomainVector idx = loop.getIdx();
 
-  zero_rep( dest_jit.elem(JitDeviceLayout::Coalesced,r_idx) );
+  zero_rep( dest_jit.elem(JitDeviceLayout::Coalesced,idx) );
 
   loop.done();
 
@@ -300,12 +302,15 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
 
   //llvm_cond_exit( llvm_ge( r_idx , r_hi ) );
 
-  llvm::Value * r_idx = loop.getIdx();
+  //llvm::Value * r_idx = loop.getIdx();
+  IndexDomainVector idx = loop.getIdx();
 
-  llvm::Value * r_idx_site = llvm_array_type_indirection( p_soffset , r_idx );
+  llvm::Value * r_idx_site = llvm_array_type_indirection( p_soffset , get_index_from_index_vector(idx) );
 
-  OpAssign()( dest_jit.elem( JitDeviceLayout::Scalar , r_idx ) , 
-	      forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , r_idx_site ) , OpCombine() ) );
+  IndexDomainVector idx_vec_gather = get_index_vector_from_index( r_idx_site );
+
+  OpAssign()( dest_jit.elem( JitDeviceLayout::Scalar , idx ) , 
+	      forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , idx_vec_gather ) , OpCombine() ) );
 
   loop.done();
 

@@ -23,14 +23,15 @@ namespace QDP {
     typedef typename REGType<typename FuncRet_t::Subtype_t>::Type_t REGFuncRet_t;
     typedef typename REGType<typename FuncRet1_t::Subtype_t>::Type_t REGFuncRet1_t;
 
-    llvm::Value * r_idx = loop.getIdx();
+    //llvm::Value * r_idx = loop.getIdx();
+    IndexDomainVector idx = loop.getIdx();
 
     REGFuncRet_t src_reg;
     REGFuncRet1_t mask_reg;
-    src_reg.setup ( src_jit.elem( JitDeviceLayout::Coalesced , r_idx ) );
-    mask_reg.setup( mask_jit.elem( JitDeviceLayout::Coalesced , r_idx ) );
+    src_reg.setup ( src_jit.elem( JitDeviceLayout::Coalesced , idx ) );
+    mask_reg.setup( mask_jit.elem( JitDeviceLayout::Coalesced , idx ) );
 
-    copymask( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ) , mask_reg , src_reg );
+    copymask( dest_jit.elem( JitDeviceLayout::Coalesced , idx ) , mask_reg , src_reg );
 
     loop.done();
 

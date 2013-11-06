@@ -20,20 +20,22 @@ struct ShiftPhase2
 
 
 
-struct ViewLeaf
+class ViewLeaf
 {
+private:
   JitDeviceLayout layout_m;
-  IndexDomainVector index_m;
-  ViewLeaf( JitDeviceLayout layout , IndexDomainVector args ) : layout_m(layout), index_m(args) { }
-  //ViewLeaf( JitDeviceLayout layout , llvm::Value * index ) : layout_m(layout), index_m(index) { }
+  IndexDomainVector index_vec_m;
+public:
+  ViewLeaf( JitDeviceLayout layout , IndexDomainVector index_vec ) : layout_m(layout), index_vec_m( index_vec ) { }
+
   JitDeviceLayout getLayout() const { return layout_m; }
-  IndexDomainVector getArgs() const  { 
-    return index_m;
+
+  IndexDomainVector getIndexVec() const  { 
+    return index_vec_m;
   }
+
   llvm::Value    *getIndex() const  { 
-    assert( !"ni" );
-    llvm::Value * o;
-    return o;
+    return get_index_from_index_vector( index_vec_m );
   }
 };
   

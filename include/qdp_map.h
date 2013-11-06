@@ -266,15 +266,15 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
     inline
     static Type_t apply(const UnaryNode<FnMapJIT, A>& expr, const ViewLeaf &v, const OpCombine &o)
     {
-      assert(!"ni");
-#if 0
+      //assert(!"ni");
+#if 1
       Type_t ret;
       Type_t ret_phi0;
       Type_t ret_phi1;
 
       IndexRet index = expr.operation().index;
 
-      llvm::Value * r_multi_index = llvm_array_type_indirection( index.p_multi_index , v.index_m );
+      llvm::Value * r_multi_index = llvm_array_type_indirection( index.p_multi_index , v.getIndex() );
       
       llvm::BasicBlock * block_in_buffer = llvm_new_basic_block();
       llvm::BasicBlock * block_not_in_buffer = llvm_new_basic_block();
@@ -290,6 +290,7 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
 
 	IndexDomainVector args;
 	args.push_back( make_pair( Layout::sitesOnNode() , idx_buf ) );
+	args.push_back( make_pair( 1 , llvm_create_value(0) ) );
 
 	typename JITType<Type_t>::Type_t t_jit_recv;
 	t_jit_recv.setup( llvm_derefParam(index.p_recv_buf) ,
@@ -303,7 +304,10 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
       {
 	llvm_set_insert_point(block_not_in_buffer);
 
-	ViewLeaf vv( JitDeviceLayout::Coalesced , r_multi_index );
+	IndexDomainVector args = get_index_vector_from_index( r_multi_index );
+
+	ViewLeaf vv( JitDeviceLayout::Coalesced , args );
+	//ViewLeaf vv( JitDeviceLayout::Coalesced , r_multi_index );
 	ret_phi1 = Combine1<TypeA_t, 
 			    FnMapJIT , 
 			    OpCombine>::combine(ForEach<A, ViewLeaf, OpCombine>::apply(expr.child(), vv, o) , 
@@ -369,8 +373,8 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
   inline static
   Type_t apply(const UnaryNode<FnMap, A> &expr, const ShiftPhase1 &f, const BitOrCombine &c)
   {
-    QDP_error_exit("ni addressleaf map apply");
-#if 0
+    //QDP_error_exit("ni addressleaf map apply");
+#if 1
     const Map& map = expr.operation().map;
     FnMap& fnmap = const_cast<FnMap&>(expr.operation());
 

@@ -4,7 +4,7 @@
 
 #include "qdp.h"
 
-#if 0
+#if 1
 
 namespace QDP {
 

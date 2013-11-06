@@ -144,7 +144,13 @@ namespace QDP
   template<class T> void *function_layout_to_native_build( const OLattice<T>& dest );
   template<class T> void  function_layout_to_native_exec(void * function, T *dest, T *src );
 
+  typedef std::pair< int , llvm::Value * > IndexDomain;
+  typedef std::vector< IndexDomain >     IndexDomainVector;
 
+  llvm::Value * datalayout( JitDeviceLayout lay , IndexDomainVector a );
+
+  llvm::Value      *get_index_from_index_vector( const IndexDomainVector& idx );
+  IndexDomainVector get_index_vector_from_index( llvm::Value *index );
 
 #if 1
   template<class T, class T1, class RHS>

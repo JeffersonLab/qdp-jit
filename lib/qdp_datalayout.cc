@@ -2,8 +2,50 @@
 
 namespace QDP {
 
+
+  // These functions convert a linear space-time index into a index vector
+  // as used for the coalesced memory accesses.
+
+  IndexDomainVector get_index_vector_from_index( llvm::Value *index )
+  {
+    llvm::Value * inner = llvm_create_value( 4 );
+    llvm::Value * iv_div_inner = llvm_div( index , inner );   // outer
+    llvm::Value * iv_mod_inner = llvm_rem( index , inner );   // inner
+
+    IndexDomainVector args;
+    args.push_back( make_pair( Layout::sitesOnNode()/4 , iv_div_inner ) );
+    args.push_back( make_pair( 4 , iv_mod_inner ) );
+
+    return args;
+  }
+
+
+  llvm::Value *get_index_from_index_vector( const IndexDomainVector& idx ) {
+    assert( idx.size() >= 2 );
+
+    const size_t nIvo = 0; // volume outer
+    const size_t nIvi = 1; // volume inner
+
+    int         Lvo,Lvi;
+    llvm::Value *ivo,*ivi;
+
+    std::tie(Lvo,ivo) = idx.at(nIvo);
+    std::tie(Lvi,ivi) = idx.at(nIvi);
+
+    llvm::Value * Ivo = llvm_create_value(Lvo);
+    llvm::Value * Ivi = llvm_create_value(Lvi);
+
+    llvm::Value * iv = llvm_add(llvm_mul( ivo , Ivi ) , ivi ); // reconstruct volume index
+
+    return iv;
+  }
+
+
 #if 1
   llvm::Value * datalayout( JitDeviceLayout lay , IndexDomainVector a ) {
+
+    assert( a.size() == 5 );
+
     llvm::Value * inner = llvm_create_value( 4 );
 
     const size_t nIvo = 0; // volume outer
@@ -35,7 +77,7 @@ namespace QDP {
     // offset = ((ir * Ic + ic) * Is + is) * Iv + iv
 
     if (lay == JitDeviceLayout::Coalesced) {
-      return llvm_add(llvm_mul(llvm_add(llvm_mul(llvm_add(llvm_mul(llvm_add(llvm_mul(ivo,Is),is),Ic),ic),Ir),ir),inner),ivi);
+      return llvm_add(llvm_mul(llvm_add(llvm_mul(llvm_add(llvm_mul(llvm_add(llvm_mul(ivo,Is),is),Ic),ic),Ir),ir),Ivi),ivi);
     } else {
       return llvm_add(llvm_mul(llvm_add(llvm_mul(llvm_add(llvm_mul(iv,Is),is),Ic),ic),Ir),ir);
     }
