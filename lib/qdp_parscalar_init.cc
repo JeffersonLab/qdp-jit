@@ -206,6 +206,12 @@ namespace QDP {
 				setProgramProfileLevel(lev);
 			}
 #endif
+			else if (strcmp((*argv)[i], "-inner")==0) 
+			{
+				int inner;
+				sscanf((*argv)[++i], "%d", &inner);
+				setDataLayoutInnerSize(inner);
+			}
 			else if (strcmp((*argv)[i], "-geom")==0) 
 			{
 				setGeomP = true;

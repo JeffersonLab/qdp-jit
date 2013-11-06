@@ -21,11 +21,11 @@ namespace QDP {
 
   class JitMainLoop {
   private:
-      const int inner = 4;
-
+    int inner;
   public:
 
     JitMainLoop() {
+      inner = getDataLayoutInnerSize();
       llvm_start_new_function();
       p_lo           = llvm_add_param<std::int64_t>();
       p_hi           = llvm_add_param<std::int64_t>();
@@ -68,7 +68,7 @@ namespace QDP {
       r_lo->addIncoming( r_lo_added , block_ordered );
       r_hi->addIncoming( r_hi_added , block_ordered );
 
-      r_inner = llvm_create_value( std::int64_t(inner) );
+      r_inner = llvm_create_value( std::int64_t( inner ) );
 
       r_lo_outer = llvm_div( r_lo , r_inner );
       r_hi_outer = llvm_div( r_hi , r_inner );

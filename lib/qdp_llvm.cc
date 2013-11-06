@@ -162,6 +162,10 @@ namespace QDP {
     // llvm::InitializeAllTargets();
     // llvm::InitializeAllTargetMCs();
 
+    // "-print-machineinstrs"
+    const char *SetTinyVectorThreshold[] = {"program","-vectorizer-min-trip-count=4"};
+    llvm::cl::ParseCommandLineOptions(2, SetTinyVectorThreshold);
+
     llvm::InitializeNativeTarget();
 
     Mod = new llvm::Module("module", llvm::getGlobalContext());
@@ -1121,12 +1125,12 @@ namespace QDP {
       functionPassManager->add(new llvm::TargetLibraryInfo(llvm::Triple(Mod->getTargetTriple())));
       functionPassManager->add(new llvm::DataLayout(Mod));
       functionPassManager->add(llvm::createBasicAliasAnalysisPass());
-      //functionPassManager->add(llvm::createLICMPass());
+      functionPassManager->add(llvm::createLICMPass());
       functionPassManager->add(llvm::createGVNPass());
-      //functionPassManager->add(llvm::createLoopVectorizePass());
-      //functionPassManager->add(llvm::createInstructionCombiningPass());
-      //functionPassManager->add(llvm::createEarlyCSEPass());
-      //functionPassManager->add(llvm::createCFGSimplificationPass());
+      functionPassManager->add(llvm::createLoopVectorizePass());
+      functionPassManager->add(llvm::createEarlyCSEPass());
+      functionPassManager->add(llvm::createInstructionCombiningPass());
+      functionPassManager->add(llvm::createCFGSimplificationPass());
 
     }
     llvm::DebugFlag = true;

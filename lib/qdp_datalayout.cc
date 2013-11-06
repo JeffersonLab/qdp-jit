@@ -6,15 +6,32 @@ namespace QDP {
   // These functions convert a linear space-time index into a index vector
   // as used for the coalesced memory accesses.
 
+
+  namespace DataLayout {
+    std::int64_t inner = 4;
+  }
+
+  std::int64_t getDataLayoutInnerSize() {
+    return DataLayout::inner;
+  }
+
+  void setDataLayoutInnerSize( std::int64_t i ) {
+    std::cout << "Using inner length = " << i << "\n";
+    DataLayout::inner = i;
+  }
+
+
   IndexDomainVector get_index_vector_from_index( llvm::Value *index )
   {
-    llvm::Value * inner = llvm_create_value( 4 );
+    std::cout << "Using inner length = " << DataLayout::inner << "\n";
+
+    llvm::Value * inner = llvm_create_value( DataLayout::inner );
     llvm::Value * iv_div_inner = llvm_div( index , inner );   // outer
     llvm::Value * iv_mod_inner = llvm_rem( index , inner );   // inner
 
     IndexDomainVector args;
-    args.push_back( make_pair( Layout::sitesOnNode()/4 , iv_div_inner ) );
-    args.push_back( make_pair( 4 , iv_mod_inner ) );
+    args.push_back( make_pair( Layout::sitesOnNode()/DataLayout::inner , iv_div_inner ) );
+    args.push_back( make_pair( DataLayout::inner , iv_mod_inner ) );
 
     return args;
   }
@@ -43,10 +60,7 @@ namespace QDP {
 
 #if 1
   llvm::Value * datalayout( JitDeviceLayout lay , IndexDomainVector a ) {
-
     assert( a.size() == 5 );
-
-    llvm::Value * inner = llvm_create_value( 4 );
 
     const size_t nIvo = 0; // volume outer
     const size_t nIvi = 1; // volume inner

@@ -16,6 +16,7 @@
 #include "llvm/Transforms/Vectorize.h"
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
+#include "llvm/Support/CommandLine.h"
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Target/TargetLowering.h"
 #include "llvm/Target/TargetLibraryInfo.h"
