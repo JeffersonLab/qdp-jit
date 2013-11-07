@@ -47,6 +47,7 @@ namespace QDP {
     int th_count = Layout::sitesOnNode();
 
     std::cout << "calling layout(to JIT)..\n";
+
     jit_call(function,th_count,addr_leaf);
   }
 
@@ -101,6 +102,7 @@ namespace QDP {
     int th_count = Layout::sitesOnNode();
 
     std::cout << "calling layout(to native)..\n";
+
     jit_call(function,th_count,addr_leaf);
   }
 

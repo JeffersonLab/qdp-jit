@@ -62,7 +62,7 @@ QDP_info (const char* format, ...)
 }
 
 
-#ifdef QDP_IS_QDPJIT
+
 int
 QDP_info_primary (const char* format, ...)
 {
@@ -95,7 +95,6 @@ QDP_info_primary (const char* format, ...)
 int
 QDP_debug (const char* format, ...)
 {
-#ifdef GPU_DEBUG
   va_list argp;
   char    info[128], hostname[256];
   char    buffer[1024*5];
@@ -113,14 +112,12 @@ QDP_debug (const char* format, ...)
 
   fprintf (stdout, "%s %s\n", info, buffer);
   return status;
-#endif
 }
 
 
 int
 QDP_debug_deep (const char* format, ...)
 {
-#ifdef GPU_DEBUG_DEEP
   va_list argp;
   char    info[128], hostname[256];
   char    buffer[1024*5];
@@ -138,9 +135,7 @@ QDP_debug_deep (const char* format, ...)
 
   fprintf (stdout, "%s %s\n", info, buffer);
   return status;
-#endif
 }
-#endif
 
 
 /**

@@ -1,6 +1,7 @@
 #ifndef SUM_H
 #define SUM_H
 
+#if 0
 namespace QDP {
 
 
@@ -249,7 +250,9 @@ namespace QDP {
 	/* 	    << " numBlocks = " << numBlocks << "\n"; */
 
 	if (numBlocks > DeviceParams::Instance().getMaxGridX() ) {
+#ifdef LLVM_DEBUG
 	  QDP_info_primary( "sum(Lat) numBlocks > maxGrixX, continue on host" );
+#endif
 	  break;
 	}
 
@@ -333,8 +336,9 @@ namespace QDP {
 	  }
       
 	  if (no_way) {
-	    QDP_info_primary( "sumMulti: No number of threads per blocks found that suits the requirements. Largest subset size = %d",
-		      ss.largest_subset);
+#ifdef LLVM_DEBUG
+	    QDP_info_primary( "sumMulti: No number of threads per blocks found that suits the requirements. Largest subset size = %d",  ss.largest_subset);
+#endif
 	    break;
 	  }
 
@@ -356,7 +360,9 @@ namespace QDP {
 	QDPCache::Instance().free_device_static( out_dev );
     
 	if (!success) {
+#ifdef LLVM_DEBUG
 	  QDP_info_primary("sumMulti: there was a problem, continue on host");
+#endif
 	  delete[] slice;
 	  break;
 	}
@@ -514,5 +520,6 @@ namespace QDP {
 
 
 }
+#endif
 
 #endif

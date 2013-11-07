@@ -1,4 +1,4 @@
-AC_INIT([qdp++],[1.42.0],[edwards@jlab.org])
+AC_INIT([qdp-jit],[0],[fwinter@jlab.org])
 
 AC_CONFIG_AUX_DIR(config)
 
@@ -81,36 +81,15 @@ AC_SUBST(CONFIG_ALIGNMENT, [${ac_alignment}])
 dnl tell the user about alignment	
 AC_MSG_NOTICE([Configuring QDP++ Alignment size=${ac_alignment}])
 
-AC_ARG_ENABLE(generics,
-	AC_HELP_STRING([--enable-generics],
-	[Enable Generic C specializations]),
-	[ac_generics=${enableval}],
-	[ac_generics="yes"]
-)
-
-if test "X${ac_generics}X" != "XnoX";
-then
-AC_DEFINE_UNQUOTED(QDP_USE_GENERIC_OPTS, [1] , [Use generic C optimizations])
-AC_SUBST(CONFIG_GENERICS, [${ac_generics}])
-fi
-dnl tell the user
-AC_MSG_NOTICE([Fallback to generic C routines if needed: ${ac_generics}])
 
 
-dnl gpu
-AC_ARG_ENABLE(gpudebug,
-  AC_HELP_STRING([--enable-gpudebug],
-    [Produce GPU debug output]),
-  [gpudebug_enabled="${enableval}"],
-  [gpudebug_enabled="no"]
-)
 
-dnl gpu
-AC_ARG_ENABLE(gpudebugdeep,
-  AC_HELP_STRING([--enable-gpudebugdeep],
-    [Produce GPU deep debug output]),
-  [gpudebugdeep_enabled="${enableval}"],
-  [gpudebugdeep_enabled="no"]
+dnl llvm debug
+AC_ARG_ENABLE(llvm-debug,
+  AC_HELP_STRING([--enable-llvm-debug],
+    [Produce LLVM debug output]),
+  [llvmdebug_enabled="${enableval}"],
+  [llvmdebug_enabled="no"]
 )
 
 
@@ -122,13 +101,9 @@ AC_ARG_ENABLE(profiling,
   [ac_profile=0]
 )
 
-dnl --enable-parallel-arch argument
-AC_ARG_ENABLE(parallel-arch,
-  AC_HELP_STRING([--enable-parallel-arch=<arch>],
-    [Build QDP++ for parallel architecture <arch>]),
-  [PARALLEL_ARCH=${enableval}],
-  AC_MSG_ERROR([Require architecture to be set])
-)
+
+AC_DEFINE_UNQUOTED(PARALLEL_ARCH, "parscalar", [Enable parscalar])
+
 
 dnl --enable-memory-debugging
 AC_ARG_ENABLE(memory-debugging,
@@ -148,146 +123,19 @@ AC_ARG_ENABLE(filedb,
 )
 
 
-dnl if test "X${gpu_enabled}X" == "XyesX"; 
-dnl then
-     ac_gcc="$CXX"     				      
-     ac_generics="no"
-     ac_sse="0"
-     ac_sse2="0"
-     ac_sse3="0"
-     ac_3dnow="0"
-     AC_DEFINE_UNQUOTED([CUDA_GCC],"${ac_gcc}",[CUDA C/C++ Compiler])
-     AC_DEFINE_UNQUOTED(QDP_IS_QDPJIT, ${gpu_enabled}, [Enable GPU/JIT])
-     AC_SUBST(CUDA_LIBS, [-lcuda])
-     AC_SUBST(CUDA_CXXFLAGS, [-I${cuda_home}/include])
-     AC_SUBST(CUDA_LDFLAGS, [-L${cuda_home}/lib64])
-dnl else
-dnl     AC_MSG_NOTICE([Not using GPUs ])
-dnl fi
+dnl AC_DEFINE_UNQUOTED(QDP_IS_QDPJIT, 1 , [Enable JIT])
 
 
 
-dnl --enable-sse
-AC_ARG_ENABLE(sse,
-  AC_HELP_STRING([--enable-sse],
-    [Optimize code with Intel SSE instructions]),
-  [if test "x${enableval}x" = "xyesx";
-   then 
-      ac_sse=1
-   else
-      ac_sse=0
-   fi],
-  [ac_sse=0]
-)
 
-dnl --enable-sse2
-AC_ARG_ENABLE(sse2,
-  AC_HELP_STRING([--enable-sse2],
-    [Optimize code with Intel SSE2 instructions]),
-  [if test "x${enableval}x" = "xyesx";
-   then
-     ac_sse=1
-     ac_sse2=1
-   else 
-     ac_sse2=0
-   fi],
-  [ac_sse2=0]
-)
-
-dnl --enable-sse3
-AC_ARG_ENABLE(sse3,
-  AC_HELP_STRING([--enable-sse3],
-    [Optimize code with Intel SSE3 instructions]),
-  [if test "x${enableval}x" = "xyesx";
-   then 
-      ac_sse=1
-      ac_sse2=1
-      ac_sse3=1
-   else
-      ac_sse3=0
-   fi],
-  [ac_sse3=0]
-)
-
-dnl --enable-3dnow
-AC_ARG_ENABLE(3dnow,
-  AC_HELP_STRING([--enable-3dnow],
-    [Optimize code with AMD 3DNow instructions]),
-  [ac_3dnow=${enableval}],
-  [ac_3dnow=0]
-)
-
-dnl --enable-qcdoc
-AC_ARG_ENABLE(qcdoc,
-   AC_HELP_STRING([--enable-qcdoc], 
-     [Enable QCDOC Optimisations]),
-     [ac_qcdoc_enabled=1
-      AC_MSG_NOTICE([Enabling QCDOC Specific Optimisations])],
-     [ac_qcdoc_enabled=0]
-)
-
-dnl --enable-bgl
-AC_ARG_ENABLE(bgl,
-   AC_HELP_STRING([--enable-bgl],
-     [Enable BlueGeneL Optimizations]),
-     [ac_bgl_enabled=1
-      AC_MSG_NOTICE([Enabling BlueGene Specific Optimizations])],
-      [ac_bgl_enabled=1]
-)
-
-if test ${ac_sse} -eq 1; then
-    AC_DEFINE_UNQUOTED(QDP_USE_SSE, ${ac_sse}, [Enable SSE instructions])
-    AC_SUBST(CONFIG_SSE,[${ac_sse}])
-    AC_MSG_NOTICE([Configuring QDP++ with SSE extentions enabled]);
-fi
-
-if test ${ac_sse2} -eq 1; then
-    AC_DEFINE_UNQUOTED(QDP_USE_SSE2, ${ac_sse2}, [Enable SSE2 instructions])
-    AC_SUBST(CONFIG_SSE2,[${ac_sse2}])
-    AC_MSG_NOTICE([Configuring QDP++ with SSE2 extentions enabled]);
-    AC_CONFIG_SUBDIRS(other_libs/libintrin)
-    AC_SUBST(LIBINTRIN_DIR, [libintrin])
-    build_libintrin="yes"
-fi
-
-if test ${ac_sse3} -eq 1; then
-    AC_DEFINE_UNQUOTED(QDP_USE_SSE3, ${ac_sse3}, [Enable SSE3 instructions])
-    AC_SUBST(CONFIG_SSE3,[${ac_sse3}])
-    AC_MSG_NOTICE([Configuring QDP++ with SSE3 extentions enabled]);
-fi
-
-if test "x${ac_3dnow}x" = "xyesx"; then
-    AC_DEFINE_UNQUOTED(QDP_USE_3DNOW, ${ac_3dnow}, [Enable 3DNOW instructions])
-    AC_MSG_NOTICE([Configuring QDP++ with 3DNOW extentions enabled]);
-fi
-
-AM_CONDITIONAL(BUILD_LIBINTRIN,
-	[ test "x${build_libintrin}x" = "xyesx"] )
-
-
-if test "X${gpudebug_enabled}X" == "XyesX"; 
+if test "X${llvmdebug_enabled}X" == "XyesX"; 
 then
-     AC_MSG_NOTICE([Configuring to produce GPU debug output])
-     AC_DEFINE([GPU_DEBUG],[1],[GPU debugging output])
-     AC_SUBST(GPU_DEBUG_CXX,"-DGPU_DEBUG")
+     AC_MSG_NOTICE([Configuring to produce LLVM debug output])
+     AC_DEFINE([LLVM_DEBUG],[1],[LLVM debugging output])
+     AC_SUBST(LLVM_DEBUG_CXX,"-DLLVM_DEBUG")
 fi
 
-if test "X${gpudebugdeep_enabled}X" == "XyesX"; 
-then
-     AC_MSG_NOTICE([Configuring to produce GPU deep debug output])
-     AC_DEFINE([GPU_DEBUG_DEEP],[1],[GPU deep debugging output])
-     AC_SUBST(GPU_DEBUGDEEP_CXX,"-DGPU_DEBUG_DEEP")
-fi
 
-dnl if QCDOC is enabled change some settings
-if test ${ac_qcdoc_enabled} -eq 1; then 
-   AC_DEFINE_UNQUOTED(QDP_USE_QCDOC, ${ac_qcdoc_enabled}, [Enable QCDOC opts])
-fi
-
-dnl if QCDOC is enabled change some settings
-if test ${ac_bgl_enabled} -eq 1; then 
-   AC_DEFINE_UNQUOTED(QDP_USE_BLUEGENEL, ${ac_bgl_enabled}, [Enable BGL opts])
-fi
 
 dnl Check if profiling is enabled
 if test ${ac_profile} -eq 1; then 
@@ -372,26 +220,7 @@ AC_ARG_WITH(qmp,
   [QMP_HOME="${with_qmp}"]
 )
 
-case ${PARALLEL_ARCH} in
-  scalar)
-    AC_DEFINE(ARCH_SCALAR, [1], [Scalar architecture])
-    AC_SUBST(ARCH_SITE, "scalarsite")
-    AC_MSG_NOTICE([ Scalar Build! Not checking for QMP ])
-    AC_SUBST(QMP_HOME)
-    AC_SUBST(QMP_CFLAGS)
-    AC_SUBST(QMP_LDFLAGS)
-    AC_SUBST(QMP_LIBS)
-    ;;
-  scalarvec)
-    AC_DEFINE(ARCH_SCALARVEC, [1], [Scalar with vector extensions architecture])
-    AC_SUBST(ARCH_SITE, "scalarvecsite")
-    AC_MSG_NOTICE([ Scalar with Vector extensions Build! Not checking for QMP ])
-    AC_SUBST(QMP_HOME)
-    AC_SUBST(QMP_CFLAGS)
-    AC_SUBST(QMP_LDFLAGS)
-    AC_SUBST(QMP_LIBS)
-    ;;
-  parscalar)
+
     AC_DEFINE(ARCH_PARSCALAR, [1], [Parallel-scalar architecture])
     AC_SUBST(ARCH_SITE, "scalarsite")
     AC_MSG_NOTICE([ Parscalar build! Checking for QMP ])
@@ -416,38 +245,8 @@ case ${PARALLEL_ARCH} in
       AC_MSG_WARN([Set environment variables QMP_CFLAGS QMP_LDFAGS QMP_LIBS
         before configure])
     fi
-    ;;
-  parscalarvec)
-    AC_DEFINE(ARCH_PARSCALARVEC, [1], [Parallel-scalar with vector extensions layout])
-    AC_SUBST(ARCH_SITE, "scalarvecsite")
-    AC_MSG_NOTICE([ Parscalar with Vector extensions build! Checking for QMP ])
 
-    if test "X${QMP_HOME}X" = "XX" ; then
-      AC_PATH_PROG([QMP_CONFIG], [qmp-config], [])
-    else
-      AC_PATH_PROG([QMP_CONFIG], [qmp-config], [], [${QMP_HOME}/bin:${PATH}])
-    fi
-
-    if test "X${QMP_CONFIG}X" != "XX" ; then
-      AC_MSG_NOTICE([Found QMP configuration program ${QMP_CONFIG}])
-      AC_SUBST(QMP_HOME,    "${QMP_HOME}")
-      AC_SUBST(QMP_CFLAGS,  "`${QMP_CONFIG} --cflags`")
-      AC_MSG_NOTICE([QMP compile flags: ${QMP_CFLAGS}])
-      AC_SUBST(QMP_LDFLAGS, "`${QMP_CONFIG} --ldflags`")
-      AC_MSG_NOTICE([QMP linking flags: ${QMP_LDFLAGS}])
-      AC_SUBST(QMP_LIBS,    "`${QMP_CONFIG} --libs`")
-      AC_MSG_NOTICE([QMP libraries flags: ${QMP_LIBS}])
-    else 
-      AC_MSG_WARN([QMP configuration program qmp-config not found.])
-      AC_MSG_WARN([Set environment variables QMP_CFLAGS QMP_LDFAGS QMP_LIBS
-        before configure])
-    fi
-    ;;
-  *)
-    AC_MSG_ERROR([ Unknown value for --enable-parallel-arch ])
-    ;;
-esac
-AC_SUBST(CONFIG_PARALLEL_ARCH, [${PARALLEL_ARCH}])
+AC_SUBST(CONFIG_PARALLEL_ARCH, ["parscalar"] )
 
 dnl verify we can compile and link against QMP, if needed
 PAC_QMP_LINK_CXX_FUNC(
@@ -461,30 +260,14 @@ PAC_QMP_LINK_CXX_FUNC(
 )
 
 AC_MSG_CHECKING([if we can compile/link of a simple QMP C++ program])
-case ${PARALLEL_ARCH} in
-  parscalar)
-    if test "X${qmp_link_ok}X" = "XyesX" ; then
-      AC_MSG_RESULT(yes)
-    else
-      AC_MSG_RESULT(no)
-      AC_MSG_ERROR([Cannot compile/link a basic QMP C++ program!
-        Check QMP_CFLAGS, QMP_LDFLAGS, QMP_LIBS.])
-    fi
-    ;;
-  parscalarvec)
-    if test "X${qmp_link_ok}X" = "XyesX" ; then
-      AC_MSG_RESULT(yes)
-    else
-      AC_MSG_RESULT(no)
-      AC_MSG_ERROR([Cannot compile/link a basic QMP C++ program!
-        Check QMP_CFLAGS, QMP_LDFLAGS, QMP_LIBS.])
-    fi
-    ;;
-  *)
-    AC_MSG_RESULT(ignored)
-    ;;
-esac
 
+    if test "X${qmp_link_ok}X" = "XyesX" ; then
+      AC_MSG_RESULT(yes)
+    else
+      AC_MSG_RESULT(no)
+      AC_MSG_ERROR([Cannot compile/link a basic QMP C++ program!
+        Check QMP_CFLAGS, QMP_LDFLAGS, QMP_LIBS.])
+    fi
 
 
 AC_ARG_WITH(llvm,
@@ -720,14 +503,6 @@ AM_CONDITIONAL(ARCH_PARSCALAR,    [test "X${PARALLEL_ARCH}X" = "XparscalarX"])
 AM_CONDITIONAL(ARCH_SCALARVEC,    [test "X${PARALLEL_ARCH}X" = "XscalarvecX"])
 AM_CONDITIONAL(ARCH_PARSCALARVEC, [test "X${PARALLEL_ARCH}X" = "XparscalarvecX"])
 
-AM_CONDITIONAL(QDP_USE_SCALAR_SSE, [test "X${ac_sse}X" = "X1X" -a "X${ARCH_SITE}X" = "XscalarsiteX"])
-AM_CONDITIONAL(QDP_USE_SCALAR_SSE2, [test "X${ac_sse2}X" = "X1X" -a "X${ARCH_SITE}X" = "XscalarsiteX"])
-
-dnl conditional for using Peters assembler
-AM_CONDITIONAL(QDP_USE_QCDOC, [test "X${ac_qcdoc_enabled}X" = "X1X" -a "X${ARCH_SITE}X" = "XscalarsiteX"])
-
-AM_CONDITIONAL(QDP_USE_SCALARVEC_SSE, [test "X${ac_sse}X" = "X1X" -a "X${ARCH_SITE}X" = "XscalarvecsiteX"])
-AM_CONDITIONAL(QDP_USE_SCALARVEC_SSE2, [test "X${ac_sse2}X" = "X1X" -a "X${ARCH_SITE}X" = "XscalarvecsiteX"])
 
 #
 # For the examples directory, conditionally compile some files.
@@ -738,8 +513,6 @@ AM_CONDITIONAL(BUILD_STAGGERED_EXAMPLES,
 AM_CONDITIONAL(BUILD_WILSON_EXAMPLES,
   [test "X${ac_Ns}X" != "X1X"])
 
-AM_CONDITIONAL(BUILD_DEFAULT_ALLOCATOR,
-  [test "X${ac_qcdoc_enabled}X" = "X0X"])
 
 #
 # Conditional for use qmt
@@ -772,6 +545,8 @@ AC_CHECK_PROG(DOXYGEN, doxygen, doxygen, true)
 ##################################
 AC_CHECK_FUNCS(gethostname)
 AC_CHECK_FUNCS(strnlen)
+
+
 
 case ${PARALLEL_ARCH} in 
 parscalar|parscalarvec)

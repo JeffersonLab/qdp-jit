@@ -15,7 +15,9 @@ template<class T, class T1, class Op, class RHS>
 void *
 function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs)
 {
+#ifdef LLVM_DEBUG
   std::cout << __PRETTY_FUNCTION__ << "\n";
+#endif
 
   JitMainLoop loop;
 
@@ -50,7 +52,9 @@ function_exec(void * function, OLattice<T>& dest, const Op& op, const QDPExpr<RH
   ShiftPhase1 phase1;
   int offnode_maps = forEach(rhs, phase1 , BitOrCombine());
   
+#ifdef LLVM_DEBUG
   QDP_info("offnode_maps = %d",offnode_maps);
+#endif
 
   ShiftPhase2 phase2;
   forEach(rhs, phase2 , NullCombine());
@@ -65,7 +69,10 @@ function_exec(void * function, OLattice<T>& dest, const Op& op, const QDPExpr<RH
   AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
   int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
 
+#ifdef LLVM_DEBUG
   std::cout << "calling eval(Lattice,Lattice).. " << addr_leaf.addr.size() << "\n";  
+#endif
+
   jit_call(function,s.numSiteTable(),addr_leaf);
 }
 
@@ -77,7 +84,9 @@ template<class T, class T1, class Op, class RHS>
 void *
 function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
 {
+#ifdef LLVM_DEBUG
   std::cout << __PRETTY_FUNCTION__ << "\n";
+#endif
 
   JitMainLoop loop;
 
@@ -131,7 +140,10 @@ function_lat_sca_exec(void* function, OLattice<T>& dest, const Op& op, const QDP
 
   int th_count = s.hasOrderedRep() ? s.numSiteTable() : Layout::sitesOnNode();
 
+#ifdef LLVM_DEBUG
   std::cout << "calling eval(Lattice,Scalar)..\n";
+#endif
+
   jit_call(function,th_count,addr_leaf);
 
   // void (*FP)(void*) = (void (*)(void*))(intptr_t)function;
@@ -185,7 +197,10 @@ function_zero_rep_exec(void * function, OLattice<T>& dest, const Subset& s )
 
   int junk_0 = forEach(dest, addr_leaf, NullCombine());
 
+#ifdef LLVM_DEBUG
   std::cout << "calling zero_rep(Lattice,Subset)..\n";
+#endif
+
   jit_call( function , s.numSiteTable() , addr_leaf );
 }
 
@@ -280,7 +295,9 @@ template<class T, class T1, class RHS>
 void *
 function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs )
 {
+#ifdef LLVM_DEBUG
   std::cout << __PRETTY_FUNCTION__ << "\n";
+#endif
 
   typedef typename WordType<T1>::Type_t WT;
 
@@ -342,7 +359,9 @@ function_gather_exec( void * function, void * send_buf , const Map& map , const 
 
   //QDP_info("gather sites into send_buf lo=%d hi=%d",lo,hi);
 
+#ifdef LLVM_DEBUG
   std::cout << "calling gather.. " << addr_leaf.addr.size() << "\n";  
+#endif
   jit_call( function , map.soffset().size() , addr_leaf);
 }
 

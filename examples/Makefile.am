@@ -11,10 +11,6 @@ AM_CXXFLAGS = -I@top_srcdir@/include -I@top_builddir@/include \
               -I@top_srcdir@/other_libs/xpath_reader/include \
               @BAGEL_QDP_CXXFLAGS@ @LIBXML2_CXXFLAGS@ @QMP_CFLAGS@ @QMT_CXXFLAGS@ @CUDA_CXXFLAGS@
 
-if BUILD_LIBINTRIN
-AM_CXXFLAGS += -I@top_srcdir@/other_libs/@LIBINTRIN_DIR@/include \
-               -I@top_builddir@/other_libs/@LIBINTRIN_DIR@/include
-endif
 
 if BUILD_FILEDB
 AM_CXXFLAGS += -I@top_srcdir@/other_libs/filedb/src \
@@ -30,9 +26,6 @@ AM_LDFLAGS += -L@top_builddir@/other_libs/qio/lib \
 endif
 AM_LDFLAGS += @LDFLAGS@ @BAGEL_QDP_LDFLAGS@ @QMP_LDFLAGS@ @QMT_LDFLAGS@
 
-if BUILD_LIBINTRIN
-AM_LDFLAGS += -L@top_builddir@/other_libs/libintrin/lib
-endif
 
 if BUILD_FILEDB
 AM_LDFLAGS += -L@top_builddir@/other_libs/filedb/src \
@@ -46,9 +39,6 @@ LDADD += -lXPathReader -lxmlWriter -lqio -llime
 endif
 LDADD += @BAGEL_QDP_LIBS@ @LIBXML2_LIBS@ @QMP_LIBS@ @QMT_LIBS@ @LIBS@
 
-if BUILD_LIBINTRIN
-LDADD += -lintrin
-endif
 
 if BUILD_FILEDB
 LDADD += -lfiledb -lfilehash

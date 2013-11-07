@@ -214,77 +214,8 @@ namespace ThreadReductions {
  
 }
 
-
-
-
-
-#if defined(ARCH_SCALAR)
-// Architectural specific code to a single node/single proc box
-#warning "Using scalar architecture"
-#include "qdp_scalar_specific.h"
-
-// Include SSE code here if applicable
-#if QDP_USE_SSE == 1
-#include "qdp_scalarsite_sse.h"
-#elif QDP_USE_BAGEL_QDP == 1
-// USE_BAGEL_QDP
-#include "qdp_scalarsite_bagel_qdp.h"
-#else
-// Use Generics only
-#ifdef QDP_USE_GENERIC_OPTS
-#warning "Using generics"
-#include "qdp_scalarsite_generic.h"
-#else
-#warning "Not using generics"
-#endif
-#endif
-
-#elif defined(ARCH_PARSCALAR)
-// Architectural specific code to a parallel/single proc box
-#warning "Using parallel scalar architecture"
 #include "qdp_sum.h"
 #include "qdp_parscalar_specific.h"
-
-// Include optimized code here if applicable
-#if QDP_USE_SSE == 1
-#include "qdp_scalarsite_sse.h"
-#elif QDP_USE_BAGEL_QDP == 1
-// Use BAGEL_QDP 
-#include "qdp_scalarsite_bagel_qdp.h"
-#else
-// Use generics
-#ifdef QDP_USE_GENERIC_OPTS
-#include "qdp_scalarsite_generic.h"
-#else 
-#warning "Not using generics"
-#endif
-#endif
-
-#elif defined(ARCH_SCALARVEC)
-// Architectural specific code to a single node/single proc box 
-// with vector extension
-#warning "Using scalar architecture with vector extensions"
-#include "qdp_scalarvec_specific.h"
-
-// Include optimized code here if applicable
-#if QDP_USE_SSE == 1
-#include "qdp_scalarvecsite_sse.h"
-#endif
-
-#elif defined(ARCH_PARSCALARVEC)
-// Architectural specific code to a parallel/single proc box
-// with vector extension
-#warning "Using parallel scalar architecture with vector extensions"
-#include "qdp_parscalarvec_specific.h"
-
-// Include optimized code here if applicable
-#if QDP_USE_SSE == 1
-#include "qdp_scalarvecsite_sse.h"
-#endif
-
-#else
-#error "Unknown architecture ARCH"
-#endif
 
 #include "qdp_flopcount.h"
 

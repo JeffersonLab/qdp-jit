@@ -53,7 +53,10 @@ namespace QDP {
 
     int th_count = Layout::sitesOnNode();
 
+#ifdef LLVM_DEBUG
     std::cout << "calling copymask(Lattice)..\n";
+#endif
+
     jit_call(function,th_count,addr_leaf);
   }
 

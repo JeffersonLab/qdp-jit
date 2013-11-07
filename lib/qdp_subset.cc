@@ -161,7 +161,6 @@ namespace QDP
   //! Simple constructor called to produce a Subset from inside a Set
   void Subset::make(bool _rep, int _start, int _end, multi1d<int>* ind, int cb, Set* _set, multi1d<bool>* _memb)
   {
-    QDP_debug("Subset::make(...) Will reserve device memory now...");
     ordRep    = _rep;
     startSite = _start;
     endSite   = _end;

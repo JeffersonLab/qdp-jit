@@ -144,7 +144,7 @@ namespace QDP {
     offnodeP = (cnt_srcenodes > 0) ? true : false;
 
     //goffsetsId = QDPCache::Instance().registrateOwnHostMem( sizeof(int)*goffsets.size() , (void*)goffsets.slice() , NULL );
-    QDP_info_primary("Not registering memory!! Map::make goffsetsId=%d",goffsetsId);
+    //QDP_info_primary("Not registering memory!! Map::make goffsetsId=%d",goffsetsId);
 
     //
     // The rest of the routine is devoted to supporting off-node communications
@@ -273,7 +273,7 @@ namespace QDP {
     if (goffsets.size()==0)
       QDP_error_exit("gsoffsets empty");
 
-    QDPIO::cerr << "not registering memory Map::make!!\n";
+    //QDPIO::cerr << "not registering memory Map::make!!\n";
     // roffsetsId = QDPCache::Instance().registrateOwnHostMem( sizeof(int)*roffsets.size() , (void*)roffsets.slice() , NULL );
     // soffsetsId = QDPCache::Instance().registrateOwnHostMem( sizeof(int)*soffsets.size() , (void*)soffsets.slice() , NULL );
 
@@ -282,11 +282,11 @@ namespace QDP {
     QDP_info("exiting Map::make");
 #endif
 
-    StopWatch t;
-    t.start();
-    myId = MasterMap::Instance().registrate(*this);
-    t.stop();
-    QDP_info_primary("Face and inner compute time = %f secs", t.getTimeInSeconds() );
+    // StopWatch t;
+    // t.start();
+    // myId = MasterMap::Instance().registrate(*this);
+    // t.stop();
+    // QDP_info_primary("Face and inner compute time = %f secs", t.getTimeInSeconds() );
   }
 
 
