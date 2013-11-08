@@ -70,8 +70,8 @@ function_exec(void * function, OLattice<T>& dest, const Op& op, const QDPExpr<RH
   int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
 
 #ifdef LLVM_DEBUG
-  std::cout << "calling eval(Lattice,Lattice).. " << addr_leaf.addr.size() << "\n";  
 #endif
+  std::cout << "calling eval(Lattice,Lattice).. " << addr_leaf.addr.size() << "\n";  
 
   jit_call(function,s.numSiteTable(),addr_leaf);
 }

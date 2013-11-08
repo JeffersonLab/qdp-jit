@@ -1125,12 +1125,13 @@ namespace QDP {
       functionPassManager->add(new llvm::TargetLibraryInfo(llvm::Triple(Mod->getTargetTriple())));
       functionPassManager->add(new llvm::DataLayout(Mod));
       functionPassManager->add(llvm::createBasicAliasAnalysisPass());
-      functionPassManager->add(llvm::createLICMPass());
+      //functionPassManager->add(llvm::createLICMPass());
       functionPassManager->add(llvm::createGVNPass());
+      functionPassManager->add(llvm::createPromoteMemoryToRegisterPass());
       functionPassManager->add(llvm::createLoopVectorizePass());
-      functionPassManager->add(llvm::createEarlyCSEPass());
-      functionPassManager->add(llvm::createInstructionCombiningPass());
-      functionPassManager->add(llvm::createCFGSimplificationPass());
+      //functionPassManager->add(llvm::createEarlyCSEPass());
+      //functionPassManager->add(llvm::createInstructionCombiningPass());
+      //functionPassManager->add(llvm::createCFGSimplificationPass());
 
     }
     llvm::DebugFlag = true;

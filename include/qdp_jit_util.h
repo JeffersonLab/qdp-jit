@@ -29,14 +29,20 @@ namespace QDP {
       llvm_start_new_function();
       p_lo           = llvm_add_param<std::int64_t>();
       p_hi           = llvm_add_param<std::int64_t>();
+      p_thread_num   = llvm_add_param<std::int64_t>();
       p_ordered      = llvm_add_param<bool>();
       p_start        = llvm_add_param<std::int64_t>();
+    }
+
+    llvm::Value * getThreadNum() {
+      return r_thread_num;
     }
 
     IndexDomainVector getIdx() {
 
       r_lo_in = llvm_derefParam( p_lo );
       r_hi_in = llvm_derefParam( p_hi );
+      r_thread_num = llvm_derefParam( p_thread_num );
 
       llvm::Value * r_ordered      = llvm_derefParam( p_ordered );
       llvm::Value * r_start        = llvm_derefParam( p_start );
@@ -150,6 +156,7 @@ namespace QDP {
     ParamRef p_hi;
     ParamRef p_ordered;
     ParamRef p_start;
+    ParamRef p_thread_num;
     llvm::PHINode* r_idx_inner;
     llvm::PHINode* r_idx_outer;
     llvm::Value*   r_idx_inner_new;
@@ -162,6 +169,7 @@ namespace QDP {
     llvm::BasicBlock * block_end_loop_body;
     llvm::Value * r_lo_in;
     llvm::Value * r_hi_in;
+    llvm::Value * r_thread_num;
     llvm::Value * r_lo_outer;
     llvm::Value * r_hi_outer;
     llvm::PHINode * r_lo;

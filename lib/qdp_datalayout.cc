@@ -37,6 +37,18 @@ namespace QDP {
   }
 
 
+  IndexDomainVector get_scalar_index_vector_from_index( llvm::Value *index )
+  {
+    std::cout << "Using inner length = " << DataLayout::inner << "\n";
+
+    IndexDomainVector args;
+    args.push_back( make_pair( Layout::sitesOnNode() , index ) );
+    args.push_back( make_pair( 1 , llvm_create_value(0) ) );
+
+    return args;
+  }
+
+
   llvm::Value *get_index_from_index_vector( const IndexDomainVector& idx ) {
     assert( idx.size() >= 2 );
 

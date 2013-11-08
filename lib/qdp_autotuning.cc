@@ -22,7 +22,7 @@ namespace QDP {
     void (*FP)(void*) = (void (*)(void*))(intptr_t)function;
 
     int threads_num;
-    int myId;
+    std::int64_t myId;
     std::int64_t lo = 0;
     std::int64_t hi = site_count;
     AddressLeaf my_args;
@@ -39,6 +39,7 @@ namespace QDP {
       my_args = args;
       my_args.addr[0].in64 = lo;
       my_args.addr[1].in64 = hi;
+      my_args.addr[2].in64 = myId;
 
       FP( my_args.addr.data() );
 #pragma omp barrier

@@ -151,6 +151,7 @@ namespace QDP
 
   llvm::Value      *get_index_from_index_vector( const IndexDomainVector& idx );
   IndexDomainVector get_index_vector_from_index( llvm::Value *index );
+  IndexDomainVector get_scalar_index_vector_from_index( llvm::Value *index );
   void setDataLayoutInnerSize( std::int64_t i );
   std::int64_t getDataLayoutInnerSize();
 
