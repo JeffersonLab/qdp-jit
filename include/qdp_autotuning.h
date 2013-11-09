@@ -3,7 +3,7 @@
 
 namespace QDP {
 
-  void jit_call(void* function,int th_count,const AddressLeaf& args);
+  void jit_call_autotuning(void* function,int th_count,const AddressLeaf& args);
 
   int jit_autotuning(void* function,int lo,int hi,void ** param);
 

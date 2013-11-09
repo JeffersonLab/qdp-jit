@@ -16,38 +16,7 @@ namespace QDP {
 
 
 
-
-  void jit_dispatch( void* function , int site_count, int th_count, const AddressLeaf& args)
-  {
-    void (*FP)(void*) = (void (*)(void*))(intptr_t)function;
-
-    int threads_num;
-    std::int64_t myId;
-    std::int64_t lo = 0;
-    std::int64_t hi = site_count;
-    AddressLeaf my_args;
-
-    omp_set_num_threads(th_count);
-   
-#pragma omp parallel shared(site_count, threads_num, args) private(myId, lo, hi, my_args) default(shared)
-    {
-      threads_num = omp_get_num_threads();
-      myId = omp_get_thread_num();
-      lo = site_count*myId/threads_num;
-      hi = site_count*(myId+1)/threads_num;
-
-      my_args = args;
-      my_args.addr[0].in64 = lo;
-      my_args.addr[1].in64 = hi;
-      my_args.addr[2].in64 = myId;
-
-      FP( my_args.addr.data() );
-#pragma omp barrier
-    }
-  }
-
-
-  void jit_call(void* function,int site_count,const AddressLeaf& args)
+  void jit_call_autotune( void* function , int site_count , const AddressLeaf& args)
   {
     // Check for thread count equals zero
     // This can happen, when inner count is zero
@@ -57,7 +26,6 @@ namespace QDP {
     if (mapTune.count(function) == 0) {
       mapTune[function] = tune_t( 32 , 0 , 0.0 );
     }
-
 
     tune_t& tune = mapTune[function];
 

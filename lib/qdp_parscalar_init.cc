@@ -212,6 +212,12 @@ namespace QDP {
 				sscanf((*argv)[++i], "%d", &inner);
 				setDataLayoutInnerSize(inner);
 			}
+			else if (strcmp((*argv)[i], "-threads")==0) 
+			{
+				int threads;
+				sscanf((*argv)[++i], "%d", &threads);
+				qdpSetNumThreads(threads);
+			}
 			else if (strcmp((*argv)[i], "-geom")==0) 
 			{
 				setGeomP = true;

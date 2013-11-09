@@ -57,7 +57,7 @@ namespace QDP {
     std::cout << "calling copymask(Lattice)..\n";
 #endif
 
-    jit_call(function,th_count,addr_leaf);
+    jit_dispatch(function,th_count,addr_leaf);
   }
 
 }

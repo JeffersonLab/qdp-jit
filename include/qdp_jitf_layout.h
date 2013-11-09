@@ -48,7 +48,7 @@ namespace QDP {
 
     std::cout << "calling layout(to JIT)..\n";
 
-    jit_call(function,th_count,addr_leaf);
+    jit_dispatch(function,th_count,addr_leaf);
   }
 
 
@@ -103,7 +103,7 @@ namespace QDP {
 
     std::cout << "calling layout(to native)..\n";
 
-    jit_call(function,th_count,addr_leaf);
+    jit_dispatch(function,th_count,addr_leaf);
   }
 
 }

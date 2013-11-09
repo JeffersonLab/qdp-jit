@@ -73,7 +73,7 @@ function_exec(void * function, OLattice<T>& dest, const Op& op, const QDPExpr<RH
 #endif
   std::cout << "calling eval(Lattice,Lattice).. " << addr_leaf.addr.size() << "\n";  
 
-  jit_call(function,s.numSiteTable(),addr_leaf);
+  jit_dispatch(function,s.numSiteTable(),addr_leaf);
 }
 
 
@@ -144,7 +144,7 @@ function_lat_sca_exec(void* function, OLattice<T>& dest, const Op& op, const QDP
   std::cout << "calling eval(Lattice,Scalar)..\n";
 #endif
 
-  jit_call(function,th_count,addr_leaf);
+  jit_dispatch(function,th_count,addr_leaf);
 
   // void (*FP)(void*) = (void (*)(void*))(intptr_t)function;
 
@@ -201,7 +201,7 @@ function_zero_rep_exec(void * function, OLattice<T>& dest, const Subset& s )
   std::cout << "calling zero_rep(Lattice,Subset)..\n";
 #endif
 
-  jit_call( function , s.numSiteTable() , addr_leaf );
+  jit_dispatch( function , s.numSiteTable() , addr_leaf );
 }
 
 
@@ -362,7 +362,7 @@ function_gather_exec( void * function, void * send_buf , const Map& map , const 
 #ifdef LLVM_DEBUG
   std::cout << "calling gather.. " << addr_leaf.addr.size() << "\n";  
 #endif
-  jit_call( function , map.soffset().size() , addr_leaf);
+  jit_dispatch( function , map.soffset().size() , addr_leaf);
 }
 
 

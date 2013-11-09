@@ -52,9 +52,9 @@ function_sum_exec(void * function, typename UnaryReturn<OLattice<T>, FnSum>::Typ
 {
   typedef typename UnaryReturn<T, FnSum>::Type_t RetT;
 
-  RetT dest[ 32 * getDataLayoutInnerSize() ];
+  RetT dest[ qdpNumThreads() ];
 
-  for( int i = 0 ; i < 32 ; ++i )
+  for( int i = 0 ; i < qdpNumThreads() ; ++i )
     zero_rep(dest[i]);
 
   AddressLeaf addr_leaf;
@@ -67,13 +67,13 @@ function_sum_exec(void * function, typename UnaryReturn<OLattice<T>, FnSum>::Typ
   addr_leaf.setAddr( &dest[0] );
 
 #ifdef LLVM_DEBUG
-#endif
   std::cout << "calling sum(Lattice).. " << addr_leaf.addr.size() << "\n";
+#endif
 
-  jit_call( function , s.numSiteTable() , addr_leaf );
+  jit_dispatch( function , s.numSiteTable() , addr_leaf );
 
   zero_rep(ret);
-  for( int i = 0 ; i < 32 ; ++i )
+  for( int i = 0 ; i < qdpNumThreads() ; ++i )
     ret.elem() += dest[i];
 }
 
