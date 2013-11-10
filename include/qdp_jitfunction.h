@@ -49,15 +49,15 @@ template<class T, class T1, class Op, class RHS>
 void 
 function_exec(void * function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
 {
-  ShiftPhase1 phase1;
-  int offnode_maps = forEach(rhs, phase1 , BitOrCombine());
+  /* ShiftPhase1 phase1; */
+  /* int offnode_maps = forEach(rhs, phase1 , BitOrCombine()); */
   
 #ifdef LLVM_DEBUG
   QDP_info("offnode_maps = %d",offnode_maps);
 #endif
 
-  ShiftPhase2 phase2;
-  forEach(rhs, phase2 , NullCombine());
+  /* ShiftPhase2 phase2; */
+  /* forEach(rhs, phase2 , NullCombine()); */
 
   AddressLeaf addr_leaf;
   jit_get_empty_arguments(addr_leaf);
@@ -70,8 +70,8 @@ function_exec(void * function, OLattice<T>& dest, const Op& op, const QDPExpr<RH
   int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
 
 #ifdef LLVM_DEBUG
-#endif
   std::cout << "calling eval(Lattice,Lattice).. " << addr_leaf.addr.size() << "\n";  
+#endif
 
   jit_dispatch(function,s.numSiteTable(),addr_leaf);
 }
