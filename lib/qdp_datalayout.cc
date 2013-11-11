@@ -16,7 +16,6 @@ namespace QDP {
   }
 
   void setDataLayoutInnerSize( std::int64_t i ) {
-    std::cout << "Using inner length = " << i << "\n";
     DataLayout::inner = i;
   }
 

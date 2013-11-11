@@ -165,8 +165,16 @@ namespace QDP {
     // llvm::InitializeAllTargetMCs();
 
     // "-print-machineinstrs"
-    const char *SetTinyVectorThreshold[] = {"program","-vectorizer-min-trip-count=4"};
+
+    char * argument = new char[128];
+    sprintf( argument , "-vectorizer-min-trip-count=%d" , (int)getDataLayoutInnerSize() );
+
+    QDPIO::cerr << "Setting loop vectorizer minimum trip count to " << (int)getDataLayoutInnerSize() << "\n";
+    
+    const char *SetTinyVectorThreshold[] = {"program",argument};
     llvm::cl::ParseCommandLineOptions(2, SetTinyVectorThreshold);
+
+    delete[] argument;
 
     llvm::InitializeNativeTarget();
 

@@ -390,9 +390,6 @@ namespace QDP {
 	    QDP_abort(1);
 	  }
 
-	  // Initialize the LLVM wrapper
-	  llvm_wrapper_init();
-		
 	  // initialize the global streams
 	  QDPIO::cin.init(&std::cin);
 	  QDPIO::cout.init(&std::cout);
@@ -401,6 +398,9 @@ namespace QDP {
 	  initProfile(__FILE__, __func__, __LINE__);
 		
 	  QDPIO::cout << "Initialize done" << std::endl;
+
+	  // Initialize the LLVM wrapper
+	  llvm_wrapper_init();
 	}
 
 
