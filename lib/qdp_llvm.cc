@@ -42,7 +42,7 @@ namespace QDP {
     int label_counter;
   }
 
-  //Imported PTX Unary operations single precision
+
   llvm::Function *func_sin_f32;
   llvm::Function *func_acos_f32;
   llvm::Function *func_asin_f32;
@@ -60,11 +60,9 @@ namespace QDP {
   llvm::Function *func_fabs_f32;
   llvm::Function *func_sqrt_f32;
 
-  //Imported PTX Binary operations single precision
   llvm::Function *func_pow_f32;
   llvm::Function *func_atan2_f32;
 
-  //Imported PTX Unary operations double precision
   llvm::Function *func_sin_f64;
   llvm::Function *func_acos_f64;
   llvm::Function *func_asin_f64;
@@ -82,82 +80,95 @@ namespace QDP {
   llvm::Function *func_fabs_f64;
   llvm::Function *func_sqrt_f64;
 
-  //Imported PTX Binary operations double precision
   llvm::Function *func_pow_f64;
   llvm::Function *func_atan2_f64;
 
 
-
-
-
-  llvm::Function *llvm_get_func( const char * name )
+  llvm::Function *llvm_get_func_float( const char * name )
   {
-    llvm::Function *func = Mod->getFunction(name);
-    if (!func)
-      QDP_error_exit("Function %s not found.\n",name);
-    //QDP_info_primary("Found libdevice function: %s",name);
-    return func;
+    return llvm::Function::Create( 
+           llvm::FunctionType::get( 
+           builder->getFloatTy(),llvm::ArrayRef<llvm::Type*>( builder->getFloatTy() ) , false) , 
+           llvm::Function::ExternalLinkage, name , Mod );
+  }
+
+  llvm::Function *llvm_get_func_float_float( const char * name )
+  {
+    std::vector< llvm::Type* > args;
+    args.push_back(builder->getFloatTy());
+    args.push_back(builder->getFloatTy());
+    return llvm::Function::Create( 
+           llvm::FunctionType::get( 
+           builder->getFloatTy(),llvm::ArrayRef<llvm::Type*>( args.data() , 2 ) , false) , 
+           llvm::Function::ExternalLinkage, name , Mod );
+  }
+
+  llvm::Function *llvm_get_func_double( const char * name )
+  {
+    return llvm::Function::Create( 
+           llvm::FunctionType::get( 
+           builder->getDoubleTy(),llvm::ArrayRef<llvm::Type*>( builder->getDoubleTy() ) , false) , 
+           llvm::Function::ExternalLinkage, name , Mod );
+  }
+
+  llvm::Function *llvm_get_func_double_double( const char * name )
+  {
+    std::vector< llvm::Type* > args;
+    args.push_back(builder->getDoubleTy());
+    args.push_back(builder->getDoubleTy());
+    return llvm::Function::Create( 
+           llvm::FunctionType::get( 
+           builder->getDoubleTy(),llvm::ArrayRef<llvm::Type*>( args.data() , 2 ) , false) , 
+           llvm::Function::ExternalLinkage, name , Mod );
   }
 
 
 
-#if 0
+
   void llvm_setup_math_functions() 
   {
-    // Link libdevice to current module
+    QDPIO::cerr << "Initializing math functions\n";
 
-    QDP_info_primary("Linking libdevice to new module");
+    func_sin_f32 = llvm_get_func_float( "sinf" );
+    func_acos_f32 = llvm_get_func_float( "acosf" );
+    func_asin_f32 = llvm_get_func_float( "asinf" );
+    func_atan_f32 = llvm_get_func_float( "atanf" );
+    func_ceil_f32 = llvm_get_func_float( "ceilf" );
+    func_floor_f32 = llvm_get_func_float( "floorf" );
+    func_cos_f32 = llvm_get_func_float( "cosf" );
+    func_cosh_f32 = llvm_get_func_float( "coshf" );
+    func_exp_f32 = llvm_get_func_float( "expf" );
+    func_log_f32 = llvm_get_func_float( "logf" );
+    func_log10_f32 = llvm_get_func_float( "log10f" );
+    func_sinh_f32 = llvm_get_func_float( "sinhf" );
+    func_tan_f32 = llvm_get_func_float( "tanf" );
+    func_tanh_f32 = llvm_get_func_float( "tanhf" );
+    func_fabs_f32 = llvm_get_func_float( "fabsf" );
+    func_sqrt_f32 = llvm_get_func_float( "sqrtf" );
 
-    std::string ErrorMsg;
-    if (llvm::Linker::LinkModules( Mod , module_libdevice.get() ,  llvm::Linker::PreserveSource , &ErrorMsg)) {
-      QDP_error_exit("Linking libdevice failed: %s",ErrorMsg.c_str());
-    }
+    func_pow_f32 = llvm_get_func_float_float( "powf" );
+    func_atan2_f32 = llvm_get_func_float_float( "atan2f" );
 
-    QDP_info_primary("Initializing math functions");
+    func_sin_f64 = llvm_get_func_double( "sin" );
+    func_acos_f64 = llvm_get_func_double( "acos" );
+    func_asin_f64 = llvm_get_func_double( "asin" );
+    func_atan_f64 = llvm_get_func_double( "atan" );
+    func_ceil_f64 = llvm_get_func_double( "ceil" );
+    func_floor_f64 = llvm_get_func_double( "floor" );
+    func_cos_f64 = llvm_get_func_double( "cos" );
+    func_cosh_f64 = llvm_get_func_double( "cosh" );
+    func_exp_f64 = llvm_get_func_double( "exp" );
+    func_log_f64 = llvm_get_func_double( "log" );
+    func_log10_f64 = llvm_get_func_double( "log10" );
+    func_sinh_f64 = llvm_get_func_double( "sinh" );
+    func_tan_f64 = llvm_get_func_double( "tan" );
+    func_tanh_f64 = llvm_get_func_double( "tanh" );
+    func_fabs_f64 = llvm_get_func_double( "fabs" );
+    func_sqrt_f64 = llvm_get_func_double( "sqrt" );
 
-    func_sin_f32 = llvm_get_func( "__nv_sinf" );
-    func_acos_f32 = llvm_get_func( "__nv_acosf" );
-    func_asin_f32 = llvm_get_func( "__nv_asinf" );
-    func_atan_f32 = llvm_get_func( "__nv_atanf" );
-    func_ceil_f32 = llvm_get_func( "__nv_ceilf" );
-    func_floor_f32 = llvm_get_func( "__nv_floorf" );
-    func_cos_f32 = llvm_get_func( "__nv_cosf" );
-    func_cosh_f32 = llvm_get_func( "__nv_coshf" );
-    func_exp_f32 = llvm_get_func( "__nv_expf" );
-    func_log_f32 = llvm_get_func( "__nv_logf" );
-    func_log10_f32 = llvm_get_func( "__nv_log10f" );
-    func_sinh_f32 = llvm_get_func( "__nv_sinhf" );
-    func_tan_f32 = llvm_get_func( "__nv_tanf" );
-    func_tanh_f32 = llvm_get_func( "__nv_tanhf" );
-    func_fabs_f32 = llvm_get_func( "__nv_fabsf" );
-    func_sqrt_f32 = llvm_get_func( "__nv_fsqrt_rn" );
-
-
-    func_pow_f32 = llvm_get_func( "__nv_powf" );
-    func_atan2_f32 = llvm_get_func( "__nv_atan2f" );
-
-
-    func_sin_f64 = llvm_get_func( "__nv_sin" );
-    func_acos_f64 = llvm_get_func( "__nv_acos" );
-    func_asin_f64 = llvm_get_func( "__nv_asin" );
-    func_atan_f64 = llvm_get_func( "__nv_atan" );
-    func_ceil_f64 = llvm_get_func( "__nv_ceil" );
-    func_floor_f64 = llvm_get_func( "__nv_floor" );
-    func_cos_f64 = llvm_get_func( "__nv_cos" );
-    func_cosh_f64 = llvm_get_func( "__nv_cosh" );
-    func_exp_f64 = llvm_get_func( "__nv_exp" );
-    func_log_f64 = llvm_get_func( "__nv_log" );
-    func_log10_f64 = llvm_get_func( "__nv_log10" );
-    func_sinh_f64 = llvm_get_func( "__nv_sinh" );
-    func_tan_f64 = llvm_get_func( "__nv_tan" );
-    func_tanh_f64 = llvm_get_func( "__nv_tanh" );
-    func_fabs_f64 = llvm_get_func( "__nv_fabs" );
-    func_sqrt_f64 = llvm_get_func( "__nv_dsqrt_rn" );
-
-    func_pow_f64 = llvm_get_func( "__nv_pow" );
-    func_atan2_f64 = llvm_get_func( "__nv_atan2" );
+    func_pow_f64 = llvm_get_func_double_double( "pow" );
+    func_atan2_f64 = llvm_get_func_double_double( "atan2" );
   }
-#endif
 
 
   void llvm_wrapper_init() {
@@ -197,6 +208,7 @@ namespace QDP {
     llvm_type<double*>::value = llvm::Type::getDoublePtrTy(llvm::getGlobalContext());
     llvm_type<int*>::value    = llvm::Type::getIntNPtrTy(llvm::getGlobalContext(),32);
     llvm_type<bool*>::value   = llvm::Type::getIntNPtrTy(llvm::getGlobalContext(),1);
+
   }  
 
 
@@ -241,6 +253,9 @@ namespace QDP {
     QDP_info_primary( "Staring new LLVM function ...");
 
     builder = new llvm::IRBuilder<>(llvm::getGlobalContext());
+
+    llvm_setup_math_functions();
+
 
     // jit_build_seedToFloat();
     // jit_build_seedMultiply();
