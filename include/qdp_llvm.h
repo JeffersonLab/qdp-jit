@@ -55,7 +55,7 @@
 #include "llvm/IR/GlobalVariable.h"
 
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
-#include "llvm/ExecutionEngine/JIT.h"
+#include "llvm/ExecutionEngine/MCJIT.h"
 #include "llvm/Analysis/Verifier.h"
 
 namespace llvm {

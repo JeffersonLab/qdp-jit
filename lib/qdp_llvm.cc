@@ -16,6 +16,8 @@ namespace QDP {
 
   llvm::FunctionPassManager *TheFPM;
 
+  std::string mcjit_error;
+
   void * fptr_mainFunc_extern;
 
   bool function_started;
@@ -168,39 +170,16 @@ namespace QDP {
 
     llvm::InitializeNativeTarget();
 
-    Mod = new llvm::Module("module", llvm::getGlobalContext());
-
-    // llvm::Triple TheTriple;
-    // TheTriple.setArch(llvm::Triple::x86_64);
-    // TheTriple.setVendor(llvm::Triple::UnknownVendor);
-    // TheTriple.setOS(llvm::Triple::Linux);
-    // TheTriple.setEnvironment(llvm::Triple::ELF);
-
-    // Mod->setTargetTriple(TheTriple.getTriple());
-
-
-    Mod->setTargetTriple(llvm::sys::getProcessTriple());
-
-    string error;
-    llvm::EngineBuilder engineBuilder(Mod);
-    engineBuilder.setMCPU(llvm::sys::getHostCPUName());
-    engineBuilder.setEngineKind(llvm::EngineKind::JIT);
-    engineBuilder.setOptLevel(llvm::CodeGenOpt::Aggressive);
-    engineBuilder.setErrorStr(&error);
-
-    TheExecutionEngine = engineBuilder.create();
-    
-    assert(TheExecutionEngine && "failed to create LLVM ExecutionEngine with error");
-
-    targetMachine = engineBuilder.selectTarget();
+    llvm::InitializeNativeTargetAsmPrinter(); // MCJIT
+    llvm::InitializeNativeTargetAsmParser(); // MCJIT
 
 
     function_created = false;
     function_started = false;
 
 
-    llvm::InitializeAllAsmPrinters();
-    llvm::InitializeAllAsmParsers();
+    // llvm::InitializeAllAsmPrinters();
+    // llvm::InitializeAllAsmParsers();
 
     llvm_type<float>::value  = llvm::Type::getFloatTy(llvm::getGlobalContext());
     llvm_type<double>::value = llvm::Type::getDoubleTy(llvm::getGlobalContext());
@@ -222,6 +201,34 @@ namespace QDP {
     assert( !function_started && "Function already started");
     function_started = true;
     function_created = false;
+
+    QDP_info_primary( "Creating new module ...");
+
+    Mod = new llvm::Module("module", llvm::getGlobalContext());
+
+    // llvm::Triple TheTriple;
+    // TheTriple.setArch(llvm::Triple::x86_64);
+    // TheTriple.setVendor(llvm::Triple::UnknownVendor);
+    // TheTriple.setOS(llvm::Triple::Linux);
+    // TheTriple.setEnvironment(llvm::Triple::ELF);
+
+    // Mod->setTargetTriple(TheTriple.getTriple());
+
+    Mod->setTargetTriple(llvm::sys::getProcessTriple());
+
+    llvm::EngineBuilder engineBuilder(Mod);
+    engineBuilder.setMCPU(llvm::sys::getHostCPUName());
+    engineBuilder.setEngineKind(llvm::EngineKind::JIT);
+    engineBuilder.setOptLevel(llvm::CodeGenOpt::Aggressive);
+    engineBuilder.setErrorStr(&mcjit_error);
+
+    TheExecutionEngine = engineBuilder.setUseMCJIT(true).create(); // MCJIT
+    
+    assert(TheExecutionEngine && "failed to create LLVM ExecutionEngine with error");
+
+    targetMachine = engineBuilder.selectTarget();
+
+
 
     QDP_info_primary( "Staring new LLVM function ...");
 
@@ -1199,6 +1206,10 @@ namespace QDP {
 
     std::cout << "in get function: Verifying main_extern function\n";
     llvm::verifyFunction(*mainFunc_extern);
+
+    std::cout << "finalizing the module\n";
+    TheExecutionEngine->finalizeObject();  // MCJIT
+
     std::cout << "in get function: JIT compiling main_extern ...\n";
     fptr_mainFunc_extern = TheExecutionEngine->getPointerToFunction( mainFunc_extern );
 
