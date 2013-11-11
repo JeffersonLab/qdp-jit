@@ -295,7 +295,7 @@ AC_SUBST(LLVM_CXXFLAGS, "`${LLVM_CONFIG} --cxxflags`")
 AC_MSG_NOTICE([LLVM compile flags: ${LLVM_CXXFLAGS}])
 AC_SUBST(LLVM_LDFLAGS,  "`${LLVM_CONFIG} --ldflags`")
 AC_MSG_NOTICE([LLVM linking flags: ${LLVM_LDFLAGS}])
-AC_SUBST(LLVM_LIBS,     "`${LLVM_CONFIG} --libs`")
+AC_SUBST(LLVM_LIBS,     "`${LLVM_CONFIG} --libs core mcjit native scalaropts vectorize irreader linker`")
 AC_MSG_NOTICE([LLVM libraries flags: ${LLVM_LIBS}])
 
 
