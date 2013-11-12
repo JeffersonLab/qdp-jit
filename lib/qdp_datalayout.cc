@@ -71,40 +71,53 @@ namespace QDP {
 
 #if 1
   llvm::Value * datalayout( JitDeviceLayout lay , IndexDomainVector a ) {
-    assert( a.size() == 5 );
+    if ( a.size() == 5 ) {
+      const size_t nIvo = 0; // volume outer
+      const size_t nIvi = 1; // volume inner
+      const size_t nIs  = 2; // spin
+      const size_t nIc  = 3; // color
+      const size_t nIr  = 4; // reality
 
-    const size_t nIvo = 0; // volume outer
-    const size_t nIvi = 1; // volume inner
-    const size_t nIs  = 2; // spin
-    const size_t nIc  = 3; // color
-    const size_t nIr  = 4; // reality
+      int         Lvo,Lvi,Ls,Lc,Lr;
+      llvm::Value *ivo,*ivi,*is,*ic,*ir;
 
-    int         Lvo,Lvi,Ls,Lc,Lr;
-    llvm::Value *ivo,*ivi,*is,*ic,*ir;
+      std::tie(Lvo,ivo) = a.at(nIvo);
+      std::tie(Lvi,ivi) = a.at(nIvi);
+      std::tie(Ls,is) = a.at(nIs);
+      std::tie(Lc,ic) = a.at(nIc);
+      std::tie(Lr,ir) = a.at(nIr);
 
-    std::tie(Lvo,ivo) = a.at(nIvo);
-    std::tie(Lvi,ivi) = a.at(nIvi);
-    std::tie(Ls,is) = a.at(nIs);
-    std::tie(Lc,ic) = a.at(nIc);
-    std::tie(Lr,ir) = a.at(nIr);
+      llvm::Value * Ivo = llvm_create_value(Lvo);
+      llvm::Value * Ivi = llvm_create_value(Lvi);
+      llvm::Value * Is = llvm_create_value(Ls);
+      llvm::Value * Ic = llvm_create_value(Lc);
+      llvm::Value * Ir = llvm_create_value(Lr);
 
-    llvm::Value * Ivo = llvm_create_value(Lvo);
-    llvm::Value * Ivi = llvm_create_value(Lvi);
-    llvm::Value * Is = llvm_create_value(Ls);
-    llvm::Value * Ic = llvm_create_value(Lc);
-    llvm::Value * Ir = llvm_create_value(Lr);
+      // llvm::Value * iv_div_inner = llvm_div( iv , inner ); // outer
+      // llvm::Value * iv_mod_inner = llvm_rem( iv , inner ); // inner
 
-    // llvm::Value * iv_div_inner = llvm_div( iv , inner ); // outer
-    // llvm::Value * iv_mod_inner = llvm_rem( iv , inner ); // inner
+      llvm::Value * iv = llvm_add(llvm_mul( ivo , Ivi ) , ivi ); // reconstruct volume index
 
-    llvm::Value * iv = llvm_add(llvm_mul( ivo , Ivi ) , ivi ); // reconstruct volume index
+      // offset = ((ir * Ic + ic) * Is + is) * Iv + iv
 
-    // offset = ((ir * Ic + ic) * Is + is) * Iv + iv
-
-    if (lay == JitDeviceLayout::Coalesced) {
-      return llvm_add(llvm_mul(llvm_add(llvm_mul(llvm_add(llvm_mul(llvm_add(llvm_mul(ivo,Is),is),Ic),ic),Ir),ir),Ivi),ivi);
+      if (lay == JitDeviceLayout::Coalesced) {
+	return llvm_add(llvm_mul(llvm_add(llvm_mul(llvm_add(llvm_mul(llvm_add(llvm_mul(ivo,Is),is),Ic),ic),Ir),ir),Ivi),ivi);
+      } else {
+	return llvm_add(llvm_mul(llvm_add(llvm_mul(llvm_add(llvm_mul(iv,Is),is),Ic),ic),Ir),ir);
+      }
     } else {
-      return llvm_add(llvm_mul(llvm_add(llvm_mul(llvm_add(llvm_mul(iv,Is),is),Ic),ic),Ir),ir);
+      // We support non-full DomainIndexVectors
+      // This is needed e.g. for peek instructions
+      assert( lay == JitDeviceLayout::Scalar );
+      llvm::Value * offset = llvm_create_value(0);
+      for( auto x = a.begin() ; x != a.end() ; x++ ) {
+	int         Index;
+	llvm::Value * index;
+	std::tie(Index,index) = *x;
+	llvm::Value * Index_jit = llvm_create_value(Index);
+	offset = llvm_add( llvm_mul( offset , Index_jit ) , index );
+      }
+      return offset;
     }
   }
 #endif
