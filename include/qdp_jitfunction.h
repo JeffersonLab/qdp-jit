@@ -49,6 +49,8 @@ template<class T, class T1, class Op, class RHS>
 void 
 function_exec(void * function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
 {
+  assert( s.hasOrderedRep() );
+
   ShiftPhase1 phase1;
   int offnode_maps = forEach(rhs, phase1 , BitOrCombine());
   
@@ -126,6 +128,8 @@ template<class T, class T1, class Op, class RHS>
 void 
 function_lat_sca_exec(void* function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs, const Subset& s)
 {
+  assert( s.hasOrderedRep() );
+
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   AddressLeaf addr_leaf;
@@ -189,6 +193,8 @@ template<class T>
 void 
 function_zero_rep_exec(void * function, OLattice<T>& dest, const Subset& s )
 {
+  assert( s.hasOrderedRep() );
+
   AddressLeaf addr_leaf;
   jit_get_empty_arguments(addr_leaf);
 
