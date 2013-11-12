@@ -20,7 +20,7 @@ using std::string;
 extern int gethostname(char *, size_t);
 #endif
 
-#if 0
+#if 1
 namespace QDP {
 
 

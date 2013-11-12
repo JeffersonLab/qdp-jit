@@ -291,7 +291,8 @@ if test "X${LLVM_CONFIG}X" = "XX" ; then
 fi
 
 AC_MSG_NOTICE([Found LLVM configuration program ${LLVM_CONFIG}])
-AC_SUBST(LLVM_CXXFLAGS, "`${LLVM_CONFIG} --cxxflags`")
+AC_SUBST(LLVM_CXXFLAGS, "-I${LLVM_HOME}/include")
+dnl AC_SUBST(LLVM_CXXFLAGS, "`${LLVM_CONFIG} --cxxflags`")
 AC_MSG_NOTICE([LLVM compile flags: ${LLVM_CXXFLAGS}])
 AC_SUBST(LLVM_LDFLAGS,  "`${LLVM_CONFIG} --ldflags`")
 AC_MSG_NOTICE([LLVM linking flags: ${LLVM_LDFLAGS}])
