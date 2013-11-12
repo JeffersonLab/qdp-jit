@@ -6,73 +6,53 @@
 namespace QDP {
 
 template<class T>
-CUfunction
+void *
 function_gaussian_build(OLattice<T>& dest ,OLattice<T>& r1 ,OLattice<T>& r2 )
 {
-  std::vector<ParamRef> params = jit_function_preamble_param();
+  JitMainLoop loop;
 
   ParamLeaf param_leaf;
 
   typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
+
   FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
   FuncRet_t r1_jit(forEach(r1, param_leaf, TreeCombine()));
   FuncRet_t r2_jit(forEach(r2, param_leaf, TreeCombine()));
 
-  llvm::Value * r_idx = jit_function_preamble_get_idx( params );
+  IndexDomainVector idx = loop.getIdx();
 
   typedef typename REGType< typename JITType<T>::Type_t >::Type_t TREG;
+
   TREG r1_reg;
   TREG r2_reg;
-  r1_reg.setup( r1_jit.elem( JitDeviceLayout::Coalesced , r_idx ) );
-  r2_reg.setup( r2_jit.elem( JitDeviceLayout::Coalesced , r_idx ) );
+  r1_reg.setup( r1_jit.elem( JitDeviceLayout::Coalesced , idx ) );
+  r2_reg.setup( r2_jit.elem( JitDeviceLayout::Coalesced , idx ) );
 
-  fill_gaussian( dest_jit.elem(JitDeviceLayout::Coalesced , r_idx ) , r1_reg , r2_reg );
+  fill_gaussian( dest_jit.elem(JitDeviceLayout::Coalesced , idx ) , r1_reg , r2_reg );
 
-  return jit_function_epilogue_get_cuf("jit_gaussian.ptx");
+  loop.done();
+
+  return jit_function_epilogue_get("jit_gaussian.ptx");
 }
 
 
 template<class T>
 void 
-function_gaussian_exec(CUfunction function, OLattice<T>& dest,OLattice<T>& r1,OLattice<T>& r2, const Subset& s )
+function_gaussian_exec(void *function, OLattice<T>& dest,OLattice<T>& r1,OLattice<T>& r2, const Subset& s )
 {
+  assert( s.hasOrderedRep() );
+
   AddressLeaf addr_leaf;
+  jit_get_empty_arguments(addr_leaf);
 
   int junk_0 = forEach(dest, addr_leaf, NullCombine());
   int junk_1 = forEach(r1, addr_leaf, NullCombine());
   int junk_2 = forEach(r2, addr_leaf, NullCombine());
 
-  int start = s.start();
-  int end = s.end();
-  bool ordered = s.hasOrderedRep();
-  int th_count = ordered ? s.numSiteTable() : Layout::sitesOnNode();
+  addr_leaf.setOrdered( s.hasOrderedRep() );
+  addr_leaf.setStart( s.start() );
 
-  void * subset_member = QDPCache::Instance().getDevicePtr( s.getIdMemberTable() );
-
-  std::vector<void*> addr;
-
-  addr.push_back( &ordered );
-  //std::cout << "ordered = " << ordered << "\n";
-
-  addr.push_back( &th_count );
-  //std::cout << "thread_count = " << th_count << "\n";
-
-  addr.push_back( &start );
-  //std::cout << "start        = " << start << "\n";
-
-  addr.push_back( &end );
-  //std::cout << "end          = " << end << "\n";
-
-  addr.push_back( &subset_member );
-  //std::cout << "addr idx_inner_dev = " << addr[3] << " " << idx_inner_dev << "\n";
-
-  int addr_dest=addr.size();
-  for(int i=0; i < addr_leaf.addr.size(); ++i) {
-    addr.push_back( &addr_leaf.addr[i] );
-    //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
-  }
-
-  jit_launch(function,th_count,addr);
+  jit_dispatch(function,s.numSiteTable(),addr_leaf);
 }
 
 

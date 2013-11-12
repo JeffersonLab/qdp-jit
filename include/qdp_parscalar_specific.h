@@ -276,28 +276,16 @@ void random(OLattice<T>& d)
 template<class T>
 void gaussian(OLattice<T>& d, const Subset& s)
 {
-  assert(!"ni");
-#if 0
   OLattice<T>  r1, r2;
 
   random(r1,s);
   random(r2,s);
 
-  static CUfunction function;
+  static void * function;
 
-  // Build the function
   if (function == NULL)
-    {
-      //QDPIO::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
-      function = function_gaussian_build( d , r1 , r2 );
-      //QDPIO::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
-    }
-  else
-    {
-      //QDPIO::cout << __PRETTY_FUNCTION__ << ": is already built\n";
-    }
+    function = function_gaussian_build( d , r1 , r2 );
 
-  // Execute the function
   function_gaussian_exec(function, d, r1, r2, s );
 
 #if 0
@@ -307,7 +295,6 @@ void gaussian(OLattice<T>& d, const Subset& s)
     int i = tab[j];
     fill_gaussian(d.elem(i), r1.elem(i), r2.elem(i));
   }
-#endif
 #endif
 }
 
