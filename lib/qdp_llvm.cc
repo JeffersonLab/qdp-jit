@@ -28,6 +28,12 @@ namespace QDP {
   std::vector< llvm::Type* > vecParamType;
   std::vector< llvm::Value* > vecArgument;
 
+  llvm::Value *r_arg_lo;
+  llvm::Value *r_arg_hi;
+  llvm::Value *r_arg_myId;
+  llvm::Value *r_arg_ordered;
+  llvm::Value *r_arg_start;
+
   llvm::OwningPtr<llvm::Module> module_libdevice;
 
   llvm::Type* llvm_type<float>::value;
@@ -88,6 +94,40 @@ namespace QDP {
   void llvm_append_mattr( const char * attr )
   {
     vec_mattr.push_back(attr);
+  }
+
+
+
+  void llvm_create_function();
+
+  llvm::Value *llvm_get_arg_lo() {     
+    if (!function_created)
+      llvm_create_function();
+    return r_arg_lo; 
+  }
+
+  llvm::Value *llvm_get_arg_hi() { 
+    if (!function_created)
+      llvm_create_function();
+    return r_arg_hi; 
+  }
+
+  llvm::Value *llvm_get_arg_myId() { 
+    if (!function_created)
+      llvm_create_function();
+    return r_arg_myId; 
+  }
+
+  llvm::Value *llvm_get_arg_ordered() { 
+    if (!function_created)
+      llvm_create_function();
+    return r_arg_ordered; 
+  }
+
+  llvm::Value *llvm_get_arg_start() { 
+    if (!function_created)
+      llvm_create_function();
+    return r_arg_start; 
   }
 
 
@@ -293,20 +333,52 @@ namespace QDP {
     assert(vecParamType.size()>0 && "vecParamType.size()>0");
 
 
+    // Make a local copy of the argument vector
+    std::vector<llvm::Type*> vecPT;
+
+    // Push back lo,hi,myId
+    vecPT.push_back( llvm::Type::getInt64Ty(llvm::getGlobalContext()) ); // lo
+    vecPT.push_back( llvm::Type::getInt64Ty(llvm::getGlobalContext()) ); // hi
+    vecPT.push_back( llvm::Type::getInt64Ty(llvm::getGlobalContext()) ); // myId
+    vecPT.push_back( llvm::Type::getInt1Ty(llvm::getGlobalContext()) );  // ordered
+    vecPT.push_back( llvm::Type::getInt64Ty(llvm::getGlobalContext()) ); // start
+
+    vecPT.insert( vecPT.end() , vecParamType.begin() , vecParamType.end() );
+
     // Create the main function
 
     llvm::FunctionType *funcType = 
       llvm::FunctionType::get( builder->getVoidTy() , 
-			       llvm::ArrayRef<llvm::Type*>( vecParamType.data() , vecParamType.size() ) , 
+			       llvm::ArrayRef<llvm::Type*>( vecPT.data() , vecPT.size() ) , 
 			       false); // no vararg
     mainFunc = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, "main", Mod);
 
     // Set argument names in 'main'
 
-    std::cout << "setting argument names in 'main'\n";
+    llvm::Function::arg_iterator AI = mainFunc->arg_begin();
+    llvm::Function::arg_iterator AE = mainFunc->arg_end();
+    AI->setName("lo"); 
+    r_arg_lo = AI; 
+    AI++;
+    
+    AI->setName("hi"); 
+    r_arg_hi = AI;
+    AI++;
+    
+    AI->setName("myId"); 
+    r_arg_myId = AI;
+    AI++;
+
+    AI->setName("ordered");
+    r_arg_ordered = AI;
+    AI++;
+
+    AI->setName("start"); 
+    r_arg_start = AI;
+    AI++;
 
     unsigned Idx = 0;
-    for (llvm::Function::arg_iterator AI = mainFunc->arg_begin(), AE = mainFunc->arg_end() ; AI != AE ; ++AI, ++Idx) {
+    for ( ; AI != AE ; ++AI, ++Idx) {
       AI->setName( std::string("arg")+std::to_string(Idx) );
 
       if ( vecParamType.at(Idx)->isPointerTy() ) {
@@ -321,8 +393,8 @@ namespace QDP {
     llvm::BasicBlock* entry_main = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entrypoint", mainFunc);
     builder->SetInsertPoint(entry_main);
 
-    if (Layout::primaryNode())
-      mainFunc->dump();
+    // if (Layout::primaryNode())
+    //   mainFunc->dump();
 
     llvm_counters::label_counter = 0;
     function_created = true;
@@ -1143,19 +1215,12 @@ namespace QDP {
     assert(function_created && "Function not created");
     assert(function_started && "Function not started");
 
-    //addKernelMetadata( mainFunc );
-
-    QDPIO::cerr << "LLVM IR function (before passes)\n";
-    //mainFunc->dump();
-    if (Layout::primaryNode())
-      mainFunc->dump();
+    // QDPIO::cerr << "LLVM IR function (before passes)\n";
+    // if (Layout::primaryNode())
+    //   mainFunc->dump();
 
     QDPIO::cerr << "Verifying main function\n";
     llvm::verifyFunction(*mainFunc);
-    //QDPIO::cerr << "Verifying main_extern function\n";
-    //assert( mainFunc_extern && "mainFunc_extern is NULL");
-    //mainFunc_extern->dump();
-    //llvm::verifyFunction(*mainFunc_extern);
 
     QDPIO::cerr << "running passes ...\n";
 
@@ -1179,14 +1244,14 @@ namespace QDP {
       functionPassManager->add(llvm::createCFGSimplificationPass());
 
     }
-    llvm::DebugFlag = true;
-    llvm::setCurrentDebugType("loop-vectorize");
+    // llvm::DebugFlag = true;
+    // llvm::setCurrentDebugType("loop-vectorize");
 
     functionPassManager->run(*mainFunc);
 
-    QDPIO::cerr << "LLVM IR function (after passes)\n";
-    if (Layout::primaryNode())
-      mainFunc->dump();
+    // QDPIO::cerr << "LLVM IR function (after passes)\n";
+    // if (Layout::primaryNode())
+    //   mainFunc->dump();
 
 
     // Right now a trampoline function which calls the main function
@@ -1198,19 +1263,54 @@ namespace QDP {
 
     // Create the 'trampoline' function
 
+    std::vector< llvm::Type* > vecArgs;
+
+    // Push front lo,hi,myId
+    vecArgs.push_back( llvm::Type::getInt64Ty(llvm::getGlobalContext()) ); // lo
+    vecArgs.push_back( llvm::Type::getInt64Ty(llvm::getGlobalContext()) ); // hi
+    vecArgs.push_back( llvm::Type::getInt64Ty(llvm::getGlobalContext()) ); // myId
+    vecArgs.push_back( llvm::Type::getInt1Ty(llvm::getGlobalContext())  ); // ordered
+    vecArgs.push_back( llvm::Type::getInt64Ty(llvm::getGlobalContext()) ); // start
+    vecArgs.push_back( llvm::PointerType::get( 
+					       llvm::ArrayType::get( llvm::Type::getInt8Ty(llvm::getGlobalContext()) , 
+								     8 ) , 0  ) );
+
     llvm::FunctionType *funcType = 
       llvm::FunctionType::get( builder->getVoidTy() , 
-			       llvm::PointerType::get( 
-						 llvm::ArrayType::get( llvm::Type::getInt8Ty(llvm::getGlobalContext()) , 
-								       8 ) , 0  ),
+			       llvm::ArrayRef<llvm::Type*>( vecArgs.data() , vecArgs.size() ) , 
 			       false); // no vararg
 
     llvm::Function *mainFunc_extern = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, "main_extern", Mod);
 
-    // Convert Parameter to Argument
+    std::vector<llvm::Value*> vecCallArgument;
 
-    llvm::Argument* arg_ptr = mainFunc_extern->arg_begin();
-    arg_ptr->setName( "arg_ptr" );
+    // Convert Parameter to Argument
+    // Push back lo,hi,myId
+
+    llvm::Function::arg_iterator AI = mainFunc_extern->arg_begin();
+
+    AI->setName( "lo" );
+    vecCallArgument.push_back( AI );
+    AI++;
+
+    AI->setName( "hi" );
+    vecCallArgument.push_back( AI );
+    AI++;
+
+    AI->setName( "myId" );
+    vecCallArgument.push_back( AI );
+    AI++;
+
+    AI->setName( "ordered" );
+    vecCallArgument.push_back( AI );
+    AI++;
+
+    AI->setName( "start" );
+    vecCallArgument.push_back( AI );
+    AI++;
+
+    AI->setName( "arg_ptr" );
+
 
     // Create entry basic block
 
@@ -1219,16 +1319,14 @@ namespace QDP {
 
     // Extract each parameter
 
-    std::vector<llvm::Value*> vecCallArgument;
-
-    std::cout << "Building trampoline with the following arguments:\n";
+    //std::cout << "Building trampoline with the following arguments:\n";
 
     int i=0;
     for( std::vector< llvm::Type* >::const_iterator param_type = vecParamType.begin() ; 
     	 param_type != vecParamType.end() ; 
     	 param_type++,i++ ) {
-      (*param_type)->dump(); std::cout << "\n";
-      llvm::Value* gep = builder->CreateGEP( arg_ptr , llvm_create_value(i) );
+      //(*param_type)->dump(); std::cout << "\n";
+      llvm::Value* gep = builder->CreateGEP( AI , llvm_create_value(i) );
       llvm::Type* param_ptr_type = llvm::PointerType::get( *param_type , 0  );
       llvm::Value* ptr_to_arg = builder->CreatePointerCast( gep , param_ptr_type );
       llvm::Value* arg = builder->CreateLoad( ptr_to_arg );
@@ -1240,8 +1338,8 @@ namespace QDP {
     builder->CreateCall( mainFunc , llvm::ArrayRef<llvm::Value*>( vecCallArgument.data() , vecCallArgument.size() ) );
     builder->CreateRetVoid();
 
-    mainFunc_extern->dump();
-
+    //mainFunc_extern->dump();
+    
     std::cout << "in get function: Verifying main_extern function\n";
     llvm::verifyFunction(*mainFunc_extern);
 

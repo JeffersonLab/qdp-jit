@@ -105,6 +105,12 @@ namespace QDP {
 
   void llvm_append_mattr( const char * attr );
 
+  llvm::Value *llvm_get_arg_lo();
+  llvm::Value *llvm_get_arg_hi();
+  llvm::Value *llvm_get_arg_myId();
+  llvm::Value *llvm_get_arg_ordered();
+  llvm::Value *llvm_get_arg_start();
+
   void llvm_start_new_function();
   void llvm_wrapper_init();
   llvm::PHINode * llvm_phi( llvm::Type* type, unsigned num = 0 );

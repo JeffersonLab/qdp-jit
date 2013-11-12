@@ -18,7 +18,7 @@
 
 namespace QDP {
 
-	
+
 	namespace ThreadReductions {
 		REAL64* norm2_results;
 		REAL64* innerProd_results;

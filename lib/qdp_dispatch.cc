@@ -13,30 +13,25 @@ namespace QDP {
     omp_set_num_threads(n);
   }
 
-  void jit_dispatch( void* function , int site_count, const AddressLeaf& args)
+  void jit_dispatch( void* function , int site_count, bool ordered, std::int64_t start, const AddressLeaf& args)
   {
-    void (*FP)(void*) = (void (*)(void*))(intptr_t)function;
+    void (*FP)(std::int64_t,std::int64_t,std::int64_t,bool,std::int64_t,void*) = 
+      (void (*)(std::int64_t,std::int64_t,std::int64_t,bool,std::int64_t,void*))(intptr_t)function;
 
     int threads_num;
     std::int64_t myId;
     std::int64_t lo = 0;
     std::int64_t hi = site_count;
-    AddressLeaf my_args;
+    void * addr = args.addr.data();
 
-#pragma omp parallel shared(site_count, threads_num, args) private(myId, lo, hi, my_args) default(shared)
+#pragma omp parallel shared(site_count, threads_num, ordered, start, addr) private(myId, lo, hi) default(shared)
     {
       threads_num = omp_get_num_threads();
       myId = omp_get_thread_num();
       lo = site_count*myId/threads_num;
       hi = site_count*(myId+1)/threads_num;
 
-      my_args = args;
-      my_args.addr[0].in64 = lo;
-      my_args.addr[1].in64 = hi;
-      my_args.addr[2].in64 = myId;
-
-      FP( my_args.addr.data() );
-#pragma omp barrier
+      FP( lo , hi , myId , ordered, start, addr );
     }
   }
 

@@ -39,7 +39,6 @@ namespace QDP {
   function_layout_to_jit_exec(void * function, T *dest, T *src )
   {
     AddressLeaf addr_leaf;
-    jit_get_empty_arguments(addr_leaf);
 
     addr_leaf.setAddr( dest );
     addr_leaf.setAddr( src );
@@ -48,7 +47,7 @@ namespace QDP {
 
     std::cout << "calling layout(to JIT)..\n";
 
-    jit_dispatch(function,th_count,addr_leaf);
+    jit_dispatch(function,th_count,true,0,addr_leaf);
   }
 
 
@@ -94,7 +93,6 @@ namespace QDP {
   function_layout_to_native_exec(void * function, T *dest, T *src )
   {
     AddressLeaf addr_leaf;
-    jit_get_empty_arguments(addr_leaf);
 
     addr_leaf.setAddr( dest );
     addr_leaf.setAddr( src );
@@ -103,7 +101,7 @@ namespace QDP {
 
     std::cout << "calling layout(to native)..\n";
 
-    jit_dispatch(function,th_count,addr_leaf);
+    jit_dispatch(function,th_count,true,0,addr_leaf);
   }
 
 }

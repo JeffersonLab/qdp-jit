@@ -23,7 +23,6 @@ namespace QDP {
     typedef typename REGType<typename FuncRet_t::Subtype_t>::Type_t REGFuncRet_t;
     typedef typename REGType<typename FuncRet1_t::Subtype_t>::Type_t REGFuncRet1_t;
 
-    //llvm::Value * r_idx = loop.getIdx();
     IndexDomainVector idx = loop.getIdx();
 
     REGFuncRet_t src_reg;
@@ -45,7 +44,6 @@ namespace QDP {
   function_copymask_exec(void * function, OLattice<T>& dest, const OLattice<T1>& mask, const OLattice<T>& src )
   {
     AddressLeaf addr_leaf;
-    jit_get_empty_arguments(addr_leaf);
 
     int junk_0 = forEach(dest, addr_leaf, NullCombine());
     int junk_1 = forEach(src, addr_leaf, NullCombine());
@@ -57,7 +55,7 @@ namespace QDP {
     std::cout << "calling copymask(Lattice)..\n";
 #endif
 
-    jit_dispatch(function,th_count,addr_leaf);
+    jit_dispatch(function,th_count,true,0,addr_leaf);
   }
 
 }

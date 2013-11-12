@@ -58,10 +58,6 @@ function_sum_exec(void * function, typename UnaryReturn<OLattice<T>, FnSum>::Typ
     zero_rep(dest[i]);
 
   AddressLeaf addr_leaf;
-  jit_get_empty_arguments(addr_leaf);
-
-  addr_leaf.setOrdered( s.hasOrderedRep() );
-  addr_leaf.setStart( s.start() );
 
   int junk_src = forEach(src, addr_leaf, NullCombine());
   addr_leaf.setAddr( &dest[0] );
@@ -70,7 +66,7 @@ function_sum_exec(void * function, typename UnaryReturn<OLattice<T>, FnSum>::Typ
   std::cout << "calling sum(Lattice).. " << addr_leaf.addr.size() << "\n";
 #endif
 
-  jit_dispatch( function , s.numSiteTable() , addr_leaf );
+  jit_dispatch( function , s.numSiteTable() , s.hasOrderedRep() , s.start() , addr_leaf );
 
   zero_rep(ret);
   for( int i = 0 ; i < qdpNumThreads() ; ++i )

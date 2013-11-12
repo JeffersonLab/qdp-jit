@@ -43,16 +43,12 @@ function_gaussian_exec(void *function, OLattice<T>& dest,OLattice<T>& r1,OLattic
   assert( s.hasOrderedRep() );
 
   AddressLeaf addr_leaf;
-  jit_get_empty_arguments(addr_leaf);
 
   int junk_0 = forEach(dest, addr_leaf, NullCombine());
   int junk_1 = forEach(r1, addr_leaf, NullCombine());
   int junk_2 = forEach(r2, addr_leaf, NullCombine());
 
-  addr_leaf.setOrdered( s.hasOrderedRep() );
-  addr_leaf.setStart( s.start() );
-
-  jit_dispatch(function,s.numSiteTable(),addr_leaf);
+  jit_dispatch(function,s.numSiteTable(),s.hasOrderedRep(),s.start(),addr_leaf);
 }
 
 

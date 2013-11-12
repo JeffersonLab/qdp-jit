@@ -21,8 +21,6 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 
   JitMainLoop loop;
 
-  //ParamRef p_site_table   = llvm_add_param<int*>();
-
   ParamLeaf param_leaf;
 
   typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
@@ -45,6 +43,7 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 
 
 
+
 template<class T, class T1, class Op, class RHS>
 void 
 function_exec(void * function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
@@ -62,10 +61,6 @@ function_exec(void * function, OLattice<T>& dest, const Op& op, const QDPExpr<RH
   forEach(rhs, phase2 , NullCombine());
 
   AddressLeaf addr_leaf;
-  jit_get_empty_arguments(addr_leaf);
-
-  addr_leaf.setOrdered( s.hasOrderedRep() );
-  addr_leaf.setStart( s.start() );
 
   int junk_dest = forEach(dest, addr_leaf, NullCombine());
   AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
@@ -75,7 +70,7 @@ function_exec(void * function, OLattice<T>& dest, const Op& op, const QDPExpr<RH
   std::cout << "calling eval(Lattice,Lattice).. " << addr_leaf.addr.size() << "\n";  
 #endif
 
-  jit_dispatch(function,s.numSiteTable(),addr_leaf);
+  jit_dispatch(function,s.numSiteTable(),s.hasOrderedRep(),s.start(),addr_leaf);
 }
 
 
@@ -92,12 +87,6 @@ function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScala
 
   JitMainLoop loop;
 
-
-  //ParamRef p_ordered      = llvm_add_param<bool>();
-  //ParamRef p_th_count     = llvm_add_param<int>();
-  //  ParamRef p_start        = llvm_add_param<int>();
-  //ParamRef p_member_array = llvm_add_param<bool*>();
-
   ParamLeaf param_leaf;
 
   typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
@@ -108,9 +97,6 @@ function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScala
   typedef typename ForEach<QDPExpr<RHS,OScalar<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
   View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
-  // llvm::Value * r_start        = llvm_derefParam( p_start );
-
-  //llvm::Value * r_idx = loop.getIdx();
   IndexDomainVector idx = loop.getIdx();
 
   op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , idx ), 
@@ -130,32 +116,17 @@ function_lat_sca_exec(void* function, OLattice<T>& dest, const Op& op, const QDP
 {
   assert( s.hasOrderedRep() );
 
-  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-
   AddressLeaf addr_leaf;
-  jit_get_empty_arguments(addr_leaf);
-
-  addr_leaf.setOrdered( s.hasOrderedRep() );
-  addr_leaf.setStart( s.start() );
 
   int junk_dest = forEach(dest, addr_leaf, NullCombine());
   AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
   int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
 
-  int th_count = s.hasOrderedRep() ? s.numSiteTable() : Layout::sitesOnNode();
-
 #ifdef LLVM_DEBUG
   std::cout << "calling eval(Lattice,Scalar)..\n";
 #endif
 
-  jit_dispatch(function,th_count,addr_leaf);
-
-  // void (*FP)(void*) = (void (*)(void*))(intptr_t)function;
-
-  // std::cout << "calling eval(Lattice,Scalar)..\n";
-  // FP( addr_leaf.addr.data() );
-  // std::cout << "..done\n";
-
+  jit_dispatch(function,s.numSiteTable(),s.hasOrderedRep(),s.start(),addr_leaf);
 }
 
 
@@ -175,7 +146,6 @@ function_zero_rep_build(OLattice<T>& dest)
   typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
   FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
 
-  //llvm::Value * r_idx = loop.getIdx();
   IndexDomainVector idx = loop.getIdx();
 
   zero_rep( dest_jit.elem(JitDeviceLayout::Coalesced,idx) );
@@ -196,10 +166,6 @@ function_zero_rep_exec(void * function, OLattice<T>& dest, const Subset& s )
   assert( s.hasOrderedRep() );
 
   AddressLeaf addr_leaf;
-  jit_get_empty_arguments(addr_leaf);
-
-  addr_leaf.setOrdered( s.hasOrderedRep() );
-  addr_leaf.setStart( s.start() );
 
   int junk_0 = forEach(dest, addr_leaf, NullCombine());
 
@@ -207,7 +173,7 @@ function_zero_rep_exec(void * function, OLattice<T>& dest, const Subset& s )
   std::cout << "calling zero_rep(Lattice,Subset)..\n";
 #endif
 
-  jit_dispatch( function , s.numSiteTable() , addr_leaf );
+  jit_dispatch( function , s.numSiteTable() , s.hasOrderedRep() , s.start(), addr_leaf );
 }
 
 
@@ -309,9 +275,6 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
 
   JitMainLoop loop;
 
-  // ParamRef p_lo      = llvm_add_param<int>();
-  // ParamRef p_hi      = llvm_add_param<int>();
-
   ParamRef p_soffset = llvm_add_param<int*>();
   ParamRef p_sndbuf  = llvm_add_param<WT*>();
 
@@ -323,9 +286,6 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
   typedef typename JITType< OLattice<T> >::Type_t DestView_t;
   DestView_t dest_jit( p_sndbuf );
 
-  //llvm_cond_exit( llvm_ge( r_idx , r_hi ) );
-
-  //llvm::Value * r_idx = loop.getIdx();
   IndexDomainVector idx = loop.getIdx();
 
   llvm::Value * r_idx_site = llvm_array_type_indirection( p_soffset , get_index_from_index_vector(idx) );
@@ -352,7 +312,6 @@ void
 function_gather_exec( void * function, void * send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs )
 {
   AddressLeaf addr_leaf;
-  jit_get_empty_arguments(addr_leaf);
 
   AddressLeaf::Types t;
   t.ptr = const_cast<int*>(map.soffset().slice());
@@ -368,7 +327,7 @@ function_gather_exec( void * function, void * send_buf , const Map& map , const 
 #ifdef LLVM_DEBUG
   std::cout << "calling gather.. " << addr_leaf.addr.size() << "\n";  
 #endif
-  jit_dispatch( function , map.soffset().size() , addr_leaf);
+  jit_dispatch( function , map.soffset().size() , true , 0 , addr_leaf);
 }
 
 
