@@ -178,14 +178,11 @@ namespace QDP {
     // "-print-machineinstrs"
 
     char * argument = new char[128];
-    const char *SetTinyVectorThreshold[] = {"program",argument};
+    sprintf( argument , "-vectorizer-min-trip-count=%d" , (int)getDataLayoutInnerSize() );
 
     QDPIO::cerr << "Setting loop vectorizer minimum trip count to " << (int)getDataLayoutInnerSize() << "\n";
-    sprintf( argument , "-vectorizer-min-trip-count=%d" , (int)getDataLayoutInnerSize() );
-    llvm::cl::ParseCommandLineOptions(2, SetTinyVectorThreshold);
-
-    QDPIO::cerr << "Forcing loop vectorizer vector width to " << (int)getDataLayoutInnerSize() << "\n";
-    sprintf( argument , "-force-vector-width=%d" , (int)getDataLayoutInnerSize() );
+    
+    const char *SetTinyVectorThreshold[] = {"program",argument};
     llvm::cl::ParseCommandLineOptions(2, SetTinyVectorThreshold);
 
     delete[] argument;
@@ -291,7 +288,7 @@ namespace QDP {
 
     // Set argument names in 'main'
 
-    //std::cout << "setting argument names in 'main'\n";
+    std::cout << "setting argument names in 'main'\n";
 
     unsigned Idx = 0;
     for (llvm::Function::arg_iterator AI = mainFunc->arg_begin(), AE = mainFunc->arg_end() ; AI != AE ; ++AI, ++Idx) {
@@ -309,8 +306,8 @@ namespace QDP {
     llvm::BasicBlock* entry_main = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entrypoint", mainFunc);
     builder->SetInsertPoint(entry_main);
 
-    // if (Layout::primaryNode())
-    //   mainFunc->dump();
+    if (Layout::primaryNode())
+      mainFunc->dump();
 
     llvm_counters::label_counter = 0;
     function_created = true;
@@ -1133,9 +1130,10 @@ namespace QDP {
 
     //addKernelMetadata( mainFunc );
 
-    // QDPIO::cerr << "LLVM IR function (before passes)\n";
-    // if (Layout::primaryNode())
-    //   mainFunc->dump();
+    QDPIO::cerr << "LLVM IR function (before passes)\n";
+    //mainFunc->dump();
+    if (Layout::primaryNode())
+      mainFunc->dump();
 
     QDPIO::cerr << "Verifying main function\n";
     llvm::verifyFunction(*mainFunc);
@@ -1171,9 +1169,9 @@ namespace QDP {
 
     functionPassManager->run(*mainFunc);
 
-    // QDPIO::cerr << "LLVM IR function (after passes)\n";
-    // if (Layout::primaryNode())
-    //   mainFunc->dump();
+    QDPIO::cerr << "LLVM IR function (after passes)\n";
+    if (Layout::primaryNode())
+      mainFunc->dump();
 
 
     // Right now a trampoline function which calls the main function
@@ -1208,13 +1206,13 @@ namespace QDP {
 
     std::vector<llvm::Value*> vecCallArgument;
 
-    //std::cout << "Building trampoline with the following arguments:\n";
+    std::cout << "Building trampoline with the following arguments:\n";
 
     int i=0;
     for( std::vector< llvm::Type* >::const_iterator param_type = vecParamType.begin() ; 
     	 param_type != vecParamType.end() ; 
     	 param_type++,i++ ) {
-      //(*param_type)->dump(); std::cout << "\n";
+      (*param_type)->dump(); std::cout << "\n";
       llvm::Value* gep = builder->CreateGEP( arg_ptr , llvm_create_value(i) );
       llvm::Type* param_ptr_type = llvm::PointerType::get( *param_type , 0  );
       llvm::Value* ptr_to_arg = builder->CreatePointerCast( gep , param_ptr_type );
@@ -1227,7 +1225,7 @@ namespace QDP {
     builder->CreateCall( mainFunc , llvm::ArrayRef<llvm::Value*>( vecCallArgument.data() , vecCallArgument.size() ) );
     builder->CreateRetVoid();
 
-    //mainFunc_extern->dump();
+    mainFunc_extern->dump();
 
     std::cout << "in get function: Verifying main_extern function\n";
     llvm::verifyFunction(*mainFunc_extern);
