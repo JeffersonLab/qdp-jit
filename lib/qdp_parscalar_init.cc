@@ -218,6 +218,12 @@ namespace QDP {
 				sscanf((*argv)[++i], "%d", &threads);
 				qdpSetNumThreads(threads);
 			}
+			else if (strcmp((*argv)[i], "-mattr")==0) 
+			{
+			  char tmp[1024];
+			  sscanf((*argv)[++i], "%s", &tmp);
+			  llvm_append_mattr(tmp);
+			}
 			else if (strcmp((*argv)[i], "-geom")==0) 
 			{
 				setGeomP = true;

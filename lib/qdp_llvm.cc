@@ -23,6 +23,7 @@ namespace QDP {
   bool function_started;
   bool function_created;
 
+  std::vector<std::string>  vec_mattr;
 
   std::vector< llvm::Type* > vecParamType;
   std::vector< llvm::Value* > vecArgument;
@@ -82,6 +83,12 @@ namespace QDP {
 
   llvm::Function *func_pow_f64;
   llvm::Function *func_atan2_f64;
+
+
+  void llvm_append_mattr( const char * attr )
+  {
+    vec_mattr.push_back(attr);
+  }
 
 
   llvm::Function *llvm_get_func_float( const char * name )
@@ -236,8 +243,16 @@ namespace QDP {
 
     Mod->setTargetTriple(llvm::sys::getProcessTriple());
 
+    if (vec_mattr.size() > 0) {
+      QDPIO::cerr << "MCPU attributes: ";
+      for ( auto attr : vec_mattr )
+	QDPIO::cerr << attr << " ";
+      QDPIO::cerr << "\n";
+    }
+
     llvm::EngineBuilder engineBuilder(Mod);
     engineBuilder.setMCPU(llvm::sys::getHostCPUName());
+    engineBuilder.setMAttrs( vec_mattr );
     engineBuilder.setEngineKind(llvm::EngineKind::JIT);
     engineBuilder.setOptLevel(llvm::CodeGenOpt::Aggressive);
     engineBuilder.setErrorStr(&mcjit_error);
