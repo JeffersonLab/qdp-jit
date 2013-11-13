@@ -9,7 +9,7 @@ AM_CXXFLAGS = -I@top_srcdir@/include -I@top_builddir@/include \
               -I@top_srcdir@/other_libs/qio/other_libs/c-lime/include \
               -I@top_builddir@/other_libs/qio/other_libs/c-lime/include \
               -I@top_srcdir@/other_libs/xpath_reader/include \
-              @LIBXML2_CXXFLAGS@ @QMP_CFLAGS@ @QMT_CXXFLAGS@ @CUDA_CXXFLAGS@
+              @LIBXML2_CXXFLAGS@ @QMP_CFLAGS@ @QMT_CXXFLAGS@ @LLVM_CXXFLAGS@
 
 
 if BUILD_FILEDB
@@ -17,14 +17,14 @@ AM_CXXFLAGS += -I@top_srcdir@/other_libs/filedb/src \
                -I@top_srcdir@/other_libs/filedb/filehash
 endif
 
-AM_LDFLAGS = -L@top_builddir@/lib @CUDA_LDFLAGS@ @CUDA_LIBS@
+AM_LDFLAGS = -L@top_builddir@/lib
 
 if QDP_USE_LIBXML2
 AM_LDFLAGS += -L@top_builddir@/other_libs/qio/lib \
              -L@top_builddir@/other_libs/qio/other_libs/c-lime/lib \
              -L@top_builddir@/other_libs/xpath_reader/lib
 endif
-AM_LDFLAGS += @LDFLAGS@ @QMP_LDFLAGS@ @QMT_LDFLAGS@
+AM_LDFLAGS += @LDFLAGS@ @QMP_LDFLAGS@ @QMT_LDFLAGS@ @LLVM_LDFLAGS@
 
 
 if BUILD_FILEDB
@@ -32,7 +32,7 @@ AM_LDFLAGS += -L@top_builddir@/other_libs/filedb/src \
               -L@top_builddir@/other_libs/filedb/filehash
 endif
 
-LDADD = -lqdp
+LDADD = -lqdp @LLVM_LIBS@
 
 if QDP_USE_LIBXML2
 LDADD += -lXPathReader -lxmlWriter -lqio -llime

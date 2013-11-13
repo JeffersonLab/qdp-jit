@@ -9,7 +9,7 @@ AM_CXXFLAGS = -I@top_srcdir@/include -I@top_builddir@/include \
               -I@top_srcdir@/other_libs/qio/other_libs/c-lime/include \
               -I@top_builddir@/other_libs/qio/other_libs/c-lime/include \
               -I@top_srcdir@/other_libs/xpath_reader/include \
-              @LIBXML2_CXXFLAGS@ @QMP_CFLAGS@ @QMT_CXXFLAGS@
+              @LIBXML2_CXXFLAGS@ @QMP_CFLAGS@ @QMT_CXXFLAGS@ @LLVM_CXXFLAGS@
 
 
 
@@ -17,10 +17,10 @@ AM_LDFLAGS = -L@top_builddir@/lib \
              -L@top_builddir@/other_libs/qio/lib \
              -L@top_builddir@/other_libs/qio/other_libs/c-lime/lib \
              -L@top_builddir@/other_libs/xpath_reader/lib \
-             @LDFLAGS@ @QMP_LDFLAGS@ @QMT_LDFLAGS@
+             @LDFLAGS@ @QMP_LDFLAGS@ @QMT_LDFLAGS@ @LLVM_LDFLAGS@
 
 
-LDADD = -lqdp -lXPathReader -lxmlWriter -lqio -llime @LIBXML2_LIBS@ @QMP_LIBS@ @QMT_LIBS@ @LIBS@
+LDADD = -lqdp -lXPathReader -lxmlWriter -lqio -llime @LIBXML2_LIBS@ @QMP_LIBS@ @QMT_LIBS@ @LIBS@ @LLVM_LIBS@
 
 
 #
