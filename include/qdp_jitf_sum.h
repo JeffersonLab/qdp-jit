@@ -1,8 +1,6 @@
 #ifndef QDP_JITF_SUM_H
 #define QDP_JITF_SUM_H
 
-#include "qmp.h"
-
 namespace QDP {
 
 

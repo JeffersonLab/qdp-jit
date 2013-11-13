@@ -1122,43 +1122,26 @@ globalMax(const QDPExpr<RHS,OScalar<T> >& s1)
 /*!
  * Find the maximum an object has across the lattice
  */
-#if 0
 template<class RHS, class T>
 typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t
 globalMax(const QDPExpr<RHS,OLattice<T> >& s1)
 {
-  OLattice<T> l(s1);
-  return globalMax(l);
-}
-#else
-template<class RHS, class T>
-typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t
-globalMax(const QDPExpr<RHS,OLattice<T> >& s1)
-{
-  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
-
-  typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t  d;
+  OLattice<T> tmp(s1);
 
 #if defined(QDP_USE_PROFILING)   
   static QDPProfile_t prof(d, OpAssign(), FnGlobalMax(), s1);
   prof.time -= getClockTime();
 #endif
 
-  // Loop always entered so unroll
-  d.elem() = forEach(s1, EvalLeaf1(0), OpCombine());   // SINGLE NODE VERSION FOR NOW
+  typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t  d;
 
-  const int vvol = Layout::sitesOnNode();
-  for(int i=1; i < vvol; ++i) 
-  {
-    typename UnaryReturn<T, FnGlobalMax>::Type_t  dd = 
-      forEach(s1, EvalLeaf1(i), OpCombine());   // SINGLE NODE VERSION FOR NOW
+  static void* function;
+  if (function == NULL)
+    function = function_global_max_build( tmp );
 
-    if (toBool(dd > d.elem()))
-      d.elem() = dd;
-  }
+  function_global_max_exec( function , d , tmp , all );
 
-  // Do a global max on the result
-  QDPInternal::globalMax(d); 
+  QDPInternal::globalMax(d);
 
 #if defined(QDP_USE_PROFILING)   
   prof.time += getClockTime();
@@ -1168,7 +1151,7 @@ globalMax(const QDPExpr<RHS,OLattice<T> >& s1)
 
   return d;
 }
-#endif
+
 
 
 //! OScalar = globalMin(OScalar)

@@ -20,25 +20,19 @@ namespace QDP {
 
   class JitMainLoop {
   private:
+
     int inner;
-  public:
+    bool done_preamble = false;
 
-    JitMainLoop() {
-      inner = getDataLayoutInnerSize();
-      llvm_start_new_function();
-    }
-
-    llvm::Value * getThreadNum() {
-      return r_thread_num;
-    }
-
-    IndexDomainVector getIdx() {
-
-      r_lo_in = llvm_get_arg_lo();
-      r_hi_in = llvm_get_arg_hi();
-      r_thread_num = llvm_get_arg_myId();
-      llvm::Value * r_ordered      = llvm_get_arg_ordered();
-      llvm::Value * r_start        = llvm_get_arg_start();
+    void do_preamble() {
+      if (done_preamble)
+	return;
+      done_preamble = true;
+      r_lo_in        = llvm_get_arg_lo();
+      r_hi_in        = llvm_get_arg_hi();
+      r_thread_num   = llvm_get_arg_myId();
+      r_ordered      = llvm_get_arg_ordered();
+      r_start        = llvm_get_arg_start();
 
       llvm::BasicBlock * block_ordered = llvm_new_basic_block();
       llvm::BasicBlock * block_not_ordered = llvm_new_basic_block();
@@ -71,6 +65,28 @@ namespace QDP {
 
       r_lo_outer = llvm_div( r_lo , r_inner );
       r_hi_outer = llvm_div( r_hi , r_inner );
+    }
+
+  public:
+
+    JitMainLoop() {
+      inner = getDataLayoutInnerSize();
+      llvm_start_new_function();
+    }
+
+
+    llvm::Value * getThreadNum() {
+      do_preamble();
+      return r_thread_num;
+    }
+
+    llvm::Value * getLo() {
+      do_preamble();
+      return r_lo;
+    }
+
+    IndexDomainVector getIdx() {
+      do_preamble();
 
       block_entry_point = llvm_get_insert_point();
       block_site_loop_inner = llvm_new_basic_block();
@@ -155,6 +171,8 @@ namespace QDP {
     llvm::BasicBlock * block_site_loop_outer;
     llvm::BasicBlock * block_site_loop_outer_exit;
     llvm::BasicBlock * block_end_loop_body;
+    llvm::Value * r_ordered;
+    llvm::Value * r_start;
     llvm::Value * r_lo_in;
     llvm::Value * r_hi_in;
     llvm::Value * r_thread_num;

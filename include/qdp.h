@@ -207,7 +207,7 @@ namespace QDP {
 #include "qdp_jitf_copymask.h"
 #include "qdp_jitf_layout.h"
 #include "qdp_jitf_sum.h"
-// #include "qdp_jitf_globalmax.h"
+#include "qdp_jitf_globalmax.h"
 #include "qdp_jitf_gaussian.h"
 
 // Include threading code here if applicable
