@@ -98,6 +98,7 @@ function_global_max_exec(void * function, typename UnaryReturn<OLattice<T>, FnGl
     if (toBool(dest[i] > ret.elem()))
       ret.elem() = dest[i];
 
+  // MPI globalMax in caller
 }
 
 

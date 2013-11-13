@@ -429,6 +429,11 @@ sum(const QDPExpr<RHS,OLattice<T> >& s1, const Subset& s)
   OLattice<T> tmp;
   tmp[s] = s1;
 
+#if defined(QDP_USE_PROFILING)   
+  static QDPProfile_t prof(d, OpAssign(), FnSum(), s1);
+  prof.time -= getClockTime();
+#endif
+
   static void* function;
 
   if (function == NULL)
@@ -438,38 +443,16 @@ sum(const QDPExpr<RHS,OLattice<T> >& s1, const Subset& s)
 
   function_sum_exec( function , d , tmp , s );
 
+  // Do a global sum on the result
+  QDPInternal::globalSum(d);
+
+#if defined(QDP_USE_PROFILING)   
+  prof.time += getClockTime();
+  prof.count++;
+  prof.print();
+#endif
+
   return d;
-
-
-
-
-//   typename UnaryReturn<OLattice<T>, FnSum>::Type_t  d;
-
-// #if defined(QDP_USE_PROFILING)   
-//   static QDPProfile_t prof(d, OpAssign(), FnSum(), s1);
-//   prof.time -= getClockTime();
-// #endif
-
-//   // Must initialize to zero since we do not know if the loop will be entered
-//   zero_rep(d.elem());
-
-//   const int *tab = s.siteTable().slice();
-//   for(int j=0; j < s.numSiteTable(); ++j) 
-//   {
-//     int i = tab[j];
-//     d.elem() += forEach(s1, EvalLeaf1(i), OpCombine());
-//   }
-
-//   // Do a global sum on the result
-//   QDPInternal::globalSum(d);
-
-// #if defined(QDP_USE_PROFILING)   
-//   prof.time += getClockTime();
-//   prof.count++;
-//   prof.print();
-// #endif
-
-//   return d;
 }
 
 
@@ -485,6 +468,11 @@ sum(const QDPExpr<RHS,OLattice<T> >& s1)
   OLattice<T> tmp;
   tmp = s1;
 
+#if defined(QDP_USE_PROFILING)   
+  static QDPProfile_t prof(d, OpAssign(), FnSum(), s1);
+  prof.time -= getClockTime();
+#endif
+
   static void* function;
 
   if (function == NULL)
@@ -494,14 +482,19 @@ sum(const QDPExpr<RHS,OLattice<T> >& s1)
 
   function_sum_exec( function , d , tmp , all );
 
+  // Do a global sum on the result
+  QDPInternal::globalSum(d);
+
+#if defined(QDP_USE_PROFILING)   
+  prof.time += getClockTime();
+  prof.count++;
+  prof.print();
+#endif
+
   return d;
 
 //   typename UnaryReturn<OLattice<T>, FnSum>::Type_t  d;
 
-// #if defined(QDP_USE_PROFILING)   
-//   static QDPProfile_t prof(d, OpAssign(), FnSum(), s1);
-//   prof.time -= getClockTime();
-// #endif
 
 //   // Loop always entered - could unroll
 //   zero_rep(d.elem());
@@ -513,11 +506,6 @@ sum(const QDPExpr<RHS,OLattice<T> >& s1)
 //   // Do a global sum on the result
 //   QDPInternal::globalSum(d);
 
-// #if defined(QDP_USE_PROFILING)   
-//   prof.time += getClockTime();
-//   prof.count++;
-//   prof.print();
-// #endif
 
 //   return d;
 }

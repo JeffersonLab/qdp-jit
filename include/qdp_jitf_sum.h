@@ -69,6 +69,8 @@ function_sum_exec(void * function, typename UnaryReturn<OLattice<T>, FnSum>::Typ
   zero_rep(ret);
   for( int i = 0 ; i < qdpNumThreads() ; ++i )
     ret.elem() += dest[i];
+
+  // MPI sum in caller
 }
 
 
