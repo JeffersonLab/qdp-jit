@@ -49,6 +49,28 @@ namespace QDP {
     int label_counter;
   }
 
+  namespace {
+    bool debug_func_build      = false;
+    bool debug_func_dump       = false;
+    bool debug_loop_vectorizer = false;
+  }
+
+  void llvm_set_debug( const char * c_str ) {
+    std::string str(c_str);
+    if (str.find("loop-vectorize") != string::npos) {
+      debug_loop_vectorizer = true;
+      return;
+    }
+    if (str.find("function-builder") != string::npos) {
+      debug_func_build = true;
+      return;
+    }
+    if (str.find("function-dump") != string::npos) {
+      debug_func_dump = true;
+      return;
+    }
+    QDP_error_exit("unknown debug argument: %s",c_str);
+  }
 
   llvm::Function *func_sin_f32;
   llvm::Function *func_acos_f32;
@@ -174,7 +196,9 @@ namespace QDP {
 
   void llvm_setup_math_functions() 
   {
-    QDPIO::cerr << "Initializing math functions\n";
+    if (debug_func_build) {
+      QDPIO::cerr << "    initializing math functions\n";
+    }
 
     func_sin_f32 = llvm_get_func_float( "sinf" );
     func_acos_f32 = llvm_get_func_float( "acosf" );
@@ -227,6 +251,7 @@ namespace QDP {
     char * argument = new char[128];
     sprintf( argument , "-vectorizer-min-trip-count=%d" , (int)getDataLayoutInnerSize() );
 
+    QDPIO::cerr << "Using inner lattice size of " << (int)getDataLayoutInnerSize() << "\n";
     QDPIO::cerr << "Setting loop vectorizer minimum trip count to " << (int)getDataLayoutInnerSize() << "\n";
     
     const char *SetTinyVectorThreshold[] = {"program",argument};
@@ -269,7 +294,9 @@ namespace QDP {
     function_started = true;
     function_created = false;
 
-    QDP_info_primary( "Creating new module ...");
+    if (debug_func_build) {
+      QDPIO::cerr << "Creating new module ...\n";
+    }
 
     Mod = new llvm::Module("module", llvm::getGlobalContext());
 
@@ -283,16 +310,19 @@ namespace QDP {
 
     Mod->setTargetTriple(llvm::sys::getProcessTriple());
 
-    if (vec_mattr.size() > 0) {
-      QDPIO::cerr << "MCPU attributes: ";
-      for ( auto attr : vec_mattr )
-	QDPIO::cerr << attr << " ";
-      QDPIO::cerr << "\n";
+    if (debug_func_build) {
+      if (vec_mattr.size() > 0) {
+	QDPIO::cerr << "    MCPU attributes: ";
+	for ( auto attr : vec_mattr )
+	  QDPIO::cerr << attr << " ";
+	QDPIO::cerr << "\n";
+      }
     }
 
     llvm::EngineBuilder engineBuilder(Mod);
     engineBuilder.setMCPU(llvm::sys::getHostCPUName());
-    engineBuilder.setMAttrs( vec_mattr );
+    if (vec_mattr.size() > 0) 
+      engineBuilder.setMAttrs( vec_mattr );
     engineBuilder.setEngineKind(llvm::EngineKind::JIT);
     engineBuilder.setOptLevel(llvm::CodeGenOpt::Aggressive);
     engineBuilder.setErrorStr(&mcjit_error);
@@ -304,13 +334,13 @@ namespace QDP {
     targetMachine = engineBuilder.selectTarget();
 
 
-
-    QDP_info_primary( "Staring new LLVM function ...");
+    if (debug_func_build) {
+      QDPIO::cerr << "    staring new LLVM function ...\n";
+    }
 
     builder = new llvm::IRBuilder<>(llvm::getGlobalContext());
 
     llvm_setup_math_functions();
-
 
     // jit_build_seedToFloat();
     // jit_build_seedMultiply();
@@ -1215,14 +1245,21 @@ namespace QDP {
     assert(function_created && "Function not created");
     assert(function_started && "Function not started");
 
-    // QDPIO::cerr << "LLVM IR function (before passes)\n";
-    // if (Layout::primaryNode())
-    //   mainFunc->dump();
+    if (debug_func_dump) {
+      if (Layout::primaryNode()) {
+	QDPIO::cerr << "LLVM IR function (before passes)\n";
+	mainFunc->dump();
+      }
+    }
 
-    QDPIO::cerr << "Verifying main function\n";
+    if (debug_func_build) {
+      QDPIO::cerr << "    verifying: main\n";
+    }
     llvm::verifyFunction(*mainFunc);
 
-    QDPIO::cerr << "running passes ...\n";
+    if (debug_func_build) {
+      QDPIO::cerr << "    optimizing ...\n";
+    }
 
     static llvm::FunctionPassManager *functionPassManager = NULL;
     if (functionPassManager == NULL) {
@@ -1244,15 +1281,21 @@ namespace QDP {
       functionPassManager->add(llvm::createCFGSimplificationPass());
 
     }
-    // llvm::DebugFlag = true;
-    // llvm::setCurrentDebugType("loop-vectorize");
+    if (debug_loop_vectorizer) {
+      if (Layout::primaryNode()) {
+	llvm::DebugFlag = true;
+	llvm::setCurrentDebugType("loop-vectorize");
+      }
+    }
 
     functionPassManager->run(*mainFunc);
 
-    // QDPIO::cerr << "LLVM IR function (after passes)\n";
-    // if (Layout::primaryNode())
-    //   mainFunc->dump();
-
+    if (debug_func_dump) {
+      if (Layout::primaryNode()) {
+	QDPIO::cerr << "LLVM IR function (after passes)\n";
+	mainFunc->dump();
+      }
+    }
 
     // Right now a trampoline function which calls the main function
     // is necessary. For the auto-vectorizer we need the arguments to
@@ -1340,13 +1383,19 @@ namespace QDP {
 
     //mainFunc_extern->dump();
     
-    std::cout << "in get function: Verifying main_extern function\n";
+    if (debug_func_build) {
+      QDPIO::cerr << "    verifying: main_extern\n";
+    }
     llvm::verifyFunction(*mainFunc_extern);
 
-    std::cout << "finalizing the module\n";
+    if (debug_func_build) {
+      QDPIO::cerr << "    finalizing the module\n";
+    }
     TheExecutionEngine->finalizeObject();  // MCJIT
 
-    std::cout << "in get function: JIT compiling main_extern ...\n";
+    if (debug_func_build) {
+      QDPIO::cerr << "    JIT compiling ...\n";
+    }
     fptr_mainFunc_extern = TheExecutionEngine->getPointerToFunction( mainFunc_extern );
 
     function_created = false;

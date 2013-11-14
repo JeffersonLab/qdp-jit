@@ -22,7 +22,7 @@ namespace QDP {
 
   IndexDomainVector get_index_vector_from_index( llvm::Value *index )
   {
-    std::cout << "Using inner length = " << DataLayout::inner << "\n";
+    //std::cout << "Using inner length = " << DataLayout::inner << "\n";
 
     llvm::Value * inner = llvm_create_value( DataLayout::inner );
     llvm::Value * iv_div_inner = llvm_div( index , inner );   // outer

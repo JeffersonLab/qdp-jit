@@ -73,6 +73,9 @@ namespace QDP {
   extern llvm::Function    *mainFunc_extern;
   extern llvm::Module      *Mod;
 
+
+  void llvm_set_debug( const char * str );
+
   llvm::Value * llvm_create_value( double v );
   llvm::Value * llvm_create_value( int v );
   llvm::Value * llvm_create_value( std::int64_t v );
