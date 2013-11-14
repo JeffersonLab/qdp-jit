@@ -147,24 +147,12 @@ namespace QDPInternal
     // tightly in memory - no padding
     typedef typename WordType<T>::Type_t  W;   // find the machine word type
 
-#if 0 
-    QDPIO::cout << "sizeof(T) = " << sizeof(T) << endl;
-    QDPIO::cout << "sizeof(W) = " << sizeof(W) << endl;
-    QDPIO::cout << "Calling global sum array with length " << sizeof(T)/sizeof(W) << endl;
-#endif
-    if (QMP_get_number_of_nodes() > 1) {
-      globalSumArray((W *)dest.getF(), int(sizeof(T)/sizeof(W))); // call appropriate hook
-    } else {
-      QDP_debug("global sum: no MPI reduction");
-    }
+    globalSumArray((W *)dest.getF(), int(sizeof(T)/sizeof(W))); // call appropriate hook
   }
 
   template<>
   inline void globalSum(double& dest)
   {
-#if 0 
-    QDPIO::cout << "Using simple sum_double" << endl;
-#endif
     QMP_sum_double(&dest);
   }
 
@@ -187,11 +175,7 @@ namespace QDPInternal
   {
     typedef typename WordType<T>::Type_t  W;   // find the machine word type
 
-    if (QMP_get_number_of_nodes() > 1) {
-      globalMaxValue((W *)dest.getF());
-    } else {
-      QDP_debug("global max: no MPI reduction");
-    }
+    globalMaxValue((W *)dest.getF());
   }
 
 
@@ -213,11 +197,7 @@ namespace QDPInternal
   {
     typedef typename WordType<T>::Type_t  W;   // find the machine word type
 
-    if (QMP_get_number_of_nodes() > 1) {
-      globalMinValue((W *)dest.getF());
-    } else {
-      QDP_debug("global min: no MPI reduction");
-    }
+    globalMinValue((W *)dest.getF());
   }
 
 

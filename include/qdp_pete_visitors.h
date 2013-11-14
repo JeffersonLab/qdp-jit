@@ -103,13 +103,13 @@ struct AddressLeaf
     addr.push_back(t);
   }
   void setLit( int i ) const {
-    std::cout << "AddressLeaf::setLit int " << i << "\n";
+    //std::cout << "AddressLeaf::setLit int " << i << "\n";
     Types t;
     t.in = i;
     addr.push_back(t);
   }
   void setLit( std::int64_t i ) const {
-    std::cout << "AddressLeaf::setLit std::int64_t " << i << "\n";
+    //std::cout << "AddressLeaf::setLit std::int64_t " << i << "\n";
     Types t;
     t.in64 = i;
     addr.push_back(t);
