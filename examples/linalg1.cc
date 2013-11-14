@@ -17,6 +17,9 @@ double QDP_M_eq_M_times_M(LatticeColorMatrix& dest,
 {
   StopWatch swatch;
 
+  // Call it once to JIT compile
+  dest = s1 * s2;
+
   swatch.start();
   for (; cnt-- > 0; )
     dest = s1 * s2;
@@ -31,6 +34,9 @@ double QDP_M_eq_Ma_times_M(LatticeColorMatrix& dest,
 			  int cnt)
 {
   StopWatch swatch;
+
+  // Call it once to JIT compile
+  dest = adj(s1) * s2;
  
   swatch.start();
   for (; cnt-- > 0; )
@@ -46,7 +52,10 @@ double QDP_M_eq_M_times_Ma(LatticeColorMatrix& dest,
 			   int cnt)
 {
   StopWatch swatch;
-                                                                                
+
+  // Call it once to JIT compile
+  dest = s1 * adj(s2);
+                                                        
   swatch.start();
   for (; cnt-- > 0; )
     dest = s1 * adj(s2);
@@ -63,11 +72,13 @@ double QDP_M_eq_Ma_times_Ma(LatticeColorMatrix& dest,
 {
 
   StopWatch swatch;
-  swatch.start();
 
+  // Call it once to JIT compile
+  dest = adj(s1) * adj(s2);
+
+  swatch.start();
   for (; cnt-- > 0; )
     dest = adj(s1) * adj(s2);
-
   swatch.stop();
 
   return swatch.getTimeInSeconds();
@@ -81,11 +92,12 @@ double QDP_M_peq_M_times_M(LatticeColorMatrix& dest,
 {
   StopWatch swatch;
 
+  // Call it once to JIT compile
+  dest += s1 * s2;
+                                                            
   swatch.start();
-
   for (; cnt-- > 0; )
     dest += s1 * s2;
-
   swatch.stop();
 
   return swatch.getTimeInSeconds();
@@ -100,11 +112,12 @@ double QDP_M_peq_M_times_Ma(LatticeColorMatrix& dest,
 {
   StopWatch swatch;
 
-  swatch.start();
+  // Call it once to JIT compile
+  dest += s1 * adj(s2);
 
+  swatch.start();
   for (; cnt-- > 0; )
     dest += s1 * adj(s2);
-
   swatch.stop();
 
   return swatch.getTimeInSeconds();
@@ -119,11 +132,12 @@ double QDP_M_peq_Ma_times_M(LatticeColorMatrix& dest,
 {
   StopWatch swatch;
 
-  swatch.start();
+  // Call it once to JIT compile
+  dest += adj(s1) * s2;
 
+  swatch.start();
   for (; cnt-- > 0; )
     dest += adj(s1) * s2;
-
   swatch.stop();
 
   return swatch.getTimeInSeconds();
@@ -138,11 +152,12 @@ double QDP_M_peq_Ma_times_Ma(LatticeColorMatrix& dest,
 {
   StopWatch swatch;
 
+  // Call it once to JIT compile
+  dest += adj(s1) * adj(s2);
+                                                  
   swatch.start();
-
   for (; cnt-- > 0; )
     dest += adj(s1) * adj(s2);
-
   swatch.stop();
 
   return swatch.getTimeInSeconds();
@@ -157,11 +172,12 @@ double QDP_M_meq_M_times_M(LatticeColorMatrix& dest,
 {
   StopWatch swatch;
 
+  // Call it once to JIT compile
+  dest -= s1 * s2;
+                                                            
   swatch.start();
-
   for (; cnt-- > 0; )
     dest -= s1 * s2;
-
   swatch.stop();
 
   return swatch.getTimeInSeconds();
@@ -176,11 +192,12 @@ double QDP_M_meq_M_times_Ma(LatticeColorMatrix& dest,
 {
   StopWatch swatch;
 
+  // Call it once to JIT compile
+  dest -= s1 * adj(s2);
+                                                                                
   swatch.start();
-
   for (; cnt-- > 0; )
     dest -= s1 * adj(s2);
-
   swatch.stop();
 
   return swatch.getTimeInSeconds();
@@ -195,11 +212,12 @@ double QDP_M_meq_Ma_times_M(LatticeColorMatrix& dest,
 {
   StopWatch swatch;
 
-  swatch.start();
+  // Call it once to JIT compile
+  dest -= adj(s1) * s2;
 
+  swatch.start();
   for (; cnt-- > 0; )
     dest -= adj(s1) * s2;
-
   swatch.stop();
 
   return swatch.getTimeInSeconds();
@@ -214,11 +232,12 @@ double QDP_M_meq_Ma_times_Ma(LatticeColorMatrix& dest,
 {
   StopWatch swatch;
 
-  swatch.start();
+  // Call it once to JIT compile
+  dest -= adj(s1) * adj(s2);
 
+  swatch.start();
   for (; cnt-- > 0; )
     dest -= adj(s1) * adj(s2);
-
   swatch.stop();
 
   return swatch.getTimeInSeconds();
@@ -234,6 +253,9 @@ double QDP_V_eq_M_times_V(LatticeColorVector& dest,
 
   StopWatch swatch;
 
+  // Call it once to JIT compile
+  dest = s1 * s2;
+                                                                                
   swatch.start();
   for (; cnt-- > 0; )
     dest = s1 * s2;
@@ -253,11 +275,12 @@ double QDP_V_eq_Ma_times_V(LatticeColorVector& dest,
 
   StopWatch swatch;
 
-  swatch.start();
+  // Call it once to JIT compile
+  dest = adj(s1) * s2;                                                                                
 
+  swatch.start();
   for (; cnt-- > 0; )
     dest = adj(s1) * s2;
-  
   swatch.stop();
 
   return swatch.getTimeInSeconds();
@@ -273,10 +296,12 @@ double QDP_V_eq_V_plus_V(LatticeColorVector& dest,
 
   StopWatch swatch;
 
+  // Call it once to JIT compile
+  dest = s1 + s2;
+                                                                                
   swatch.start();
   for (; cnt-- > 0; )
     dest = s1 + s2;
-
   swatch.stop();
 
   return swatch.getTimeInSeconds();
@@ -291,10 +316,12 @@ double QDP_D_eq_M_times_D(LatticeDiracFermion& dest,
 {
   StopWatch swatch;
 
+  // Call it once to JIT compile
+  dest = s1 * s2;
+                                                                                
   swatch.start();
   for (; cnt-- > 0; )
     dest = s1 * s2;
-
   swatch.stop();
 
   return swatch.getTimeInSeconds();
@@ -310,11 +337,12 @@ double QDP_D_eq_Ma_times_D(LatticeDiracFermion& dest,
 
   StopWatch swatch;
 
+  // Call it once to JIT compile
+  dest = adj(s1) * s2;
+                                                        
   swatch.start();
-
   for (; cnt-- > 0; )
     dest = adj(s1) * s2;
-
   swatch.stop();
 
 
@@ -331,6 +359,9 @@ double QDP_H_eq_M_times_H(LatticeHalfFermion& dest,
 
   StopWatch swatch;
 
+  // Call it once to JIT compile
+  dest = s1 * s2;
+                                                             
   swatch.start();
   for (; cnt-- > 0; )
     dest = s1 * s2;
@@ -348,6 +379,9 @@ double QDP_H_eq_Ma_times_H(LatticeHalfFermion& dest,
 {
   StopWatch swatch;
 
+  // Call it once to JIT compile
+  dest = adj(s1) * s2;
+                                                        
   swatch.start();
   for (; cnt-- > 0; )
     dest = adj(s1) * s2;
