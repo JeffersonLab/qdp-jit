@@ -80,6 +80,8 @@ int main(int argc, char *argv[])
   swatch.reset();
   time = 0;
   icnt = 1;
+  // Call once for sake of JIT
+  m1-=m2;
   while(time <= 1000000) { 
     swatch.start();
     for(int j=0; j < icnt; j++) {
