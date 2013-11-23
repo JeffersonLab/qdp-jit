@@ -20,6 +20,18 @@ int main(int argc, char *argv[])
   const int foo[] = {16,16,16,16};
   multi1d<int> nrow(Nd);
   nrow = foo;  // Use only Nd elements
+
+  for (int i=1; i<argc; i++) 
+    {
+      if (strcmp((argv)[i], "-lat")==0) 
+	{
+	  int lat;
+	  sscanf((argv)[++i], "%d", &lat);
+	  nrow[0]=nrow[1]=nrow[2]=nrow[3]=lat;
+	}
+    }
+
+
   Layout::setLattSize(nrow);
   Layout::create();
 
