@@ -23,6 +23,17 @@ int main(int argc, char **argv)
   const int foo[] = {4,2,2,2};
   multi1d<int> nrow(Nd);
   nrow = foo;  // Use only Nd elements
+
+  for (int i=1; i<argc; i++) 
+    {
+      if (strcmp((argv)[i], "-lat")==0) 
+	{
+	  int lat;
+	  sscanf((argv)[++i], "%d", &lat);
+	  nrow[0]=nrow[1]=nrow[2]=nrow[3]=lat;
+	}
+    }
+
   Layout::setLattSize(nrow);
   Layout::create();
 
@@ -42,6 +53,7 @@ int main(int argc, char **argv)
     int cb = 0;
     QDPIO::cout << "Applying D" << endl;
       
+    dslash(chi, u, psi, isign, cb);
     clock_t myt1=clock();
     for(int i=0; i < iter; i++)
       dslash(chi, u, psi, isign, cb);
@@ -62,6 +74,7 @@ int main(int argc, char **argv)
     int cb = 0;
     QDPIO::cout << "Applying D" << endl;
       
+    dslash2(chi, u, psi, isign, cb);
     clock_t myt1=clock();
     for(int i=0; i < iter; i++)
       dslash2(chi, u, psi, isign, cb);
@@ -76,7 +89,7 @@ int main(int argc, char **argv)
   }
 
 
-#if 1
+#if 0
   XMLFileWriter xml("t_dslashm.xml");
   push(xml,"t_dslashm");
   write(xml,"Nd", Nd);
