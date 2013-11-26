@@ -72,7 +72,7 @@ AC_ARG_ENABLE(alignment,
 	AC_HELP_STRING([--enable-alignment=N],
 	[Set alignment to N bytes for OLattice]),
 	[ac_alignment=${enableval}],
-	[ac_alignment=16]
+	[ac_alignment=32]
 )
 
 AC_DEFINE_UNQUOTED(QDP_AC_ALIGNMENT_SIZE, ${ac_alignment}, [Alignment for OLattice])
