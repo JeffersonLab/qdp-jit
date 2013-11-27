@@ -88,8 +88,8 @@ function_global_max_exec(void * function, typename UnaryReturn<OLattice<T>, FnGl
   addr_leaf.setAddr( &dest[0] );
 
 #ifdef LLVM_DEBUG
-#endif
   std::cout << "calling globalMax(Lattice).. " << addr_leaf.addr.size() << "\n";
+#endif
 
   jit_dispatch( function , s.numSiteTable() , s.hasOrderedRep() , s.start() , addr_leaf );
 
