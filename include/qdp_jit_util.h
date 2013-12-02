@@ -21,9 +21,6 @@ namespace QDP {
   class JitMainLoop {
   private:
 
-    int inner;
-    bool done_preamble = false;
-
     void do_preamble() {
       if (done_preamble)
 	return;
@@ -72,6 +69,7 @@ namespace QDP {
     JitMainLoop() {
       inner = getDataLayoutInnerSize();
       llvm_start_new_function();
+      done_preamble = false;
     }
 
 
@@ -182,6 +180,8 @@ namespace QDP {
     llvm::PHINode * r_hi;
     llvm::Value * r_inner;
 
+    int inner;
+    bool done_preamble;
   };
 
 

@@ -1,6 +1,8 @@
 #ifndef QDP_LLVM
 #define QDP_LLVM
 
+#define __STDC_LIMIT_MACROS
+#define __STDC_CONSTANT_MACROS
 
 #include "llvm/IRReader/IRReader.h"
 #include "llvm/IR/Module.h"

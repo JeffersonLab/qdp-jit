@@ -271,8 +271,16 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 
     typedef T SubType_t;
 
+    void common_ctor() {
+      F_alloc[0] = false;
+      F_alloc[1] = false;
+      F_jit_valid = false;
+    }
+
+
     OLattice()
     {
+      common_ctor();
       //alloc_mem("create");
     }
 
@@ -287,6 +295,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
     template<class T1>
     OLattice(const OScalar<T1>& rhs)
     {
+      common_ctor();
       //alloc_mem("construct from OScalar");
       this->assign(rhs);
     }
@@ -295,6 +304,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
     template<class T1>
     OLattice(const OLattice<T1>& rhs)
     {
+      common_ctor();
       //alloc_mem("construct from OLattice");
       this->assign(rhs);
     }
@@ -303,6 +313,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
     template<class RHS, class T1>
     OLattice(const QDPExpr<RHS, OLattice<T1> >& rhs)
     {
+      common_ctor();
       //alloc_mem("construct from expr");
       this->assign(rhs);
     }
@@ -310,6 +321,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 
     OLattice(const typename WordType<T>::Type_t& rhs)
     {
+      common_ctor();
       //alloc_mem("construct from const");
 
       typedef OScalar<typename InternalScalar<T>::Type_t>  Scalar_t;
@@ -319,6 +331,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 
     OLattice(const Zero& rhs)
     {
+      common_ctor();
       //alloc_mem("construct from zero");
       this->assign(rhs);
     }
@@ -368,6 +381,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 
     OLattice(const OLattice& rhs)
     {
+      common_ctor();
       //alloc_mem("copy");
       this->assign(rhs);
     }
@@ -486,8 +500,8 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
     mutable T* F;
     mutable T* F_jit;
 
-    mutable std::array<bool,2> F_alloc = {{ false , false }};
-    mutable bool F_jit_valid = false;
+    mutable bool F_alloc[2];
+    mutable bool F_jit_valid;
   };
 
 
