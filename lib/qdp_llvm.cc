@@ -509,8 +509,7 @@ namespace QDP {
 
 
 
-  std::tuple<llvm::Value*,llvm::Value*,llvm::Type*>
-  llvm_normalize_values(llvm::Value* lhs , llvm::Value* rhs)
+  llvm::Value* llvm_normalize_values(llvm::Value*& lhs , llvm::Value*& rhs)
   {
     llvm::Type* args_type = promote( lhs->getType() , rhs->getType() );
     if ( args_type != lhs->getType() ) {
@@ -521,17 +520,17 @@ namespace QDP {
       //llvm::outs() << "rhs needs conversion\n";
       rhs = llvm_cast( args_type , rhs );
     }
-    return std::tie(lhs,rhs,args_type);
+    return args_type;
   }
 
 
 
-  llvm::Value* llvm_b_op( std::function< llvm::Value *(llvm::Value *, llvm::Value *) > func_float,
-			  std::function< llvm::Value *(llvm::Value *, llvm::Value *) > func_int,
+  llvm::Value* llvm_b_op(  llvm::Value *(*)(llvm::Value *, llvm::Value *)  func_float,
+			   llvm::Value *(*)(llvm::Value *, llvm::Value *)  func_int,
 			  llvm::Value* lhs , llvm::Value* rhs )
   {
     llvm::Type* args_type;
-    std::tie(lhs,rhs,args_type) = llvm_normalize_values(lhs,rhs);
+    args_type = llvm_normalize_values(lhs,rhs);
     if ( args_type->isFloatingPointTy() ) {
       //llvm::outs() << "float binary op\n";
       return func_float( lhs , rhs );  
@@ -542,8 +541,8 @@ namespace QDP {
   }
 
 
-  llvm::Value* llvm_u_op( std::function< llvm::Value *(llvm::Value *) > func_float,
-			  std::function< llvm::Value *(llvm::Value *) > func_int,
+  llvm::Value* llvm_u_op(  llvm::Value *(*)(llvm::Value *)  func_float,
+			   llvm::Value *(*)(llvm::Value *)  func_int,
 			  llvm::Value* lhs )
   {
     if ( lhs->getType()->isFloatingPointTy() ) {
@@ -653,6 +652,7 @@ namespace QDP {
   //   return oss.str();
   // }
 
+#if 0
   llvm::Value* llvm_get_shared_ptr( llvm::Type *ty ) {
 
     //
@@ -671,7 +671,7 @@ namespace QDP {
     //return builder->CreatePointerCast(gv,llvm_type<double*>::value);
     //return gv;
   }
-
+#endif
 
 
   llvm::Value * llvm_alloca( llvm::Type* type , int elements )
@@ -690,7 +690,7 @@ namespace QDP {
     vecParamType.push_back( llvm::Type::getInt1PtrTy(llvm::getGlobalContext()) );
     return vecParamType.size()-1;
   }
-  template<> ParamRef llvm_add_param<std::int64_t>() { 
+  template<> ParamRef llvm_add_param<int64_t>() { 
     vecParamType.push_back( llvm::Type::getInt64Ty(llvm::getGlobalContext()) );
     return vecParamType.size()-1;
   }
@@ -785,7 +785,7 @@ namespace QDP {
       return llvm::ConstantFP::get( llvm::Type::getDoubleTy(llvm::getGlobalContext()) , v );
   }
 
-  llvm::Value * llvm_create_value(std::int64_t v )  {return llvm::ConstantInt::get( llvm::Type::getInt64Ty(llvm::getGlobalContext()) , v );}
+  llvm::Value * llvm_create_value(int64_t v )  {return llvm::ConstantInt::get( llvm::Type::getInt64Ty(llvm::getGlobalContext()) , v );}
   llvm::Value * llvm_create_value(int v )  {return llvm::ConstantInt::get( llvm::Type::getInt32Ty(llvm::getGlobalContext()) , v );}
   llvm::Value * llvm_create_value(size_t v){return llvm::ConstantInt::get( llvm::Type::getInt32Ty(llvm::getGlobalContext()) , v );}
   llvm::Value * llvm_create_value(bool v ) {return llvm::ConstantInt::get( llvm::Type::getInt1Ty(llvm::getGlobalContext()) , v );}

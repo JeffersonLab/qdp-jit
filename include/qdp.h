@@ -83,6 +83,13 @@
 #define QDP_ALIGNMENT_SIZE 16
 #endif
 
+// Added this to compile with GCC 4.4
+#define __STDC_LIMIT_MACROS
+#define __STDC_CONSTANT_MACROS
+#include <stdint.h>
+
+
+
 // YUKKY - Eventually get rid of these includes
 #include <cstdio>
 #include <cstdlib>
@@ -91,6 +98,7 @@
 #include <utility>
 #include <memory>
 #include <vector>
+
 
 #include <string>
 #include <fstream>

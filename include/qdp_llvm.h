@@ -1,8 +1,6 @@
 #ifndef QDP_LLVM
 #define QDP_LLVM
 
-#define __STDC_LIMIT_MACROS
-#define __STDC_CONSTANT_MACROS
 
 #include "llvm/IRReader/IRReader.h"
 #include "llvm/IR/Module.h"
@@ -80,7 +78,7 @@ namespace QDP {
 
   llvm::Value * llvm_create_value( double v );
   llvm::Value * llvm_create_value( int v );
-  llvm::Value * llvm_create_value( std::int64_t v );
+  llvm::Value * llvm_create_value( int64_t v );
   llvm::Value * llvm_create_value( size_t v );
   llvm::Value * llvm_create_value( bool v );
 
@@ -124,15 +122,14 @@ namespace QDP {
 
   llvm::SwitchInst * llvm_switch( llvm::Value* val , llvm::BasicBlock* bb_default );
 
-  std::tuple<llvm::Value*,llvm::Value*,llvm::Type*>
-  llvm_normalize_values(llvm::Value* lhs , llvm::Value* rhs);
+  llvm::Type* llvm_normalize_values(llvm::Value*& lhs , llvm::Value*& rhs);
 
-  llvm::Value* llvm_b_op( std::function< llvm::Value *(llvm::Value *, llvm::Value *) > func_float,
-			  std::function< llvm::Value *(llvm::Value *, llvm::Value *) > func_int,
+  llvm::Value* llvm_b_op( llvm::Value *(*)(llvm::Value *, llvm::Value *) func_float,
+			  llvm::Value *(*)(llvm::Value *, llvm::Value *) func_int,
 			  llvm::Value* lhs , llvm::Value* rhs );
 
-  llvm::Value* llvm_u_op( std::function< llvm::Value *(llvm::Value *) > func_float,
-			  std::function< llvm::Value *(llvm::Value *) > func_int,
+  llvm::Value* llvm_u_op( llvm::Value *(*)(llvm::Value *) func_float,
+			  llvm::Value *(*)(llvm::Value *) func_int,
 			  llvm::Value* lhs );
 
   llvm::Value* llvm_shl( llvm::Value* lhs , llvm::Value* rhs );
@@ -166,7 +163,7 @@ namespace QDP {
 
   template<> ParamRef llvm_add_param<bool>();
   template<> ParamRef llvm_add_param<bool*>();
-  template<> ParamRef llvm_add_param<std::int64_t>();
+  template<> ParamRef llvm_add_param<int64_t>();
   template<> ParamRef llvm_add_param<int>();
   template<> ParamRef llvm_add_param<int*>();
   template<> ParamRef llvm_add_param<float>();
@@ -212,7 +209,7 @@ namespace QDP {
   llvm::Value * llvm_call_special_ctaidx();
 
   llvm::Value * llvm_alloca( llvm::Type* type , int elements );
-  llvm::Value * llvm_get_shared_ptr( llvm::Type *ty );
+  //  llvm::Value * llvm_get_shared_ptr( llvm::Type *ty );
 
   void llvm_bar_sync();
 

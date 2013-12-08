@@ -13,15 +13,15 @@ namespace QDP {
     omp_set_num_threads(n);
   }
 
-  void jit_dispatch( void* function , int site_count, bool ordered, std::int64_t start, const AddressLeaf& args)
+  void jit_dispatch( void* function , int site_count, bool ordered, int64_t start, const AddressLeaf& args)
   {
-    void (*FP)(std::int64_t,std::int64_t,std::int64_t,bool,std::int64_t,void*) = 
-      (void (*)(std::int64_t,std::int64_t,std::int64_t,bool,std::int64_t,void*))(intptr_t)function;
+    void (*FP)(int64_t,int64_t,int64_t,bool,int64_t,void*) = 
+      (void (*)(int64_t,int64_t,int64_t,bool,int64_t,void*))(intptr_t)function;
 
     int threads_num;
-    std::int64_t myId;
-    std::int64_t lo = 0;
-    std::int64_t hi = site_count;
+    int64_t myId;
+    int64_t lo = 0;
+    int64_t hi = site_count;
     void * addr = args.addr.data();
 
 #pragma omp parallel shared(site_count, threads_num, ordered, start, addr) private(myId, lo, hi) default(shared)

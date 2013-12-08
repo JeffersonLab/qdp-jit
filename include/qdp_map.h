@@ -66,19 +66,19 @@ private:
 
 public:
   const Map& map;
-  std::shared_ptr<RsrcWrapper> pRsrc;
-  //QDPHandle::Handle<RsrcWrapper> pRsrc;
+  //std::shared_ptr<RsrcWrapper> pRsrc;
+  QDPHandle::Handle<RsrcWrapper> pRsrc;
 
   FnMap(const Map& m);
   FnMap(const FnMap& f);
 
   const FnMapRsrc& getResource(int srcnum_, int dstnum_) {
-    assert(pRsrc);
+    //assert(pRsrc);
     return pRsrc->getResource( srcnum_ , dstnum_ );
   }
 
   const FnMapRsrc& getCached() const {
-    assert(pRsrc);
+    //assert(pRsrc);
     return pRsrc->get();
   }
   
@@ -199,8 +199,8 @@ struct FnMapJIT
 public:
   IndexRet index;
   const Map& map;
-  std::shared_ptr<RsrcWrapper> pRsrc;
-  //QDPHandle::Handle<RsrcWrapper> pRsrc;
+  //std::shared_ptr<RsrcWrapper> pRsrc;
+  QDPHandle::Handle<RsrcWrapper> pRsrc;
 
   FnMapJIT(const FnMap& fnmap,const IndexRet& i): 
     map(fnmap.map), pRsrc(fnmap.pRsrc), index(i) {}

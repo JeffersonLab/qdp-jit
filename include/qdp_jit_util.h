@@ -58,7 +58,7 @@ namespace QDP {
       r_lo->addIncoming( r_lo_added , block_ordered );
       r_hi->addIncoming( r_hi_added , block_ordered );
 
-      r_inner = llvm_create_value( std::int64_t( inner ) );
+      r_inner = llvm_create_value( int64_t( inner ) );
 
       r_lo_outer = llvm_div( r_lo , r_inner );
       r_hi_outer = llvm_div( r_hi , r_inner );
@@ -140,15 +140,15 @@ namespace QDP {
       llvm_branch(           block_end_loop_body );
       llvm_set_insert_point( block_end_loop_body );
 
-      r_idx_inner_new = llvm_add( r_idx_inner , llvm_create_value(std::int64_t(1)) );
+      r_idx_inner_new = llvm_add( r_idx_inner , llvm_create_value(int64_t(1)) );
       r_idx_inner->addIncoming( r_idx_inner_new , block_end_loop_body );
-      r_idx_inner->addIncoming( llvm_create_value(std::int64_t(0)) , block_site_loop_outer );
+      r_idx_inner->addIncoming( llvm_create_value(int64_t(0)) , block_site_loop_outer );
 
       llvm::Value * r_exit_cond_inner = llvm_ge( r_idx_inner_new , llvm_create_value( inner ) );
       llvm_cond_branch( r_exit_cond_inner , block_site_loop_inner_exit , block_site_loop_inner );
       llvm_set_insert_point(block_site_loop_inner_exit);
 
-      r_idx_outer_new = llvm_add( r_idx_outer , llvm_create_value(std::int64_t(1)) );
+      r_idx_outer_new = llvm_add( r_idx_outer , llvm_create_value(int64_t(1)) );
       r_idx_outer->addIncoming( r_idx_outer_new , block_site_loop_inner_exit );
       r_idx_outer->addIncoming( r_lo_outer , block_entry_point );
 

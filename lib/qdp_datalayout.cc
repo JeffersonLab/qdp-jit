@@ -8,14 +8,14 @@ namespace QDP {
 
 
   namespace DataLayout {
-    std::int64_t inner = 4;
+    int64_t inner = 4;
   }
 
-  std::int64_t getDataLayoutInnerSize() {
+  int64_t getDataLayoutInnerSize() {
     return DataLayout::inner;
   }
 
-  void setDataLayoutInnerSize( std::int64_t i ) {
+  void setDataLayoutInnerSize( int64_t i ) {
     DataLayout::inner = i;
   }
 

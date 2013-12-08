@@ -64,7 +64,7 @@ struct AddressLeaf
     void * ptr;
     float  fl;
     int    in;
-    std::int64_t in64;
+    int64_t in64;
     double db;
     bool   bl;
   };
@@ -108,8 +108,8 @@ struct AddressLeaf
     t.in = i;
     addr.push_back(t);
   }
-  void setLit( std::int64_t i ) const {
-    //std::cout << "AddressLeaf::setLit std::int64_t " << i << "\n";
+  void setLit( int64_t i ) const {
+    //std::cout << "AddressLeaf::setLit int64_t " << i << "\n";
     Types t;
     t.in64 = i;
     addr.push_back(t);
