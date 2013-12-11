@@ -557,11 +557,13 @@ namespace QDP {
 
 
 
-  llvm::Value* llvm_neg( llvm::Value* src ) {
-    if ( src->getType()->isFloatingPointTy() )
-      return builder->CreateFSub( llvm_create_value(0.0) , src );
+  llvm::Value* llvm_neg( llvm::Value* rhs ) {
+    llvm::Value* lhs = llvm_create_value(0);
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    if ( args_type->isFloatingPointTy() )
+      return builder->CreateFSub( lhs , rhs );
     else
-      return builder->CreateSub( llvm_create_value(0) , src );
+      return builder->CreateSub( lhs , rhs );
   }
 
 
