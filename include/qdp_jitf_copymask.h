@@ -27,10 +27,10 @@ namespace QDP {
 
     REGFuncRet_t src_reg;
     REGFuncRet1_t mask_reg;
-    src_reg.setup ( src_jit.elem( JitDeviceLayout::Coalesced , idx ) );
-    mask_reg.setup( mask_jit.elem( JitDeviceLayout::Coalesced , idx ) );
+    src_reg.setup ( src_jit.elem( JitDeviceLayout::LayoutCoalesced , idx ) );
+    mask_reg.setup( mask_jit.elem( JitDeviceLayout::LayoutCoalesced , idx ) );
 
-    copymask( dest_jit.elem( JitDeviceLayout::Coalesced , idx ) , mask_reg , src_reg );
+    copymask( dest_jit.elem( JitDeviceLayout::LayoutCoalesced , idx ) , mask_reg , src_reg );
 
     loop.done();
 

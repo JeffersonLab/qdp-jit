@@ -27,8 +27,8 @@ function_global_max_build(const OLattice<T>& src)
   IndexDomainVector idx_lo = get_index_vector_from_index( loop.getLo() );
 
   TREG Treg_lo;
-  Treg_lo.setup( src_view.elem( JitDeviceLayout::Coalesced , idx_lo ) );
-  dest_jit.elem( JitDeviceLayout::Scalar , th_num ) = Treg_lo;
+  Treg_lo.setup( src_view.elem( JitDeviceLayout::LayoutCoalesced , idx_lo ) );
+  dest_jit.elem( JitDeviceLayout::LayoutScalar , th_num ) = Treg_lo;
 
   IndexDomainVector idx    = loop.getIdx();
 
@@ -36,12 +36,12 @@ function_global_max_build(const OLattice<T>& src)
   // access[0].second = loop.getThreadNum();
 
   TREG Treg;
-  Treg.setup( src_view.elem( JitDeviceLayout::Coalesced , idx ) );
+  Treg.setup( src_view.elem( JitDeviceLayout::LayoutCoalesced , idx ) );
   TREG dest_reg;
-  dest_reg.setup( dest_jit.elem( JitDeviceLayout::Scalar , th_num ) );
+  dest_reg.setup( dest_jit.elem( JitDeviceLayout::LayoutScalar , th_num ) );
 
 
-  dest_jit.elem( JitDeviceLayout::Scalar , th_num ) = where( Treg > dest_reg , Treg , dest_reg );
+  dest_jit.elem( JitDeviceLayout::LayoutScalar , th_num ) = where( Treg > dest_reg , Treg , dest_reg );
 
   loop.done();
 
@@ -61,11 +61,11 @@ function_global_max_build(const OLattice<T>& src)
   llvm_cond_branch( llvm_eq( isFirst , llvm_create_value(1) ) , block_first , block_not_first );
 
   llvm_set_insert_point( block_first );
-  dest_jit.elem( JitDeviceLayout::Scalar , th_num ) = Treg;
+  dest_jit.elem( JitDeviceLayout::LayoutScalar , th_num ) = Treg;
   llvm_branch( block_cont );
 
   llvm_set_insert_point( block_not_first );
-  dest_jit.elem( JitDeviceLayout::Scalar , th_num ) = where( Treg > dest_reg , Treg , dest_reg );
+  dest_jit.elem( JitDeviceLayout::LayoutScalar , th_num ) = where( Treg > dest_reg , Treg , dest_reg );
   llvm_branch( block_cont );
 
   llvm_set_insert_point( block_cont );

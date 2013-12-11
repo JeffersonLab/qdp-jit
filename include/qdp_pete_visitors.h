@@ -23,12 +23,12 @@ struct ShiftPhase2
 class ViewLeaf
 {
 private:
-  JitDeviceLayout layout_m;
+  JitDeviceLayout::LayoutEnum layout_m;
   IndexDomainVector index_vec_m;
 public:
-  ViewLeaf( JitDeviceLayout layout , IndexDomainVector index_vec ) : layout_m(layout), index_vec_m( index_vec ) { }
+  ViewLeaf( JitDeviceLayout::LayoutEnum layout , IndexDomainVector index_vec ) : layout_m(layout), index_vec_m( index_vec ) { }
 
-  JitDeviceLayout getLayout() const { return layout_m; }
+  JitDeviceLayout::LayoutEnum getLayout() const { return layout_m; }
 
   IndexDomainVector getIndexVec() const  { 
     return index_vec_m;

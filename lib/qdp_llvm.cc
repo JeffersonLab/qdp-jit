@@ -313,8 +313,8 @@ namespace QDP {
     if (debug_func_build) {
       if (vec_mattr.size() > 0) {
 	QDPIO::cerr << "    MCPU attributes: ";
-	for ( auto attr : vec_mattr )
-	  QDPIO::cerr << attr << " ";
+	for ( int i = 0 ; i < vec_mattr.size() ; i++ )
+	  QDPIO::cerr << vec_mattr.at(i) << " ";
 	QDPIO::cerr << "\n";
       }
     }
@@ -409,7 +409,9 @@ namespace QDP {
 
     unsigned Idx = 0;
     for ( ; AI != AE ; ++AI, ++Idx) {
-      AI->setName( std::string("arg")+std::to_string(Idx) );
+      std::ostringstream oss;
+      oss << "arg" << Idx;
+      AI->setName( oss.str() );
 
       if ( vecParamType.at(Idx)->isPointerTy() ) {
       	llvm::AttrBuilder B;
@@ -509,7 +511,7 @@ namespace QDP {
 
 
 
-  llvm::Value* llvm_normalize_values(llvm::Value*& lhs , llvm::Value*& rhs)
+  llvm::Type* llvm_normalize_values(llvm::Value*& lhs , llvm::Value*& rhs)
   {
     llvm::Type* args_type = promote( lhs->getType() , rhs->getType() );
     if ( args_type != lhs->getType() ) {
@@ -556,11 +558,10 @@ namespace QDP {
 
 
   llvm::Value* llvm_neg( llvm::Value* src ) {
-    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
-    if ( args_type->isFloatingPointTy() )
-      return builder->CreateFSub( llvm_create_value(0.0) , rhs );
+    if ( src->getType()->isFloatingPointTy() )
+      return builder->CreateFSub( llvm_create_value(0.0) , src );
     else
-      return builder->CreateSub( llvm_create_value(0) , rhs );
+      return builder->CreateSub( llvm_create_value(0) , src );
   }
 
 
@@ -962,95 +963,6 @@ namespace QDP {
     }
   }
 
-
-  std::string get_PTX_from_Module_using_llvm( llvm::Module *Mod )
-  {
-    llvm::FunctionPassManager OurFPM( Mod );
-    //OurFPM.add(llvm::createCFGSimplificationPass());  // skip this for now. causes problems with CUDA generic pointers
-    //OurFPM.add(llvm::createBasicAliasAnalysisPass());
-    //OurFPM.add(llvm::createInstructionCombiningPass()); // this causes problems. Not anymore!
-    //OurFPM.add(llvm::createReassociatePass());
-    OurFPM.add(llvm::createGVNPass());
-    OurFPM.doInitialization();
-
-    auto& func_list = Mod->getFunctionList();
-
-    QDP_info_primary("Running optimization passes on functions");
-
-    for(auto& x : func_list) {
-      //QDP_info("Running all optimization passes on function %s",x.getName());
-      OurFPM.run(x);
-    }
-
-
-
-    //
-    // Call NVPTX
-    //
-    llvm::Triple TheTriple;
-    TheTriple.setArch(llvm::Triple::nvptx64);
-    TheTriple.setVendor(llvm::Triple::UnknownVendor);
-    TheTriple.setOS(llvm::Triple::Linux);
-    TheTriple.setEnvironment(llvm::Triple::ELF);
-
-    //Mod->setTargetTriple(TheTriple);
-
-    std::string Error;
-    const llvm::Target *TheTarget = llvm::TargetRegistry::lookupTarget( "nvptx64", TheTriple, Error);
-    if (!TheTarget) {
-      llvm::errs() << "Error looking up target: " << Error;
-      exit(1);
-    }
-
-
-    // OwningPtr<TargetMachine> target(TheTarget->createTargetMachine(TheTriple.getTriple(),
-    // 								 MCPU, FeaturesStr, Options ));
-
-    llvm::TargetOptions Options;
-    llvm::OwningPtr<llvm::TargetMachine> target(TheTarget->createTargetMachine(TheTriple.getTriple(),
-									       "sm_20", "ptx31", Options ));
-
-  
-    assert(target.get() && "Could not allocate target machine!");
-    llvm::TargetMachine &Target = *target.get();
-
-
-    std::string str;
-    llvm::raw_string_ostream rss(str);
-    llvm::formatted_raw_ostream FOS(rss);
-
-    llvm::PassManager PMTM;
-
-
-#if 0
-    // Add the target data from the target machine, if it exists, or the module.
-    if (const DataLayout *TD = Target.getDataLayout()) {
-      QDP_info_primary( "Using targets's data layout" );
-      PMTM.add(new DataLayout(*TD));
-    }
-    else {
-      QDP_info_primary( "Using module's data layout" );
-      PMTM.add(new DataLayout(Mod));
-    }
-#else
-    QDP_info_primary( "Using module's data layout" );
-    PMTM.add(new llvm::DataLayout(Mod));
-#endif
-
-
-    // Ask the target to add backend passes as necessary.
-    if (Target.addPassesToEmitFile(PMTM, FOS,  llvm::TargetMachine::CGFT_AssemblyFile )) {
-      llvm::errs() << ": target does not support generation of this"
-		   << " file type!\n";
-      exit(1);
-    }
-
-    QDP_info_primary("PTX code generation");
-    PMTM.run(*Mod);
-    FOS.flush();
-
-    return str;
-  }
 
 
   void str_replace(std::string& str, const std::string& oldStr, const std::string& newStr)

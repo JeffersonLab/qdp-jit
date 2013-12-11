@@ -263,7 +263,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
   class OLattice: public QDPType<T, OLattice<T> >
   {
   private:
-    enum class MemoryUsage { native = 0 , jit = 1 };
+    enum MemoryUsage { MemoryUsageNative = 0 , MemoryUsageJIT = 1 };
 
   public:
     //typedef T Subtype;
@@ -435,7 +435,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 
 
     inline void alloc_mem(MemoryUsage where, const char* msg) const {
-      if (where == MemoryUsage::jit)
+      if (where == MemoryUsageJIT)
 	assert( !F_alloc[1] && "alloc_mem already allocated (jit)");
       else
 	assert( !F_alloc[0] && "alloc_mem already allocated (native)");
@@ -449,7 +449,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 	QDP::Allocator::theQDPAllocator::Instance().dump();
 	QDP_abort(1);
       }
-      if (where == MemoryUsage::jit) {
+      if (where == MemoryUsageJIT) {
 	F_jit = tmp;
 	F_alloc[1] = true;
       } else {
@@ -472,7 +472,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 	return;
 
       if (!F_alloc[1])
-	alloc_mem(MemoryUsage::jit,"assert_valid_jit");
+	alloc_mem(MemoryUsageJIT,"assert_valid_jit");
 
       if (F_alloc[0]) 
 	change_layout_to_jit(F_jit,F);
@@ -486,7 +486,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 	return;
 
       if (!F_alloc[0])
-	alloc_mem(MemoryUsage::native,"assert_valid_native");
+	alloc_mem(MemoryUsageNative,"assert_valid_native");
 
       if (F_alloc[1])
 	change_layout_to_native(F,F_jit);

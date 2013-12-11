@@ -558,7 +558,7 @@ peekSpin(const PSpinMatrixREG<T,N>& l, llvm::Value* row, llvm::Value* col)
   llvm::Value* ptr_local = llvm_alloca( llvm_type<typename WordType<T>::Type_t>::value , TTjit::Size_t );
 
   TTjit dj;
-  dj.setup( ptr_local, JitDeviceLayout::Scalar );
+  dj.setup( ptr_local, JitDeviceLayout::LayoutScalar );
   dj=l;
 
   d.elem() = dj.getRegElem(row,col);

@@ -46,7 +46,9 @@ namespace QDP {
     std::vector< llvm::Value* > args;
     unsigned Idx = 0;
     for (llvm::Function::arg_iterator AI = F->arg_begin(), AE = F->arg_end() ; AI != AE ; ++AI, ++Idx) {
-      AI->setName( std::string("arg") + std::to_string(Idx) );
+      std::ostringstream oss;
+      oss << "arg" << Idx;
+      AI->setName( oss.str() );
       args.push_back(AI);
     }
 
@@ -126,7 +128,9 @@ namespace QDP {
     std::vector< llvm::Value* > args;
     unsigned Idx = 0;
     for (llvm::Function::arg_iterator AI = F->arg_begin(), AE = F->arg_end() ; AI != AE ; ++AI, ++Idx) {
-      AI->setName( std::string("arg") + std::to_string(Idx) );
+      std::ostringstream oss;
+      oss << "arg" << Idx;
+      AI->setName( oss.str() );
       args.push_back(AI);
     }
 

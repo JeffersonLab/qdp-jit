@@ -32,7 +32,7 @@ namespace QDP {
 
   // T1 input
   // T2 output
-  template < class T1 , class T2 , JitDeviceLayout input_layout >
+  template < class T1 , class T2 , JitDeviceLayout::LayoutEnum input_layout >
   void reduce_convert_indirection(int size, 
 				  int threads, 
 				  int blocks, 
@@ -113,7 +113,7 @@ namespace QDP {
 
       if (numBlocks == 1) {
 	if (first) {
-	  reduce_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, shared_mem_usage ,  
+	  reduce_convert_indirection<T1,T2,JitDeviceLayout::LayoutCoalesced>(actsize, numThreads, numBlocks, shared_mem_usage ,  
 								       (T1*)QDPCache::Instance().getDevicePtr( s1.getId() ),
 								       (T2*)QDPCache::Instance().getDevicePtr( d.getId() ),
 								       (int*)QDPCache::Instance().getDevicePtr( s.getId()));
@@ -124,7 +124,7 @@ namespace QDP {
 	}
       } else {
 	if (first) {
-	  reduce_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, shared_mem_usage,
+	  reduce_convert_indirection<T1,T2,JitDeviceLayout::LayoutCoalesced>(actsize, numThreads, numBlocks, shared_mem_usage,
 								       (T1*)QDPCache::Instance().getDevicePtr( s1.getId() ),
 								       out_dev , (int*)QDPCache::Instance().getDevicePtr(s.getId()));
 	}
@@ -277,7 +277,7 @@ namespace QDP {
 	  //QDP_info("numBlocks=%d actsize=%d virt_size=%d smem=%d",numBlocks,actsize,virt_size,shared_mem_usage);
 
 	  if (first) {
-	    reduce_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(actsize, 
+	    reduce_convert_indirection<T1,T2,JitDeviceLayout::LayoutCoalesced>(actsize, 
 									 numThreads, 
 									 numBlocks,  
 									 shared_mem_usage,

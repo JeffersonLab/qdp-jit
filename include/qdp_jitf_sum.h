@@ -32,9 +32,9 @@ function_sum_build(const OLattice<T>& src)
   // access[0].second = loop.getThreadNum();
 
   TREG Treg;
-  Treg.setup( src_view.elem( JitDeviceLayout::Coalesced , idx ) );
+  Treg.setup( src_view.elem( JitDeviceLayout::LayoutCoalesced , idx ) );
 
-  dest_jit.elem( JitDeviceLayout::Scalar , th_num ) += Treg;
+  dest_jit.elem( JitDeviceLayout::LayoutScalar , th_num ) += Treg;
 
   loop.done();
 

@@ -14,7 +14,7 @@ namespace QDP {
 
     llvm::Value *       m_base;
     IndexDomainVector partial_offset;
-    JitDeviceLayout   layout;
+    JitDeviceLayout::LayoutEnum   layout;
 
   public:
     BaseJIT(): 
@@ -46,7 +46,7 @@ namespace QDP {
     // }
 
 
-    void setup( llvm::Value * base , JitDeviceLayout lay , IndexDomainVector args = IndexDomainVector() ) {
+    void setup( llvm::Value * base , JitDeviceLayout::LayoutEnum lay , IndexDomainVector args = IndexDomainVector() ) {
       m_base = base;
       layout = lay;
       partial_offset = args;
@@ -91,7 +91,7 @@ namespace QDP {
       T jit;
       IndexDomainVector args = partial_offset;
       args.push_back( make_pair( N , index ) );
-      jit.setup( m_base , JitDeviceLayout::Scalar, args );
+      jit.setup( m_base , JitDeviceLayout::LayoutScalar, args );
       typename REGType<T>::Type_t ret_reg;
       ret_reg.setup( jit );
       return ret_reg;

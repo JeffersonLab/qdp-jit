@@ -294,7 +294,7 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
 
 	typename JITType<Type_t>::Type_t t_jit_recv;
 	t_jit_recv.setup( llvm_derefParam(index.p_recv_buf) ,
-			  JitDeviceLayout::Scalar ,
+			  JitDeviceLayout::LayoutScalar ,
 			  args );
 
 	ret_phi0.setup( t_jit_recv );
@@ -306,8 +306,8 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
 
 	IndexDomainVector args = get_index_vector_from_index( r_multi_index );
 
-	ViewLeaf vv( JitDeviceLayout::Coalesced , args );
-	//ViewLeaf vv( JitDeviceLayout::Coalesced , r_multi_index );
+	ViewLeaf vv( JitDeviceLayout::LayoutCoalesced , args );
+	//ViewLeaf vv( JitDeviceLayout::LayoutCoalesced , r_multi_index );
 	ret_phi1 = Combine1<TypeA_t, 
 			    FnMapJIT , 
 			    OpCombine>::combine(ForEach<A, ViewLeaf, OpCombine>::apply(expr.child(), vv, o) , 

@@ -4,10 +4,17 @@
  * @brief Forward declarations for QDP
  */
 
+
+namespace JitDeviceLayout
+{
+  enum LayoutEnum { LayoutCoalesced , LayoutScalar };
+}
+
+
 namespace QDP
 {
 
-  enum JitDeviceLayout { LayoutCoalesced , LayoutScalar };
+
 
 
   // IO
@@ -147,7 +154,7 @@ namespace QDP
   typedef std::pair< int , llvm::Value * > IndexDomain;
   typedef std::vector< IndexDomain >     IndexDomainVector;
 
-  llvm::Value * datalayout( JitDeviceLayout lay , IndexDomainVector a );
+  llvm::Value * datalayout( JitDeviceLayout::LayoutEnum  lay , IndexDomainVector a );
 
   llvm::Value      *get_index_from_index_vector( const IndexDomainVector& idx );
   IndexDomainVector get_index_vector_from_index( llvm::Value *index );

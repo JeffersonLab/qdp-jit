@@ -25,10 +25,10 @@ function_gaussian_build(OLattice<T>& dest ,OLattice<T>& r1 ,OLattice<T>& r2 )
 
   TREG r1_reg;
   TREG r2_reg;
-  r1_reg.setup( r1_jit.elem( JitDeviceLayout::Coalesced , idx ) );
-  r2_reg.setup( r2_jit.elem( JitDeviceLayout::Coalesced , idx ) );
+  r1_reg.setup( r1_jit.elem( JitDeviceLayout::LayoutCoalesced , idx ) );
+  r2_reg.setup( r2_jit.elem( JitDeviceLayout::LayoutCoalesced , idx ) );
 
-  fill_gaussian( dest_jit.elem(JitDeviceLayout::Coalesced , idx ) , r1_reg , r2_reg );
+  fill_gaussian( dest_jit.elem(JitDeviceLayout::LayoutCoalesced , idx ) , r1_reg , r2_reg );
 
   loop.done();
 

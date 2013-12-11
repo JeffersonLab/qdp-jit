@@ -37,7 +37,7 @@ namespace QDP {
     }
 #endif
 
-    void setup( llvm::Value * base_m , JitDeviceLayout lay , IndexDomainVector args ) {
+    void setup( llvm::Value * base_m , JitDeviceLayout::LayoutEnum lay , IndexDomainVector args ) {
       r_base = base_m;
       offset = datalayout( lay , args );
       setup_m = true;

@@ -23,9 +23,9 @@ namespace QDP {
     IndexDomainVector r_idx = loop.getIdx();
 
     REGFuncRet_t src_reg;
-    src_reg.setup ( src_jit.elem( JitDeviceLayout::Scalar , r_idx ) );
+    src_reg.setup ( src_jit.elem( JitDeviceLayout::LayoutScalar , r_idx ) );
 
-    dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ) = src_reg;
+    dest_jit.elem( JitDeviceLayout::LayoutCoalesced , r_idx ) = src_reg;
 
     loop.done();
 
@@ -77,9 +77,9 @@ namespace QDP {
     IndexDomainVector r_idx = loop.getIdx();
 
     REGFuncRet_t src_reg;
-    src_reg.setup ( src_jit.elem( JitDeviceLayout::Coalesced , r_idx ) );
+    src_reg.setup ( src_jit.elem( JitDeviceLayout::LayoutCoalesced , r_idx ) );
 
-    dest_jit.elem( JitDeviceLayout::Scalar , r_idx ) = src_reg;
+    dest_jit.elem( JitDeviceLayout::LayoutScalar , r_idx ) = src_reg;
 
     loop.done();
 

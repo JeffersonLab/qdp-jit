@@ -26,15 +26,15 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
   FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
 
-  auto op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
+  Op op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
 
   typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
   View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
   IndexDomainVector idx = loop.getIdx();
 
-  op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , idx ), 
-   	  forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , idx ), OpCombine()));
+  op_jit( dest_jit.elem( JitDeviceLayout::LayoutCoalesced , idx ), 
+   	  forEach(rhs_view, ViewLeaf( JitDeviceLayout::LayoutCoalesced , idx ), OpCombine()));
 
   loop.done();
 
@@ -92,15 +92,15 @@ function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScala
   typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
   FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
 
-  auto op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
+  Op op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
 
   typedef typename ForEach<QDPExpr<RHS,OScalar<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
   View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
   IndexDomainVector idx = loop.getIdx();
 
-  op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , idx ), 
-   	  forEach(rhs_view, ViewLeaf( JitDeviceLayout::Scalar , idx ), OpCombine()));
+  op_jit( dest_jit.elem( JitDeviceLayout::LayoutCoalesced , idx ), 
+   	  forEach(rhs_view, ViewLeaf( JitDeviceLayout::LayoutScalar , idx ), OpCombine()));
 
   loop.done();
 
@@ -148,7 +148,7 @@ function_zero_rep_build(OLattice<T>& dest)
 
   IndexDomainVector idx = loop.getIdx();
 
-  zero_rep( dest_jit.elem(JitDeviceLayout::Coalesced,idx) );
+  zero_rep( dest_jit.elem(JitDeviceLayout::LayoutCoalesced,idx) );
 
   loop.done();
 
@@ -231,13 +231,13 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
 
   seed_reg.setup( ran_seed_jit.elem() );
 
-  lattice_ran_mult_reg.setup( lattice_ran_mult_jit.elem( JitDeviceLayout::Coalesced , r_idx ) );
+  lattice_ran_mult_reg.setup( lattice_ran_mult_jit.elem( JitDeviceLayout::LayoutCoalesced , r_idx ) );
 
   skewed_seed_reg = seed_reg * lattice_ran_mult_reg;
 
   ran_mult_n_reg.setup( ran_mult_n_jit.elem() );
 
-  fill_random( dest_jit.elem(JitDeviceLayout::Coalesced,r_idx) , seed_reg , skewed_seed_reg , ran_mult_n_reg );
+  fill_random( dest_jit.elem(JitDeviceLayout::LayoutCoalesced,r_idx) , seed_reg , skewed_seed_reg , ran_mult_n_reg );
 
   llvm::Value * r_save = llvm_eq( r_idx_thread , llvm_create_value(0) );
 
@@ -292,8 +292,8 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
 
   IndexDomainVector idx_vec_gather = get_index_vector_from_index( r_idx_site );
 
-  OpAssign()( dest_jit.elem( JitDeviceLayout::Scalar , idx ) , 
-	      forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , idx_vec_gather ) , OpCombine() ) );
+  OpAssign()( dest_jit.elem( JitDeviceLayout::LayoutScalar , idx ) , 
+	      forEach(rhs_view, ViewLeaf( JitDeviceLayout::LayoutCoalesced , idx_vec_gather ) , OpCombine() ) );
 
   loop.done();
 
