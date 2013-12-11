@@ -59,6 +59,7 @@ struct ForEach<UnaryNode<FnPeekColorMatrix, A>, ParamLeaf, TreeCombine>
   
   template<>  
   struct AddOpParam< FnPokeColorMatrix, ParamLeaf> {
+    typedef FnPokeColorMatrixREG Type_t;
     static FnPokeColorMatrixREG apply( const FnPokeColorMatrix& a, const ParamLeaf& p) {
       //std::cout << __PRETTY_FUNCTION__ << "\n";
       return FnPokeColorMatrixREG( llvm_add_param<int>() , 
@@ -156,6 +157,7 @@ struct ForEach<UnaryNode<FnPeekSpinMatrix, A>, ParamLeaf, TreeCombine>
   
   template<>  
   struct AddOpParam< FnPokeSpinMatrix, ParamLeaf> {
+    typedef FnPokeSpinMatrixREG Type_t;
     static FnPokeSpinMatrixREG apply( const FnPokeSpinMatrix& a, const ParamLeaf& p) {
       //std::cout << __PRETTY_FUNCTION__ << "\n";
       return FnPokeSpinMatrixREG( llvm_add_param<int>() , 
@@ -255,6 +257,7 @@ struct ForEach<UnaryNode<FnPeekColorVector, A>, ParamLeaf, TreeCombine>
   
   template<>  
   struct AddOpParam< FnPokeColorVector, ParamLeaf> {
+    typedef FnPokeColorVectorREG Type_t;
     static FnPokeColorVectorREG apply( const FnPokeColorVector& a, const ParamLeaf& p) {
       //std::cout << __PRETTY_FUNCTION__ << "\n";
       return FnPokeColorVectorREG( llvm_add_param<int>() );
@@ -345,6 +348,7 @@ struct ForEach<UnaryNode<FnPeekSpinVector, A>, ParamLeaf, TreeCombine>
   
   template<>  
   struct AddOpParam< FnPokeSpinVector, ParamLeaf> {
+    typedef FnPokeSpinVectorREG Type_t;
     static FnPokeSpinVectorREG apply( const FnPokeSpinVector& a, const ParamLeaf& p) {
       //std::cout << __PRETTY_FUNCTION__ << "\n";
       return FnPokeSpinVectorREG( llvm_add_param<int>() );

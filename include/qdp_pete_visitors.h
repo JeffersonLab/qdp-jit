@@ -130,6 +130,7 @@ struct AddressLeaf
   template<class LeafType>
   struct AddOpParam<LeafType,ParamLeaf>
   { 
+    typedef LeafType Type_t;
     static LeafType apply(const LeafType&, const ParamLeaf& p) { return LeafType(); }
   };
 
