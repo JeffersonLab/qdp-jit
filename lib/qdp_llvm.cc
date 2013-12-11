@@ -524,7 +524,7 @@ namespace QDP {
   }
 
 
-
+#if 0
   llvm::Value* llvm_b_op(  llvm::Value *(*)(llvm::Value *, llvm::Value *)  func_float,
 			   llvm::Value *(*)(llvm::Value *, llvm::Value *)  func_int,
 			  llvm::Value* lhs , llvm::Value* rhs )
@@ -551,89 +551,143 @@ namespace QDP {
       return func_int( lhs );  
     }
   }
+#endif
+
 
 
   llvm::Value* llvm_neg( llvm::Value* src ) {
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateFSub( lhs , rhs ); } , 
-		      [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateSub( lhs , rhs ); } , 
-		      llvm_create_value(0) , src ); }
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    if ( args_type->isFloatingPointTy() )
+      return builder->CreateFSub( llvm_create_value(0.0) , rhs );
+    else
+      return builder->CreateSub( llvm_create_value(0) , rhs );
+  }
 
 
   llvm::Value* llvm_rem( llvm::Value* lhs , llvm::Value* rhs ) {
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateFRem( lhs , rhs ); } , 
-		      [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateSRem( lhs , rhs ); } , 
-		      lhs , rhs ); }
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    if ( args_type->isFloatingPointTy() )
+      return builder->CreateFRem( lhs , rhs );
+    else
+      return builder->CreateSRem( lhs , rhs );
+  }
+
 
   llvm::Value* llvm_shr( llvm::Value* lhs , llvm::Value* rhs ) {  
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{assert(!"Flt-pnt SHR makes no sense.");},
-		      [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{ return builder->CreateAShr( lhs , rhs ); },
-		      lhs , rhs ); }
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    assert( !args_type->isFloatingPointTy() );
+    return builder->CreateAShr( lhs , rhs );
+  }
+
 
   llvm::Value* llvm_shl( llvm::Value* lhs , llvm::Value* rhs ) {  
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{assert(!"Flt-pnt SHL makes no sense.");},
-		      [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{ return builder->CreateShl( lhs , rhs ); },
-		      lhs , rhs ); }
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    assert( !args_type->isFloatingPointTy() );
+    return builder->CreateShl( lhs , rhs );
+  }
+
 
   llvm::Value* llvm_and( llvm::Value* lhs , llvm::Value* rhs ) {  
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{assert(!"Flt-pnt AND makes no sense.");},
-		      [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{ return builder->CreateAnd( lhs , rhs ); },
-		      lhs , rhs ); }
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    assert( !args_type->isFloatingPointTy() );
+    return builder->CreateAnd( lhs , rhs );
+  }
+
 
   llvm::Value* llvm_or( llvm::Value* lhs , llvm::Value* rhs ) {  
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{assert(!"Flt-pnt OR makes no sense.");},
-		      [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{ return builder->CreateOr( lhs , rhs ); },
-		      lhs , rhs ); }
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    assert( !args_type->isFloatingPointTy() );
+    return builder->CreateOr( lhs , rhs );
+  }
+
 
   llvm::Value* llvm_xor( llvm::Value* lhs , llvm::Value* rhs ) {  
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{assert(!"Flt-pnt XOR makes no sense.");},
-		      [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{ return builder->CreateXor( lhs , rhs ); },
-		      lhs , rhs ); }
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    assert( !args_type->isFloatingPointTy() );
+    return builder->CreateXor( lhs , rhs );
+  }
+
 
   llvm::Value* llvm_mul( llvm::Value* lhs , llvm::Value* rhs ) {
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateFMul( lhs , rhs ); } , 
-		      [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateMul( lhs , rhs ); } , 
-		      lhs , rhs ); }
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    if ( args_type->isFloatingPointTy() )
+      return builder->CreateFMul( lhs , rhs );
+    else
+      return builder->CreateMul( lhs , rhs );
+  }
+
 
   llvm::Value* llvm_add( llvm::Value* lhs , llvm::Value* rhs ) {
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateFAdd( lhs , rhs ); } , 
-		      [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateNSWAdd( lhs , rhs ); } , 
-		      lhs , rhs ); }
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    if ( args_type->isFloatingPointTy() )
+      return builder->CreateFAdd( lhs , rhs );
+    else
+      return builder->CreateNSWAdd( lhs , rhs );
+  }
+
 
   llvm::Value* llvm_sub( llvm::Value* lhs , llvm::Value* rhs ) {
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateFSub( lhs , rhs ); } , 
-		      [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateSub( lhs , rhs ); } , 
-		      lhs , rhs ); }
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    if ( args_type->isFloatingPointTy() )
+      return builder->CreateFSub( lhs , rhs );
+    else
+      return builder->CreateSub( lhs , rhs );
+  }
+
 
   llvm::Value* llvm_div( llvm::Value* lhs , llvm::Value* rhs ) {
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateFDiv( lhs , rhs ); } , 
-		      [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateSDiv( lhs , rhs ); } , 
-		      lhs , rhs ); }
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    if ( args_type->isFloatingPointTy() )
+      return builder->CreateFDiv( lhs , rhs );
+    else 
+      return builder->CreateSDiv( lhs , rhs );
+  }
 
 
   llvm::Value* llvm_eq( llvm::Value* lhs , llvm::Value* rhs ) {
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateFCmpOEQ( lhs , rhs ); } , 
-		      [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateICmpEQ( lhs , rhs ); } , 
-		      lhs , rhs ); }
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);return builder->CreateICmpEQ( lhs , rhs );
+    if ( args_type->isFloatingPointTy() )
+      return builder->CreateFCmpOEQ( lhs , rhs );
+    else
+      return builder->CreateICmpEQ( lhs , rhs );
+  }
+
 
   llvm::Value* llvm_ge( llvm::Value* lhs , llvm::Value* rhs ) {
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateFCmpOGE( lhs , rhs ); } , 
-		      [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateICmpSGE( lhs , rhs ); } , 
-		      lhs , rhs ); }
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    if ( args_type->isFloatingPointTy() )
+      return builder->CreateFCmpOGE( lhs , rhs );
+    else
+      return builder->CreateICmpSGE( lhs , rhs );
+  }
+
 
   llvm::Value* llvm_gt( llvm::Value* lhs , llvm::Value* rhs ) {
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateFCmpOGT( lhs , rhs ); } , 
-		      [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateICmpSGT( lhs , rhs ); } , 
-		      lhs , rhs ); }
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    if ( args_type->isFloatingPointTy() )
+      return builder->CreateFCmpOGT( lhs , rhs );
+    else
+      return builder->CreateICmpSGT( lhs , rhs );
+  }
+
 
   llvm::Value* llvm_le( llvm::Value* lhs , llvm::Value* rhs ) {
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateFCmpOLE( lhs , rhs ); } , 
-		      [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateICmpSLE( lhs , rhs ); } , 
-		      lhs , rhs ); }
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    if ( args_type->isFloatingPointTy() )
+      return builder->CreateFCmpOLE( lhs , rhs );
+    else
+      return builder->CreateICmpSLE( lhs , rhs );
+  }
+
 
   llvm::Value* llvm_lt( llvm::Value* lhs , llvm::Value* rhs ) {
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateFCmpOLT( lhs , rhs ); } , 
-		      [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateICmpSLT( lhs , rhs ); } , 
-		      lhs , rhs ); }
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    if ( args_type->isFloatingPointTy() )
+      return builder->CreateFCmpOLT( lhs , rhs );
+    else 
+      return builder->CreateICmpSLT( lhs , rhs );
+  }
+
 
   //
   // Convenience function definitions

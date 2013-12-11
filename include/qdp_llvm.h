@@ -124,6 +124,7 @@ namespace QDP {
 
   llvm::Type* llvm_normalize_values(llvm::Value*& lhs , llvm::Value*& rhs);
 
+#if 0
   llvm::Value* llvm_b_op( llvm::Value *(*)(llvm::Value *, llvm::Value *) func_float,
 			  llvm::Value *(*)(llvm::Value *, llvm::Value *) func_int,
 			  llvm::Value* lhs , llvm::Value* rhs );
@@ -131,6 +132,7 @@ namespace QDP {
   llvm::Value* llvm_u_op( llvm::Value *(*)(llvm::Value *) func_float,
 			  llvm::Value *(*)(llvm::Value *) func_int,
 			  llvm::Value* lhs );
+#endif
 
   llvm::Value* llvm_shl( llvm::Value* lhs , llvm::Value* rhs );
   llvm::Value* llvm_shr( llvm::Value* lhs , llvm::Value* rhs );

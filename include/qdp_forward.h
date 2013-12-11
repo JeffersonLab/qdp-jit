@@ -7,7 +7,7 @@
 namespace QDP
 {
 
-  enum class JitDeviceLayout { Coalesced , Scalar };
+  enum JitDeviceLayout { LayoutCoalesced , LayoutScalar };
 
 
   // IO
