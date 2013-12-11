@@ -646,7 +646,7 @@ namespace QDP {
 
 
   llvm::Value* llvm_eq( llvm::Value* lhs , llvm::Value* rhs ) {
-    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);return builder->CreateICmpEQ( lhs , rhs );
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
     if ( args_type->isFloatingPointTy() )
       return builder->CreateFCmpOEQ( lhs , rhs );
     else
