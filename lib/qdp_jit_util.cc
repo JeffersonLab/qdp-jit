@@ -144,8 +144,8 @@ namespace QDP {
     s1.elem(2).elem().setup( args[2] );
     s1.elem(3).elem().setup( args[3] );
 
-    typename UnaryReturn<PSeedREG<T>, FnSeedToFloat>::Type_t  d; // QDP::PScalarREG<QDP::RScalarREG<QDP::WordREG<float> > >
-    typedef typename RealScalar<T>::Type_t  S;                                   // QDP::RScalarREG<QDP::WordREG<float> >
+     UnaryReturn<PSeedREG<T>, FnSeedToFloat>::Type_t  d; // QDP::PScalarREG<QDP::RScalarREG<QDP::WordREG<float> > >
+    typedef  RealScalar<T>::Type_t  S;                                   // QDP::RScalarREG<QDP::WordREG<float> >
 
     S  twom11(1.0 / 2048.0);
     S  twom12(1.0 / 4096.0);
