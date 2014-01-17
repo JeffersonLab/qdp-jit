@@ -198,6 +198,8 @@ void Set::make(const SetFunc& fun)
 #endif
   }
 
+  MasterSet::Instance().registrate( *this );
+
 
 #if 0
   QDPIO::cout << "Set: Building strided sitetables...\n";

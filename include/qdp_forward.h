@@ -144,6 +144,8 @@ namespace QDP
   struct FnMap;
   class ArrayBiDirectionalMap;
 
+  class Subset;
+  class Set;
 
   template<class T> void *function_layout_to_jit_build( const OLattice<T>& dest );
   template<class T> void  function_layout_to_jit_exec(void * function, T *dest, T *src );

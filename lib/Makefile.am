@@ -24,7 +24,7 @@ libqdp_a_SOURCES = qdp_map.cc qdp_subset.cc qdp_random.cc qdp.cc \
         qdp_stopwatch.cc \
         qdp_rannyu.cc \
 	qdp_mapresource.cc \
-	qdp_llvm.cc qdp_mastermap.cc qdp_dispatch.cc \
+	qdp_llvm.cc qdp_mastermap.cc qdp_masterset.cc qdp_dispatch.cc \
         qdp_jitf_sum.cc qdp_wordreg.cc qdp_datalayout.cc qdp_jit_util.cc
 
 

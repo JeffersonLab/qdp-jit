@@ -27,7 +27,7 @@ JIT_HDRS = qdp_mapresource.h \
             qdp_primseedreg.h \
             qdp_primvectorjit.h qdp_primspinvecjit.h qdp_primcolorvecjit.h \
             qdp_primvectorreg.h qdp_primspinvecreg.h qdp_primcolorvecreg.h \
-            qdp_handle.h qdp_mastermap.h qdp_sum.h qdp_datalayout.h  \
+            qdp_handle.h qdp_mastermap.h qdp_masterset.h qdp_sum.h qdp_datalayout.h  \
 	    qdp_jitf_copymask.h qdp_jitf_layout.h qdp_jitf_sum.h qdp_jitf_globalmax.h \
 	    qdp_jitf_gaussian.h qdp_internal.h qdp_newopsreg.h
 

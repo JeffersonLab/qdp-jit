@@ -72,6 +72,8 @@ public:
   multi1d<bool>& getIsElement() const       { return *membertable; }
   bool           isElement(int index) const { return (*membertable)[index]; }
 
+  void setId(int _id) { id = _id; }
+  int getId() const { return id; }
 
 protected:
   // Simple constructor
@@ -98,6 +100,8 @@ private:
 
   // Constant time to know whether linear index in this subset
   multi1d<bool>* membertable;
+
+  int id;
 
 public:
   inline bool hasOrderedRep() const {return ordRep;}
@@ -130,6 +134,7 @@ public:
 
   //! Index operator selects a subset from a set
   const Subset& operator[](int subset_index) const {return sub[subset_index];}
+        Subset& operator[](int subset_index)       {return sub[subset_index];}
 
   //! Return number of subsets
   int numSubsets() const {return sub.size();}
@@ -193,19 +198,19 @@ extern Subset all;
 
 
 //! Experimental 3d checkerboarding for temp_precond
-extern Set rb3;
+//extern Set rb3;
 
 //! Default 2-checkerboard (red/black) subset
 extern Set rb;
 
 //! Default 2^{Nd+1}-checkerboard subset. Useful for pure gauge updating.
-extern Set mcb;
+//extern Set mcb;
 
 //! Default even subset
-extern Subset even;
+//extern Subset even;
 
 //! Default odd subset
-extern Subset odd;
+//extern Subset odd;
 
 
 /** @} */ // end of group subsetss

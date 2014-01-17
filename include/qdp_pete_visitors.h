@@ -12,6 +12,8 @@ namespace QDP {
 
 struct ShiftPhase1
 {
+  ShiftPhase1(const Subset& _s):subset(_s) {}
+  const Subset& subset;
 };
 
 struct ShiftPhase2
@@ -69,21 +71,25 @@ struct AddressLeaf
     bool   bl;
   };
 
-  AddressLeaf() {    
+  AddressLeaf(const Subset& s): subset(s) {    
     //std::cout << "AddressLeaf default ctor\n";
   }
 
-  AddressLeaf(const AddressLeaf& cp) {
+  AddressLeaf(const AddressLeaf& cp): subset(cp.subset) {
     addr = cp.addr;
     //std::cout << "AddressLeaf copy ctor my_size = " << addr.size() << "\n";
   }
 
   AddressLeaf& operator=(const AddressLeaf& cp) {
+    assert(!"strange");
     addr = cp.addr;
     //std::cout << "AddressLeaf assignment my_size = " << addr.size() << "\n";
   }
 
+  
   mutable std::vector<Types> addr;
+  const Subset& subset;
+
   void setAddr(void* p) const {
     //std::cout << "AddressLeaf::setAddr " << p << "\n";
     Types t;

@@ -142,6 +142,7 @@ namespace QDP {
 #include "qdp_qdpio.h"
 #endif
 
+#include "qdp_masterset.h"
 
 #include "qdp_subset.h"
 #include "qdp_stopwatch.h"

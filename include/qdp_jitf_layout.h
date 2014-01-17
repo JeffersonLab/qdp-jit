@@ -29,6 +29,7 @@ namespace QDP {
 
     loop.done();
 
+    QDPIO::cerr << "functionlayout_to_jit_build\n";
     return jit_function_epilogue_get("jit_layout.ptx");
   }
 
@@ -38,7 +39,7 @@ namespace QDP {
   void 
   function_layout_to_jit_exec(void * function, T *dest, T *src )
   {
-    AddressLeaf addr_leaf;
+    AddressLeaf addr_leaf(all);
 
     addr_leaf.setAddr( dest );
     addr_leaf.setAddr( src );
@@ -83,6 +84,7 @@ namespace QDP {
 
     loop.done();
 
+    QDPIO::cerr << "functionlayout_to_native_build\n";
     return jit_function_epilogue_get("jit_layout.ptx");
   }
 
@@ -92,7 +94,7 @@ namespace QDP {
   void 
   function_layout_to_native_exec(void * function, T *dest, T *src )
   {
-    AddressLeaf addr_leaf;
+    AddressLeaf addr_leaf(all);
 
     addr_leaf.setAddr( dest );
     addr_leaf.setAddr( src );

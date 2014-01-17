@@ -38,6 +38,8 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 
   loop.done();
 
+  QDPIO::cerr << "function_build\n";
+
   return jit_function_epilogue_get("jit_eval.ptx");
 }
 
@@ -50,17 +52,17 @@ function_exec(void * function, OLattice<T>& dest, const Op& op, const QDPExpr<RH
 {
   assert( s.hasOrderedRep() );
 
-  ShiftPhase1 phase1;
+  ShiftPhase1 phase1(s);
   int offnode_maps = forEach(rhs, phase1 , BitOrCombine());
   
 #ifdef LLVM_DEBUG
-  QDP_info("offnode_maps = %d",offnode_maps);
 #endif
+  QDP_info("offnode_maps = %d",offnode_maps);
 
   ShiftPhase2 phase2;
   forEach(rhs, phase2 , NullCombine());
 
-  AddressLeaf addr_leaf;
+  AddressLeaf addr_leaf(s);
 
   int junk_dest = forEach(dest, addr_leaf, NullCombine());
   AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
@@ -116,7 +118,7 @@ function_lat_sca_exec(void* function, OLattice<T>& dest, const Op& op, const QDP
 {
   assert( s.hasOrderedRep() );
 
-  AddressLeaf addr_leaf;
+  AddressLeaf addr_leaf(s);
 
   int junk_dest = forEach(dest, addr_leaf, NullCombine());
   AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
@@ -165,7 +167,7 @@ function_zero_rep_exec(void * function, OLattice<T>& dest, const Subset& s )
 {
   assert( s.hasOrderedRep() );
 
-  AddressLeaf addr_leaf;
+  AddressLeaf addr_leaf(s);
 
   int junk_0 = forEach(dest, addr_leaf, NullCombine());
 
@@ -297,6 +299,7 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
 
   loop.done();
 
+  QDPIO::cerr << "function_gather_build\n";
   return jit_function_epilogue_get("jit_gather.ll");
 }
 
@@ -309,12 +312,17 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
 
 template<class T1, class RHS>
 void
-function_gather_exec( void * function, void * send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs )
+function_gather_exec( void * function, 
+		      void * send_buf , 
+		      const Map& map , 
+		      const QDPExpr<RHS,OLattice<T1> >& rhs , 
+		      const Subset& subset )
 {
-  AddressLeaf addr_leaf;
+#if 1
+  AddressLeaf addr_leaf(subset);
 
   AddressLeaf::Types t;
-  t.ptr = const_cast<int*>(map.soffset().slice());
+  t.ptr = const_cast<int*>(map.soffset(subset).slice());
   addr_leaf.addr.push_back(t);
 
   t.ptr = send_buf;
@@ -327,7 +335,8 @@ function_gather_exec( void * function, void * send_buf , const Map& map , const 
 #ifdef LLVM_DEBUG
   std::cout << "calling gather.. " << addr_leaf.addr.size() << "\n";  
 #endif
-  jit_dispatch( function , map.soffset().size() , true , 0 , addr_leaf);
+  jit_dispatch( function , map.soffset(subset).size() , true , 0 , addr_leaf);
+#endif
 }
 
 

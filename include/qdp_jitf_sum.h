@@ -55,7 +55,7 @@ function_sum_exec(void * function, typename UnaryReturn<OLattice<T>, FnSum>::Typ
   for( int i = 0 ; i < qdpNumThreads() ; ++i )
     zero_rep(dest[i]);
 
-  AddressLeaf addr_leaf;
+  AddressLeaf addr_leaf(s);
 
   int junk_src = forEach(src, addr_leaf, NullCombine());
   addr_leaf.setAddr( &dest[0] );
