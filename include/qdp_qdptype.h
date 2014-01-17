@@ -525,6 +525,16 @@ struct LeafFunctor<QDPType<T,C>, ShiftPhase2>
 };
 
 
+template<class T, class C>
+struct LeafFunctor<QDPType<T,C>, HasShift>
+{
+  typedef int Type_t;
+  static int apply(const QDPType<T,C> &s, const HasShift &f) {
+    return 0;
+  }
+};
+
+
 
 
 } // namespace QDP

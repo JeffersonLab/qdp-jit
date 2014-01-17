@@ -222,6 +222,20 @@ struct LeafFunctor<GammaConst<N,m>, ShiftPhase2>
   static int apply(const GammaConst<N,m> &s, const ShiftPhase2 &f) { return 0; }
 };
 
+template<int N>
+struct LeafFunctor<GammaType<N>, HasShift>
+{
+  typedef int Type_t;
+  static int apply(const GammaType<N> &s, const HasShift &f) { return 0; }
+};
+
+template<int N, int m>
+struct LeafFunctor<GammaConst<N,m>, HasShift>
+{
+  typedef int Type_t;
+  static int apply(const GammaConst<N,m> &s, const HasShift &f) { return 0; }
+};
+
 
 
 

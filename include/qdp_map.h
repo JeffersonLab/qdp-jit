@@ -480,6 +480,24 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase2 , CTag>
 
 
 
+template<class A>
+struct ForEach<UnaryNode<FnMap, A>, HasShift , BitOrCombine>
+{
+  typedef typename ForEach<A, EvalLeaf1, OpCombine>::Type_t InnerTypeA_t;
+  typedef typename Combine1<InnerTypeA_t, FnMap, OpCombine>::Type_t InnerType_t;
+  typedef int Type_t;
+  typedef QDPExpr<A,OLattice<InnerType_t> > Expr;
+  inline static
+  Type_t apply(const UnaryNode<FnMap, A> &expr, const HasShift &f, const BitOrCombine &c)
+  {
+    return 1;
+  }
+};
+
+
+
+
+
 
 //-----------------------------------------------------------------------------
 //! Array of general permutation map class for communications

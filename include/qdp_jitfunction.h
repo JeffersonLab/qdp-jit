@@ -19,7 +19,12 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   std::cout << __PRETTY_FUNCTION__ << "\n";
 #endif
 
-  JitMainLoop loop;
+  HasShift hasShift;
+  int with_shift = forEach(rhs, hasShift , BitOrCombine());
+
+  QDPIO::cerr << "with_shift = " << with_shift << "\n";
+
+  JitMainLoop loop( with_shift ? 1 : getDataLayoutInnerSize() );
 
   ParamLeaf param_leaf;
 
@@ -51,6 +56,11 @@ void
 function_exec(void * function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
 {
   assert( s.hasOrderedRep() );
+
+  HasShift hasShift;
+  int with_shift = forEach(rhs, hasShift , BitOrCombine());
+
+  QDPIO::cerr << "with_shift = " << with_shift << "\n";
 
   ShiftPhase1 phase1(s);
   int offnode_maps = forEach(rhs, phase1 , BitOrCombine());

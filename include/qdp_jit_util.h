@@ -72,6 +72,12 @@ namespace QDP {
       done_preamble = false;
     }
 
+    JitMainLoop(int inner_a) {
+      inner = inner_a;
+      llvm_start_new_function();
+      done_preamble = false;
+    }
+
 
     llvm::Value * getThreadNum() {
       do_preamble();

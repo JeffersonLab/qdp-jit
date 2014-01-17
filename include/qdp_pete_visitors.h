@@ -20,6 +20,10 @@ struct ShiftPhase2
 {
 };
 
+struct HasShift
+{
+};
+
 
 
 class ViewLeaf

@@ -545,6 +545,25 @@ struct LeafFunctor<OLattice<T>, ShiftPhase2>
 };
 
 
+template<class T>
+struct LeafFunctor<OScalar<T>, HasShift>
+{
+  typedef int Type_t;
+  inline static Type_t apply(const OScalar<T> &a, const HasShift &f) {
+    return 0;
+  }
+};
+
+template<class T>
+struct LeafFunctor<OLattice<T>, HasShift>
+{
+  typedef int Type_t;
+  inline static Type_t apply(const OLattice<T> &a, const HasShift &f) {
+    return 0;
+  }
+};
+
+
 
 
 template<class T> 

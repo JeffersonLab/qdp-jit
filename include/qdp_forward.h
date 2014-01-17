@@ -140,6 +140,7 @@ namespace QDP
 
   struct ShiftPhase1;
   struct ShiftPhase2;
+  struct HasShift;
   class Map;
   struct FnMap;
   class ArrayBiDirectionalMap;
