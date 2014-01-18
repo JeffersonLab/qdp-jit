@@ -61,15 +61,24 @@ template<class T, class T1, class Op, class RHS>
 void 
 function_exec(void * function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
 {
-  assert( s.hasOrderedRep() );
+  //QDPIO::cerr << __PRETTY_FUNCTION__ << "\n";
 
-  // HasShift hasShift;
-  // int with_shift = forEach(rhs, hasShift , BitOrCombine());
+  assert( s.hasOrderedRep() && "only ordered subsets are supported");
 
-  // QDPIO::cerr << "with_shift = " << with_shift << "\n";
-
+  static int offnode_maps_previous_call = -1;
   ShiftPhase1 phase1(s);
   int offnode_maps = forEach(rhs, phase1 , BitOrCombine());
+
+#if 0
+  QDPIO::cerr << "offnode_maps_previous_call = " << offnode_maps_previous_call 
+	      << "offnode_maps = " << offnode_maps << "\n";
+#endif
+
+  if (offnode_maps_previous_call != -1) 
+    if ( (offnode_maps_previous_call > 0  && offnode_maps == 0) ||
+	 (offnode_maps_previous_call == 0 && offnode_maps >  0) )
+      QDP_error_exit("implementation limitation: same expression template used with offnode and no offnode comms.");
+  offnode_maps_previous_call = offnode_maps;
   
 #ifdef LLVM_DEBUG
 #endif
