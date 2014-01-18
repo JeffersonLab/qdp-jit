@@ -139,7 +139,18 @@ namespace QDP {
     return id;
   }
 
-
+  const multi1d<int>& MasterMap::getInnerSites(const Subset& s,int bitmask) const {
+    assert( s.getId() >= 0 && s.getId() < powerSet.size() && "subset Id out of range");
+    if ( bitmask < 1 || bitmask > powerSetC.size()-1 )
+      QDP_error_exit("internal error: get count inner %d",bitmask);
+    return *powerSetC[s.getId()][bitmask];
+  }
+  const multi1d<int>& MasterMap::getFaceSites(const Subset& s,int bitmask) const {
+    assert( s.getId() >= 0 && s.getId() < powerSet.size() && "subset Id out of range");
+    if ( bitmask < 1 || bitmask > powerSet.size()-1 )
+      QDP_error_exit("internal error: get count face %d",bitmask);
+    return *powerSet[s.getId()][bitmask]; 
+  }
 
   int MasterMap::getCountInner(const Subset& s,int bitmask) const {
     assert( s.getId() >= 0 && s.getId() < powerSet.size() && "subset Id out of range");

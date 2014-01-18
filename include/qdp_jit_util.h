@@ -31,51 +31,64 @@ namespace QDP {
       r_ordered      = llvm_get_arg_ordered();
       r_start        = llvm_get_arg_start();
 
-      llvm::BasicBlock * block_ordered = llvm_new_basic_block();
-      llvm::BasicBlock * block_not_ordered = llvm_new_basic_block();
-      llvm::BasicBlock * block_ordered_exit = llvm_new_basic_block();
-      llvm::Value* r_lo_added;
-      llvm::Value* r_hi_added;
-      llvm_cond_branch( r_ordered , block_ordered , block_not_ordered );
-      {
-	llvm_set_insert_point(block_not_ordered);
-	llvm_branch( block_ordered_exit );
-      }
-      {
-	llvm_set_insert_point(block_ordered);
-	r_lo_added = llvm_add( r_lo_in , r_start );
-	r_hi_added = llvm_add( r_hi_in , r_start );
-	llvm_branch( block_ordered_exit );
-      }
-      llvm_set_insert_point(block_ordered_exit);
-
-      r_lo = llvm_phi( r_lo_in->getType() , 2 );
-      r_hi = llvm_phi( r_hi_in->getType() , 2 );
-
-      r_lo->addIncoming( r_lo_in , block_not_ordered );
-      r_hi->addIncoming( r_hi_in , block_not_ordered );
-
-      r_lo->addIncoming( r_lo_added , block_ordered );
-      r_hi->addIncoming( r_hi_added , block_ordered );
-
       r_inner = llvm_create_value( int64_t( inner ) );
 
-      r_lo_outer = llvm_div( r_lo , r_inner );
-      r_hi_outer = llvm_div( r_hi , r_inner );
+      if (!do_siteperm) 
+	{
+	  llvm::BasicBlock * block_ordered = llvm_new_basic_block();
+	  llvm::BasicBlock * block_not_ordered = llvm_new_basic_block();
+	  llvm::BasicBlock * block_ordered_exit = llvm_new_basic_block();
+	  llvm::Value* r_lo_added;
+	  llvm::Value* r_hi_added;
+	  llvm_cond_branch( r_ordered , block_ordered , block_not_ordered );
+	  {
+	    llvm_set_insert_point(block_not_ordered);
+	    llvm_branch( block_ordered_exit );
+	  }
+	  {
+	    llvm_set_insert_point(block_ordered);
+	    r_lo_added = llvm_add( r_lo_in , r_start );
+	    r_hi_added = llvm_add( r_hi_in , r_start );
+	    llvm_branch( block_ordered_exit );
+	  }
+	  llvm_set_insert_point(block_ordered_exit);
+	  
+	  r_lo = llvm_phi( r_lo_in->getType() , 2 );
+	  r_hi = llvm_phi( r_hi_in->getType() , 2 );
+	  
+	  r_lo->addIncoming( r_lo_in , block_not_ordered );
+	  r_hi->addIncoming( r_hi_in , block_not_ordered );
+	  
+	  r_lo->addIncoming( r_lo_added , block_ordered );
+	  r_hi->addIncoming( r_hi_added , block_ordered );
+
+	  r_lo_outer = llvm_div( r_lo , r_inner );
+	  r_hi_outer = llvm_div( r_hi , r_inner );
+	}
+      else 
+	{
+	  r_lo_outer = llvm_div( r_lo_in , r_inner );
+	  r_hi_outer = llvm_div( r_hi_in , r_inner );
+	}
     }
 
   public:
 
     JitMainLoop() {
+      do_siteperm = false;
       inner = getDataLayoutInnerSize();
       llvm_start_new_function();
       done_preamble = false;
     }
 
-    JitMainLoop(int inner_a) {
+    JitMainLoop(int inner_a, bool do_siteperm_a) {
+      do_siteperm = do_siteperm_a;
       inner = inner_a;
       llvm_start_new_function();
       done_preamble = false;
+      if (do_siteperm) {
+	p_sitetable = llvm_add_param<int*>();
+      }
     }
 
 
@@ -112,6 +125,13 @@ namespace QDP {
       IndexDomainVector args;
       args.push_back( make_pair( Layout::sitesOnNode()/inner , r_idx_outer ) );
       args.push_back( make_pair( inner , r_idx_inner ) );
+
+      if (do_siteperm) {
+	assert( inner == 1 && "doing siteperm and inner is not 1. makes no sense.");
+	llvm::Value * r_idx_site = llvm_array_type_indirection( p_sitetable , get_index_from_index_vector(args) );
+	IndexDomainVector idx_new = get_scalar_index_vector_from_index( r_idx_site );
+	return idx_new;
+      }
 
       return args;
     }
@@ -186,8 +206,11 @@ namespace QDP {
     llvm::PHINode * r_hi;
     llvm::Value * r_inner;
 
+    ParamRef p_sitetable;
+
     int inner;
     bool done_preamble;
+    bool do_siteperm;
   };
 
 

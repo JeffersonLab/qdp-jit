@@ -534,6 +534,15 @@ struct LeafFunctor<QDPType<T,C>, HasShift>
   }
 };
 
+template<class T, class C>
+struct LeafFunctor<QDPType<T,C>, HasOffNodeShift>
+{
+  typedef int Type_t;
+  static int apply(const QDPType<T,C> &s, const HasOffNodeShift &f) {
+    return 0;
+  }
+};
+
 
 
 

@@ -496,6 +496,27 @@ struct ForEach<UnaryNode<FnMap, A>, HasShift , BitOrCombine>
 
 
 
+template<class A>
+struct ForEach<UnaryNode<FnMap, A>, HasOffNodeShift , BitOrCombine>
+{
+  typedef typename ForEach<A, EvalLeaf1, OpCombine>::Type_t InnerTypeA_t;
+  typedef typename Combine1<InnerTypeA_t, FnMap, OpCombine>::Type_t InnerType_t;
+  typedef int Type_t;
+  typedef QDPExpr<A,OLattice<InnerType_t> > Expr;
+  inline static
+  Type_t apply(const UnaryNode<FnMap, A> &expr, const HasOffNodeShift &f, const BitOrCombine &c)
+  {
+    const Map& map = expr.operation().map;
+
+    int ret = 0;
+
+    if (map.offnodeP)
+      ret |= map.getId();
+
+    return ret;
+  }
+};
+
 
 
 

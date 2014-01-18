@@ -24,6 +24,10 @@ struct HasShift
 {
 };
 
+struct HasOffNodeShift
+{
+};
+
 
 
 class ViewLeaf

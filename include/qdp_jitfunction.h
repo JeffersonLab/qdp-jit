@@ -20,11 +20,17 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 #endif
 
   HasShift hasShift;
-  int with_shift = forEach(rhs, hasShift , BitOrCombine());
+  int withShift = forEach(rhs, hasShift , BitOrCombine());
 
-  QDPIO::cerr << "with_shift = " << with_shift << "\n";
+  HasOffNodeShift hasOffNodeShift;
+  int offnodeShift = forEach(rhs, hasOffNodeShift , BitOrCombine());
 
-  JitMainLoop loop( with_shift ? 1 : getDataLayoutInnerSize() );
+  QDPIO::cerr << "withShift = " << withShift << "    offnodeShift = " << offnodeShift << "\n";
+
+  if ( withShift == 0   &&   offnodeShift > 0 )
+    QDP_error_exit("no shift, but offnode shift. Giving up!");
+
+  JitMainLoop loop( withShift ? 1 : getDataLayoutInnerSize() , offnodeShift );
 
   ParamLeaf param_leaf;
 
@@ -57,32 +63,83 @@ function_exec(void * function, OLattice<T>& dest, const Op& op, const QDPExpr<RH
 {
   assert( s.hasOrderedRep() );
 
-  HasShift hasShift;
-  int with_shift = forEach(rhs, hasShift , BitOrCombine());
+  // HasShift hasShift;
+  // int with_shift = forEach(rhs, hasShift , BitOrCombine());
 
-  QDPIO::cerr << "with_shift = " << with_shift << "\n";
+  // QDPIO::cerr << "with_shift = " << with_shift << "\n";
 
   ShiftPhase1 phase1(s);
   int offnode_maps = forEach(rhs, phase1 , BitOrCombine());
   
 #ifdef LLVM_DEBUG
 #endif
-  QDP_info("offnode_maps = %d",offnode_maps);
+  QDPIO::cerr << "offnode_maps = " << offnode_maps << "\n";
 
-  ShiftPhase2 phase2;
-  forEach(rhs, phase2 , NullCombine());
+  if (offnode_maps) 
+    {
+      int innerCount        = MasterMap::Instance().getCountInner(s,offnode_maps);
+      int faceCount         = MasterMap::Instance().getCountFace(s,offnode_maps);
+      const int *innerSites = MasterMap::Instance().getInnerSites(s,offnode_maps).slice();
+      const int *faceSites  = MasterMap::Instance().getFaceSites(s,offnode_maps).slice();
 
-  AddressLeaf addr_leaf(s);
+      QDPIO::cerr << "we have " << innerCount << " inner and " << faceCount << " face sites\n";
 
-  int junk_dest = forEach(dest, addr_leaf, NullCombine());
-  AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
-  int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
+      QDPIO::cerr << "Inner sites: ";
+      for (int i = 0 ; i < innerCount ; ++i )
+	QDPIO::cerr << innerSites[i] << " ";
+      QDPIO::cerr << "\n";
+
+      QDPIO::cerr << "Face sites: ";
+      for (int i = 0 ; i < faceCount ; ++i )
+	QDPIO::cerr << faceSites[i] << " ";
+      QDPIO::cerr << "\n";
+
+      AddressLeaf addr_leaf(s);
+
+      AddressLeaf::Types t;
+      t.ptr = const_cast<int*>( innerSites );
+      addr_leaf.addr.push_back(t);
+
+      int junk_dest = forEach(dest, addr_leaf, NullCombine());
+      AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
+      int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
+
+      QDPIO::cerr << "Calling function for inner sites\n";
+      jit_dispatch(function,innerCount,false,0,addr_leaf);
+
+      ShiftPhase2 phase2;
+      forEach(rhs, phase2 , NullCombine());
+
+      AddressLeaf addr_leaf_face(s);
+
+      t.ptr = const_cast<int*>( faceSites );
+      addr_leaf_face.addr.push_back(t);
+
+      junk_dest = forEach(dest, addr_leaf_face, NullCombine());
+      AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf_face);
+      junk_rhs = forEach(rhs, addr_leaf_face , NullCombine());
+
+      QDPIO::cerr << "Calling function for face sites\n";
+      jit_dispatch(function,faceCount,false,0,addr_leaf_face);
+    }
+  else
+    {
+      AddressLeaf addr_leaf(s);
+
+      int junk_dest = forEach(dest, addr_leaf, NullCombine());
+      AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
+      int junk_rhs = forEach(rhs, addr_leaf , NullCombine());
+
+      QDPIO::cerr << "Calling function for ordered subset\n";
+      jit_dispatch(function,s.numSiteTable(),s.hasOrderedRep(),s.start(),addr_leaf);
+    } 
+
 
 #ifdef LLVM_DEBUG
   std::cout << "calling eval(Lattice,Lattice).. " << addr_leaf.addr.size() << "\n";  
 #endif
 
-  jit_dispatch(function,s.numSiteTable(),s.hasOrderedRep(),s.start(),addr_leaf);
+
 }
 
 
@@ -328,7 +385,6 @@ function_gather_exec( void * function,
 		      const QDPExpr<RHS,OLattice<T1> >& rhs , 
 		      const Subset& subset )
 {
-#if 1
   AddressLeaf addr_leaf(subset);
 
   AddressLeaf::Types t;
@@ -346,7 +402,6 @@ function_gather_exec( void * function,
   std::cout << "calling gather.. " << addr_leaf.addr.size() << "\n";  
 #endif
   jit_dispatch( function , map.soffset(subset).size() , true , 0 , addr_leaf);
-#endif
 }
 
 
