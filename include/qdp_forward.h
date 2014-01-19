@@ -149,11 +149,12 @@ namespace QDP
   class Subset;
   class Set;
 
-  template<class T> void *function_layout_to_jit_build( const OLattice<T>& dest );
-  template<class T> void  function_layout_to_jit_exec(void * function, T *dest, T *src );
+  class JitFunction;
+  template<class T> void function_layout_to_jit_build( JitFunction& function, const OLattice<T>& dest );
+  template<class T> void function_layout_to_jit_exec( const JitFunction& function, T *dest, T *src );
 
-  template<class T> void *function_layout_to_native_build( const OLattice<T>& dest );
-  template<class T> void  function_layout_to_native_exec(void * function, T *dest, T *src );
+  template<class T> void function_layout_to_native_build( JitFunction& function, const OLattice<T>& dest );
+  template<class T> void function_layout_to_native_exec( const JitFunction& function, T *dest, T *src );
 
   typedef std::pair< int , llvm::Value * > IndexDomain;
   typedef std::vector< IndexDomain >     IndexDomainVector;

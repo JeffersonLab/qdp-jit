@@ -6,8 +6,8 @@
 namespace QDP {
 
   template<class T>
-  void *
-  function_layout_to_jit_build( const OLattice<T>& dest )
+  void 
+  function_layout_to_jit_build( JitFunction& func, const OLattice<T>& dest )
   {
     JitMainLoop loop;
 
@@ -30,14 +30,15 @@ namespace QDP {
     loop.done();
 
     QDPIO::cerr << "functionlayout_to_jit_build\n";
-    return jit_function_epilogue_get("jit_layout.ptx");
+
+    func.func().push_back( jit_function_epilogue_get("jit_layout.ptx") );
   }
 
 
 
   template<class T>
   void 
-  function_layout_to_jit_exec(void * function, T *dest, T *src )
+  function_layout_to_jit_exec(const JitFunction& function, T *dest, T *src )
   {
     AddressLeaf addr_leaf(all);
 
@@ -48,7 +49,7 @@ namespace QDP {
 
     QDPIO::cerr << "calling layout(to JIT)..\n";
 
-    jit_dispatch(function,th_count,true,0,addr_leaf);
+    jit_dispatch(function.func().at(0),th_count,true,0,addr_leaf);
   }
 
 
@@ -61,8 +62,8 @@ namespace QDP {
 
 
   template<class T>
-  void *
-  function_layout_to_native_build( const OLattice<T>& dest )
+  void 
+  function_layout_to_native_build( JitFunction& func, const OLattice<T>& dest )
   {
     JitMainLoop loop;
 
@@ -85,14 +86,15 @@ namespace QDP {
     loop.done();
 
     QDPIO::cerr << "functionlayout_to_native_build\n";
-    return jit_function_epilogue_get("jit_layout.ptx");
+
+    func.func().push_back( jit_function_epilogue_get("jit_layout.ptx") );
   }
 
 
 
   template<class T>
   void 
-  function_layout_to_native_exec(void * function, T *dest, T *src )
+  function_layout_to_native_exec( const JitFunction& function, T *dest, T *src )
   {
     AddressLeaf addr_leaf(all);
 
@@ -103,7 +105,7 @@ namespace QDP {
 
     QDPIO::cerr << "calling layout(to native)..\n";
 
-    jit_dispatch(function,th_count,true,0,addr_leaf);
+    jit_dispatch(function.func().at(0),th_count,true,0,addr_leaf);
   }
 
 }

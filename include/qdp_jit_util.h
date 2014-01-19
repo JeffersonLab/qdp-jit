@@ -215,6 +215,16 @@ namespace QDP {
 
 
 
+  class JitFunction {
+    std::vector<void*> func_m;
+  public:
+    bool built() const { return func_m.size(); }
+          std::vector<void*>& func()       { return func_m; }
+    const std::vector<void*>& func() const { return func_m; }
+  };
+
+
+
 
 } // namespace
 

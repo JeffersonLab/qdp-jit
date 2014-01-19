@@ -416,17 +416,17 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 
     void change_layout_to_jit(void * outPtr,void * inPtr) const
     {
-      static void* function;
-      if (function == NULL)
-	function = function_layout_to_jit_build( *this );
+      static JitFunction function;
+      if (!function.built())
+	function_layout_to_jit_build( function , *this );
       function_layout_to_jit_exec(function, outPtr , inPtr );
     }
 
     void change_layout_to_native(void * outPtr,void * inPtr) const
     {
-      static void* function;
-      if (function == NULL)
-	function = function_layout_to_native_build( *this );
+      static JitFunction function;
+      if (!function.built())
+	function_layout_to_native_build( function , *this );
       function_layout_to_native_exec(function, outPtr , inPtr );
     }
 

@@ -48,13 +48,14 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& 
   prof.stime(getClockTime());
 #endif
 
-  static void * function;
+  static JitFunction function;
 
   // Build the function
-  if (function == NULL)
+  if (!function.built())
+  if (!function.built())
     {
       //QDPIO::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
-      function = function_lat_sca_build(dest, op, rhs);
+      function_lat_sca_build( function , dest, op, rhs);
       //QDPIO::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
     }
   else
@@ -109,13 +110,13 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
   prof.stime(getClockTime());
 #endif
 
-  static void * function;
+  static JitFunction function;
 
   // Build the function
-  if (function == NULL)
+  if (!function.built())
     {
       //QDPIO::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
-      function = function_build(dest, op, rhs);
+      function_build( function , dest, op, rhs);
       //QDPIO::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
     }
   else
@@ -157,12 +158,12 @@ template<class T1, class T2>
 void copymask(OLattice<T2>& dest, const OLattice<T1>& mask, const OLattice<T2>& s1) 
 {
   //QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
-  static void* function;
+  static JitFunction function;
   // Build the function
-  if (function == NULL)
+  if (!function.built())
     {
       //QDPIO::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
-      function = function_copymask_build( dest , mask , s1 );
+      function_copymask_build( function ,  dest , mask , s1 );
       //QDPIO::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
     }
   else
@@ -219,10 +220,10 @@ random(OLattice<T>& d, const Subset& s)
   Seed seed_tmp;
 
   // Build the function
-  if (function == NULL)
+  if (!function.built())
     {
       //QDPIO::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
-      function = function_random_build( d , seed_tmp );
+      function_random_build( function ,  d , seed_tmp );
       //QDPIO::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
     }
   else
@@ -281,10 +282,10 @@ void gaussian(OLattice<T>& d, const Subset& s)
   random(r1,s);
   random(r2,s);
 
-  static void * function;
+  static JitFunction function;
 
-  if (function == NULL)
-    function = function_gaussian_build( d , r1 , r2 );
+  if (!function.built())
+    function_gaussian_build( function ,  d , r1 , r2 );
 
   function_gaussian_exec(function, d, r1, r2, s );
 
@@ -327,11 +328,11 @@ template<class T>
 inline
 void zero_rep(OLattice<T>& dest, const Subset& s) 
 {
-  static void * function;
+  static JitFunction function;
 
-  if (function == NULL)
+  if (!function.built())
     {
-      function = function_zero_rep_build( dest );
+      function_zero_rep_build( function ,  dest );
     }
   else
     {
@@ -434,10 +435,10 @@ sum(const QDPExpr<RHS,OLattice<T> >& s1, const Subset& s)
   prof.time -= getClockTime();
 #endif
 
-  static void* function;
+  static JitFunction function;
 
-  if (function == NULL)
-    function = function_sum_build( tmp );
+  if (!function.built())
+    function_sum_build( function ,  tmp );
 
   typename UnaryReturn<OLattice<T>, FnSum>::Type_t  d;
 
@@ -473,10 +474,10 @@ sum(const QDPExpr<RHS,OLattice<T> >& s1)
   prof.time -= getClockTime();
 #endif
 
-  static void* function;
+  static JitFunction function;
 
-  if (function == NULL)
-    function = function_sum_build( tmp );
+  if (!function.built())
+    function_sum_build( function ,  tmp );
 
   typename UnaryReturn<OLattice<T>, FnSum>::Type_t  d;
 
@@ -1123,9 +1124,9 @@ globalMax(const QDPExpr<RHS,OLattice<T> >& s1)
 
   typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t  d;
 
-  static void* function;
-  if (function == NULL)
-    function = function_global_max_build( tmp );
+  static JitFunction function;
+  if (!function.built())
+    function_global_max_build( function ,  tmp );
 
   function_global_max_exec( function , d , tmp , all );
 

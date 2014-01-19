@@ -422,13 +422,13 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
 	}
 
 #if 1
-	static void * function;
+	static JitFunction function;
 
 	// Build the function
-	if (function == NULL)
+	if (!function.built())
 	  {
 	    //std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
-	    function = function_gather_build<InnerType_t>( rRSrc.getSendBufPtr() , map , subexpr );
+	    function_gather_build<InnerType_t>( function , rRSrc.getSendBufPtr() , map , subexpr );
 	    //std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
 	  }
 	else

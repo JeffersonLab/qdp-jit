@@ -12,8 +12,7 @@ namespace QDP {
 
 
 template<class T, class T1, class Op, class RHS>
-void *
-function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs)
+void function_build(JitFunction& func, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs)
 {
 #ifdef LLVM_DEBUG
   std::cout << __PRETTY_FUNCTION__ << "\n";
@@ -22,36 +21,63 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   HasShift hasShift;
   int withShift = forEach(rhs, hasShift , BitOrCombine());
 
-  HasOffNodeShift hasOffNodeShift;
-  int offnodeShift = forEach(rhs, hasOffNodeShift , BitOrCombine());
+  QDPIO::cerr << "withShift = " << withShift << "\n";
 
-  QDPIO::cerr << "withShift = " << withShift << "    offnodeShift = " << offnodeShift << "\n";
+  {
+    JitMainLoop loop( withShift ? 1 : getDataLayoutInnerSize() , false );  // no offnode shift
 
-  if ( withShift == 0   &&   offnodeShift > 0 )
-    QDP_error_exit("no shift, but offnode shift. Giving up!");
+    ParamLeaf param_leaf;
 
-  JitMainLoop loop( withShift ? 1 : getDataLayoutInnerSize() , offnodeShift );
+    typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
+    FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
 
-  ParamLeaf param_leaf;
+    typename AddOpParam<Op,ParamLeaf>::Type_t op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
 
-  typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
-  FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
+    typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
+    View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
-  typename AddOpParam<Op,ParamLeaf>::Type_t op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
+    IndexDomainVector idx = loop.getIdx();
 
-  typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
-  View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
+    op_jit( dest_jit.elem( JitDeviceLayout::LayoutCoalesced , idx ), 
+	    forEach(rhs_view, ViewLeaf( JitDeviceLayout::LayoutCoalesced , idx ), OpCombine()));
 
-  IndexDomainVector idx = loop.getIdx();
+    loop.done();
 
-  op_jit( dest_jit.elem( JitDeviceLayout::LayoutCoalesced , idx ), 
-   	  forEach(rhs_view, ViewLeaf( JitDeviceLayout::LayoutCoalesced , idx ), OpCombine()));
+    QDPIO::cerr << "function_build\n";
 
-  loop.done();
+    func.func().push_back( jit_function_epilogue_get("jit_eval.ptx") );
+  }
 
-  QDPIO::cerr << "function_build\n";
 
-  return jit_function_epilogue_get("jit_eval.ptx");
+  // I might need to build a 2nd version of this function. This version 
+  // is needed when the semantics of the shift operations only differ by
+  // runtime state.
+
+  if (withShift)
+    {
+      JitMainLoop loop( withShift ? 1 : getDataLayoutInnerSize() , true );  // with offnode shift
+
+      ParamLeaf param_leaf;
+
+      typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
+      FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
+
+      typename AddOpParam<Op,ParamLeaf>::Type_t op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
+
+      typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
+      View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
+
+      IndexDomainVector idx = loop.getIdx();
+
+      op_jit( dest_jit.elem( JitDeviceLayout::LayoutCoalesced , idx ), 
+	      forEach(rhs_view, ViewLeaf( JitDeviceLayout::LayoutCoalesced , idx ), OpCombine()));
+
+      loop.done();
+
+      QDPIO::cerr << "function_build\n";
+
+      func.func().push_back( jit_function_epilogue_get("jit_eval.ptx") );
+    }
 }
 
 
@@ -59,13 +85,17 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 
 template<class T, class T1, class Op, class RHS>
 void 
-function_exec(void * function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
+function_exec(const JitFunction& function, 
+	      OLattice<T>& dest, 
+	      const Op& op, 
+	      const QDPExpr<RHS,OLattice<T1> >& rhs, 
+	      const Subset& s)
 {
   //QDPIO::cerr << __PRETTY_FUNCTION__ << "\n";
 
   assert( s.hasOrderedRep() && "only ordered subsets are supported");
 
-  static int offnode_maps_previous_call = -1;
+  //static int offnode_maps_previous_call = -1;
   ShiftPhase1 phase1(s);
   int offnode_maps = forEach(rhs, phase1 , BitOrCombine());
 
@@ -74,11 +104,13 @@ function_exec(void * function, OLattice<T>& dest, const Op& op, const QDPExpr<RH
 	      << "offnode_maps = " << offnode_maps << "\n";
 #endif
 
+#if 0
   if (offnode_maps_previous_call != -1) 
     if ( (offnode_maps_previous_call > 0  && offnode_maps == 0) ||
 	 (offnode_maps_previous_call == 0 && offnode_maps >  0) )
       QDP_error_exit("implementation limitation: same expression template used with offnode and no offnode comms.");
   offnode_maps_previous_call = offnode_maps;
+#endif
   
 #ifdef LLVM_DEBUG
 #endif
@@ -114,7 +146,7 @@ function_exec(void * function, OLattice<T>& dest, const Op& op, const QDPExpr<RH
       int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
 
       QDPIO::cerr << "Calling function for inner sites\n";
-      jit_dispatch(function,innerCount,false,0,addr_leaf);
+      jit_dispatch(function.func().at(1),innerCount,false,0,addr_leaf); // 2nd function pointer is offnode version
 
       ShiftPhase2 phase2;
       forEach(rhs, phase2 , NullCombine());
@@ -129,7 +161,7 @@ function_exec(void * function, OLattice<T>& dest, const Op& op, const QDPExpr<RH
       junk_rhs = forEach(rhs, addr_leaf_face , NullCombine());
 
       QDPIO::cerr << "Calling function for face sites\n";
-      jit_dispatch(function,faceCount,false,0,addr_leaf_face);
+      jit_dispatch(function.func().at(1),faceCount,false,0,addr_leaf_face);
     }
   else
     {
@@ -140,7 +172,7 @@ function_exec(void * function, OLattice<T>& dest, const Op& op, const QDPExpr<RH
       int junk_rhs = forEach(rhs, addr_leaf , NullCombine());
 
       QDPIO::cerr << "Calling function for ordered subset\n";
-      jit_dispatch(function,s.numSiteTable(),s.hasOrderedRep(),s.start(),addr_leaf);
+      jit_dispatch(function.func().at(0),s.numSiteTable(),s.hasOrderedRep(),s.start(),addr_leaf);
     } 
 
 
@@ -156,8 +188,7 @@ function_exec(void * function, OLattice<T>& dest, const Op& op, const QDPExpr<RH
 
 
 template<class T, class T1, class Op, class RHS>
-void *
-function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
+void function_lat_sca_build(JitFunction& func,OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
 {
 #ifdef LLVM_DEBUG
   std::cout << __PRETTY_FUNCTION__ << "\n";
@@ -182,7 +213,7 @@ function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScala
 
   loop.done();
 
-  return jit_function_epilogue_get("jit_lat_sca.ptx");
+  func.func().push_back( jit_function_epilogue_get("jit_lat_sca.ptx") );
 }
 
 
@@ -190,7 +221,8 @@ function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScala
 
 template<class T, class T1, class Op, class RHS>
 void 
-function_lat_sca_exec(void* function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs, const Subset& s)
+function_lat_sca_exec(const JitFunction& function, 
+		      OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs, const Subset& s)
 {
   assert( s.hasOrderedRep() );
 
@@ -204,7 +236,7 @@ function_lat_sca_exec(void* function, OLattice<T>& dest, const Op& op, const QDP
   std::cout << "calling eval(Lattice,Scalar)..\n";
 #endif
 
-  jit_dispatch(function,s.numSiteTable(),s.hasOrderedRep(),s.start(),addr_leaf);
+  jit_dispatch(function.func().at(0),s.numSiteTable(),s.hasOrderedRep(),s.start(),addr_leaf);
 }
 
 
@@ -214,8 +246,7 @@ function_lat_sca_exec(void* function, OLattice<T>& dest, const Op& op, const QDP
 
 
 template<class T>
-void *
-function_zero_rep_build(OLattice<T>& dest)
+void function_zero_rep_build(JitFunction& func,OLattice<T>& dest)
 {
   JitMainLoop loop;
 
@@ -230,7 +261,7 @@ function_zero_rep_build(OLattice<T>& dest)
 
   loop.done();
 
-  return jit_function_epilogue_get("jit_zero.ptx");
+  func.func().push_back( jit_function_epilogue_get("jit_zero.ptx") );
 }
 
 
@@ -239,7 +270,7 @@ function_zero_rep_build(OLattice<T>& dest)
 
 template<class T>
 void 
-function_zero_rep_exec(void * function, OLattice<T>& dest, const Subset& s )
+function_zero_rep_exec(const JitFunction& function, OLattice<T>& dest, const Subset& s )
 {
   assert( s.hasOrderedRep() );
 
@@ -251,7 +282,7 @@ function_zero_rep_exec(void * function, OLattice<T>& dest, const Subset& s )
   std::cout << "calling zero_rep(Lattice,Subset)..\n";
 #endif
 
-  jit_dispatch( function , s.numSiteTable() , s.hasOrderedRep() , s.start(), addr_leaf );
+  jit_dispatch( function.func().at(0) , s.numSiteTable() , s.hasOrderedRep() , s.start(), addr_leaf );
 }
 
 
@@ -342,8 +373,7 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
 
 
 template<class T, class T1, class RHS>
-void *
-function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs )
+void function_gather_build( JitFunction& func , void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs )
 {
 #ifdef LLVM_DEBUG
   std::cout << __PRETTY_FUNCTION__ << "\n";
@@ -376,7 +406,8 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
   loop.done();
 
   QDPIO::cerr << "function_gather_build\n";
-  return jit_function_epilogue_get("jit_gather.ll");
+
+  func.func().push_back( jit_function_epilogue_get("jit_gather.ll") );
 }
 
 
@@ -388,7 +419,7 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
 
 template<class T1, class RHS>
 void
-function_gather_exec( void * function, 
+function_gather_exec( const JitFunction& function, 
 		      void * send_buf , 
 		      const Map& map , 
 		      const QDPExpr<RHS,OLattice<T1> >& rhs , 
@@ -410,7 +441,7 @@ function_gather_exec( void * function,
 #ifdef LLVM_DEBUG
   std::cout << "calling gather.. " << addr_leaf.addr.size() << "\n";  
 #endif
-  jit_dispatch( function , map.soffset(subset).size() , true , 0 , addr_leaf);
+  jit_dispatch( function.func().at(0) , map.soffset(subset).size() , true , 0 , addr_leaf);
 }
 
 

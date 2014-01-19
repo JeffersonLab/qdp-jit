@@ -6,8 +6,8 @@
 namespace QDP {
 
 template<class T>
-void *
-function_gaussian_build(OLattice<T>& dest ,OLattice<T>& r1 ,OLattice<T>& r2 )
+void 
+function_gaussian_build( JitFunction& func, OLattice<T>& dest ,OLattice<T>& r1 ,OLattice<T>& r2 )
 {
   JitMainLoop loop;
 
@@ -32,13 +32,13 @@ function_gaussian_build(OLattice<T>& dest ,OLattice<T>& r1 ,OLattice<T>& r2 )
 
   loop.done();
 
-  return jit_function_epilogue_get("jit_gaussian.ptx");
+  func.func().push_back( jit_function_epilogue_get("jit_gaussian.ptx") );
 }
 
 
 template<class T>
 void 
-function_gaussian_exec(void *function, OLattice<T>& dest,OLattice<T>& r1,OLattice<T>& r2, const Subset& s )
+function_gaussian_exec(const JitFunction& function, OLattice<T>& dest,OLattice<T>& r1,OLattice<T>& r2, const Subset& s )
 {
   assert( s.hasOrderedRep() );
 
@@ -48,7 +48,7 @@ function_gaussian_exec(void *function, OLattice<T>& dest,OLattice<T>& r1,OLattic
   int junk_1 = forEach(r1, addr_leaf, NullCombine());
   int junk_2 = forEach(r2, addr_leaf, NullCombine());
 
-  jit_dispatch(function,s.numSiteTable(),s.hasOrderedRep(),s.start(),addr_leaf);
+  jit_dispatch(function.func().at(0),s.numSiteTable(),s.hasOrderedRep(),s.start(),addr_leaf);
 }
 
 

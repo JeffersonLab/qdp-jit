@@ -6,8 +6,8 @@ namespace QDP {
 
 
 template<class T>
-void *
-function_sum_build(const OLattice<T>& src)
+void 
+function_sum_build( JitFunction& func, const OLattice<T>& src)
 {
 #ifdef LLVM_DEBUG
   std::cout << __PRETTY_FUNCTION__ << "\n";
@@ -38,7 +38,7 @@ function_sum_build(const OLattice<T>& src)
 
   loop.done();
 
-  return jit_function_epilogue_get("jit_sum.ptx");
+  func.func().push_back( jit_function_epilogue_get("jit_sum.ptx") );
 }
 
 
@@ -46,7 +46,7 @@ function_sum_build(const OLattice<T>& src)
 
 template<class T>
 void 
-function_sum_exec(void * function, typename UnaryReturn<OLattice<T>, FnSum>::Type_t& ret, const OLattice<T>& src, const Subset& s)
+function_sum_exec(const JitFunction& function, typename UnaryReturn<OLattice<T>, FnSum>::Type_t& ret, const OLattice<T>& src, const Subset& s)
 {
   typedef typename UnaryReturn<T, FnSum>::Type_t RetT;
 
@@ -64,7 +64,7 @@ function_sum_exec(void * function, typename UnaryReturn<OLattice<T>, FnSum>::Typ
   std::cout << "calling sum(Lattice).. " << addr_leaf.addr.size() << "\n";
 #endif
 
-  jit_dispatch( function , s.numSiteTable() , s.hasOrderedRep() , s.start() , addr_leaf );
+  jit_dispatch( function.func().at(0) , s.numSiteTable() , s.hasOrderedRep() , s.start() , addr_leaf );
 
   zero_rep(ret);
   for( int i = 0 ; i < qdpNumThreads() ; ++i )

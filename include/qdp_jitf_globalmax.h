@@ -5,8 +5,8 @@ namespace QDP {
 
 
 template<class T>
-void *
-function_global_max_build(const OLattice<T>& src)
+void 
+function_global_max_build( JitFunction& func, const OLattice<T>& src)
 {
 #ifdef LLVM_DEBUG
   std::cout << __PRETTY_FUNCTION__ << "\n";
@@ -45,7 +45,7 @@ function_global_max_build(const OLattice<T>& src)
 
   loop.done();
 
-  return jit_function_epilogue_get("jit_globalmax.ptx");
+  func.func().push_back( jit_function_epilogue_get("jit_globalmax.ptx") );
 }
 
 
@@ -75,7 +75,7 @@ function_global_max_build(const OLattice<T>& src)
 
 template<class T>
 void 
-function_global_max_exec(void * function, typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t& ret, const OLattice<T>& src, const Subset& s)
+function_global_max_exec(const JitFunction& function, typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t& ret, const OLattice<T>& src, const Subset& s)
 {
   typedef typename UnaryReturn<T, FnGlobalMax>::Type_t RetT;
 
@@ -91,7 +91,7 @@ function_global_max_exec(void * function, typename UnaryReturn<OLattice<T>, FnGl
   std::cout << "calling globalMax(Lattice).. " << addr_leaf.addr.size() << "\n";
 #endif
 
-  jit_dispatch( function , s.numSiteTable() , s.hasOrderedRep() , s.start() , addr_leaf );
+  jit_dispatch( function.func().at(0) , s.numSiteTable() , s.hasOrderedRep() , s.start() , addr_leaf );
 
   ret.elem() = dest[0];
   for( int i = 1 ; i < qdpNumThreads() ; ++i )

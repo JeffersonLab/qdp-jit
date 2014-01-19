@@ -6,8 +6,8 @@
 namespace QDP {
 
   template<class T,class T1>
-  void *
-  function_copymask_build( OLattice<T>& dest , const OLattice<T1>& mask , const OLattice<T>& src )
+  void
+  function_copymask_build( JitFunction& func, OLattice<T>& dest , const OLattice<T1>& mask , const OLattice<T>& src )
   {
     JitMainLoop loop;
 
@@ -34,14 +34,14 @@ namespace QDP {
 
     loop.done();
 
-    return jit_function_epilogue_get("jit_copymask.ptx");
+    func.func().push_back( jit_function_epilogue_get("jit_copymask.ptx") );
   }
 
 
 
   template<class T,class T1>
   void 
-  function_copymask_exec(void * function, OLattice<T>& dest, const OLattice<T1>& mask, const OLattice<T>& src )
+  function_copymask_exec(const JitFunction& function, OLattice<T>& dest, const OLattice<T1>& mask, const OLattice<T>& src )
   {
     AddressLeaf addr_leaf(all);
 
@@ -55,7 +55,7 @@ namespace QDP {
     std::cout << "calling copymask(Lattice)..\n";
 #endif
 
-    jit_dispatch(function,th_count,true,0,addr_leaf);
+    jit_dispatch(function.func().at(0),th_count,true,0,addr_leaf);
   }
 
 }
