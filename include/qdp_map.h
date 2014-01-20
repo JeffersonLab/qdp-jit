@@ -726,7 +726,7 @@ private:
 
 
 // Add this code if you need CPU shifts
-#if 1
+#if 0
 template<class A, class CTag>
 struct ForEach<UnaryNode<FnMap, A>, EvalLeaf1, CTag>
 {

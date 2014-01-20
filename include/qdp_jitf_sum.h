@@ -50,7 +50,7 @@ function_sum_exec(const JitFunction& function, typename UnaryReturn<OLattice<T>,
 {
   typedef typename UnaryReturn<T, FnSum>::Type_t RetT;
 
-  RetT dest[ qdpNumThreads() ];
+  RetT* dest = new RetT( qdpNumThreads() );
 
   for( int i = 0 ; i < qdpNumThreads() ; ++i )
     zero_rep(dest[i]);
@@ -58,7 +58,7 @@ function_sum_exec(const JitFunction& function, typename UnaryReturn<OLattice<T>,
   AddressLeaf addr_leaf(s);
 
   int junk_src = forEach(src, addr_leaf, NullCombine());
-  addr_leaf.setAddr( &dest[0] );
+  addr_leaf.setAddr( dest );
 
 #ifdef LLVM_DEBUG
   std::cout << "calling sum(Lattice).. " << addr_leaf.addr.size() << "\n";
@@ -69,6 +69,8 @@ function_sum_exec(const JitFunction& function, typename UnaryReturn<OLattice<T>,
   zero_rep(ret);
   for( int i = 0 ; i < qdpNumThreads() ; ++i )
     ret.elem() += dest[i];
+
+  delete[] dest;
 
   // MPI sum in caller
 }

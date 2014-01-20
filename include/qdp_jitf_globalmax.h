@@ -82,7 +82,7 @@ function_global_max_exec(const JitFunction& function, typename UnaryReturn<OLatt
   // I cannot initialize 'dest' here. This must be done in the kernel
   RetT dest[ qdpNumThreads() ];
 
-  AddressLeaf addr_leaf;
+  AddressLeaf addr_leaf(s);
 
   int junk_src = forEach(src, addr_leaf, NullCombine());
   addr_leaf.setAddr( &dest[0] );

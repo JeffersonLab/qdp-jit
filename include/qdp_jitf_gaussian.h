@@ -42,7 +42,7 @@ function_gaussian_exec(const JitFunction& function, OLattice<T>& dest,OLattice<T
 {
   assert( s.hasOrderedRep() );
 
-  AddressLeaf addr_leaf;
+  AddressLeaf addr_leaf(s);
 
   int junk_0 = forEach(dest, addr_leaf, NullCombine());
   int junk_1 = forEach(r1, addr_leaf, NullCombine());

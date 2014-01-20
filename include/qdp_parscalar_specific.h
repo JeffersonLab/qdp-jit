@@ -50,20 +50,9 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& 
 
   static JitFunction function;
 
-  // Build the function
   if (!function.built())
-  if (!function.built())
-    {
-      //QDPIO::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
-      function_lat_sca_build( function , dest, op, rhs);
-      //QDPIO::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
-    }
-  else
-    {
-      //QDPIO::cout << __PRETTY_FUNCTION__ << ": is already built\n";
-    }
+    function_lat_sca_build( function , dest, op, rhs);
 
-  // Execute the function
   function_lat_sca_exec(function, dest, op, rhs, s);
 
 

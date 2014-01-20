@@ -977,6 +977,7 @@ namespace QDP {
       }
   }
 
+#if 0
   std::map<std::string,std::string> mapAttr;
   std::map<std::string,std::string>::iterator mapAttrIter;
 
@@ -1000,7 +1001,7 @@ namespace QDP {
 	mapAttr[num]=val;
       }
   }
-
+#endif
 
 
 #if 0
