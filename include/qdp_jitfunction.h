@@ -49,35 +49,38 @@ void function_build(JitFunction& func, OLattice<T>& dest, const Op& op, const QD
   }
 
 
-  // I might need to build a 2nd version of this function. This version 
-  // is needed when the semantics of the shift operations only differ by
-  // runtime state.
+  // I need to build a 2nd version of this function. This version 
+  // is needed for
+  //   * offnode shifts
+  //   * unordered sets
 
-  if (withShift)
-    {
-      JitMainLoop loop( withShift ? 1 : getDataLayoutInnerSize() , true );  // with offnode shift
+  {
+    // We set inner length to 1 no matter whether we use this
+    // version for unordered subset or offnode shifts.
 
-      ParamLeaf param_leaf;
+    JitMainLoop loop( 1 , true );
 
-      typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
-      FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
+    ParamLeaf param_leaf;
 
-      typename AddOpParam<Op,ParamLeaf>::Type_t op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
+    typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
+    FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
 
-      typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
-      View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
+    typename AddOpParam<Op,ParamLeaf>::Type_t op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
 
-      IndexDomainVector idx = loop.getIdx();
+    typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
+    View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
-      op_jit( dest_jit.elem( JitDeviceLayout::LayoutCoalesced , idx ), 
-	      forEach(rhs_view, ViewLeaf( JitDeviceLayout::LayoutCoalesced , idx ), OpCombine()));
+    IndexDomainVector idx = loop.getIdx();
 
-      loop.done();
+    op_jit( dest_jit.elem( JitDeviceLayout::LayoutCoalesced , idx ), 
+	    forEach(rhs_view, ViewLeaf( JitDeviceLayout::LayoutCoalesced , idx ), OpCombine()));
 
-      QDPIO::cerr << "function_build\n";
+    loop.done();
 
-      func.func().push_back( jit_function_epilogue_get("jit_eval.ptx") );
-    }
+    QDPIO::cerr << "function_build\n";
+
+    func.func().push_back( jit_function_epilogue_get("jit_eval.ptx") );
+  }
 }
 
 
@@ -93,7 +96,7 @@ function_exec(const JitFunction& function,
 {
   //QDPIO::cerr << __PRETTY_FUNCTION__ << "\n";
 
-  assert( s.hasOrderedRep() && "only ordered subsets are supported");
+  //assert( s.hasOrderedRep() && "only ordered subsets are supported");
 
   //static int offnode_maps_previous_call = -1;
   ShiftPhase1 phase1(s);
@@ -165,14 +168,39 @@ function_exec(const JitFunction& function,
     }
   else
     {
-      AddressLeaf addr_leaf(s);
+      if (s.hasOrderedRep()) 
+	{
+	  AddressLeaf addr_leaf(s);
 
-      int junk_dest = forEach(dest, addr_leaf, NullCombine());
-      AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
-      int junk_rhs = forEach(rhs, addr_leaf , NullCombine());
+	  int junk_dest = forEach(dest, addr_leaf, NullCombine());
+	  AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
+	  int junk_rhs = forEach(rhs, addr_leaf , NullCombine());
 
-      QDPIO::cerr << "Calling function for ordered subset\n";
-      jit_dispatch(function.func().at(0),s.numSiteTable(),s.hasOrderedRep(),s.start(),addr_leaf);
+	  QDPIO::cerr << "Calling function for ordered subset\n";
+	  jit_dispatch(function.func().at(0),s.numSiteTable(),s.hasOrderedRep(),s.start(),addr_leaf);
+	}
+      else
+	{
+	  AddressLeaf addr_leaf(s);
+
+	  AddressLeaf::Types t;
+	  t.ptr = const_cast<int*>( s.siteTable().slice() );
+	  addr_leaf.addr.push_back(t);
+
+
+	  QDPIO::cerr << "Sites: ";
+	  for (int i = 0 ; i < s.numSiteTable() ; ++i )
+	    QDPIO::cerr << ((int*)t.ptr)[i] << " ";
+	  QDPIO::cerr << "\n";
+	  
+
+	  int junk_dest = forEach(dest, addr_leaf, NullCombine());
+	  AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
+	  int junk_rhs = forEach(rhs, addr_leaf , NullCombine());
+
+	  QDPIO::cerr << "Calling function for not ordered subset\n";
+	  jit_dispatch(function.func().at(1),s.numSiteTable(),s.hasOrderedRep(),s.start(),addr_leaf);
+	}
     } 
 
 

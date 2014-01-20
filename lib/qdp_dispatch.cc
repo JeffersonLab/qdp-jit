@@ -15,6 +15,9 @@ namespace QDP {
 
   void jit_dispatch( void* function , int site_count, bool ordered, int64_t start, const AddressLeaf& args)
   {
+    if (site_count == 0)
+      return;
+
     void (*FP)(int64_t,int64_t,int64_t,bool,int64_t,void*) = 
       (void (*)(int64_t,int64_t,int64_t,bool,int64_t,void*))(intptr_t)function;
 
