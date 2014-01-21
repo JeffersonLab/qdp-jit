@@ -401,12 +401,12 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
 	QDP_info("Map: off-node communications required");
 #endif
 
-	QDPIO::cerr << "map phase 1, off-node required, subset id = " << f.subset.getId() << "\n";
+	//QDPIO::cerr << "map phase 1, off-node required, subset id = " << f.subset.getId() << "\n";
 
 	int dstnum = map.destnodes_num[f.subset.getId()][0]*sizeof(InnerType_t);
 	int srcnum = map.srcenodes_num[f.subset.getId()][0]*sizeof(InnerType_t);
 
-	QDPIO::cerr << "dest source site numbers = " << map.destnodes_num[f.subset.getId()][0] << " " << map.srcenodes_num[f.subset.getId()][0] << "\n";
+	//QDPIO::cerr << "dest source site numbers = " << map.destnodes_num[f.subset.getId()][0] << " " << map.srcenodes_num[f.subset.getId()][0] << "\n";
 
 	const FnMapRsrc& rRSrc = fnmap.getResource(srcnum,dstnum);
 

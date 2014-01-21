@@ -81,6 +81,11 @@ namespace QDP {
       done_preamble = false;
     }
 
+    // parameter 'inner' was added so that it can be set
+    // to 1 in case of siteperm (offnode) soffset gather.
+    // Rational being that number of sites to send not
+    // necessarily multiple of inner length.
+
     JitMainLoop(int inner_a, bool do_siteperm_a) {
       do_siteperm = do_siteperm_a;
       inner = inner_a;
@@ -123,13 +128,13 @@ namespace QDP {
       r_idx_inner      = llvm_phi( r_inner->getType() , 2 );
 
       IndexDomainVector args;
-      args.push_back( make_pair( Layout::sitesOnNode()/inner , r_idx_outer ) );
-      args.push_back( make_pair( inner , r_idx_inner ) );
+      args.push_back( make_pair( Layout::sitesOnNode()/getDataLayoutInnerSize() , r_idx_outer ) );
+      args.push_back( make_pair( getDataLayoutInnerSize() , r_idx_inner ) );
 
       if (do_siteperm) {
-	assert( inner == 1 && "doing siteperm and inner is not 1. makes no sense.");
+	//assert( inner == 1 && "doing siteperm and inner is not 1. makes no sense.");
 	llvm::Value * r_idx_site = llvm_array_type_indirection( p_sitetable , get_index_from_index_vector(args) );
-	IndexDomainVector idx_new = get_scalar_index_vector_from_index( r_idx_site );
+	IndexDomainVector idx_new = get_index_vector_from_index( r_idx_site );
 	return idx_new;
       }
 

@@ -24,7 +24,7 @@ void function_build(JitFunction& func, OLattice<T>& dest, const Op& op, const QD
   QDPIO::cerr << "withShift = " << withShift << "\n";
 
   {
-    JitMainLoop loop( withShift ? 1 : getDataLayoutInnerSize() , false );  // no offnode shift
+    JitMainLoop loop( getDataLayoutInnerSize() , false );  // no offnode shift
 
     ParamLeaf param_leaf;
 
@@ -43,7 +43,7 @@ void function_build(JitFunction& func, OLattice<T>& dest, const Op& op, const QD
 
     loop.done();
 
-    QDPIO::cerr << "function_build\n";
+    QDPIO::cerr << "function_build (no siteperm)\n";
 
     func.func().push_back( jit_function_epilogue_get("jit_eval.ptx") );
   }
@@ -58,7 +58,7 @@ void function_build(JitFunction& func, OLattice<T>& dest, const Op& op, const QD
     // We set inner length to 1 no matter whether we use this
     // version for unordered subset or offnode shifts.
 
-    JitMainLoop loop( 1 , true );
+    JitMainLoop loop( getDataLayoutInnerSize() , true );
 
     ParamLeaf param_leaf;
 
@@ -77,7 +77,7 @@ void function_build(JitFunction& func, OLattice<T>& dest, const Op& op, const QD
 
     loop.done();
 
-    QDPIO::cerr << "function_build\n";
+    QDPIO::cerr << "function_build (siteperm)\n";
 
     func.func().push_back( jit_function_epilogue_get("jit_eval.ptx") );
   }
@@ -116,8 +116,8 @@ function_exec(const JitFunction& function,
 #endif
   
 #ifdef LLVM_DEBUG
-#endif
   QDPIO::cerr << "offnode_maps = " << offnode_maps << "\n";
+#endif
 
   if (offnode_maps) 
     {
@@ -126,17 +126,17 @@ function_exec(const JitFunction& function,
       const int *innerSites = MasterMap::Instance().getInnerSites(s,offnode_maps).slice();
       const int *faceSites  = MasterMap::Instance().getFaceSites(s,offnode_maps).slice();
 
-      QDPIO::cerr << "we have " << innerCount << " inner and " << faceCount << " face sites\n";
+      // QDPIO::cerr << "we have " << innerCount << " inner and " << faceCount << " face sites\n";
 
-      QDPIO::cerr << "Inner sites: ";
-      for (int i = 0 ; i < innerCount ; ++i )
-	QDPIO::cerr << innerSites[i] << " ";
-      QDPIO::cerr << "\n";
+      // QDPIO::cerr << "Inner sites: ";
+      // for (int i = 0 ; i < innerCount ; ++i )
+      // 	QDPIO::cerr << innerSites[i] << " ";
+      // QDPIO::cerr << "\n";
 
-      QDPIO::cerr << "Face sites: ";
-      for (int i = 0 ; i < faceCount ; ++i )
-	QDPIO::cerr << faceSites[i] << " ";
-      QDPIO::cerr << "\n";
+      // QDPIO::cerr << "Face sites: ";
+      // for (int i = 0 ; i < faceCount ; ++i )
+      // 	QDPIO::cerr << faceSites[i] << " ";
+      // QDPIO::cerr << "\n";
 
       AddressLeaf addr_leaf(s);
 
@@ -148,7 +148,8 @@ function_exec(const JitFunction& function,
       AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
       int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
 
-      QDPIO::cerr << "Calling function for inner sites\n";
+      //QDPIO::cerr << "Calling function for inner sites\n";
+
       jit_dispatch(function.func().at(1),innerCount,false,0,addr_leaf); // 2nd function pointer is offnode version
 
       ShiftPhase2 phase2;
@@ -163,7 +164,8 @@ function_exec(const JitFunction& function,
       AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf_face);
       junk_rhs = forEach(rhs, addr_leaf_face , NullCombine());
 
-      QDPIO::cerr << "Calling function for face sites\n";
+      //QDPIO::cerr << "Calling function for face sites\n";
+
       jit_dispatch(function.func().at(1),faceCount,false,0,addr_leaf_face);
     }
   else
@@ -176,7 +178,8 @@ function_exec(const JitFunction& function,
 	  AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
 	  int junk_rhs = forEach(rhs, addr_leaf , NullCombine());
 
-	  QDPIO::cerr << "Calling function for ordered subset\n";
+	  //QDPIO::cerr << "Calling function for ordered subset\n";
+
 	  jit_dispatch(function.func().at(0),s.numSiteTable(),s.hasOrderedRep(),s.start(),addr_leaf);
 	}
       else
@@ -188,17 +191,18 @@ function_exec(const JitFunction& function,
 	  addr_leaf.addr.push_back(t);
 
 
-	  QDPIO::cerr << "Sites: ";
-	  for (int i = 0 ; i < s.numSiteTable() ; ++i )
-	    QDPIO::cerr << ((int*)t.ptr)[i] << " ";
-	  QDPIO::cerr << "\n";
+	  // QDPIO::cerr << "Sites: ";
+	  // for (int i = 0 ; i < s.numSiteTable() ; ++i )
+	  //   QDPIO::cerr << ((int*)t.ptr)[i] << " ";
+	  // QDPIO::cerr << "\n";
 	  
 
 	  int junk_dest = forEach(dest, addr_leaf, NullCombine());
 	  AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
 	  int junk_rhs = forEach(rhs, addr_leaf , NullCombine());
 
-	  QDPIO::cerr << "Calling function for not ordered subset\n";
+	  //QDPIO::cerr << "Calling function for not ordered subset\n";
+
 	  jit_dispatch(function.func().at(1),s.numSiteTable(),s.hasOrderedRep(),s.start(),addr_leaf);
 	}
     } 

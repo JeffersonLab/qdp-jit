@@ -108,13 +108,13 @@ namespace QDP {
       // llvm::Value * iv_div_inner = llvm_div( iv , inner ); // outer
       // llvm::Value * iv_mod_inner = llvm_rem( iv , inner ); // inner
 
-      llvm::Value * iv = llvm_add(llvm_mul( ivo , Ivi ) , ivi ); // reconstruct volume index
 
       // offset = ((ir * Ic + ic) * Is + is) * Iv + iv
 
       if (lay == JitDeviceLayout::LayoutCoalesced) {
 	return llvm_add(llvm_mul(llvm_add(llvm_mul(llvm_add(llvm_mul(llvm_add(llvm_mul(ivo,Is),is),Ic),ic),Ir),ir),Ivi),ivi);
       } else {
+	llvm::Value * iv = llvm_add(llvm_mul( ivo , Ivi ) , ivi ); // reconstruct volume index
 	return llvm_add(llvm_mul(llvm_add(llvm_mul(llvm_add(llvm_mul(iv,Is),is),Ic),ic),Ir),ir);
       }
     } else {
