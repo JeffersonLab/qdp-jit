@@ -237,6 +237,9 @@ namespace QDP {
 	destnodes_num[s_no] = 0;
 
 	// For now assume that we send as many sites as we receive
+	// and that the sitetable for subsets is the same across nodes
+	// (which is not the case for all subsets. Thus, shift operations
+	// on such subsets will be wrong.)
       
 	for(int linear=0; linear < nodeSites; ++linear)
 	  {
@@ -293,12 +296,14 @@ namespace QDP {
 	if ( si != destnodes_num[s_no][0] )
 	  QDP_error_exit("internal error: si != destnodes_num[0]");
 
+#if 0
 	if (roffsets[s_no].size()==0)
-	  QDP_error_exit("rsoffsets empty");
+	  QDP_error_exit("roffsets empty");
 	if (soffsets[s_no].size()==0)
-	  QDP_error_exit("ssoffsets empty");
+	  QDP_error_exit("soffsets empty");
+#endif
 	if (goffsets[s_no].size()==0)
-	  QDP_error_exit("gsoffsets empty");
+	  QDP_error_exit("goffsets empty");
 
       } // s_no
 

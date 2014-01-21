@@ -473,7 +473,7 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase2 , CTag>
       //QDP_info("ShiftPhase2: FnMap");
       rRSrc.qmp_wait();
     }
-    ForEach<A, ShiftPhase2, CTag>::apply(expr.child(), f, c);
+    return ForEach<A, ShiftPhase2, CTag>::apply(expr.child(), f, c);
   }
 };
 

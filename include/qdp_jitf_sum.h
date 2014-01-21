@@ -50,7 +50,7 @@ function_sum_exec(const JitFunction& function, typename UnaryReturn<OLattice<T>,
 {
   typedef typename UnaryReturn<T, FnSum>::Type_t RetT;
 
-  RetT* dest = new RetT( qdpNumThreads() );
+  RetT* dest = new RetT[ qdpNumThreads() ];
 
   for( int i = 0 ; i < qdpNumThreads() ; ++i )
     zero_rep(dest[i]);

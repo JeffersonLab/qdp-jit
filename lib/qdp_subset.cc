@@ -16,19 +16,19 @@ namespace QDP
   Subset all;
 
   //! Default rb3 subset -- Always unordered
-  //Set rb3;
+  Set rb3;
 
   //! Default 2-checkerboard (red/black) set
   Set rb;
 
   //! Default 2^{Nd+1}-checkerboard set. Useful for pure gauge updating.
-  //Set mcb;
+  Set mcb;
 
   //! Even subset
-  //Subset even;
+  Subset even;
 
   //! Odd subset
-  //Subset odd;
+  Subset odd;
 
   Set::~Set() { }
 
@@ -141,10 +141,10 @@ namespace QDP
     rb.make(SetRBFunc());
 
     // Initialize the 3d red/black checkerboard.
-    //rb3.make(SetRB3Func());
+    rb3.make(SetRB3Func());
 
     // Initialize the 32-style checkerboard
-    //mcb.make(Set32CBFunc());
+    mcb.make(Set32CBFunc());
 
     // The all set
     set_all.make(SetAllFunc());
@@ -153,10 +153,10 @@ namespace QDP
     all.make(set_all[0]);
 
     // COPY the rb[0] to the even subset
-    //even = rb[0];
+    even = rb[0];
 
     // COPY the rb[1] to the odd subset
-    //odd = rb[1];
+    odd = rb[1];
   }
 
 	  
