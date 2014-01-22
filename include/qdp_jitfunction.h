@@ -126,7 +126,12 @@ function_exec(const JitFunction& function,
       const int *innerSites = MasterMap::Instance().getInnerSites(s,offnode_maps).slice();
       const int *faceSites  = MasterMap::Instance().getFaceSites(s,offnode_maps).slice();
 
-      // QDPIO::cerr << "we have " << innerCount << " inner and " << faceCount << " face sites\n";
+      //QDPIO::cerr << "we have " << innerCount << " inner and " << faceCount << " face sites\n";
+
+      // if (( innerCount % getDataLayoutInnerSize() ) ||
+      // 	  ( faceCount  % getDataLayoutInnerSize() ))
+      // 	QDP_error_exit("implementation limitation. innerCount=%d , faceCount=%d must be multiple of inner length=%d",
+      // 		       innerCount,faceCount,getDataLayoutInnerSize());
 
       // QDPIO::cerr << "Inner sites: ";
       // for (int i = 0 ; i < innerCount ; ++i )
@@ -413,7 +418,7 @@ void function_gather_build( JitFunction& func , void* send_buf , const Map& map 
 
   typedef typename WordType<T1>::Type_t WT;
 
-  JitMainLoop loop;
+  JitMainLoop loop(1,false);
 
   ParamRef p_soffset = llvm_add_param<int*>();
   ParamRef p_sndbuf  = llvm_add_param<WT*>();
@@ -471,8 +476,9 @@ function_gather_exec( const JitFunction& function,
   //QDP_info("gather sites into send_buf lo=%d hi=%d",lo,hi);
 
 #ifdef LLVM_DEBUG
-  std::cout << "calling gather.. " << addr_leaf.addr.size() << "\n";  
+  QDPIO::cerr << "calling gather.. number of sites to gather: " << map.soffset(subset).size() << "\n";
 #endif
+
   jit_dispatch( function.func().at(0) , map.soffset(subset).size() , true , 0 , addr_leaf);
 }
 

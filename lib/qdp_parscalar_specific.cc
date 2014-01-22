@@ -296,10 +296,12 @@ namespace QDP {
 	if ( si != destnodes_num[s_no][0] )
 	  QDP_error_exit("internal error: si != destnodes_num[0]");
 
-	assert( ((soffsets[s_no].size() % getDataLayoutInnerSize())==0) && 
-		"number of sites to send not a multiple of inner length" );
-	assert( ((roffsets[s_no].size() % getDataLayoutInnerSize())==0) && 
-		"number of sites to receive not a multiple of inner length" );
+	// QDPIO::cerr << "soffsets[s_no].size() = " << soffsets[s_no].size() << "\n";
+	// assert( ((soffsets[s_no].size() % getDataLayoutInnerSize())==0) && 
+	// 	"number of sites to send not a multiple of inner length" );
+	// QDPIO::cerr << "roffsets[s_no].size() = " << roffsets[s_no].size() << "\n";
+	// assert( ((roffsets[s_no].size() % getDataLayoutInnerSize())==0) && 
+	// 	"number of sites to receive not a multiple of inner length" );
 
 #if 0
 	if (roffsets[s_no].size()==0)

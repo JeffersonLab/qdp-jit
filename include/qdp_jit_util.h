@@ -128,12 +128,24 @@ namespace QDP {
       r_idx_inner      = llvm_phi( r_inner->getType() , 2 );
 
       IndexDomainVector args;
-      args.push_back( make_pair( Layout::sitesOnNode()/getDataLayoutInnerSize() , r_idx_outer ) );
-      args.push_back( make_pair( getDataLayoutInnerSize() , r_idx_inner ) );
+      args.push_back( make_pair( Layout::sitesOnNode()/inner , r_idx_outer ) );
+      args.push_back( make_pair( inner , r_idx_inner ) );
 
       if (do_siteperm) {
 	//assert( inner == 1 && "doing siteperm and inner is not 1. makes no sense.");
-	llvm::Value * r_idx_site = llvm_array_type_indirection( p_sitetable , get_index_from_index_vector(args) );
+
+	llvm::Value * r_linear_idx = get_index_from_index_vector(args);
+
+	llvm::BasicBlock * block_exit = llvm_new_basic_block();
+	llvm::BasicBlock * block_cont = llvm_new_basic_block();
+
+	llvm_cond_branch( llvm_ge( r_linear_idx , r_hi_in ) , block_exit , block_cont );
+	llvm_set_insert_point(block_exit);
+	llvm_exit();
+	llvm_set_insert_point(block_cont);
+
+
+	llvm::Value * r_idx_site = llvm_array_type_indirection( p_sitetable , r_linear_idx );
 	IndexDomainVector idx_new = get_index_vector_from_index( r_idx_site );
 	return idx_new;
       }
@@ -183,7 +195,13 @@ namespace QDP {
       r_idx_outer->addIncoming( r_idx_outer_new , block_site_loop_inner_exit );
       r_idx_outer->addIncoming( r_lo_outer , block_entry_point );
 
-      llvm::Value * r_exit_cond_outer = llvm_ge( r_idx_outer_new , r_hi_outer );
+      llvm::Value * r_exit_cond_outer;
+
+      if (do_siteperm) 
+	r_exit_cond_outer = llvm_gt( r_idx_outer_new , r_hi_outer );
+      else
+	r_exit_cond_outer = llvm_ge( r_idx_outer_new , r_hi_outer );
+
       llvm_cond_branch( r_exit_cond_outer , block_site_loop_outer_exit , block_site_loop_outer );
 
       llvm_set_insert_point(block_site_loop_outer_exit);
