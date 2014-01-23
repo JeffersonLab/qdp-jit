@@ -10,7 +10,7 @@ void
 function_sum_build( JitFunction& func, const OLattice<T>& src)
 {
 #ifdef LLVM_DEBUG
-  std::cout << __PRETTY_FUNCTION__ << "\n";
+  QDPIO::cerr << __PRETTY_FUNCTION__ << "\n";
 #endif
 
   JitMainLoop loop;
@@ -48,6 +48,8 @@ template<class T>
 void 
 function_sum_exec(const JitFunction& function, typename UnaryReturn<OLattice<T>, FnSum>::Type_t& ret, const OLattice<T>& src, const Subset& s)
 {
+  assert( s.hasOrderedRep() );
+
   typedef typename UnaryReturn<T, FnSum>::Type_t RetT;
 
   RetT* dest = new RetT[ qdpNumThreads() ];
@@ -63,6 +65,10 @@ function_sum_exec(const JitFunction& function, typename UnaryReturn<OLattice<T>,
 #ifdef LLVM_DEBUG
   std::cout << "calling sum(Lattice).. " << addr_leaf.addr.size() << "\n";
 #endif
+
+  if (s.numSiteTable() % getDataLayoutInnerSize())
+    QDP_error_exit("number of sites in ordered subset is %d, but inner length is %d" , 
+		   s.numSiteTable() , getDataLayoutInnerSize());
 
   jit_dispatch( function.func().at(0) , s.numSiteTable() , s.hasOrderedRep() , s.start() , addr_leaf );
 

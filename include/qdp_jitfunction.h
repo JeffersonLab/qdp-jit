@@ -183,7 +183,11 @@ function_exec(const JitFunction& function,
 	  AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
 	  int junk_rhs = forEach(rhs, addr_leaf , NullCombine());
 
-	  //QDPIO::cerr << "Calling function for ordered subset\n";
+	  //QDPIO::cerr << "Calling function for ordered subset count=" << s.numSiteTable() << " start=" << s.start() << "\n";
+
+	  if (s.numSiteTable() % getDataLayoutInnerSize())
+	    QDP_error_exit("number of sites in ordered subset is %d, but inner length is %d" , 
+			   s.numSiteTable() , getDataLayoutInnerSize());
 
 	  jit_dispatch(function.func().at(0),s.numSiteTable(),s.hasOrderedRep(),s.start(),addr_leaf);
 	}
@@ -273,6 +277,10 @@ function_lat_sca_exec(const JitFunction& function,
   std::cout << "calling eval(Lattice,Scalar)..\n";
 #endif
 
+  if (s.numSiteTable() % getDataLayoutInnerSize())
+    QDP_error_exit("number of sites in ordered subset is %d, but inner length is %d" , 
+		   s.numSiteTable() , getDataLayoutInnerSize());
+
   jit_dispatch(function.func().at(0),s.numSiteTable(),s.hasOrderedRep(),s.start(),addr_leaf);
 }
 
@@ -318,6 +326,10 @@ function_zero_rep_exec(const JitFunction& function, OLattice<T>& dest, const Sub
 #ifdef LLVM_DEBUG
   std::cout << "calling zero_rep(Lattice,Subset)..\n";
 #endif
+
+  if (s.numSiteTable() % getDataLayoutInnerSize())
+    QDP_error_exit("number of sites in ordered subset is %d, but inner length is %d" , 
+		   s.numSiteTable() , getDataLayoutInnerSize());
 
   jit_dispatch( function.func().at(0) , s.numSiteTable() , s.hasOrderedRep() , s.start(), addr_leaf );
 }
