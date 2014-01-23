@@ -70,7 +70,7 @@ function_sum_exec(const JitFunction& function, typename UnaryReturn<OLattice<T>,
     QDP_error_exit("number of sites in ordered subset is %d, but inner length is %d" , 
 		   s.numSiteTable() , getDataLayoutInnerSize());
 
-  jit_dispatch( function.func().at(0) , s.numSiteTable() , s.hasOrderedRep() , s.start() , addr_leaf );
+  jit_dispatch( function.func().at(0) , s.numSiteTable() , getDataLayoutInnerSize() , s.hasOrderedRep() , s.start() , addr_leaf );
 
   zero_rep(ret);
   for( int i = 0 ; i < qdpNumThreads() ; ++i )

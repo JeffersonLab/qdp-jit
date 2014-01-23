@@ -91,7 +91,7 @@ function_global_max_exec(const JitFunction& function, typename UnaryReturn<OLatt
   std::cout << "calling globalMax(Lattice).. " << addr_leaf.addr.size() << "\n";
 #endif
 
-  jit_dispatch( function.func().at(0) , s.numSiteTable() , s.hasOrderedRep() , s.start() , addr_leaf );
+  jit_dispatch( function.func().at(0) , s.numSiteTable() , getDataLayoutInnerSize() , s.hasOrderedRep() , s.start() , addr_leaf );
 
   ret.elem() = dest[0];
   for( int i = 1 ; i < qdpNumThreads() ; ++i )

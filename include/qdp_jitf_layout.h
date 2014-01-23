@@ -49,7 +49,7 @@ namespace QDP {
 
     QDPIO::cerr << "calling layout(to JIT)..\n";
 
-    jit_dispatch(function.func().at(0),th_count,true,0,addr_leaf);
+    jit_dispatch(function.func().at(0),th_count,getDataLayoutInnerSize(),true,0,addr_leaf);
   }
 
 
@@ -105,7 +105,7 @@ namespace QDP {
 
     QDPIO::cerr << "calling layout(to native)..\n";
 
-    jit_dispatch(function.func().at(0),th_count,true,0,addr_leaf);
+    jit_dispatch(function.func().at(0),th_count,getDataLayoutInnerSize(),true,0,addr_leaf);
   }
 
 }

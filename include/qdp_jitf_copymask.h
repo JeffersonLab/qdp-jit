@@ -55,7 +55,7 @@ namespace QDP {
     std::cout << "calling copymask(Lattice)..\n";
 #endif
 
-    jit_dispatch(function.func().at(0),th_count,true,0,addr_leaf);
+    jit_dispatch(function.func().at(0),th_count,getDataLayoutInnerSize(),true,0,addr_leaf);
   }
 
 }

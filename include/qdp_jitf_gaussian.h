@@ -52,7 +52,7 @@ function_gaussian_exec(const JitFunction& function, OLattice<T>& dest,OLattice<T
     QDP_error_exit("number of sites in ordered subset is %d, but inner length is %d" , 
 		   s.numSiteTable() , getDataLayoutInnerSize());
 
-  jit_dispatch(function.func().at(0),s.numSiteTable(),s.hasOrderedRep(),s.start(),addr_leaf);
+  jit_dispatch(function.func().at(0),s.numSiteTable(),getDataLayoutInnerSize(),s.hasOrderedRep(),s.start(),addr_leaf);
 }
 
 

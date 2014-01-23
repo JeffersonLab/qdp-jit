@@ -155,7 +155,7 @@ function_exec(const JitFunction& function,
 
       //QDPIO::cerr << "Calling function for inner sites\n";
 
-      jit_dispatch(function.func().at(1),innerCount,false,0,addr_leaf); // 2nd function pointer is offnode version
+      jit_dispatch(function.func().at(1),innerCount,1,false,0,addr_leaf); // 2nd function pointer is offnode version
 
       ShiftPhase2 phase2;
       forEach(rhs, phase2 , NullCombine());
@@ -171,7 +171,7 @@ function_exec(const JitFunction& function,
 
       //QDPIO::cerr << "Calling function for face sites\n";
 
-      jit_dispatch(function.func().at(1),faceCount,false,0,addr_leaf_face);
+      jit_dispatch(function.func().at(1),faceCount,1,false,0,addr_leaf_face);
     }
   else
     {
@@ -189,7 +189,7 @@ function_exec(const JitFunction& function,
 	    QDP_error_exit("number of sites in ordered subset is %d, but inner length is %d" , 
 			   s.numSiteTable() , getDataLayoutInnerSize());
 
-	  jit_dispatch(function.func().at(0),s.numSiteTable(),s.hasOrderedRep(),s.start(),addr_leaf);
+	  jit_dispatch(function.func().at(0),s.numSiteTable(),getDataLayoutInnerSize(),s.hasOrderedRep(),s.start(),addr_leaf);
 	}
       else
 	{
@@ -212,7 +212,7 @@ function_exec(const JitFunction& function,
 
 	  //QDPIO::cerr << "Calling function for not ordered subset\n";
 
-	  jit_dispatch(function.func().at(1),s.numSiteTable(),s.hasOrderedRep(),s.start(),addr_leaf);
+	  jit_dispatch(function.func().at(1),s.numSiteTable(),1,s.hasOrderedRep(),s.start(),addr_leaf);
 	}
     } 
 
@@ -281,7 +281,7 @@ function_lat_sca_exec(const JitFunction& function,
     QDP_error_exit("number of sites in ordered subset is %d, but inner length is %d" , 
 		   s.numSiteTable() , getDataLayoutInnerSize());
 
-  jit_dispatch(function.func().at(0),s.numSiteTable(),s.hasOrderedRep(),s.start(),addr_leaf);
+  jit_dispatch(function.func().at(0),s.numSiteTable(),getDataLayoutInnerSize(),s.hasOrderedRep(),s.start(),addr_leaf);
 }
 
 
@@ -331,7 +331,7 @@ function_zero_rep_exec(const JitFunction& function, OLattice<T>& dest, const Sub
     QDP_error_exit("number of sites in ordered subset is %d, but inner length is %d" , 
 		   s.numSiteTable() , getDataLayoutInnerSize());
 
-  jit_dispatch( function.func().at(0) , s.numSiteTable() , s.hasOrderedRep() , s.start(), addr_leaf );
+  jit_dispatch( function.func().at(0) , s.numSiteTable() , getDataLayoutInnerSize() , s.hasOrderedRep() , s.start(), addr_leaf );
 }
 
 
@@ -491,7 +491,7 @@ function_gather_exec( const JitFunction& function,
   QDPIO::cerr << "calling gather.. number of sites to gather: " << map.soffset(subset).size() << "\n";
 #endif
 
-  jit_dispatch( function.func().at(0) , map.soffset(subset).size() , true , 0 , addr_leaf);
+  jit_dispatch( function.func().at(0) , map.soffset(subset).size() , 1 , true , 0 , addr_leaf);
 }
 
 

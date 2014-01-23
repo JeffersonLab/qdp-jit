@@ -7,7 +7,7 @@ namespace QDP {
 
   int qdpNumThreads();
   void qdpSetNumThreads(int);
-  void jit_dispatch( void* function , int site_count, bool ordered, int64_t start, const AddressLeaf& args);
+  void jit_dispatch( void* function , int site_count, int inner, bool ordered, int64_t start, const AddressLeaf& args);
 
 
   template<class Arg>

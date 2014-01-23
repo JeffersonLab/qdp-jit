@@ -13,7 +13,7 @@ namespace QDP {
     omp_set_num_threads(n);
   }
 
-  void jit_dispatch( void* function , int site_count, bool ordered, int64_t start, const AddressLeaf& args)
+  void jit_dispatch( void* function , int site_count, int inner, bool ordered, int64_t start, const AddressLeaf& args)
   {
     if (site_count == 0)
       return;
@@ -31,8 +31,8 @@ namespace QDP {
     {
       threads_num = omp_get_num_threads();
       myId = omp_get_thread_num();
-      lo = site_count*myId/threads_num;
-      hi = site_count*(myId+1)/threads_num;
+      lo = ((site_count/inner)*myId/threads_num)*inner;
+      hi = ((site_count/inner)*(myId+1)/threads_num)*inner;
 
       FP( lo , hi , myId , ordered, start, addr );
     }
