@@ -32,6 +32,12 @@ int main(int argc, char **argv)
 	  sscanf((argv)[++i], "%d", &lat);
 	  nrow[0]=nrow[1]=nrow[2]=nrow[3]=lat;
 	}
+      if (strcmp((argv)[i], "-latz")==0) 
+	{
+	  int lat;
+	  sscanf((argv)[++i], "%d", &lat);
+	  nrow[3]=lat;
+	}
     }
 
   Layout::setLattSize(nrow);
@@ -48,25 +54,26 @@ int main(int argc, char **argv)
 
   int iter = 1000;
 
-  {
-    int isign = +1;
-    int cb = 0;
-    QDPIO::cout << "Applying D" << endl;
+  for (int isign=-1 ; isign <= +1 ; isign += 2 )
+    for (int cb=0 ; cb <= 1 ; cb++ )
+      {
+	QDPIO::cout << "Applying D" << endl;
       
-    dslash(chi, u, psi, isign, cb);
-    clock_t myt1=clock();
-    for(int i=0; i < iter; i++)
-      dslash(chi, u, psi, isign, cb);
-    clock_t myt2=clock();
-      
-    double mydt=(double)(myt2-myt1)/((double)(CLOCKS_PER_SEC));
-    mydt=1.0e6*mydt/((double)(iter*(Layout::vol()/2)));
-      
-    QDPIO::cout << "cb = " << cb << " isign = " << isign << endl;
-    QDPIO::cout << "The time per lattice point is "<< mydt << " micro sec" 
-		<< " (" <<  (double)(1392.0f/mydt) << ") Mflops " << endl;
-  }
+	dslash(chi, u, psi, isign, cb);
+    
+	StopWatch w;
+	w.start();
+	for(int i=0; i < iter; i++)
+	  dslash(chi, u, psi, isign, cb);
+	w.stop();
 
+	double gflops = 1392.0 * ((double)((Layout::vol()/2) * iter)) * 1.0e-9 / w.getTimeInSeconds();
+
+	QDPIO::cout << "cb=" << cb << "  sign=" << isign << "  performance = " << gflops << " GFlops\n";
+      
+      }
+
+#if 0
   chi = zero;
 
   {
@@ -116,6 +123,7 @@ int main(int argc, char **argv)
       QDPIO::cout << "isign="<<isign<<" cb=" << cb << " Diff = " << sqrt( norm2(diff,rb[cb]) / norm2(psi, rb[otherCB]))<< endl;
     }
   }
+#endif
 
   // Time to bolt
   QDP_finalize();
