@@ -58,7 +58,7 @@ void function_build(JitFunction& func, OLattice<T>& dest, const Op& op, const QD
     // We set inner length to 1 no matter whether we use this
     // version for unordered subset or offnode shifts.
 
-    JitMainLoop loop( getDataLayoutInnerSize() , true );
+    JitMainLoop loop( 1 , true );
 
     ParamLeaf param_leaf;
 

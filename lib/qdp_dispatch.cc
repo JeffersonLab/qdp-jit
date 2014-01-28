@@ -38,8 +38,6 @@ namespace QDP {
     }
   }
 
-
-
 }
 
 #else 
