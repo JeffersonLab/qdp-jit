@@ -5,6 +5,9 @@
 //#undef JIT_DO_MEMBER
 
 
+//#define JIT_TIMING
+
+
 #include "qmp.h"
 
 namespace QDP {
@@ -21,7 +24,7 @@ void function_build(JitFunction& func, OLattice<T>& dest, const Op& op, const QD
   HasShift hasShift;
   int withShift = forEach(rhs, hasShift , BitOrCombine());
 
-  QDPIO::cerr << "withShift = " << withShift << "\n";
+  //QDPIO::cerr << "withShift = " << withShift << "\n";
 
   {
     JitMainLoop loop( getDataLayoutInnerSize() , false );  // no offnode shift
@@ -43,7 +46,7 @@ void function_build(JitFunction& func, OLattice<T>& dest, const Op& op, const QD
 
     loop.done();
 
-    QDPIO::cerr << "function_build (no siteperm)\n";
+    //QDPIO::cerr << "function_build (no siteperm)\n";
 
     func.func().push_back( jit_function_epilogue_get("jit_eval.ptx") );
   }
@@ -77,7 +80,7 @@ void function_build(JitFunction& func, OLattice<T>& dest, const Op& op, const QD
 
     loop.done();
 
-    QDPIO::cerr << "function_build (siteperm)\n";
+    //QDPIO::cerr << "function_build (siteperm)\n";
 
     func.func().push_back( jit_function_epilogue_get("jit_eval.ptx") );
   }
@@ -96,31 +99,38 @@ function_exec(const JitFunction& function,
 {
   //QDPIO::cerr << __PRETTY_FUNCTION__ << "\n";
 
-  //assert( s.hasOrderedRep() && "only ordered subsets are supported");
+#ifdef JIT_TIMING
+  std::vector<double> tt;
+  static StopWatch sw;
+  static int invok;
+  if (invok==1) {
+    sw.stop();
+    tt.push_back( sw.getTimeInMicroseconds() );
+  }
+  invok=1;
+  sw.reset();
+  sw.start();
+#endif
 
-  //static int offnode_maps_previous_call = -1;
   ShiftPhase1 phase1(s);
   int offnode_maps = forEach(rhs, phase1 , BitOrCombine());
 
-#if 0
-  QDPIO::cerr << "offnode_maps_previous_call = " << offnode_maps_previous_call 
-	      << "offnode_maps = " << offnode_maps << "\n";
-#endif
+#ifdef JIT_TIMING
+  sw.stop();
+  tt.push_back( sw.getTimeInMicroseconds() );
+  sw.reset();
+  sw.start();
+#endif      
 
-#if 0
-  if (offnode_maps_previous_call != -1) 
-    if ( (offnode_maps_previous_call > 0  && offnode_maps == 0) ||
-	 (offnode_maps_previous_call == 0 && offnode_maps >  0) )
-      QDP_error_exit("implementation limitation: same expression template used with offnode and no offnode comms.");
-  offnode_maps_previous_call = offnode_maps;
-#endif
-  
 #ifdef LLVM_DEBUG
   QDPIO::cerr << "offnode_maps = " << offnode_maps << "\n";
 #endif
 
   if (offnode_maps) 
     {
+#ifdef JIT_TIMING
+      tt.push_back( 0.0 );
+#endif      
       int innerCount        = MasterMap::Instance().getCountInner(s,offnode_maps);
       int faceCount         = MasterMap::Instance().getCountFace(s,offnode_maps);
       const int *innerSites = MasterMap::Instance().getInnerSites(s,offnode_maps).slice();
@@ -155,10 +165,31 @@ function_exec(const JitFunction& function,
 
       //QDPIO::cerr << "Calling function for inner sites\n";
 
+#ifdef JIT_TIMING
+      sw.stop();
+      tt.push_back( sw.getTimeInMicroseconds() );
+      sw.reset();
+      sw.start();
+#endif
+
       jit_dispatch(function.func().at(1),innerCount,1,false,0,addr_leaf); // 2nd function pointer is offnode version
+
+#ifdef JIT_TIMING
+      sw.stop();
+      tt.push_back( sw.getTimeInMicroseconds() );
+      sw.reset();
+      sw.start();
+#endif
 
       ShiftPhase2 phase2;
       forEach(rhs, phase2 , NullCombine());
+
+#ifdef JIT_TIMING
+      sw.stop();
+      tt.push_back( sw.getTimeInMicroseconds() );
+      sw.reset();
+      sw.start();
+#endif
 
       AddressLeaf addr_leaf_face(s);
 
@@ -171,12 +202,28 @@ function_exec(const JitFunction& function,
 
       //QDPIO::cerr << "Calling function for face sites\n";
 
+#ifdef JIT_TIMING
+      sw.stop();
+      tt.push_back( sw.getTimeInMicroseconds() );
+      sw.reset();
+      sw.start();
+#endif
+
       jit_dispatch(function.func().at(1),faceCount,1,false,0,addr_leaf_face);
+
+#ifdef JIT_TIMING
+      sw.stop();
+      tt.push_back( sw.getTimeInMicroseconds() );
+#endif
+
     }
   else
     {
       if (s.hasOrderedRep()) 
 	{
+#ifdef JIT_TIMING
+	  tt.push_back( 1.0 );
+#endif
 	  AddressLeaf addr_leaf(s);
 
 	  int junk_dest = forEach(dest, addr_leaf, NullCombine());
@@ -189,7 +236,20 @@ function_exec(const JitFunction& function,
 	    QDP_error_exit("number of sites in ordered subset is %d, but inner length is %d" , 
 			   s.numSiteTable() , getDataLayoutInnerSize());
 
+#ifdef JIT_TIMING
+      sw.stop();
+      tt.push_back( sw.getTimeInMicroseconds() );
+      sw.reset();
+      sw.start();
+#endif
+
 	  jit_dispatch(function.func().at(0),s.numSiteTable(),getDataLayoutInnerSize(),s.hasOrderedRep(),s.start(),addr_leaf);
+
+#ifdef JIT_TIMING
+      sw.stop();
+      tt.push_back( sw.getTimeInMicroseconds() );
+#endif
+
 	}
       else
 	{
@@ -216,6 +276,16 @@ function_exec(const JitFunction& function,
 	}
     } 
 
+
+#ifdef JIT_TIMING
+  if (tt.size()>0) {
+    for(int i=0 ; i<tt.size() ;++i)
+      QDPIO::cout << tt.at(i) << " ";
+    QDPIO::cout << "\n";
+  }
+  sw.reset();
+  sw.start();
+#endif
 
 #ifdef LLVM_DEBUG
   std::cout << "calling eval(Lattice,Lattice).. " << addr_leaf.addr.size() << "\n";  
@@ -474,6 +544,12 @@ function_gather_exec( const JitFunction& function,
 		      const QDPExpr<RHS,OLattice<T1> >& rhs , 
 		      const Subset& subset )
 {
+#ifdef JIT_TIMING
+  std::vector<double> tt;
+  StopWatch sw;
+  sw.start();
+#endif
+
   AddressLeaf addr_leaf(subset);
 
   AddressLeaf::Types t;
@@ -491,7 +567,27 @@ function_gather_exec( const JitFunction& function,
   QDPIO::cerr << "calling gather.. number of sites to gather: " << map.soffset(subset).size() << "\n";
 #endif
 
-  jit_dispatch( function.func().at(0) , map.soffset(subset).size() , 1 , true , 0 , addr_leaf);
+#ifdef JIT_TIMING
+      sw.stop();
+      tt.push_back( sw.getTimeInMicroseconds() );
+      sw.reset();
+      sw.start();
+#endif
+
+      jit_dispatch( function.func().at(0) , map.soffset(subset).size() , 1 , true , 0 , addr_leaf);
+
+#ifdef JIT_TIMING
+      sw.stop();
+      tt.push_back( sw.getTimeInMicroseconds() );
+      sw.reset();
+      sw.start();
+  if (tt.size()>0) {
+    QDPIO::cout << "gather ";
+    for(int i=0 ; i<tt.size() ;++i)
+      QDPIO::cout << tt.at(i) << " ";
+    QDPIO::cout << "\n";
+  }
+#endif
 }
 
 

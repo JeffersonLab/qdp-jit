@@ -15,6 +15,7 @@ namespace QDP {
 #define FORWARD 1
 #define BACKWARD -1
 
+  //#define JIT_TIMING
 
 /*! @defgroup map Maps and shifts
  *
@@ -471,7 +472,26 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase2 , CTag>
     if (map.offnodeP) {
       const FnMapRsrc& rRSrc = fnmap.getCached();
       //QDP_info("ShiftPhase2: FnMap");
+
+#ifdef JIT_TIMING
+      std::vector<double> tt;
+      static StopWatch sw;
+      sw.start();
+#endif
+
       rRSrc.qmp_wait();
+
+#ifdef JIT_TIMING
+      sw.stop();
+      tt.push_back( sw.getTimeInMicroseconds() );
+      QDPIO::cout << "MPI wait ";
+      if (tt.size()>0) {
+	for(int i=0 ; i<tt.size() ;++i)
+	  QDPIO::cout << tt.at(i) << " ";
+	QDPIO::cout << "\n";
+      }
+#endif
+
     }
     return ForEach<A, ShiftPhase2, CTag>::apply(expr.child(), f, c);
   }

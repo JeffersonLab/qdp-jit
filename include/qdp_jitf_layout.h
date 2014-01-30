@@ -29,7 +29,7 @@ namespace QDP {
 
     loop.done();
 
-    QDPIO::cerr << "functionlayout_to_jit_build\n";
+    //QDPIO::cerr << "functionlayout_to_jit_build\n";
 
     func.func().push_back( jit_function_epilogue_get("jit_layout.ptx") );
   }
@@ -85,7 +85,7 @@ namespace QDP {
 
     loop.done();
 
-    QDPIO::cerr << "functionlayout_to_native_build\n";
+    //QDPIO::cerr << "functionlayout_to_native_build\n";
 
     func.func().push_back( jit_function_epilogue_get("jit_layout.ptx") );
   }

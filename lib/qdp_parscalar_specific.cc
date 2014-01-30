@@ -87,7 +87,7 @@ namespace QDP {
 
     for (int s_no = 0 ; s_no < MasterSet::Instance().numSubsets() ; ++s_no ) {
 
-      QDPIO::cerr << "Build goffset for subset no. " << s_no << "\n";
+      //QDPIO::cerr << "Build goffset for subset no. " << s_no << "\n";
 
       //--------------------------------------
       // Setup the communication index arrays
@@ -111,15 +111,17 @@ namespace QDP {
 	      // additional '-1' to make sure its negative,
 	      // not the best style, but higher performance
 	      // than using another buffer
-	      QDPIO::cerr << "found off-node source site (" << linear << ") "; 
+
+	      //QDPIO::cerr << "found off-node source site (" << linear << ") "; 
+
 	      if ( MasterSet::Instance().getSubset( s_no ).isElement( linear ) ) 
 		{
-		  QDPIO::cerr << "in subset, assigning receivce buffer index = " << -ri-1 << "\n";
+		  //QDPIO::cerr << "in subset, assigning receivce buffer index = " << -ri-1 << "\n";
 		  goffsets[s_no][linear] = -(ri++)-1;
 		} 
 	      else 
 		{
-		  QDPIO::cerr << "not in subset\n";
+		  //QDPIO::cerr << "not in subset\n";
 		}
 	    }
 	}
@@ -227,7 +229,7 @@ namespace QDP {
 
     for (int s_no = 0 ; s_no < MasterSet::Instance().numSubsets() ; ++s_no ) 
       {
-	QDPIO::cerr << "Build srce/destnodes_num for subset no. " << s_no << "\n";
+	//QDPIO::cerr << "Build srce/destnodes_num for subset no. " << s_no << "\n";
 
 	// Run through the lists and find the number of each unique node
 	srcenodes_num[s_no].resize(srcenodes.size());
