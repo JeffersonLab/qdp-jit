@@ -77,15 +77,17 @@ template<class T>
 void 
 function_global_max_exec(const JitFunction& function, typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t& ret, const OLattice<T>& src, const Subset& s)
 {
+  assert( s.hasOrderedRep() );
+
   typedef typename UnaryReturn<T, FnGlobalMax>::Type_t RetT;
 
   // I cannot initialize 'dest' here. This must be done in the kernel
-  RetT dest[ qdpNumThreads() ];
+  RetT* dest = new RetT[ qdpNumThreads() ];
 
   AddressLeaf addr_leaf(s);
 
   int junk_src = forEach(src, addr_leaf, NullCombine());
-  addr_leaf.setAddr( &dest[0] );
+  addr_leaf.setAddr( dest );
 
 #ifdef LLVM_DEBUG
   std::cout << "calling globalMax(Lattice).. " << addr_leaf.addr.size() << "\n";
@@ -97,6 +99,8 @@ function_global_max_exec(const JitFunction& function, typename UnaryReturn<OLatt
   for( int i = 1 ; i < qdpNumThreads() ; ++i )
     if (toBool(dest[i] > ret.elem()))
       ret.elem() = dest[i];
+
+  delete[] dest;
 
   // MPI globalMax in caller
 }
