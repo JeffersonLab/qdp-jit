@@ -279,16 +279,19 @@ AC_ARG_WITH(llvm,
 )
 
 
-
-if test "X${LLVM_HOME}X" = "XX" ; then
-  AC_PATH_PROG(LLVM_CONFIG, [llvm-config], [])
+echo "X`${LLVM_HOME}/bin/llvm-config --libs`X"
+if test "X`${LLVM_HOME}/bin/llvm-config --libs`X" = "XX" ; then
+  AC_PATH_PROG(LLVM_CONFIG, [llvm-config-host], [], [${LLVM_HOME}/bin:${PATH}])
 else
   AC_PATH_PROG(LLVM_CONFIG, [llvm-config], [], [${LLVM_HOME}/bin:${PATH}])
 fi
 
+
+echo llvm-config program: ${LLVM_CONFIG}
 if test "X${LLVM_CONFIG}X" = "XX" ; then
   AC_MSG_ERROR([LLVM configuration program llvm-config not found.])
 fi
+
 
 AC_MSG_NOTICE([Found LLVM configuration program ${LLVM_CONFIG}])
 AC_SUBST(LLVM_CXXFLAGS, "-I${LLVM_HOME}/include")
