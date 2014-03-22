@@ -824,25 +824,25 @@ namespace QDP {
   std::map<std::string,std::string> mapAttr;
   std::map<std::string,std::string>::iterator mapAttrIter;
 
-  bool find_attr(std::string& str)
+  void find_attr(std::string& str)
   {
     mapAttr.clear();
     size_t pos = 0;
     while((pos = str.find("attributes #", pos)) != std::string::npos)
-      {
-	size_t pos_space = str.find(" ", pos+12);
-	std::string num = str.substr(pos+12,pos_space-pos-12);
-	num = " #"+num;
-	std::cout << "# num found = " << num << "()\n";
-	size_t pos_open = str.find("{", pos_space);
-	size_t pos_close = str.find("}", pos_open);
-	std::string val = str.substr(pos_open+1,pos_close-pos_open-1);
-	std::cout << "# val found = " << val << "\n";
-	str.replace(pos, pos_close-pos+1, "");
-	if (mapAttr.count(num) > 0)
-	  QDP_error_exit("unexp.");
-	mapAttr[num]=val;
-      }
+    {
+	  size_t pos_space = str.find(" ", pos+12);
+	  std::string num = str.substr(pos+12,pos_space-pos-12);
+	  num = " #"+num;
+	  std::cout << "# num found = " << num << "()\n";
+	  size_t pos_open = str.find("{", pos_space);
+	  size_t pos_close = str.find("}", pos_open);
+	  std::string val = str.substr(pos_open+1,pos_close-pos_open-1);
+	  std::cout << "# val found = " << val << "\n";
+	  str.replace(pos, pos_close-pos+1, "");
+	  if (mapAttr.count(num) > 0)
+	    QDP_error_exit("unexp.");
+	  mapAttr[num]=val;
+    }
   }
 
 
