@@ -155,9 +155,9 @@ private:
   void operator=(const Map&) {}
 
 private:
-  friend class FnMap;
-  friend class FnMapRsrc;
-  template<class E,class F,class C> friend class ForEach;
+  friend struct FnMap;
+  friend struct FnMapRsrc;
+  template<class E,class F,class C> friend struct ForEach;
 
   //! Offset table used for communications. 
   /*! 
@@ -200,8 +200,8 @@ public:
   //QDPHandle::Handle<RsrcWrapper> pRsrc;
 
   FnMapJIT(const FnMap& fnmap,const IndexRet& i): 
-    map(fnmap.map), pRsrc(fnmap.pRsrc), index(i) {}
-  FnMapJIT(const FnMapJIT& f) : map(f.map) , pRsrc(f.pRsrc), index(f.index) {}
+    index(i), map(fnmap.map), pRsrc(fnmap.pRsrc) {}
+  FnMapJIT(const FnMapJIT& f) : index(f.index), map(f.map) ,pRsrc(f.pRsrc) {}
 
 public:
   template<class T>

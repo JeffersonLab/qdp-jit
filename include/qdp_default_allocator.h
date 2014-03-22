@@ -35,7 +35,7 @@ namespace QDP
       QDPDefaultAllocator() {init();}
       ~QDPDefaultAllocator() {}
 
-      friend class QDP::CreateUsingNew<QDP::Allocator::QDPDefaultAllocator>;
+      friend struct QDP::CreateUsingNew<QDP::Allocator::QDPDefaultAllocator>;
     public:
 
       // Pusher

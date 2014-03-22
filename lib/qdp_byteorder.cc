@@ -42,7 +42,7 @@ namespace QDPUtil
     case 4:  /* n_uint32_t */
     {
       n_uint32_t *w = (n_uint32_t *)ptr;
-      register n_uint32_t old, recent;
+      n_uint32_t old, recent;
 
       for(j=0; j<nmemb; j++)
       {
@@ -153,7 +153,7 @@ namespace QDPUtil
     case 2:  /* n_uint16_t */
     {
       n_uint16_t *w = (n_uint16_t *)ptr;
-      register n_uint16_t old, recent;
+      n_uint16_t old, recent;
 
       for(j=0; j<nmemb; j++)
       {
@@ -166,7 +166,7 @@ namespace QDPUtil
     break;
 
     default:
-      fprintf(stderr,"%s: unsupported word size = %d\n",__func__,size);
+      fprintf(stderr,"%s: unsupported word size = %zu\n",__func__,size);
       exit(1);
     }
   }

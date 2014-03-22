@@ -66,7 +66,7 @@ namespace QDP {
     void autoDetect();
 
   private:
-    DeviceParams(): GPUDirect(false), syncDevice(false), maxKernelArg(512), boolNoReadSM(false) {}; // Private constructor
+    DeviceParams(): boolNoReadSM(false), GPUDirect(false), syncDevice(false), maxKernelArg(512){}; // Private constructor
     DeviceParams(const DeviceParams&);                                           // Prevent copy-construction
     DeviceParams& operator=(const DeviceParams&);
     size_t roundDown2pow(size_t x);

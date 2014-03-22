@@ -58,10 +58,10 @@ class FnMapRsrcMatrix {
   int numSendMsgSize;
   int numDestNode;
 
-  FnMapRsrcMatrix(): numSendMsgSize(32), 
-		     numDestNode(Nd*2), 
-		     sendMsgSize(0), 
-		     destNode(0) {
+  FnMapRsrcMatrix(): sendMsgSize(0),
+		             destNode(0),
+		             numSendMsgSize(32),
+		             numDestNode(Nd*2) {
     m2d.resize(numSendMsgSize,numDestNode);
 
     for(int i=0;i<numSendMsgSize;i++) {
@@ -180,7 +180,7 @@ public:
     }
   }
   RsrcWrapper(  const multi1d<int>& destnodes_, const multi1d<int>& srcenodes_): 
-    destnodes(destnodes_),srcenodes(srcenodes_),rAlloc(false),cached(NULL) {
+    destnodes(destnodes_),srcenodes(srcenodes_),cached(NULL),rAlloc(false) {
     //QDPIO::cout << "wrapper ctor " << srcenodes.size() << " " << destnodes.size() << "\n";
   }
 
