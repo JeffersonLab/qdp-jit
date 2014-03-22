@@ -155,7 +155,9 @@ namespace QDPInternal
     if (QMP_get_number_of_nodes() > 1) {
       globalSumArray((W *)dest.getF(), int(sizeof(T)/sizeof(W))); // call appropriate hook
     } else {
+#ifdef GPU_DEBUG
       QDP_debug("global sum: no MPI reduction");
+#endif      
     }
   }
 
@@ -190,7 +192,9 @@ namespace QDPInternal
     if (QMP_get_number_of_nodes() > 1) {
       globalMaxValue((W *)dest.getF());
     } else {
+#ifdef GPU_DEBUG    
       QDP_debug("global max: no MPI reduction");
+#endif      
     }
   }
 
@@ -216,7 +220,9 @@ namespace QDPInternal
     if (QMP_get_number_of_nodes() > 1) {
       globalMinValue((W *)dest.getF());
     } else {
+#ifdef GPU_DEBUG    
       QDP_debug("global min: no MPI reduction");
+#endif      
     }
   }
 

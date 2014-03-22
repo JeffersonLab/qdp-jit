@@ -33,7 +33,9 @@ namespace QDP
   Set::~Set() {
 
     if (registered) {
+#ifdef GPU_DEBUG    
       QDP_debug("Set::~Set: Strided:  Will sign off now...");
+#endif      
       QDPCache::Instance().signoff( idStrided );
     }
 
@@ -60,7 +62,9 @@ namespace QDP
   {
 
     if (registered) {
+#ifdef GPU_DEBUG    
       QDP_debug("Subet::~Subset: Will sign off now...");
+#endif      
       QDPCache::Instance().signoff( idSiteTable );
       QDPCache::Instance().signoff( idMemberTable );
     }
@@ -180,7 +184,9 @@ namespace QDP
   //! Simple constructor called to produce a Subset from inside a Set
   void Subset::make(bool _rep, int _start, int _end, multi1d<int>* ind, int cb, Set* _set, multi1d<bool>* _memb)
   {
+#ifdef GPU_DEBUG  
     QDP_debug("Subset::make(...) Will reserve device memory now...");
+#endif    
     ordRep    = _rep;
     startSite = _start;
     endSite   = _end;
@@ -191,15 +197,19 @@ namespace QDP
 
 
     if (ind->size() == 0) 
+#ifdef GPU_DEBUG    
       QDP_debug("At least one subset has zero size on at least one node. (rep=%d,start=%d,end=%d)",
 	       (int)ordRep,(int)startSite,(int)endSite);
+#endif	       
     else {
       if (registered) {
 	QDP_info("Subset::make:  Already registered, will sign off the old memory ...");
 	QDPCache::Instance().signoff( idSiteTable );
 	QDPCache::Instance().signoff( idMemberTable );
       }
+#ifdef GPU_DEBUG      
       QDP_debug("Subset::make: Will register memory now...");
+#endif      
       idSiteTable = QDPCache::Instance().registrateOwnHostMem( ind->size() * sizeof(int) , (void*)ind->slice() , NULL );
       idMemberTable = QDPCache::Instance().registrateOwnHostMem( membertable->size() * sizeof(bool) , (void*)membertable->slice() , NULL );
       registered=true;
@@ -211,9 +221,9 @@ namespace QDP
   //! Simple constructor called to produce a Subset from inside a Set
   void Subset::make(const Subset& s)
   {
-
+#ifdef GPU_DEBUG
     QDP_debug("Subset::make(Subset) Will reserve device memory now...");
-
+#endif
 
     ordRep    = s.ordRep;
     startSite = s.startSite;
@@ -225,15 +235,19 @@ namespace QDP
 
 
     if (s.sitetable->size() == 0)
+#ifdef GPU_DEBUG    
       QDP_debug("At least one subset has zero size on at least one node. (Subset,rep=%d,start=%d,end=%d)",
 	       (int)ordRep,(int)startSite,(int)endSite);
+#endif	       
     else {
       if (registered) {
 	QDP_info("Subset::make:  Already registered, will sign off the old memory ...");
 	QDPCache::Instance().signoff( idSiteTable );
 	QDPCache::Instance().signoff( idMemberTable );
       }
+#ifdef GPU_DEBUG      
       QDP_debug("Subset::make: Will register memory now...");
+#endif      
       idSiteTable = QDPCache::Instance().registrateOwnHostMem( s.sitetable->size() * sizeof(int) , (void*)s.sitetable->slice() , NULL );
       idMemberTable = QDPCache::Instance().registrateOwnHostMem( s.membertable->size() * sizeof(bool) , (void*)s.membertable->slice() , NULL );
       registered=true;

@@ -106,7 +106,9 @@ namespace QDP
 
   template<class Allocator>
     QDPPoolAllocator<Allocator>::QDPPoolAllocator(): bufferAllocated(false) {
+#ifdef GPU_DEBUG    
       QDP_debug("Pool allocator construct");
+#endif      
       setPoolSize( 50*1024*1024 );
     }
 
@@ -144,7 +146,9 @@ namespace QDP
       Allocator::free(unaligned);
       bufferAllocated=false;
     } else {
+#ifdef GPU_DEBUG    
       QDP_debug("pool allocator: no internal buffer allocated");
+#endif      
     }
   }
 
@@ -155,9 +159,13 @@ namespace QDP
     //QDP_info_primary("Pool allocator: allocate internal buffer (%lld)",(unsigned long long)poolSize);
 
     if (bufferAllocated) {
+#ifdef GPU_DEBUG    
       QDP_debug("memory was allocated before, I will free it first..");
+#endif      
       Allocator::free( unaligned );
+#ifdef GPU_DEBUG      
       QDP_debug("listEntry size (should be 1) = %d" , listEntry.size());
+#endif      
       if (listEntry.size() != 1)
 	QDP_error_exit("pool allocator problem, listEntry not 1");
       while ( listEntry.size() )
@@ -168,17 +176,17 @@ namespace QDP
       QDP_error_exit("Pool allocator: list of entries not zero");
 
     bytes_allocated = poolSize + 2 * QDP_ALIGNMENT_SIZE;
-
+#ifdef GPU_DEBUG
     QDP_debug("Pool allocater: Allocating buffer %d bytes" , bytes_allocated );
-	
+#endif	
     if (!Allocator::allocate( (void**)&unaligned , bytes_allocated )) {
       QDP_error_exit("Pool allocater: Error allocating %lu bytes" , bytes_allocated );
     }
 
     poolPtr = (unsigned char *)( ( (unsigned long)unaligned + (QDP_ALIGNMENT_SIZE-1) ) & ~(QDP_ALIGNMENT_SIZE - 1));
-
+#ifdef GPU_DEBUG
     QDP_debug("pool allocator allocate internal buffer: unaligned ptr = %p  aligned ptr = %p" , (void*)unaligned , (void*)poolPtr);
-
+#endif
     entry_t e;
     e.ptr = poolPtr;
     e.size = poolSize;
@@ -309,9 +317,9 @@ namespace QDP
 	}
       }
     } while ( findNextNotAllocated( ++candidate , size ) );
-
+#ifdef GPU_DEBUG
     QDP_debug("Pool allocator: out of memory");
-
+#endif
     return false;
   }
 

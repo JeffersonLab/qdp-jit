@@ -254,10 +254,10 @@ void Set::make(const SetFunc& fun)
 
   idStrided = QDPCache::Instance().registrateOwnHostMem( dsize , (void*)sitetables_strided.slice() , NULL );
   registered=true;
-  
+#ifdef GPU_DEBUG  
   QDP_debug("nonEmptySubsetsOnNode  = %d" , nonEmptySubsetsOnNode );  
   QDP_debug("stride_offset = %d" , stride_offset );
-  
+#endif  
 #if 1
   // Now check across nodes
   Integer yo = enableGPU ? 1 : 0;
