@@ -196,12 +196,12 @@ namespace QDP
     membertable = _memb;
 
 
-    if (ind->size() == 0) 
+    if (ind->size() == 0) {
 #ifdef GPU_DEBUG    
       QDP_debug("At least one subset has zero size on at least one node. (rep=%d,start=%d,end=%d)",
 	       (int)ordRep,(int)startSite,(int)endSite);
 #endif	       
-    else {
+    } else {
       if (registered) {
 	QDP_info("Subset::make:  Already registered, will sign off the old memory ...");
 	QDPCache::Instance().signoff( idSiteTable );
@@ -234,12 +234,12 @@ namespace QDP
     membertable = s.membertable;
 
 
-    if (s.sitetable->size() == 0)
+    if (s.sitetable->size() == 0) {
 #ifdef GPU_DEBUG    
       QDP_debug("At least one subset has zero size on at least one node. (Subset,rep=%d,start=%d,end=%d)",
 	       (int)ordRep,(int)startSite,(int)endSite);
 #endif	       
-    else {
+    } else {
       if (registered) {
 	QDP_info("Subset::make:  Already registered, will sign off the old memory ...");
 	QDPCache::Instance().signoff( idSiteTable );
