@@ -6,8 +6,8 @@
 #ifndef __qdp_map_obj_h__
 #define __qdp_map_obj_h__
 
-#include <map>
-#include <vector>
+//#include <map>
+//#include <vector>
 
 #include "qdp.h"
 

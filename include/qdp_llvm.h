@@ -1,6 +1,8 @@
 #ifndef QDP_LLVM
 #define QDP_LLVM
 
+//#define __STDC_LIMIT_MACROS
+//#define __STDC_CONSTANT_MACROS
 
 #include "llvm/IRReader/IRReader.h"
 #include "llvm/IR/Module.h"
@@ -25,7 +27,7 @@
 #include "llvm/Support/FormattedStream.h"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/Support/SourceMgr.h"
-#include "llvm/Assembly/Parser.h"
+//#include "llvm/Assembly/Parser.h"
 #include "llvm/IR/TypeBuilder.h"
 
 #include "llvm/ADT/ArrayRef.h"
@@ -48,15 +50,15 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/Host.h"
 
-#include "llvm/Linker.h"
-#include "llvm/Assembly/PrintModulePass.h"
+//#include "llvm/Linker.h"
+//#include "llvm/Assembly/PrintModulePass.h"
 
 #include "llvm/ExecutionEngine/ObjectBuffer.h"
 #include "llvm/IR/GlobalVariable.h"
 
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/MCJIT.h"
-#include "llvm/Analysis/Verifier.h"
+#include "llvm/IR/Verifier.h"
 
 namespace llvm {
 ModulePass *createNVVMReflectPass(const StringMap<int>&);

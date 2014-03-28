@@ -416,6 +416,7 @@ namespace QDP {
       if ( vecParamType.at(Idx)->isPointerTy() ) {
       	llvm::AttrBuilder B;
       	B.addAttribute(llvm::Attribute::NoAlias);
+	//B.addAlignmentAttr( 32 );
       	AI->addAttr( llvm::AttributeSet::get( llvm::getGlobalContext() , 0 ,  B ) );
       }
 
@@ -955,13 +956,16 @@ namespace QDP {
 
   void llvm_print_module( llvm::Module* m , const char * fname ) {
     std::string ErrorMsg;
-    llvm::raw_fd_ostream outfd( fname ,ErrorMsg);
+    llvm::raw_fd_ostream outfd( fname ,ErrorMsg, llvm::sys::fs::OpenFlags::F_Text);
     llvm::outs() << ErrorMsg << "\n";
     std::string banner;
     {
+      llvm::outs() << "llvm_print_module ni\n";
+#if 0
       llvm::PassManager PM;
       PM.add( llvm::createPrintModulePass( &outfd, false, banner ) ); 
       PM.run( *m );
+#endif
     }
   }
 
@@ -1236,10 +1240,10 @@ namespace QDP {
       initializeScalarOpts(registry);
 
       functionPassManager = new llvm::FunctionPassManager(Mod);
-      functionPassManager->add(llvm::createVerifierPass(llvm::PrintMessageAction));
+      //functionPassManager->add(llvm::createVerifierPass(llvm::PrintMessageAction));
       targetMachine->addAnalysisPasses(*functionPassManager);
       functionPassManager->add(new llvm::TargetLibraryInfo(llvm::Triple(Mod->getTargetTriple())));
-      functionPassManager->add(new llvm::DataLayout(Mod));
+      functionPassManager->add(new llvm::DataLayoutPass(Mod));
       functionPassManager->add(llvm::createBasicAliasAnalysisPass());
       functionPassManager->add(llvm::createLICMPass());
       functionPassManager->add(llvm::createGVNPass());
@@ -1265,6 +1269,28 @@ namespace QDP {
 	mainFunc->dump();
       }
     }
+
+#if 0
+    // Write assembly
+    {
+      llvm::FunctionPassManager *functionPassManager = new llvm::FunctionPassManager(Mod);
+      llvm::PassManager PM;
+
+      std::string str;
+      llvm::raw_string_ostream rsos(str);
+      llvm::formatted_raw_ostream FOS(rsos);
+
+      if (targetMachine->addPassesToEmitFile( PM , FOS , llvm::TargetMachine::CGFT_AssemblyFile ) ) {
+	std::cout << "addPassesToEmitFile failed\n";
+        exit(1);
+      }
+      PM.run(*Mod);
+      std::cerr << "Assembly:\n";
+      std::cerr << str << "\n";
+      std::cerr << "end assembly!\n";
+    }
+#endif
+
 
     // Right now a trampoline function which calls the main function
     // is necessary. For the auto-vectorizer we need the arguments to

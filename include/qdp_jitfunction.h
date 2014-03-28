@@ -18,7 +18,7 @@ template<class T, class T1, class Op, class RHS>
 void function_build(JitFunction& func, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs)
 {
 #ifdef LLVM_DEBUG
-  std::cout << __PRETTY_FUNCTION__ << "\n";
+  QDPIO::cerr << __PRETTY_FUNCTION__ << "\n";
 #endif
 
   HasShift hasShift;

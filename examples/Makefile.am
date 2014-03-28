@@ -24,7 +24,7 @@ AM_LDFLAGS += -L@top_builddir@/other_libs/qio/lib \
              -L@top_builddir@/other_libs/qio/other_libs/c-lime/lib \
              -L@top_builddir@/other_libs/xpath_reader/lib
 endif
-AM_LDFLAGS += @LDFLAGS@ @QMP_LDFLAGS@ @QMT_LDFLAGS@ @LLVM_LDFLAGS@
+AM_LDFLAGS += @LDFLAGS@ @QMP_LDFLAGS@ @QMT_LDFLAGS@ @LLVM_LDFLAGS@ -ldl
 
 
 if BUILD_FILEDB

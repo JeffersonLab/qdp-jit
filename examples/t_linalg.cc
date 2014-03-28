@@ -1,11 +1,12 @@
 // $Id: t_linalg.cc,v 1.20 2006-09-27 17:26:43 bjoo Exp $
 
+#include "qdp.h"
+
 #include <iostream>
 #include <cstdio>
 
 #include <time.h>
 
-#include "qdp.h"
 #include "linalg.h"
 
 using namespace QDP;
