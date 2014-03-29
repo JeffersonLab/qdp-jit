@@ -226,11 +226,15 @@ function_exec(const JitFunction& function,
 #endif
 	  AddressLeaf addr_leaf(s);
 
+	  //std::cout << "adding dest\n";
 	  int junk_dest = forEach(dest, addr_leaf, NullCombine());
+	  //std::cout << "adding op\n";
 	  AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
+	  //std::cout << "adding RHS\n";
 	  int junk_rhs = forEach(rhs, addr_leaf , NullCombine());
 
-	  //QDPIO::cerr << "Calling function for ordered subset count=" << s.numSiteTable() << " start=" << s.start() << "\n";
+	  /* QDPIO::cerr << "Calling function for ordered subset count=" << s.numSiteTable() << " start=" << s.start()  */
+	  /* 	      << " addr_leaf.size()=" << addr_leaf.addr.size() << "\n"; */
 
 	  if (s.numSiteTable() % getDataLayoutInnerSize())
 	    QDP_error_exit("number of sites in ordered subset is %d, but inner length is %d" , 

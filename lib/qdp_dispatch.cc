@@ -20,7 +20,7 @@ namespace QDP {
 
     void (*FP)(int64_t,int64_t,int64_t,bool,int64_t,void*) = 
       (void (*)(int64_t,int64_t,int64_t,bool,int64_t,void*))(intptr_t)function;
-
+    
     int threads_num;
     int64_t myId;
     int64_t lo = 0;
@@ -35,6 +35,8 @@ namespace QDP {
       myId = omp_get_thread_num();
       lo = ((site_count/inner)*myId/threads_num)*inner;
       hi = ((site_count/inner)*(myId+1)/threads_num)*inner;
+
+      //std::cout << "dispatch: " << lo << " " << hi << " " << myId << " " << ordered << " " << start << "\n";
 
       FP( lo , hi , myId , ordered, start, addr );
     }

@@ -1218,6 +1218,16 @@ namespace QDP {
     assert(function_created && "Function not created");
     assert(function_started && "Function not started");
 
+#if 0
+    //
+    QDPIO::cerr << "loading module from mod_peek.ll\n";
+    llvm::SMDiagnostic Err;
+    Mod = llvm::ParseIRFile("mod_peek.ll", Err, llvm::getGlobalContext());
+    mainFunc = Mod->getFunction("main");
+    llvm::Function *mainFunc_extern = Mod->getFunction("main_extern");
+    //
+#endif
+
     if (debug_func_dump) {
       if (Layout::primaryNode()) {
 	QDPIO::cerr << "LLVM IR function (before passes)\n";
@@ -1267,6 +1277,7 @@ namespace QDP {
       if (Layout::primaryNode()) {
 	QDPIO::cerr << "LLVM IR function (after passes)\n";
 	mainFunc->dump();
+	//Mod->dump();
       }
     }
 
@@ -1292,6 +1303,7 @@ namespace QDP {
 #endif
 
 
+#if 1
     // Right now a trampoline function which calls the main function
     // is necessary. For the auto-vectorizer we need the arguments to
     // to be noalias. Adding this attribute to a pointer is only possible
@@ -1371,12 +1383,19 @@ namespace QDP {
       vecCallArgument.push_back( arg );      
     }
 
+    // vecCallArgument.pop_back();
+    // vecCallArgument.pop_back();
+    // llvm::Value* val_0 = llvm_create_value( (int)0 );
+    // vecCallArgument.push_back( val_0 );
+    // vecCallArgument.push_back( val_0 );
+
     // Call 'main' from 'main_extern'
     
     builder->CreateCall( mainFunc , llvm::ArrayRef<llvm::Value*>( vecCallArgument.data() , vecCallArgument.size() ) );
     builder->CreateRetVoid();
 
     //mainFunc_extern->dump();
+#endif
     
     if (debug_func_build) {
       QDPIO::cerr << "    verifying: main_extern\n";
@@ -1385,7 +1404,9 @@ namespace QDP {
 
     if (debug_func_build) {
       QDPIO::cerr << "    finalizing the module\n";
+      //Mod->dump();
     }
+
     TheExecutionEngine->finalizeObject();  // MCJIT
 
     if (debug_func_build) {
