@@ -936,6 +936,43 @@ tanh(const Word<T1>& s1)
 }
 
 
+//-----------------------------------------------------------------------------
+// These functions always return bool
+//! isnan
+template<class T1>
+inline bool
+isnan(const Word<T1>& s1)
+{
+  return isnan(s1.elem());
+}
+
+//! isinf
+template<class T1>
+inline bool
+isinf(const Word<T1>& s1)
+{
+  return isinf(s1.elem());
+}
+
+//! isnormal
+template<class T1>
+inline bool
+isnormal(const Word<T1>& s1)
+{
+  return isnormal(s1.elem());
+}
+
+//! isfinite
+template<class T1>
+inline bool
+isfinite(const Word<T1>& s1)
+{
+  return isfinite(s1.elem());
+}
+
+
+
+
 //! Word<T> = pow(Word<T> , Word<T>)
 template<class T1, class T2>
  inline typename BinaryReturn<Word<T1>, Word<T2>, FnPow>::Type_t
