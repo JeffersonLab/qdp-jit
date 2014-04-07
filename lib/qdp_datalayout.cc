@@ -72,6 +72,27 @@ namespace QDP {
   }
 
 
+  std::array<int,5> QDP_jit_layout;
+
+  void QDP_set_jit_datalayout(int pos_o, int pos_s, int pos_c, int pos_r, int pos_i) {
+    QDP_jit_layout[pos_o] = 0;
+    QDP_jit_layout[pos_s] = 1;
+    QDP_jit_layout[pos_c] = 2;
+    QDP_jit_layout[pos_r] = 3;
+    QDP_jit_layout[pos_i] = 4;
+  }
+
+  void QDP_print_jit_datalayout() {
+    const char* letters="oscri";
+    QDPIO::cerr << "Using JIT data layout ";
+    QDPIO::cerr << letters[ QDP_jit_layout[0] ];
+    QDPIO::cerr << letters[ QDP_jit_layout[1] ];
+    QDPIO::cerr << letters[ QDP_jit_layout[2] ];
+    QDPIO::cerr << letters[ QDP_jit_layout[3] ];
+    QDPIO::cerr << letters[ QDP_jit_layout[4] ];
+    QDPIO::cerr << "\n";
+  }
+
 #if 1
   llvm::Value * datalayout( JitDeviceLayout::LayoutEnum lay , IndexDomainVector a ) {
     if ( a.size() == 5 ) {
@@ -111,8 +132,38 @@ namespace QDP {
 
       // offset = ((ir * Ic + ic) * Is + is) * Iv + iv
 
+      std::array<llvm::Value *,5> dom_in;
+      dom_in[0] = Ivo;
+      dom_in[1] = Is;
+      dom_in[2] = Ic;
+      dom_in[3] = Ir;
+      dom_in[4] = Ivi;
+      std::array<llvm::Value *,5> ind_in;
+      ind_in[0] = ivo;
+      ind_in[1] = is;
+      ind_in[2] = ic;
+      ind_in[3] = ir;
+      ind_in[4] = ivi;
+
+      std::array<llvm::Value *,5> dom;
+      dom[0] = dom_in[ QDP_jit_layout[0] ];
+      dom[1] = dom_in[ QDP_jit_layout[1] ];
+      dom[2] = dom_in[ QDP_jit_layout[2] ];
+      dom[3] = dom_in[ QDP_jit_layout[3] ];
+      dom[4] = dom_in[ QDP_jit_layout[4] ];
+      std::array<llvm::Value *,5> ind;
+      ind[0] = ind_in[ QDP_jit_layout[0] ];
+      ind[1] = ind_in[ QDP_jit_layout[1] ];
+      ind[2] = ind_in[ QDP_jit_layout[2] ];
+      ind[3] = ind_in[ QDP_jit_layout[3] ];
+      ind[4] = ind_in[ QDP_jit_layout[4] ];
+      
+
       if (lay == JitDeviceLayout::LayoutCoalesced) {
-	return llvm_add(llvm_mul(llvm_add(llvm_mul(llvm_add(llvm_mul(llvm_add(llvm_mul(ivo,Is),is),Ic),ic),Ir),ir),Ivi),ivi);
+	return llvm_add(llvm_mul(llvm_add(llvm_mul(llvm_add(llvm_mul(llvm_add(llvm_mul(ind[0],dom[1]),ind[1]),dom[2]),ind[2]),dom[3]),ind[3]),dom[4]),ind[4]);
+	//return llvm_add(llvm_mul(llvm_add(llvm_mul(llvm_add(llvm_mul(llvm_add(llvm_mul(ivo,Is),is),Ic),ic),Ir),ir),Ivi),ivi); // orig
+	//return llvm_add(llvm_mul(llvm_add(llvm_mul(llvm_add(llvm_mul(llvm_add(llvm_mul(ivo,Ic),ic),Is),is),Ir),ir),Ivi),ivi); // ok
+	//return llvm_add(llvm_mul(llvm_add(llvm_mul(llvm_add(llvm_mul(llvm_add(llvm_mul(ivo,Is),is),Ic),ic),Ivi),ivi),Ir),ir); // ok
       } else {
 	llvm::Value * iv = llvm_add(llvm_mul( ivo , Ivi ) , ivi ); // reconstruct volume index
 	return llvm_add(llvm_mul(llvm_add(llvm_mul(llvm_add(llvm_mul(iv,Is),is),Ic),ic),Ir),ir);
