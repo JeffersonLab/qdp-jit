@@ -1,5 +1,7 @@
 #include "qdp.h"
 
+#include <array>
+
 namespace QDP {
 
 
