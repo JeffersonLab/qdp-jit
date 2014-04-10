@@ -3,11 +3,11 @@
  *  \brief Test the Wilson-Dirac operator (dslash)
  */
 
+#include "qdp.h"
+#include "examples.h"
 #include <iostream>
 #include <cstdio>
 
-#include "qdp.h"
-#include "examples.h"
 
 #include <sys/time.h>
 
@@ -20,7 +20,7 @@ int main(int argc, char **argv)
   QDP_initialize(&argc, &argv);
 
   // Setup the layout
-  const int foo[] = {4,2,2,2};
+  const int foo[] = {16,16,16,16};
   multi1d<int> nrow(Nd);
   nrow = foo;  // Use only Nd elements
 
@@ -67,7 +67,7 @@ int main(int argc, char **argv)
 	  dslash(chi, u, psi, isign, cb);
 	w.stop();
 
-	double gflops = 1392.0 * ((double)((Layout::vol()/2) * iter)) * 1.0e-9 / w.getTimeInSeconds();
+	double gflops = 1392.0 * ((double)((((double)Layout::vol())/2.) * ((double)iter))) * 1.0e-9 / w.getTimeInSeconds();
 
 	QDPIO::cout << "cb=" << cb << "  sign=" << isign << "  performance = " << gflops << " GFlops\n";
       
