@@ -327,6 +327,10 @@ namespace QDP {
     engineBuilder.setOptLevel(llvm::CodeGenOpt::Aggressive);
     engineBuilder.setErrorStr(&mcjit_error);
 
+    llvm::TargetOptions targetOptions;
+    targetOptions.AllowFPOpFusion = llvm::FPOpFusion::Fast;
+    engineBuilder.setTargetOptions( targetOptions );
+
     TheExecutionEngine = engineBuilder.setUseMCJIT(true).create(); // MCJIT
     
     assert(TheExecutionEngine && "failed to create LLVM ExecutionEngine with error");
@@ -1262,7 +1266,9 @@ namespace QDP {
       functionPassManager->add(llvm::createEarlyCSEPass());
       functionPassManager->add(llvm::createInstructionCombiningPass());
       functionPassManager->add(llvm::createCFGSimplificationPass());
-
+      functionPassManager->add(llvm::createSimpleLoopUnrollPass() );  // unroll the vectorized loop with trip count 1
+      functionPassManager->add(llvm::createCFGSimplificationPass());  // join BB of vectorized loop with header
+      functionPassManager->add(llvm::createGVNPass()); // eliminate redundant index instructions
     }
     if (debug_loop_vectorizer) {
       if (Layout::primaryNode()) {
