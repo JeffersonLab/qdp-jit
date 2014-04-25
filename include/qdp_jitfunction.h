@@ -528,7 +528,7 @@ void function_gather_build( JitFunction& func , void* send_buf , const Map& map 
 
   loop.done();
 
-  QDPIO::cerr << "function_gather_build\n";
+  //QDPIO::cerr << "function_gather_build\n";
 
   func.func().push_back( jit_function_epilogue_get("jit_gather.ll") );
 }

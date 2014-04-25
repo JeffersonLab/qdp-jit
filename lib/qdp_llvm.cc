@@ -1269,6 +1269,7 @@ namespace QDP {
       functionPassManager->add(llvm::createSimpleLoopUnrollPass() );  // unroll the vectorized loop with trip count 1
       functionPassManager->add(llvm::createCFGSimplificationPass());  // join BB of vectorized loop with header
       functionPassManager->add(llvm::createGVNPass()); // eliminate redundant index instructions
+      functionPassManager->add(llvm::createStupidAlignPass()); // change alignment of vector load/stores from 8 to 32 
     }
     if (debug_loop_vectorizer) {
       if (Layout::primaryNode()) {
@@ -1289,6 +1290,29 @@ namespace QDP {
 
 #if 0
     // Write assembly
+    {
+      llvm::FunctionPassManager *functionPassManager = new llvm::FunctionPassManager(Mod);
+      llvm::PassManager PM;
+
+      std::string str;
+      llvm::raw_string_ostream rsos(str);
+      llvm::formatted_raw_ostream FOS(rsos);
+
+      if (targetMachine->addPassesToEmitFile( PM , FOS , llvm::TargetMachine::CGFT_AssemblyFile ) ) {
+	std::cout << "addPassesToEmitFile failed\n";
+        exit(1);
+      }
+      PM.run(*Mod);
+      FOS.flush();
+      std::cerr << "Assembly:\n";
+      std::cerr << str << "\n";
+      std::cerr << "end assembly!\n";
+    }
+#endif
+
+
+#if 0
+    // Write assembly (not sure if this one works!)
     {
       llvm::FunctionPassManager *functionPassManager = new llvm::FunctionPassManager(Mod);
       llvm::PassManager PM;
