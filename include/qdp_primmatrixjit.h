@@ -160,14 +160,14 @@ public:
 
 public:
   typename REGType<T>::Type_t getRegElem(llvm::Value * row,llvm::Value * col) {
-    llvm::Value * tmp = llvm_mul( col , llvm_create_value( N ) );
-    llvm::Value * lin = llvm_add( tmp , row );
+    llvm::Value * tmp = llvm_mul( row , llvm_create_value( N ) );
+    llvm::Value * lin = llvm_add( tmp , col );
     return BaseJIT<T,N*N>::getRegElem( lin );
   }
 
   T getJitElem(llvm::Value * row,llvm::Value * col) {
-    llvm::Value * tmp = llvm_mul( col , llvm_create_value( N ) );
-    llvm::Value * lin = llvm_add( tmp , row );
+    llvm::Value * tmp = llvm_mul( row , llvm_create_value( N ) );
+    llvm::Value * lin = llvm_add( tmp , col );
     return BaseJIT<T,N*N>::getJitElem( lin );
   }
 

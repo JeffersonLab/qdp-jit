@@ -99,6 +99,68 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
   prof.stime(getClockTime());
 #endif
 
+#if 0 // run with cross-check?
+  OLattice<T> dest0;
+  const int *tab = s.siteTable().slice();
+  for(int j=0; j < s.numSiteTable(); ++j) 
+    {
+      int i = tab[j];
+      OpAssign()( dest0.elem(i) , dest.elem(i) );
+    }
+
+  static JitFunction function;
+  if (!function.built())
+    function_build( function , dest0, op, rhs);
+  function_exec(function, dest0, op, rhs, s);
+
+  for(int j=0; j < s.numSiteTable(); ++j) 
+    {
+      int i = tab[j];
+      op(dest.elem(i), forEach(rhs, EvalLeaf1(i), OpCombine()));
+    }
+
+  size_t diffs=0;
+  for(int j=0; j < s.numSiteTable(); ++j) {
+    int i = tab[j];
+    typename WordType<T>::Type_t * f_cpu = (typename WordType<T>::Type_t *)&dest0.elem(i);
+    typename WordType<T>::Type_t * f_gpu = (typename WordType<T>::Type_t *)&dest.elem(i);
+    for(int w=0 ; w < sizeof(T)/sizeof(typename WordType<T>::Type_t) ; w++ ) {
+      bool different = false;
+
+      double d_cpu = (double)f_cpu[w];
+      double d_gpu = (double)f_gpu[w];
+
+      if ( fabs( d_gpu ) > 1.0e-9 ) {
+        if ( fabs( d_cpu / d_gpu - 1.0 ) > 1.0e-5 ) {
+          different = true;
+        }
+      } else {
+        if ( fabs( d_cpu ) > 1.0e-8 ) {
+          different = true;
+        }
+      }
+
+      if (different) {
+        diffs++;
+        QDPIO::cout << "site = " << i
+                  << "   cpu = " << d_cpu
+                  << "   gpu = " << d_gpu
+                  << "   factor = " << d_cpu/d_gpu
+                  << "    diff = " << d_cpu - d_gpu << "\n";
+      }
+    }
+    if (diffs > 1000)
+      break;
+  }
+
+  if (diffs > 0) {
+    QDPIO::cout << __PRETTY_FUNCTION__ << " numsitetable = " << s.numSiteTable() << "\n";
+    check_abort();
+  }
+
+#else
+
+#if 1 // compile with LLVM?
   static JitFunction function;
 
   // Build the function
@@ -115,6 +177,17 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
 
   // Execute the function
   function_exec(function, dest, op, rhs, s);
+#else
+  // General form of loop structure
+  const int *tab = s.siteTable().slice();
+  for(int j=0; j < s.numSiteTable(); ++j) 
+  {
+    int i = tab[j];
+    //fprintf(stderr,"eval(olattice,olattice): site %d\n",i);
+    op(dest.elem(i), forEach(rhs, EvalLeaf1(i), OpCombine()));
+  }
+#endif
+#endif
 
 #if defined(QDP_USE_PROFILING)   
   prof.etime(getClockTime(),function);

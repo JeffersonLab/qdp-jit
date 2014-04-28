@@ -750,7 +750,7 @@ private:
 
 
 // Add this code if you need CPU shifts
-#if 0
+#if 1
 template<class A, class CTag>
 struct ForEach<UnaryNode<FnMap, A>, EvalLeaf1, CTag>
 {
@@ -761,7 +761,7 @@ struct ForEach<UnaryNode<FnMap, A>, EvalLeaf1, CTag>
   {
     const Map& map = expr.operation().map;
     FnMap& fnmap = const_cast<FnMap&>(expr.operation());
-    
+
     //     if (map.offnodeP) {
     //       if (map.goffsets[f.val1()] < 0) {
     // 	const FnMapRsrc& rRSrc = fnmap.getCached();
@@ -775,7 +775,7 @@ struct ForEach<UnaryNode<FnMap, A>, EvalLeaf1, CTag>
     // 	return recv_buf[-map.goffsets[f.val1()]-1];
     //       } else {
 
-    EvalLeaf1 ff( map.goffsets[f.val1()] );
+    EvalLeaf1 ff( map.goffsets[all.getId()][f.val1()] );
     return Combine1<TypeA_t, FnMap, CTag>::combine(ForEach<A, EvalLeaf1, CTag>::apply(expr.child(), ff, c),expr.operation(), c);
     //}
   }
