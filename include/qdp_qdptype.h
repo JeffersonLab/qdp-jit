@@ -468,6 +468,9 @@ struct LeafFunctor<QDPType<T,OLattice<T> >, ParamLeaf>
   typedef TypeA_t  Type_t;
   inline static Type_t apply(const QDPType<T,OLattice<T> > &a, const ParamLeaf& p)
   {
+    // if (llvm_debug::debug_func_write && Layout::primaryNode()) 
+    //   std::cout << typeid(OLattice<T>).name() << "\n";
+
     ParamRef    base_addr = llvm_add_param< typename WordType<T>::Type_t * >();
     return Type_t( base_addr );
   }

@@ -59,6 +59,7 @@
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/MCJIT.h"
 #include "llvm/IR/Verifier.h"
+#include "llvm/IR/AssemblyAnnotationWriter.h"
 
 namespace llvm {
 ModulePass *createNVVMReflectPass(const StringMap<int>&);
@@ -66,6 +67,15 @@ ModulePass *createNVVMReflectPass(const StringMap<int>&);
 
 
 namespace QDP {
+
+
+  namespace llvm_debug {
+    extern bool debug_func_build     ;
+    extern bool debug_func_dump      ;
+    extern bool debug_func_write     ;
+    extern bool debug_loop_vectorizer;
+  }
+
 
   typedef int ParamRef;
 
@@ -77,6 +87,7 @@ namespace QDP {
 
 
   void llvm_set_debug( const char * str );
+  void llvm_debug_write_set_name( const char* pretty, const char* additional );
 
   llvm::Value * llvm_create_value( double v );
   llvm::Value * llvm_create_value( int v );

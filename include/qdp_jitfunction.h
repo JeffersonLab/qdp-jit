@@ -26,6 +26,13 @@ void function_build(JitFunction& func, OLattice<T>& dest, const Op& op, const QD
 
   //QDPIO::cerr << "withShift = " << withShift << "\n";
 
+  if (llvm_debug::debug_func_write) {
+    if (Layout::primaryNode()) {
+      llvm_debug_write_set_name(__PRETTY_FUNCTION__,"streaming");
+    }
+  }
+
+
   {
     JitMainLoop loop( getDataLayoutInnerSize() , false );  // no offnode shift
 
@@ -56,6 +63,12 @@ void function_build(JitFunction& func, OLattice<T>& dest, const Op& op, const QD
   // is needed for
   //   * offnode shifts
   //   * unordered sets
+
+  if (llvm_debug::debug_func_write) {
+    if (Layout::primaryNode()) {
+      llvm_debug_write_set_name(__PRETTY_FUNCTION__,"siteperm");
+    }
+  }
 
   {
     // We set inner length to 1 no matter whether we use this

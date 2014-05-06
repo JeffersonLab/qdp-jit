@@ -155,6 +155,12 @@ public:
     return roffsets[s.getId()];
   }
 
+  const multi1d< multi1d<int> >& get_srcenodes_num() const { return srcenodes_num; }
+  const multi1d< multi1d<int> >& get_destnodes_num() const { return destnodes_num; }
+
+  const multi1d<int>& get_srcenodes() const { return srcenodes; }
+  const multi1d<int>& get_destnodes() const { return destnodes; }
+
   //multi1d<int>& soffset() {return soffsets;}
 
   // int getRoffsetsId() const { return roffsetsId;}
@@ -258,6 +264,11 @@ struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
 
       typedef typename WordType<InnerType_t>::Type_t AWordType_t;
 
+      // if (llvm_debug::debug_func_write && Layout::primaryNode()) {
+      // 	std::cout << "site permutation buffer\n";
+      // 	std::cout << "receive buffer\n";
+      // }
+
       IndexRet index_pack;
       index_pack.p_multi_index = llvm_add_param<int*>();
       index_pack.p_recv_buf    = llvm_add_param<AWordType_t*>(); // This deduces it's type from A
@@ -266,6 +277,10 @@ struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
 		     ForEach< A, ParamLeaf, TreeCombine >::apply( expr.child() , p , c ) );
     }
   };
+
+
+
+
 
 
 
@@ -735,6 +750,7 @@ public:
 	CreateLeaf<QDPExpr<T1,C1> >::make(l)));
     }
 
+  const Map& getMap(int isign,int dir) const { return bimapsa((isign+1)>>1,dir); }
 
 private:
   //! Hide copy constructor

@@ -49,24 +49,31 @@ namespace QDP {
     int label_counter;
   }
 
-  namespace {
+  namespace llvm_debug {
     bool debug_func_build      = false;
     bool debug_func_dump       = false;
+    bool debug_func_write      = false;
     bool debug_loop_vectorizer = false;
+    std::string name_pretty;
+    std::string name_additional;
   }
 
   void llvm_set_debug( const char * c_str ) {
     std::string str(c_str);
     if (str.find("loop-vectorize") != string::npos) {
-      debug_loop_vectorizer = true;
+      llvm_debug::debug_loop_vectorizer = true;
       return;
     }
     if (str.find("function-builder") != string::npos) {
-      debug_func_build = true;
+      llvm_debug::debug_func_build = true;
       return;
     }
     if (str.find("function-dump") != string::npos) {
-      debug_func_dump = true;
+      llvm_debug::debug_func_dump = true;
+      return;
+    }
+    if (str.find("function-write") != string::npos) {
+      llvm_debug::debug_func_write = true;
       return;
     }
     QDP_error_exit("unknown debug argument: %s",c_str);
@@ -111,6 +118,14 @@ namespace QDP {
 
   llvm::Function *func_pow_f64;
   llvm::Function *func_atan2_f64;
+
+
+
+  void llvm_debug_write_set_name( const char* pretty, const char* additional )
+  {
+    llvm_debug::name_pretty = std::string(pretty);
+    llvm_debug::name_additional = std::string(additional);
+  }
 
 
   void llvm_append_mattr( const char * attr )
@@ -196,7 +211,7 @@ namespace QDP {
 
   void llvm_setup_math_functions() 
   {
-    if (debug_func_build) {
+    if (llvm_debug::debug_func_build) {
       QDPIO::cerr << "    initializing math functions\n";
     }
 
@@ -294,7 +309,7 @@ namespace QDP {
     function_started = true;
     function_created = false;
 
-    if (debug_func_build) {
+    if (llvm_debug::debug_func_build) {
       QDPIO::cerr << "Creating new module ...\n";
     }
 
@@ -310,7 +325,7 @@ namespace QDP {
 
     Mod->setTargetTriple(llvm::sys::getProcessTriple());
 
-    if (debug_func_build) {
+    if (llvm_debug::debug_func_build) {
       if (vec_mattr.size() > 0) {
 	QDPIO::cerr << "    MCPU attributes: ";
 	for ( int i = 0 ; i < vec_mattr.size() ; i++ )
@@ -338,7 +353,7 @@ namespace QDP {
     targetMachine = engineBuilder.selectTarget();
 
 
-    if (debug_func_build) {
+    if (llvm_debug::debug_func_build) {
       QDPIO::cerr << "    staring new LLVM function ...\n";
     }
 
@@ -1232,19 +1247,19 @@ namespace QDP {
     //
 #endif
 
-    if (debug_func_dump) {
+    if (llvm_debug::debug_func_dump) {
       if (Layout::primaryNode()) {
 	QDPIO::cerr << "LLVM IR function (before passes)\n";
 	mainFunc->dump();
       }
     }
 
-    if (debug_func_build) {
+    if (llvm_debug::debug_func_build) {
       QDPIO::cerr << "    verifying: main\n";
     }
     llvm::verifyFunction(*mainFunc);
 
-    if (debug_func_build) {
+    if (llvm_debug::debug_func_build) {
       QDPIO::cerr << "    optimizing ...\n";
     }
 
@@ -1271,7 +1286,7 @@ namespace QDP {
       functionPassManager->add(llvm::createGVNPass()); // eliminate redundant index instructions
       functionPassManager->add(llvm::createStupidAlignPass()); // change alignment of vector load/stores from 8 to 32 
     }
-    if (debug_loop_vectorizer) {
+    if (llvm_debug::debug_loop_vectorizer) {
       if (Layout::primaryNode()) {
 	llvm::DebugFlag = true;
 	llvm::setCurrentDebugType("loop-vectorize");
@@ -1280,11 +1295,41 @@ namespace QDP {
 
     functionPassManager->run(*mainFunc);
 
-    if (debug_func_dump) {
+    if (llvm_debug::debug_func_dump) {
       if (Layout::primaryNode()) {
 	QDPIO::cerr << "LLVM IR function (after passes)\n";
 	mainFunc->dump();
 	//Mod->dump();
+      }
+    }
+
+    if (llvm_debug::debug_func_write) {
+      if (Layout::primaryNode()) {
+	std::string str;
+
+	llvm::raw_string_ostream rss(str);
+	Mod->print(rss,new llvm::AssemblyAnnotationWriter());
+
+	char* fname = new char[100];
+	sprintf(fname,"module_XXXXXX");
+	mkstemp(fname);
+	QDPIO::cerr << fname << "\n";
+
+	size_t start_pos = str.find("main");
+	if(start_pos == std::string::npos)
+	  QDP_error_exit("main not found in IR");
+	str.replace(start_pos, 4, fname);
+
+	str.insert(0,llvm_debug::name_additional);
+	str.insert(0,llvm_debug::name_pretty);
+	str.insert(0,";");
+
+	ofstream myfile;
+	myfile.open (fname);
+	myfile << str;
+	myfile.close();
+
+	delete[] fname;
       }
     }
 
@@ -1427,19 +1472,19 @@ namespace QDP {
     //mainFunc_extern->dump();
 #endif
     
-    if (debug_func_build) {
+    if (llvm_debug::debug_func_build) {
       QDPIO::cerr << "    verifying: main_extern\n";
     }
     llvm::verifyFunction(*mainFunc_extern);
 
-    if (debug_func_build) {
+    if (llvm_debug::debug_func_build) {
       QDPIO::cerr << "    finalizing the module\n";
       //Mod->dump();
     }
 
     TheExecutionEngine->finalizeObject();  // MCJIT
 
-    if (debug_func_build) {
+    if (llvm_debug::debug_func_build) {
       QDPIO::cerr << "    JIT compiling ...\n";
     }
     fptr_mainFunc_extern = TheExecutionEngine->getPointerToFunction( mainFunc_extern );
