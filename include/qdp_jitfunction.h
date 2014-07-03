@@ -19,14 +19,14 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 {
   llvm_start_new_function();
 
-  //ParamRef p_ordered      = llvm_add_param<bool>();
+  ParamRef p_ordered      = llvm_add_param<bool>();
   ParamRef p_th_count     = llvm_add_param<int>();
-  // ParamRef p_start        = llvm_add_param<int>();
-  // ParamRef p_end          = llvm_add_param<int>();
-  // ParamRef p_do_site_perm = llvm_add_param<bool>();
-  // ParamRef p_site_table   = llvm_add_param<int*>();
-  // ParamRef p_member_array = llvm_add_param<bool*>();
-
+  ParamRef p_start        = llvm_add_param<int>();
+  ParamRef p_end          = llvm_add_param<int>();
+  ParamRef p_do_site_perm = llvm_add_param<bool>();
+  ParamRef p_site_table   = llvm_add_param<int*>();
+  ParamRef p_member_array = llvm_add_param<bool*>();
+  
 
   ParamLeaf param_leaf;
 
@@ -39,71 +39,71 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
 
-  //llvm::Value * r_ordered      = llvm_derefParam( p_ordered );
+  llvm::Value * r_ordered      = llvm_derefParam( p_ordered );
   llvm::Value * r_th_count     = llvm_derefParam( p_th_count );
-  // llvm::Value * r_start        = llvm_derefParam( p_start );
-  // llvm::Value * r_end          = llvm_derefParam( p_end );
-  // llvm::Value * r_do_site_perm = llvm_derefParam( p_do_site_perm );
+   llvm::Value * r_start        = llvm_derefParam( p_start );
+   llvm::Value * r_end          = llvm_derefParam( p_end );
+   llvm::Value * r_do_site_perm = llvm_derefParam( p_do_site_perm );
 
-  //llvm::Value* r_no_site_perm = llvm_not( r_do_site_perm );  
+  llvm::Value* r_no_site_perm = llvm_not( r_do_site_perm );  
   //mainFunc->dump();
-  llvm::Value* r_idx = llvm_thread_idx();
+  llvm::Value* r_idx_thread = llvm_thread_idx();
   //mainFunc->dump();
 
-  llvm_cond_exit( llvm_ge( r_idx , r_th_count ) );
+  llvm_cond_exit( llvm_ge( r_idx_thread , r_th_count ) );
 
-  // llvm::BasicBlock * block_no_site_perm_exit = llvm_new_basic_block();
-  // llvm::BasicBlock * block_no_site_perm = llvm_new_basic_block();
-  // llvm::BasicBlock * block_site_perm = llvm_new_basic_block();
-  // llvm::BasicBlock * block_add_start = llvm_new_basic_block();
-  // llvm::BasicBlock * block_add_start_else = llvm_new_basic_block();
+  llvm::BasicBlock * block_no_site_perm_exit = llvm_new_basic_block();
+  llvm::BasicBlock * block_no_site_perm = llvm_new_basic_block();
+  llvm::BasicBlock * block_site_perm = llvm_new_basic_block();
+  llvm::BasicBlock * block_add_start = llvm_new_basic_block();
+  llvm::BasicBlock * block_add_start_else = llvm_new_basic_block();
 
-  // llvm::Value* r_idx_perm_phi0;
-  // llvm::Value* r_idx_perm_phi1;
+  llvm::Value* r_idx_perm_phi0;
+  llvm::Value* r_idx_perm_phi1;
 
-  // llvm_cond_branch( r_no_site_perm , block_no_site_perm , block_site_perm ); 
-  // {
-  //   llvm_set_insert_point(block_site_perm);
-  //   r_idx_perm_phi0 = llvm_array_type_indirection( p_site_table , r_idx_thread ); // PHI 0
-  //   llvm_branch( block_no_site_perm_exit );
-  // }
-  // {
-  //   llvm_set_insert_point(block_no_site_perm);
-  //   llvm_cond_branch( r_ordered , block_add_start , block_add_start_else );
-  //   {
-  //     llvm_set_insert_point(block_add_start);
-  //     r_idx_perm_phi1 = llvm_add( r_idx_thread , r_start ); // PHI 1
-  //     llvm_branch( block_no_site_perm_exit );
-  //     llvm_set_insert_point(block_add_start_else);
-  //     llvm_branch( block_no_site_perm_exit );
-  //   }
-  // }
-  // llvm_set_insert_point(block_no_site_perm_exit);
+  llvm_cond_branch( r_no_site_perm , block_no_site_perm , block_site_perm ); 
+  {
+    llvm_set_insert_point(block_site_perm);
+    r_idx_perm_phi0 = llvm_array_type_indirection( p_site_table , r_idx_thread ); // PHI 0   
+    llvm_branch( block_no_site_perm_exit );
+  }
+  {
+    llvm_set_insert_point(block_no_site_perm);
+    llvm_cond_branch( r_ordered , block_add_start , block_add_start_else );
+    {
+      llvm_set_insert_point(block_add_start);
+      r_idx_perm_phi1 = llvm_add( r_idx_thread , r_start ); // PHI 1  
+      llvm_branch( block_no_site_perm_exit );
+      llvm_set_insert_point(block_add_start_else);
+      llvm_branch( block_no_site_perm_exit );
+    }
+  }
+  llvm_set_insert_point(block_no_site_perm_exit);
 
-  // llvm::PHINode* r_idx = llvm_phi( r_idx_perm_phi0->getType() , 3 );
+  llvm::PHINode* r_idx = llvm_phi( r_idx_perm_phi0->getType() , 3 );
 
-  // r_idx->addIncoming( r_idx_perm_phi0 , block_site_perm );
-  // r_idx->addIncoming( r_idx_perm_phi1 , block_add_start );
-  // r_idx->addIncoming( r_idx_thread , block_add_start_else );
+  r_idx->addIncoming( r_idx_perm_phi0 , block_site_perm );
+  r_idx->addIncoming( r_idx_perm_phi1 , block_add_start );
+  r_idx->addIncoming( r_idx_thread , block_add_start_else );
 
-  // llvm::BasicBlock * block_ordered = llvm_new_basic_block();
-  // llvm::BasicBlock * block_not_ordered = llvm_new_basic_block();
-  // llvm::BasicBlock * block_ordered_exit = llvm_new_basic_block();
-  // llvm_cond_branch( r_ordered , block_ordered , block_not_ordered );
-  // {
-  //   llvm_set_insert_point(block_not_ordered);
-  //   llvm::Value* r_ismember     = llvm_array_type_indirection( p_member_array , r_idx );
-  //   llvm::Value* r_ismember_not = llvm_not( r_ismember );
-  //   llvm_cond_exit( r_ismember_not ); 
-  //   llvm_branch( block_ordered_exit );
-  // }
-  // {
-  //   llvm_set_insert_point(block_ordered);
-  //   llvm_cond_exit( llvm_gt( r_idx , r_end ) );
-  //   llvm_cond_exit( llvm_lt( r_idx , r_start ) );
-  //   llvm_branch( block_ordered_exit );
-  // }
-  // llvm_set_insert_point(block_ordered_exit);
+  llvm::BasicBlock * block_ordered = llvm_new_basic_block();
+  llvm::BasicBlock * block_not_ordered = llvm_new_basic_block();
+  llvm::BasicBlock * block_ordered_exit = llvm_new_basic_block();
+  llvm_cond_branch( r_ordered , block_ordered , block_not_ordered );
+  {
+    llvm_set_insert_point(block_not_ordered);
+    llvm::Value* r_ismember     = llvm_array_type_indirection( p_member_array , r_idx );
+    llvm::Value* r_ismember_not = llvm_not( r_ismember );
+    llvm_cond_exit( r_ismember_not ); 
+    llvm_branch( block_ordered_exit );
+  }
+  {
+    llvm_set_insert_point(block_ordered);
+    llvm_cond_exit( llvm_gt( r_idx , r_end ) );
+    llvm_cond_exit( llvm_lt( r_idx , r_start ) );
+    llvm_branch( block_ordered_exit );
+  }
+  llvm_set_insert_point(block_ordered_exit);
 
 
 
@@ -451,25 +451,25 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
   std::vector<void*> addr;
 
 
-  //addr.push_back( &ordered );
+  addr.push_back( &ordered );
   //std::cout << "addr hi = " << addr[1] << " hi=" << hi << "\n";
 
   addr.push_back( &th_count );
   //std::cout << "thread_count = " << th_count << "\n";
 
-  //  addr.push_back( &start );
+    addr.push_back( &start );
   //std::cout << "start        = " << start << "\n";
 
-  //addr.push_back( &end );
+  addr.push_back( &end );
   //std::cout << "end          = " << end << "\n";
 
-  //addr.push_back( &do_soffset_index );
+  addr.push_back( &do_soffset_index );
   //std::cout << "addr do_soffset_index =" << addr[2] << " " << do_soffset_index << "\n";
 
-  //addr.push_back( &idx_inner_dev );
+  addr.push_back( &idx_inner_dev );
   //std::cout << "addr idx_inner_dev = " << addr[3] << " " << idx_inner_dev << "\n";
 
-  //addr.push_back( &subset_member );
+  addr.push_back( &subset_member );
   //std::cout << "addr subset_dev (member_array) = " << addr[3] << " " << subset_member << "\n";
 
   int addr_dest=addr.size();

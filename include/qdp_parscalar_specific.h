@@ -228,6 +228,7 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
   for(int j=0; j < s.numSiteTable(); ++j) 
     {
       int i = tab[j];
+      std::cout << "tab[" << j << "] = " << i << "\n";
       OpAssign()( dest0.elem(i) , dest.elem(i) );
     }
 
@@ -259,8 +260,8 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
   size_t diffs=0;
   for(int j=0; j < s.numSiteTable(); ++j) {
     int i = tab[j];
-    typename WordType<T>::Type_t * f_cpu = (typename WordType<T>::Type_t *)&dest0.elem(i);
-    typename WordType<T>::Type_t * f_gpu = (typename WordType<T>::Type_t *)&dest.elem(i);
+    typename WordType<T>::Type_t * f_gpu = (typename WordType<T>::Type_t *)&dest0.elem(i);
+    typename WordType<T>::Type_t * f_cpu = (typename WordType<T>::Type_t *)&dest.elem(i);
     for(int w=0 ; w < sizeof(T)/sizeof(typename WordType<T>::Type_t) ; w++ ) {
       bool different = false;
 

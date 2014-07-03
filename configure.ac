@@ -167,6 +167,7 @@ dnl then
      ac_3dnow="0"
      AC_DEFINE_UNQUOTED([CUDA_GCC],"${ac_gcc}",[CUDA C/C++ Compiler])
      AC_DEFINE_UNQUOTED(QDP_IS_QDPJIT, ${gpu_enabled}, [Enable GPU/JIT])
+     AC_DEFINE_UNQUOTED(QDPJIT_IS_QDPJITNVVM, ${gpu_enabled}, [Enable GPU/JIT])
      AC_SUBST(CUDA_LIBS, [-lcuda])
      AC_SUBST(CUDA_CXXFLAGS, [-I${cuda_home}/include])
      AC_SUBST(CUDA_LDFLAGS, [-L${cuda_home}/lib64])

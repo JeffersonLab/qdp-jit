@@ -668,7 +668,7 @@ struct ForEach<UnaryNode<FnMap, A>, EvalLeaf1, CTag>
   {
     const Map& map = expr.operation().map;
     FnMap& fnmap = const_cast<FnMap&>(expr.operation());
-    
+
     //     if (map.offnodeP) {
     //       if (map.goffsets[f.val1()] < 0) {
     // 	const FnMapRsrc& rRSrc = fnmap.getCached();
