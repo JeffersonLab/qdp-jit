@@ -188,7 +188,6 @@ namespace QDP {
 
 
 #if 0
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
   QDP_error_exit("ni");
     //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 

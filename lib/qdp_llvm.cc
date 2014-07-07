@@ -121,14 +121,14 @@ namespace QDP {
   {
     // Link libdevice to current module
 
-    QDP_info_primary("Linking libdevice to new module");
+    //QDP_info_primary("Linking libdevice to new module");
 
     std::string ErrorMsg;
     if (llvm::Linker::LinkModules( Mod , module_libdevice.get() ,  llvm::Linker::PreserveSource , &ErrorMsg)) {
       QDP_error_exit("Linking libdevice failed: %s",ErrorMsg.c_str());
     }
 
-    QDP_info_primary("Initializing math functions");
+    //QDP_info_primary("Initializing math functions");
 
     func_sin_f32 = llvm_get_func( "__nv_sinf" );
     func_acos_f32 = llvm_get_func( "__nv_acosf" );
@@ -201,7 +201,7 @@ namespace QDP {
 
 
   void llvm_start_new_function() {
-    QDP_info_primary( "Staring new LLVM function ...");
+    //QDP_info_primary( "Staring new LLVM function ...");
 
     Mod = new llvm::Module("module", llvm::getGlobalContext());
     builder = new llvm::IRBuilder<>(llvm::getGlobalContext());
@@ -791,7 +791,7 @@ namespace QDP {
       PMTM.add(new DataLayout(Mod));
     }
 #else
-    QDP_info_primary( "Using module's data layout" );
+    //QDP_info_primary( "Using module's data layout" );
     PMTM.add(new llvm::DataLayout(Mod));
 #endif
 
@@ -833,11 +833,11 @@ namespace QDP {
 	  size_t pos_space = str.find(" ", pos+12);
 	  std::string num = str.substr(pos+12,pos_space-pos-12);
 	  num = " #"+num;
-	  std::cout << "# num found = " << num << "()\n";
+	  //std::cout << "# num found = " << num << "()\n";
 	  size_t pos_open = str.find("{", pos_space);
 	  size_t pos_close = str.find("}", pos_open);
 	  std::string val = str.substr(pos_open+1,pos_close-pos_open-1);
-	  std::cout << "# val found = " << val << "\n";
+	  //std::cout << "# val found = " << val << "\n";
 	  str.replace(pos, pos_close-pos+1, "");
 	  if (mapAttr.count(num) > 0)
 	    QDP_error_exit("unexp.");
@@ -864,10 +864,10 @@ namespace QDP {
       PMTM.add(new DataLayout(Mod));
     }
 #else
-    QDP_info_primary( "Using module's data layout" );
+    //QDP_info_primary( "Using module's data layout" );
     PMTM.add(new llvm::DataLayout(Mod));
 #endif
-    QDP_info_primary("Adding data layout");
+    //QDP_info_primary("Adding data layout");
     PMTM.run(*Mod);
 
 #if 1
@@ -999,7 +999,7 @@ namespace QDP {
 
   std::string llvm_get_ptx_kernel(const char* fname)
   {
-    QDP_info_primary("Internalizing module");
+    //QDP_info_primary("Internalizing module");
 
     const char *ExportList[] = { "main" };
 
@@ -1014,17 +1014,17 @@ namespace QDP {
     OurPM.run( *Mod );
 
 
-    QDP_info_primary("Running optimization passes on module");
+    //QDP_info_primary("Running optimization passes on module");
 
     llvm::PassManager PM;
     PM.add( llvm::createGlobalDCEPass() );
     PM.run( *Mod );
 
-    llvm_print_module(Mod,"ir_internalized_reflected_globalDCE.ll");
+    //llvm_print_module(Mod,"ir_internalized_reflected_globalDCE.ll");
 
     std::string str = get_PTX_from_Module_using_nvvm( Mod );
 
-#if 1
+#if 0
     // Write PTX string to file
     std::ofstream ptxfile;
     ptxfile.open ( fname );
@@ -1064,7 +1064,7 @@ namespace QDP {
 
     std::string ptx_kernel = llvm_get_ptx_kernel(fname);
 
-    QDP_info_primary("Loading PTX kernel with driver");
+    //QDP_info_primary("Loading PTX kernel with driver");
 
     ret = cuModuleLoadData(&cuModule, (void*)ptx_kernel.c_str());
     //ret = cuModuleLoadDataEx( &cuModule , ptx_kernel.c_str() , 0 , 0 , 0 );
