@@ -35,8 +35,7 @@ General remarks and requirements:
 3) Install QDP-JIT/NVVM
 
 - Download source code:
-  git clone --recursive https://github.com/fwinter/qdp-jit.git
-  git checkout -b llvm-nvvm origin/llvm-nvvm
+  git clone -b llvm-nvvm --recursive https://github.com/fwinter/qdp-jit.git
 
 - Remake the autobuild system:
   autoreconf
