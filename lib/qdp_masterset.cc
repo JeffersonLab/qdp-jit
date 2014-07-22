@@ -18,7 +18,7 @@ namespace QDP {
     QDPIO::cerr << "masterset: register set with " << set.numSubsets() << " subsets\n";
 
     for ( int i = 0 ; i < set.numSubsets() ; ++i ) {
-      QDPIO::cerr << "subset no. " << vecSubset.size() << "\n";
+      //QDPIO::cerr << "subset no. " << vecSubset.size() << "\n";
       set[i].setId( vecSubset.size() );
       vecSubset.push_back( &set[i] );
     }

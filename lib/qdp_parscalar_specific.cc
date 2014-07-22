@@ -91,7 +91,7 @@ namespace QDP {
 
     for (int s_no = 0 ; s_no < MasterSet::Instance().numSubsets() ; ++s_no ) {
 
-      QDPIO::cerr << "Build goffset for subset no. " << s_no << "\n";
+      //QDPIO::cerr << "Build goffset for subset no. " << s_no << "\n";
 
       //--------------------------------------
       // Setup the communication index arrays
@@ -115,22 +115,22 @@ namespace QDP {
 	      // additional '-1' to make sure its negative,
 	      // not the best style, but higher performance
 	      // than using another buffer
-	      QDPIO::cerr << "found off-node source site (" << linear << ") "; 
+	      //QDPIO::cerr << "found off-node source site (" << linear << ") "; 
 	      if ( MasterSet::Instance().getSubset( s_no ).isElement( linear ) ) 
 		{
-		  QDPIO::cerr << "in subset, assigning receivce buffer index = " << -ri-1 << "\n";
+		  //QDPIO::cerr << "in subset, assigning receivce buffer index = " << -ri-1 << "\n";
 		  goffsets[s_no][linear] = -(ri++)-1;
 		} 
 	      else 
 		{
-		  QDPIO::cerr << "not in subset\n";
+		  //QDPIO::cerr << "not in subset\n";
 		}
 	    }
 	}
 
       goffsetsId[s_no] = QDPCache::Instance().registrateOwnHostMem( sizeof(int)*goffsets[s_no].size() , 
 								    goffsets[s_no].slice() , NULL );
-      QDPIO::cout << "Map::make goffsetsId[" << s_no << "] = " << goffsetsId[s_no] << "  size=" << (sizeof(int)*goffsets[s_no].size()) << "\n";
+      //QDPIO::cout << "Map::make goffsetsId[" << s_no << "] = " << goffsetsId[s_no] << "  size=" << (sizeof(int)*goffsets[s_no].size()) << "\n";
     } // s_no
 
 
@@ -236,7 +236,7 @@ namespace QDP {
 
     for (int s_no = 0 ; s_no < MasterSet::Instance().numSubsets() ; ++s_no ) 
       {
-	QDPIO::cerr << "Build srce/destnodes_num for subset no. " << s_no << "\n";
+	//QDPIO::cerr << "Build srce/destnodes_num for subset no. " << s_no << "\n";
 
 	// Run through the lists and find the number of each unique node
 	srcenodes_num[s_no].resize(srcenodes.size());
@@ -313,7 +313,7 @@ namespace QDP {
 
 	roffsetsId[s_no] = QDPCache::Instance().registrateOwnHostMem( sizeof(int)*roffsets[s_no].size() , roffsets[s_no].slice() , NULL );
 	soffsetsId[s_no] = QDPCache::Instance().registrateOwnHostMem( sizeof(int)*soffsets[s_no].size() , soffsets[s_no].slice() , NULL );
-	QDPIO::cout << "Map::make GPU memory registered for roff,soff (ids) " << roffsetsId[s_no] << " " << soffsetsId[s_no] << " " << sizeof(int)*roffsets[s_no].size() << " " << sizeof(int)*soffsets[s_no].size() << "\n";
+	//QDPIO::cout << "Map::make GPU memory registered for roff,soff (ids) " << roffsetsId[s_no] << " " << soffsetsId[s_no] << " " << sizeof(int)*roffsets[s_no].size() << " " << sizeof(int)*soffsets[s_no].size() << "\n";
 
       } // s_no
 
