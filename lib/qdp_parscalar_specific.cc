@@ -302,10 +302,12 @@ namespace QDP {
 	if ( si != destnodes_num[s_no][0] )
 	  QDP_error_exit("internal error: si != destnodes_num[0]");
 
+#if 0
 	if (roffsets[s_no].size()==0)
 	  QDP_error_exit("rsoffsets empty");
 	if (soffsets[s_no].size()==0)
 	  QDP_error_exit("ssoffsets empty");
+#endif
 	if (goffsets[s_no].size()==0)
 	  QDP_error_exit("gsoffsets empty");
 
