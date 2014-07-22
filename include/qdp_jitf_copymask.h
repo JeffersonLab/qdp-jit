@@ -51,7 +51,7 @@ namespace QDP {
   void 
   function_copymask_exec(CUfunction function, OLattice<T>& dest, const OLattice<T1>& mask, const OLattice<T>& src )
   {
-    AddressLeaf addr_leaf;
+    AddressLeaf addr_leaf(all);
 
     int junk_0 = forEach(dest, addr_leaf, NullCombine());
     int junk_1 = forEach(src, addr_leaf, NullCombine());

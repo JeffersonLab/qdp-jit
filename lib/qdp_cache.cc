@@ -173,8 +173,9 @@ namespace QDP
 
 
 
-  int QDPCache::registrateOwnHostMem( size_t size, void* ptr, LayoutFptr func)
+  int QDPCache::registrateOwnHostMem( size_t size, const void* ptr_, LayoutFptr func)
   {
+    void * ptr = const_cast<void*>(ptr_);
     if (stackFree.size() == 0) {
       enlargeStack();
     }

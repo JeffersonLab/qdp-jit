@@ -45,7 +45,7 @@ namespace QDP
     //  - 2: don't use host allocator (for objects that manage their own memory)
     int registrate( size_t size, unsigned flags, LayoutFptr func );
 
-    int registrateOwnHostMem( size_t size, void* ptr , LayoutFptr func );
+    int registrateOwnHostMem( size_t size, const void* ptr , LayoutFptr func );
     void signoff(int id);
     void lockId(int id);
     void * getDevicePtr(int id);

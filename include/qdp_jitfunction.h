@@ -17,6 +17,8 @@ template<class T, class T1, class Op, class RHS>
 CUfunction
 function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs)
 {
+  //std::cout << __PRETTY_FUNCTION__ << "\n";
+
   llvm_start_new_function();
 
   ParamRef p_ordered      = llvm_add_param<bool>();
@@ -329,9 +331,9 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
 
 template<class T1, class RHS>
 void
-function_gather_exec( CUfunction function, void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs )
+  function_gather_exec( CUfunction function, void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs , const Subset& subset )
 {
-  AddressLeaf addr_leaf;
+  AddressLeaf addr_leaf(subset);
 
   int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
 
@@ -339,11 +341,11 @@ function_gather_exec( CUfunction function, void* send_buf , const Map& map , con
 
   // lo <= idx < hi
   int lo = 0;
-  int hi = map.soffset().size();
+  int hi = map.soffset(subset).size();
 
   //QDP_info("gather sites into send_buf lo=%d hi=%d",lo,hi);
 
-  int soffsetsId = map.getSoffsetsId();
+  int soffsetsId = map.getSoffsetsId(subset);
   void * soffsetsDev = QDPCache::Instance().getDevicePtr( soffsetsId );
 
 #if 0
@@ -388,11 +390,9 @@ template<class T, class T1, class Op, class RHS>
 void 
 function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
 {
-  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  //std::cout << __PRETTY_FUNCTION__ << "\n";
 
-  //  std::cout << "function_exec 0\n";
-
-  ShiftPhase1 phase1;
+  ShiftPhase1 phase1(s);
   int offnode_maps = forEach(rhs, phase1 , BitOrCombine());
   //QDP_info("offnode_maps = %d",offnode_maps);
 
@@ -410,10 +410,10 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
 
   if (offnode_maps > 0) {
     int innerId, faceId;
-    innerId = MasterMap::Instance().getIdInner(offnode_maps);
-    innerCount = MasterMap::Instance().getCountInner(offnode_maps);
-    faceId = MasterMap::Instance().getIdFace(offnode_maps);
-    faceCount = MasterMap::Instance().getCountFace(offnode_maps);
+    innerId = MasterMap::Instance().getIdInner(s,offnode_maps);
+    innerCount = MasterMap::Instance().getCountInner(s,offnode_maps);
+    faceId = MasterMap::Instance().getIdFace(s,offnode_maps);
+    faceCount = MasterMap::Instance().getCountFace(s,offnode_maps);
     idx_inner_dev = QDPCache::Instance().getDevicePtr( innerId );
     idx_face_dev = QDPCache::Instance().getDevicePtr( faceId );
     th_count = innerCount;
@@ -440,7 +440,7 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
 
   
 
-  AddressLeaf addr_leaf;
+  AddressLeaf addr_leaf(s);
 
   int junk_dest = forEach(dest, addr_leaf, NullCombine());
   AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
@@ -498,7 +498,7 @@ function_lat_sca_exec(CUfunction function, OLattice<T>& dest, const Op& op, cons
 {
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
-  AddressLeaf addr_leaf;
+  AddressLeaf addr_leaf(s);
 
   int junk_dest = forEach(dest, addr_leaf, NullCombine());
   AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
@@ -546,7 +546,7 @@ function_zero_rep_exec(CUfunction function, OLattice<T>& dest, const Subset& s )
 {
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
-  AddressLeaf addr_leaf;
+  AddressLeaf addr_leaf(s);
 
   int junk_0 = forEach(dest, addr_leaf, NullCombine());
 
@@ -629,7 +629,7 @@ function_random_exec(CUfunction function, OLattice<T>& dest, const Subset& s , S
 
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
-  AddressLeaf addr_leaf;
+  AddressLeaf addr_leaf(s);
 
   int junk_0 = forEach(dest, addr_leaf, NullCombine());
 

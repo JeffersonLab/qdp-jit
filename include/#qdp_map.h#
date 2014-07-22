@@ -66,19 +66,19 @@ private:
 
 public:
   const Map& map;
-  //std::shared_ptr<RsrcWrapper> pRsrc;
-  QDPHandle::Handle<RsrcWrapper> pRsrc;
+  std::shared_ptr<RsrcWrapper> pRsrc;
+  //QDPHandle::Handle<RsrcWrapper> pRsrc;
 
   FnMap(const Map& m);
   FnMap(const FnMap& f);
 
   const FnMapRsrc& getResource(int srcnum_, int dstnum_) {
-    //assert(pRsrc);
+    assert(pRsrc);
     return pRsrc->getResource( srcnum_ , dstnum_ );
   }
 
   const FnMapRsrc& getCached() const {
-    //assert(pRsrc);
+    assert(pRsrc);
     return pRsrc->get();
   }
   
@@ -137,36 +137,12 @@ public:
 
 public:
   //! Accessor to offsets
-  const multi1d<int>& goffset(const Subset& s) const {
-    std::cout << s.getId() << "\n";
-    assert( s.getId() >= 0 && s.getId() < goffsets.size() && "goffset: subset Id out of range");
-    return goffsets[s.getId()];
-  }
-  const multi1d<int>& soffset(const Subset& s) const {
-    assert( s.getId() >= 0 && s.getId() < soffsets.size() && "soffset: subset Id out of range");
-    return soffsets[s.getId()];
-  }
-  multi1d<int>& soffset(const Subset& s) {
-    assert( s.getId() >= 0 && s.getId() < soffsets.size() && "soffset: subset Id out of range");
-    return soffsets[s.getId()];
-  }
-  const multi1d<int>& roffset(const Subset& s) const {
-    assert( s.getId() >= 0 && s.getId() < roffsets.size() && "roffset: subset Id out of range");
-    return roffsets[s.getId()];
-  }
-
-  int getRoffsetsId(const Subset& s) const { 
-    assert( s.getId() >= 0 && s.getId() < roffsets.size() && "roffset: subset Id out of range");
-    return roffsetsId[s.getId()];
-  }
-  int getSoffsetsId(const Subset& s) const { 
-    assert( s.getId() >= 0 && s.getId() < soffsets.size() && "soffset: subset Id out of range");
-    return soffsetsId[s.getId()];
-  }
-  int getGoffsetsId(const Subset& s) const { 
-    assert( s.getId() >= 0 && s.getId() < goffsets.size() && "goffset: subset Id out of range");
-    return goffsetsId[s.getId()];
-  }
+  const multi1d<int>& goffset() const {return goffsets;}
+  const multi1d<int>& soffset() const {return soffsets;}
+  const multi1d<int>& roffset() const {return roffsets;}
+  int getRoffsetsId() const { return roffsetsId;}
+  int getSoffsetsId() const { return soffsetsId;}
+  int getGoffsetsId() const { return goffsetsId;}
 
   int getId() const {return myId;}
   bool hasOffnode() const { return offnodeP; }
@@ -179,30 +155,32 @@ private:
   void operator=(const Map&) {}
 
 private:
-  friend class FnMap;
-  friend class FnMapRsrc;
-  template<class E,class F,class C> friend class ForEach;
+  friend struct FnMap;
+  friend struct FnMapRsrc;
+  template<class E,class F,class C> friend struct ForEach;
 
   //! Offset table used for communications. 
   /*! 
    * The direction is in the sense of the Map or Shift functions from QDP.
    * goffsets(position) 
    */ 
-  multi1d< multi1d<int> > goffsets;    // [subset no.][linear index] > 0 local, < 0 receive buffer index
-  multi1d< multi1d<int> > soffsets;    // [subset no.][0..N] = linear index   N = destnodes_num
-  multi1d< multi1d<int> > roffsets;    // [subset no.][0..N] = linear index   N = srcenodes_num
+  multi1d<int> goffsets;
+  multi1d<int> soffsets;
+  multi1d<int> srcnode;
+  multi1d<int> dstnode;
 
-  multi1d<int> roffsetsId; // [subset no.]
-  multi1d<int> soffsetsId; // [subset no.]
-  multi1d<int> goffsetsId; // [subset no.]
+  multi1d<int> roffsets;
 
+  int roffsetsId;
+  int soffsetsId;
+  int goffsetsId;
   int myId; // master map id
 
-  multi1d<int> srcenodes;                   // node number index = node number
-  multi1d<int> destnodes;                   // node number index = node number
+  multi1d<int> srcenodes;
+  multi1d<int> destnodes;
 
-  multi1d< multi1d<int> > srcenodes_num;    // [subset no.][node number index] = number of sites
-  multi1d< multi1d<int> > destnodes_num;    // [subset no.][node number index] = number of sites
+  multi1d<int> srcenodes_num;
+  multi1d<int> destnodes_num;
 
   // Indicate off-node communications is needed;
   bool offnodeP;
@@ -218,12 +196,12 @@ struct FnMapJIT
 public:
   IndexRet index;
   const Map& map;
-  //std::shared_ptr<RsrcWrapper> pRsrc;
-  QDPHandle::Handle<RsrcWrapper> pRsrc;
+  std::shared_ptr<RsrcWrapper> pRsrc;
+  //QDPHandle::Handle<RsrcWrapper> pRsrc;
 
   FnMapJIT(const FnMap& fnmap,const IndexRet& i): 
-    map(fnmap.map), pRsrc(fnmap.pRsrc), index(i) {}
-  FnMapJIT(const FnMapJIT& f) : map(f.map) , pRsrc(f.pRsrc), index(f.index) {}
+    index(i), map(fnmap.map), pRsrc(fnmap.pRsrc) {}
+  FnMapJIT(const FnMapJIT& f) : index(f.index), map(f.map) ,pRsrc(f.pRsrc) {}
 
 public:
   template<class T>
@@ -285,15 +263,13 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
     inline
     static Type_t apply(const UnaryNode<FnMapJIT, A>& expr, const ViewLeaf &v, const OpCombine &o)
     {
-      //assert(!"ni");
-#if 1
       Type_t ret;
       Type_t ret_phi0;
       Type_t ret_phi1;
 
       IndexRet index = expr.operation().index;
 
-      llvm::Value * r_multi_index = llvm_array_type_indirection( index.p_multi_index , v.getIndex() );
+      llvm::Value * r_multi_index = llvm_array_type_indirection( index.p_multi_index , v.index_m );
       
       llvm::BasicBlock * block_in_buffer = llvm_new_basic_block();
       llvm::BasicBlock * block_not_in_buffer = llvm_new_basic_block();
@@ -309,7 +285,6 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
 
 	IndexDomainVector args;
 	args.push_back( make_pair( Layout::sitesOnNode() , idx_buf ) );
-	args.push_back( make_pair( 1 , llvm_create_value(0) ) );
 
 	typename JITType<Type_t>::Type_t t_jit_recv;
 	t_jit_recv.setup( llvm_derefParam(index.p_recv_buf) ,
@@ -338,7 +313,6 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
 	      ret_phi1 , block_not_in_buffer );
 
       return ret;
-#endif
     }
   };
 
@@ -358,20 +332,18 @@ struct ForEach<UnaryNode<FnMap, A>, AddressLeaf, NullCombine>
       const Map& map = expr.operation().map;
       FnMap& fnmap = const_cast<FnMap&>(expr.operation());
 
-      // int goffsetsId = 
-      // void * goffsetsDev = QDPCache::Instance().getDevicePtr( goffsetsId );
-      //QDP_info("Map:AddressLeaf: add goffset p=%p",goffsetsDev);
-      int goffsetsId = expr.operation().map.getGoffsetsId(a.subset);
+      int goffsetsId = expr.operation().map.getGoffsetsId();
       void * goffsetsDev = QDPCache::Instance().getDevicePtr( goffsetsId );
-      a.setAddr( goffsetsDev );
+      //QDP_info("Map:AddressLeaf: add goffset p=%p",goffsetsDev);
+      a.setAddr(goffsetsDev);
 
-      void * rcvBuf = NULL;
+      void * rcvBufDev = NULL;
       if (map.hasOffnode()) {
 	const FnMapRsrc& rRSrc = fnmap.getCached();
-	rcvBuf = rRSrc.getRecvBufDevPtr();
+	rcvBufDev = rRSrc.getRecvBufDevPtr();
       }
       //QDP_info("Map:AddressLeaf: add recv buf p=%p",rcvBufDev);
-      a.setAddr(rcvBuf);
+      a.setAddr(rcvBufDev);
 
       return Type_t( ForEach<A, AddressLeaf, NullCombine>::apply( expr.child() , a , n ) );
     }
@@ -391,8 +363,6 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
   inline static
   Type_t apply(const UnaryNode<FnMap, A> &expr, const ShiftPhase1 &f, const BitOrCombine &c)
   {
-    //QDP_error_exit("ni addressleaf map apply");
-#if 1
     const Map& map = expr.operation().map;
     FnMap& fnmap = const_cast<FnMap&>(expr.operation());
 
@@ -407,12 +377,8 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
 	QDP_info("Map: off-node communications required");
 #endif
 
-	QDPIO::cerr << "map phase 1, off-node required, subset id = " << f.subset.getId() << "\n";
-
-	int dstnum = map.destnodes_num[f.subset.getId()][0]*sizeof(InnerType_t);
-	int srcnum = map.srcenodes_num[f.subset.getId()][0]*sizeof(InnerType_t);
-
-	QDPIO::cerr << "dest source site numbers = " << map.destnodes_num[f.subset.getId()][0] << " " << map.srcenodes_num[f.subset.getId()][0] << "\n";
+	int dstnum = map.destnodes_num[0]*sizeof(InnerType_t);
+	int srcnum = map.srcenodes_num[0]*sizeof(InnerType_t);
 
 	const FnMapRsrc& rRSrc = fnmap.getResource(srcnum,dstnum);
 
@@ -422,9 +388,8 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
 	// send and receive before recursing down
 	int maps_involved = forEach(subexpr, f , BitOrCombine());
 	if (maps_involved > 0) {
-	  QDP_error_exit("shift of shift is not supported");
-	  // ShiftPhase2 phase2;
-	  // forEach(subexpr, phase2 , NullCombine());
+	  ShiftPhase2 phase2;
+	  forEach(subexpr, phase2 , NullCombine());
 	}
 
 #if 1
@@ -443,7 +408,7 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
 	  }
 
 	// Execute the function
-	function_gather_exec(function, rRSrc.getSendBufDevPtr() , map , subexpr , f.subset );
+	function_gather_exec(function, rRSrc.getSendBufDevPtr() , map , subexpr );
 
 	rRSrc.send_receive();
 	
@@ -455,7 +420,6 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
 	returnVal = ForEach<A, ShiftPhase1, BitOrCombine>::apply(expr.child(), f, c);
       }
     return returnVal;
-#endif
   }
 };
 
@@ -704,7 +668,7 @@ struct ForEach<UnaryNode<FnMap, A>, EvalLeaf1, CTag>
   {
     const Map& map = expr.operation().map;
     FnMap& fnmap = const_cast<FnMap&>(expr.operation());
-    
+
     //     if (map.offnodeP) {
     //       if (map.goffsets[f.val1()] < 0) {
     // 	const FnMapRsrc& rRSrc = fnmap.getCached();

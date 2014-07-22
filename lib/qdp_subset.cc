@@ -16,19 +16,19 @@ namespace QDP
   Subset all;
 
   //! Default rb3 subset -- Always unordered
-  Set rb3;
+  //Set rb3;
 
   //! Default 2-checkerboard (red/black) set
   Set rb;
 
   //! Default 2^{Nd+1}-checkerboard set. Useful for pure gauge updating.
-  Set mcb;
+  //Set mcb;
 
   //! Even subset
-  Subset even;
+  //Subset even;
 
   //! Odd subset
-  Subset odd;
+  //Subset odd;
 
   Set::~Set() {
 
@@ -45,6 +45,7 @@ namespace QDP
 
   Subset::Subset():registered(false) {
     QDPCache::Instance().sayHi();
+    id=-1;
   }
 
 
@@ -52,7 +53,7 @@ namespace QDP
 
   Subset::Subset(const Subset& s):
     ordRep(s.ordRep), startSite(s.startSite), endSite(s.endSite), 
-    sub_index(s.sub_index), sitetable(s.sitetable), membertable(s.membertable), set(s.set) , registered(false) { 
+    sub_index(s.sub_index), sitetable(s.sitetable), membertable(s.membertable), set(s.set) , registered(false), id(s.id) { 
     QDPCache::Instance().sayHi();
   }
 
@@ -161,10 +162,10 @@ namespace QDP
     rb.make(SetRBFunc());
 
     // Initialize the 3d red/black checkerboard.
-    rb3.make(SetRB3Func());
+    //rb3.make(SetRB3Func());
 
     // Initialize the 32-style checkerboard
-    mcb.make(Set32CBFunc());
+    //mcb.make(Set32CBFunc());
 
     // The all set
     set_all.make(SetAllFunc());
@@ -173,10 +174,10 @@ namespace QDP
     all.make(set_all[0]);
 
     // COPY the rb[0] to the even subset
-    even = rb[0];
+    //even = rb[0];
 
     // COPY the rb[1] to the odd subset
-    odd = rb[1];
+    //odd = rb[1];
   }
 
 	  
@@ -210,8 +211,8 @@ namespace QDP
 #ifdef GPU_DEBUG      
       QDP_debug("Subset::make: Will register memory now...");
 #endif      
-      idSiteTable = QDPCache::Instance().registrateOwnHostMem( ind->size() * sizeof(int) , (void*)ind->slice() , NULL );
-      idMemberTable = QDPCache::Instance().registrateOwnHostMem( membertable->size() * sizeof(bool) , (void*)membertable->slice() , NULL );
+      idSiteTable = QDPCache::Instance().registrateOwnHostMem( ind->size() * sizeof(int) , ind->slice() , NULL );
+      idMemberTable = QDPCache::Instance().registrateOwnHostMem( membertable->size() * sizeof(bool) , membertable->slice() , NULL );
       registered=true;
     }
 
@@ -248,8 +249,8 @@ namespace QDP
 #ifdef GPU_DEBUG      
       QDP_debug("Subset::make: Will register memory now...");
 #endif      
-      idSiteTable = QDPCache::Instance().registrateOwnHostMem( s.sitetable->size() * sizeof(int) , (void*)s.sitetable->slice() , NULL );
-      idMemberTable = QDPCache::Instance().registrateOwnHostMem( s.membertable->size() * sizeof(bool) , (void*)s.membertable->slice() , NULL );
+      idSiteTable = QDPCache::Instance().registrateOwnHostMem( s.sitetable->size() * sizeof(int) , s.sitetable->slice() , NULL );
+      idMemberTable = QDPCache::Instance().registrateOwnHostMem( s.membertable->size() * sizeof(bool) , s.membertable->slice() , NULL );
       registered=true;
     }
 
