@@ -3,11 +3,11 @@
  *  \brief Test the Wilson-Dirac operator (dslash)
  */
 
+#include "qdp.h"
+#include "examples.h"
 #include <iostream>
 #include <cstdio>
 
-#include "qdp.h"
-#include "examples.h"
 
 #include <sys/time.h>
 
@@ -20,9 +20,26 @@ int main(int argc, char **argv)
   QDP_initialize(&argc, &argv);
 
   // Setup the layout
-  const int foo[] = {4,2,2,2};
+  const int foo[] = {16,16,16,16};
   multi1d<int> nrow(Nd);
   nrow = foo;  // Use only Nd elements
+
+  for (int i=1; i<argc; i++) 
+    {
+      if (strcmp((argv)[i], "-lat")==0) 
+	{
+	  int lat;
+	  sscanf((argv)[++i], "%d", &lat);
+	  nrow[0]=nrow[1]=nrow[2]=nrow[3]=lat;
+	}
+      if (strcmp((argv)[i], "-latz")==0) 
+	{
+	  int lat;
+	  sscanf((argv)[++i], "%d", &lat);
+	  nrow[3]=lat;
+	}
+    }
+
   Layout::setLattSize(nrow);
   Layout::create();
 
@@ -37,24 +54,26 @@ int main(int argc, char **argv)
 
   int iter = 1000;
 
-  {
-    int isign = +1;
-    int cb = 0;
-    QDPIO::cout << "Applying D" << endl;
+  for (int isign=-1 ; isign <= +1 ; isign += 2 )
+    for (int cb=0 ; cb <= 1 ; cb++ )
+      {
+	QDPIO::cout << "Applying D" << endl;
       
-    clock_t myt1=clock();
-    for(int i=0; i < iter; i++)
-      dslash(chi, u, psi, isign, cb);
-    clock_t myt2=clock();
-      
-    double mydt=(double)(myt2-myt1)/((double)(CLOCKS_PER_SEC));
-    mydt=1.0e6*mydt/((double)(iter*(Layout::vol()/2)));
-      
-    QDPIO::cout << "cb = " << cb << " isign = " << isign << endl;
-    QDPIO::cout << "The time per lattice point is "<< mydt << " micro sec" 
-		<< " (" <<  (double)(1392.0f/mydt) << ") Mflops " << endl;
-  }
+	dslash(chi, u, psi, isign, cb);
+    
+	StopWatch w;
+	w.start();
+	for(int i=0; i < iter; i++)
+	  dslash(chi, u, psi, isign, cb);
+	w.stop();
 
+	double gflops = 1392.0 * ((double)((((double)Layout::vol())/2.) * ((double)iter))) * 1.0e-9 / w.getTimeInSeconds();
+
+	QDPIO::cout << "cb=" << cb << "  sign=" << isign << "  performance = " << gflops << " GFlops\n";
+      
+      }
+
+#if 0
   chi = zero;
 
   {
@@ -62,6 +81,7 @@ int main(int argc, char **argv)
     int cb = 0;
     QDPIO::cout << "Applying D" << endl;
       
+    dslash2(chi, u, psi, isign, cb);
     clock_t myt1=clock();
     for(int i=0; i < iter; i++)
       dslash2(chi, u, psi, isign, cb);
@@ -76,7 +96,7 @@ int main(int argc, char **argv)
   }
 
 
-#if 1
+#if 0
   XMLFileWriter xml("t_dslashm.xml");
   push(xml,"t_dslashm");
   write(xml,"Nd", Nd);
@@ -103,6 +123,7 @@ int main(int argc, char **argv)
       QDPIO::cout << "isign="<<isign<<" cb=" << cb << " Diff = " << sqrt( norm2(diff,rb[cb]) / norm2(psi, rb[otherCB]))<< endl;
     }
   }
+#endif
 
   // Time to bolt
   QDP_finalize();
