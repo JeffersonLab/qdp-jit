@@ -36,7 +36,7 @@ template<class T>
 void 
 function_gaussian_exec(CUfunction function, OLattice<T>& dest,OLattice<T>& r1,OLattice<T>& r2, const Subset& s )
 {
-  AddressLeaf addr_leaf;
+  AddressLeaf addr_leaf(s);
 
   int junk_0 = forEach(dest, addr_leaf, NullCombine());
   int junk_1 = forEach(r1, addr_leaf, NullCombine());
