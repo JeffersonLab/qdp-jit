@@ -252,6 +252,8 @@ struct TagVisitor<FnMap, PrintTag> : public ParenPrinter<FnMap>
 template<class A>
 struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
   {
+    typedef typename ForEach<A, EvalLeaf1, OpCombine>::Type_t InnerTypeA_t;
+    typedef typename Combine1<InnerTypeA_t, FnMap, OpCombine>::Type_t InnerType_t;
     //typedef typename ForEach<A, ViewLeaf, OpCombine>::Type_t AInnerTypeA_t;
     typedef typename ForEach< UnaryNode<FnMapJIT, A> , ParamLeaf, TreeCombine>::Type_t Type_t;
     inline
@@ -262,9 +264,11 @@ struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
       const Map& map = expr.operation().map;
       FnMap& fnmap = const_cast<FnMap&>(expr.operation());
 
+      typedef typename WordType<InnerType_t>::Type_t AWordType_t;
+
       IndexRet index_pack;
       index_pack.p_multi_index = llvm_add_param<int*>();
-      index_pack.p_recv_buf    = llvm_add_param<REAL*>(); // This should deduce it's type from A somehow
+      index_pack.p_recv_buf    = llvm_add_param<AWordType_t*>(); // This deduces it's type from A
 
       return Type_t( FnMapJIT( expr.operation() , index_pack ) , 
 		     ForEach< A, ParamLeaf, TreeCombine >::apply( expr.child() , p , c ) );
