@@ -107,7 +107,7 @@ namespace QDP {
 	  reduce_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, shared_mem_usage ,  
 								       (T1*)QDPCache::Instance().getDevicePtr( s1.getId() ),
 								       (T2*)QDPCache::Instance().getDevicePtr( d.getId() ),
-								       (int*)QDPCache::Instance().getDevicePtr( s.getId()));
+								       (int*)QDPCache::Instance().getDevicePtr( s.getIdSiteTable()));
 	}
 	else {
 	  reduce_convert<T2>( actsize , numThreads , numBlocks, shared_mem_usage , 
@@ -117,7 +117,7 @@ namespace QDP {
 	if (first) {
 	  reduce_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, shared_mem_usage,
 								       (T1*)QDPCache::Instance().getDevicePtr( s1.getId() ),
-								       out_dev , (int*)QDPCache::Instance().getDevicePtr(s.getId()));
+								       out_dev , (int*)QDPCache::Instance().getDevicePtr(s.getIdSiteTable()));
 	}
 	else
 	  reduce_convert<T2>( actsize , numThreads , numBlocks , shared_mem_usage , in_dev , out_dev );

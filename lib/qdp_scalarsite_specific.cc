@@ -198,6 +198,8 @@ void Set::make(const SetFunc& fun)
 #endif
   }
 
+  MasterSet::Instance().registrate( *this );
+
 
   QDPIO::cout << "Set: Building strided sitetables...\n";
 
@@ -252,7 +254,7 @@ void Set::make(const SetFunc& fun)
     QDPCache::Instance().signoff( idStrided );
   }
 
-  idStrided = QDPCache::Instance().registrateOwnHostMem( dsize , (void*)sitetables_strided.slice() , NULL );
+  idStrided = QDPCache::Instance().registrateOwnHostMem( dsize , sitetables_strided.slice() , NULL );
   registered=true;
 #ifdef GPU_DEBUG  
   QDP_debug("nonEmptySubsetsOnNode  = %d" , nonEmptySubsetsOnNode );  

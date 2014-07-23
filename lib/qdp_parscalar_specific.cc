@@ -48,59 +48,102 @@ namespace QDP {
     QDP_info("Map::make");
 #endif
     const int nodeSites = Layout::sitesOnNode();
+    const int my_node   = Layout::nodeNumber();
 
-    //--------------------------------------
-    // Setup the communication index arrays
-    goffsets.resize(nodeSites);
+    multi1d<int> srcnode;
+    multi1d<int> dstnode;
     srcnode.resize(nodeSites);
     dstnode.resize(nodeSites);
 
-    const int my_node = Layout::nodeNumber();
-
     // Loop over the sites on this node
-    for(int linear=0, ri=0; linear < nodeSites; ++linear)
-    {
-      // Get the true lattice coord of this linear site index
-      multi1d<int> coord = Layout::siteCoords(my_node, linear);
+    for(int linear=0; linear < nodeSites; ++linear) 
+      {
+	// Get the true lattice coord of this linear site index
+	multi1d<int> coord = Layout::siteCoords(my_node, linear);
+	  
+	// Source neighbor for this destination site
+	multi1d<int> fcoord = func(coord,+1);
+	  
+	// Destination neighbor receiving data from this site
+	// This functions as the inverse map
+	multi1d<int> bcoord = func(coord,-1);
+	  
+	int fnode = Layout::nodeNumber(fcoord);
+	int bnode = Layout::nodeNumber(bcoord);
 
-      // Source neighbor for this destination site
-      multi1d<int> fcoord = func(coord,+1);
+	// Source linear site and node
+	srcnode[linear]  = fnode;
+	// Destination node
+	dstnode[linear]  = bnode;
+      }
 
-      // Destination neighbor receiving data from this site
-      // This functions as the inverse map
-      multi1d<int> bcoord = func(coord,-1);
 
-      int fnode = Layout::nodeNumber(fcoord);
-      int bnode = Layout::nodeNumber(bcoord);
+    goffsets.resize( MasterSet::Instance().numSubsets() );
+    soffsets.resize( MasterSet::Instance().numSubsets() );
+    roffsets.resize( MasterSet::Instance().numSubsets() );
 
-      // Source linear site and node
-      srcnode[linear]  = fnode;
-      // Destination node
-      dstnode[linear]  = bnode;
+    goffsetsId.resize( MasterSet::Instance().numSubsets() );
+    soffsetsId.resize( MasterSet::Instance().numSubsets() );
+    roffsetsId.resize( MasterSet::Instance().numSubsets() );
 
-      if (srcnode[linear] == my_node)
+    srcenodes_num.resize( MasterSet::Instance().numSubsets() );
+    destnodes_num.resize( MasterSet::Instance().numSubsets() );
+
+    for (int s_no = 0 ; s_no < MasterSet::Instance().numSubsets() ; ++s_no ) {
+
+      //QDPIO::cerr << "Build goffset for subset no. " << s_no << "\n";
+
+      //--------------------------------------
+      // Setup the communication index arrays
+      goffsets[s_no].resize(nodeSites);
+
+      const int my_node = Layout::nodeNumber();
+
+      // Loop over the sites on this node
+      for(int linear=0, ri=0; linear < nodeSites; ++linear)
 	{
-	  goffsets[linear] = Layout::linearSiteIndex(fcoord);
+	  multi1d<int> coord = Layout::siteCoords(my_node, linear);
+	  multi1d<int> fcoord = func(coord,+1);
+
+	  if (srcnode[linear] == my_node)
+	    {
+	      goffsets[s_no][linear] = Layout::linearSiteIndex(fcoord);
+	    }
+	  else
+	    {
+	      // if destptr < 0 it contains the receive_buffer index
+	      // additional '-1' to make sure its negative,
+	      // not the best style, but higher performance
+	      // than using another buffer
+	      //QDPIO::cerr << "found off-node source site (" << linear << ") "; 
+	      if ( MasterSet::Instance().getSubset( s_no ).isElement( linear ) ) 
+		{
+		  //QDPIO::cerr << "in subset, assigning receivce buffer index = " << -ri-1 << "\n";
+		  goffsets[s_no][linear] = -(ri++)-1;
+		} 
+	      else 
+		{
+		  //QDPIO::cerr << "not in subset\n";
+		}
+	    }
 	}
-      else
-	{
-	  // if destptr < 0 it contains the receive_buffer index
-	  // additional '-1' to make sure its negative,
-	  // not the best style, but higher performance
-	  // than using another buffer
-	  goffsets[linear] = -(ri++)-1;
-	}
+
+      goffsetsId[s_no] = QDPCache::Instance().registrateOwnHostMem( sizeof(int)*goffsets[s_no].size() , 
+								    goffsets[s_no].slice() , NULL );
+      //QDPIO::cout << "Map::make goffsetsId[" << s_no << "] = " << goffsetsId[s_no] << "  size=" << (sizeof(int)*goffsets[s_no].size()) << "\n";
+    } // s_no
 
 
 #if QDP_DEBUG >= 3
-      QDP_info("linear=%d  coord=%d %d %d %d   fcoord=%d %d %d %d   bcoord=%d %d %d %d   goffsets=%d", 
-	       linear, 
-	       coord[0], coord[1], coord[2], coord[3],
-	       fcoord[0], fcoord[1], fcoord[2], fcoord[3],
-	       bcoord[0], bcoord[1], bcoord[2], bcoord[3],
-	       goffsets[linear]);
+	  QDP_info("linear=%d  coord=%d %d %d %d   fcoord=%d %d %d %d   bcoord=%d %d %d %d   goffsets=%d", 
+		   linear, 
+		   coord[0], coord[1], coord[2], coord[3],
+		   fcoord[0], fcoord[1], fcoord[2], fcoord[3],
+		   bcoord[0], bcoord[1], bcoord[2], bcoord[3],
+		   goffsets[linear]);
 #endif
-    }
+
+
 
     // Return a list of the unique nodes in the list
     // NOTE: my_node may be included as a unique node, so one extra
@@ -143,8 +186,8 @@ namespace QDP {
     // If no srce/dest nodes, then we know no off-node communications
     offnodeP = (cnt_srcenodes > 0) ? true : false;
 
-    goffsetsId = QDPCache::Instance().registrateOwnHostMem( sizeof(int)*goffsets.size() , (void*)goffsets.slice() , NULL );
-    QDP_info_primary("Map::make goffsetsId=%d",goffsetsId);
+    //goffsetsId = QDPCache::Instance().registrateOwnHostMem( sizeof(int)*goffsets.size() , (void*)goffsets.slice() , NULL );
+    //QDP_info_primary("Not registering memory!! Map::make goffsetsId=%d",goffsetsId);
 
     //
     // The rest of the routine is devoted to supporting off-node communications
@@ -180,38 +223,110 @@ namespace QDP {
 #endif
 
 
-    // Run through the lists and find the number of each unique node
-    srcenodes_num.resize(srcenodes.size());
-    destnodes_num.resize(destnodes.size());
 
-    srcenodes_num = 0;
-    destnodes_num = 0;
+    // Implementation limitation in the Map::operator(). Only support
+    // a node sending data all to one node or no sending at all (offNodeP == false).
+    if (srcenodes.size() != 1)
+      QDP_error_exit("Map: for now only allow 1 destination node");
+      
+    if (destnodes.size() != 1)
+      QDP_error_exit("Map: for now only allow receives from 1 node");
 
-    for(int linear=0; linear < nodeSites; ++linear)
-    {
-      int this_node = srcnode[linear];
-      if (this_node != my_node)
-	for(int i=0; i < srcenodes_num.size(); ++i)
-	{
-	  if (srcenodes[i] == this_node)
+
+
+    for (int s_no = 0 ; s_no < MasterSet::Instance().numSubsets() ; ++s_no ) 
+      {
+	//QDPIO::cerr << "Build srce/destnodes_num for subset no. " << s_no << "\n";
+
+	// Run through the lists and find the number of each unique node
+	srcenodes_num[s_no].resize(srcenodes.size());
+	destnodes_num[s_no].resize(destnodes.size());
+
+	srcenodes_num[s_no] = 0;
+	destnodes_num[s_no] = 0;
+
+	// For now assume that we send as many sites as we receive
+      
+	for(int linear=0; linear < nodeSites; ++linear)
 	  {
-	    srcenodes_num[i]++;
-	    break;
+	    if ( MasterSet::Instance().getSubset(s_no).isElement(linear ) )
+	      {
+		int this_node = srcnode[linear];
+		if (this_node != my_node)
+		  {
+		    for(int i=0; i < srcenodes_num[s_no].size(); ++i)
+		      {
+			if (srcenodes[i] == this_node)
+			  {
+			    srcenodes_num[s_no][i]++;
+			    destnodes_num[s_no][i]++;
+			    break;
+			  }
+		      }
+		  }
+	      }
 	  }
-	}
 
-      int that_node = dstnode[linear];
-      if (that_node != my_node)
-	for(int i=0; i < destnodes_num.size(); ++i)
-	{
-	  if (destnodes[i] == that_node)
-	  {
-	    destnodes_num[i]++;
-	    break;
-	  }
-	}
-    }
+	// Now make a small scatter array for the dest_buf so that when data
+	// is sent, it is put in an order the gather can pick it up
+	// If we allow multiple dest nodes, then soffsets here needs to be
+	// an array of arrays
+	soffsets[s_no].resize(destnodes_num[s_no][0]);
+	roffsets[s_no].resize(srcenodes_num[s_no][0]);
   
+	// Loop through sites on my *destination* node - here I assume all nodes have
+	// the same number of sites. Mimic the gather pattern needed on that node and
+	// set my scatter array to scatter into the correct site order.
+	// Further assume that the subsets have equal sitetables on all nodes.
+
+	int ri=0;
+	int si=0;
+	for(int i=0; i < nodeSites; ++i) 
+	  {
+	    // Get the true lattice coord of this linear site index
+	    multi1d<int> coord = Layout::siteCoords(destnodes[0], i);
+	    multi1d<int> fcoord = func(coord,+1);
+	    int fnode = Layout::nodeNumber(fcoord);
+	    int fline = Layout::linearSiteIndex(fcoord);
+
+	    if ( MasterSet::Instance().getSubset(s_no).isElement(i)  &&  fnode == my_node )
+	      soffsets[s_no][si++] = fline;
+
+	    if ( MasterSet::Instance().getSubset(s_no).isElement(i)  &&  srcnode[i] != my_node )
+	      roffsets[s_no][ri++] = i;
+	  }
+
+	if ( ri != srcenodes_num[s_no][0] )
+	  QDP_error_exit("internal error: ri != srcenodes_num[0]");
+
+	if ( si != destnodes_num[s_no][0] )
+	  QDP_error_exit("internal error: si != destnodes_num[0]");
+
+#if 0
+	if (roffsets[s_no].size()==0)
+	  QDP_error_exit("rsoffsets empty");
+	if (soffsets[s_no].size()==0)
+	  QDP_error_exit("ssoffsets empty");
+#endif
+	if (goffsets[s_no].size()==0)
+	  QDP_error_exit("gsoffsets empty");
+
+	roffsetsId[s_no] = QDPCache::Instance().registrateOwnHostMem( sizeof(int)*roffsets[s_no].size() , roffsets[s_no].slice() , NULL );
+	soffsetsId[s_no] = QDPCache::Instance().registrateOwnHostMem( sizeof(int)*soffsets[s_no].size() , soffsets[s_no].slice() , NULL );
+	//QDPIO::cout << "Map::make GPU memory registered for roff,soff (ids) " << roffsetsId[s_no] << " " << soffsetsId[s_no] << " " << sizeof(int)*roffsets[s_no].size() << " " << sizeof(int)*soffsets[s_no].size() << "\n";
+
+      } // s_no
+
+    // int that_node = dstnode[linear];
+    // if (that_node != my_node)
+    //   for(int i=0; i < destnodes_num[s_no].size(); ++i)
+    //     {
+    // 	if (destnodes[i] == that_node)
+    // 	  {
+    // 	    destnodes_num[s_no][i]++;
+    // 	    break;
+    // 	  }
+    //     }
 
 #if QDP_DEBUG >= 3
     for(int i=0; i < destnodes.size(); ++i)
@@ -226,55 +341,7 @@ namespace QDP {
       QDP_info("destnodes_num(%d) = %d",i,destnodes_num(i));
     }
 #endif
-
-    // Implementation limitation in the Map::operator(). Only support
-    // a node sending data all to one node or no sending at all (offNodeP == false).
-    if (srcenodes.size() != 1)
-      QDP_error_exit("Map: for now only allow 1 destination node");
-      
-    if (destnodes.size() != 1)
-      QDP_error_exit("Map: for now only allow receives from 1 node");
-
-
-    // Now make a small scatter array for the dest_buf so that when data
-    // is sent, it is put in an order the gather can pick it up
-    // If we allow multiple dest nodes, then soffsets here needs to be
-    // an array of arrays
-    soffsets.resize(destnodes_num[0]);
-
-    roffsets.resize(srcenodes_num[0]);
-  
-    // Loop through sites on my *destination* node - here I assume all nodes have
-    // the same number of sites. Mimic the gather pattern needed on that node and
-    // set my scatter array to scatter into the correct site order
-    int ri=0;
-    for(int i=0, si=0; i < nodeSites; ++i) 
-    {
-      // Get the true lattice coord of this linear site index
-      multi1d<int> coord = Layout::siteCoords(destnodes[0], i);
-      multi1d<int> fcoord = func(coord,+1);
-      int fnode = Layout::nodeNumber(fcoord);
-      int fline = Layout::linearSiteIndex(fcoord);
-
-      if (fnode == my_node)
-	soffsets[si++] = fline;
-
-      if (srcnode[i] != my_node)
-	roffsets[ri++] = i;
-    }
-
-    if ( ri != srcenodes_num[0] )
-      QDP_error_exit("internal error: ri != srcenodes_num[0]");
-
-    if (roffsets.size()==0)
-      QDP_error_exit("rsoffsets empty");
-    if (soffsets.size()==0)
-      QDP_error_exit("ssoffsets empty");
-    if (goffsets.size()==0)
-      QDP_error_exit("gsoffsets empty");
-
-    roffsetsId = QDPCache::Instance().registrateOwnHostMem( sizeof(int)*roffsets.size() , (void*)roffsets.slice() , NULL );
-    soffsetsId = QDPCache::Instance().registrateOwnHostMem( sizeof(int)*soffsets.size() , (void*)soffsets.slice() , NULL );
+ 
 
 
 #if QDP_DEBUG >= 3
@@ -285,7 +352,7 @@ namespace QDP {
     t.start();
     myId = MasterMap::Instance().registrate(*this);
     t.stop();
-    QDP_info_primary("Face and inner compute time = %f secs", t.getTimeInSeconds() );
+    QDPIO::cerr << "Face and inner compute time = " << t.getTimeInSeconds() << " secs\n";
   }
 
 

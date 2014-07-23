@@ -51,15 +51,18 @@ public:
   //! Destructor for a subset
   ~Subset();
 
-  int getId() const {
+  void setId(int _id) { id = _id; }
+  int getId() const { return id; }
+
+  int getIdSiteTable() const {
     if (!registered) 
-      return -1;
-    else
-      return idSiteTable;
+      QDP_error_exit("Subset::getIdSiteTable not registered");
+    return idSiteTable;
   }
+
   int getIdMemberTable() const {
     if (!registered) 
-      QDP_error_exit("Subset not registered");
+      QDP_error_exit("Subset::getIdMemberTable not registered");
     return idMemberTable;
   }
 
@@ -76,6 +79,7 @@ public:
 protected:
   // Simple constructor
   void make(bool rep, int start, int end, multi1d<int>* ind, int cb, Set* set, multi1d<bool>* memb);
+  int id;
 
 private:
   bool ordRep;
@@ -130,6 +134,7 @@ public:
 
   //! Index operator selects a subset from a set
   const Subset& operator[](int subset_index) const {return sub[subset_index];}
+        Subset& operator[](int subset_index)       {return sub[subset_index];}
 
   //! Return number of subsets
   int numSubsets() const {return sub.size();}
