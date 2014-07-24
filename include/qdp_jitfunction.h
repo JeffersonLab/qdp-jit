@@ -393,17 +393,17 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
   //std::cout << __PRETTY_FUNCTION__ << "\n";
 
   assert( s.hasOrderedRep() && "only ordered subsets are supported");
-  static int offnode_maps_previous_call = -1;
+  //static int offnode_maps_previous_call = -1;
 
   ShiftPhase1 phase1(s);
   int offnode_maps = forEach(rhs, phase1 , BitOrCombine());
   //QDP_info("offnode_maps = %d",offnode_maps);
 
-  if (offnode_maps_previous_call != -1) 
-    if ( (offnode_maps_previous_call > 0  && offnode_maps == 0) ||
-	 (offnode_maps_previous_call == 0 && offnode_maps >  0) )
-      QDP_error_exit("implementation limitation: same expression template used with offnode and no offnode comms.");
-  offnode_maps_previous_call = offnode_maps;
+  /* if (offnode_maps_previous_call != -1)  */
+  /*   if ( (offnode_maps_previous_call > 0  && offnode_maps == 0) || */
+  /* 	 (offnode_maps_previous_call == 0 && offnode_maps >  0) ) */
+  /*     QDP_error_exit("implementation limitation: same expression template used with offnode and no offnode comms."); */
+  /* offnode_maps_previous_call = offnode_maps; */
 
   void * idx_inner_dev = NULL;
   void * idx_face_dev = NULL;

@@ -49,9 +49,11 @@ struct ForEach<UnaryNode<FnPeekColorMatrix, A>, ParamLeaf, TreeCombine>
   inline static
   Type_t apply(const UnaryNode<FnPeekColorMatrix, A> &expr, const ParamLeaf &p, const TreeCombine &c)
   {
+    ParamRef a = llvm_add_param<int>();
+    ParamRef b = llvm_add_param<int>();
     return Combine1<TypeA_t, FnPeekColorMatrixREG, TreeCombine>::
       combine(ForEach<A, ParamLeaf, TreeCombine>::apply(expr.child(), p, c),
-              FnPeekColorMatrixREG( llvm_add_param<int>() , llvm_add_param<int>() ) , c);
+              FnPeekColorMatrixREG( a , b ) , c);
   }
 };
   
@@ -59,10 +61,12 @@ struct ForEach<UnaryNode<FnPeekColorMatrix, A>, ParamLeaf, TreeCombine>
   
   template<>  
   struct AddOpParam< FnPokeColorMatrix, ParamLeaf> {
+    typedef FnPokeColorMatrixREG Type_t;
     static FnPokeColorMatrixREG apply( const FnPokeColorMatrix& a, const ParamLeaf& p) {
       //std::cout << __PRETTY_FUNCTION__ << "\n";
-      return FnPokeColorMatrixREG( llvm_add_param<int>() , 
-				   llvm_add_param<int>() );
+      ParamRef pa = llvm_add_param<int>();
+      ParamRef pb = llvm_add_param<int>();
+      return FnPokeColorMatrixREG( pa , pb );
     }
   };
 
@@ -73,8 +77,8 @@ struct ForEach<UnaryNode<FnPeekColorMatrix, A>, ParamLeaf, TreeCombine>
       int row = p.getRow();
       int col = p.getCol();
       //std::cout << "set poke color matrix row,llvm_derefParam(col) = " << row << " " << col << "\n";
-      a.setLit( row );
-      a.setLit( col );
+      a.setLit( (int)row );
+      a.setLit( (int)col );
     }
   };
 
@@ -91,8 +95,8 @@ struct ForEach<UnaryNode<FnPeekColorMatrix, A>, AddressLeaf, NullCombine>
       int row = expr.operation().getRow();
       int col = expr.operation().getCol();
       //std::cout << "set peek color matrix row,llvm_derefParam(col) = " << row << " " << col << "\n";
-      a.setLit( row );
-      a.setLit( col );
+      a.setLit( (int)row );
+      a.setLit( (int)col );
       return Type_t( ForEach<A, AddressLeaf, NullCombine>::apply( expr.child() , a , n ) );
     }
 };
@@ -146,9 +150,11 @@ struct ForEach<UnaryNode<FnPeekSpinMatrix, A>, ParamLeaf, TreeCombine>
   inline static
   Type_t apply(const UnaryNode<FnPeekSpinMatrix, A> &expr, const ParamLeaf &p, const TreeCombine &c)
   {
+    ParamRef a = llvm_add_param<int>();
+    ParamRef b = llvm_add_param<int>();
     return Combine1<TypeA_t, FnPeekSpinMatrixREG, TreeCombine>::
       combine(ForEach<A, ParamLeaf, TreeCombine>::apply(expr.child(), p, c),
-              FnPeekSpinMatrixREG( llvm_add_param<int>() , llvm_add_param<int>() ) , c);
+              FnPeekSpinMatrixREG( a , b ) , c);
   }
 };
   
@@ -156,10 +162,12 @@ struct ForEach<UnaryNode<FnPeekSpinMatrix, A>, ParamLeaf, TreeCombine>
   
   template<>  
   struct AddOpParam< FnPokeSpinMatrix, ParamLeaf> {
+    typedef FnPokeSpinMatrixREG Type_t;
     static FnPokeSpinMatrixREG apply( const FnPokeSpinMatrix& a, const ParamLeaf& p) {
       //std::cout << __PRETTY_FUNCTION__ << "\n";
-      return FnPokeSpinMatrixREG( llvm_add_param<int>() , 
-				   llvm_add_param<int>() );
+      ParamRef pa = llvm_add_param<int>();
+      ParamRef pb = llvm_add_param<int>();
+      return FnPokeSpinMatrixREG( pa , pb );
     }
   };
 
@@ -170,8 +178,8 @@ struct ForEach<UnaryNode<FnPeekSpinMatrix, A>, ParamLeaf, TreeCombine>
       int row = p.getRow();
       int col = p.getCol();
       //std::cout << "set poke spin matrix row,llvm_derefParam(col) = " << row << " " << col << "\n";
-      a.setLit( row );
-      a.setLit( col );
+      a.setLit( (int)row );
+      a.setLit( (int)col );
     }
   };
 
@@ -188,8 +196,8 @@ struct ForEach<UnaryNode<FnPeekSpinMatrix, A>, AddressLeaf, NullCombine>
       int row = expr.operation().getRow();
       int col = expr.operation().getCol();
       //std::cout << "set peek spin matrix row,llvm_derefParam(col) = " << row << " " << col << "\n";
-      a.setLit( row );
-      a.setLit( col );
+      a.setLit( (int)row );
+      a.setLit( (int)col );
       return Type_t( ForEach<A, AddressLeaf, NullCombine>::apply( expr.child() , a , n ) );
     }
 };
@@ -245,9 +253,10 @@ struct ForEach<UnaryNode<FnPeekColorVector, A>, ParamLeaf, TreeCombine>
   inline static
   Type_t apply(const UnaryNode<FnPeekColorVector, A> &expr, const ParamLeaf &p, const TreeCombine &c)
   {
+    ParamRef a = llvm_add_param<int>();
     return Combine1<TypeA_t, FnPeekColorVectorREG, TreeCombine>::
       combine(ForEach<A, ParamLeaf, TreeCombine>::apply(expr.child(), p, c),
-              FnPeekColorVectorREG( llvm_add_param<int>() ) , c);
+              FnPeekColorVectorREG( a ) , c);
   }
 };
   
@@ -255,6 +264,7 @@ struct ForEach<UnaryNode<FnPeekColorVector, A>, ParamLeaf, TreeCombine>
   
   template<>  
   struct AddOpParam< FnPokeColorVector, ParamLeaf> {
+    typedef FnPokeColorVectorREG Type_t;
     static FnPokeColorVectorREG apply( const FnPokeColorVector& a, const ParamLeaf& p) {
       //std::cout << __PRETTY_FUNCTION__ << "\n";
       return FnPokeColorVectorREG( llvm_add_param<int>() );
@@ -267,7 +277,7 @@ struct ForEach<UnaryNode<FnPeekColorVector, A>, ParamLeaf, TreeCombine>
       //std::cout << __PRETTY_FUNCTION__ << "\n";
       int row = p.getRow();
       //std::cout << "set poke color vector row,llvm_derefParam(col) = " << row << "\n";
-      a.setLit( row );
+      a.setLit( (int)row );
     }
   };
 
@@ -283,7 +293,7 @@ struct ForEach<UnaryNode<FnPeekColorVector, A>, AddressLeaf, NullCombine>
     {
       int row = expr.operation().getRow();
       //std::cout << "set peek color vector row = " << row << "\n";
-      a.setLit( row );
+      a.setLit( (int)row );
       return Type_t( ForEach<A, AddressLeaf, NullCombine>::apply( expr.child() , a , n ) );
     }
 };
@@ -335,9 +345,10 @@ struct ForEach<UnaryNode<FnPeekSpinVector, A>, ParamLeaf, TreeCombine>
   inline static
   Type_t apply(const UnaryNode<FnPeekSpinVector, A> &expr, const ParamLeaf &p, const TreeCombine &c)
   {
+    ParamRef a = llvm_add_param<int>();
     return Combine1<TypeA_t, FnPeekSpinVectorREG, TreeCombine>::
       combine(ForEach<A, ParamLeaf, TreeCombine>::apply(expr.child(), p, c),
-              FnPeekSpinVectorREG( llvm_add_param<int>() ) , c);
+              FnPeekSpinVectorREG( a ) , c);
   }
 };
   
@@ -345,6 +356,7 @@ struct ForEach<UnaryNode<FnPeekSpinVector, A>, ParamLeaf, TreeCombine>
   
   template<>  
   struct AddOpParam< FnPokeSpinVector, ParamLeaf> {
+    typedef FnPokeSpinVectorREG Type_t;
     static FnPokeSpinVectorREG apply( const FnPokeSpinVector& a, const ParamLeaf& p) {
       //std::cout << __PRETTY_FUNCTION__ << "\n";
       return FnPokeSpinVectorREG( llvm_add_param<int>() );
@@ -357,7 +369,7 @@ struct ForEach<UnaryNode<FnPeekSpinVector, A>, ParamLeaf, TreeCombine>
       //std::cout << __PRETTY_FUNCTION__ << "\n";
       int row = p.getRow();
       //std::cout << "set poke spin vector row = " << row << "\n";
-      a.setLit( row );
+      a.setLit( (int)row );
     }
   };
 
@@ -373,7 +385,7 @@ struct ForEach<UnaryNode<FnPeekSpinVector, A>, AddressLeaf, NullCombine>
     {
       int row = expr.operation().getRow();
       //std::cout << "set peek spin vector row = " << row << "\n";
-      a.setLit( row );
+      a.setLit( (int)row );
       return Type_t( ForEach<A, AddressLeaf, NullCombine>::apply( expr.child() , a , n ) );
     }
 };
