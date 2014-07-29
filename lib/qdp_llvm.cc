@@ -679,14 +679,19 @@ namespace QDP {
   llvm::Value * llvm_call_special_tidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.tid.x"); }
   llvm::Value * llvm_call_special_ntidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.ntid.x"); }
   llvm::Value * llvm_call_special_ctaidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.x"); }
+  llvm::Value * llvm_call_special_nctaidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.nctaid.x"); }
+  llvm::Value * llvm_call_special_ctaidy() { return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.y"); }
 
 
   llvm::Value * llvm_thread_idx() { 
-    return llvm_add( llvm_mul( llvm_call_special_ctaidx() , 
-			       llvm_call_special_ntidx() ) , 
-		     llvm_call_special_tidx() );
+    llvm::Value * tidx = llvm_call_special_tidx();
+    llvm::Value * ntidx = llvm_call_special_ntidx();
+    llvm::Value * ctaidx = llvm_call_special_ctaidx();
+    llvm::Value * ctaidy = llvm_call_special_ctaidy();
+    llvm::Value * nctaidx = llvm_call_special_nctaidx();
+    return llvm_add( llvm_mul( llvm_add( llvm_mul( ctaidy , nctaidx ) , ctaidx ) , ntidx ) , tidx );
   }
-
+  
 
 
   void addKernelMetadata(llvm::Function *F) {

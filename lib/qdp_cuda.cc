@@ -312,6 +312,8 @@ namespace QDP {
       QDP_info_primary("Using device pool size: %d MiB",(int)val_min_int);
       CUDADevicePoolAllocator::Instance().setPoolSize( ((size_t)val_min_int) * 1024 * 1024 );
       setPoolSize = true;
+    } else {
+      QDP_info_primary("Using device pool size: %d MiB",(int)(CUDADevicePoolAllocator::Instance().getPoolSize()/1024/1024));
     }
 
     // int major = DeviceParams::Instance().getMajor();
