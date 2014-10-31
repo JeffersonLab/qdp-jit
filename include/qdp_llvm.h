@@ -23,7 +23,7 @@
 #include "llvm/Target/TargetLowering.h"
 #include "llvm/Target/TargetLibraryInfo.h"
 #include "llvm/Support/ToolOutputFile.h"
-#include "llvm/ADT/OwningPtr.h"
+//#include "llvm/ADT/OwningPtr.h"
 #include "llvm/Support/FormattedStream.h"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/Support/SourceMgr.h"
@@ -45,10 +45,13 @@
 #include "llvm/Support/DataStream.h"
 #include "llvm/ADT/Statistic.h"
 #include "llvm/Support/Program.h"
-#include "llvm/Support/system_error.h"
+//#include "llvm/Support/system_error.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/Host.h"
+
+#include <system_error>
+
 
 //#include "llvm/Linker.h"
 //#include "llvm/Assembly/PrintModulePass.h"
