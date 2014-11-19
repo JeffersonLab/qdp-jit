@@ -10,7 +10,7 @@ namespace QDP {
 
 
   namespace DataLayout {
-    int64_t inner = 4;
+    int64_t inner = 1;
   }
 
   int64_t getDataLayoutInnerSize() {
