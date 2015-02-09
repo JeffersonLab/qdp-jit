@@ -513,7 +513,10 @@ namespace QDP {
     int minor = DeviceParams::Instance().getMinor();
     
     if (major >= 2) {
-      final_ptx << ".version 3.1\n";
+      if (jit_ptx_version.length())
+	final_ptx << ".version " << jit_ptx_version << "\n";
+      else
+	final_ptx << ".version 3.1\n";
       final_ptx << ".target sm_" << major << minor << "\n";
       final_ptx << ".address_size 64\n";
     } else {

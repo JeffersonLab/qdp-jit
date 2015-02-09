@@ -15,6 +15,7 @@
 namespace QDP {
 
 #ifdef QDP_IS_QDPJIT
+  extern std::string jit_ptx_version;
   extern bool QDPuseGPU;
   extern bool setPoolSize;
   int QDP_setGPU(); // returns the CUDA device number that was actually set

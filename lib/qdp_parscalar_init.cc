@@ -32,6 +32,7 @@ namespace QDP {
   multi1d<int> logical_geom(Nd);   // apriori logical geometry of the machine
   multi1d<int> logical_iogeom(Nd); // apriori logical 	
 
+  std::string jit_ptx_version;
 
 #if 1
   int gamma_degrand_rossi[5][4][4][2] = 
@@ -277,6 +278,12 @@ namespace QDP {
 			    char buffer[1024];
 			    sscanf((*argv)[++i],"%s",&buffer);
 			    DeviceParams::Instance().setENVVAR(buffer);
+			  }
+			else if (strcmp((*argv)[i], "-ptx")==0) 
+			  {
+			    char buffer[1024];
+			    sscanf((*argv)[++i],"%s",&buffer);
+			    jit_ptx_version = std::string(buffer);
 			  }
 			else if (strcmp((*argv)[i], "-poolsize")==0) 
 			  {
