@@ -605,6 +605,9 @@ namespace QDP
   }
 
 
+
+
+
   // Readers
   void BinaryReader::readDesc(string& input)
   {
@@ -727,6 +730,46 @@ namespace QDP
 	QDPUtil::byte_swap(input, size, nmemb);
       }
     }
+  }
+
+
+
+  void BinaryReader::readArrayLittleEndian(char* input, size_t size, size_t nmemb)
+  {
+    if (Layout::primaryNode())
+      {
+	// Read
+	// By default, we expect all data to be in big-endian
+	getIstream().read(input, size*nmemb);
+	// internalChecksum() = QDPUtil::crc32(internalChecksum(), input, size*nmemb);
+
+	if (QDPUtil::big_endian())
+	  {
+	    // big-endian
+	    // Swap
+	    QDPUtil::byte_swap(input, size, nmemb);
+	  }
+      }
+    // Now broadcast back out to all nodes
+    QDPInternal::broadcast((void*)input, size*nmemb);
+  }
+
+  void BinaryReader::readArrayPrimaryNodeLittleEndian(char* input, size_t size, size_t nmemb)
+  {
+    if (Layout::primaryNode())
+      {
+	// Read
+	// By default, we expect all data to be in big-endian
+	getIstream().read(input, size*nmemb);
+	// internalChecksum() = QDPUtil::crc32(internalChecksum(), input, size*nmemb);
+
+	if (QDPUtil::big_endian())
+	  {
+	    // big-endian
+	    // Swap
+	    QDPUtil::byte_swap(input, size, nmemb);
+	  }
+      }
   }
 
 
