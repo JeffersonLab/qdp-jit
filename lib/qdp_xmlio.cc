@@ -6,8 +6,6 @@
 #include "qdp.h"
 #include <list>
 
-#undef SKIP_DOUBLE
-
 namespace QDP 
 {
 
@@ -36,7 +34,7 @@ namespace QDP
     open(mw);
   }
 
-  XMLReader::XMLReader(XMLReader& old, const string& xpath) : BasicXPathReader() 
+  XMLReader::XMLReader(XMLReader& old, const std::string& xpath) : BasicXPathReader() 
   {
     iop = false;
     derived = true;
@@ -44,7 +42,7 @@ namespace QDP
   }
 
 
-  void XMLReader::open(const string& filename)
+  void XMLReader::open(const std::string& filename)
   {
     if (Layout::primaryNode())
     {
@@ -57,11 +55,11 @@ namespace QDP
       f.open(filename.c_str(),std::ifstream::in);
       BasicXPathReader::open(f);
 #else
-      ifstream f;
-      f.open(filename.c_str(), ios::binary);
+      std::ifstream f;
+      f.open(filename.c_str(), std::ios::binary);
       if (f.fail())
       {
-	QDPIO::cerr << "Error opening read file = " << filename << endl;
+	QDPIO::cerr << "Error opening read file = " << filename << std::endl;
 	QDP_abort(1);
       }
       BasicXPathReader::open(f);
@@ -95,7 +93,7 @@ namespace QDP
     derived = false;
   }
 
-  void XMLReader::open(XMLReader& old, const string& xpath)
+  void XMLReader::open(XMLReader& old, const std::string& xpath)
   {
     if( Layout::primaryNode()) 
     {
@@ -128,7 +126,7 @@ namespace QDP
 
 
   // Overloaded Reader Functions
-  void XMLReader::get(const std::string& xpath, string& result)
+  void XMLReader::get(const std::string& xpath, std::string& result)
   {
     // Only primary node can grab string
     if (Layout::primaryNode()) 
@@ -175,6 +173,12 @@ namespace QDP
     readPrimitive<bool>(xpath, result);
   }
    
+  void XMLReader::getAttribute(const std::string& xpath,
+			       const std::string& attrib_name, 
+			       int& result){
+    readAttrPrimitive<int>(xpath,attrib_name,result);
+  }
+
   template<typename T>
   void XMLReader::readPrimitive(const std::string& xpath, T& result)
   {
@@ -186,9 +190,22 @@ namespace QDP
     QDPInternal::broadcast(result);
   }
 
-  void XMLReader::print(ostream& os)
+  template<typename T>
+  void XMLReader::readAttrPrimitive(const std::string& xpath, 
+				    const std::string& attrib_name, 
+				    T& result)
   {
-    ostringstream newos;
+    if (Layout::primaryNode()) {
+      BasicXPathReader::getAttribute(xpath, attrib_name, result);
+    }
+
+    // Now broadcast back out to all nodes
+    QDPInternal::broadcast(result);
+  }
+
+  void XMLReader::print(std::ostream& os)
+  {
+    std::ostringstream newos;
     std::string s;
 
     if (Layout::primaryNode())
@@ -202,9 +219,9 @@ namespace QDP
     os << s;
   }
    
-  void XMLReader::printCurrentContext(ostream& os)
+  void XMLReader::printCurrentContext(std::ostream& os)
   {
-    ostringstream newos;
+    std::ostringstream newos;
     std::string s;
 
     if (Layout::primaryNode())
@@ -222,7 +239,7 @@ namespace QDP
     os << s;
   }
    
-  int XMLReader::count(const string& xpath)
+  int XMLReader::count(const std::string& xpath)
   {
     int n;
     if (Layout::primaryNode())
@@ -234,14 +251,14 @@ namespace QDP
   }
    
   // Namespace Registration?
-  void XMLReader::registerNamespace(const std::string& prefix, const string& uri)
+  void XMLReader::registerNamespace(const std::string& prefix, const std::string& uri)
   {
     if (Layout::primaryNode())
       BasicXPathReader::registerNamespace(prefix, uri);
   }
 
   // Overloaded Reader Functions
-  void read(XMLReader& xml, const std::string& xpath, string& result)
+  void read(XMLReader& xml, const std::string& xpath, std::string& result)
   {
     xml.get(xpath, result);
   }
@@ -297,7 +314,7 @@ namespace QDP
     std::ostringstream error_message;
   
     // Try reading the list as a string
-    string list_string;
+    std::string list_string;
     read(xml, s, list_string);
 
     // Count the number of elements
@@ -310,14 +327,14 @@ namespace QDP
 
     if ((! list_stream.eof()) && list_stream.fail())
     {
-      error_message << "Error in reading array " << s << endl;
+      error_message << "Error in reading array " << s << std::endl;
       throw error_message.str();
     }
 
     // It is not an error to have a zero-length array
     //  if (array_size == 0)
     //  {
-    //    error_message << "Something wrong with reading array " << list_string << endl;
+    //    error_message << "Something wrong with reading array " << list_string << std::endl;
     //    throw error_message.str();
     //  }
       
@@ -391,13 +408,11 @@ namespace QDP
   {
     readArrayPrimitive<Real32>(xml, xpath, result);
   }
-#ifndef SKIP_DOUBLE
   template<>
   void read(XMLReader& xml, const std::string& xpath, multi1d<Real64>& result)
   {
     readArrayPrimitive<Real64>(xml, xpath, result);
   }
-#endif
   template<>
   void read(XMLReader& xml, const std::string& xpath, multi1d<Boolean>& result)
   {
@@ -492,13 +507,11 @@ namespace QDP
   {
     readVectorPrimitive<Real32>(xml, xpath, result);
   }
-#ifndef SKIP_DOUBLE
   template<>
   void read(XMLReader& xml, const std::string& xpath, std::vector<Real64>& result)
   {
     readVectorPrimitive<Real64>(xml, xpath, result);
   }
-#endif
   template<>
   void read(XMLReader& xml, const std::string& xpath, std::vector<Boolean>& result)
   {
@@ -575,13 +588,11 @@ namespace QDP
   {
     readListPrimitive<Real32>(xml, xpath, result);
   }
-#ifndef SKIP_DOUBLE
   template<>
   void read(XMLReader& xml, const std::string& xpath, std::list<Real64>& result)
   {
     readListPrimitive<Real64>(xml, xpath, result);
   }
-#endif
   template<>
   void read(XMLReader& xml, const std::string& xpath, std::list<Boolean>& result)
   {
@@ -601,7 +612,7 @@ namespace QDP
   {
   }
 
-  void XMLWriter::openSimple(const string& tagname)
+  void XMLWriter::openSimple(const std::string& tagname)
   {
     openTag(tagname);
   }
@@ -611,7 +622,7 @@ namespace QDP
     closeTag();
   }
 
-  void XMLWriter::openStruct(const string& tagname)
+  void XMLWriter::openStruct(const std::string& tagname)
   {
     openTag(tagname);
   }
@@ -621,26 +632,26 @@ namespace QDP
     closeTag();
   }
 
-  void XMLWriter::openTag(const string& tagname)
+  void XMLWriter::openTag(const std::string& tagname)
   {
     if (Layout::primaryNode())
       XMLSimpleWriter::openTag(tagname);
   }
 
-  void XMLWriter::openTag(const string& nsprefix, const string& tagname)
+  void XMLWriter::openTag(const std::string& nsprefix, const std::string& tagname)
   {
     if (Layout::primaryNode())
       XMLSimpleWriter::openTag(nsprefix,tagname);
   }
 
-  void XMLWriter::openTag(const string& tagname, XMLWriterAPI::AttributeList& al)
+  void XMLWriter::openTag(const std::string& tagname, XMLWriterAPI::AttributeList& al)
   {
     if (Layout::primaryNode())
       XMLSimpleWriter::openTag(tagname,al);
   }
 
-  void XMLWriter::openTag(const string& nsprefix, 
-			  const string& tagname, 
+  void XMLWriter::openTag(const std::string& nsprefix, 
+			  const std::string& tagname, 
 			  XMLWriterAPI::AttributeList& al)
   {
     if (Layout::primaryNode())
@@ -653,19 +664,19 @@ namespace QDP
       XMLSimpleWriter::closeTag();
   }
 
-  void XMLWriter::emptyTag(const string& tagname)
+  void XMLWriter::emptyTag(const std::string& tagname)
   {
     if (Layout::primaryNode())
       XMLSimpleWriter::emptyTag(tagname);
   }
-  void XMLWriter::emptyTag(const string& tagname,  XMLWriterAPI::AttributeList& al)
+  void XMLWriter::emptyTag(const std::string& tagname,  XMLWriterAPI::AttributeList& al)
   {
     if (Layout::primaryNode())
       XMLSimpleWriter::emptyTag(tagname,al);
   }
 
-  void XMLWriter::emptyTag(const string& nsprefix, 
-			   const string& tagname, 
+  void XMLWriter::emptyTag(const std::string& nsprefix, 
+			   const std::string& tagname, 
 			   XMLWriterAPI::AttributeList& al)
   {
     if (Layout::primaryNode())
@@ -674,7 +685,7 @@ namespace QDP
 
 
   // Overloaded Writer Functions
-  void XMLWriter::write(const string& output)
+  void XMLWriter::write(const std::string& output)
   {
     if (Layout::primaryNode())
       XMLSimpleWriter::write(output);
@@ -725,8 +736,8 @@ namespace QDP
       XMLSimpleWriter::write(output);
   }
    
-  // Write XML string
-  void XMLWriter::writeXML(const string& output)
+  // Write XML std::string
+  void XMLWriter::writeXML(const std::string& output)
   {
     if (Layout::primaryNode())
       XMLSimpleWriter::writeXML(output);
@@ -734,7 +745,7 @@ namespace QDP
 
 
   // Push a group name
-  void push(XMLWriter& xml, const string& s) {xml.openStruct(s);}
+  void push(XMLWriter& xml, const std::string& s) {xml.openStruct(s);}
 
   // Pop a group name
   void pop(XMLWriter& xml) {xml.closeStruct();}
@@ -749,7 +760,7 @@ namespace QDP
 
   XMLWriter& operator<<(XMLWriter& xml, const XMLReader& d)
   {
-    ostringstream os;
+    std::ostringstream os;
     const_cast<XMLReader&>(d).printCurrentContext(os);
     xml.writeXML(os.str());
     return xml;
@@ -771,77 +782,77 @@ namespace QDP
 
   // Time to build a telephone book of basic primitives
   template<typename T>
-  void writePrimitive(XMLWriter& xml, const string& s, const T& d)
+  void writePrimitive(XMLWriter& xml, const std::string& s, const T& d)
   {
     xml.openTag(s);
     xml.write(d);
     xml.closeTag();
   }
 
-  void write(XMLWriter& xml, const string& s, const string& d)
+  void write(XMLWriter& xml, const std::string& s, const std::string& d)
   {
-    writePrimitive<string>(xml, s, d);
+    writePrimitive<std::string>(xml, s, d);
   }
 
-  void write(XMLWriter& xml, const string& s, const char* d)
+  void write(XMLWriter& xml, const std::string& s, const char* d)
   {
-    writePrimitive<string>(xml, s, string(d));
+    writePrimitive<std::string>(xml, s, std::string(d));
   }
 
-  void write(XMLWriter& xml, const string& s, const char& d)
+  void write(XMLWriter& xml, const std::string& s, const char& d)
   {
     // Gruesome hack. For some inexplicable reason we don't have a proper write of a char in xpath_reader.
-    writePrimitive<string>(xml, s, string(1,d));
+    writePrimitive<std::string>(xml, s, std::string(1,d));
   }
 
-  void write(XMLWriter& xml, const string& s, const int& d)
+  void write(XMLWriter& xml, const std::string& s, const int& d)
   {
     writePrimitive<int>(xml, s, d);
   }
 
-  void write(XMLWriter& xml, const string& s, const unsigned int& d)
+  void write(XMLWriter& xml, const std::string& s, const unsigned int& d)
   {
     writePrimitive<unsigned int>(xml, s, d);
   }
 
-  void write(XMLWriter& xml, const string& s, const short int& d)
+  void write(XMLWriter& xml, const std::string& s, const short int& d)
   {
     writePrimitive<short int>(xml, s, d);
   }
 
-  void write(XMLWriter& xml, const string& s, const unsigned short int& d)
+  void write(XMLWriter& xml, const std::string& s, const unsigned short int& d)
   {
     writePrimitive<unsigned short int>(xml, s, d);
   }
 
-  void write(XMLWriter& xml, const string& s, const long int& d)
+  void write(XMLWriter& xml, const std::string& s, const long int& d)
   {
     writePrimitive<long int>(xml, s, d);
   }
 
-  void write(XMLWriter& xml, const string& s, const unsigned long int& d)
+  void write(XMLWriter& xml, const std::string& s, const unsigned long int& d)
   {
     writePrimitive<unsigned long int>(xml, s, d);
   }
 
-  void write(XMLWriter& xml, const string& s, const float& d)
+  void write(XMLWriter& xml, const std::string& s, const float& d)
   {
     writePrimitive<float>(xml, s, d);
   }
 
-  void write(XMLWriter& xml, const string& s, const double& d)
+  void write(XMLWriter& xml, const std::string& s, const double& d)
   {
     writePrimitive<double>(xml, s, d);
   }
 
-  void write(XMLWriter& xml, const string& s, const bool& d)
+  void write(XMLWriter& xml, const std::string& s, const bool& d)
   {
     writePrimitive<bool>(xml, s, d);
   }
 
   // Versions that do not print a name
-  XMLWriter& operator<<(XMLWriter& xml, const string& d) {xml.write(d);return xml;}
-  XMLWriter& operator<<(XMLWriter& xml, const char* d) {xml.write(string(d));return xml;}
+  XMLWriter& operator<<(XMLWriter& xml, const std::string& d) {xml.write(d);return xml;}
+  XMLWriter& operator<<(XMLWriter& xml, const char* d) {xml.write(std::string(d));return xml;}
   XMLWriter& operator<<(XMLWriter& xml, const char& d) {xml.write(d);return xml;}
   XMLWriter& operator<<(XMLWriter& xml, const int& d) {xml.write(d);return xml;}
   XMLWriter& operator<<(XMLWriter& xml, const unsigned int& d) {xml.write(d);return xml;}
@@ -968,7 +979,6 @@ namespace QDP
     xml << output.str();
     xml.closeTag();
   }
-#ifndef SKIP_DOUBLE
   template<>
   void write(XMLWriter& xml, const std::string& s, const multi1d<Real64>& s1)
   {
@@ -987,7 +997,6 @@ namespace QDP
     xml << output.str();
     xml.closeTag();
   }
-#endif
   template<>
   void write(XMLWriter& xml, const std::string& xpath, const multi1d<Boolean>& output)
   {
@@ -1102,7 +1111,6 @@ namespace QDP
     xml << output.str();
     xml.closeTag();
   }
-#ifndef SKIP_DOUBLE
   template<>
   void write(XMLWriter& xml, const std::string& s, const std::vector<Real64>& s1)
   {
@@ -1121,7 +1129,6 @@ namespace QDP
     xml << output.str();
     xml.closeTag();
   }
-#endif
   template<>
   void write(XMLWriter& xml, const std::string& xpath, const std::vector<Boolean>& output)
   {
@@ -1249,7 +1256,6 @@ namespace QDP
     xml << output.str();
     xml.closeTag();
   }
-#ifndef SKIP_DOUBLE
   template<>
   void write(XMLWriter& xml, const std::string& s, const std::list<Real64>& s1)
   {
@@ -1271,7 +1277,6 @@ namespace QDP
     xml << output.str();
     xml.closeTag();
   }
-#endif
   template<>
   void write(XMLWriter& xml, const std::string& xpath, const std::list<Boolean>& output)
   {
@@ -1292,7 +1297,7 @@ namespace QDP
 
   string XMLBufferWriter::str() const
   {
-    ostringstream s;
+    std::ostringstream s;
   
     if (Layout::primaryNode()) 
     {
@@ -1316,10 +1321,10 @@ namespace QDP
   {
     if (Layout::primaryNode())
     {
-      output_stream.open(filename.c_str(), ofstream::out);
+      output_stream.open(filename.c_str(), std::ofstream::out);
       if (output_stream.fail())
       {
-	QDPIO::cerr << "Error opening write file = " << filename << endl;
+	QDPIO::cerr << "Error opening write file = " << filename << std::endl;
 	QDP_abort(1);
       }
       if (write_prologue)
