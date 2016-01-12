@@ -9,7 +9,7 @@ AC_CHECK_TOOL(AR, ar, [ar])
 AC_CHECK_TOOL(XXD, xxd, [xxd])
 
 dnl Initialise automake
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([subdir-objects])
 
 dnl defines...
 AC_CONFIG_HEADERS([include/qdp_config_internal.h])
