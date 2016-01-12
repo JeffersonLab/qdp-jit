@@ -672,14 +672,14 @@ typename UnaryReturn<WordREG<double>, FnHypTan>::Type_t tanh(const WordREG<doubl
 
 typename BinaryReturn<WordREG<float>, WordREG<float>, FnPow>::Type_t pow(const WordREG<float>& s1, const WordREG<float>& s2);
 typename BinaryReturn<WordREG<double>, WordREG<double>, FnPow>::Type_t pow(const WordREG<double>& s1, const WordREG<double>& s2);
-typename BinaryReturn<WordREG<double>, WordREG<float>, FnPow>::Type_t pow(const WordREG<double>& s1, const WordREG<float>& s2);
-  typename BinaryReturn<WordREG<float>, WordREG<double>, FnPow>::Type_t pow(const WordREG<float>& s1, const WordREG<double>& s2);
+typename BinaryReturn<WordREG<float>, WordREG<float>, FnPow>::Type_t pow(const WordREG<double>& s1, const WordREG<float>& s2);
+  typename BinaryReturn<WordREG<float>, WordREG<float>, FnPow>::Type_t pow(const WordREG<float>& s1, const WordREG<double>& s2);
 
 
 typename BinaryReturn<WordREG<float>, WordREG<float>, FnArcTan2>::Type_t atan2(const WordREG<float>& s1, const WordREG<float>& s2);
 typename BinaryReturn<WordREG<double>, WordREG<double>, FnArcTan2>::Type_t atan2(const WordREG<double>& s1, const WordREG<double>& s2);
-typename BinaryReturn<WordREG<double>, WordREG<float>, FnArcTan2>::Type_t atan2(const WordREG<double>& s1, const WordREG<float>& s2);
-typename BinaryReturn<WordREG<float>, WordREG<double>, FnArcTan2>::Type_t atan2(const WordREG<float>& s1, const WordREG<double>& s2);
+typename BinaryReturn<WordREG<float>, WordREG<float>, FnArcTan2>::Type_t atan2(const WordREG<double>& s1, const WordREG<float>& s2);
+typename BinaryReturn<WordREG<float>, WordREG<float>, FnArcTan2>::Type_t atan2(const WordREG<float>& s1, const WordREG<double>& s2);
 
 
 
