@@ -103,7 +103,7 @@ namespace QDP
   typename BinaryReturn<WordREG<float>, WordREG<float>, FnPow>::Type_t
   pow(const WordREG<float>& s1, const WordREG<float>& s2)
   {
-    typename UnaryReturn<WordREG<float>, FnHypTan>::Type_t ret;
+    typename BinaryReturn<WordREG<float>, WordREG<float>, FnPow>::Type_t ret;
     ret.setup( jit_ins_pow_f32( s1.get_val() , s2.get_val() ) );
     return ret;
   }
@@ -111,7 +111,7 @@ namespace QDP
   typename BinaryReturn<WordREG<float>, WordREG<float>, FnArcTan2>::Type_t
   atan2(const WordREG<float>& s1, const WordREG<float>& s2)
   {
-    typename UnaryReturn<WordREG<float>, FnArcTan2>::Type_t ret;
+    typename BinaryReturn<WordREG<float>, WordREG<float>, FnArcTan2>::Type_t ret;
     ret.setup( jit_ins_atan2_f32( s1.get_val() , s2.get_val() ) );
     return ret;
   }
@@ -219,7 +219,7 @@ namespace QDP
   typename BinaryReturn<WordREG<double>, WordREG<double>, FnPow>::Type_t
   pow(const WordREG<double>& s1, const WordREG<double>& s2)
   {
-    typename UnaryReturn<WordREG<double>, FnHypTan>::Type_t ret;
+    typename BinaryReturn<WordREG<double>, WordREG<double>, FnPow>::Type_t ret;
     ret.setup( jit_ins_pow_f64( s1.get_val() , s2.get_val() ) );
     return ret;
   }
@@ -227,12 +227,43 @@ namespace QDP
   typename BinaryReturn<WordREG<double>, WordREG<double>, FnArcTan2>::Type_t
   atan2(const WordREG<double>& s1, const WordREG<double>& s2)
   {
-    typename UnaryReturn<WordREG<double>, FnArcTan2>::Type_t ret;
+    typename BinaryReturn<WordREG<double>, WordREG<double>, FnArcTan2>::Type_t ret;
     ret.setup( jit_ins_atan2_f64( s1.get_val() , s2.get_val() ) );
     return ret;
   }
 
 
+  typename BinaryReturn<WordREG<float>, WordREG<float>, FnPow>::Type_t
+  pow(const WordREG<double>& s1, const WordREG<float>& s2)
+  {
+    typename BinaryReturn<WordREG<float>, WordREG<float>, FnPow>::Type_t ret;
+    ret.setup( jit_ins_pow_f32( s1.get_val() , s2.get_val() ) );
+    return ret;
+  }
+
+  typename BinaryReturn<WordREG<float>, WordREG<float>, FnPow>::Type_t
+  pow(const WordREG<float>& s1, const WordREG<double>& s2)
+  {
+    typename BinaryReturn<WordREG<float>, WordREG<float>, FnPow>::Type_t ret;
+    ret.setup( jit_ins_pow_f32( s1.get_val() , s2.get_val() ) );
+    return ret;
+  }
+
+  typename BinaryReturn<WordREG<float>, WordREG<float>, FnArcTan2>::Type_t
+  atan2(const WordREG<double>& s1, const WordREG<float>& s2)
+  {
+    typename BinaryReturn<WordREG<float>, WordREG<float>, FnArcTan2>::Type_t ret;
+    ret.setup( jit_ins_atan2_f32( s1.get_val() , s2.get_val() ) );
+    return ret;
+  }
+
+  typename BinaryReturn<WordREG<float>, WordREG<float>, FnArcTan2>::Type_t
+  atan2(const WordREG<float>& s1, const WordREG<double>& s2)
+  {
+    typename BinaryReturn<WordREG<float>, WordREG<float>, FnArcTan2>::Type_t ret;
+    ret.setup( jit_ins_atan2_f32( s1.get_val() , s2.get_val() ) );
+    return ret;
+  }
 
 
 }
