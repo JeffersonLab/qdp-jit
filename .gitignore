@@ -1,5 +1,4 @@
 *~
-*.h.in
 Makefile.in
 Makefile
 configure
