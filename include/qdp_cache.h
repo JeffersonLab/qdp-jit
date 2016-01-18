@@ -16,7 +16,7 @@ using namespace std;
 namespace QDP 
 {
   class QDPJitArgs;
-
+  class QDPCached;
 
   class QDPCache
   {
@@ -46,11 +46,13 @@ namespace QDP
     int registrate( size_t size, unsigned flags, LayoutFptr func );
 
     int registrateOwnHostMem( size_t size, const void* ptr , LayoutFptr func );
+    int registrateOScalar( size_t size, void* ptr , LayoutFptr func , const QDPCached* object);
     void signoff(int id);
     void lockId(int id);
     void * getDevicePtr(int id);
     void * getDevicePtrNoLock(int id);
     void getHostPtr(void ** ptr , int id);
+    void assureOnHost(int id);
     void freeHostMemory(Entry& e);
     void allocateHostMemory(Entry& e);
     void assureDevice(Entry& e);

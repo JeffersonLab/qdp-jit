@@ -38,8 +38,7 @@ namespace QDP {
     typedef T SubType_t;
 
     OScalar() {
-      QDPCache::Instance().sayHi();
-      alloc_mem();
+      this->onHost=true;
     }
 
     virtual ~OScalar() {
@@ -49,8 +48,7 @@ namespace QDP {
 
     OScalar(const typename WordType<T>::Type_t& rhs)
     {
-      QDPCache::Instance().sayHi();
-      alloc_mem();
+      this->onHost=true;
       typedef typename InternalScalar<T>::Type_t  Scalar_t;
       elem() = Scalar_t(rhs);
     }
@@ -58,8 +56,7 @@ namespace QDP {
 
     OScalar(const Zero& rhs)
     {
-      QDPCache::Instance().sayHi();
-      alloc_mem();
+      this->onHost=true;
       this->assign(rhs);
     }
 
@@ -67,8 +64,7 @@ namespace QDP {
     template<class T1>
     OScalar(const OScalar<T1>& rhs)
     {
-      QDPCache::Instance().sayHi();
-      alloc_mem();
+      this->onHost=true;
       this->assign(rhs);
     }
 
@@ -76,8 +72,7 @@ namespace QDP {
     template<class RHS, class T1>
     OScalar(const QDPExpr<RHS, OScalar<T1> >& rhs)
     {
-      QDPCache::Instance().sayHi();
-      alloc_mem();
+      this->onHost=true;
       this->assign(rhs);
     }
 
@@ -124,8 +119,7 @@ namespace QDP {
 
 
     OScalar(const OScalar& rhs) {
-      QDPCache::Instance().sayHi();
-      alloc_mem();
+      this->onHost=true;
       this->assign(rhs);
     }
 
@@ -157,15 +151,18 @@ namespace QDP {
     }
 #endif
 
-    inline T* getF() const { assert_on_host(); return F; };
+    inline T* getF() const { assert_on_host(); return &F; };
 
 
-    inline T& elem() { assert_on_host(); return *F;  }
-    inline const T& elem() const { assert_on_host(); return *F; }
-    inline T& elem(int i) { assert_on_host(); return *F; }
-    inline const T& elem(int i) const { assert_on_host(); return *F; }
+    inline T& elem() { assert_on_host(); return F;  }
+    inline const T& elem() const { assert_on_host(); return F; }
+    inline T& elem(int i) { assert_on_host(); return F; }
+    inline const T& elem(int i) const { assert_on_host(); return F; }
 
-    int getId() const { return myId; }
+    int getId() const {       
+      alloc_mem(); 
+      return myId; 
+    }
 
   private:
 
@@ -214,7 +211,9 @@ namespace QDP {
 #endif
 
 
-    inline void alloc_mem() {
+    inline void alloc_mem() const {
+      if (myId >= 0)
+	return;
 #if 0
       int lim_rea = GetLimit<T,2>::Limit_v; //T::ThisSize;
       int lim_col = GetLimit<T,1>::Limit_v; //T::ThisSize;
@@ -228,25 +227,26 @@ namespace QDP {
       else
       myId = QDPCache::Instance().registrate( sizeof(T) , 0 , &changeLayout );
 #endif
-      myId = QDPCache::Instance().registrate( sizeof(T) , 0 , NULL );
+      myId = QDPCache::Instance().registrateOScalar( sizeof(T) , &F , NULL , this );
     }
     inline void free_mem() {
       if (myId >= 0)
 	QDPCache::Instance().signoff( myId );
     }
     inline void assert_on_host() const {
+      if (this->onHost)
+	return;
       // Here or somewhere we sould make sure that 
       // if the pointer is still valid, we do not too much
       if (myId >= 0)
-	QDPCache::Instance().getHostPtr( (void**)&F , myId );
+	QDPCache::Instance().assureOnHost( myId );
       else
 	QDP_error_exit("Oscalar assert on host, but resource moved");
+      this->onHost=true;
     }
 
-
-    mutable T* F;
-    mutable int myId;
-
+    mutable T F;
+    mutable int myId = -1;
   };
 
 
@@ -518,7 +518,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 
     void static changeLayout(bool toDev,void * outPtr,void * inPtr)
     {
-      QDP_info_primary("changing data layout to %s format" , toDev? "device" : "host");
+      QDP_info_primary("changing lattice data layout to %s format" , toDev? "device" : "host");
 
       typename WordType<T>::Type_t * in_data  = (typename WordType<T>::Type_t *)inPtr;
       typename WordType<T>::Type_t * out_data = (typename WordType<T>::Type_t *)outPtr;
@@ -562,11 +562,12 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
   private:
 
 
-    inline void alloc_mem(const char* msg) {
+    inline void alloc_mem(const char* msg) const {
       myId = QDPCache::Instance().registrate( Layout::sitesOnNode() * sizeof(T) , 1 , &changeLayout ); 
     }
     inline void free_mem()  { 
-      QDPCache::Instance().signoff( myId ); 
+      if (myId >= 0)
+	QDPCache::Instance().signoff( myId ); 
     }
 
 
@@ -580,7 +581,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
   private:
 
     mutable T *F;
-    mutable int myId;
+    mutable int myId = -2;
 
   };
 

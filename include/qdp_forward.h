@@ -137,6 +137,8 @@ namespace QDP
   struct FnMap;
   class ArrayBiDirectionalMap;
 
+  class QDPCached;
+
   class Set;
   class Subset;
 

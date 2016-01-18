@@ -20,6 +20,7 @@ namespace QDP
     int    lockCount;
     list<int>::iterator iterTrack;
     LayoutFptr fptr;
+    const QDPCached* object;
   };
 
 
@@ -73,6 +74,7 @@ namespace QDP
 
 
   bool QDPCache::allocate_device_static( void** ptr, size_t n_bytes ) {
+    //QDPIO::cout << "GPU cache, allocate static memory " << (double)n_bytes/1024./1024. << " MB\n";
     while (!CUDADevicePoolAllocator::Instance().allocate( ptr , n_bytes )) {
       if (!spill_lru()) {
 	QDP_error_exit("cache allocate_device_static: can't spill LRU object");
@@ -211,6 +213,44 @@ namespace QDP
     return Id;
   }
     
+  int QDPCache::registrateOScalar( size_t size, void* ptr, LayoutFptr func, const QDPCached* object)
+  {
+    if (stackFree.size() == 0) {
+      enlargeStack();
+    }
+
+    int Id = stackFree.top();
+    Entry& e = vecEntry[ Id ];
+
+#ifdef GPU_DEBUG_DEEP
+    QDP_debug_deep("cache registrate ownHost size=%lu Id=%u",(long)size,(unsigned)Id );
+#endif
+
+#ifdef SANITY_CHECKS_CACHE
+    // SANITY
+    if (find(lstTracker.begin(),lstTracker.end(),Id) != lstTracker.end())
+      QDP_error_exit("cache reg: already in tracker");
+#endif
+
+    e.Id        = Id;
+    e.fptr      = func;
+    e.size      = size;
+    e.flags     = 3;
+    e.hstPtr    = ptr;
+    e.devPtr    = NULL;
+    e.lockCount = 0;
+    e.iterTrack = lstTracker.insert( lstTracker.end() , Id );
+    e.object    = object;
+      
+    stackFree.pop();
+
+#ifdef GPU_DEBUG_DEEP
+    printTracker();
+#endif
+
+    return Id;
+  }
+    
 
 
   void QDPCache::signoff(int id) {
@@ -276,6 +316,25 @@ namespace QDP
   }
 
 
+  void QDPCache::assureOnHost(int id) {
+#ifdef GPU_DEBUG_DEEP
+    QDP_debug_deep("cache get host ptr id=%lu",(long)id );
+#endif
+
+#ifdef SANITY_CHECKS_CACHE
+    // SANITY
+    if (find(lstTracker.begin(),lstTracker.end(),id) == lstTracker.end())
+      QDP_error_exit("cache getDevicePtr: id not in tracker");
+    if (find(lstDel.begin(),lstDel.end(),id) != lstDel.end())
+      QDP_error_exit("cache getDevicePtr: id already in lstDel!");
+    if (id >= vecEntry.size())
+      QDP_error_exit("cache getDevicePtr: out of range");
+#endif
+
+    Entry& e = vecEntry[id];
+    assureHost( e );
+  }
+
 
   void QDPCache::getHostPtr(void ** ptr , int id) {
 #ifdef GPU_DEBUG_DEEP
@@ -323,6 +382,12 @@ namespace QDP
       e.hstPtr=NULL;
       break;
     case 2:
+      // Do nothing, this object deallocates its own host memory
+#ifdef GPU_DEBUG_DEEP
+      QDP_debug_deep("cache delete obj, no need to free host mem");
+#endif
+      break;
+    case 3:
       // Do nothing, this object deallocates its own host memory
 #ifdef GPU_DEBUG_DEEP
       QDP_debug_deep("cache delete obj, no need to free host mem");
@@ -414,8 +479,10 @@ namespace QDP
 	  CudaMemcpyH2D( e.devPtr , e.hstPtr , e.size );
 	}
 	CudaSyncTransferStream();
-	if (e.flags != 2)
+	if (e.flags != 2 && e.flags != 3)
 	  freeHostMemory(e);
+	if (e.flags == 3)
+	  e.object->onHost=false;
       }
     }
 
@@ -478,7 +545,29 @@ namespace QDP
 	CUDADevicePoolAllocator::Instance().free( e.devPtr );
 	e.devPtr = NULL;
       }
-    } else {
+    } else if (e.flags ==3 ) {
+      if (e.devPtr) {
+	// CudaMemcpyAsync( e.hstPtr , e.devPtr , e.size );
+	//CudaMemcpyD2HAsync( e.hstPtr , e.devPtr , e.size );
+	if (e.fptr) {
+	  //std::cout << "allocating host memory to store data in device format " << e.size << "\n";
+	  char * tmp = new char[e.size];
+	  //std::cout << "copy data to host, size = " << e.size << "\n";
+	  CudaMemcpyD2H( tmp , e.devPtr , e.size );
+	  //std::cout << "call layout changer\n";
+	  e.fptr(false,e.hstPtr,tmp);
+	  delete[] tmp;
+	} else {
+	  //std::cout << "copy data to host (no layout change) size = " << e.size << "\n";
+	  CudaMemcpyD2H( e.hstPtr , e.devPtr , e.size );
+	}
+	CudaSyncTransferStream();
+	CUDADevicePoolAllocator::Instance().free( e.devPtr );
+	e.devPtr = NULL;
+	e.object->onHost=true;
+      }
+      
+    }else {
       if (!e.hstPtr) {
 	allocateHostMemory(e);
 	if (e.devPtr) {

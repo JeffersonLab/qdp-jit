@@ -10,6 +10,13 @@
 namespace QDP {
 
 
+class QDPCached
+{
+public:
+  mutable bool onHost;
+};
+
+
 /*! \addtogroup group1 QDP main operations
  *
  *  Lattice site-wide operations that can be applied to QDPTypes.
@@ -25,7 +32,7 @@ namespace QDP {
  * and infix operations
  */
 template<class T, class C> 
-class QDPType
+class QDPType: public QDPCached
 {
 public:
   //! Type of the first argument

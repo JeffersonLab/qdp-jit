@@ -115,7 +115,7 @@ namespace QDP
 
   template<class Allocator>
     QDPPoolAllocator<Allocator>::~QDPPoolAllocator() { 
-      QDP_info_primary("Destructing pool, but I will not deallocate the internal buffer. (Stupid Nvidia runtime has already destructed itself!)");
+    QDP_info_primary("Destructing pool, but not deallocating the internal buffer.");
 #if 0
       freeInternalBuffer();
 #endif
