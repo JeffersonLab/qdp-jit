@@ -4,9 +4,6 @@
 [submodule "other_libs/qio"]
 	path = other_libs/qio
 	url = https://github.com/usqcd-software/qio.git
-[submodule "other_libs/libintrin"]
-	path = other_libs/libintrin
-	url = https://github.com/usqcd-software/libintrin.git
 [submodule "other_libs/filedb"]
 	path = other_libs/filedb
 	url = https://github.com/usqcd-software/filedb.git

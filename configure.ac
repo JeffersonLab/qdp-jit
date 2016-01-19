@@ -90,20 +90,6 @@ AC_SUBST(CONFIG_ALIGNMENT, [${ac_alignment}])
 dnl tell the user about alignment	
 AC_MSG_NOTICE([Configuring QDP++ Alignment size=${ac_alignment}])
 
-AC_ARG_ENABLE(generics,
-	AC_HELP_STRING([--enable-generics],
-	[Enable Generic C specializations]),
-	[ac_generics=${enableval}],
-	[ac_generics="yes"]
-)
-
-if test "X${ac_generics}X" != "XnoX";
-then
-AC_DEFINE_UNQUOTED(QDP_USE_GENERIC_OPTS, [1] , [Use generic C optimizations])
-AC_SUBST(CONFIG_GENERICS, [${ac_generics}])
-fi
-dnl tell the user
-AC_MSG_NOTICE([Fallback to generic C routines if needed: ${ac_generics}])
 
 
 dnl gpu
@@ -160,11 +146,6 @@ AC_ARG_ENABLE(filedb,
 dnl if test "X${gpu_enabled}X" == "XyesX"; 
 dnl then
      ac_gcc="$CXX"     				      
-     ac_generics="no"
-     ac_sse="0"
-     ac_sse2="0"
-     ac_sse3="0"
-     ac_3dnow="0"
      AC_DEFINE_UNQUOTED([CUDA_GCC],"${ac_gcc}",[CUDA C/C++ Compiler])
      AC_DEFINE_UNQUOTED(QDP_IS_QDPJIT, ${gpu_enabled}, [Enable GPU/JIT])
      AC_DEFINE_UNQUOTED(QDPJIT_IS_QDPJITNVVM, ${gpu_enabled}, [Enable GPU/JIT])
@@ -176,103 +157,6 @@ dnl     AC_MSG_NOTICE([Not using GPUs ])
 dnl fi
 
 
-
-dnl --enable-sse
-AC_ARG_ENABLE(sse,
-  AC_HELP_STRING([--enable-sse],
-    [Optimize code with Intel SSE instructions]),
-  [if test "x${enableval}x" = "xyesx";
-   then 
-      ac_sse=1
-   else
-      ac_sse=0
-   fi],
-  [ac_sse=0]
-)
-
-dnl --enable-sse2
-AC_ARG_ENABLE(sse2,
-  AC_HELP_STRING([--enable-sse2],
-    [Optimize code with Intel SSE2 instructions]),
-  [if test "x${enableval}x" = "xyesx";
-   then
-     ac_sse=1
-     ac_sse2=1
-   else 
-     ac_sse2=0
-   fi],
-  [ac_sse2=0]
-)
-
-dnl --enable-sse3
-AC_ARG_ENABLE(sse3,
-  AC_HELP_STRING([--enable-sse3],
-    [Optimize code with Intel SSE3 instructions]),
-  [if test "x${enableval}x" = "xyesx";
-   then 
-      ac_sse=1
-      ac_sse2=1
-      ac_sse3=1
-   else
-      ac_sse3=0
-   fi],
-  [ac_sse3=0]
-)
-
-dnl --enable-3dnow
-AC_ARG_ENABLE(3dnow,
-  AC_HELP_STRING([--enable-3dnow],
-    [Optimize code with AMD 3DNow instructions]),
-  [ac_3dnow=${enableval}],
-  [ac_3dnow=0]
-)
-
-dnl --enable-qcdoc
-AC_ARG_ENABLE(qcdoc,
-   AC_HELP_STRING([--enable-qcdoc], 
-     [Enable QCDOC Optimisations]),
-     [ac_qcdoc_enabled=1
-      AC_MSG_NOTICE([Enabling QCDOC Specific Optimisations])],
-     [ac_qcdoc_enabled=0]
-)
-
-dnl --enable-bgl
-AC_ARG_ENABLE(bgl,
-   AC_HELP_STRING([--enable-bgl],
-     [Enable BlueGeneL Optimizations]),
-     [ac_bgl_enabled=1
-      AC_MSG_NOTICE([Enabling BlueGene Specific Optimizations])],
-      [ac_bgl_enabled=1]
-)
-
-if test ${ac_sse} -eq 1; then
-    AC_DEFINE_UNQUOTED(QDP_USE_SSE, ${ac_sse}, [Enable SSE instructions])
-    AC_SUBST(CONFIG_SSE,[${ac_sse}])
-    AC_MSG_NOTICE([Configuring QDP++ with SSE extentions enabled]);
-fi
-
-if test ${ac_sse2} -eq 1; then
-    AC_DEFINE_UNQUOTED(QDP_USE_SSE2, ${ac_sse2}, [Enable SSE2 instructions])
-    AC_SUBST(CONFIG_SSE2,[${ac_sse2}])
-    AC_MSG_NOTICE([Configuring QDP++ with SSE2 extentions enabled]);
-    AC_CONFIG_SUBDIRS(other_libs/libintrin)
-    AC_SUBST(LIBINTRIN_DIR, [libintrin])
-    build_libintrin="yes"
-fi
-
-if test ${ac_sse3} -eq 1; then
-    AC_DEFINE_UNQUOTED(QDP_USE_SSE3, ${ac_sse3}, [Enable SSE3 instructions])
-    AC_SUBST(CONFIG_SSE3,[${ac_sse3}])
-    AC_MSG_NOTICE([Configuring QDP++ with SSE3 extentions enabled]);
-fi
-
-if test "x${ac_3dnow}x" = "xyesx"; then
-    AC_DEFINE_UNQUOTED(QDP_USE_3DNOW, ${ac_3dnow}, [Enable 3DNOW instructions])
-    AC_MSG_NOTICE([Configuring QDP++ with 3DNOW extentions enabled]);
-fi
-
-AM_CONDITIONAL(BUILD_LIBINTRIN,
-	[ test "x${build_libintrin}x" = "xyesx"] )
 
 
 if test "X${gpudebug_enabled}X" == "XyesX"; 
@@ -756,14 +640,6 @@ AM_CONDITIONAL(ARCH_PARSCALAR,    [test "X${PARALLEL_ARCH}X" = "XparscalarX"])
 AM_CONDITIONAL(ARCH_SCALARVEC,    [test "X${PARALLEL_ARCH}X" = "XscalarvecX"])
 AM_CONDITIONAL(ARCH_PARSCALARVEC, [test "X${PARALLEL_ARCH}X" = "XparscalarvecX"])
 
-AM_CONDITIONAL(QDP_USE_SCALAR_SSE, [test "X${ac_sse}X" = "X1X" -a "X${ARCH_SITE}X" = "XscalarsiteX"])
-AM_CONDITIONAL(QDP_USE_SCALAR_SSE2, [test "X${ac_sse2}X" = "X1X" -a "X${ARCH_SITE}X" = "XscalarsiteX"])
-
-dnl conditional for using Peters assembler
-AM_CONDITIONAL(QDP_USE_QCDOC, [test "X${ac_qcdoc_enabled}X" = "X1X" -a "X${ARCH_SITE}X" = "XscalarsiteX"])
-
-AM_CONDITIONAL(QDP_USE_SCALARVEC_SSE, [test "X${ac_sse}X" = "X1X" -a "X${ARCH_SITE}X" = "XscalarvecsiteX"])
-AM_CONDITIONAL(QDP_USE_SCALARVEC_SSE2, [test "X${ac_sse2}X" = "X1X" -a "X${ARCH_SITE}X" = "XscalarvecsiteX"])
 
 #
 # For the examples directory, conditionally compile some files.
