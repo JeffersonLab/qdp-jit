@@ -44,7 +44,7 @@ namespace QDP
 
 
   Subset::Subset():registered(false) {
-    QDPCache::Instance().sayHi();
+    //QDPCache::Instance().sayHi();
     id=-1;
   }
 
@@ -54,7 +54,7 @@ namespace QDP
   Subset::Subset(const Subset& s):
     ordRep(s.ordRep), startSite(s.startSite), endSite(s.endSite), 
     sub_index(s.sub_index), sitetable(s.sitetable), membertable(s.membertable), set(s.set) , registered(false), id(s.id) { 
-    QDPCache::Instance().sayHi();
+    //QDPCache::Instance().sayHi();
   }
 
 
@@ -74,14 +74,14 @@ namespace QDP
 
 
   Set::Set(): registered(false) {
-    QDPCache::Instance().sayHi();
+    //QDPCache::Instance().sayHi();
   }
 
 
 
   //! Constructor from a function object
   Set::Set(const SetFunc& fn): registered(false) {
-    QDPCache::Instance().sayHi();
+    //QDPCache::Instance().sayHi();
     make(fn);    
   }
 

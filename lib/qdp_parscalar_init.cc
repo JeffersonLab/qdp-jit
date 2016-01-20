@@ -89,7 +89,6 @@ namespace QDP {
     QDPuseGPU=true;
     
     CudaCreateStreams();
-    CUDAHostPoolAllocator::Instance().registerMemory();
   }
 
 
@@ -517,10 +516,6 @@ namespace QDP {
 		
 		FnMapRsrcMatrix::Instance().cleanup();
 
-
-		CUDAHostPoolAllocator::Instance().unregisterMemory();
-
-	
 		//
 		// finalise qmt
 		//

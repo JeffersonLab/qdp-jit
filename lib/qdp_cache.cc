@@ -97,11 +97,6 @@ namespace QDP
 
 
 
-  void QDPCache::sayHi () {
-    CUDADevicePoolAllocator::Instance().sayHi();
-    CUDAHostPoolAllocator::Instance().sayHi();
-  }
-
   size_t QDPCache::getSize(int id) {
     const Entry& e = vecEntry[id];
     return e.size;
@@ -367,13 +362,6 @@ namespace QDP
 
   void QDPCache::freeHostMemory(Entry& e) {
     switch(e.flags) {
-    case 0:
-#ifdef GPU_DEBUG_DEEP
-      QDP_debug_deep("cache delete obj host memory flag=0");
-#endif
-      CUDAHostPoolAllocator::Instance().free( e.hstPtr );
-      e.hstPtr=NULL;
-      break;
     case 1:
 #ifdef GPU_DEBUG_DEEP
       QDP_debug_deep("cache delete obj host memory flag=1");
@@ -412,14 +400,7 @@ namespace QDP
 #endif
 
     switch(e.flags) {
-    case 0:
-
-      if ( !CUDAHostPoolAllocator::Instance().allocate( &e.hstPtr , e.size ) )
-	QDP_error_exit("cache allocateHostMemory: host memory allocator flags=0 failed");
-
-      break;
     case 1:
-
       try {
 	e.hstPtr = (void*)QDP::Allocator::theQDPAllocator::Instance().allocate( e.size , QDP::Allocator::DEFAULT );
       }
@@ -453,8 +434,6 @@ namespace QDP
 	if (!spill_lru()) {
 	  QDP_info("Device pool:");
 	  CUDADevicePoolAllocator::Instance().printListPool();
-	  QDP_info("Host pool:");
-	  CUDAHostPoolAllocator::Instance().printListPool();
 	  printLockSets();
 	  QDP_error_exit("cache assureDevice: can't spill LRU object. Out of GPU memory!");
 	}

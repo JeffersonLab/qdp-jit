@@ -35,12 +35,11 @@ namespace QDP
     void backupOnHost();
     void restoreFromHost();
 #endif
-    void sayHi();
     bool onDevice(int id) const;    
     void enlargeStack();
 
     // flags
-    //  - 0: use host pool allocator (for OScalar)
+    //  - 0: unused. (former: use host pool allocator (for OScalar))
     //  - 1: use host malloc allocator (for OLattice)
     //  - 2: don't use host allocator (for objects that manage their own memory)
     int registrate( size_t size, unsigned flags, LayoutFptr func );

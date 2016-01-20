@@ -123,33 +123,7 @@ namespace QDP {
       this->assign(rhs);
     }
 
-#if 0
-    OScalar(const OScalar&& rhs) {
-      QDP_error_exit("OScalar(const OScalar&& rhs)");
-    }
-
-    OScalar( OScalar&& rhs) {
-      QDPCache::Instance().sayHi();
-      myId = rhs.myId;
-      F = rhs.F;
-      rhs.myId = -1;
-      //alloc_mem();
-      //this->assign(rhs);
-    }
-#endif
-
-
-
   public:
-
-#if 0
-    inline bool onDevice() const {
-      return QDPCache::Instance().onDevice( myId );
-    }
-    inline T* getFdev() const {
-      return (T*)QDPCache::Instance().getDevicePtr( myId );
-    }
-#endif
 
     inline T* getF() const { assert_on_host(); return &F; };
 
@@ -168,65 +142,10 @@ namespace QDP {
 
     // OScalar uses the same data layout on the device
     // and the host.
-#if 0
-    void static changeLayout(bool toDev,void * outPtr,void * inPtr)
-    {
-
-      typename WordType<T>::Type_t * in_data  = (typename WordType<T>::Type_t *)inPtr;
-      typename WordType<T>::Type_t * out_data = (typename WordType<T>::Type_t *)outPtr;
-
-      size_t lim_rea = GetLimit<T,2>::Limit_v; //T::ThisSize;
-      size_t lim_col = GetLimit<T,1>::Limit_v; //T::ThisSize;
-      size_t lim_spi = GetLimit<T,0>::Limit_v; //T::ThisSize;
-
-      QDP_info_primary("changing scalar data layout to %s format rea=%d col=%d spi=%d" , toDev? "device" : "host",lim_rea,lim_col,lim_spi);
-
-#if 0      
-      if (toDev)
-	std::cout << "my value = " << *((T*)(inPtr)) << "\n";
-#endif
-
-      for ( size_t reality = 0 ; reality < lim_rea ; reality++ ) {
-	for ( size_t color = 0 ; color < lim_col ; color++ ) {
-	  for ( size_t spin = 0 ; spin < lim_spi ; spin++ ) {
-	    size_t hst_idx = 
-	      reality + 
-	      lim_rea * color +
-	      lim_rea * lim_col * spin;
-	    size_t dev_idx = 
-	      spin +
-	      lim_spi * color +
-	      lim_spi * lim_col * reality;
-	    //QDP_info_primary("dev_idx=%d hst_idx=%d",dev_idx,hst_idx);
-	    if (toDev)
-	      out_data[dev_idx] = in_data[hst_idx];
-	    else {
-	      //std::cout << hst_idx  << " <= " << dev_idx << "\n";
-	      out_data[hst_idx] = in_data[dev_idx];
-	    }
-	  }
-	}
-      }
-    }
-#endif
-
 
     inline void alloc_mem() const {
       if (myId >= 0)
 	return;
-#if 0
-      int lim_rea = GetLimit<T,2>::Limit_v; //T::ThisSize;
-      int lim_col = GetLimit<T,1>::Limit_v; //T::ThisSize;
-      int lim_spi = GetLimit<T,0>::Limit_v; //T::ThisSize;
-      if ( (lim_rea*lim_col == 1) || 
-      	   (lim_rea*lim_spi == 1) || 
-      	   (lim_col*lim_spi == 1) ) {
-      	//QDP_info_primary("OScalar::alloc_mem: no layout change: rea=%d col=%d spi=%d" ,lim_rea,lim_col,lim_spi);
-      	myId = QDPCache::Instance().registrate( sizeof(T) , 0 , NULL );
-      }
-      else
-      myId = QDPCache::Instance().registrate( sizeof(T) , 0 , &changeLayout );
-#endif
       myId = QDPCache::Instance().registrateOScalar( sizeof(T) , &F , NULL , this );
     }
     inline void free_mem() {
@@ -484,18 +403,6 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
       this->assign(rhs);
     }
 
-
-#if 0
-    inline bool onDevice() const {
-      return QDPCache::Instance().onDevice( myId );
-    }
-    inline T* getFdev() const {
-      return (T*)QDPCache::Instance().getDevicePtr( myId );
-    }
-    inline T* elem_devptr(int i) const {
-      return &((T*)QDPCache::Instance().getDevicePtr( myId ))[i];
-    }
-#endif
 
     inline T* getF() const { 
       assert_on_host(); 
