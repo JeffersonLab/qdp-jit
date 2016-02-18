@@ -56,7 +56,7 @@
 //#include "llvm/Linker.h"
 //#include "llvm/Assembly/PrintModulePass.h"
 
-#include "llvm/ExecutionEngine/ObjectBuffer.h"
+//#include "llvm/ExecutionEngine/MCJIT/ObjectBuffer.h"
 #include "llvm/IR/GlobalVariable.h"
 
 #include "llvm/ExecutionEngine/ExecutionEngine.h"

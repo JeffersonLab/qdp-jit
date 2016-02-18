@@ -1284,7 +1284,7 @@ namespace QDP {
       functionPassManager->add(llvm::createSimpleLoopUnrollPass() );  // unroll the vectorized loop with trip count 1
       functionPassManager->add(llvm::createCFGSimplificationPass());  // join BB of vectorized loop with header
       functionPassManager->add(llvm::createGVNPass()); // eliminate redundant index instructions
-      functionPassManager->add(llvm::createStupidAlignPass()); // change alignment of vector load/stores from 8 to 32 
+      //functionPassManager->add(llvm::createStupidAlignPass()); // change alignment of vector load/stores from 8 to 32 
     }
     if (llvm_debug::debug_loop_vectorizer) {
       if (Layout::primaryNode()) {
