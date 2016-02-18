@@ -407,23 +407,23 @@ namespace QDP {
     llvm::Function::arg_iterator AI = mainFunc->arg_begin();
     llvm::Function::arg_iterator AE = mainFunc->arg_end();
     AI->setName("lo"); 
-    r_arg_lo = AI; 
+    r_arg_lo = &*AI; 
     AI++;
     
     AI->setName("hi"); 
-    r_arg_hi = AI;
+    r_arg_hi = &*AI;
     AI++;
     
     AI->setName("myId"); 
-    r_arg_myId = AI;
+    r_arg_myId = &*AI;
     AI++;
 
     AI->setName("ordered");
-    r_arg_ordered = AI;
+    r_arg_ordered = &*AI;
     AI++;
 
     AI->setName("start"); 
-    r_arg_start = AI;
+    r_arg_start = &*AI;
     AI++;
 
     unsigned Idx = 0;
@@ -439,7 +439,7 @@ namespace QDP {
       	AI->addAttr( llvm::AttributeSet::get( llvm::getGlobalContext() , 0 ,  B ) );
       }
 
-      vecArgument.push_back( AI );
+      vecArgument.push_back( &*AI );
     }
 
     llvm::BasicBlock* entry_main = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entrypoint", mainFunc);
@@ -1263,6 +1263,8 @@ namespace QDP {
       QDPIO::cerr << "    optimizing ...\n";
     }
 
+
+#if 0
     static llvm::FunctionPassManager *functionPassManager = NULL;
     if (functionPassManager == NULL) {
       llvm::PassRegistry &registry = *llvm::PassRegistry::getPassRegistry();
@@ -1286,6 +1288,34 @@ namespace QDP {
       functionPassManager->add(llvm::createGVNPass()); // eliminate redundant index instructions
       //functionPassManager->add(llvm::createStupidAlignPass()); // change alignment of vector load/stores from 8 to 32 
     }
+#else
+
+    llvm::FunctionPassManager *functionPassManager = new llvm::FunctionPassManager(Mod);
+
+    llvm::PassRegistry &registry = *llvm::PassRegistry::getPassRegistry();
+    initializeScalarOpts(registry);
+
+    //functionPassManager->add(llvm::createVerifierPass(llvm::PrintMessageAction));
+    //targetMachine->addAnalysisPasses(*functionPassManager);
+
+    //functionPassManager->addPass(new llvm::DataLayout(TheExecutionEngine->getDataLayout()));
+    //functionPassManager->add(new llvm::TargetLibraryInfo(llvm::Triple(Mod->getTargetTriple())));
+    //functionPassManager->add(new llvm::DataLayoutPass());
+    functionPassManager->addPass(llvm::createBasicAAWrapperPass());
+#if 0
+    functionPassManager->addPass(llvm::createLICMPass());
+    functionPassManager->addPass(llvm::createGVNPass());
+    functionPassManager->addPass(llvm::createPromoteMemoryToRegisterPass());
+    functionPassManager->addPass(llvm::createLoopVectorizePass());
+    functionPassManager->addPass(llvm::createEarlyCSEPass());
+    functionPassManager->addPass(llvm::createInstructionCombiningPass());
+    functionPassManager->addPass(llvm::createCFGSimplificationPass());
+    functionPassManager->addPass(llvm::createSimpleLoopUnrollPass() );  // unroll the vectorized loop with trip count 1
+    functionPassManager->addPass(llvm::createCFGSimplificationPass());  // join BB of vectorized loop with header
+    functionPassManager->addPass(llvm::createGVNPass()); // eliminate redundant index instructions
+#endif
+#endif
+
     if (llvm_debug::debug_loop_vectorizer) {
       if (Layout::primaryNode()) {
 	llvm::DebugFlag = true;
@@ -1415,23 +1445,23 @@ namespace QDP {
     llvm::Function::arg_iterator AI = mainFunc_extern->arg_begin();
 
     AI->setName( "lo" );
-    vecCallArgument.push_back( AI );
+    vecCallArgument.push_back( &*AI );
     AI++;
 
     AI->setName( "hi" );
-    vecCallArgument.push_back( AI );
+    vecCallArgument.push_back( &*AI );
     AI++;
 
     AI->setName( "myId" );
-    vecCallArgument.push_back( AI );
+    vecCallArgument.push_back( &*AI );
     AI++;
 
     AI->setName( "ordered" );
-    vecCallArgument.push_back( AI );
+    vecCallArgument.push_back( &*AI );
     AI++;
 
     AI->setName( "start" );
-    vecCallArgument.push_back( AI );
+    vecCallArgument.push_back( &*AI );
     AI++;
 
     AI->setName( "arg_ptr" );
@@ -1451,7 +1481,7 @@ namespace QDP {
     	 param_type != vecParamType.end() ; 
     	 param_type++,i++ ) {
       //(*param_type)->dump(); std::cout << "\n";
-      llvm::Value* gep = builder->CreateGEP( AI , llvm_create_value(i) );
+      llvm::Value* gep = builder->CreateGEP( &*AI , llvm_create_value(i) );
       llvm::Type* param_ptr_type = llvm::PointerType::get( *param_type , 0  );
       llvm::Value* ptr_to_arg = builder->CreatePointerCast( gep , param_ptr_type );
       llvm::Value* arg = builder->CreateLoad( ptr_to_arg );
@@ -1508,7 +1538,7 @@ namespace QDP {
   {
     llvm::Value* lhs_f32 = llvm_cast( llvm_type<float>::value , lhs );
     llvm::Value* rhs_f32 = llvm_cast( llvm_type<float>::value , rhs );
-    return builder->CreateCall2(func,lhs_f32,rhs_f32);
+    return builder->CreateCall(func,{lhs_f32,rhs_f32});
   }
 
   llvm::Value* llvm_call_f64( llvm::Function* func , llvm::Value* lhs )
@@ -1521,7 +1551,7 @@ namespace QDP {
   {
     llvm::Value* lhs_f64 = llvm_cast( llvm_type<double>::value , lhs );
     llvm::Value* rhs_f64 = llvm_cast( llvm_type<double>::value , rhs );
-    return builder->CreateCall2(func,lhs_f64,rhs_f64);
+    return builder->CreateCall(func,{lhs_f64,rhs_f64});
   }
 
   llvm::Value* llvm_sin_f32( llvm::Value* lhs ) { return llvm_call_f32( func_sin_f32 , lhs ); }
