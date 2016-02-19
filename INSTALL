@@ -1,3 +1,81 @@
+
+This version of QDP-JIT/LLVM requires:
+
+LLVM 3.8
+
+1) Building LLVM
+
+- Build LLVM as a shared library; requires the LD_LIBRARY_PATH set later
+- LLVM turns off RTTI by default ==> compile QDP-JIT with RTTI turned off 
+- Requires python27
+- Check out LLVM 3.8 and build with your C++ compiler. Here's my build script for JLab:
+
+SRC=$HOME/svn/llvm-3.8
+
+CMAKE_BUILD_TYPE="Debug"
+CMAKE_INSTALL_PREFIX="$HOME/toolchain/install/llvm-3.8"
+LLVM_TARGETS_TO_BUILD="X86"
+
+CXX="/dist/gcc-4.8.2/bin/g++"
+CC="/dist/gcc-4.8.2/bin/gcc"
+
+cmake -G "Unix Makefiles" \
+-DBUILD_SHARED_LIBS="ON" \
+-DCMAKE_CXX_COMPILER=$CXX \
+-DCMAKE_C_COMPILER=$CC \
+-DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+-DCMAKE_INSTALL_PREFIX=$CMAKE_INSTALL_PREFIX \
+-DLLVM_TARGETS_TO_BUILD=$LLVM_TARGETS_TO_BUILD \
+$SRC
+
+make -j 24
+make install
+
+
+
+
+
+2) Building QDP-JIT/LLVM
+
+
+Check-out the 'llvm-x86' branch of qdp-jit and `autoreconf` everything.
+
+Now, you want an OMP enabled compiler to build this. These are my build options:
+
+CXXFLAGS="-O3 -std=c++0x -fopenmp -fno-rtti"
+CFLAGS="-O3 -std=c99 -fopenmp"
+
+    $QDPDIR/configure \
+    --prefix=$INSTALL/qdp++-$TYPE  \
+    --enable-openmp \
+    --with-qmp=$INSTALL/qmp-$TYPE  \
+    --enable-parallel-arch=$ARCH \
+    --enable-precision=$PRECISION \
+    --with-llvm=${LLVMDIR} \
+    --with-libxml2=${LIBXML2} \
+    CXX=${CXX} \
+    CFLAGS="$CFLAGS" \
+    CXXFLAGS="$CXXFLAGS"
+
+Build Chroma on top of qdp-jit/llvm.
+
+
+3) Running
+
+You want to run with the '-inner <n>' runtime argument. 
+Where <n> is the vector (SIMD) length, i.e. for AVX in 
+double precision you would say '-inner 4' and for single
+precision '-inner 8'.
+
+
+
+
+
+
+
+
+
+
 Installation instructions for QDP++
 =================================
 
