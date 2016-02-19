@@ -49,7 +49,7 @@ namespace QDP {
       std::ostringstream oss;
       oss << "arg" << Idx;
       AI->setName( oss.str() );
-      args.push_back(AI);
+      args.push_back(&*AI);
     }
 
     llvm::BasicBlock* entry = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entrypoint", F);
@@ -131,7 +131,7 @@ namespace QDP {
       std::ostringstream oss;
       oss << "arg" << Idx;
       AI->setName( oss.str() );
-      args.push_back(AI);
+      args.push_back(&*AI);
     }
 
     llvm::BasicBlock* entry = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entrypoint", F);
@@ -182,7 +182,7 @@ namespace QDP {
     assert(a2 && "llvm_seedToFloat a2");
     assert(a3 && "llvm_seedToFloat a3");
     assert(func_seed2float && "llvm_seedToFloat func_seed2float");
-    return builder->CreateCall4( func_seed2float , a0,a1,a2,a3 );
+    return builder->CreateCall( func_seed2float , {a0,a1,a2,a3} );
   }
 
 

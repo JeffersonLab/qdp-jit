@@ -14,7 +14,7 @@ namespace QDP {
 
   llvm::TargetMachine *targetMachine;
 
-  llvm::FunctionPassManager *TheFPM;
+  llvm::legacy::FunctionPassManager *TheFPM;
 
   std::string mcjit_error;
 
@@ -323,7 +323,7 @@ namespace QDP {
 
     // Mod->setTargetTriple(TheTriple.getTriple());
 
-    Mod->setTargetTriple(llvm::sys::getProcessTriple());
+    //Mod->setTargetTriple(llvm::sys::getProcessTriple());  // LLVM 3.8
 
     if (llvm_debug::debug_func_build) {
       if (vec_mattr.size() > 0) {
@@ -352,6 +352,7 @@ namespace QDP {
 
     targetMachine = engineBuilder.selectTarget();
 
+    Mod->setDataLayout( targetMachine->createDataLayout() ); // LLVM 3.8
 
     if (llvm_debug::debug_func_build) {
       QDPIO::cerr << "    staring new LLVM function ...\n";
@@ -1264,57 +1265,25 @@ namespace QDP {
     }
 
 
-#if 0
-    static llvm::FunctionPassManager *functionPassManager = NULL;
-    if (functionPassManager == NULL) {
-      llvm::PassRegistry &registry = *llvm::PassRegistry::getPassRegistry();
-      initializeScalarOpts(registry);
-
-      functionPassManager = new llvm::FunctionPassManager(Mod);
-      //functionPassManager->add(llvm::createVerifierPass(llvm::PrintMessageAction));
-      targetMachine->addAnalysisPasses(*functionPassManager);
-      functionPassManager->add(new llvm::TargetLibraryInfo(llvm::Triple(Mod->getTargetTriple())));
-      functionPassManager->add(new llvm::DataLayoutPass());
-      functionPassManager->add(llvm::createBasicAliasAnalysisPass());
-      functionPassManager->add(llvm::createLICMPass());
-      functionPassManager->add(llvm::createGVNPass());
-      functionPassManager->add(llvm::createPromoteMemoryToRegisterPass());
-      functionPassManager->add(llvm::createLoopVectorizePass());
-      functionPassManager->add(llvm::createEarlyCSEPass());
-      functionPassManager->add(llvm::createInstructionCombiningPass());
-      functionPassManager->add(llvm::createCFGSimplificationPass());
-      functionPassManager->add(llvm::createSimpleLoopUnrollPass() );  // unroll the vectorized loop with trip count 1
-      functionPassManager->add(llvm::createCFGSimplificationPass());  // join BB of vectorized loop with header
-      functionPassManager->add(llvm::createGVNPass()); // eliminate redundant index instructions
-      //functionPassManager->add(llvm::createStupidAlignPass()); // change alignment of vector load/stores from 8 to 32 
-    }
-#else
-
-    llvm::FunctionPassManager *functionPassManager = new llvm::FunctionPassManager(Mod);
+    llvm::legacy::FunctionPassManager *functionPassManager = new llvm::legacy::FunctionPassManager(Mod);
 
     llvm::PassRegistry &registry = *llvm::PassRegistry::getPassRegistry();
     initializeScalarOpts(registry);
 
-    //functionPassManager->add(llvm::createVerifierPass(llvm::PrintMessageAction));
-    //targetMachine->addAnalysisPasses(*functionPassManager);
+    functionPassManager->add(createTargetTransformInfoWrapperPass(targetMachine->getTargetIRAnalysis()));  // LLVM 3.8
 
-    //functionPassManager->addPass(new llvm::DataLayout(TheExecutionEngine->getDataLayout()));
-    //functionPassManager->add(new llvm::TargetLibraryInfo(llvm::Triple(Mod->getTargetTriple())));
-    //functionPassManager->add(new llvm::DataLayoutPass());
-    functionPassManager->addPass(llvm::createBasicAAWrapperPass());
-#if 0
-    functionPassManager->addPass(llvm::createLICMPass());
-    functionPassManager->addPass(llvm::createGVNPass());
-    functionPassManager->addPass(llvm::createPromoteMemoryToRegisterPass());
-    functionPassManager->addPass(llvm::createLoopVectorizePass());
-    functionPassManager->addPass(llvm::createEarlyCSEPass());
-    functionPassManager->addPass(llvm::createInstructionCombiningPass());
-    functionPassManager->addPass(llvm::createCFGSimplificationPass());
-    functionPassManager->addPass(llvm::createSimpleLoopUnrollPass() );  // unroll the vectorized loop with trip count 1
-    functionPassManager->addPass(llvm::createCFGSimplificationPass());  // join BB of vectorized loop with header
-    functionPassManager->addPass(llvm::createGVNPass()); // eliminate redundant index instructions
-#endif
-#endif
+    functionPassManager->add( new llvm::TargetLibraryInfoWrapperPass(llvm::TargetLibraryInfoImpl(targetMachine->getTargetTriple())) );
+    functionPassManager->add(llvm::createBasicAAWrapperPass());
+    functionPassManager->add(llvm::createLICMPass());
+    functionPassManager->add(llvm::createGVNPass());
+    functionPassManager->add(llvm::createPromoteMemoryToRegisterPass());
+    functionPassManager->add(llvm::createLoopVectorizePass());
+    functionPassManager->add(llvm::createEarlyCSEPass());
+    functionPassManager->add(llvm::createInstructionCombiningPass());
+    functionPassManager->add(llvm::createCFGSimplificationPass());
+    functionPassManager->add(llvm::createLoopUnrollPass() );  // LLVM 3.8
+    functionPassManager->add(llvm::createCFGSimplificationPass());  // join BB of vectorized loop with header
+    functionPassManager->add(llvm::createGVNPass()); // eliminate redundant index instructions
 
     if (llvm_debug::debug_loop_vectorizer) {
       if (Layout::primaryNode()) {
@@ -1366,14 +1335,28 @@ namespace QDP {
 #if 0
     // Write assembly
     {
-      llvm::FunctionPassManager *functionPassManager = new llvm::FunctionPassManager(Mod);
-      llvm::PassManager PM;
+      llvm::legacy::FunctionPassManager *functionPassManager = new llvm::legacy::FunctionPassManager(Mod);
+      llvm::legacy::PassManager PM;
 
       std::string str;
       llvm::raw_string_ostream rsos(str);
-      llvm::formatted_raw_ostream FOS(rsos);
+      //llvm::raw_ostream ros(str);
+      //llvm::formatted_raw_ostream FOS(rsos);
 
-      if (targetMachine->addPassesToEmitFile( PM , FOS , llvm::TargetMachine::CGFT_AssemblyFile ) ) {
+      //llvm::raw_pwrite_stream OS(rsos);
+      llvm::raw_pwrite_stream *OS = &llvm::outs();
+
+#if 0
+      PassManagerBase &, raw_pwrite_stream &, CodeGenFileType,
+      bool /*DisableVerify*/ = true, AnalysisID /*StartBefore*/ = nullptr,
+      AnalysisID /*StartAfter*/ = nullptr, AnalysisID /*StopAfter*/ = nullptr,
+      MachineFunctionInitializer * /*MFInitializer*/ = nullptr
+
+    if (Target->addPassesToEmitFile(PM, *OS, FileType, NoVerify, StartBeforeID,
+                                    StartAfterID, StopAfterID, MIR.get())) {
+#endif
+
+      if (targetMachine->addPassesToEmitFile( PM , *OS , llvm::TargetMachine::CGFT_AssemblyFile ) ) {
 	std::cout << "addPassesToEmitFile failed\n";
         exit(1);
       }
