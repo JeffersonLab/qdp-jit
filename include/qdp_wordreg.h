@@ -121,8 +121,8 @@ namespace QDP {
     inline
     WordREG& operator%=(const WordREG<T1>& rhs) 
     {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-  QDP_error_exit("ni");
+      std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+      QDP_error_exit("ni");
 #if 0
       val = llvm_mod( val , rhs.get_val() );
       return *this;
@@ -134,8 +134,8 @@ namespace QDP {
     inline
     WordREG& operator|=(const WordREG<T1>& rhs) 
     {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-  QDP_error_exit("ni");
+      std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+      QDP_error_exit("ni");
 #if 0
       val = llvm_or( val , rhs.get_val() );
       return *this;
@@ -147,8 +147,8 @@ namespace QDP {
     inline
     WordREG& operator&=(const WordREG<T1>& rhs) 
     {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-  QDP_error_exit("ni");
+      std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+      QDP_error_exit("ni");
 #if 0
       val = llvm_and( val , rhs.get_val() );
       return *this;
@@ -160,8 +160,8 @@ namespace QDP {
     inline
     WordREG& operator^=(const WordREG<T1>& rhs) 
     {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-  QDP_error_exit("ni");
+      std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+      QDP_error_exit("ni");
 #if 0
       val = llvm_xor( val , rhs.get_val() );
       return *this;
@@ -173,8 +173,8 @@ namespace QDP {
     inline
     WordREG& operator<<=(const WordREG<T1>& rhs) 
     {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-  QDP_error_exit("ni");
+      std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+      QDP_error_exit("ni");
 #if 0
       val = llvm_shl( val , rhs.get_val() );
       return *this;
@@ -186,8 +186,8 @@ namespace QDP {
     inline
     WordREG& operator>>=(const WordREG<T1>& rhs) 
     {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-  QDP_error_exit("ni");
+      std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+      QDP_error_exit("ni");
 #if 0
       val = llvm_shr( val , rhs.get_val() );
       return *this;
@@ -202,9 +202,9 @@ namespace QDP {
 
 
 
-//-----------------------------------------------------------------------------
-// Traits classes 
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
+  // Traits classes 
+  //-----------------------------------------------------------------------------
 
   template<class T>
   struct InternalScalar<WordREG<T> > {
@@ -327,206 +327,206 @@ namespace QDP {
 
 
 
-template<class T1, class T2 >
-struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpLeftShift > {
-  typedef WordREG<typename BinaryReturn<T1, T2, OpLeftShift>::Type_t>  Type_t;
-};
+  template<class T1, class T2 >
+  struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpLeftShift > {
+    typedef WordREG<typename BinaryReturn<T1, T2, OpLeftShift>::Type_t>  Type_t;
+  };
  
 
-template<class T1, class T2>
-inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpLeftShift>::Type_t
-operator<<(const WordREG<T1>& l, const WordREG<T2>& r)
-{
-  typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpLeftShift>::Type_t ret;
-  ret.setup( llvm_shl( l.get_val() , r.get_val() ) );
-  return ret;
-}
+  template<class T1, class T2>
+  inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpLeftShift>::Type_t
+  operator<<(const WordREG<T1>& l, const WordREG<T2>& r)
+  {
+    typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpLeftShift>::Type_t ret;
+    ret.setup( llvm_shl( l.get_val() , r.get_val() ) );
+    return ret;
+  }
 
 
 
-template<class T1, class T2 >
-struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpRightShift > {
-  typedef WordREG<typename BinaryReturn<T1, T2, OpRightShift>::Type_t>  Type_t;
-};
+  template<class T1, class T2 >
+  struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpRightShift > {
+    typedef WordREG<typename BinaryReturn<T1, T2, OpRightShift>::Type_t>  Type_t;
+  };
  
 
-template<class T1, class T2>
-inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpRightShift>::Type_t
-operator>>(const WordREG<T1>& l, const WordREG<T2>& r)
-{
-  typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpRightShift>::Type_t ret;
-  ret.setup( llvm_shr( l.get_val() , r.get_val() ) );
-  return ret;
-}
+  template<class T1, class T2>
+  inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpRightShift>::Type_t
+  operator>>(const WordREG<T1>& l, const WordREG<T2>& r)
+  {
+    typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpRightShift>::Type_t ret;
+    ret.setup( llvm_shr( l.get_val() , r.get_val() ) );
+    return ret;
+  }
 
 
 
-template<class T1, class T2 >
-inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpMod>::Type_t
-operator%(const WordREG<T1>& l, const WordREG<T2>& r)
-{
-  typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpMod>::Type_t ret;
-  ret.setup( llvm_rem( l.get_val() , r.get_val() ) );
-  return ret;
-}
-
-
-
-
-template<class T1, class T2 >
-inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseXor>::Type_t
-operator^(const WordREG<T1>& l, const WordREG<T2>& r)
-{
-  typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseXor>::Type_t ret;
-  ret.setup( llvm_xor( l.get_val() , r.get_val() ) );
-  return ret;
-}
-
-
-template<class T1, class T2 >
-inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseAnd>::Type_t
-operator&(const WordREG<T1>& l, const WordREG<T2>& r)
-{
-  typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseAnd>::Type_t ret;
-  ret.setup( llvm_and( l.get_val() , r.get_val() ) );
-  return ret;
-}
+  template<class T1, class T2 >
+  inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpMod>::Type_t
+  operator%(const WordREG<T1>& l, const WordREG<T2>& r)
+  {
+    typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpMod>::Type_t ret;
+    ret.setup( llvm_rem( l.get_val() , r.get_val() ) );
+    return ret;
+  }
 
 
 
 
-
-template<class T1, class T2>
-inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseOr>::Type_t
-operator|(const WordREG<T1>& l, const WordREG<T2>& r)
-{
-  typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseOr>::Type_t ret;
-  ret.setup( llvm_or( l.get_val() , r.get_val() ) );
-  return ret;
-}
-
+  template<class T1, class T2 >
+  inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseXor>::Type_t
+  operator^(const WordREG<T1>& l, const WordREG<T2>& r)
+  {
+    typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseXor>::Type_t ret;
+    ret.setup( llvm_xor( l.get_val() , r.get_val() ) );
+    return ret;
+  }
 
 
-// Comparisons
-template<class T1, class T2 >
-struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpLT > {
-  typedef WordREG<typename BinaryReturn<T1, T2, OpLT>::Type_t>  Type_t;
-};
-
-template<class T1, class T2>
-inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpLT>::Type_t
-operator<(const WordREG<T1>& l, const WordREG<T2>& r)
-{
-  typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpLT>::Type_t ret;
-  ret.setup( llvm_lt( l.get_val() , r.get_val() ) );
-  return ret;
-}
-
-
-template<class T1, class T2 >
-struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpLE > {
-  typedef WordREG<typename BinaryReturn<T1, T2, OpLE>::Type_t>  Type_t;
-};
-
-template<class T1, class T2>
-inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpLE>::Type_t
-operator<=(const WordREG<T1>& l, const WordREG<T2>& r)
-{
-  typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpLE>::Type_t ret;
-  ret.setup( llvm_le( l.get_val() , r.get_val() ) );
-  return ret;
-}
-
-
-template<class T1, class T2 >
-struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpGT > {
-  typedef WordREG<typename BinaryReturn<T1, T2, OpGT>::Type_t>  Type_t;
-};
-
-template<class T1, class T2>
-inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpGT>::Type_t
-operator>(const WordREG<T1>& l, const WordREG<T2>& r)
-{
-  typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpGT>::Type_t ret;
-  ret.setup( llvm_gt( l.get_val() , r.get_val() ) );
-  return ret;
-}
-
-
-template<class T1, class T2 >
-struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpGE > {
-  typedef WordREG<typename BinaryReturn<T1, T2, OpGE>::Type_t>  Type_t;
-};
-
-template<class T1, class T2>
-inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpGE>::Type_t
-operator>=(const WordREG<T1>& l, const WordREG<T2>& r)
-{
-  typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpGE>::Type_t ret;
-  ret.setup( llvm_ge( l.get_val() , r.get_val() ) );
-  return ret;
-}
-
-
-template<class T1, class T2 >
-struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpEQ > {
-  typedef WordREG<typename BinaryReturn<T1, T2, OpEQ>::Type_t>  Type_t;
-};
-
-template<class T1, class T2>
-inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpEQ>::Type_t
-operator==(const WordREG<T1>& l, const WordREG<T2>& r)
-{
-  typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpEQ>::Type_t ret;
-  ret.setup( llvm_eq( l.get_val() , r.get_val() ) );
-  return ret;
-}
-
-
-template<class T1, class T2 >
-struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpNE > {
-  typedef WordREG<typename BinaryReturn<T1, T2, OpNE>::Type_t>  Type_t;
-};
-
-template<class T1, class T2>
-inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpNE>::Type_t
-operator!=(const WordREG<T1>& l, const WordREG<T2>& r)
-{
-  typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpNE>::Type_t ret;
-  ret.setup( llvm_ne( l.get_val() , r.get_val() ) );
-  return ret;
-}
+  template<class T1, class T2 >
+  inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseAnd>::Type_t
+  operator&(const WordREG<T1>& l, const WordREG<T2>& r)
+  {
+    typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseAnd>::Type_t ret;
+    ret.setup( llvm_and( l.get_val() , r.get_val() ) );
+    return ret;
+  }
 
 
 
-template<class T1, class T2>
-struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpAnd > {
-  typedef WordREG<typename BinaryReturn<T1, T2, OpAnd>::Type_t>  Type_t;
-};
-
-template<class T1, class T2>
-inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpAnd>::Type_t
-operator&&(const WordREG<T1>& l, const WordREG<T2>& r)
-{
-  typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpAnd>::Type_t ret;
-  ret.setup( llvm_and( l.get_val() , r.get_val() ) );
-  return ret;
-}
 
 
-template<class T1, class T2>
-struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpOr > {
-  typedef WordREG<typename BinaryReturn<T1, T2, OpOr>::Type_t>  Type_t;
-};
+  template<class T1, class T2>
+  inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseOr>::Type_t
+  operator|(const WordREG<T1>& l, const WordREG<T2>& r)
+  {
+    typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpBitwiseOr>::Type_t ret;
+    ret.setup( llvm_or( l.get_val() , r.get_val() ) );
+    return ret;
+  }
 
-template<class T1, class T2>
-inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpOr>::Type_t
-operator||(const WordREG<T1>& l, const WordREG<T2>& r)
-{
-  typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpOr>::Type_t ret;
-  ret.setup( llvm_or( l.get_val() , r.get_val() ) );
-  return ret;
-}
+
+
+  // Comparisons
+  template<class T1, class T2 >
+  struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpLT > {
+    typedef WordREG<typename BinaryReturn<T1, T2, OpLT>::Type_t>  Type_t;
+  };
+
+  template<class T1, class T2>
+  inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpLT>::Type_t
+  operator<(const WordREG<T1>& l, const WordREG<T2>& r)
+  {
+    typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpLT>::Type_t ret;
+    ret.setup( llvm_lt( l.get_val() , r.get_val() ) );
+    return ret;
+  }
+
+
+  template<class T1, class T2 >
+  struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpLE > {
+    typedef WordREG<typename BinaryReturn<T1, T2, OpLE>::Type_t>  Type_t;
+  };
+
+  template<class T1, class T2>
+  inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpLE>::Type_t
+  operator<=(const WordREG<T1>& l, const WordREG<T2>& r)
+  {
+    typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpLE>::Type_t ret;
+    ret.setup( llvm_le( l.get_val() , r.get_val() ) );
+    return ret;
+  }
+
+
+  template<class T1, class T2 >
+  struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpGT > {
+    typedef WordREG<typename BinaryReturn<T1, T2, OpGT>::Type_t>  Type_t;
+  };
+
+  template<class T1, class T2>
+  inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpGT>::Type_t
+  operator>(const WordREG<T1>& l, const WordREG<T2>& r)
+  {
+    typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpGT>::Type_t ret;
+    ret.setup( llvm_gt( l.get_val() , r.get_val() ) );
+    return ret;
+  }
+
+
+  template<class T1, class T2 >
+  struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpGE > {
+    typedef WordREG<typename BinaryReturn<T1, T2, OpGE>::Type_t>  Type_t;
+  };
+
+  template<class T1, class T2>
+  inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpGE>::Type_t
+  operator>=(const WordREG<T1>& l, const WordREG<T2>& r)
+  {
+    typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpGE>::Type_t ret;
+    ret.setup( llvm_ge( l.get_val() , r.get_val() ) );
+    return ret;
+  }
+
+
+  template<class T1, class T2 >
+  struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpEQ > {
+    typedef WordREG<typename BinaryReturn<T1, T2, OpEQ>::Type_t>  Type_t;
+  };
+
+  template<class T1, class T2>
+  inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpEQ>::Type_t
+  operator==(const WordREG<T1>& l, const WordREG<T2>& r)
+  {
+    typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpEQ>::Type_t ret;
+    ret.setup( llvm_eq( l.get_val() , r.get_val() ) );
+    return ret;
+  }
+
+
+  template<class T1, class T2 >
+  struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpNE > {
+    typedef WordREG<typename BinaryReturn<T1, T2, OpNE>::Type_t>  Type_t;
+  };
+
+  template<class T1, class T2>
+  inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpNE>::Type_t
+  operator!=(const WordREG<T1>& l, const WordREG<T2>& r)
+  {
+    typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpNE>::Type_t ret;
+    ret.setup( llvm_ne( l.get_val() , r.get_val() ) );
+    return ret;
+  }
+
+
+
+  template<class T1, class T2>
+  struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpAnd > {
+    typedef WordREG<typename BinaryReturn<T1, T2, OpAnd>::Type_t>  Type_t;
+  };
+
+  template<class T1, class T2>
+  inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpAnd>::Type_t
+  operator&&(const WordREG<T1>& l, const WordREG<T2>& r)
+  {
+    typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpAnd>::Type_t ret;
+    ret.setup( llvm_and( l.get_val() , r.get_val() ) );
+    return ret;
+  }
+
+
+  template<class T1, class T2>
+  struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpOr > {
+    typedef WordREG<typename BinaryReturn<T1, T2, OpOr>::Type_t>  Type_t;
+  };
+
+  template<class T1, class T2>
+  inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpOr>::Type_t
+  operator||(const WordREG<T1>& l, const WordREG<T2>& r)
+  {
+    typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpOr>::Type_t ret;
+    ret.setup( llvm_or( l.get_val() , r.get_val() ) );
+    return ret;
+  }
 
 
   template<class T1, class T2, class T3>
@@ -565,64 +565,64 @@ operator||(const WordREG<T1>& l, const WordREG<T2>& r)
 
 
 
-template<class T>
-struct UnaryReturn<WordREG<T>, FnLocalNorm2 > {
-  typedef WordREG<typename UnaryReturn<T, FnLocalNorm2>::Type_t>  Type_t;
-};
+  template<class T>
+  struct UnaryReturn<WordREG<T>, FnLocalNorm2 > {
+    typedef WordREG<typename UnaryReturn<T, FnLocalNorm2>::Type_t>  Type_t;
+  };
 
-template<class T>
-inline typename UnaryReturn<WordREG<T>, FnLocalNorm2>::Type_t
-localNorm2(const WordREG<T>& s1)
-{
-  typename UnaryReturn<WordREG<T>, FnLocalNorm2>::Type_t ret;
-  ret.setup( llvm_mul( s1.get_val() , s1.get_val() ) );
-  return ret;
-}
-
-
+  template<class T>
+  inline typename UnaryReturn<WordREG<T>, FnLocalNorm2>::Type_t
+  localNorm2(const WordREG<T>& s1)
+  {
+    typename UnaryReturn<WordREG<T>, FnLocalNorm2>::Type_t ret;
+    ret.setup( llvm_mul( s1.get_val() , s1.get_val() ) );
+    return ret;
+  }
 
 
-//! WordREG<T> = InnerProduct(adj(WordREG<T1>)*WordREG<T2>)
-template<class T1, class T2>
-struct BinaryReturn<WordREG<T1>, WordREG<T2>, FnInnerProduct > {
-  typedef WordREG<typename BinaryReturn<T1, T2, FnInnerProduct>::Type_t>  Type_t;
-};
-
-template<class T1, class T2>
-struct BinaryReturn<WordREG<T1>, WordREG<T2>, FnLocalInnerProduct > {
-  typedef WordREG<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>  Type_t;
-};
-
-template<class T1, class T2>
-inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, FnLocalInnerProduct>::Type_t
-localInnerProduct(const WordREG<T1>& s1, const WordREG<T2>& s2)
-{
-  typename BinaryReturn<WordREG<T1>, WordREG<T2>, FnLocalInnerProduct>::Type_t ret;
-  ret.setup( llvm_mul( s1.get_val() , s2.get_val() ) );
-  return ret;
-}
 
 
-//! WordREG<T> = InnerProductReal(adj(PMatrix<T1>)*PMatrix<T1>)
-// Real-ness is eaten at this level
-template<class T1, class T2>
-struct BinaryReturn<WordREG<T1>, WordREG<T2>, FnInnerProductReal > {
-  typedef WordREG<typename BinaryReturn<T1, T2, FnInnerProduct>::Type_t>  Type_t;
-};
+  //! WordREG<T> = InnerProduct(adj(WordREG<T1>)*WordREG<T2>)
+  template<class T1, class T2>
+  struct BinaryReturn<WordREG<T1>, WordREG<T2>, FnInnerProduct > {
+    typedef WordREG<typename BinaryReturn<T1, T2, FnInnerProduct>::Type_t>  Type_t;
+  };
 
-template<class T1, class T2>
-struct BinaryReturn<WordREG<T1>, WordREG<T2>, FnLocalInnerProductReal > {
-  typedef WordREG<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>  Type_t;
-};
+  template<class T1, class T2>
+  struct BinaryReturn<WordREG<T1>, WordREG<T2>, FnLocalInnerProduct > {
+    typedef WordREG<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>  Type_t;
+  };
 
-template<class T1, class T2>
-inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, FnLocalInnerProductReal>::Type_t
-localInnerProductReal(const WordREG<T1>& s1, const WordREG<T2>& s2)
-{
-  typename BinaryReturn<WordREG<T1>, WordREG<T2>, FnLocalInnerProductReal>::Type_t ret;
-  ret.setup( llvm_mul( s1.get_val() , s2.get_val() ) );
-  return ret;
-}
+  template<class T1, class T2>
+  inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, FnLocalInnerProduct>::Type_t
+  localInnerProduct(const WordREG<T1>& s1, const WordREG<T2>& s2)
+  {
+    typename BinaryReturn<WordREG<T1>, WordREG<T2>, FnLocalInnerProduct>::Type_t ret;
+    ret.setup( llvm_mul( s1.get_val() , s2.get_val() ) );
+    return ret;
+  }
+
+
+  //! WordREG<T> = InnerProductReal(adj(PMatrix<T1>)*PMatrix<T1>)
+  // Real-ness is eaten at this level
+  template<class T1, class T2>
+  struct BinaryReturn<WordREG<T1>, WordREG<T2>, FnInnerProductReal > {
+    typedef WordREG<typename BinaryReturn<T1, T2, FnInnerProduct>::Type_t>  Type_t;
+  };
+
+  template<class T1, class T2>
+  struct BinaryReturn<WordREG<T1>, WordREG<T2>, FnLocalInnerProductReal > {
+    typedef WordREG<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>  Type_t;
+  };
+
+  template<class T1, class T2>
+  inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, FnLocalInnerProductReal>::Type_t
+  localInnerProductReal(const WordREG<T1>& s1, const WordREG<T2>& s2)
+  {
+    typename BinaryReturn<WordREG<T1>, WordREG<T2>, FnLocalInnerProductReal>::Type_t ret;
+    ret.setup( llvm_mul( s1.get_val() , s2.get_val() ) );
+    return ret;
+  }
 
 
   inline void 
@@ -662,54 +662,67 @@ localInnerProductReal(const WordREG<T1>& s1, const WordREG<T2>& s2)
 
 
 
- UnaryReturn<WordREG<float>, FnCeil>::Type_t ceil(const WordREG<float>& s1);
- UnaryReturn<WordREG<float>, FnFloor>::Type_t floor(const WordREG<float>& s1);
- UnaryReturn<WordREG<float>, FnFabs>::Type_t fabs(const WordREG<float>& s1);
- UnaryReturn<WordREG<float>, FnSqrt>::Type_t sqrt(const WordREG<float>& s1);
- UnaryReturn<WordREG<float>, FnArcCos>::Type_t acos(const WordREG<float>& s1);
- UnaryReturn<WordREG<float>, FnArcSin>::Type_t asin(const WordREG<float>& s1);
- UnaryReturn<WordREG<float>, FnArcTan>::Type_t atan(const WordREG<float>& s1);
- UnaryReturn<WordREG<float>, FnCos>::Type_t cos(const WordREG<float>& s1);
- UnaryReturn<WordREG<float>, FnHypCos>::Type_t cosh(const WordREG<float>& s1);
- UnaryReturn<WordREG<float>, FnExp>::Type_t exp(const WordREG<float>& s1);
- UnaryReturn<WordREG<float>, FnLog>::Type_t log(const WordREG<float>& s1);
- UnaryReturn<WordREG<float>, FnLog10>::Type_t log10(const WordREG<float>& s1);
- UnaryReturn<WordREG<float>, FnSin>::Type_t sin(const WordREG<float>& s1);
- UnaryReturn<WordREG<float>, FnHypSin>::Type_t sinh(const WordREG<float>& s1);
- UnaryReturn<WordREG<float>, FnTan>::Type_t tan(const WordREG<float>& s1);
- UnaryReturn<WordREG<float>, FnHypTan>::Type_t tanh(const WordREG<float>& s1);
+  typename UnaryReturn<WordREG<float>, FnCeil>::Type_t ceil(const WordREG<float>& s1);
+  typename UnaryReturn<WordREG<float>, FnFloor>::Type_t floor(const WordREG<float>& s1);
+  typename UnaryReturn<WordREG<float>, FnFabs>::Type_t fabs(const WordREG<float>& s1);
+  typename UnaryReturn<WordREG<float>, FnSqrt>::Type_t sqrt(const WordREG<float>& s1);
+  typename UnaryReturn<WordREG<float>, FnArcCos>::Type_t acos(const WordREG<float>& s1);
+  typename UnaryReturn<WordREG<float>, FnArcSin>::Type_t asin(const WordREG<float>& s1);
+  typename UnaryReturn<WordREG<float>, FnArcTan>::Type_t atan(const WordREG<float>& s1);
+  typename UnaryReturn<WordREG<float>, FnCos>::Type_t cos(const WordREG<float>& s1);
+  typename UnaryReturn<WordREG<float>, FnHypCos>::Type_t cosh(const WordREG<float>& s1);
+  typename UnaryReturn<WordREG<float>, FnExp>::Type_t exp(const WordREG<float>& s1);
+  typename UnaryReturn<WordREG<float>, FnLog>::Type_t log(const WordREG<float>& s1);
+  typename UnaryReturn<WordREG<float>, FnLog10>::Type_t log10(const WordREG<float>& s1);
+  typename UnaryReturn<WordREG<float>, FnSin>::Type_t sin(const WordREG<float>& s1);
+  typename UnaryReturn<WordREG<float>, FnHypSin>::Type_t sinh(const WordREG<float>& s1);
+  typename UnaryReturn<WordREG<float>, FnTan>::Type_t tan(const WordREG<float>& s1);
+  typename UnaryReturn<WordREG<float>, FnHypTan>::Type_t tanh(const WordREG<float>& s1);
 
- BinaryReturn<WordREG<float>, WordREG<float>, FnPow>::Type_t pow(const WordREG<float>& s1, const WordREG<float>& s2);
- BinaryReturn<WordREG<float>, WordREG<float>, FnArcTan2>::Type_t atan2(const WordREG<float>& s1, const WordREG<float>& s2);
-
-
-
- UnaryReturn<WordREG<double>, FnCeil>::Type_t ceil(const WordREG<double>& s1);
- UnaryReturn<WordREG<double>, FnFloor>::Type_t floor(const WordREG<double>& s1);
- UnaryReturn<WordREG<double>, FnFabs>::Type_t fabs(const WordREG<double>& s1);
- UnaryReturn<WordREG<double>, FnSqrt>::Type_t sqrt(const WordREG<double>& s1);
- UnaryReturn<WordREG<double>, FnArcCos>::Type_t acos(const WordREG<double>& s1);
- UnaryReturn<WordREG<double>, FnArcSin>::Type_t asin(const WordREG<double>& s1);
- UnaryReturn<WordREG<double>, FnArcTan>::Type_t atan(const WordREG<double>& s1);
- UnaryReturn<WordREG<double>, FnCos>::Type_t cos(const WordREG<double>& s1);
- UnaryReturn<WordREG<double>, FnHypCos>::Type_t cosh(const WordREG<double>& s1);
- UnaryReturn<WordREG<double>, FnExp>::Type_t exp(const WordREG<double>& s1);
- UnaryReturn<WordREG<double>, FnLog>::Type_t log(const WordREG<double>& s1);
- UnaryReturn<WordREG<double>, FnLog10>::Type_t log10(const WordREG<double>& s1);
- UnaryReturn<WordREG<double>, FnSin>::Type_t sin(const WordREG<double>& s1);
- UnaryReturn<WordREG<double>, FnHypSin>::Type_t sinh(const WordREG<double>& s1);
- UnaryReturn<WordREG<double>, FnTan>::Type_t tan(const WordREG<double>& s1);
- UnaryReturn<WordREG<double>, FnHypTan>::Type_t tanh(const WordREG<double>& s1);
-
- BinaryReturn<WordREG<double>, WordREG<double>, FnPow>::Type_t pow(const WordREG<double>& s1, const WordREG<double>& s2);
- BinaryReturn<WordREG<double>, WordREG<double>, FnArcTan2>::Type_t atan2(const WordREG<double>& s1, const WordREG<double>& s2);
+  typename UnaryReturn<WordREG<double>, FnCeil>::Type_t ceil(const WordREG<double>& s1);
+  typename UnaryReturn<WordREG<double>, FnFloor>::Type_t floor(const WordREG<double>& s1);
+  typename UnaryReturn<WordREG<double>, FnFabs>::Type_t fabs(const WordREG<double>& s1);
+  typename UnaryReturn<WordREG<double>, FnSqrt>::Type_t sqrt(const WordREG<double>& s1);
+  typename UnaryReturn<WordREG<double>, FnArcCos>::Type_t acos(const WordREG<double>& s1);
+  typename UnaryReturn<WordREG<double>, FnArcSin>::Type_t asin(const WordREG<double>& s1);
+  typename UnaryReturn<WordREG<double>, FnArcTan>::Type_t atan(const WordREG<double>& s1);
+  typename UnaryReturn<WordREG<double>, FnCos>::Type_t cos(const WordREG<double>& s1);
+  typename UnaryReturn<WordREG<double>, FnHypCos>::Type_t cosh(const WordREG<double>& s1);
+  typename UnaryReturn<WordREG<double>, FnExp>::Type_t exp(const WordREG<double>& s1);
+  typename UnaryReturn<WordREG<double>, FnLog>::Type_t log(const WordREG<double>& s1);
+  typename UnaryReturn<WordREG<double>, FnLog10>::Type_t log10(const WordREG<double>& s1);
+  typename UnaryReturn<WordREG<double>, FnSin>::Type_t sin(const WordREG<double>& s1);
+  typename UnaryReturn<WordREG<double>, FnHypSin>::Type_t sinh(const WordREG<double>& s1);
+  typename UnaryReturn<WordREG<double>, FnTan>::Type_t tan(const WordREG<double>& s1);
+  typename UnaryReturn<WordREG<double>, FnHypTan>::Type_t tanh(const WordREG<double>& s1);
 
 
+  typename BinaryReturn<WordREG<float>, 
+			WordREG<float>, FnPow>::Type_t pow(const WordREG<float>& s1, 
+							   const WordREG<float>& s2);
+  typename BinaryReturn<WordREG<double>, 
+			WordREG<double>, FnPow>::Type_t pow(const WordREG<double>& s1, 
+							    const WordREG<double>& s2);
+  typename BinaryReturn<WordREG<float>, 
+			WordREG<float>, FnPow>::Type_t pow(const WordREG<double>& s1, 
+							   const WordREG<float>& s2);
+  typename BinaryReturn<WordREG<float>, 
+			WordREG<float>, FnPow>::Type_t pow(const WordREG<float>& s1, 
+							   const WordREG<double>& s2);
 
 
-
-
-
+  typename BinaryReturn<WordREG<float>, 
+			WordREG<float>, FnArcTan2>::Type_t atan2(const WordREG<float>& s1, 
+								 const WordREG<float>& s2);
+  typename BinaryReturn<WordREG<double>, 
+			WordREG<double>, FnArcTan2>::Type_t atan2(const WordREG<double>& s1, 
+								  const WordREG<double>& s2);
+  typename BinaryReturn<WordREG<float>, 
+			WordREG<float>, FnArcTan2>::Type_t atan2(const WordREG<double>& s1, 
+								 const WordREG<float>& s2);
+  typename BinaryReturn<WordREG<float>, 
+			WordREG<float>, FnArcTan2>::Type_t atan2(const WordREG<float>& s1, 
+								 const WordREG<double>& s2);
 
 
 } // namespace QDP
