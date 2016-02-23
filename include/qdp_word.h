@@ -153,6 +153,8 @@ public:
     }
 
 
+  operator T() const { return F; }
+
   //! Do deep copies here
    Word(const Word& a): F(a.F) {}
 
