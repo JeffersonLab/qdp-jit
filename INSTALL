@@ -6,13 +6,13 @@ LLVM 3.8
 1) Building LLVM
 
 - Build LLVM as a shared library; requires the LD_LIBRARY_PATH set later
-- LLVM turns off RTTI by default ==> compile QDP-JIT with RTTI turned off 
-- Requires python27
-- Check out LLVM 3.8 and build with your C++ compiler. Here's my build script for JLab:
+- LLVM turns off RTTI by default, Chroma needs RTTI, there were linking with issues GCC 4.8.2 with this setting
+- Building the toolchain with RTTI turned on is recommended
+- Something along the line
 
 SRC=$HOME/svn/llvm-3.8
 
-CMAKE_BUILD_TYPE="Debug"
+CMAKE_BUILD_TYPE="Debug"   # or "Release"
 CMAKE_INSTALL_PREFIX="$HOME/toolchain/install/llvm-3.8"
 LLVM_TARGETS_TO_BUILD="X86"
 
@@ -20,6 +20,8 @@ CXX="/dist/gcc-4.8.2/bin/g++"
 CC="/dist/gcc-4.8.2/bin/gcc"
 
 cmake -G "Unix Makefiles" \
+-DLLVM_ENABLE_PIC="ON" \
+-DLLVM_ENABLE_RTTI="ON" \
 -DBUILD_SHARED_LIBS="ON" \
 -DCMAKE_CXX_COMPILER=$CXX \
 -DCMAKE_C_COMPILER=$CC \
@@ -38,11 +40,11 @@ make install
 2) Building QDP-JIT/LLVM
 
 
-Check-out the 'llvm-x86' branch of qdp-jit and `autoreconf` everything.
+'llvm-x86' branch of qdp-jit, `autoreconf`.
 
-Now, you want an OMP enabled compiler to build this. These are my build options:
+This step requires an OpenMP C++ compiler with C++11 support
 
-CXXFLAGS="-O3 -std=c++0x -fopenmp -fno-rtti"
+CXXFLAGS="-O3 -std=c++0x -fopenmp"
 CFLAGS="-O3 -std=c99 -fopenmp"
 
     $QDPDIR/configure \
@@ -57,15 +59,13 @@ CFLAGS="-O3 -std=c99 -fopenmp"
     CFLAGS="$CFLAGS" \
     CXXFLAGS="$CXXFLAGS"
 
-Build Chroma on top of qdp-jit/llvm.
+Chroma builds on top of this.
 
 
 3) Running
 
-You want to run with the '-inner <n>' runtime argument. 
-Where <n> is the vector (SIMD) length, i.e. for AVX in 
-double precision you would say '-inner 4' and for single
-precision '-inner 8'.
+'-inner <n>'
+Where <n> is the vector (SIMD) length in QDP-JIT base precision.
 
 
 
