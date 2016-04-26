@@ -20,6 +20,8 @@ General remarks and requirements:
 
 - Configure:
     --prefix=$INSTALL/llvm-$TYPE  \
+    --enable-targets="x86_64,nvptx" \
+    --enable-shared \
     --disable-terminfo \
     --disable-zlib \
     --disable-libedit \

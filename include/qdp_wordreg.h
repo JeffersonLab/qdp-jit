@@ -680,7 +680,10 @@ typename UnaryReturn<WordREG<float>, FnTan>::Type_t tan(const WordREG<float>& s1
 typename UnaryReturn<WordREG<float>, FnHypTan>::Type_t tanh(const WordREG<float>& s1);
 
 
-typename UnaryReturn<WordREG<double>, FnSin>::Type_t sin(const WordREG<double>& s1);
+typename UnaryReturn<WordREG<double>, FnCeil>::Type_t ceil(const WordREG<double>& s1);
+typename UnaryReturn<WordREG<double>, FnFloor>::Type_t floor(const WordREG<double>& s1);
+typename UnaryReturn<WordREG<double>, FnFabs>::Type_t fabs(const WordREG<double>& s1);
+typename UnaryReturn<WordREG<double>, FnSqrt>::Type_t sqrt(const WordREG<double>& s1);
 typename UnaryReturn<WordREG<double>, FnArcCos>::Type_t acos(const WordREG<double>& s1);
 typename UnaryReturn<WordREG<double>, FnArcSin>::Type_t asin(const WordREG<double>& s1);
 typename UnaryReturn<WordREG<double>, FnArcTan>::Type_t atan(const WordREG<double>& s1);
