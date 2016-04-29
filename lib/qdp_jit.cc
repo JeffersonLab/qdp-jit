@@ -511,19 +511,17 @@ namespace QDP {
 
     int major = DeviceParams::Instance().getMajor();
     int minor = DeviceParams::Instance().getMinor();
-    
-    if (major >= 2) {
-      if (jit_ptx_version.length())
-	final_ptx << ".version " << jit_ptx_version << "\n";
-      else
-	final_ptx << ".version 3.1\n";
-      final_ptx << ".target sm_" << major << minor << "\n";
-      final_ptx << ".address_size 64\n";
-    } else {
-      final_ptx << ".version 1.4\n";
-      final_ptx << ".target sm_" << major << minor << "\n";
-    }
 
+    int combined = major*10+minor;
+
+    if (!jit_ptx_version.empty())
+      final_ptx << ".version " << jit_ptx_version << "\n";
+    else
+      final_ptx << ".version 3.1\n";
+
+    final_ptx << ".target sm_20\n";
+    final_ptx << ".address_size 64\n";
+    
     if (m_shared)
       final_ptx << ".extern .shared .align 4 .b8 sdata[];\n";
 
