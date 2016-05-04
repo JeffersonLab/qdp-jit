@@ -2,6 +2,7 @@
 
 
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/ADT/SmallString.h"
 
 namespace QDP {
 
@@ -52,6 +53,7 @@ namespace QDP {
   namespace llvm_debug {
     bool debug_func_build      = false;
     bool debug_func_dump       = false;
+    bool debug_func_dump_asm   = false;
     bool debug_func_write      = false;
     bool debug_loop_vectorizer = false;
     std::string name_pretty;
@@ -68,12 +70,16 @@ namespace QDP {
       llvm_debug::debug_func_build = true;
       return;
     }
-    if (str.find("function-dump") != string::npos) {
+    if (str.find("function-dump-ir") != string::npos) {
       llvm_debug::debug_func_dump = true;
       return;
     }
     if (str.find("function-write") != string::npos) {
       llvm_debug::debug_func_write = true;
+      return;
+    }
+    if (str.find("function-dump-asm") != string::npos) {
+      llvm_debug::debug_func_dump_asm = true;
       return;
     }
     QDP_error_exit("unknown debug argument: %s",c_str);
@@ -1332,39 +1338,29 @@ namespace QDP {
       }
     }
 
-#if 0
+
+
+
+
+#if 1 
     // Write assembly
-    {
-      llvm::legacy::FunctionPassManager *functionPassManager = new llvm::legacy::FunctionPassManager(Mod);
-      llvm::legacy::PassManager PM;
+    if (llvm_debug::debug_func_dump_asm) {
+      if (Layout::primaryNode()) {
+	llvm::legacy::FunctionPassManager *functionPassManager = new llvm::legacy::FunctionPassManager(Mod);
+	llvm::legacy::PassManager PM;
 
-      std::string str;
-      llvm::raw_string_ostream rsos(str);
-      //llvm::raw_ostream ros(str);
-      //llvm::formatted_raw_ostream FOS(rsos);
+	llvm::SmallString<128> Str;
+	llvm::raw_svector_ostream dest(Str); 
 
-      //llvm::raw_pwrite_stream OS(rsos);
-      llvm::raw_pwrite_stream *OS = &llvm::outs();
-
-#if 0
-      PassManagerBase &, raw_pwrite_stream &, CodeGenFileType,
-      bool /*DisableVerify*/ = true, AnalysisID /*StartBefore*/ = nullptr,
-      AnalysisID /*StartAfter*/ = nullptr, AnalysisID /*StopAfter*/ = nullptr,
-      MachineFunctionInitializer * /*MFInitializer*/ = nullptr
-
-    if (Target->addPassesToEmitFile(PM, *OS, FileType, NoVerify, StartBeforeID,
-                                    StartAfterID, StopAfterID, MIR.get())) {
-#endif
-
-      if (targetMachine->addPassesToEmitFile( PM , *OS , llvm::TargetMachine::CGFT_AssemblyFile ) ) {
-	std::cout << "addPassesToEmitFile failed\n";
-        exit(1);
+	if (targetMachine->addPassesToEmitFile( PM , dest , llvm::TargetMachine::CGFT_AssemblyFile ) ) {
+	  std::cout << "addPassesToEmitFile failed\n";
+	  exit(1);
+	}
+	PM.run(*Mod);
+	std::cerr << "Assembly:\n";
+	std::cerr << std::string( Str.c_str() ) << "\n";
+	std::cerr << "end assembly!\n";
       }
-      PM.run(*Mod);
-      FOS.flush();
-      std::cerr << "Assembly:\n";
-      std::cerr << str << "\n";
-      std::cerr << "end assembly!\n";
     }
 #endif
 

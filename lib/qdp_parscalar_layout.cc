@@ -219,7 +219,7 @@ namespace QDP
 
       // Default maps
       initDefaultMaps();
-      
+
       // Initialize RNG
       RNG::initDefaultRNG();
       
