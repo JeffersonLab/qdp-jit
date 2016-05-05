@@ -442,7 +442,12 @@ namespace QDP {
       if ( vecParamType.at(Idx)->isPointerTy() ) {
       	llvm::AttrBuilder B;
       	B.addAttribute(llvm::Attribute::NoAlias);
-	//B.addAlignmentAttr( 32 );
+
+	// We assume a FP pointer type coming from an OLattice which uses the default QDP allocator
+	if (vecParamType.at(Idx)->getPointerElementType()->isFloatingPointTy()) {
+	  B.addAlignmentAttr( QDP_ALIGNMENT_SIZE );
+	}
+
       	AI->addAttr( llvm::AttributeSet::get( llvm::getGlobalContext() , 0 ,  B ) );
       }
 
