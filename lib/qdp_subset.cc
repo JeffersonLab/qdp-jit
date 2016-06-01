@@ -137,6 +137,10 @@ namespace QDP
   {
     QDPIO::cerr << "initDefaultSets\n";
 
+    // QDPIO::cerr << "\n\n!!! WARNING !!!\n";
+    // QDPIO::cerr << "Sets mcb and rb3 will not get initialized (and will crash when being used)\n";
+    // QDPIO::cerr << "\n\n!!! WARNING !!!\n";
+
     // Initialize the red/black checkerboard
     rb.make(SetRBFunc());
 

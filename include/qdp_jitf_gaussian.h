@@ -9,6 +9,16 @@ template<class T>
 void 
 function_gaussian_build( JitFunction& func, OLattice<T>& dest ,OLattice<T>& r1 ,OLattice<T>& r2 )
 {
+#ifdef LLVM_DEBUG
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
+#endif
+
+  if (llvm_debug::debug_func_write) {
+    if (Layout::primaryNode()) {
+      llvm_debug_write_set_name(__PRETTY_FUNCTION__,"");
+    }
+  }
+
   JitMainLoop loop;
 
   ParamLeaf param_leaf;
@@ -40,6 +50,10 @@ template<class T>
 void 
 function_gaussian_exec(const JitFunction& function, OLattice<T>& dest,OLattice<T>& r1,OLattice<T>& r2, const Subset& s )
 {
+#ifdef LLVM_DEBUG
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
+#endif
+
   assert( s.hasOrderedRep() );
 
   AddressLeaf addr_leaf(s);

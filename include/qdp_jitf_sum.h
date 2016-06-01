@@ -10,8 +10,14 @@ void
 function_sum_build( JitFunction& func, const OLattice<T>& src)
 {
 #ifdef LLVM_DEBUG
-  QDPIO::cerr << __PRETTY_FUNCTION__ << "\n";
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
 #endif
+
+  if (llvm_debug::debug_func_write) {
+    if (Layout::primaryNode()) {
+      llvm_debug_write_set_name(__PRETTY_FUNCTION__,"");
+    }
+  }
 
   JitMainLoop loop;
   ParamLeaf param_leaf;
@@ -48,6 +54,10 @@ template<class T>
 void 
 function_sum_exec(const JitFunction& function, typename UnaryReturn<OLattice<T>, FnSum>::Type_t& ret, const OLattice<T>& src, const Subset& s)
 {
+#ifdef LLVM_DEBUG
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
+#endif
+
   assert( s.hasOrderedRep() );
 
   typedef typename UnaryReturn<T, FnSum>::Type_t RetT;

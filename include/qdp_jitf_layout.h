@@ -9,6 +9,10 @@ namespace QDP {
   void 
   function_layout_to_jit_build( JitFunction& func, const OLattice<T>& dest )
   {
+#ifdef LLVM_DEBUG
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
+#endif
+
     JitMainLoop loop;
 
     ParamLeaf param_leaf;
@@ -40,6 +44,10 @@ namespace QDP {
   void 
   function_layout_to_jit_exec(const JitFunction& function, T *dest, T *src )
   {
+#ifdef LLVM_DEBUG
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
+#endif
+
     AddressLeaf addr_leaf(all);
 
     addr_leaf.setAddr( dest );
@@ -65,6 +73,10 @@ namespace QDP {
   void 
   function_layout_to_native_build( JitFunction& func, const OLattice<T>& dest )
   {
+#ifdef LLVM_DEBUG
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
+#endif
+
     JitMainLoop loop;
 
     ParamLeaf param_leaf;
@@ -96,6 +108,10 @@ namespace QDP {
   void 
   function_layout_to_native_exec( const JitFunction& function, T *dest, T *src )
   {
+#ifdef LLVM_DEBUG
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
+#endif
+
     AddressLeaf addr_leaf(all);
 
     addr_leaf.setAddr( dest );

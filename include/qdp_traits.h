@@ -81,7 +81,8 @@ struct QDPSubTypeTrait {};
   // WordType. This forces the user to provide
   // WordType specializations for custom containers
   // to participate in jitting.
-  template<class T> struct WordType;
+  //template<class T> struct WordType;
+  template<class T> struct WordType { typedef float  Type_t; };
 
   template<> struct WordType<float>  { typedef float  Type_t; };
   template<> struct WordType<double> { typedef double Type_t; };

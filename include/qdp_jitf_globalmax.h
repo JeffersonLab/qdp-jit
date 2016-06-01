@@ -9,7 +9,7 @@ void
 function_global_max_build( JitFunction& func, const OLattice<T>& src)
 {
 #ifdef LLVM_DEBUG
-  std::cout << __PRETTY_FUNCTION__ << "\n";
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
 #endif
 
   JitMainLoop loop;
@@ -77,6 +77,10 @@ template<class T>
 void 
 function_global_max_exec(const JitFunction& function, typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t& ret, const OLattice<T>& src, const Subset& s)
 {
+#ifdef LLVM_DEBUG
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
+#endif
+
   assert( s.hasOrderedRep() );
 
   typedef typename UnaryReturn<T, FnGlobalMax>::Type_t RetT;

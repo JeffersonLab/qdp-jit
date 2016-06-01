@@ -110,6 +110,9 @@ function_exec(const JitFunction& function,
 	      const QDPExpr<RHS,OLattice<T1> >& rhs, 
 	      const Subset& s)
 {
+#ifdef LLVM_DEBUG
+  std::cout << __PRETTY_FUNCTION__ << "\n";
+#endif
   //QDPIO::cerr << __PRETTY_FUNCTION__ << "\n";
 
 #ifdef JIT_TIMING
@@ -303,12 +306,6 @@ function_exec(const JitFunction& function,
   sw.reset();
   sw.start();
 #endif
-
-#ifdef LLVM_DEBUG
-  std::cout << "calling eval(Lattice,Lattice).. " << addr_leaf.addr.size() << "\n";  
-#endif
-
-
 }
 
 
@@ -319,8 +316,14 @@ template<class T, class T1, class Op, class RHS>
 void function_lat_sca_build(JitFunction& func,OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
 {
 #ifdef LLVM_DEBUG
-  std::cout << __PRETTY_FUNCTION__ << "\n";
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
 #endif
+
+  if (llvm_debug::debug_func_write) {
+    if (Layout::primaryNode()) {
+      llvm_debug_write_set_name(__PRETTY_FUNCTION__,"");
+    }
+  }
 
   JitMainLoop loop;
 
@@ -352,6 +355,9 @@ void
 function_lat_sca_exec(const JitFunction& function, 
 		      OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs, const Subset& s)
 {
+#ifdef LLVM_DEBUG
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
+#endif
   assert( s.hasOrderedRep() );
 
   AddressLeaf addr_leaf(s);
@@ -380,6 +386,16 @@ function_lat_sca_exec(const JitFunction& function,
 template<class T>
 void function_zero_rep_build(JitFunction& func,OLattice<T>& dest)
 {
+#ifdef LLVM_DEBUG
+  std::cout << __PRETTY_FUNCTION__ << "\n";
+#endif
+
+  if (llvm_debug::debug_func_write) {
+    if (Layout::primaryNode()) {
+      llvm_debug_write_set_name(__PRETTY_FUNCTION__,"");
+    }
+  }
+
   JitMainLoop loop;
 
   ParamLeaf param_leaf;
@@ -404,6 +420,10 @@ template<class T>
 void 
 function_zero_rep_exec(const JitFunction& function, OLattice<T>& dest, const Subset& s )
 {
+#ifdef LLVM_DEBUG
+  std::cout << __PRETTY_FUNCTION__ << "\n";
+#endif
+
   assert( s.hasOrderedRep() );
 
   AddressLeaf addr_leaf(s);
@@ -512,8 +532,14 @@ template<class T, class T1, class RHS>
 void function_gather_build( JitFunction& func , void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs )
 {
 #ifdef LLVM_DEBUG
-  std::cout << __PRETTY_FUNCTION__ << "\n";
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
 #endif
+
+  if (llvm_debug::debug_func_write) {
+    if (Layout::primaryNode()) {
+      llvm_debug_write_set_name(__PRETTY_FUNCTION__,"");
+    }
+  }
 
   typedef typename WordType<T1>::Type_t WT;
 
@@ -561,6 +587,10 @@ function_gather_exec( const JitFunction& function,
 		      const QDPExpr<RHS,OLattice<T1> >& rhs , 
 		      const Subset& subset )
 {
+#ifdef LLVM_DEBUG
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
+#endif
+
 #ifdef JIT_TIMING
   std::vector<double> tt;
   StopWatch sw;

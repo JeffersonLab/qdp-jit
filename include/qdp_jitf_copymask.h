@@ -9,6 +9,16 @@ namespace QDP {
   void
   function_copymask_build( JitFunction& func, OLattice<T>& dest , const OLattice<T1>& mask , const OLattice<T>& src )
   {
+#ifdef LLVM_DEBUG
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
+#endif
+
+    if (llvm_debug::debug_func_write) {
+      if (Layout::primaryNode()) {
+	llvm_debug_write_set_name(__PRETTY_FUNCTION__,"");
+      }
+    }
+
     JitMainLoop loop;
 
     ParamLeaf param_leaf;
@@ -43,6 +53,10 @@ namespace QDP {
   void 
   function_copymask_exec(const JitFunction& function, OLattice<T>& dest, const OLattice<T1>& mask, const OLattice<T>& src )
   {
+#ifdef LLVM_DEBUG
+  QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
+#endif
+
     AddressLeaf addr_leaf(all);
 
     int junk_0 = forEach(dest, addr_leaf, NullCombine());

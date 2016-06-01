@@ -129,7 +129,7 @@ namespace QDP {
 
   private:
 
-    mutable T F;
+    mutable T F __attribute__((aligned(QDP_ALIGNMENT_SIZE)));;
   };
 
 

@@ -55,7 +55,9 @@ namespace QDP {
     srcnode.resize(nodeSites);
     dstnode.resize(nodeSites);
 
+
     // Loop over the sites on this node
+#pragma omp parallel for
     for(int linear=0; linear < nodeSites; ++linear) 
       {
 	// Get the true lattice coord of this linear site index
@@ -77,7 +79,6 @@ namespace QDP {
 	dstnode[linear]  = bnode;
       }
 
-
     goffsets.resize( MasterSet::Instance().numSubsets() );
     soffsets.resize( MasterSet::Instance().numSubsets() );
     roffsets.resize( MasterSet::Instance().numSubsets() );
@@ -96,6 +97,71 @@ namespace QDP {
       const int my_node = Layout::nodeNumber();
 
       // Loop over the sites on this node
+
+      // StopWatch w;
+      // w.start();
+
+      //
+      // OMP version, or serial version
+      //
+#if 1
+
+#pragma omp parallel for
+      for(int linear=0; linear < nodeSites; ++linear)
+	{
+	  multi1d<int> coord = Layout::siteCoords(my_node, linear);
+	  multi1d<int> fcoord = func(coord,+1);
+
+	  if (srcnode[linear] == my_node)
+	    {
+	      goffsets[s_no][linear] = Layout::linearSiteIndex(fcoord);
+	    }
+	  else
+	    {
+	      // if destptr < 0 it contains the receive_buffer index
+	      // additional '-1' to make sure its negative,
+	      // not the best style, but higher performance
+	      // than using another buffer
+
+	      //QDPIO::cerr << "found off-node source site (" << linear << ") "; 
+
+	      if ( MasterSet::Instance().getSubset( s_no ).isElement( linear ) ) 
+		{
+		  //QDPIO::cerr << "in subset, assigning receivce buffer index = " << -ri-1 << "\n";
+		  goffsets[s_no][linear] = -1;
+		} 
+	      else 
+		{
+		  //QDPIO::cerr << "not in subset\n";
+		}
+	    }
+	}
+      for(int linear=0,ri=0; linear < nodeSites; ++linear)
+	if ( goffsets[s_no][linear] == -1 )
+	  goffsets[s_no][linear] = -(ri++)-1;
+
+      // check
+#if 0
+      for(int linear=0, ri=0; linear < nodeSites; ++linear)
+	{
+	  multi1d<int> coord = Layout::siteCoords(my_node, linear);
+	  multi1d<int> fcoord = func(coord,+1);
+	  if (srcnode[linear] == my_node)
+	    {
+      assert( goffsets[s_no][linear] == Layout::linearSiteIndex(fcoord) );
+            }
+	  else
+	    {
+	      if ( MasterSet::Instance().getSubset( s_no ).isElement( linear ) ) 
+		{
+      assert( goffsets[s_no][linear] == -(ri++)-1);
+		} 
+	    }
+	}
+#endif
+
+
+#else
       for(int linear=0, ri=0; linear < nodeSites; ++linear)
 	{
 	  multi1d<int> coord = Layout::siteCoords(my_node, linear);
@@ -125,7 +191,13 @@ namespace QDP {
 		}
 	    }
 	}
+#endif
+      // w.stop();
+      // double ms = w.getTimeInSeconds();
+      // QDPIO::cout << "time = " << ms << "s\n";
+
     } // s_no
+
 
 #if QDP_DEBUG >= 3
 	  QDP_info("linear=%d  coord=%d %d %d %d   fcoord=%d %d %d %d   bcoord=%d %d %d %d   goffsets=%d", 
@@ -167,7 +239,6 @@ namespace QDP {
     QDP_info("cnt_srcenodes = %d", cnt_srcenodes);
     QDP_info("cnt_destnodes = %d", cnt_destnodes);
 #endif
-
 
     // A sanity check - both counts must be either 0 or non-zero
     if (cnt_srcenodes > 0 && cnt_destnodes == 0)
@@ -214,8 +285,6 @@ namespace QDP {
     for(int i=0; i < destnodes.size(); ++i)
       QDP_info("destnodes(%d) = %d",i,destnodes(i));
 #endif
-
-
 
     // Implementation limitation in the Map::operator(). Only support
     // a node sending data all to one node or no sending at all (offNodeP == false).
@@ -340,10 +409,6 @@ namespace QDP {
       QDP_info("destnodes_num(%d) = %d",i,destnodes_num(i));
     }
 #endif
-
-
-
-
 
 
 #if QDP_DEBUG >= 3
