@@ -310,6 +310,29 @@ namespace QDP {
   }
 
 
+
+
+
+  llvm::SmallVector<std::string,10> getTargetFeatures()
+  {
+    llvm::StringMap<bool> HostFeatures;
+    llvm::sys::getHostCPUFeatures(HostFeatures);
+
+    llvm::SmallVector<std::string,10> attr;
+    for (llvm::StringMap<bool>::const_iterator it = HostFeatures.begin(); it != HostFeatures.end(); it++)
+      {
+        std::string att = it->getValue() ? it->getKey().str() :
+	  std::string("-") + it->getKey().str();
+        attr.append(1, att);
+      }
+    return attr;
+  }
+
+
+
+  
+
+
   void llvm_start_new_function() {
     assert( !function_started && "Function already started");
     function_started = true;
@@ -341,9 +364,26 @@ namespace QDP {
     }
 
     llvm::EngineBuilder engineBuilder(std::move(std::unique_ptr<llvm::Module>(Mod)));
+
+    if (llvm_debug::debug_func_build) {
+      QDPIO::cout << "getHostCPUName() = " << llvm::sys::getHostCPUName().str() << "\n";
+    }
+    
+    llvm::SmallVector<std::string,10> target_features_vec = getTargetFeatures();
+
     engineBuilder.setMCPU(llvm::sys::getHostCPUName());
-    if (vec_mattr.size() > 0) 
+    if (vec_mattr.size() > 0) {
       engineBuilder.setMAttrs( vec_mattr );
+      target_features_vec.append(vec_mattr.begin(),vec_mattr.end());
+    }
+
+    if (llvm_debug::debug_func_build) {
+      for (llvm::SmallVector<std::string,10>::const_iterator it = target_features_vec.begin(); it != target_features_vec.end(); it++)
+	QDPIO::cout << *it << ",";
+      QDPIO::cout << "\n";
+    }
+
+    engineBuilder.setMAttrs( target_features_vec );
     engineBuilder.setEngineKind(llvm::EngineKind::JIT);
     engineBuilder.setOptLevel(llvm::CodeGenOpt::Aggressive);
     engineBuilder.setErrorStr(&mcjit_error);
@@ -443,6 +483,8 @@ namespace QDP {
       	llvm::AttrBuilder B;
       	B.addAttribute(llvm::Attribute::NoAlias);
 
+	//B.addAlignmentAttr( 32 );
+ 
 	// We assume a FP pointer type coming from an OLattice which uses the default QDP allocator
 	if (vecParamType.at(Idx)->getPointerElementType()->isFloatingPointTy()) {
 	  B.addAlignmentAttr( QDP_ALIGNMENT_SIZE );
