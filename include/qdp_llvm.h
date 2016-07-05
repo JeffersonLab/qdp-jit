@@ -84,6 +84,7 @@ namespace QDP {
     extern bool debug_loop_vectorizer;
   }
 
+  extern llvm::LLVMContext TheContext;
 
   typedef int ParamRef;
 

@@ -3,8 +3,13 @@
 
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/ADT/SmallString.h"
+#include "llvm-c/Core.h"
+#include "llvm/Transforms/Scalar/GVN.h"
+
 
 namespace QDP {
+
+  llvm::LLVMContext TheContext;
 
   llvm::IRBuilder<> *builder;
   llvm::BasicBlock  *entry;
@@ -289,10 +294,13 @@ namespace QDP {
     function_created = false;
     function_started = false;
 
+    
 
     // llvm::InitializeAllAsmPrinters();
     // llvm::InitializeAllAsmParsers();
 
+    
+#if 0
     llvm_type<float>::value  = llvm::Type::getFloatTy(llvm::getGlobalContext());
     llvm_type<double>::value = llvm::Type::getDoubleTy(llvm::getGlobalContext());
     llvm_type<int>::value    = llvm::Type::getIntNTy(llvm::getGlobalContext(),32);
@@ -301,6 +309,16 @@ namespace QDP {
     llvm_type<double*>::value = llvm::Type::getDoublePtrTy(llvm::getGlobalContext());
     llvm_type<int*>::value    = llvm::Type::getIntNPtrTy(llvm::getGlobalContext(),32);
     llvm_type<bool*>::value   = llvm::Type::getIntNPtrTy(llvm::getGlobalContext(),1);
+#else
+    llvm_type<float>::value  = llvm::Type::getFloatTy(TheContext);
+    llvm_type<double>::value = llvm::Type::getDoubleTy(TheContext);
+    llvm_type<int>::value    = llvm::Type::getIntNTy(TheContext,32);
+    llvm_type<bool>::value   = llvm::Type::getIntNTy(TheContext,1);
+    llvm_type<float*>::value  = llvm::Type::getFloatPtrTy(TheContext);
+    llvm_type<double*>::value = llvm::Type::getDoublePtrTy(TheContext);
+    llvm_type<int*>::value    = llvm::Type::getIntNPtrTy(TheContext,32);
+    llvm_type<bool*>::value   = llvm::Type::getIntNPtrTy(TheContext,1);
+#endif
 
   }  
 
@@ -308,29 +326,6 @@ namespace QDP {
   llvm::BasicBlock * llvm_get_insert_block() {
     return builder->GetInsertBlock();
   }
-
-
-
-
-
-  llvm::SmallVector<std::string,10> getTargetFeatures()
-  {
-    llvm::StringMap<bool> HostFeatures;
-    llvm::sys::getHostCPUFeatures(HostFeatures);
-
-    llvm::SmallVector<std::string,10> attr;
-    for (llvm::StringMap<bool>::const_iterator it = HostFeatures.begin(); it != HostFeatures.end(); it++)
-      {
-        std::string att = it->getValue() ? it->getKey().str() :
-	  std::string("-") + it->getKey().str();
-        attr.append(1, att);
-      }
-    return attr;
-  }
-
-
-
-  
 
 
   void llvm_start_new_function() {
@@ -342,7 +337,9 @@ namespace QDP {
       QDPIO::cerr << "Creating new module ...\n";
     }
 
-    Mod = new llvm::Module("module", llvm::getGlobalContext());
+
+
+    Mod = new llvm::Module("module", TheContext);
 
     // llvm::Triple TheTriple;
     // TheTriple.setArch(llvm::Triple::x86_64);
@@ -364,26 +361,9 @@ namespace QDP {
     }
 
     llvm::EngineBuilder engineBuilder(std::move(std::unique_ptr<llvm::Module>(Mod)));
-
-    if (llvm_debug::debug_func_build) {
-      QDPIO::cout << "getHostCPUName() = " << llvm::sys::getHostCPUName().str() << "\n";
-    }
-    
-    llvm::SmallVector<std::string,10> target_features_vec = getTargetFeatures();
-
     engineBuilder.setMCPU(llvm::sys::getHostCPUName());
-    if (vec_mattr.size() > 0) {
+    if (vec_mattr.size() > 0) 
       engineBuilder.setMAttrs( vec_mattr );
-      target_features_vec.append(vec_mattr.begin(),vec_mattr.end());
-    }
-
-    if (llvm_debug::debug_func_build) {
-      for (llvm::SmallVector<std::string,10>::const_iterator it = target_features_vec.begin(); it != target_features_vec.end(); it++)
-	QDPIO::cout << *it << ",";
-      QDPIO::cout << "\n";
-    }
-
-    engineBuilder.setMAttrs( target_features_vec );
     engineBuilder.setEngineKind(llvm::EngineKind::JIT);
     engineBuilder.setOptLevel(llvm::CodeGenOpt::Aggressive);
     engineBuilder.setErrorStr(&mcjit_error);
@@ -404,7 +384,7 @@ namespace QDP {
       QDPIO::cerr << "    staring new LLVM function ...\n";
     }
 
-    builder = new llvm::IRBuilder<>(llvm::getGlobalContext());
+    builder = new llvm::IRBuilder<>(TheContext);
 
     llvm_setup_math_functions();
 
@@ -433,11 +413,11 @@ namespace QDP {
     std::vector<llvm::Type*> vecPT;
 
     // Push back lo,hi,myId
-    vecPT.push_back( llvm::Type::getInt64Ty(llvm::getGlobalContext()) ); // lo
-    vecPT.push_back( llvm::Type::getInt64Ty(llvm::getGlobalContext()) ); // hi
-    vecPT.push_back( llvm::Type::getInt64Ty(llvm::getGlobalContext()) ); // myId
-    vecPT.push_back( llvm::Type::getInt1Ty(llvm::getGlobalContext()) );  // ordered
-    vecPT.push_back( llvm::Type::getInt64Ty(llvm::getGlobalContext()) ); // start
+    vecPT.push_back( llvm::Type::getInt64Ty(TheContext) ); // lo
+    vecPT.push_back( llvm::Type::getInt64Ty(TheContext) ); // hi
+    vecPT.push_back( llvm::Type::getInt64Ty(TheContext) ); // myId
+    vecPT.push_back( llvm::Type::getInt1Ty(TheContext) );  // ordered
+    vecPT.push_back( llvm::Type::getInt64Ty(TheContext) ); // start
 
     vecPT.insert( vecPT.end() , vecParamType.begin() , vecParamType.end() );
 
@@ -483,20 +463,18 @@ namespace QDP {
       	llvm::AttrBuilder B;
       	B.addAttribute(llvm::Attribute::NoAlias);
 
-	//B.addAlignmentAttr( 32 );
- 
 	// We assume a FP pointer type coming from an OLattice which uses the default QDP allocator
 	if (vecParamType.at(Idx)->getPointerElementType()->isFloatingPointTy()) {
 	  B.addAlignmentAttr( QDP_ALIGNMENT_SIZE );
 	}
 
-      	AI->addAttr( llvm::AttributeSet::get( llvm::getGlobalContext() , 0 ,  B ) );
+      	AI->addAttr( llvm::AttributeSet::get( TheContext , 0 ,  B ) );
       }
 
       vecArgument.push_back( &*AI );
     }
 
-    llvm::BasicBlock* entry_main = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entrypoint", mainFunc);
+    llvm::BasicBlock* entry_main = llvm::BasicBlock::Create(TheContext, "entrypoint", mainFunc);
     builder->SetInsertPoint(entry_main);
 
     // if (Layout::primaryNode())
@@ -542,14 +520,14 @@ namespace QDP {
     if ( t0->isFloatingPointTy() || t1->isFloatingPointTy() ) {
       //llvm::outs() << "promote floating " << t0->isFloatingPointTy() << " " << t1->isFloatingPointTy() << "\n";
       if ( t0->isDoubleTy() || t1->isDoubleTy() ) {
-	return llvm::Type::getDoubleTy(llvm::getGlobalContext());
+	return llvm::Type::getDoubleTy(TheContext);
       } else {
-	return llvm::Type::getFloatTy(llvm::getGlobalContext());
+	return llvm::Type::getFloatTy(TheContext);
       }
     } else {
       //llvm::outs() << "promote int\n";
       unsigned upper = std::max( t0->getScalarSizeInBits() , t1->getScalarSizeInBits() );
-      return llvm::Type::getIntNTy(llvm::getGlobalContext() , upper );
+      return llvm::Type::getIntNTy(TheContext , upper );
     }
   }
 
@@ -812,41 +790,41 @@ namespace QDP {
 
 
   template<> ParamRef llvm_add_param<bool>() { 
-    vecParamType.push_back( llvm::Type::getInt1Ty(llvm::getGlobalContext()) );
+    vecParamType.push_back( llvm::Type::getInt1Ty(TheContext) );
     return vecParamType.size()-1;
-    // llvm::Argument * u8 = new llvm::Argument( llvm::Type::getInt8Ty(llvm::getGlobalContext()) , param_next() , mainFunc );
+    // llvm::Argument * u8 = new llvm::Argument( llvm::Type::getInt8Ty(TheContext) , param_next() , mainFunc );
     // return llvm_cast( llvm_type<bool>::value , u8 );
   }
   template<> ParamRef llvm_add_param<bool*>() { 
-    vecParamType.push_back( llvm::Type::getInt1PtrTy(llvm::getGlobalContext()) );
+    vecParamType.push_back( llvm::Type::getInt1PtrTy(TheContext) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<int64_t>() { 
-    vecParamType.push_back( llvm::Type::getInt64Ty(llvm::getGlobalContext()) );
+    vecParamType.push_back( llvm::Type::getInt64Ty(TheContext) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<int>() { 
-    vecParamType.push_back( llvm::Type::getInt32Ty(llvm::getGlobalContext()) );
+    vecParamType.push_back( llvm::Type::getInt32Ty(TheContext) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<int*>() { 
-    vecParamType.push_back( llvm::Type::getInt32PtrTy(llvm::getGlobalContext()) );
+    vecParamType.push_back( llvm::Type::getInt32PtrTy(TheContext) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<float>() { 
-    vecParamType.push_back( llvm::Type::getFloatTy(llvm::getGlobalContext()) );
+    vecParamType.push_back( llvm::Type::getFloatTy(TheContext) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<float*>() { 
-    vecParamType.push_back( llvm::Type::getFloatPtrTy(llvm::getGlobalContext()) );
+    vecParamType.push_back( llvm::Type::getFloatPtrTy(TheContext) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<double>() { 
-    vecParamType.push_back( llvm::Type::getDoubleTy(llvm::getGlobalContext()) );
+    vecParamType.push_back( llvm::Type::getDoubleTy(TheContext) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<double*>() { 
-    vecParamType.push_back( llvm::Type::getDoublePtrTy(llvm::getGlobalContext()) );
+    vecParamType.push_back( llvm::Type::getDoublePtrTy(TheContext) );
     return vecParamType.size()-1;
   }
 
@@ -856,7 +834,7 @@ namespace QDP {
   {
     std::ostringstream oss;
     oss << "L" << llvm_counters::label_counter++;
-    llvm::BasicBlock *BB = llvm::BasicBlock::Create(llvm::getGlobalContext(), oss.str() );
+    llvm::BasicBlock *BB = llvm::BasicBlock::Create(TheContext, oss.str() );
     mainFunc->getBasicBlockList().push_back(BB);
     return BB;
   }
@@ -905,21 +883,21 @@ namespace QDP {
 
 
   llvm::ConstantInt * llvm_create_const_int(int i) {
-    return llvm::ConstantInt::getSigned( llvm::Type::getIntNTy(llvm::getGlobalContext(),32) , i );
+    return llvm::ConstantInt::getSigned( llvm::Type::getIntNTy(TheContext,32) , i );
   }
 
   llvm::Value * llvm_create_value( double v )
   {
     if (sizeof(REAL) == 4)
-      return llvm::ConstantFP::get( llvm::Type::getFloatTy(llvm::getGlobalContext()) , v );
+      return llvm::ConstantFP::get( llvm::Type::getFloatTy(TheContext) , v );
     else
-      return llvm::ConstantFP::get( llvm::Type::getDoubleTy(llvm::getGlobalContext()) , v );
+      return llvm::ConstantFP::get( llvm::Type::getDoubleTy(TheContext) , v );
   }
 
-  llvm::Value * llvm_create_value(int64_t v )  {return llvm::ConstantInt::get( llvm::Type::getInt64Ty(llvm::getGlobalContext()) , v );}
-  llvm::Value * llvm_create_value(int v )  {return llvm::ConstantInt::get( llvm::Type::getInt32Ty(llvm::getGlobalContext()) , v );}
-  llvm::Value * llvm_create_value(size_t v){return llvm::ConstantInt::get( llvm::Type::getInt32Ty(llvm::getGlobalContext()) , v );}
-  llvm::Value * llvm_create_value(bool v ) {return llvm::ConstantInt::get( llvm::Type::getInt1Ty(llvm::getGlobalContext()) , v );}
+  llvm::Value * llvm_create_value(int64_t v )  {return llvm::ConstantInt::get( llvm::Type::getInt64Ty(TheContext) , v );}
+  llvm::Value * llvm_create_value(int v )  {return llvm::ConstantInt::get( llvm::Type::getInt32Ty(TheContext) , v );}
+  llvm::Value * llvm_create_value(size_t v){return llvm::ConstantInt::get( llvm::Type::getInt32Ty(TheContext) , v );}
+  llvm::Value * llvm_create_value(bool v ) {return llvm::ConstantInt::get( llvm::Type::getInt1Ty(TheContext) , v );}
 
 
   llvm::Value * llvm_createGEP( llvm::Value * ptr , llvm::Value * idx )
@@ -962,14 +940,14 @@ namespace QDP {
 
   void llvm_bar_sync()
   {
-    llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getVoidTy(llvm::getGlobalContext()), false);
+    llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getVoidTy(TheContext), false);
 
     llvm::AttrBuilder ABuilder;
     ABuilder.addAttribute(llvm::Attribute::ReadNone);
 
     llvm::Constant *Bar = Mod->getOrInsertFunction( "llvm.nvvm.barrier0" , 
 						    IntrinFnTy , 
-						    llvm::AttributeSet::get(llvm::getGlobalContext(), 
+						    llvm::AttributeSet::get(TheContext, 
 									    llvm::AttributeSet::FunctionIndex, 
 									    ABuilder)
 						    );
@@ -983,14 +961,14 @@ namespace QDP {
 
   llvm::Value * llvm_special( const char * name )
   {
-    llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getInt32Ty(llvm::getGlobalContext()), false);
+    llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getInt32Ty(TheContext), false);
 
     llvm::AttrBuilder ABuilder;
     ABuilder.addAttribute(llvm::Attribute::ReadNone);
 
     llvm::Constant *ReadTidX = Mod->getOrInsertFunction( name , 
 							 IntrinFnTy , 
-							 llvm::AttributeSet::get(llvm::getGlobalContext(), 
+							 llvm::AttributeSet::get(TheContext, 
 										 llvm::AttributeSet::FunctionIndex, 
 										 ABuilder)
 							 );
@@ -1295,7 +1273,7 @@ namespace QDP {
     //
     QDPIO::cerr << "loading module from mod_peek.ll\n";
     llvm::SMDiagnostic Err;
-    Mod = llvm::ParseIRFile("mod_peek.ll", Err, llvm::getGlobalContext());
+    Mod = llvm::ParseIRFile("mod_peek.ll", Err, TheContext);
     mainFunc = Mod->getFunction("main");
     llvm::Function *mainFunc_extern = Mod->getFunction("main_extern");
     //
@@ -1447,13 +1425,13 @@ namespace QDP {
     std::vector< llvm::Type* > vecArgs;
 
     // Push front lo,hi,myId
-    vecArgs.push_back( llvm::Type::getInt64Ty(llvm::getGlobalContext()) ); // lo
-    vecArgs.push_back( llvm::Type::getInt64Ty(llvm::getGlobalContext()) ); // hi
-    vecArgs.push_back( llvm::Type::getInt64Ty(llvm::getGlobalContext()) ); // myId
-    vecArgs.push_back( llvm::Type::getInt1Ty(llvm::getGlobalContext())  ); // ordered
-    vecArgs.push_back( llvm::Type::getInt64Ty(llvm::getGlobalContext()) ); // start
+    vecArgs.push_back( llvm::Type::getInt64Ty(TheContext) ); // lo
+    vecArgs.push_back( llvm::Type::getInt64Ty(TheContext) ); // hi
+    vecArgs.push_back( llvm::Type::getInt64Ty(TheContext) ); // myId
+    vecArgs.push_back( llvm::Type::getInt1Ty(TheContext)  ); // ordered
+    vecArgs.push_back( llvm::Type::getInt64Ty(TheContext) ); // start
     vecArgs.push_back( llvm::PointerType::get( 
-					       llvm::ArrayType::get( llvm::Type::getInt8Ty(llvm::getGlobalContext()) , 
+					       llvm::ArrayType::get( llvm::Type::getInt8Ty(TheContext) , 
 								     8 ) , 0  ) );
 
     llvm::FunctionType *funcType = 
@@ -1495,7 +1473,7 @@ namespace QDP {
 
     // Create entry basic block
 
-    llvm::BasicBlock* entry = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entrypoint", mainFunc_extern);
+    llvm::BasicBlock* entry = llvm::BasicBlock::Create(TheContext, "entrypoint", mainFunc_extern);
     builder->SetInsertPoint(entry);
 
     // Extract each parameter

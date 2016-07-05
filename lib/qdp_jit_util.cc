@@ -5,6 +5,7 @@ namespace QDP {
   extern llvm::IRBuilder<>  *builder;
   extern llvm::Module       *Mod;
 
+
   llvm::Function    *func_seed2float;
   llvm::Function    *func_seedMultiply;
 
@@ -34,7 +35,7 @@ namespace QDP {
 				builder->getInt32Ty(),
 				builder->getInt32Ty() };
     
-    llvm::StructType* ret_type = llvm::StructType::get(llvm::getGlobalContext(), 
+    llvm::StructType* ret_type = llvm::StructType::get(TheContext, 
 						       llvm::ArrayRef< llvm::Type * >( ret_types , 4 ) );
 
     llvm::FunctionType *funcType = llvm::FunctionType::get( ret_type , 
@@ -52,7 +53,7 @@ namespace QDP {
       args.push_back(&*AI);
     }
 
-    llvm::BasicBlock* entry = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entrypoint", F);
+    llvm::BasicBlock* entry = llvm::BasicBlock::Create(TheContext, "entrypoint", F);
     builder->SetInsertPoint(entry);
 
     typedef RScalar<WordREG<int> >  T;
@@ -134,7 +135,7 @@ namespace QDP {
       args.push_back(&*AI);
     }
 
-    llvm::BasicBlock* entry = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entrypoint", F);
+    llvm::BasicBlock* entry = llvm::BasicBlock::Create(TheContext, "entrypoint", F);
     builder->SetInsertPoint(entry);
 
     typedef RScalar<WordREG<int> >  T;
