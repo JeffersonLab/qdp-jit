@@ -4,10 +4,17 @@ Build instructions for Chroma/JIT on Intel KNL
 ----------------------------------------------
 ----------------------------------------------
 
-Prerequisite: Building LLVM 3.8 with Intel compiler.
+Prerequisite: Building LLVM version higher than 3.8 (as 3.8 had not complete KNL support, but LLVM snapshot on July 4 2016 was successful)
+
+Building LLVM 3.9 with GCC compiler
+-------------------------------------
+remarks:
+LLVM's build system turns off RTTI by default. However, Chroma needs it. This (at least for my build clashed) and I had to tweak the LLVM source by removing the option from file 'cmake/modules/AddLLVM.cmake'. Also I had to turn off ZLIB and TERMINFO. Then I could build the whole stack with RTTI turned on. Using shared libs for LLVM reduces link times considerably.
 
 
-Building LLVM 3.8 with Intel compiler
+
+
+Building LLVM 3.9 with Intel compiler
 -------------------------------------
 
 Successfully built with 
