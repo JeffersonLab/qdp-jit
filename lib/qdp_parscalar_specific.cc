@@ -104,7 +104,7 @@ namespace QDP {
       //
       // OMP version, or serial version
       //
-#if 1
+#if 0
 
 #pragma omp parallel for
       for(int linear=0; linear < nodeSites; ++linear)
