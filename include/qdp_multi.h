@@ -24,6 +24,8 @@ namespace QDP {
 template<class T> class multi1d
 {
 public:
+  typedef T InnerType_t;
+
   // Basic cosntructor. Null (0x0) array_pointer, no copymem, no fast memory
   multi1d() {F=0;n1=0;copymem=false;fast_mem_hint=false;}
 

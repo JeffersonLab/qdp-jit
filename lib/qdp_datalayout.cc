@@ -84,6 +84,16 @@ namespace QDP {
     QDP_jit_layout[pos_i] = 4;
   }
 
+  bool QDP_assert_jit_datalayout(int pos_o, int pos_s, int pos_c, int pos_r, int pos_i) {
+	  bool correct = ( QDP_jit_layout[pos_o] == 0)
+					  && (QDP_jit_layout[pos_s] == 1)
+					  && (QDP_jit_layout[pos_c] == 2)
+					  && (QDP_jit_layout[pos_r] == 3)
+					  && (QDP_jit_layout[pos_i] == 4);
+
+	  return correct;
+  }
+
   void QDP_print_jit_datalayout() {
     const char* letters="oscri";
     QDPIO::cerr << "Using JIT data layout ";
