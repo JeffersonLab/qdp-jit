@@ -8,6 +8,8 @@ namespace QDP {
 
   void QDP_set_jit_datalayout(int pos_o, int pos_s, int pos_c, int pos_r, int pos_i);
   void QDP_print_jit_datalayout();
+  bool QDP_assert_jit_datalayout(int pos_o, int pos_s, int pos_c, int pos_r, int pos_i);
+  int64_t getDataLayoutInnerSize();
   //llvm::Value * datalayout_stack(IndexDomainVector a);
 
 } // namespace QDP
