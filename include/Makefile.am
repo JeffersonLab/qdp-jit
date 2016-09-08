@@ -13,7 +13,8 @@ PETE_HDRS =  PETE/Combiners.h \
 MEMORY_HDRS = qdp_allocator.h \
 	      qdp_singleton.h \
 	      qdp_default_allocator.h \
-	      qdp_qcdoc_allocator.h
+	      qdp_qcdoc_allocator.h \
+	      qdp_pool_allocator.h
 
 JIT_HDRS = qdp_mapresource.h \
 	    qdp_llvm.h qdp_viewleaf.h \

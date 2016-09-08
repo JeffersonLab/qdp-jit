@@ -31,6 +31,7 @@ namespace QDP {
   multi1d<int> logical_geom(Nd);   // apriori logical geometry of the machine
   multi1d<int> logical_iogeom(Nd); // apriori logical 	
 
+  extern size_t pool_size_in_gb;
 
 #if 1
   int gamma_degrand_rossi[5][4][4][2] = 
@@ -355,6 +356,11 @@ namespace QDP {
 			  char tmp[1024];
 			  sscanf((*argv)[++i], "%s", &tmp);
 			  llvm_append_mattr(tmp);
+			}
+			else if ( strcmp((*argv)[i],"-poolsize")==0)
+			{
+				sscanf((*argv)[++i], "%d", &pool_size_in_gb);
+
 			}
 			else if (strcmp((*argv)[i], "-debug")==0) 
 			{
