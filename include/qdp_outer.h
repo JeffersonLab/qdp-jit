@@ -4,7 +4,7 @@
 #define QDP_OUTER_H
 
 #include "qdp_config.h"
-#include "qdp_pool_allocator.h"
+#include "qdp_allocator.h"
 /*! \file
  * \brief Outer grid classes
  */
@@ -443,19 +443,13 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
     	T* tmp;
 
     	try {
-#if 0
     		tmp = (T*)QDP::Allocator::theQDPAllocator::Instance().allocate( sizeof(T) * Layout::sitesOnNode() ,
     				QDP::Allocator::DEFAULT );
-#else
-    		tmp = (T*)QDP::Allocator::theQDPPoolAllocator::Instance().alloc( sizeof(T) * Layout::sitesOnNode() );
-#endif
 
     	}
     	catch(std::bad_alloc) {
     		QDPIO::cerr << "Allocation failed in OLattice alloc_mem" << endl;
-#if 0
     		QDP::Allocator::theQDPAllocator::Instance().dump();
-#endif
     		QDP_abort(1);
     	}
     	if (where == MemoryUsageJIT) {
@@ -470,19 +464,12 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 
     inline void free_mem() {
     	if (F_alloc[1]) {
-#if 0
+
     		QDP::Allocator::theQDPAllocator::Instance().free( F_jit );
-#else
-    		QDP::Allocator::theQDPPoolAllocator::Instance().free( F_jit );
-#endif
 
     	}
     	if (F_alloc[0]) {
-#if 0
     		QDP::Allocator::theQDPAllocator::Instance().free( F );
-#else
-    		QDP::Allocator::theQDPPoolAllocator::Instance().free( F );
-#endif
     	}
     }
 

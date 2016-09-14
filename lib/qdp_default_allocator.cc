@@ -8,6 +8,7 @@
 #include <stack>
 #endif
 
+#include "qdp_default_allocator.h"
 
 namespace QDP {
 namespace Allocator {
@@ -40,7 +41,7 @@ namespace Allocator {
   // A stack to hold fun info
   std::stack<FuncInfo_t> infostack;
 #else
-  typedef map<unsigned char*, unsigned char *> MapT;
+  typedef std::map<unsigned char*, unsigned char *> MapT;
 
 #endif
 
@@ -51,7 +52,7 @@ namespace Allocator {
 
   // The type returned on map insertion, allows me to check
   // the insertion was successful.
-  typedef pair<MapT::iterator, bool> InsertRetVal;
+  typedef std::pair<MapT::iterator, bool> InsertRetVal;
 
 
   //! Allocator function. Allocates n_bytes, into a memory pool
@@ -78,7 +79,7 @@ namespace Allocator {
       unaligned = new unsigned char[ bytes_to_alloc ];
     }
     catch( std::bad_alloc ) { 
-      QDPIO::cerr << "Unable to allocate memory in allocate()" << endl;
+      QDPIO::cerr << "Unable to allocate memory in allocate()" << std::endl;
       throw;  // Re throw the bad alloc is the correct behaviour
 
     }
@@ -95,12 +96,12 @@ namespace Allocator {
       make_pair(aligned, MapVal(unaligned, info.func, info.line, bytes_to_alloc)));
 #else
     // Insert into the map
-    InsertRetVal r = the_alignment_map.insert(make_pair(aligned, unaligned));
+    InsertRetVal r = the_alignment_map.insert(std::make_pair(aligned, unaligned));
 #endif
 
     // Check success of insertion.
     if( ! r.second ) { 
-      QDPIO::cerr << "Failed to insert (unaligned,aligned) pair into map" << endl;
+      QDPIO::cerr << "Failed to insert (unaligned,aligned) pair into map" << std::endl;
       QDP_abort(1);
     }
 
@@ -133,7 +134,7 @@ namespace Allocator {
       delete [] unaligned;
     }
     else { 
-      QDPIO::cerr << "Pointer not found in map" << endl;
+      QDPIO::cerr << "Pointer not found in map" << std::endl;
       QDP_abort(1);
     }
   }
@@ -148,7 +149,7 @@ namespace Allocator {
      {
        size_t sum = 0;
        typedef MapT::const_iterator CI;
-       QDPIO::cout << "Dumping memory map" << endl;
+       QDPIO::cout << "Dumping memory map" << std::endl;
        for( CI j = the_alignment_map.begin();
              j != the_alignment_map.end(); j++)
        {
@@ -173,7 +174,7 @@ namespace Allocator {
   {
     if (infostack.empty())
     {
-      QDPIO::cerr << __func__ << ": invalid pop" << endl;
+      QDPIO::cerr << __func__ << ": invalid pop" << std::endl;
       QDP_abort(1);
     }
   
@@ -199,7 +200,7 @@ namespace Allocator {
      if ( Layout::primaryNode() )
      {
        typedef MapT::const_iterator CI;
-       QDPIO::cout << "Dumping memory map" << endl;
+       QDPIO::cout << "Dumping memory map" << std::endl;
        for( CI j = the_alignment_map.begin();
              j != the_alignment_map.end(); j++)
        {
@@ -219,7 +220,10 @@ namespace Allocator {
 
   // Init
   void
-  QDPDefaultAllocator::init() {}
+  QDPDefaultAllocator::init(size_t PoolSizeInMB ) {
+	  QDPIO::cout << "Initializing QDPDefaultAllocator." << std::endl;
+
+  }
 
 #endif
 

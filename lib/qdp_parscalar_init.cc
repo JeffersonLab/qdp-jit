@@ -31,7 +31,7 @@ namespace QDP {
   multi1d<int> logical_geom(Nd);   // apriori logical geometry of the machine
   multi1d<int> logical_iogeom(Nd); // apriori logical 	
 
-  extern size_t pool_size_in_gb;
+  extern float pool_size_in_gb;
 
 #if 1
   int gamma_degrand_rossi[5][4][4][2] = 
@@ -307,7 +307,10 @@ namespace QDP {
 				fprintf(stderr,"    -rtinode  %%s [%s] run-time interface fileserver node\n", 
 						rtinode);
 #endif
-				
+				fprintf(stderr, "   -poolsize <X>  Create a fixed pool of X GB for Pool Alloc\n");
+				fprintf(stderr, "   -threads <N>  run with N threads, specify binding manually\n");
+				fprintf(stderr, "   -layout ocsri/oscri or combinations -- Order of indices in layout\n");
+				fprintf(stderr, "   -inner  length of inntermost dimension, for vectorization ");
 				QDP_abort(1);
 			}
 		}
@@ -359,7 +362,7 @@ namespace QDP {
 			}
 			else if ( strcmp((*argv)[i],"-poolsize")==0)
 			{
-				sscanf((*argv)[++i], "%d", &pool_size_in_gb);
+				sscanf((*argv)[++i], "%f", &pool_size_in_gb);
 
 			}
 			else if (strcmp((*argv)[i], "-debug")==0) 
