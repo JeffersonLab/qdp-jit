@@ -440,6 +440,25 @@ then
 	AC_DEFINE([QDP_USE_OMP_THREADS], [1], [ Use OpenMP Threads ])
 fi
 
+
+AC_ARG_ENABLE(tbb-pool-allocator,
+	AC_HELP_STRING([--enable-tbb-pool-allocator],
+		[ Enable Threaded Building Blocks Fixed Pool Allocator]),
+	[ ac_enable_tbbpool=${enableval} ],
+	[ ac_enable_tbbpool="no" ]
+)
+
+dnl Threaded Building Blocks Pool Allocator
+if test "X${ac_enable_tbbpool}X" == "XyesX";
+then 
+	AC_MSG_NOTICE([Configuring to use TBB Fixed Pool. Please ensure CXXFLAGS and LDFLAGS are correctly set])
+	AC_DEFINE([QDP_USE_TBBPOOL_ALLOCATOR],[1], [ Use TBB Fixed Pool Allocator ])
+else
+	AC_MSG_NOTICE([Not Configuring Pool Allocator])
+fi
+
+AM_CONDITIONAL(BUILD_QDPJIT_TBB_ALLOCATOR, [test "X${ac_enable_tbbpool}X" == "XyesX" ])
+  
 dnl
 dnl
 dnl Now have all the options... Do some configuration 

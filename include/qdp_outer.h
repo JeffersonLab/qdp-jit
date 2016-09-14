@@ -4,7 +4,7 @@
 #define QDP_OUTER_H
 
 #include "qdp_config.h"
-
+#include "qdp_allocator.h"
 /*! \file
  * \brief Outer grid classes
  */
@@ -435,35 +435,42 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 
 
     inline void alloc_mem(MemoryUsage where, const char* msg) const {
-      if (where == MemoryUsageJIT)
-	assert( !F_alloc[1] && "alloc_mem already allocated (jit)");
-      else
-	assert( !F_alloc[0] && "alloc_mem already allocated (native)");
+    	if (where == MemoryUsageJIT)
+    		assert( !F_alloc[1] && "alloc_mem already allocated (jit)");
+    	else
+    		assert( !F_alloc[0] && "alloc_mem already allocated (native)");
 
-      T* tmp;
-      try {
-	 tmp = (T*)QDP::Allocator::theQDPAllocator::Instance().allocate( sizeof(T) * Layout::sitesOnNode() ,
-									 QDP::Allocator::DEFAULT ); }
-      catch(std::bad_alloc) {
-	QDPIO::cerr << "Allocation failed in OLattice alloc_mem" << endl;
-	QDP::Allocator::theQDPAllocator::Instance().dump();
-	QDP_abort(1);
-      }
-      if (where == MemoryUsageJIT) {
-	F_jit = tmp;
-	F_alloc[1] = true;
-      } else {
-	F = tmp;
-	F_alloc[0] = true;
-      }
+    	T* tmp;
+
+    	try {
+    		tmp = (T*)QDP::Allocator::theQDPAllocator::Instance().allocate( sizeof(T) * Layout::sitesOnNode() ,
+    				QDP::Allocator::DEFAULT );
+
+    	}
+    	catch(std::bad_alloc) {
+    		QDPIO::cerr << "Allocation failed in OLattice alloc_mem" << endl;
+    		QDP::Allocator::theQDPAllocator::Instance().dump();
+    		QDP_abort(1);
+    	}
+    	if (where == MemoryUsageJIT) {
+    		F_jit = tmp;
+    		F_alloc[1] = true;
+    	} else {
+    		F = tmp;
+    		F_alloc[0] = true;
+    	}
 
     }
 
     inline void free_mem() {
-      if (F_alloc[1])
-	QDP::Allocator::theQDPAllocator::Instance().free( F_jit );
-      if (F_alloc[0])
-	QDP::Allocator::theQDPAllocator::Instance().free( F );
+    	if (F_alloc[1]) {
+
+    		QDP::Allocator::theQDPAllocator::Instance().free( F_jit );
+
+    	}
+    	if (F_alloc[0]) {
+    		QDP::Allocator::theQDPAllocator::Instance().free( F );
+    	}
     }
 
 

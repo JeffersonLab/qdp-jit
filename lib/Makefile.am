@@ -38,6 +38,9 @@ libqdp_a_SOURCES += qdp_parscalar_init.cc qdp_parscalar_layout.cc \
 
 
 libqdp_a_SOURCES += qdp_default_allocator.cc
+if BUILD_QDPJIT_TBB_ALLOCATOR
+libqdp_a_SOURCES += qdp_pool_allocator.cc
+endif
 
 
 
