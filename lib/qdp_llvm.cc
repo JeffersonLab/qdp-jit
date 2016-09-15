@@ -13,6 +13,7 @@ namespace QDP {
 
   llvm::IRBuilder<> *builder;
   llvm::BasicBlock  *entry;
+  llvm::BasicBlock  *entry_main;
   llvm::Function    *mainFunc;
   llvm::Function    *mainFunc_extern;
   llvm::Module      *Mod;
@@ -474,7 +475,7 @@ namespace QDP {
       vecArgument.push_back( &*AI );
     }
 
-    llvm::BasicBlock* entry_main = llvm::BasicBlock::Create(TheContext, "entrypoint", mainFunc);
+    entry_main = llvm::BasicBlock::Create(TheContext, "entrypoint", mainFunc);
     builder->SetInsertPoint(entry_main);
 
     // if (Layout::primaryNode())
@@ -785,7 +786,12 @@ namespace QDP {
 
   llvm::Value * llvm_alloca( llvm::Type* type , int elements )
   {
-    return builder->CreateAlloca( type , llvm_create_value(elements) );    // This can be a llvm::Value*
+    llvm::BasicBlock *insert_block = builder->GetInsertBlock();
+    llvm::BasicBlock::iterator insert_point = builder->GetInsertPoint();
+    builder->SetInsertPoint( entry_main , entry_main->begin() );
+    llvm::Value *ptr = builder->CreateAlloca( type , llvm_create_value(elements) );    // This can be a llvm::Value*
+    builder->SetInsertPoint( insert_block , insert_point );
+    return ptr;
   }
 
 
@@ -1271,11 +1277,45 @@ namespace QDP {
 
 #if 0
     //
-    QDPIO::cerr << "loading module from mod_peek.ll\n";
+    QDPIO::cerr << "loading module from f.ll\n";
     llvm::SMDiagnostic Err;
-    Mod = llvm::ParseIRFile("mod_peek.ll", Err, TheContext);
+    //Mod = llvm::ParseIRFile("f.ll", Err, TheContext);
+    unique_ptr<llvm::Module> Mod_unique = llvm::getLazyIRFileModule("f.ll", Err, TheContext);
+    if (!Mod_unique)
+      {
+	QDPIO::cerr << Err.getMessage() << "\n";
+	exit(1);
+      }
+    QDPIO::cerr << "done\n";
+    Mod = Mod_unique.get();
+
+    //
+    // I need a new execution engine
+    //
+    llvm::EngineBuilder engineBuilder(std::move(Mod_unique));
+    engineBuilder.setMCPU(llvm::sys::getHostCPUName());
+    if (vec_mattr.size() > 0) 
+      engineBuilder.setMAttrs( vec_mattr );
+    engineBuilder.setEngineKind(llvm::EngineKind::JIT);
+    engineBuilder.setOptLevel(llvm::CodeGenOpt::Aggressive);
+    engineBuilder.setErrorStr(&mcjit_error);
+    llvm::TargetOptions targetOptions;
+    targetOptions.AllowFPOpFusion = llvm::FPOpFusion::Fast;
+    engineBuilder.setTargetOptions( targetOptions );
+    TheExecutionEngine = engineBuilder.create(); // MCJIT
+    assert(TheExecutionEngine && "failed to create LLVM ExecutionEngine with error");
+    QDPIO::cerr << "created new execution engine\n";
+
+    //Mod_unique.get()->dump();
+    //exit(0);
+    
     mainFunc = Mod->getFunction("main");
-    llvm::Function *mainFunc_extern = Mod->getFunction("main_extern");
+    if (!mainFunc)
+      {
+	QDPIO::cerr << "main not found!\n";
+	exit(1);
+      }
+    //llvm::Function *mainFunc_extern = Mod->getFunction("main_extern");
     //
 #endif
 
@@ -1315,7 +1355,7 @@ namespace QDP {
     functionPassManager->add(llvm::createLoopUnrollPass() );  // LLVM 3.8
     functionPassManager->add(llvm::createCFGSimplificationPass());  // join BB of vectorized loop with header
     functionPassManager->add(llvm::createGVNPass()); // eliminate redundant index instructions
-
+    
     if (llvm_debug::debug_loop_vectorizer) {
       if (Layout::primaryNode()) {
 	llvm::DebugFlag = true;
@@ -1362,8 +1402,6 @@ namespace QDP {
 	delete[] fname;
       }
     }
-
-
 
 
 
@@ -1433,7 +1471,6 @@ namespace QDP {
     vecArgs.push_back( llvm::PointerType::get( 
 					       llvm::ArrayType::get( llvm::Type::getInt8Ty(TheContext) , 
 								     8 ) , 0  ) );
-
     llvm::FunctionType *funcType = 
       llvm::FunctionType::get( builder->getVoidTy() , 
 			       llvm::ArrayRef<llvm::Type*>( vecArgs.data() , vecArgs.size() ) , 
@@ -1499,7 +1536,7 @@ namespace QDP {
     // vecCallArgument.push_back( val_0 );
 
     // Call 'main' from 'main_extern'
-    
+
     builder->CreateCall( mainFunc , llvm::ArrayRef<llvm::Value*>( vecCallArgument.data() , vecCallArgument.size() ) );
     builder->CreateRetVoid();
 
@@ -1523,6 +1560,8 @@ namespace QDP {
     }
     fptr_mainFunc_extern = TheExecutionEngine->getPointerToFunction( mainFunc_extern );
 
+    assert(fptr_mainFunc_extern!=NULL && "JIT failed");
+    
     function_created = false;
     function_started = false;
 

@@ -27,8 +27,13 @@ namespace QDP {
     int64_t hi = site_count;
     void * addr = args.addr.data();
 
-    //QDPIO::cerr << "dispatch...\n";
-
+#if 0    
+    QDPIO::cerr << "dispatch... site_counnt = " << site_count << "\n";
+    QDPIO::cerr << "dispatch... ordered     = " << ordered << "\n";
+    QDPIO::cerr << "dispatch... start       = " << start << "\n";
+    QDPIO::cerr << "dispatch... inner       = " << inner << "\n";
+#endif
+    
 #pragma omp parallel shared(site_count, threads_num, ordered, start, addr) private(myId, lo, hi) default(shared)
     {
       threads_num = omp_get_num_threads();
