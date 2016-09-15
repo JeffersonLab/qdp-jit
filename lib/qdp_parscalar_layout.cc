@@ -15,7 +15,7 @@
 
 #include "qdp.h"
 #include "qdp_util.h"
-
+#include "qdp_allocator.h"
 #include "qmp.h"
 
 
@@ -33,6 +33,7 @@ namespace QDP
     return s;
   }
 
+  float pool_size_in_gb = 8.0;
 
 //-----------------------------------------------------------------------------
   namespace Layout
@@ -363,6 +364,12 @@ namespace QDP
 	  QDP_error_exit("Layout::create - Layout problems, the layout functions do not work correctly with this lattice size");
       }
 #endif
+
+
+      size_t pool_size_in_MB = static_cast<size_t>(floor(pool_size_in_gb*1024.0));
+
+      Allocator::theQDPAllocator::Instance().init(pool_size_in_MB);
+
       // Initialize various defaults
       initDefaults();
 

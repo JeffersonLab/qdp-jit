@@ -15,6 +15,10 @@ MEMORY_HDRS = qdp_allocator.h \
 	      qdp_default_allocator.h \
 	      qdp_qcdoc_allocator.h
 
+if BUILD_QDPJIT_TBB_ALLOCATOR
+MEMORY_HDRS += qdp_pool_allocator.h
+endif
+
 JIT_HDRS = qdp_mapresource.h \
 	    qdp_llvm.h qdp_viewleaf.h \
 	    qdp_word.h qdp_wordjit.h qdp_wordreg.h \
