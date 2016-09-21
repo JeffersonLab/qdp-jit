@@ -7,6 +7,8 @@
 #ifndef QDP_ALLOCATOR
 #define QDP_ALLOCATOR
 
+#include "qdp_config.h"
+#include "qdp_singleton.h"
 /*! QDP Allocator
  *  A raw memory allocator for QDP, for particular use 
  *  with OLattice Objects. The pointers returned by allocate
@@ -15,8 +17,6 @@
  *  whereas on other targets (QCDOC) this should be the default
  *  alignment
  */
-using namespace std;
-
 namespace QDP 
 {
   namespace Allocator 
@@ -66,12 +66,29 @@ namespace QDP
 
 } // namespace QDP
 
-#ifdef QDP_USE_QCDOC
-// Include the QCDOC specialisation
-#include "qdp_qcdoc_allocator.h"
+
+// Now include the allocator.h-s and turn into singleton as approprite.
+#ifdef QDP_USE_TBBPOOL_ALLOCATOR
+#include "qdp_pool_allocator.h"
+namespace QDP {
+ namespace Allocator {
+ using theQDPAllocator = SingletonHolder<QDP::Allocator::QDPPoolAllocator,
+			    QDP::CreateUsingNew,
+			    QDP::NoDestroy,
+			    QDP::SingleThreaded>;
+ }
+}
 #else
 // Include the default specialisation
 #include "qdp_default_allocator.h"
+namespace QDP {
+ namespace Allocator {
+ using theQDPAllocator =  SingletonHolder<QDP::Allocator::QDPDefaultAllocator,
+			    QDP::CreateUsingNew,
+			    QDP::NoDestroy,
+			    QDP::SingleThreaded>;
+ }
+ }
 #endif
 
 
