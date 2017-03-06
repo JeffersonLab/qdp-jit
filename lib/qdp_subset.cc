@@ -36,7 +36,7 @@ namespace QDP
 #ifdef GPU_DEBUG    
       QDP_debug("Set::~Set: Strided:  Will sign off now...");
 #endif      
-      QDPCache::Instance().signoff( idStrided );
+      QDP_get_global_cache().signoff( idStrided );
     }
 
   }
@@ -44,7 +44,7 @@ namespace QDP
 
 
   Subset::Subset():registered(false) {
-    //QDPCache::Instance().sayHi();
+    //QDP_get_global_cache().sayHi();
     id=-1;
   }
 
@@ -54,7 +54,7 @@ namespace QDP
   Subset::Subset(const Subset& s):
     ordRep(s.ordRep), startSite(s.startSite), endSite(s.endSite), 
     sub_index(s.sub_index), sitetable(s.sitetable), membertable(s.membertable), set(s.set) , registered(false), id(s.id) { 
-    //QDPCache::Instance().sayHi();
+    //QDP_get_global_cache().sayHi();
   }
 
 
@@ -66,22 +66,22 @@ namespace QDP
 #ifdef GPU_DEBUG    
       QDP_debug("Subet::~Subset: Will sign off now...");
 #endif      
-      QDPCache::Instance().signoff( idSiteTable );
-      QDPCache::Instance().signoff( idMemberTable );
+      QDP_get_global_cache().signoff( idSiteTable );
+      QDP_get_global_cache().signoff( idMemberTable );
     }
 
   }
 
 
   Set::Set(): registered(false) {
-    //QDPCache::Instance().sayHi();
+    //QDP_get_global_cache().sayHi();
   }
 
 
 
   //! Constructor from a function object
   Set::Set(const SetFunc& fn): registered(false) {
-    //QDPCache::Instance().sayHi();
+    //QDP_get_global_cache().sayHi();
     make(fn);    
   }
 
@@ -205,14 +205,14 @@ namespace QDP
     } else {
       if (registered) {
 	QDP_info("Subset::make:  Already registered, will sign off the old memory ...");
-	QDPCache::Instance().signoff( idSiteTable );
-	QDPCache::Instance().signoff( idMemberTable );
+	QDP_get_global_cache().signoff( idSiteTable );
+	QDP_get_global_cache().signoff( idMemberTable );
       }
 #ifdef GPU_DEBUG      
       QDP_debug("Subset::make: Will register memory now...");
 #endif      
-      idSiteTable = QDPCache::Instance().registrateOwnHostMem( ind->size() * sizeof(int) , ind->slice() , NULL );
-      idMemberTable = QDPCache::Instance().registrateOwnHostMem( membertable->size() * sizeof(bool) , membertable->slice() , NULL );
+      idSiteTable = QDP_get_global_cache().registrateOwnHostMem( ind->size() * sizeof(int) , ind->slice() , NULL );
+      idMemberTable = QDP_get_global_cache().registrateOwnHostMem( membertable->size() * sizeof(bool) , membertable->slice() , NULL );
       registered=true;
     }
 
@@ -243,14 +243,14 @@ namespace QDP
     } else {
       if (registered) {
 	QDP_info("Subset::make:  Already registered, will sign off the old memory ...");
-	QDPCache::Instance().signoff( idSiteTable );
-	QDPCache::Instance().signoff( idMemberTable );
+	QDP_get_global_cache().signoff( idSiteTable );
+	QDP_get_global_cache().signoff( idMemberTable );
       }
 #ifdef GPU_DEBUG      
       QDP_debug("Subset::make: Will register memory now...");
 #endif      
-      idSiteTable = QDPCache::Instance().registrateOwnHostMem( s.sitetable->size() * sizeof(int) , s.sitetable->slice() , NULL );
-      idMemberTable = QDPCache::Instance().registrateOwnHostMem( s.membertable->size() * sizeof(bool) , s.membertable->slice() , NULL );
+      idSiteTable = QDP_get_global_cache().registrateOwnHostMem( s.sitetable->size() * sizeof(int) , s.sitetable->slice() , NULL );
+      idMemberTable = QDP_get_global_cache().registrateOwnHostMem( s.membertable->size() * sizeof(bool) , s.membertable->slice() , NULL );
       registered=true;
     }
 

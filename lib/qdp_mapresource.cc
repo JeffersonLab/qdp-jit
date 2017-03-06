@@ -43,11 +43,11 @@ namespace QDP {
     }
 
     QDPIO::cout << "Allocating receive buffer on device: " << srcnum << " bytes\n";
-    if (!QDPCache::Instance().allocate_device_static( &recv_buf_dev , srcnum))
+    if (!QDP_get_global_cache().allocate_device_static( &recv_buf_dev , srcnum))
       QDP_error_exit("Error allocating GPU memory for receive buffer");
 
     QDPIO::cout << "Allocating send buffer on device: " << dstnum << " bytes\n";
-    if (!QDPCache::Instance().allocate_device_static( &send_buf_dev , dstnum))
+    if (!QDP_get_global_cache().allocate_device_static( &send_buf_dev , dstnum))
       QDP_error_exit("Error allocating GPU memory for send buffer");
 
     if (!DeviceParams::Instance().getGPUDirect()) {
@@ -99,8 +99,8 @@ namespace QDP {
       QMP_free_memory(recv_buf_mem);
       QMP_free_memory(send_buf_mem);
 #endif
-      QDPCache::Instance().free_device_static( send_buf_dev );
-      QDPCache::Instance().free_device_static( recv_buf_dev );
+      QDP_get_global_cache().free_device_static( send_buf_dev );
+      QDP_get_global_cache().free_device_static( recv_buf_dev );
       CudaHostFree(send_buf);
       CudaHostFree(recv_buf);
     }

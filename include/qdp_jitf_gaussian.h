@@ -47,7 +47,7 @@ function_gaussian_exec(CUfunction function, OLattice<T>& dest,OLattice<T>& r1,OL
   bool ordered = s.hasOrderedRep();
   int th_count = ordered ? s.numSiteTable() : Layout::sitesOnNode();
 
-  void * subset_member = QDPCache::Instance().getDevicePtr( s.getIdMemberTable() );
+  void * subset_member = QDP_get_global_cache().getDevicePtr( s.getIdMemberTable() );
 
   std::vector<void*> addr;
 

@@ -24,11 +24,11 @@ namespace QDP
   };
 
 
-  QDPCache& QDPCache::Instance()
-  {
-    static QDPCache singleton;
-    return singleton;
-  }
+  // QDPCache& QDPCache::Instance()
+  // {
+  //   static QDPCache singleton;
+  //   return singleton;
+  // }
 
   void QDPCache::beginNewLockSet() {
     prevLS = currLS;
@@ -75,7 +75,7 @@ namespace QDP
 
   bool QDPCache::allocate_device_static( void** ptr, size_t n_bytes ) {
     //QDPIO::cout << "GPU cache, allocate static memory " << (double)n_bytes/1024./1024. << " MB\n";
-    while (!CUDADevicePoolAllocator::Instance().allocate( ptr , n_bytes )) {
+    while (!pool_allocator.allocate( ptr , n_bytes )) {
       if (!spill_lru()) {
 	QDP_error_exit("cache allocate_device_static: can't spill LRU object");
       }
@@ -85,7 +85,7 @@ namespace QDP
   }
 
   void QDPCache::free_device_static( void* ptr ) {
-    CUDADevicePoolAllocator::Instance().free( ptr );
+    pool_allocator.free( ptr );
 
     list<void*>::iterator i = find( lstStatic.begin() , lstStatic.end() , ptr );
 
@@ -268,6 +268,10 @@ namespace QDP
 #ifdef GPU_DEBUG_DEEP
     printLockSets();
 #endif
+#ifdef GPU_DEBUG_DEEP
+    QDP_debug_deep("cache signoff id=%lu (done)",(long)id );
+#endif
+
   }
 
   void * QDPCache::getDevicePtrNoLock(int id) {
@@ -430,10 +434,10 @@ namespace QDP
   void QDPCache::assureDevice(Entry& e) {
 
     if (!e.devPtr) {
-      while (!CUDADevicePoolAllocator::Instance().allocate( &e.devPtr , e.size )) {
+      while (!pool_allocator.allocate( &e.devPtr , e.size )) {
 	if (!spill_lru()) {
 	  QDP_info("Device pool:");
-	  CUDADevicePoolAllocator::Instance().printListPool();
+	  pool_allocator.printListPool();
 	  printLockSets();
 	  QDP_error_exit("cache assureDevice: can't spill LRU object. Out of GPU memory!");
 	}
@@ -521,7 +525,7 @@ namespace QDP
     // we can immediately free the device memory
     if (e.flags == 2) {
       if (e.devPtr) {
-	CUDADevicePoolAllocator::Instance().free( e.devPtr );
+	pool_allocator.free( e.devPtr );
 	e.devPtr = NULL;
       }
     } else if (e.flags ==3 ) {
@@ -541,7 +545,7 @@ namespace QDP
 	  CudaMemcpyD2H( e.hstPtr , e.devPtr , e.size );
 	}
 	CudaSyncTransferStream();
-	CUDADevicePoolAllocator::Instance().free( e.devPtr );
+	pool_allocator.free( e.devPtr );
 	e.devPtr = NULL;
 	e.object->onHost=true;
       }
@@ -566,7 +570,7 @@ namespace QDP
 	  }
 
 	  CudaSyncTransferStream();
-	  CUDADevicePoolAllocator::Instance().free( e.devPtr );
+	  pool_allocator.free( e.devPtr );
 	  e.devPtr = NULL;
 	}
       }
@@ -633,6 +637,9 @@ namespace QDP
 
 
   void QDPCache::deleteObjects() {
+#ifdef GPU_DEBUG_DEEP
+    QDP_debug_deep("delete objs");
+#endif
 
     list<int>::iterator i = lstDel.begin();
 
@@ -665,7 +672,7 @@ namespace QDP
 #endif
 	  
 	if (e.devPtr) {
-	  CUDADevicePoolAllocator::Instance().free( e.devPtr );
+	  pool_allocator.free( e.devPtr );
 	}
 
 	if (e.hstPtr)
@@ -678,6 +685,10 @@ namespace QDP
 	i++;
       }
     }
+#ifdef GPU_DEBUG_DEEP
+    QDP_debug_deep("delete objs (done)");
+#endif
+
   }
 
 
@@ -697,10 +708,21 @@ namespace QDP
 
 
   QDPCache::~QDPCache() {
+#ifdef GPU_DEBUG_DEEP
+    QDP_debug_deep("Cache destructed");
+#endif
   }
 
 
 
+  QDPCache& QDP_get_global_cache()
+  {
+    static QDPCache* global_cache;
+    if (!global_cache) {
+      global_cache = new QDPCache();
+    }
+    return *global_cache;
+  }
 
 
 }

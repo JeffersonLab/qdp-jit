@@ -137,11 +137,11 @@ namespace QDP {
 
 	  //QDPIO::cout << "mastermap:reg: subset=" << s_no << " i|id=" << ((int)i|id) << " size=" << powerSet[s_no][i|id]->size() * sizeof(int) << "\n";
 
-	  idFace[s_no][i|id] = QDPCache::Instance().registrateOwnHostMem( powerSet[s_no][i|id]->size() * sizeof(int) , 
+	  idFace[s_no][i|id] = QDP_get_global_cache().registrateOwnHostMem( powerSet[s_no][i|id]->size() * sizeof(int) , 
 									  powerSet[s_no][i|id]->slice() , NULL );
 	  //QDPIO::cout << "mastermap:reg: subset=" << s_no << " i|id=" << ((int)i|id) << " size=" << powerSetC[s_no][i|id]->size() * sizeof(int) << "\n";
 
-	  idInner[s_no][i|id] = QDPCache::Instance().registrateOwnHostMem( powerSetC[s_no][i|id]->size() * sizeof(int) , 
+	  idInner[s_no][i|id] = QDP_get_global_cache().registrateOwnHostMem( powerSetC[s_no][i|id]->size() * sizeof(int) , 
 									   powerSetC[s_no][i|id]->slice() , NULL );
 
 	}

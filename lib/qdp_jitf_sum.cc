@@ -14,7 +14,7 @@ namespace QDP {
     //int do_soffset_index = 1;
 
 
-    //QDPCache::Instance().printLockSets();
+    //QDP_get_global_cache().printLockSets();
 
     std::vector<void*> addr;
 
@@ -56,7 +56,7 @@ namespace QDP {
     //int do_soffset_index = 0;
     //void *dummy_ptr = NULL;
 
-    //QDPCache::Instance().printLockSets();
+    //QDP_get_global_cache().printLockSets();
 
     std::vector<void*> addr;
 

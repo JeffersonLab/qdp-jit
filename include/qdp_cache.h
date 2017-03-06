@@ -14,16 +14,19 @@
 using namespace std;
 
 namespace QDP 
-{
+{  
   class QDPJitArgs;
   class QDPCached;
 
+  namespace {
+    typedef QDPPoolAllocator<QDPCUDAAllocator>     CUDADevicePoolAllocator;
+  }
+  
   class QDPCache
   {
     struct Entry;
   public:
     typedef void (* LayoutFptr)(bool toDev,void * outPtr,void * inPtr);
-    static QDPCache& Instance();
 
     size_t getSize(int id);
     void beginNewLockSet();
@@ -62,6 +65,8 @@ namespace QDP
     QDPCache();
     ~QDPCache();
 
+    CUDADevicePoolAllocator& get_allocator() { return pool_allocator; }
+    
   private:
     list<void *>        lstStatic;
 
@@ -76,9 +81,10 @@ namespace QDP
     int                 prevLS;
     list<char*>         listBackup;
 
+    CUDADevicePoolAllocator pool_allocator;
   };
 
-
+  QDPCache& QDP_get_global_cache();
 
 }
 

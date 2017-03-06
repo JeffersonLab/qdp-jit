@@ -21,7 +21,8 @@ namespace QDP {
     for (void *addr : args)	
       QDP_info("%2d: %12d %12d %p",i++,*(bool*)addr,*(int*)addr,*(void**)addr);
     QDP_info("Device pool info:");
-    CUDADevicePoolAllocator::Instance().printPoolInfo();
+    //CUDADevicePoolAllocator::Instance().printPoolInfo();
+    QDP_get_global_cache().get_allocator().printPoolInfo();
   }
 
 
@@ -55,8 +56,8 @@ namespace QDP {
 		       now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1 );
       }
 
-      QDPCache::Instance().releasePrevLockSet();
-      QDPCache::Instance().beginNewLockSet();
+      QDP_get_global_cache().releasePrevLockSet();
+      QDP_get_global_cache().beginNewLockSet();
 
       result = cuCtxSynchronize();
       if (result != CUDA_SUCCESS) {
@@ -92,8 +93,8 @@ namespace QDP {
 
 	if (result == CUDA_SUCCESS) {
 
-	  QDPCache::Instance().releasePrevLockSet();
-	  QDPCache::Instance().beginNewLockSet();
+	  QDP_get_global_cache().releasePrevLockSet();
+	  QDP_get_global_cache().beginNewLockSet();
 
 	  result_sync = cuCtxSynchronize();
 	  if (result_sync != CUDA_SUCCESS) {

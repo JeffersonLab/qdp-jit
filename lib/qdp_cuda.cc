@@ -107,11 +107,11 @@ namespace QDP {
       //std::cout << "skipping kernel launch due to zero block!!!\n";
     }
 
-    QDPCache::Instance().releasePrevLockSet();
-    QDPCache::Instance().beginNewLockSet();
+    QDP_get_global_cache().releasePrevLockSet();
+    QDP_get_global_cache().beginNewLockSet();
 
 #ifdef GPU_DEBUG_DEEP
-    QDPCache::Instance().printLockSets();
+    QDP_get_global_cache().printLockSets();
 #endif
 
     // For now, pull the brakes
@@ -310,10 +310,14 @@ namespace QDP {
       }
       int val_min_int = (int)val_min;
       QDP_info_primary("Using device pool size: %d MiB",(int)val_min_int);
-      CUDADevicePoolAllocator::Instance().setPoolSize( ((size_t)val_min_int) * 1024 * 1024 );
+
+      //CUDADevicePoolAllocator::Instance().setPoolSize( ((size_t)val_min_int) * 1024 * 1024 );
+      QDP_get_global_cache().get_allocator().setPoolSize( ((size_t)val_min_int) * 1024 * 1024 );
+
       setPoolSize = true;
     } else {
-      QDP_info_primary("Using device pool size: %d MiB",(int)(CUDADevicePoolAllocator::Instance().getPoolSize()/1024/1024));
+      //QDP_info_primary("Using device pool size: %d MiB",(int)(CUDADevicePoolAllocator::Instance().getPoolSize()/1024/1024));
+      QDP_info_primary("Using device pool size: %d MiB",(int)(QDP_get_global_cache().get_allocator().getPoolSize()/1024/1024));
     }
 
     // int major = DeviceParams::Instance().getMajor();

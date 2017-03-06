@@ -337,7 +337,7 @@ void
 
   int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
 
-  //QDPCache::Instance().printLockSets();
+  //QDP_get_global_cache().printLockSets();
 
   // lo <= idx < hi
   int lo = 0;
@@ -346,10 +346,10 @@ void
   //QDP_info("gather sites into send_buf lo=%d hi=%d",lo,hi);
 
   int soffsetsId = map.getSoffsetsId(subset);
-  void * soffsetsDev = QDPCache::Instance().getDevicePtr( soffsetsId );
+  void * soffsetsDev = QDP_get_global_cache().getDevicePtr( soffsetsId );
 
 #if 0
-  int size = QDPCache::Instance().getSize( soffsetsId );
+  int size = QDP_get_global_cache().getSize( soffsetsId );
   std::cout << "allocating host memory for soffset, size = " << size << "\n";
   unsigned char * soff_host = new unsigned char[ size ];
   std::cout << "copying...\n";
@@ -360,7 +360,7 @@ void
   delete[] soff_host;
 #endif
 
-  //QDPCache::Instance().printLockSets();
+  //QDP_get_global_cache().printLockSets();
 
   std::vector<void*> addr;
 
@@ -423,8 +423,8 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
     innerCount = MasterMap::Instance().getCountInner(s,offnode_maps);
     faceId = MasterMap::Instance().getIdFace(s,offnode_maps);
     faceCount = MasterMap::Instance().getCountFace(s,offnode_maps);
-    idx_inner_dev = QDPCache::Instance().getDevicePtr( innerId );
-    idx_face_dev = QDPCache::Instance().getDevicePtr( faceId );
+    idx_inner_dev = QDP_get_global_cache().getDevicePtr( innerId );
+    idx_face_dev = QDP_get_global_cache().getDevicePtr( faceId );
     th_count = innerCount;
     do_soffset_index = true;
     //QDP_info("innerId = %d innerCount = %d faceId = %d  faceCount = %d",innerId,innerCount,faceId,faceCount);
@@ -435,11 +435,11 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
 
 
 
-  void * subset_member = QDPCache::Instance().getDevicePtr( s.getIdMemberTable() );
+  void * subset_member = QDP_get_global_cache().getDevicePtr( s.getIdMemberTable() );
 
 
-  // bool * member = new bool[QDPCache::Instance().getSize( s.getIdMemberTable() ) / sizeof(bool) ];
-  // CudaMemcpyD2H( member , subset_member , QDPCache::Instance().getSize( s.getIdMemberTable() ) );
+  // bool * member = new bool[QDP_get_global_cache().getSize( s.getIdMemberTable() ) / sizeof(bool) ];
+  // CudaMemcpyD2H( member , subset_member , QDP_get_global_cache().getSize( s.getIdMemberTable() ) );
   // int co=0;
   // for (int i=0;i<hi;i++)
   //   if (member[i])
@@ -518,7 +518,7 @@ function_lat_sca_exec(CUfunction function, OLattice<T>& dest, const Op& op, cons
   bool ordered = s.hasOrderedRep();
   int th_count = ordered ? s.numSiteTable() : Layout::sitesOnNode();
 
-  void * subset_member = QDPCache::Instance().getDevicePtr( s.getIdMemberTable() );
+  void * subset_member = QDP_get_global_cache().getDevicePtr( s.getIdMemberTable() );
 
   std::vector<void*> addr;
 
@@ -564,7 +564,7 @@ function_zero_rep_exec(CUfunction function, OLattice<T>& dest, const Subset& s )
   bool ordered = s.hasOrderedRep();
   int th_count = ordered ? s.numSiteTable() : Layout::sitesOnNode();
 
-  void * subset_member = QDPCache::Instance().getDevicePtr( s.getIdMemberTable() );
+  void * subset_member = QDP_get_global_cache().getDevicePtr( s.getIdMemberTable() );
 
   std::vector<void*> addr;
 

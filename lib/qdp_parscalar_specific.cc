@@ -128,7 +128,7 @@ namespace QDP {
 	    }
 	}
 
-      goffsetsId[s_no] = QDPCache::Instance().registrateOwnHostMem( sizeof(int)*goffsets[s_no].size() , 
+      goffsetsId[s_no] = QDP_get_global_cache().registrateOwnHostMem( sizeof(int)*goffsets[s_no].size() , 
 								    goffsets[s_no].slice() , NULL );
       //QDPIO::cout << "Map::make goffsetsId[" << s_no << "] = " << goffsetsId[s_no] << "  size=" << (sizeof(int)*goffsets[s_no].size()) << "\n";
     } // s_no
@@ -186,7 +186,7 @@ namespace QDP {
     // If no srce/dest nodes, then we know no off-node communications
     offnodeP = (cnt_srcenodes > 0) ? true : false;
 
-    //goffsetsId = QDPCache::Instance().registrateOwnHostMem( sizeof(int)*goffsets.size() , (void*)goffsets.slice() , NULL );
+    //goffsetsId = QDP_get_global_cache().registrateOwnHostMem( sizeof(int)*goffsets.size() , (void*)goffsets.slice() , NULL );
     //QDP_info_primary("Not registering memory!! Map::make goffsetsId=%d",goffsetsId);
 
     //
@@ -311,8 +311,8 @@ namespace QDP {
 	if (goffsets[s_no].size()==0)
 	  QDP_error_exit("gsoffsets empty");
 
-	roffsetsId[s_no] = QDPCache::Instance().registrateOwnHostMem( sizeof(int)*roffsets[s_no].size() , roffsets[s_no].slice() , NULL );
-	soffsetsId[s_no] = QDPCache::Instance().registrateOwnHostMem( sizeof(int)*soffsets[s_no].size() , soffsets[s_no].slice() , NULL );
+	roffsetsId[s_no] = QDP_get_global_cache().registrateOwnHostMem( sizeof(int)*roffsets[s_no].size() , roffsets[s_no].slice() , NULL );
+	soffsetsId[s_no] = QDP_get_global_cache().registrateOwnHostMem( sizeof(int)*soffsets[s_no].size() , soffsets[s_no].slice() , NULL );
 	//QDPIO::cout << "Map::make GPU memory registered for roff,soff (ids) " << roffsetsId[s_no] << " " << soffsetsId[s_no] << " " << sizeof(int)*roffsets[s_no].size() << " " << sizeof(int)*soffsets[s_no].size() << "\n";
 
       } // s_no

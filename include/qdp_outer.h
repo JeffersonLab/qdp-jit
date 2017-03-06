@@ -146,11 +146,11 @@ namespace QDP {
     inline void alloc_mem() const {
       if (myId >= 0)
 	return;
-      myId = QDPCache::Instance().registrateOScalar( sizeof(T) , &F , NULL , this );
+      myId = QDP_get_global_cache().registrateOScalar( sizeof(T) , &F , NULL , this );
     }
     inline void free_mem() {
       if (myId >= 0)
-	QDPCache::Instance().signoff( myId );
+	QDP_get_global_cache().signoff( myId );
     }
     inline void assert_on_host() const {
       if (this->onHost)
@@ -158,7 +158,7 @@ namespace QDP {
       // Here or somewhere we sould make sure that 
       // if the pointer is still valid, we do not too much
       if (myId >= 0)
-	QDPCache::Instance().assureOnHost( myId );
+	QDP_get_global_cache().assureOnHost( myId );
       else
 	QDP_error_exit("Oscalar assert on host, but resource moved");
       this->onHost=true;
@@ -470,11 +470,11 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 
 
     inline void alloc_mem(const char* msg) const {
-      myId = QDPCache::Instance().registrate( Layout::sitesOnNode() * sizeof(T) , 1 , &changeLayout ); 
+      myId = QDP_get_global_cache().registrate( Layout::sitesOnNode() * sizeof(T) , 1 , &changeLayout ); 
     }
     inline void free_mem()  { 
       if (myId >= 0)
-	QDPCache::Instance().signoff( myId ); 
+	QDP_get_global_cache().signoff( myId ); 
     }
 
 
@@ -482,7 +482,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
     inline void assert_on_host() const {
       // Here or somewhere we sould make sure that 
       // if the pointer is still valid, we do not too much
-      QDPCache::Instance().getHostPtr( (void**)&F , myId );
+      QDP_get_global_cache().getHostPtr( (void**)&F , myId );
     }
 
   private:
@@ -584,7 +584,7 @@ struct LeafFunctor<OLattice<T>, AddressLeaf>
   inline static
   Type_t apply(const OLattice<T>& s, const AddressLeaf& p) 
   {
-    p.setAddr( QDPCache::Instance().getDevicePtr( s.getId() ) );
+    p.setAddr( QDP_get_global_cache().getDevicePtr( s.getId() ) );
     return 0;
   }
 };
@@ -596,7 +596,7 @@ struct LeafFunctor<OScalar<T>, AddressLeaf>
   inline static
   Type_t apply(const OScalar<T>& s, const AddressLeaf& p) 
   {
-    p.setAddr( QDPCache::Instance().getDevicePtr( s.getId() ) );
+    p.setAddr( QDP_get_global_cache().getDevicePtr( s.getId() ) );
     return 0;
   }
 };

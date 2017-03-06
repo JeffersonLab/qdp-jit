@@ -96,28 +96,28 @@ namespace QDP {
       //QDP_info("sum(Lat,subset): using %d threads per block, %d blocks, shared mem=%d" , numThreads , numBlocks , shared_mem_usage );
 
       if (first) {
-	if (!QDPCache::Instance().allocate_device_static( (void**)&out_dev , numBlocks*sizeof(T2) ))
+	if (!QDP_get_global_cache().allocate_device_static( (void**)&out_dev , numBlocks*sizeof(T2) ))
 	  QDP_error_exit( "sum(lat,subset) reduction buffer: 1st buffer no memory, exit");
-	if (!QDPCache::Instance().allocate_device_static( (void**)&in_dev , numBlocks*sizeof(T2) ))
+	if (!QDP_get_global_cache().allocate_device_static( (void**)&in_dev , numBlocks*sizeof(T2) ))
 	  QDP_error_exit( "sum(lat,subset) reduction buffer: 2nd buffer no memory, exit");
       }
 
       if (numBlocks == 1) {
 	if (first) {
 	  reduce_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, shared_mem_usage ,  
-								       (T1*)QDPCache::Instance().getDevicePtr( s1.getId() ),
-								       (T2*)QDPCache::Instance().getDevicePtr( d.getId() ),
-								       (int*)QDPCache::Instance().getDevicePtr( s.getIdSiteTable()));
+								       (T1*)QDP_get_global_cache().getDevicePtr( s1.getId() ),
+								       (T2*)QDP_get_global_cache().getDevicePtr( d.getId() ),
+								       (int*)QDP_get_global_cache().getDevicePtr( s.getIdSiteTable()));
 	}
 	else {
 	  reduce_convert<T2>( actsize , numThreads , numBlocks, shared_mem_usage , 
-			      in_dev , (T2*)QDPCache::Instance().getDevicePtr( d.getId() ) );
+			      in_dev , (T2*)QDP_get_global_cache().getDevicePtr( d.getId() ) );
 	}
       } else {
 	if (first) {
 	  reduce_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, shared_mem_usage,
-								       (T1*)QDPCache::Instance().getDevicePtr( s1.getId() ),
-								       out_dev , (int*)QDPCache::Instance().getDevicePtr(s.getIdSiteTable()));
+								       (T1*)QDP_get_global_cache().getDevicePtr( s1.getId() ),
+								       out_dev , (int*)QDP_get_global_cache().getDevicePtr(s.getIdSiteTable()));
 	}
 	else
 	  reduce_convert<T2>( actsize , numThreads , numBlocks , shared_mem_usage , in_dev , out_dev );
@@ -136,8 +136,8 @@ namespace QDP {
       out_dev = tmp;
     }
 
-    QDPCache::Instance().free_device_static( in_dev );
-    QDPCache::Instance().free_device_static( out_dev );
+    QDP_get_global_cache().free_device_static( in_dev );
+    QDP_get_global_cache().free_device_static( out_dev );
 
     QDPInternal::globalSum(d);
 
@@ -242,10 +242,10 @@ namespace QDP {
 	T2 * out_dev;
 	T2 * in_dev;
 
-	if (!QDPCache::Instance().allocate_device_static( (void**)&out_dev , numBlocks*sizeof(T2) ))
+	if (!QDP_get_global_cache().allocate_device_static( (void**)&out_dev , numBlocks*sizeof(T2) ))
 	  QDP_error_exit( "sumMulti(lat) reduction buffer: 2nd buffer no memory" );
 
-	if (!QDPCache::Instance().allocate_device_static( (void**)&in_dev , numBlocks*sizeof(T2) ))
+	if (!QDP_get_global_cache().allocate_device_static( (void**)&in_dev , numBlocks*sizeof(T2) ))
 	  QDP_error_exit("sumMulti(lat) reduction buffer: 3rd buffer no memory" );
 
 	int virt_size = ss.largest_subset;
@@ -264,9 +264,9 @@ namespace QDP {
 									 numThreads, 
 									 numBlocks,  
 									 shared_mem_usage,
-									 (T1*)QDPCache::Instance().getDevicePtr( s1.getId() ),
+									 (T1*)QDP_get_global_cache().getDevicePtr( s1.getId() ),
 									 out_dev , 
-									 (int*)QDPCache::Instance().getDevicePtr( ss.getIdStrided() ) );
+									 (int*)QDP_get_global_cache().getDevicePtr( ss.getIdStrided() ) );
 	  } else {
 	    reduce_convert<T2>(actsize, 
 			       numThreads, 
@@ -338,8 +338,8 @@ namespace QDP {
 
 	CudaMemcpyD2H( (void*)slice , (void*)out_dev , ss.numSubsets()*sizeof(T2) );
 
-	QDPCache::Instance().free_device_static( in_dev );
-	QDPCache::Instance().free_device_static( out_dev );
+	QDP_get_global_cache().free_device_static( in_dev );
+	QDP_get_global_cache().free_device_static( out_dev );
     
 	if (!success) {
 	  QDP_info_primary("sumMulti: there was a problem, continue on host");
@@ -442,25 +442,25 @@ namespace QDP {
 	    }
 
 	    if (first) {
-	      if (!QDPCache::Instance().allocate_device_static( (void**)&out_dev , numBlocks*sizeof(T) ))
+	      if (!QDP_get_global_cache().allocate_device_static( (void**)&out_dev , numBlocks*sizeof(T) ))
 		QDP_error_exit( "globMax(lat) reduction buffer: 1st buffer no memory, exit");
-	      if (!QDPCache::Instance().allocate_device_static( (void**)&in_dev , numBlocks*sizeof(T) ))
+	      if (!QDP_get_global_cache().allocate_device_static( (void**)&in_dev , numBlocks*sizeof(T) ))
 		QDP_error_exit( "globMax(lat) reduction buffer: 2nd buffer no memory, exit");
 	    }
 
 	    if (numBlocks == 1) {
 	      if (first)
 		globalMax_kernel<T>(actsize, numThreads, numBlocks, 
-				    (T*)QDPCache::Instance().getDevicePtr( s1.getId() ),
-				    (T*)QDPCache::Instance().getDevicePtr( d.getId() ) );
+				    (T*)QDP_get_global_cache().getDevicePtr( s1.getId() ),
+				    (T*)QDP_get_global_cache().getDevicePtr( d.getId() ) );
 	      else
 		globalMax_kernel<T>(actsize, numThreads, numBlocks, 
 				    in_dev, 
-				    (T*)QDPCache::Instance().getDevicePtr( d.getId() ) );
+				    (T*)QDP_get_global_cache().getDevicePtr( d.getId() ) );
 	    } else {
 	      if (first)
 		globalMax_kernel<T>(actsize, numThreads, numBlocks, 
-				    (T*)QDPCache::Instance().getDevicePtr( s1.getId() ),
+				    (T*)QDP_get_global_cache().getDevicePtr( s1.getId() ),
 				    out_dev );
 	      else
 		globalMax_kernel<T>(actsize, numThreads, numBlocks, 
@@ -480,8 +480,8 @@ namespace QDP {
 	    out_dev = tmp;
 	  }
 
-	  QDPCache::Instance().free_device_static( in_dev );
-	  QDPCache::Instance().free_device_static( out_dev );
+	  QDP_get_global_cache().free_device_static( in_dev );
+	  QDP_get_global_cache().free_device_static( out_dev );
 
 	  QDPInternal::globalMax(d);
 

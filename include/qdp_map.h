@@ -363,10 +363,10 @@ struct ForEach<UnaryNode<FnMap, A>, AddressLeaf, NullCombine>
       FnMap& fnmap = const_cast<FnMap&>(expr.operation());
 
       // int goffsetsId = 
-      // void * goffsetsDev = QDPCache::Instance().getDevicePtr( goffsetsId );
+      // void * goffsetsDev = QDP_get_global_cache().getDevicePtr( goffsetsId );
       //QDP_info("Map:AddressLeaf: add goffset p=%p",goffsetsDev);
       int goffsetsId = expr.operation().map.getGoffsetsId(a.subset);
-      void * goffsetsDev = QDPCache::Instance().getDevicePtr( goffsetsId );
+      void * goffsetsDev = QDP_get_global_cache().getDevicePtr( goffsetsId );
       a.setAddr( goffsetsDev );
 
       void * rcvBuf = NULL;

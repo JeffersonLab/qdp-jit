@@ -251,10 +251,10 @@ void Set::make(const SetFunc& fun)
 
   if (registered) {
     QDPIO::cout << "Set: Already registered, will sign it off first ...\n";
-    QDPCache::Instance().signoff( idStrided );
+    QDP_get_global_cache().signoff( idStrided );
   }
 
-  idStrided = QDPCache::Instance().registrateOwnHostMem( dsize , sitetables_strided.slice() , NULL );
+  idStrided = QDP_get_global_cache().registrateOwnHostMem( dsize , sitetables_strided.slice() , NULL );
   registered=true;
 #ifdef GPU_DEBUG  
   QDP_debug("nonEmptySubsetsOnNode  = %d" , nonEmptySubsetsOnNode );  

@@ -130,259 +130,262 @@ namespace QDP {
     QDP_startGPU();
   }
 	
-	//! Turn on the machine
-	void QDP_initialize_CUDA(int *argc, char ***argv)
-	{
-	  if (sizeof(bool) != 1)
-	    {
-	      std::cout << "Error: sizeof(bool) == " << sizeof(bool) << "   (1 is required)" << endl;
-	      exit(1);
-	    }
+  //! Turn on the machine
+  void QDP_initialize_CUDA(int *argc, char ***argv)
+  {
+    if (sizeof(bool) != 1)
+      {
+	std::cout << "Error: sizeof(bool) == " << sizeof(bool) << "   (1 is required)" << endl;
+	exit(1);
+      }
 
-		if (isInit)
-		{
-			QDPIO::cerr << "QDP already inited" << endl;
-			QDP_abort(1);
-		}
+    if (isInit)
+      {
+	QDPIO::cerr << "QDP already inited" << endl;
+	QDP_abort(1);
+      }
 
 #if 1
-		//QDP_info_primary("Setting gamma matrices");
+    //QDP_info_primary("Setting gamma matrices");
 
-		SpinMatrix dgr[5];
-		for (int i=0;i<5;i++) {
-		  for (int s=0;s<4;s++) {
-		    for (int s2=0;s2<4;s2++) {
-		      dgr[i].elem().elem(s,s2).elem().real() = (float)gamma_degrand_rossi[i][s2][s][0];
-		      dgr[i].elem().elem(s,s2).elem().imag() = (float)gamma_degrand_rossi[i][s2][s][1];
-		    }
-		  }
-		  //std::cout << i << "\n" << dgr[i] << "\n";
-		}
-		//QDP_info_primary("Finished setting gamma matrices");
-		//QDP_info_primary("Multiplying gamma matrices");
+    SpinMatrix dgr[5];
+    for (int i=0;i<5;i++) {
+      for (int s=0;s<4;s++) {
+	for (int s2=0;s2<4;s2++) {
+	  dgr[i].elem().elem(s,s2).elem().real() = (float)gamma_degrand_rossi[i][s2][s][0];
+	  dgr[i].elem().elem(s,s2).elem().imag() = (float)gamma_degrand_rossi[i][s2][s][1];
+	}
+      }
+      //std::cout << i << "\n" << dgr[i] << "\n";
+    }
+    //QDP_info_primary("Finished setting gamma matrices");
+    //QDP_info_primary("Multiplying gamma matrices");
 
-		QDP_Gamma_values[0]=dgr[4]; // Unity
-		for (int i=1;i<16;i++) {
-		  zero_rep(QDP_Gamma_values[i]);
-		  bool first=true;
-		  //std::cout << "gamma value " << i << " ";
-		  for (int q=0;q<4;q++) {
-		    if (i&(1<<q)) {
-		      //std::cout << q << " ";
-		      if (first)
-			QDP_Gamma_values[i]=dgr[q];
-		      else
-			QDP_Gamma_values[i]=QDP_Gamma_values[i]*dgr[q];
-		      first = false;
-		    }
-		  }
-		  //std::cout << "\n" << QDP_Gamma_values[i] << "\n";
+    QDP_Gamma_values[0]=dgr[4]; // Unity
+    for (int i=1;i<16;i++) {
+      zero_rep(QDP_Gamma_values[i]);
+      bool first=true;
+      //std::cout << "gamma value " << i << " ";
+      for (int q=0;q<4;q++) {
+	if (i&(1<<q)) {
+	  //std::cout << q << " ";
+	  if (first)
+	    QDP_Gamma_values[i]=dgr[q];
+	  else
+	    QDP_Gamma_values[i]=QDP_Gamma_values[i]*dgr[q];
+	  first = false;
+	}
+      }
+      //std::cout << "\n" << QDP_Gamma_values[i] << "\n";
 		  
-		}
-		//QDP_info_primary("Finished multiplying gamma matrices");
+    }
+    //QDP_info_primary("Finished multiplying gamma matrices");
 #endif
 
-		CudaInit();
+    CudaInit();
 
-		// This defaults to mvapich2
-		DeviceParams::Instance().setENVVAR("MV2_COMM_WORLD_LOCAL_RANK");
+    // This defaults to mvapich2
+    DeviceParams::Instance().setENVVAR("MV2_COMM_WORLD_LOCAL_RANK");
 		
-		//
-		// Process command line
-		//
+    //
+    // Process command line
+    //
 		
-		// Look for help
-		bool help_flag = false;
-		for (int i=0; i<*argc; i++) 
-		{
-			if (strcmp((*argv)[i], "-h")==0)
-				help_flag = true;
-		}
+    // Look for help
+    bool help_flag = false;
+    for (int i=0; i<*argc; i++) 
+      {
+	if (strcmp((*argv)[i], "-h")==0)
+	  help_flag = true;
+      }
 		
-		setGeomP = false;
-		logical_geom = 0;
+    setGeomP = false;
+    logical_geom = 0;
 		
-		setIOGeomP = false;
-		logical_iogeom = 0;
+    setIOGeomP = false;
+    logical_iogeom = 0;
 		
 #ifdef USE_REMOTE_QIO
-		int rtiP = 0;
+    int rtiP = 0;
 #endif
-		int QMP_verboseP = 0;
-		const int maxlen = 256;
-		char rtinode[maxlen];
-		strncpy(rtinode, "your_local_food_store", maxlen);
+    int QMP_verboseP = 0;
+    const int maxlen = 256;
+    char rtinode[maxlen];
+    strncpy(rtinode, "your_local_food_store", maxlen);
 		
-		// Usage
-		if (Layout::primaryNode())  {
-			if (help_flag) 
-			{
-				fprintf(stderr,"Usage:    %s options\n",(*argv)[0]);
-				fprintf(stderr,"options:\n");
-				fprintf(stderr,"    -h        help\n");
-				fprintf(stderr,"    -V        %%d [%d] verbose mode for QMP\n", 
-						QMP_verboseP);
+    // Usage
+    if (Layout::primaryNode())  {
+      if (help_flag) 
+	{
+	  fprintf(stderr,"Usage:    %s options\n",(*argv)[0]);
+	  fprintf(stderr,"options:\n");
+	  fprintf(stderr,"    -h        help\n");
+	  fprintf(stderr,"    -V        %%d [%d] verbose mode for QMP\n", 
+		  QMP_verboseP);
 #if defined(QDP_USE_PROFILING)   
-				fprintf(stderr,"    -p        %%d [%d] profile level\n", 
-						getProfileLevel());
+	  fprintf(stderr,"    -p        %%d [%d] profile level\n", 
+		  getProfileLevel());
 #endif
 				
-				// logical geometry info
-				fprintf(stderr,"    -geom     %%d");
-				for(int i=1; i < Nd; i++) 
-					fprintf(stderr," %%d");
+	  // logical geometry info
+	  fprintf(stderr,"    -geom     %%d");
+	  for(int i=1; i < Nd; i++) 
+	    fprintf(stderr," %%d");
 				
-				fprintf(stderr," [-1");
-				for(int i=1; i < Nd; i++) 
-					fprintf(stderr,",-1");
-				fprintf(stderr,"] logical machine geometry\n");
+	  fprintf(stderr," [-1");
+	  for(int i=1; i < Nd; i++) 
+	    fprintf(stderr,",-1");
+	  fprintf(stderr,"] logical machine geometry\n");
 				
 #ifdef USE_REMOTE_QIO
-				fprintf(stderr,"    -cd       %%s [.] set working dir for QIO interface\n");
-				fprintf(stderr,"    -rti      %%d [%d] use run-time interface\n", 
-						rtiP);
-				fprintf(stderr,"    -rtinode  %%s [%s] run-time interface fileserver node\n", 
-						rtinode);
+	  fprintf(stderr,"    -cd       %%s [.] set working dir for QIO interface\n");
+	  fprintf(stderr,"    -rti      %%d [%d] use run-time interface\n", 
+		  rtiP);
+	  fprintf(stderr,"    -rtinode  %%s [%s] run-time interface fileserver node\n", 
+		  rtinode);
 #endif
 				
-				QDP_abort(1);
-			}
-		}
+	  QDP_abort(1);
+	}
+    }
 
-		for (int i=1; i<*argc; i++) 
-		{
-			if (strcmp((*argv)[i], "-V")==0) 
-			{
-				QMP_verboseP = 1;
-			}
+    for (int i=1; i<*argc; i++) 
+      {
+	if (strcmp((*argv)[i], "-V")==0) 
+	  {
+	    QMP_verboseP = 1;
+	  }
 #if defined(QDP_USE_PROFILING)   
-			else if (strcmp((*argv)[i], "-p")==0) 
-			{
-				int lev;
-				sscanf((*argv)[++i], "%d", &lev);
-				setProgramProfileLevel(lev);
-			}
+	else if (strcmp((*argv)[i], "-p")==0) 
+	  {
+	    int lev;
+	    sscanf((*argv)[++i], "%d", &lev);
+	    setProgramProfileLevel(lev);
+	  }
 #endif
-			else if (strcmp((*argv)[i], "-sync")==0) 
-			  {
-			    DeviceParams::Instance().setSyncDevice(true);
-			  }
-			else if (strcmp((*argv)[i], "-sm")==0) 
-			  {
-			    int sm;
-			    sscanf((*argv)[++i], "%d", &sm);
-			    DeviceParams::Instance().setSM(sm);
-			  }
-			else if (strcmp((*argv)[i], "-gpudirect")==0) 
-			  {
-			    DeviceParams::Instance().setGPUDirect(true);
-			  }
-			else if (strcmp((*argv)[i], "-envvar")==0) 
-			  {
-			    char buffer[1024];
-			    sscanf((*argv)[++i],"%s",&buffer);
-			    DeviceParams::Instance().setENVVAR(buffer);
-			  }
-			else if (strcmp((*argv)[i], "-poolsize")==0) 
-			  {
-			    float f;
-			    char c;
-			    sscanf((*argv)[++i],"%f%c",&f,&c);
-			    double mul;
-			    switch (tolower(c)) {
-			    case 'k': 
-			      mul=1024.; 
-			      break;
-			    case 'm': 
-			      mul=1024.*1024; 
-			      break;
-			    case 'g': 
-			      mul=1024.*1024*1024; 
-			      break;
-			    case 't':
-			      mul=1024.*1024*1024*1024;
-			      break;
-			    case '\0':
-			      break;
-			    default:
-			      QDP_error_exit("unknown multiplication factor");
-			    }
-			    size_t val = (size_t)((double)(f) * mul);
-			    CUDADevicePoolAllocator::Instance().setPoolSize(val);
-			    setPoolSize = true;
-			  }
-			else if (strcmp((*argv)[i], "-geom")==0) 
-			{
-				setGeomP = true;
-				for(int j=0; j < Nd; j++) 
-				{
-					int uu;
-					sscanf((*argv)[++i], "%d", &uu);
-					logical_geom[j] = uu;
-				}
-			}
-			else if (strcmp((*argv)[i], "-iogeom")==0) 
-			{
-				setIOGeomP = true;
-				for(int j=0; j < Nd; j++) 
-				{
-					int uu;
-					sscanf((*argv)[++i], "%d", &uu);
-					logical_iogeom[j] = uu;
-				}
-			}
+	else if (strcmp((*argv)[i], "-sync")==0) 
+	  {
+	    DeviceParams::Instance().setSyncDevice(true);
+	  }
+	else if (strcmp((*argv)[i], "-sm")==0) 
+	  {
+	    int sm;
+	    sscanf((*argv)[++i], "%d", &sm);
+	    DeviceParams::Instance().setSM(sm);
+	  }
+	else if (strcmp((*argv)[i], "-gpudirect")==0) 
+	  {
+	    DeviceParams::Instance().setGPUDirect(true);
+	  }
+	else if (strcmp((*argv)[i], "-envvar")==0) 
+	  {
+	    char buffer[1024];
+	    sscanf((*argv)[++i],"%s",&buffer);
+	    DeviceParams::Instance().setENVVAR(buffer);
+	  }
+	else if (strcmp((*argv)[i], "-poolsize")==0) 
+	  {
+	    float f;
+	    char c;
+	    sscanf((*argv)[++i],"%f%c",&f,&c);
+	    double mul;
+	    switch (tolower(c)) {
+	    case 'k': 
+	      mul=1024.; 
+	      break;
+	    case 'm': 
+	      mul=1024.*1024; 
+	      break;
+	    case 'g': 
+	      mul=1024.*1024*1024; 
+	      break;
+	    case 't':
+	      mul=1024.*1024*1024*1024;
+	      break;
+	    case '\0':
+	      break;
+	    default:
+	      QDP_error_exit("unknown multiplication factor");
+	    }
+	    size_t val = (size_t)((double)(f) * mul);
+
+	    //CUDADevicePoolAllocator::Instance().setPoolSize(val);
+	    QDP_get_global_cache().get_allocator().setPoolSize(val);
+	    
+	    setPoolSize = true;
+	  }
+	else if (strcmp((*argv)[i], "-geom")==0) 
+	  {
+	    setGeomP = true;
+	    for(int j=0; j < Nd; j++) 
+	      {
+		int uu;
+		sscanf((*argv)[++i], "%d", &uu);
+		logical_geom[j] = uu;
+	      }
+	  }
+	else if (strcmp((*argv)[i], "-iogeom")==0) 
+	  {
+	    setIOGeomP = true;
+	    for(int j=0; j < Nd; j++) 
+	      {
+		int uu;
+		sscanf((*argv)[++i], "%d", &uu);
+		logical_iogeom[j] = uu;
+	      }
+	  }
 #ifdef USE_REMOTE_QIO
-			else if (strcmp((*argv)[i], "-cd")==0) 
-			{
-				/* push the dir into the environment vars so qio.c can pick it up */
-				setenv("QHOSTDIR", (*argv)[++i], 0);
-			}
-			else if (strcmp((*argv)[i], "-rti")==0) 
-			{
-				sscanf((*argv)[++i], "%d", &rtiP);
-			}
-			else if (strcmp((*argv)[i], "-rtinode")==0) 
-			{
-				int n = strlen((*argv)[++i]);
-				if (n >= maxlen)
-				{
-					QDPIO::cerr << __func__ << ": rtinode name too long" << endl;
-					QDP_abort(1);
-				}
-				sscanf((*argv)[i], "%s", rtinode);
-			}
+	else if (strcmp((*argv)[i], "-cd")==0) 
+	  {
+	    /* push the dir into the environment vars so qio.c can pick it up */
+	    setenv("QHOSTDIR", (*argv)[++i], 0);
+	  }
+	else if (strcmp((*argv)[i], "-rti")==0) 
+	  {
+	    sscanf((*argv)[++i], "%d", &rtiP);
+	  }
+	else if (strcmp((*argv)[i], "-rtinode")==0) 
+	  {
+	    int n = strlen((*argv)[++i]);
+	    if (n >= maxlen)
+	      {
+		QDPIO::cerr << __func__ << ": rtinode name too long" << endl;
+		QDP_abort(1);
+	      }
+	    sscanf((*argv)[i], "%s", rtinode);
+	  }
 #endif
 #if 0
-			else 
-			{
-				QDPIO::cerr << __func__ << ": Unknown argument = " << (*argv)[i] << endl;
-				QDP_abort(1);
-			}
+	else 
+	  {
+	    QDPIO::cerr << __func__ << ": Unknown argument = " << (*argv)[i] << endl;
+	    QDP_abort(1);
+	  }
 #endif
 			
-			if (i >= *argc) 
-			{
-				QDPIO::cerr << __func__ << ": missing argument at the end" << endl;
-				QDP_abort(1);
-			}
-		}
+	if (i >= *argc) 
+	  {
+	    QDPIO::cerr << __func__ << ": missing argument at the end" << endl;
+	    QDP_abort(1);
+	  }
+      }
 		
 
-		if (!setPoolSize) {
-		  // It'll be set later in CudaGetDeviceProps
-		  //QDP_error_exit("Run-time argument -poolsize <size> missing. Please consult README.");
-		}
+    if (!setPoolSize) {
+      // It'll be set later in CudaGetDeviceProps
+      //QDP_error_exit("Run-time argument -poolsize <size> missing. Please consult README.");
+    }
 
 		
-		QMP_verbose (QMP_verboseP);
+    QMP_verbose (QMP_verboseP);
 		
 #if QDP_DEBUG >= 1
-		// Print command line args
-		for (int i=0; i<*argc; i++) 
-			QDP_info("QDP_init: arg[%d] = XX%sXX",i,(*argv)[i]);
+    // Print command line args
+    for (int i=0; i<*argc; i++) 
+      QDP_info("QDP_init: arg[%d] = XX%sXX",i,(*argv)[i]);
 #endif
 		
-	}
+  }
 
 
 

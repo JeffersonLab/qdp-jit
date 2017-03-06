@@ -123,7 +123,7 @@ namespace QDP
 
 
 
-  typedef QDPPoolAllocator<QDPCUDAAllocator>     CUDADevicePoolAllocator;
+  
 
 
 
