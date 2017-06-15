@@ -33,7 +33,7 @@ inline cudaError_t QDP_allocate(void **dst, size_t size, char * cstrFile , int i
 {
   bool op;
 
-  op = QDP::QDPCache::Instance().allocate_device_static( dst , size );
+  op = QDP::QDP_get_global_cache().allocate_device_static( dst , size );
 
   if (!op)
     return cudaErrorMemoryAllocation;
@@ -43,7 +43,7 @@ inline cudaError_t QDP_allocate(void **dst, size_t size, char * cstrFile , int i
 
 inline cudaError_t QDP_free(void *dst)
 {
-  QDP::QDPCache::Instance().free_device_static( dst );
+  QDP::QDP_get_global_cache().free_device_static( dst );
   return cudaSuccess;
 }
 
