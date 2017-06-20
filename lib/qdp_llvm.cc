@@ -3,7 +3,12 @@
 #include "qdp_libdevice_20.h"
 #include "nvvm.h"
 
+#include "llvm/IR/DataLayout.h"
+#include "llvm/Bitcode/ReaderWriter.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/raw_ostream.h"
+#include <memory>
 
 namespace QDP {
 
@@ -24,7 +29,7 @@ namespace QDP {
   std::vector< llvm::Type* > vecParamType;
   std::vector< llvm::Argument* > vecArgument;
 
-  llvm::OwningPtr<llvm::Module> module_libdevice;
+  std::unique_ptr<llvm::Module> module_libdevice;
 
   llvm::Type* llvm_type<float>::value;
   llvm::Type* llvm_type<double>::value;
@@ -107,10 +112,19 @@ namespace QDP {
     llvm::StringRef libdevice_20( (const char *)_usr_local_cuda_5_5_nvvm_libdevice_libdevice_compute_20_10_bc, 
 				  (size_t)_usr_local_cuda_5_5_nvvm_libdevice_libdevice_compute_20_10_bc_len );
 
-    module_libdevice.reset( llvm::ParseBitcodeFile( llvm::MemoryBuffer::getMemBufferCopy( libdevice_20 ) ,
-						    llvm::getGlobalContext() , 
-						    &ErrorMessage ) 
-			    );
+    llvm::ErrorOr<unique_ptr<llvm::Module> > ModuleOrErr = llvm::parseBitcodeFile( llvm::MemoryBuffer::getMemBufferCopy(libdevice_20 ),
+
+											 llvm::getGlobalContext() );
+
+    if( !ModuleOrErr) { 
+	std::error_code EC = ModuleOrErr.getError();
+        QDP_error_exit("llvm::parseBitcodeFile retuned error %s \n",EC.message().c_str());
+	abort();   	
+    } 
+    else {
+        module_libdevice.reset(  (ModuleOrErr.get()).release() );
+    }
+
 #endif
 
     //llvm::outs() << ErrorMessage << "\n";
@@ -714,6 +728,22 @@ namespace QDP {
 
 
   void llvm_print_module( llvm::Module* m , const char * fname ) {
+    std::string ErrorMsg; 
+    llvm::raw_fd_ostream outfd( fname , ErrorMsg, llvm::sys::fs::OpenFlags::F_Text);
+    //ASSERT_FALSE(outfd.has_error());
+    std::string banner;
+    {
+        llvm::outs() << "llvm_print_module ni\n";
+#if 0
+        llvm::PassManager PM;
+        PM.add( llvm::createPrintModulePass( &outfd, false, banner ) ); 
+        PM.run( *m );
+#endif
+    }
+  }
+
+#if 0
+  void llvm_print_module( llvm::Module* m , const char * fname ) {
     std::string ErrorMsg;
     llvm::raw_fd_ostream outfd( fname ,ErrorMsg);
     llvm::outs() << ErrorMsg << "\n";
@@ -724,7 +754,7 @@ namespace QDP {
       PM.run( *m );
     }
   }
-
+#endif
 
   std::string get_PTX_from_Module_using_llvm( llvm::Module *Mod )
   {
@@ -754,23 +784,20 @@ namespace QDP {
     TheTriple.setArch(llvm::Triple::nvptx64);
     TheTriple.setVendor(llvm::Triple::UnknownVendor);
     TheTriple.setOS(llvm::Triple::Linux);
-    TheTriple.setEnvironment(llvm::Triple::ELF);
-
-    //Mod->setTargetTriple(TheTriple);
+    TheTriple.setEnvironment(llvm::Triple::UnknownEnvironment);
+    TheTriple.setObjectFormat(llvm::Triple::ELF );
 
     std::string Error;
-    const llvm::Target *TheTarget = llvm::TargetRegistry::lookupTarget( "nvptx64", TheTriple, Error);
+    const llvm::Target *TheTarget = llvm::TargetRegistry::lookupTarget( "nvptx64-unknown-cuda",TheTriple, Error);
     if (!TheTarget) {
       llvm::errs() << "Error looking up target: " << Error;
       exit(1);
     }
 
 
-    // OwningPtr<TargetMachine> target(TheTarget->createTargetMachine(TheTriple.getTriple(),
-    // 								 MCPU, FeaturesStr, Options ));
 
     llvm::TargetOptions Options;
-    llvm::OwningPtr<llvm::TargetMachine> target(TheTarget->createTargetMachine(TheTriple.getTriple(),
+    std::unique_ptr<llvm::TargetMachine> target(TheTarget->createTargetMachine(TheTriple.getTriple(),
 									       "sm_20", "ptx31", Options ));
 
   
@@ -783,7 +810,7 @@ namespace QDP {
     llvm::formatted_raw_ostream FOS(rss);
 
     llvm::PassManager PMTM;
-
+    FOS <<  "target datalayout = \"e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v32:32:32-v64:64:64-v128:128:128-n16:32:64\";\n";
 
 #if 0
     // Add the target data from the target machine, if it exists, or the module.
@@ -797,9 +824,9 @@ namespace QDP {
     }
 #else
     //QDP_info_primary( "Using module's data layout" );
-    PMTM.add(new llvm::DataLayout(Mod));
+    //PMTM.add(new llvm::DataLayoutPass(Mod));
 #endif
-
+    Mod->setDataLayout("");
 
     // Ask the target to add backend passes as necessary.
     if (Target.addPassesToEmitFile(PMTM, FOS,  llvm::TargetMachine::CGFT_AssemblyFile )) {
@@ -855,8 +882,6 @@ namespace QDP {
 
   std::string get_PTX_from_Module_using_nvvm( llvm::Module *Mod )
   {
-    Mod->setDataLayout("e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v32:32:32-v64:64:64-v128:128:128-n16:32:64");
-
     llvm::PassManager PMTM;
 #if 0
     // Add the target data from the target machine, if it exists, or the module.
@@ -870,7 +895,7 @@ namespace QDP {
     }
 #else
     //QDP_info_primary( "Using module's data layout" );
-    PMTM.add(new llvm::DataLayout(Mod));
+    //PMTM.add(new llvm::DataLayoutPass(Mod));
 #endif
     //QDP_info_primary("Adding data layout");
     PMTM.run(*Mod);
@@ -879,7 +904,8 @@ namespace QDP {
     std::string str;
     llvm::raw_string_ostream rsos(str);
     llvm::formatted_raw_ostream fros(rsos);
-
+    fros << "target datalayout = \"e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v32:32:32-v64:64:64-v128:128:128-n16:32:64\";\n";
+ 
     Mod->print(fros,NULL);
 
     // std::cout << "Do we need the ostream in binary mode?\n";
@@ -898,9 +924,9 @@ namespace QDP {
     std::string error;
     unsigned OpenFlags = 0;
     OpenFlags |= llvm::raw_fd_ostream::F_Binary;
-    llvm::OwningPtr<llvm::tool_output_file> Out( new llvm::tool_output_file( "test.bc" , error, OpenFlags) );
+    std::unique_ptr<llvm::tool_output_file> Out( new llvm::tool_output_file( "test.bc" , error, OpenFlags) );
     if (!Out) {
-      llvm::errs() << "Could not create OwningPtr<tool_output_file>\n";
+      llvm::errs() << "Could not create std::unique_ptr<tool_output_file>\n";
       exit(1);
     }
     llvm::formatted_raw_ostream fros(Out->os());
