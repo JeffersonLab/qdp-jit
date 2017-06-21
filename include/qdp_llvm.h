@@ -17,11 +17,11 @@
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Support/ToolOutputFile.h"
-#include "llvm/ADT/OwningPtr.h"
+// #include "llvm/ADT/OwningPtr.h"
 #include "llvm/Support/FormattedStream.h"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/Support/SourceMgr.h"
-#include "llvm/Assembly/Parser.h"
+#include "llvm/AsmParser/Parser.h"
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/StringSet.h"
@@ -36,11 +36,9 @@
 #include "llvm/Support/DataStream.h"
 #include "llvm/ADT/Statistic.h"
 #include "llvm/Support/Program.h"
-#include "llvm/Support/system_error.h"
 #include "llvm/Support/MemoryBuffer.h"
 
-#include "llvm/Linker.h"
-#include "llvm/Assembly/PrintModulePass.h"
+#include "llvm/Linker/Linker.h"
 
 #include "llvm/ExecutionEngine/ObjectBuffer.h"
 #include "llvm/IR/GlobalVariable.h"
