@@ -102,23 +102,27 @@ namespace QDP {
       QDP_error_exit("No CUDA devices found");
     }
 
-    const char *rank = getenv( DeviceParams::Instance().getENVVAR() );
+    // Try MVapich fist
+    char *rank = getenv( "MV2_COMM_WORLD_LOCAL_RANK"  );
+
+    // Try OpenMPI
+    if( ! rank ) {
+       rank = getenv( "OMPI_COMM_WORLD_LOCAL_RANK" );
+    } 
+
+    int dev=0;
     if (rank) {
       int local_rank = atoi(rank);
-      int dev = local_rank % deviceCount;
-      std::cout << "Setting CUDA device to " << dev << "\n";
-      CudaSetDevice( dev );
-      ret = dev;
+      dev = local_rank % deviceCount;
     } else {
-      std::cerr << "Env. var. "
-		<< DeviceParams::Instance().getENVVAR() 
-		<< "not found! Will use device no. 0 (this would be bad for a multi-GPU node run)\n";
-      std::cout << "Setting CUDA device to " << 0 << "\n";
-      CudaSetDevice( 0 );
+       std::cerr << "Couldnt determine local rank. Selecting device based on global rank \n";
+       std::cerr << "Please ensure that ranks increase fastest within the node for this to work \n";
+       int rank_QMP = QMP_get_node_number();
+       dev = rank_QMP % deviceCount;
     }
-    // int rank_QMP = QMP_get_node_number();
-    // int dev      = rank_QMP % deviceCount;
-    return ret;
+    std::cout << "Setting CUDA device to " << dev << "\n";
+    CudaSetDevice( dev );
+    return dev;
   }
 
 
@@ -185,7 +189,10 @@ namespace QDP {
     CudaInit();
 
     // This defaults to mvapich2
+#if 0
+    // This is deprecated - direct envvars try several variables
     DeviceParams::Instance().setENVVAR("MV2_COMM_WORLD_LOCAL_RANK");
+#endif 
 		
     //
     // Process command line
