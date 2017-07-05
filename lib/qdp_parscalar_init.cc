@@ -111,6 +111,7 @@ namespace QDP {
     } 
 
     int dev=0;
+#if 0
     if (rank) {
       int local_rank = atoi(rank);
       dev = local_rank % deviceCount;
@@ -120,6 +121,7 @@ namespace QDP {
        int rank_QMP = QMP_get_node_number();
        dev = rank_QMP % deviceCount;
     }
+#endif
     std::cout << "Setting CUDA device to " << dev << "\n";
     CudaSetDevice( dev );
     return dev;
@@ -132,6 +134,8 @@ namespace QDP {
     QDP_setGPU();
     QDP_initialize_QMP(argc, argv);
     QDP_startGPU();
+    // Initialize the LLVM wrapper
+    llvm_wrapper_init();
   }
 	
   //! Turn on the machine
@@ -498,7 +502,7 @@ namespace QDP {
 	  }
 
 	  // Initialize the LLVM wrapper
-	  llvm_wrapper_init();
+	  //llvm_wrapper_init();
 		
 	  // initialize the global streams
 	  QDPIO::cin.init(&std::cin);

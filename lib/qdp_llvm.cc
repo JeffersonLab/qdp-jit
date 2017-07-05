@@ -1,16 +1,23 @@
 #include "qdp.h"
 
-#include "qdp_libdevice_20.h"
+#include "qdp_libdevice.h"
 #include "nvvm.h"
 
 #include "llvm/IR/DataLayout.h"
-#include "llvm/Bitcode/ReaderWriter.h"
+//#include "llvm/Bitcode/ReaderWriter.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Linker/Linker.h"
+
+#include "llvm/Support/TargetRegistry.h"
+#include "llvm/PassRegistry.h"
+#include "llvm/CodeGen/CommandFlags.h"
 #include <memory>
 
 namespace QDP {
+
+  llvm::LLVMContext TheContext;
 
   llvm::IRBuilder<> *builder;
   llvm::BasicBlock  *entry;
@@ -27,7 +34,13 @@ namespace QDP {
   bool function_created;
 
   std::vector< llvm::Type* > vecParamType;
-  std::vector< llvm::Argument* > vecArgument;
+  std::vector< llvm::Value* > vecArgument;
+
+  llvm::Value *r_arg_lo;
+  llvm::Value *r_arg_hi;
+  llvm::Value *r_arg_myId;
+  llvm::Value *r_arg_ordered;
+  llvm::Value *r_arg_start;
 
   std::unique_ptr<llvm::Module> module_libdevice;
 
@@ -44,7 +57,36 @@ namespace QDP {
     int label_counter;
   }
 
-  //Imported PTX Unary operations single precision
+  namespace llvm_debug {
+    bool debug_func_build      = false;
+    bool debug_func_dump       = false;
+    bool debug_func_write      = false;
+    bool debug_loop_vectorizer = false;
+    std::string name_pretty;
+    std::string name_additional;
+  }
+
+  void llvm_set_debug( const char * c_str ) {
+    std::string str(c_str);
+    if (str.find("loop-vectorize") != string::npos) {
+      llvm_debug::debug_loop_vectorizer = true;
+      return;
+    }
+    if (str.find("function-builder") != string::npos) {
+      llvm_debug::debug_func_build = true;
+      return;
+    }
+    if (str.find("function-dump") != string::npos) {
+      llvm_debug::debug_func_dump = true;
+      return;
+    }
+    if (str.find("function-write") != string::npos) {
+      llvm_debug::debug_func_write = true;
+      return;
+    }
+    QDP_error_exit("unknown debug argument: %s",c_str);
+  }
+
   llvm::Function *func_sin_f32;
   llvm::Function *func_acos_f32;
   llvm::Function *func_asin_f32;
@@ -101,44 +143,62 @@ namespace QDP {
 
   void llvm_init_libdevice()
   {
+    auto major = DeviceParams::Instance().getMajor();
+    auto minor = DeviceParams::Instance().getMinor();
+
+    QDPIO::cout << "Loading CUDA libdevice for compute capability " << major << minor << "\n";
+    
     std::string ErrorMessage;
 
-#if 0
-    llvm::SMDiagnostic Err;
-    module_libdevice.reset(llvm::ParseAssemblyFile("libdevice_sm20.ll", Err, llvm::getGlobalContext() ));
-#else
-    //llvm::outs() << "mapping " << (size_t)_usr_local_cuda_5_5_nvvm_libdevice_libdevice_compute_20_10_bc_len << " bytes\n";
+    if ( QDP::LIBDEVICE::map_sm_lib.find( major*10 + minor ) == QDP::LIBDEVICE::map_sm_lib.end() )
+      {
+	QDPIO::cout << "Compute capability " << major*10 + minor << " not found in libdevice libmap\n";
+	QDP_abort(1);
+      }
+    if ( QDP::LIBDEVICE::map_sm_len.find( major*10 + minor ) == QDP::LIBDEVICE::map_sm_len.end() )
+      {
+	QDPIO::cout << "Compute capability " << major*10 + minor << " not found in libdevice lenmap\n";
+	QDP_abort(1);
+      }
 
-    llvm::StringRef libdevice_20( (const char *)_usr_local_cuda_5_5_nvvm_libdevice_libdevice_compute_20_10_bc, 
-				  (size_t)_usr_local_cuda_5_5_nvvm_libdevice_libdevice_compute_20_10_bc_len );
+    llvm::StringRef libdevice_bc( (const char *) QDP::LIBDEVICE::map_sm_lib[ major*10 + minor ], 
+				  (size_t) QDP::LIBDEVICE::map_sm_len[ major*10 + minor ] );
 
-    llvm::ErrorOr<unique_ptr<llvm::Module> > ModuleOrErr = llvm::parseBitcodeFile( llvm::MemoryBuffer::getMemBufferCopy(libdevice_20 ),
-
-											 llvm::getGlobalContext() );
-
-    if( !ModuleOrErr) { 
-	std::error_code EC = ModuleOrErr.getError();
-        QDP_error_exit("llvm::parseBitcodeFile retuned error %s \n",EC.message().c_str());
-	abort();   	
-    } 
-    else {
-        module_libdevice.reset(  (ModuleOrErr.get()).release() );
+    {
+      llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer> > BufferOrErr =
+	llvm::MemoryBuffer::getMemBufferCopy(libdevice_bc );
+      
+      if (std::error_code ec = BufferOrErr.getError())
+	ErrorMessage = ec.message();
+      else {
+	std::unique_ptr<llvm::MemoryBuffer> &BufferPtr = BufferOrErr.get();
+	
+	llvm::Expected<std::unique_ptr<llvm::Module> > ModuleOrErr = llvm::parseBitcodeFile(BufferPtr.get()->getMemBufferRef(), TheContext);
+	
+	if (llvm::Error Err = ModuleOrErr.takeError()) {
+	  ErrorMessage = llvm::toString(std::move(Err));
+	}
+	else
+	  {
+	    module_libdevice.reset( ModuleOrErr.get().release() );
+	  }
+      }
     }
 
-#endif
-
-    //llvm::outs() << ErrorMessage << "\n";
+    if (!module_libdevice) {
+      if (ErrorMessage.size())
+	llvm::errs() << ErrorMessage << "\n";
+      else
+	llvm::errs() << "libdevice bitcode didn't read correctly.\n";
+      QDP_abort( 1 );
+    }
   }
 
 
   void llvm_setup_math_functions() 
   {
-    // Link libdevice to current module
-
-    //QDP_info_primary("Linking libdevice to new module");
-
     std::string ErrorMsg;
-    if (llvm::Linker::LinkModules( Mod , module_libdevice.get() ,  llvm::Linker::PreserveSource , &ErrorMsg)) {
+    if (llvm::Linker::linkModules( *Mod , std::move(module_libdevice) )) {  // llvm::Linker::PreserveSource
       QDP_error_exit("Linking libdevice failed: %s",ErrorMsg.c_str());
     }
 
@@ -196,14 +256,23 @@ namespace QDP {
     llvm::InitializeAllAsmPrinters();
     llvm::InitializeAllAsmParsers();
 
-    llvm_type<float>::value  = llvm::Type::getFloatTy(llvm::getGlobalContext());
-    llvm_type<double>::value = llvm::Type::getDoubleTy(llvm::getGlobalContext());
-    llvm_type<int>::value    = llvm::Type::getIntNTy(llvm::getGlobalContext(),32);
-    llvm_type<bool>::value   = llvm::Type::getIntNTy(llvm::getGlobalContext(),1);
-    llvm_type<float*>::value  = llvm::Type::getFloatPtrTy(llvm::getGlobalContext());
-    llvm_type<double*>::value = llvm::Type::getDoublePtrTy(llvm::getGlobalContext());
-    llvm_type<int*>::value    = llvm::Type::getIntNPtrTy(llvm::getGlobalContext(),32);
-    llvm_type<bool*>::value   = llvm::Type::getIntNPtrTy(llvm::getGlobalContext(),1);
+    llvm::PassRegistry *Registry = llvm::PassRegistry::getPassRegistry();
+    llvm::initializeCore(*Registry);
+    llvm::initializeCodeGen(*Registry);
+    llvm::initializeLoopStrengthReducePass(*Registry);
+    llvm::initializeLowerIntrinsicsPass(*Registry);
+    llvm::initializeCountingFunctionInserterPass(*Registry);
+    llvm::initializeUnreachableBlockElimLegacyPassPass(*Registry);
+    llvm::initializeConstantHoistingLegacyPassPass(*Registry);
+
+    llvm_type<float>::value  = llvm::Type::getFloatTy(TheContext);
+    llvm_type<double>::value = llvm::Type::getDoubleTy(TheContext);
+    llvm_type<int>::value    = llvm::Type::getIntNTy(TheContext,32);
+    llvm_type<bool>::value   = llvm::Type::getIntNTy(TheContext,1);
+    llvm_type<float*>::value  = llvm::Type::getFloatPtrTy(TheContext);
+    llvm_type<double*>::value = llvm::Type::getDoublePtrTy(TheContext);
+    llvm_type<int*>::value    = llvm::Type::getIntNPtrTy(TheContext,32);
+    llvm_type<bool*>::value   = llvm::Type::getIntNPtrTy(TheContext,1);
 
     llvm_init_libdevice();
   }  
@@ -217,8 +286,8 @@ namespace QDP {
   void llvm_start_new_function() {
     //QDP_info_primary( "Staring new LLVM function ...");
 
-    Mod = new llvm::Module("module", llvm::getGlobalContext());
-    builder = new llvm::IRBuilder<>(llvm::getGlobalContext());
+    Mod = new llvm::Module("module", TheContext);
+    builder = new llvm::IRBuilder<>(TheContext);
 
     jit_build_seedToFloat();
     jit_build_seedMultiply();
@@ -247,10 +316,10 @@ namespace QDP {
     unsigned Idx = 0;
     for (llvm::Function::arg_iterator AI = mainFunc->arg_begin(), AE = mainFunc->arg_end() ; AI != AE ; ++AI, ++Idx) {
       AI->setName( std::string("arg")+std::to_string(Idx) );
-      vecArgument.push_back( AI );
+      vecArgument.push_back( &*AI );
     }
 
-    llvm::BasicBlock* entry = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entrypoint", mainFunc);
+    llvm::BasicBlock* entry = llvm::BasicBlock::Create(TheContext, "entrypoint", mainFunc);
     builder->SetInsertPoint(entry);
 
     llvm_counters::label_counter = 0;
@@ -262,7 +331,7 @@ namespace QDP {
   llvm::Value * llvm_derefParam( ParamRef r ) {
     if (!function_created)
       llvm_create_function();
-    assert( vecArgument.size() > (int)r && "derefParam out of range");
+    assert( vecArgument.size() > (unsigned)r && "derefParam out of range");
     return vecArgument.at(r);
   }
 
@@ -292,14 +361,14 @@ namespace QDP {
     if ( t0->isFloatingPointTy() || t1->isFloatingPointTy() ) {
       //llvm::outs() << "promote floating " << t0->isFloatingPointTy() << " " << t1->isFloatingPointTy() << "\n";
       if ( t0->isDoubleTy() || t1->isDoubleTy() ) {
-	return llvm::Type::getDoubleTy(llvm::getGlobalContext());
+	return llvm::Type::getDoubleTy(TheContext);
       } else {
-	return llvm::Type::getFloatTy(llvm::getGlobalContext());
+	return llvm::Type::getFloatTy(TheContext);
       }
     } else {
       //llvm::outs() << "promote int\n";
       unsigned upper = std::max( t0->getScalarSizeInBits() , t1->getScalarSizeInBits() );
-      return llvm::Type::getIntNTy(llvm::getGlobalContext() , upper );
+      return llvm::Type::getIntNTy(TheContext , upper );
     }
   }
 
@@ -335,8 +404,8 @@ namespace QDP {
 
 
 
-  std::tuple<llvm::Value*,llvm::Value*,llvm::Type*>
-  llvm_normalize_values(llvm::Value* lhs , llvm::Value* rhs)
+
+  llvm::Type* llvm_normalize_values(llvm::Value*& lhs , llvm::Value*& rhs)
   {
     llvm::Type* args_type = promote( lhs->getType() , rhs->getType() );
     if ( args_type != lhs->getType() ) {
@@ -347,120 +416,146 @@ namespace QDP {
       //llvm::outs() << "rhs needs conversion\n";
       rhs = llvm_cast( args_type , rhs );
     }
-    return std::tie(lhs,rhs,args_type);
+    return args_type;
   }
 
 
 
-  llvm::Value* llvm_b_op( std::function< llvm::Value *(llvm::Value *, llvm::Value *) > func_float,
-			  std::function< llvm::Value *(llvm::Value *, llvm::Value *) > func_int,
-			  llvm::Value* lhs , llvm::Value* rhs )
-  {
-    llvm::Type* args_type;
-    std::tie(lhs,rhs,args_type) = llvm_normalize_values(lhs,rhs);
-    if ( args_type->isFloatingPointTy() ) {
-      //llvm::outs() << "float binary op\n";
-      return func_float( lhs , rhs );  
-    }  else {
-      //llvm::outs() << "integer binary op\n";
-      return func_int( lhs , rhs );  
-    }
+
+  llvm::Value* llvm_neg( llvm::Value* rhs ) {
+    llvm::Value* lhs = llvm_create_value(0);
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    if ( args_type->isFloatingPointTy() )
+      return builder->CreateFSub( lhs , rhs );
+    else
+      return builder->CreateSub( lhs , rhs );
   }
 
 
-  llvm::Value* llvm_u_op( std::function< llvm::Value *(llvm::Value *) > func_float,
-			  std::function< llvm::Value *(llvm::Value *) > func_int,
-			  llvm::Value* lhs )
-  {
-    if ( lhs->getType()->isFloatingPointTy() ) {
-      return func_float( lhs );  
-    }  else {
-      return func_int( lhs );  
-    }
+    llvm::Value* llvm_rem( llvm::Value* lhs , llvm::Value* rhs ) {
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    if ( args_type->isFloatingPointTy() )
+      return builder->CreateFRem( lhs , rhs );
+    else
+      return builder->CreateSRem( lhs , rhs );
   }
 
-
-  llvm::Value* llvm_neg( llvm::Value* src ) {
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateFSub( lhs , rhs ); } , 
-		      [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateSub( lhs , rhs ); } , 
-		      llvm_create_value(0) , src ); }
-
-
-  llvm::Value* llvm_rem( llvm::Value* lhs , llvm::Value* rhs ) {
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateFRem( lhs , rhs ); } , 
-		      [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateSRem( lhs , rhs ); } , 
-		      lhs , rhs ); }
 
   llvm::Value* llvm_shr( llvm::Value* lhs , llvm::Value* rhs ) {  
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{assert(!"Flt-pnt SHR makes no sense.");},
-		      [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{ return builder->CreateAShr( lhs , rhs ); },
-		      lhs , rhs ); }
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    assert( !args_type->isFloatingPointTy() );
+    return builder->CreateAShr( lhs , rhs );
+  }
+
 
   llvm::Value* llvm_shl( llvm::Value* lhs , llvm::Value* rhs ) {  
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{assert(!"Flt-pnt SHL makes no sense.");},
-		      [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{ return builder->CreateShl( lhs , rhs ); },
-		      lhs , rhs ); }
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    assert( !args_type->isFloatingPointTy() );
+    return builder->CreateShl( lhs , rhs );
+  }
+
 
   llvm::Value* llvm_and( llvm::Value* lhs , llvm::Value* rhs ) {  
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{assert(!"Flt-pnt AND makes no sense.");},
-		      [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{ return builder->CreateAnd( lhs , rhs ); },
-		      lhs , rhs ); }
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    assert( !args_type->isFloatingPointTy() );
+    return builder->CreateAnd( lhs , rhs );
+  }
+
 
   llvm::Value* llvm_or( llvm::Value* lhs , llvm::Value* rhs ) {  
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{assert(!"Flt-pnt OR makes no sense.");},
-		      [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{ return builder->CreateOr( lhs , rhs ); },
-		      lhs , rhs ); }
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    assert( !args_type->isFloatingPointTy() );
+    return builder->CreateOr( lhs , rhs );
+  }
+
 
   llvm::Value* llvm_xor( llvm::Value* lhs , llvm::Value* rhs ) {  
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{assert(!"Flt-pnt XOR makes no sense.");},
-		      [](llvm::Value* lhs , llvm::Value* rhs ) -> llvm::Value*{ return builder->CreateXor( lhs , rhs ); },
-		      lhs , rhs ); }
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    assert( !args_type->isFloatingPointTy() );
+    return builder->CreateXor( lhs , rhs );
+  }
+
 
   llvm::Value* llvm_mul( llvm::Value* lhs , llvm::Value* rhs ) {
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateFMul( lhs , rhs ); } , 
-		      [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateMul( lhs , rhs ); } , 
-		      lhs , rhs ); }
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    if ( args_type->isFloatingPointTy() )
+      return builder->CreateFMul( lhs , rhs );
+    else
+      return builder->CreateMul( lhs , rhs );
+  }
+
 
   llvm::Value* llvm_add( llvm::Value* lhs , llvm::Value* rhs ) {
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateFAdd( lhs , rhs ); } , 
-		      [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateAdd( lhs , rhs ); } , 
-		      lhs , rhs ); }
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    if ( args_type->isFloatingPointTy() )
+      return builder->CreateFAdd( lhs , rhs );
+    else
+      return builder->CreateNSWAdd( lhs , rhs );
+  }
+
 
   llvm::Value* llvm_sub( llvm::Value* lhs , llvm::Value* rhs ) {
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateFSub( lhs , rhs ); } , 
-		      [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateSub( lhs , rhs ); } , 
-		      lhs , rhs ); }
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    if ( args_type->isFloatingPointTy() )
+      return builder->CreateFSub( lhs , rhs );
+    else
+      return builder->CreateSub( lhs , rhs );
+  }
+
 
   llvm::Value* llvm_div( llvm::Value* lhs , llvm::Value* rhs ) {
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateFDiv( lhs , rhs ); } , 
-		      [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateSDiv( lhs , rhs ); } , 
-		      lhs , rhs ); }
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    if ( args_type->isFloatingPointTy() )
+      return builder->CreateFDiv( lhs , rhs );
+    else 
+      return builder->CreateSDiv( lhs , rhs );
+  }
 
 
   llvm::Value* llvm_eq( llvm::Value* lhs , llvm::Value* rhs ) {
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateFCmpOEQ( lhs , rhs ); } , 
-		      [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateICmpEQ( lhs , rhs ); } , 
-		      lhs , rhs ); }
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    if ( args_type->isFloatingPointTy() )
+      return builder->CreateFCmpOEQ( lhs , rhs );
+    else
+      return builder->CreateICmpEQ( lhs , rhs );
+  }
+
 
   llvm::Value* llvm_ge( llvm::Value* lhs , llvm::Value* rhs ) {
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateFCmpOGE( lhs , rhs ); } , 
-		      [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateICmpSGE( lhs , rhs ); } , 
-		      lhs , rhs ); }
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    if ( args_type->isFloatingPointTy() )
+      return builder->CreateFCmpOGE( lhs , rhs );
+    else
+      return builder->CreateICmpSGE( lhs , rhs );
+  }
+
 
   llvm::Value* llvm_gt( llvm::Value* lhs , llvm::Value* rhs ) {
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateFCmpOGT( lhs , rhs ); } , 
-		      [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateICmpSGT( lhs , rhs ); } , 
-		      lhs , rhs ); }
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    if ( args_type->isFloatingPointTy() )
+      return builder->CreateFCmpOGT( lhs , rhs );
+    else
+      return builder->CreateICmpSGT( lhs , rhs );
+  }
+
 
   llvm::Value* llvm_le( llvm::Value* lhs , llvm::Value* rhs ) {
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateFCmpOLE( lhs , rhs ); } , 
-		      [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateICmpSLE( lhs , rhs ); } , 
-		      lhs , rhs ); }
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    if ( args_type->isFloatingPointTy() )
+      return builder->CreateFCmpOLE( lhs , rhs );
+    else
+      return builder->CreateICmpSLE( lhs , rhs );
+  }
+
 
   llvm::Value* llvm_lt( llvm::Value* lhs , llvm::Value* rhs ) {
-    return llvm_b_op( [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateFCmpOLT( lhs , rhs ); } , 
-		      [](llvm::Value* lhs , llvm::Value* rhs) -> llvm::Value*{ return builder->CreateICmpSLT( lhs , rhs ); } , 
-		      lhs , rhs ); }
+    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    if ( args_type->isFloatingPointTy() )
+      return builder->CreateFCmpOLT( lhs , rhs );
+    else 
+      return builder->CreateICmpSLT( lhs , rhs );
+  }
+
 
   //
   // Convenience function definitions
@@ -471,6 +566,8 @@ namespace QDP {
   }
 
 
+
+
   // std::string param_next()
   // {
   //   std::ostringstream oss;
@@ -478,6 +575,7 @@ namespace QDP {
   //   llvm::outs() << "param_name = " << oss.str() << "\n";
   //   return oss.str();
   // }
+
 
   llvm::Value* llvm_get_shared_ptr( llvm::Type *ty ) {
 
@@ -507,37 +605,41 @@ namespace QDP {
 
 
   template<> ParamRef llvm_add_param<bool>() { 
-    vecParamType.push_back( llvm::Type::getInt1Ty(llvm::getGlobalContext()) );
+    vecParamType.push_back( llvm::Type::getInt1Ty(TheContext) );
     return vecParamType.size()-1;
-    // llvm::Argument * u8 = new llvm::Argument( llvm::Type::getInt8Ty(llvm::getGlobalContext()) , param_next() , mainFunc );
+    // llvm::Argument * u8 = new llvm::Argument( llvm::Type::getInt8Ty(TheContext) , param_next() , mainFunc );
     // return llvm_cast( llvm_type<bool>::value , u8 );
   }
   template<> ParamRef llvm_add_param<bool*>() { 
-    vecParamType.push_back( llvm::Type::getInt1PtrTy(llvm::getGlobalContext()) );
+    vecParamType.push_back( llvm::Type::getInt1PtrTy(TheContext) );
+    return vecParamType.size()-1;
+  }
+  template<> ParamRef llvm_add_param<int64_t>() { 
+    vecParamType.push_back( llvm::Type::getInt64Ty(TheContext) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<int>() { 
-    vecParamType.push_back( llvm::Type::getInt32Ty(llvm::getGlobalContext()) );
+    vecParamType.push_back( llvm::Type::getInt32Ty(TheContext) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<int*>() { 
-    vecParamType.push_back( llvm::Type::getInt32PtrTy(llvm::getGlobalContext()) );
+    vecParamType.push_back( llvm::Type::getInt32PtrTy(TheContext) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<float>() { 
-    vecParamType.push_back( llvm::Type::getFloatTy(llvm::getGlobalContext()) );
+    vecParamType.push_back( llvm::Type::getFloatTy(TheContext) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<float*>() { 
-    vecParamType.push_back( llvm::Type::getFloatPtrTy(llvm::getGlobalContext()) );
+    vecParamType.push_back( llvm::Type::getFloatPtrTy(TheContext) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<double>() { 
-    vecParamType.push_back( llvm::Type::getDoubleTy(llvm::getGlobalContext()) );
+    vecParamType.push_back( llvm::Type::getDoubleTy(TheContext) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<double*>() { 
-    vecParamType.push_back( llvm::Type::getDoublePtrTy(llvm::getGlobalContext()) );
+    vecParamType.push_back( llvm::Type::getDoublePtrTy(TheContext) );
     return vecParamType.size()-1;
   }
 
@@ -547,7 +649,7 @@ namespace QDP {
   {
     std::ostringstream oss;
     oss << "L" << llvm_counters::label_counter++;
-    llvm::BasicBlock *BB = llvm::BasicBlock::Create(llvm::getGlobalContext(), oss.str() );
+    llvm::BasicBlock *BB = llvm::BasicBlock::Create(TheContext, oss.str() );
     mainFunc->getBasicBlockList().push_back(BB);
     return BB;
   }
@@ -596,20 +698,21 @@ namespace QDP {
 
 
   llvm::ConstantInt * llvm_create_const_int(int i) {
-    return llvm::ConstantInt::getSigned( llvm::Type::getIntNTy(llvm::getGlobalContext(),32) , i );
+    return llvm::ConstantInt::getSigned( llvm::Type::getIntNTy(TheContext,32) , i );
   }
 
   llvm::Value * llvm_create_value( double v )
   {
     if (sizeof(REAL) == 4)
-      return llvm::ConstantFP::get( llvm::Type::getFloatTy(llvm::getGlobalContext()) , v );
+      return llvm::ConstantFP::get( llvm::Type::getFloatTy(TheContext) , v );
     else
-      return llvm::ConstantFP::get( llvm::Type::getDoubleTy(llvm::getGlobalContext()) , v );
+      return llvm::ConstantFP::get( llvm::Type::getDoubleTy(TheContext) , v );
   }
 
-  llvm::Value * llvm_create_value(int v )  {return llvm::ConstantInt::get( llvm::Type::getInt32Ty(llvm::getGlobalContext()) , v );}
-  llvm::Value * llvm_create_value(size_t v){return llvm::ConstantInt::get( llvm::Type::getInt32Ty(llvm::getGlobalContext()) , v );}
-  llvm::Value * llvm_create_value(bool v ) {return llvm::ConstantInt::get( llvm::Type::getInt1Ty(llvm::getGlobalContext()) , v );}
+  llvm::Value * llvm_create_value(int64_t v )  {return llvm::ConstantInt::get( llvm::Type::getInt64Ty(TheContext) , v );}
+  llvm::Value * llvm_create_value(int v )  {return llvm::ConstantInt::get( llvm::Type::getInt32Ty(TheContext) , v );}
+  llvm::Value * llvm_create_value(size_t v){return llvm::ConstantInt::get( llvm::Type::getInt32Ty(TheContext) , v );}
+  llvm::Value * llvm_create_value(bool v ) {return llvm::ConstantInt::get( llvm::Type::getInt1Ty(TheContext) , v );}
 
 
   llvm::Value * llvm_createGEP( llvm::Value * ptr , llvm::Value * idx )
@@ -652,14 +755,14 @@ namespace QDP {
 
   void llvm_bar_sync()
   {
-    llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getVoidTy(llvm::getGlobalContext()), false);
+    llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getVoidTy(TheContext), false);
 
     llvm::AttrBuilder ABuilder;
     ABuilder.addAttribute(llvm::Attribute::ReadNone);
 
     llvm::Constant *Bar = Mod->getOrInsertFunction( "llvm.nvvm.barrier0" , 
 						    IntrinFnTy , 
-						    llvm::AttributeSet::get(llvm::getGlobalContext(), 
+						    llvm::AttributeSet::get(TheContext, 
 									    llvm::AttributeSet::FunctionIndex, 
 									    ABuilder)
 						    );
@@ -673,14 +776,14 @@ namespace QDP {
 
   llvm::Value * llvm_special( const char * name )
   {
-    llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getInt32Ty(llvm::getGlobalContext()), false);
+    llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getInt32Ty(TheContext), false);
 
     llvm::AttrBuilder ABuilder;
     ABuilder.addAttribute(llvm::Attribute::ReadNone);
 
     llvm::Constant *ReadTidX = Mod->getOrInsertFunction( name , 
 							 IntrinFnTy , 
-							 llvm::AttributeSet::get(llvm::getGlobalContext(), 
+							 llvm::AttributeSet::get(TheContext, 
 										 llvm::AttributeSet::FunctionIndex, 
 										 ABuilder)
 							 );
@@ -709,6 +812,7 @@ namespace QDP {
 
 
   void addKernelMetadata(llvm::Function *F) {
+#if 0
     llvm::Module *M = F->getParent();
     llvm::LLVMContext &Ctx = M->getContext();
 
@@ -723,47 +827,60 @@ namespace QDP {
 
     // Append metadata to nvvm.annotations
     MD->addOperand(llvm::MDNode::get(Ctx, MDVals));
+#else
+    llvm::Module *M = F->getParent();
+    llvm::LLVMContext &Ctx = M->getContext();
+
+    // Get "nvvm.annotations" metadata node
+    llvm::NamedMDNode *MD = M->getOrInsertNamedMetadata("nvvm.annotations");
+
+    // Create !{<func-ref>, metadata !"kernel", i32 1} node
+    llvm::SmallVector<llvm::Metadata *, 3> MDVals;
+    MDVals.push_back(llvm::ValueAsMetadata::get(F));
+    MDVals.push_back(llvm::MDString::get(Ctx, "kernel"));
+    MDVals.push_back(llvm::ValueAsMetadata::get(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), 1)));    //ConstantAsMetadata::get
+
+    // Append metadata to nvvm.annotations
+    MD->addOperand(llvm::MDNode::get(Ctx, MDVals));
+#endif
   }
 
 
-
-  void llvm_print_module( llvm::Module* m , const char * fname ) {
-    std::string ErrorMsg; 
-    llvm::raw_fd_ostream outfd( fname , ErrorMsg, llvm::sys::fs::OpenFlags::F_Text);
+    void llvm_print_module( llvm::Module* m , const char * fname ) {
+    std::error_code EC;
+    llvm::raw_fd_ostream outfd( fname , EC, llvm::sys::fs::OpenFlags::F_Text);
     //ASSERT_FALSE(outfd.has_error());
     std::string banner;
     {
-        llvm::outs() << "llvm_print_module ni\n";
+      llvm::outs() << "llvm_print_module ni\n";
 #if 0
-        llvm::PassManager PM;
-        PM.add( llvm::createPrintModulePass( &outfd, false, banner ) ); 
-        PM.run( *m );
-#endif
-    }
-  }
-
-#if 0
-  void llvm_print_module( llvm::Module* m , const char * fname ) {
-    std::string ErrorMsg;
-    llvm::raw_fd_ostream outfd( fname ,ErrorMsg);
-    llvm::outs() << ErrorMsg << "\n";
-    std::string banner;
-    {
       llvm::PassManager PM;
       PM.add( llvm::createPrintModulePass( &outfd, false, banner ) ); 
       PM.run( *m );
+#endif
     }
   }
-#endif
+
+
+
 
   std::string get_PTX_from_Module_using_llvm( llvm::Module *Mod )
   {
-    llvm::FunctionPassManager OurFPM( Mod );
-    //OurFPM.add(llvm::createCFGSimplificationPass());  // skip this for now. causes problems with CUDA generic pointers
+    //std::cout << "enter getPTX_llvm------\n";
+    //Mod->dump();
+
+
+    if (llvm::verifyModule(*Mod, &llvm::errs())) {
+      exit(1);
+    }
+
+    
+    llvm::legacy::FunctionPassManager OurFPM( Mod );
+    OurFPM.add(llvm::createCFGSimplificationPass());  // skip this for now. causes problems with CUDA generic pointers
     //OurFPM.add(llvm::createBasicAliasAnalysisPass());
-    //OurFPM.add(llvm::createInstructionCombiningPass()); // this causes problems. Not anymore!
-    //OurFPM.add(llvm::createReassociatePass());
-    OurFPM.add(llvm::createGVNPass());
+    OurFPM.add(llvm::createInstructionCombiningPass()); // this causes problems. Not anymore!
+    OurFPM.add(llvm::createReassociatePass());
+    //OurFPM.add(llvm::createGVNPass());
     OurFPM.doInitialization();
 
     auto& func_list = Mod->getFunctionList();
@@ -780,38 +897,78 @@ namespace QDP {
     //
     // Call NVPTX
     //
-    llvm::Triple TheTriple;
-    TheTriple.setArch(llvm::Triple::nvptx64);
-    TheTriple.setVendor(llvm::Triple::UnknownVendor);
-    TheTriple.setOS(llvm::Triple::Linux);
-    TheTriple.setEnvironment(llvm::Triple::UnknownEnvironment);
-    TheTriple.setObjectFormat(llvm::Triple::ELF );
+    // llvm::Triple TheTriple;
+    // TheTriple.setArch(llvm::Triple::nvptx64);
+    // TheTriple.setVendor(llvm::Triple::UnknownVendor);
+    // TheTriple.setOS(llvm::Triple::CUDA);
+    // TheTriple.setEnvironment(llvm::Triple::UnknownEnvironment);
+    // TheTriple.setObjectFormat(llvm::Triple::ELF );
 
+    llvm::Triple triple("nvptx64-nvidia-cuda");
+      
     std::string Error;
-    const llvm::Target *TheTarget = llvm::TargetRegistry::lookupTarget( "nvptx64-unknown-cuda",TheTriple, Error);
+    const llvm::Target *TheTarget = llvm::TargetRegistry::lookupTarget( "", triple, Error);
     if (!TheTarget) {
       llvm::errs() << "Error looking up target: " << Error;
       exit(1);
     }
 
+    std::cout << "target name: " << TheTarget->getName() << "\n";
+
+    //llvm::Optional<llvm::Reloc::Model> relocModel;
+    // if (m_generatePIC) 
+    // relocModel = llvm::Reloc::PIC_;
 
 
-    llvm::TargetOptions Options;
-    std::unique_ptr<llvm::TargetMachine> target(TheTarget->createTargetMachine(TheTriple.getTriple(),
-									       "sm_20", "ptx31", Options ));
+    //llvm::TargetOptions Options;
 
-  
-    assert(target.get() && "Could not allocate target machine!");
-    llvm::TargetMachine &Target = *target.get();
+    llvm::TargetOptions Options = InitTargetOptionsFromCodeGenFlags();
+    // Options.DisableIntegratedAS = llvm::NoIntegratedAssembler;
+    // Options.MCOptions.ShowMCEncoding = llvm::ShowMCEncoding;
+    // Options.MCOptions.MCUseDwarfDirectory = llvm::EnableDwarfDirectory;
+    // Options.MCOptions.AsmVerbose = llvm::AsmVerbose;
+    // Options.MCOptions.PreserveAsmComments = llvm::PreserveComments;
+    // Options.MCOptions.IASSearchPaths = llvm::IncludeDirs;
+
+    
+    //std::unique_ptr<llvm::TargetMachine> target(TheTarget->createTargetMachine(TheTriple.getTriple(),"sm_50", "ptx50", Options , relocModel ));
+
+    std::unique_ptr<llvm::TargetMachine> target_machine(TheTarget->createTargetMachine(
+										       "nvptx64-nvidia-cuda",
+										       "sm_50",
+										       "",
+										       llvm::TargetOptions(),
+										       getRelocModel(),
+										       llvm::CodeModel::Default,
+										       llvm::CodeGenOpt::Aggressive ));
+
+    assert(target_machine.get() && "Could not allocate target machine!");
+
+    std::cout << "target machine cpu:     " << target_machine->getTargetCPU().str() << "\n";
+    std::cout << "target machine feature: " << target_machine->getTargetFeatureString().str() << "\n";
+ 
+    //llvm::TargetMachine &Target = *target.get();
 
 
-    std::string str;
-    llvm::raw_string_ostream rss(str);
-    llvm::formatted_raw_ostream FOS(rss);
+    //std::string str;
+    //llvm::raw_string_ostream rss(str);
+    //llvm::formatted_raw_ostream FOS(rss);
 
-    llvm::PassManager PMTM;
-    FOS <<  "target datalayout = \"e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v32:32:32-v64:64:64-v128:128:128-n16:32:64\";\n";
+    llvm::legacy::PassManager PM;
+    //FOS <<  "target datalayout = \"e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v32:32:32-v64:64:64-v128:128:128-n16:32:64\";\n";
+    Mod->setTargetTriple( "nvptx64-nvidia-cuda" );
 
+    llvm::TargetLibraryInfoImpl TLII(Triple(Mod->getTargetTriple()));
+    PM.add(new TargetLibraryInfoWrapperPass(TLII));
+    //PM.add(new llvm::TargetLibraryInfoWrapperPass(llvm::Triple(Mod->getTargetTriple())));
+
+    Mod->setDataLayout(target_machine->createDataLayout());
+    //Mod->setDataLayout("e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v32:32:32-v64:64:64-v128:128:128-n16:32:64");
+
+    //setFunctionAttributes("sm_30", "", *Mod);  // !!!!!
+
+    
+    
 #if 0
     // Add the target data from the target machine, if it exists, or the module.
     if (const DataLayout *TD = Target.getDataLayout()) {
@@ -826,20 +983,32 @@ namespace QDP {
     //QDP_info_primary( "Using module's data layout" );
     //PMTM.add(new llvm::DataLayoutPass(Mod));
 #endif
-    Mod->setDataLayout("");
 
+    std::string str;
+    llvm::raw_string_ostream rss(str);
+    llvm::buffer_ostream bos(rss);
+
+
+
+    
     // Ask the target to add backend passes as necessary.
-    if (Target.addPassesToEmitFile(PMTM, FOS,  llvm::TargetMachine::CGFT_AssemblyFile )) {
+    if (target_machine->addPassesToEmitFile(PM, bos ,  llvm::TargetMachine::CGFT_AssemblyFile )) {
       llvm::errs() << ": target does not support generation of this"
 		   << " file type!\n";
       exit(1);
     }
 
-    QDP_info_primary("PTX code generation");
-    PMTM.run(*Mod);
-    FOS.flush();
 
-    return str;
+    //Mod->dump();
+    //std::cout << "(module right before PTX codegen)------\n";
+	
+    QDP_info_primary("PTX code generation");
+    PM.run(*Mod);
+    //bos.flush();
+
+    std::cout << "PTX generated2: " << bos.str().str() << " (end)\n";
+
+    return bos.str().str();
   }
 
 
@@ -882,7 +1051,11 @@ namespace QDP {
 
   std::string get_PTX_from_Module_using_nvvm( llvm::Module *Mod )
   {
-    llvm::PassManager PMTM;
+    // std::cout << __PRETTY_FUNCTION__ << "\n";
+    // Mod->dump();
+
+    
+    llvm::legacy::PassManager PMTM;
 #if 0
     // Add the target data from the target machine, if it exists, or the module.
     if (const DataLayout *TD = Target.getDataLayout()) {
@@ -955,7 +1128,28 @@ namespace QDP {
 
     //exit(1);
 
-    //std::cout << str << "\n";
+#if 0
+    // Write PTX string to file
+    std::ofstream ptxfile;
+    ptxfile.open ( "ATST.ptx" );
+    ptxfile << str << "\n";
+    ptxfile.close();
+#endif
+
+
+#if 1
+    // Read PTX string from file
+    std::ifstream ptxfile("ATST.ptx");
+    std::stringstream buffer;
+    buffer << ptxfile.rdbuf();
+    ptxfile.close();
+    str = buffer.str();
+#endif
+
+
+    std::cout << "PROGRAM:\n";
+    std::cout << str << "\n";
+    std::cout << "PROGRAM------\n";
 
     nvvmResult result;
     nvvmProgram program;
@@ -976,7 +1170,8 @@ namespace QDP {
     }
 
     std::stringstream ss;
-    ss << "-arch=compute_" << DeviceParams::Instance().getMajor() << DeviceParams::Instance().getMinor();
+    //ss << "-arch=compute_" << DeviceParams::Instance().getMajor() << DeviceParams::Instance().getMinor();
+    ss << "-arch=compute_35";
 
     std::string sm_str = ss.str();
 
@@ -1025,35 +1220,51 @@ namespace QDP {
   }
 
 
-
+  // LLVM 4.0
+  bool all_but_main(const llvm::GlobalValue & gv)
+  {
+    return gv.getName().str() == "main";
+  }
 
 
   std::string llvm_get_ptx_kernel(const char* fname)
   {
+    //std::cout << "enter get_ptx_kernel------\n";
+    //Mod->dump();
     //QDP_info_primary("Internalizing module");
 
-    const char *ExportList[] = { "main" };
+    //const char *ExportList[] = { "main" };
 
+    
     llvm::StringMap<int> Mapping;
     Mapping["__CUDA_FTZ"] = 0;
 
     std::string banner;
 
-    llvm::PassManager OurPM;
-    OurPM.add( llvm::createInternalizePass( llvm::ArrayRef<const char *>(ExportList, 1)));
+    llvm::legacy::PassManager OurPM;
+    OurPM.add( llvm::createInternalizePass( all_but_main ) );
     OurPM.add( llvm::createNVVMReflectPass(Mapping));
     OurPM.run( *Mod );
 
 
     //QDP_info_primary("Running optimization passes on module");
 
-    llvm::PassManager PM;
+    llvm::legacy::PassManager PM;
     PM.add( llvm::createGlobalDCEPass() );
     PM.run( *Mod );
 
+
+    // std::cout << "after globalDCE\n";
+    // Mod->dump();
+    // std::cout << "after globalDCE------\n";
+
+    // Mod->dump();
+
+
     //llvm_print_module(Mod,"ir_internalized_reflected_globalDCE.ll");
 
-    std::string str = get_PTX_from_Module_using_nvvm( Mod );
+    //std::string str = get_PTX_from_Module_using_nvvm( Mod );
+    std::string str = get_PTX_from_Module_using_llvm( Mod );
 
 #if 0
     // Write PTX string to file
@@ -1095,8 +1306,10 @@ namespace QDP {
 
     std::string ptx_kernel = llvm_get_ptx_kernel(fname);
 
-    //QDP_info_primary("Loading PTX kernel with driver");
+    //QDP_info_primary("Loading PTX kernel with the CUDA driver");
 
+    //std::cout << ptx_kernel << "\n";
+    
     ret = cuModuleLoadData(&cuModule, (void*)ptx_kernel.c_str());
     //ret = cuModuleLoadDataEx( &cuModule , ptx_kernel.c_str() , 0 , 0 , 0 );
 
@@ -1121,6 +1334,9 @@ namespace QDP {
     return func;
   }
 
+
+
+
   llvm::Value* llvm_call_f32( llvm::Function* func , llvm::Value* lhs )
   {
     llvm::Value* lhs_f32 = llvm_cast( llvm_type<float>::value , lhs );
@@ -1131,7 +1347,7 @@ namespace QDP {
   {
     llvm::Value* lhs_f32 = llvm_cast( llvm_type<float>::value , lhs );
     llvm::Value* rhs_f32 = llvm_cast( llvm_type<float>::value , rhs );
-    return builder->CreateCall2(func,lhs_f32,rhs_f32);
+    return builder->CreateCall(func,{lhs_f32,rhs_f32});
   }
 
   llvm::Value* llvm_call_f64( llvm::Function* func , llvm::Value* lhs )
@@ -1144,7 +1360,7 @@ namespace QDP {
   {
     llvm::Value* lhs_f64 = llvm_cast( llvm_type<double>::value , lhs );
     llvm::Value* rhs_f64 = llvm_cast( llvm_type<double>::value , rhs );
-    return builder->CreateCall2(func,lhs_f64,rhs_f64);
+    return builder->CreateCall(func,{lhs_f64,rhs_f64});
   }
 
   llvm::Value* llvm_sin_f32( llvm::Value* lhs ) { return llvm_call_f32( func_sin_f32 , lhs ); }

@@ -1,27 +1,39 @@
 #ifndef QDP_LLVM
 #define QDP_LLVM
 
+//#define __STDC_LIMIT_MACROS
+//#define __STDC_CONSTANT_MACROS
 
 #include "llvm/IRReader/IRReader.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/Bitcode/BitstreamWriter.h"
-#include "llvm/Bitcode/ReaderWriter.h"
-#include "llvm/PassManager.h"
+#include "llvm/Bitcode/BitcodeReader.h"
+//#include "llvm/Bitcode/Writer.h"
+//#include "llvm/IR/PassManager.h"  // not ready yet in LLVM 3.8
+#include "llvm/IR/LegacyPassManager.h"
+//#include "llvm/Transforms/IPO/PassManagerBuilder.h"
+#include "llvm/Analysis/BasicAliasAnalysis.h"
 #include "llvm/Pass.h"
 #include "llvm/Analysis/Passes.h"
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/IPO.h"
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
+#include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/CommandLine.h"
 #include "llvm/Target/TargetMachine.h"
+#include "llvm/Target/TargetLowering.h"
+#include "llvm/Analysis/TargetTransformInfo.h"
+#include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/Support/ToolOutputFile.h"
-// #include "llvm/ADT/OwningPtr.h"
+//#include "llvm/ADT/OwningPtr.h"
 #include "llvm/Support/FormattedStream.h"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/Support/SourceMgr.h"
-#include "llvm/AsmParser/Parser.h"
+//#include "llvm/Assembly/Parser.h"
+#include "llvm/IR/TypeBuilder.h"
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/StringSet.h"
@@ -31,18 +43,27 @@
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Attributes.h"
 #include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/Attributes.h"
+
 #include "llvm/Support/raw_os_ostream.h"
 
-#include "llvm/Support/DataStream.h"
+//#include "llvm/Support/DataStream.h"
 #include "llvm/ADT/Statistic.h"
 #include "llvm/Support/Program.h"
+//#include "llvm/Support/system_error.h"
 #include "llvm/Support/MemoryBuffer.h"
+#include "llvm/Support/Debug.h"
+#include "llvm/Support/Host.h"
 
-#include "llvm/Linker/Linker.h"
+#include <system_error>
 
-#include "llvm/ExecutionEngine/ObjectBuffer.h"
+//#include "llvm/ExecutionEngine/ObjectBuffer.h"
 #include "llvm/IR/GlobalVariable.h"
 
+#include "llvm/ExecutionEngine/ExecutionEngine.h"
+#include "llvm/ExecutionEngine/MCJIT.h"
+#include "llvm/IR/Verifier.h"
+#include "llvm/IR/AssemblyAnnotationWriter.h"
 
 namespace llvm {
 ModulePass *createNVVMReflectPass(const StringMap<int>&);
@@ -51,15 +72,31 @@ ModulePass *createNVVMReflectPass(const StringMap<int>&);
 
 namespace QDP {
 
+
+  namespace llvm_debug {
+    extern bool debug_func_build     ;
+    extern bool debug_func_dump      ;
+    extern bool debug_func_write     ;
+    extern bool debug_loop_vectorizer;
+  }
+
+  extern llvm::LLVMContext TheContext;
+
   typedef int ParamRef;
 
   // llvm::IRBuilder<> *builder;
   // llvm::BasicBlock  *entry;
-  // extern llvm::Function    *mainFunc;
-  //extern llvm::Module      *Mod;
+  extern llvm::Function    *mainFunc;
+  extern llvm::Function    *mainFunc_extern;
+  extern llvm::Module      *Mod;
+
+
+  void llvm_set_debug( const char * str );
+  void llvm_debug_write_set_name( const char* pretty, const char* additional );
 
   llvm::Value * llvm_create_value( double v );
   llvm::Value * llvm_create_value( int v );
+  llvm::Value * llvm_create_value( int64_t v );
   llvm::Value * llvm_create_value( size_t v );
   llvm::Value * llvm_create_value( bool v );
 
@@ -86,6 +123,14 @@ namespace QDP {
   };
 
   std::string getPTXfromCUFunc(CUfunction f);
+  
+  void llvm_append_mattr( const char * attr );
+
+  llvm::Value *llvm_get_arg_lo();
+  llvm::Value *llvm_get_arg_hi();
+  llvm::Value *llvm_get_arg_myId();
+  llvm::Value *llvm_get_arg_ordered();
+  llvm::Value *llvm_get_arg_start();
 
   void llvm_start_new_function();
   void llvm_wrapper_init();
@@ -95,16 +140,17 @@ namespace QDP {
 
   llvm::SwitchInst * llvm_switch( llvm::Value* val , llvm::BasicBlock* bb_default );
 
-  std::tuple<llvm::Value*,llvm::Value*,llvm::Type*>
-  llvm_normalize_values(llvm::Value* lhs , llvm::Value* rhs);
+  llvm::Type* llvm_normalize_values(llvm::Value*& lhs , llvm::Value*& rhs);
 
-  llvm::Value* llvm_b_op( std::function< llvm::Value *(llvm::Value *, llvm::Value *) > func_float,
-			  std::function< llvm::Value *(llvm::Value *, llvm::Value *) > func_int,
+#if 0
+  llvm::Value* llvm_b_op( llvm::Value *(*)(llvm::Value *, llvm::Value *) func_float,
+			  llvm::Value *(*)(llvm::Value *, llvm::Value *) func_int,
 			  llvm::Value* lhs , llvm::Value* rhs );
 
-  llvm::Value* llvm_u_op( std::function< llvm::Value *(llvm::Value *) > func_float,
-			  std::function< llvm::Value *(llvm::Value *) > func_int,
+  llvm::Value* llvm_u_op( llvm::Value *(*)(llvm::Value *) func_float,
+			  llvm::Value *(*)(llvm::Value *) func_int,
 			  llvm::Value* lhs );
+#endif
 
   llvm::Value* llvm_shl( llvm::Value* lhs , llvm::Value* rhs );
   llvm::Value* llvm_shr( llvm::Value* lhs , llvm::Value* rhs );
@@ -137,6 +183,7 @@ namespace QDP {
 
   template<> ParamRef llvm_add_param<bool>();
   template<> ParamRef llvm_add_param<bool*>();
+  template<> ParamRef llvm_add_param<int64_t>();
   template<> ParamRef llvm_add_param<int>();
   template<> ParamRef llvm_add_param<int*>();
   template<> ParamRef llvm_add_param<float>();

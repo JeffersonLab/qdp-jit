@@ -5,6 +5,7 @@ namespace QDP {
   extern llvm::IRBuilder<>  *builder;
   extern llvm::Module       *Mod;
 
+
   llvm::Function    *func_seed2float;
   llvm::Function    *func_seedMultiply;
 
@@ -34,7 +35,7 @@ namespace QDP {
 				builder->getInt32Ty(),
 				builder->getInt32Ty() };
     
-    llvm::StructType* ret_type = llvm::StructType::get(llvm::getGlobalContext(), 
+    llvm::StructType* ret_type = llvm::StructType::get(TheContext, 
 						       llvm::ArrayRef< llvm::Type * >( ret_types , 4 ) );
 
     llvm::FunctionType *funcType = llvm::FunctionType::get( ret_type , 
@@ -46,11 +47,13 @@ namespace QDP {
     std::vector< llvm::Value* > args;
     unsigned Idx = 0;
     for (llvm::Function::arg_iterator AI = F->arg_begin(), AE = F->arg_end() ; AI != AE ; ++AI, ++Idx) {
-      AI->setName( std::string("arg") + std::to_string(Idx) );
-      args.push_back(AI);
+      std::ostringstream oss;
+      oss << "arg" << Idx;
+      AI->setName( oss.str() );
+      args.push_back(&*AI);
     }
 
-    llvm::BasicBlock* entry = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entrypoint", F);
+    llvm::BasicBlock* entry = llvm::BasicBlock::Create(TheContext, "entrypoint", F);
     builder->SetInsertPoint(entry);
 
     typedef RScalar<WordREG<int> >  T;
@@ -126,11 +129,13 @@ namespace QDP {
     std::vector< llvm::Value* > args;
     unsigned Idx = 0;
     for (llvm::Function::arg_iterator AI = F->arg_begin(), AE = F->arg_end() ; AI != AE ; ++AI, ++Idx) {
-      AI->setName( std::string("arg") + std::to_string(Idx) );
-      args.push_back(AI);
+      std::ostringstream oss;
+      oss << "arg" << Idx;
+      AI->setName( oss.str() );
+      args.push_back(&*AI);
     }
 
-    llvm::BasicBlock* entry = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entrypoint", F);
+    llvm::BasicBlock* entry = llvm::BasicBlock::Create(TheContext, "entrypoint", F);
     builder->SetInsertPoint(entry);
 
     typedef RScalar<WordREG<int> >  T;
@@ -140,8 +145,8 @@ namespace QDP {
     s1.elem(2).elem().setup( args[2] );
     s1.elem(3).elem().setup( args[3] );
 
-    typename UnaryReturn<PSeedREG<T>, FnSeedToFloat>::Type_t  d; // QDP::PScalarREG<QDP::RScalarREG<QDP::WordREG<float> > >
-    typedef typename RealScalar<T>::Type_t  S;                                   // QDP::RScalarREG<QDP::WordREG<float> >
+     UnaryReturn<PSeedREG<T>, FnSeedToFloat>::Type_t  d; // QDP::PScalarREG<QDP::RScalarREG<QDP::WordREG<float> > >
+    typedef  RealScalar<T>::Type_t  S;                                   // QDP::RScalarREG<QDP::WordREG<float> >
 
     S  twom11(1.0 / 2048.0);
     S  twom12(1.0 / 4096.0);
@@ -178,7 +183,7 @@ namespace QDP {
     assert(a2 && "llvm_seedToFloat a2");
     assert(a3 && "llvm_seedToFloat a3");
     assert(func_seed2float && "llvm_seedToFloat func_seed2float");
-    return builder->CreateCall4( func_seed2float , a0,a1,a2,a3 );
+    return builder->CreateCall( func_seed2float , {a0,a1,a2,a3} );
   }
 
 
