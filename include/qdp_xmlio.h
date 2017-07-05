@@ -145,7 +145,7 @@ namespace QDP
     void operator=(const XMLReader&) {}
   
     //! Hide the copy constructor
-    XMLReader(const XMLReader&) {}
+    XMLReader(const XMLReader&) = delete;
   
     void open(XMLReader& old, const std::string& xpath);
   protected:

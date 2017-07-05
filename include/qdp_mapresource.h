@@ -55,8 +55,8 @@ class FnMapRsrcMatrix {
   multi2d< std::pair< int , std::vector<FnMapRsrc*> >* > m2d;
   std::vector<int> sendMsgSize;
   std::vector<int> destNode;
-  int numSendMsgSize;
-  int numDestNode;
+  unsigned int numSendMsgSize;
+  unsigned int numDestNode;
 
   FnMapRsrcMatrix(): sendMsgSize(0),
 		             destNode(0),
@@ -64,8 +64,8 @@ class FnMapRsrcMatrix {
 		             numDestNode(Nd*2) {
     m2d.resize(numSendMsgSize,numDestNode);
 
-    for(int i=0;i<numSendMsgSize;i++) {
-      for(int q=0;q<numDestNode;q++) {
+    for(unsigned int i=0;i<numSendMsgSize;i++) {
+      for(unsigned int q=0;q<numDestNode;q++) {
 	m2d(i,q)=new std::pair< int , std::vector<FnMapRsrc*> >;
 	(*m2d(i,q)).first=0;
       }
@@ -77,8 +77,8 @@ class FnMapRsrcMatrix {
 
   void cleanup() {
     //QDPIO::cout << "FnMapRsrcMatrix cleanup\n";
-    for(int i=0;i<numSendMsgSize;i++) {
-      for(int q=0;q<numDestNode;q++) {
+    for(unsigned int i=0;i<numSendMsgSize;i++) {
+      for(unsigned int q=0;q<numDestNode;q++) {
 	//QDPIO::cout << "cleanup m2d(" << i << "," << q << ")\n";
 	for (std::vector<FnMapRsrc*>::iterator v = (*m2d(i,q)).second.begin() ; v != (*m2d(i,q)).second.end() ; ++v )
 	  delete *v;
@@ -92,7 +92,7 @@ class FnMapRsrcMatrix {
   std::pair< int , std::vector<FnMapRsrc*> >* get(int _destNode,int _srcNode,
 						  int _sendMsgSize,int _rcvMsgSize) {
     bool found = false;
-    int xDestNode=0;
+    unsigned int xDestNode=0;
     for(; xDestNode < destNode.size(); ++xDestNode)
       if (destNode[xDestNode] == _destNode)
 	{
@@ -111,7 +111,7 @@ class FnMapRsrcMatrix {
 
 
     found = false;
-    int xSendmsgsize=0;
+    unsigned int xSendmsgsize=0;
     for(; xSendmsgsize < sendMsgSize.size(); ++xSendmsgsize)
       if (sendMsgSize[xSendmsgsize] == _sendMsgSize)
 	{
@@ -137,7 +137,7 @@ class FnMapRsrcMatrix {
 #endif
 
     // Vector's size large enough ?
-    if ( pos.second.size() ==  pos.first ) {
+    if ( pos.second.size() ==  (unsigned)pos.first ) {
       QDPIO::cout << "allocate and setup new rsrc-obj (destnode=" << _destNode << ",sndmsgsize=" << _sendMsgSize << ")\n";
       pos.second.push_back( new FnMapRsrc() );
       pos.second.at(pos.first)->setup( _destNode, _srcNode, _sendMsgSize, _rcvMsgSize );

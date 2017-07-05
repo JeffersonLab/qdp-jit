@@ -67,7 +67,7 @@ namespace Layout
     int QDPXX_getLinearSiteIndex(const int coord[]);
     int QDPXX_nodeNumber(const int coord[]);
 
-  };
+  }
 
   //! Returns the node number of this node
   int nodeNumber() QDP_CONST;
