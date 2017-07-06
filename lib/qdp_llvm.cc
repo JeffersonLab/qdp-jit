@@ -17,6 +17,8 @@
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Transforms/IPO/AlwaysInliner.h"
 
+#include "llvm/Transforms/Utils/Cloning.h"
+
 #include <memory>
 
 namespace QDP {
@@ -149,7 +151,7 @@ namespace QDP {
     auto major = DeviceParams::Instance().getMajor();
     auto minor = DeviceParams::Instance().getMinor();
 
-    QDPIO::cout << "Loading CUDA libdevice for compute capability " << major << minor << "\n";
+    //QDPIO::cout << "Loading CUDA libdevice for compute capability " << major << minor << "\n";
     
     std::string ErrorMessage;
 
@@ -200,14 +202,26 @@ namespace QDP {
 
   void llvm_setup_math_functions() 
   {
-    QDPIO::cout << "Setup math functions..\n";
+    //QDPIO::cout << "Setup math functions..\n";
 
+    // Cloning a module takes more time than creating the module from scratch
+    // So, I am creating the libdevice module from the embedded bitcode.
+    //
+#if 0
+    std::unique_ptr<llvm::Module> libdevice_clone( CloneModule( module_libdevice.get() ) );
+
+    std::string ErrorMsg;
+    if (llvm::Linker::linkModules( *Mod , std::move( libdevice_clone ) )) {  // llvm::Linker::PreserveSource
+      QDP_error_exit("Linking libdevice failed: %s",ErrorMsg.c_str());
+    }
+#else
     llvm_init_libdevice();
 
     std::string ErrorMsg;
-    if (llvm::Linker::linkModules( *Mod , std::move(module_libdevice) )) {  // llvm::Linker::PreserveSource
+    if (llvm::Linker::linkModules( *Mod , std::move( module_libdevice ) )) {  // llvm::Linker::PreserveSource
       QDP_error_exit("Linking libdevice failed: %s",ErrorMsg.c_str());
     }
+#endif    
 
     func_sin_f32 = llvm_get_func( "__nv_sinf" );
     func_acos_f32 = llvm_get_func( "__nv_acosf" );
@@ -278,6 +292,11 @@ namespace QDP {
     llvm_type<double*>::value = llvm::Type::getDoublePtrTy(TheContext);
     llvm_type<int*>::value    = llvm::Type::getIntNPtrTy(TheContext,32);
     llvm_type<bool*>::value   = llvm::Type::getIntNPtrTy(TheContext,1);
+
+    //
+    // I initialize libdevice in math_setup
+    //
+    // llvm_init_libdevice();
   }  
 
 
@@ -287,7 +306,7 @@ namespace QDP {
 
 
   void llvm_start_new_function() {
-    QDPIO::cout << "Starting new LLVM function..\n";
+    //QDPIO::cout << "Starting new LLVM function..\n";
 
     Mod = new llvm::Module("module", TheContext);
     builder = new llvm::IRBuilder<>(TheContext);
@@ -875,7 +894,7 @@ namespace QDP {
 				    TargetMachine *TM, unsigned OptLevel,
 				    unsigned SizeLevel)
   {
-    QDPIO::cout << " adding opt passes..\n";
+    //QDPIO::cout << " adding opt passes..\n";
 
     const bool DisableInline = false;
     const bool UnitAtATime = false;
@@ -923,7 +942,7 @@ namespace QDP {
 
   void optimize_module( std::unique_ptr< llvm::TargetMachine >& TM )
   {
-    QDPIO::cout << "optimize module...\n";
+    //QDPIO::cout << "optimize module...\n";
     
     llvm::legacy::PassManager Passes;
 
@@ -957,7 +976,7 @@ namespace QDP {
 
   std::string get_PTX_from_Module_using_llvm( llvm::Module *Mod )
   {
-    QDPIO::cout << "get PTX using NVPTC..\n";
+    //QDPIO::cout << "get PTX using NVPTC..\n";
 
     llvm::Triple triple("nvptx64-nvidia-cuda");
       
@@ -968,7 +987,7 @@ namespace QDP {
       exit(1);
     }
 
-    std::cout << "target name: " << TheTarget->getName() << "\n";
+    //QDPIO::cout << "target name: " << TheTarget->getName() << "\n";
 
     //llvm::Optional<llvm::Reloc::Model> relocModel;
     // if (m_generatePIC) 
@@ -996,7 +1015,7 @@ namespace QDP {
 
     std::string compute = oss.str();
 
-    QDPIO::cout << "create target machine for compute capability " << compute << "\n";
+    //QDPIO::cout << "create target machine for compute capability " << compute << "\n";
     
     std::unique_ptr<llvm::TargetMachine> target_machine(TheTarget->createTargetMachine(
 										       "nvptx64-nvidia-cuda",
@@ -1009,8 +1028,8 @@ namespace QDP {
 
     assert(target_machine.get() && "Could not allocate target machine!");
 
-    std::cout << "target machine cpu:     " << target_machine->getTargetCPU().str() << "\n";
-    std::cout << "target machine feature: " << target_machine->getTargetFeatureString().str() << "\n";
+    //QDPIO::cout << "target machine cpu:     " << target_machine->getTargetCPU().str() << "\n";
+    //QDPIO::cout << "target machine feature: " << target_machine->getTargetFeatureString().str() << "\n";
  
     //llvm::TargetMachine &Target = *target.get();
 
@@ -1032,12 +1051,12 @@ namespace QDP {
 
     //setFunctionAttributes("sm_30", "", *Mod);  // !!!!!
 
-    //std::cout << "BEFORE OPT ---------------\n";
+    //QDPIO::cout << "BEFORE OPT ---------------\n";
     //Mod->dump();
     
     optimize_module( target_machine );
 
-    //std::cout << "AFTER OPT ---------------\n";
+    //QDPIO::cout << "AFTER OPT ---------------\n";
     //Mod->dump();
 
     
@@ -1072,13 +1091,13 @@ namespace QDP {
 
 
     //Mod->dump();
-    //std::cout << "(module right before PTX codegen)------\n";
+    //QDPIO::cout << "(module right before PTX codegen)------\n";
 	
-    QDPIO::cout << "PTX code generation\n";
+    //QDPIO::cout << "PTX code generation\n";
     PM.run(*Mod);
     //bos.flush();
 
-    //std::cout << "PTX generated2: " << bos.str().str() << " (end)\n";
+    //QDPIO::cout << "PTX generated2: " << bos.str().str() << " (end)\n";
 
     return bos.str().str();
   }
@@ -1106,11 +1125,11 @@ namespace QDP {
 	  size_t pos_space = str.find(" ", pos+12);
 	  std::string num = str.substr(pos+12,pos_space-pos-12);
 	  num = " #"+num;
-	  //std::cout << "# num found = " << num << "()\n";
+	  //QDPIO::cout << "# num found = " << num << "()\n";
 	  size_t pos_open = str.find("{", pos_space);
 	  size_t pos_close = str.find("}", pos_open);
 	  std::string val = str.substr(pos_open+1,pos_close-pos_open-1);
-	  //std::cout << "# val found = " << val << "\n";
+	  //QDPIO::cout << "# val found = " << val << "\n";
 	  str.replace(pos, pos_close-pos+1, "");
 	  if (mapAttr.count(num) > 0)
 	    QDP_error_exit("unexp.");
@@ -1123,7 +1142,7 @@ namespace QDP {
 
   std::string get_PTX_from_Module_using_nvvm( llvm::Module *Mod )
   {
-    // std::cout << __PRETTY_FUNCTION__ << "\n";
+    // QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
     // Mod->dump();
 
     
@@ -1153,7 +1172,7 @@ namespace QDP {
  
     Mod->print(fros,NULL);
 
-    // std::cout << "Do we need the ostream in binary mode?\n";
+    // QDPIO::cout << "Do we need the ostream in binary mode?\n";
     // llvm::WriteBitcodeToFile(Mod,fros);
     fros.flush();
 
@@ -1219,9 +1238,9 @@ namespace QDP {
 #endif
 
 
-    std::cout << "PROGRAM:\n";
-    std::cout << str << "\n";
-    std::cout << "PROGRAM------\n";
+    QDPIO::cout << "PROGRAM:\n";
+    QDPIO::cout << str << "\n";
+    QDPIO::cout << "PROGRAM------\n";
 
     nvvmResult result;
     nvvmProgram program;
@@ -1285,7 +1304,7 @@ namespace QDP {
     }
 
     std::string ret(PTX);
-    //std::cout << ret << "\n";
+    //QDPIO::cout << ret << "\n";
 
     return ret;
     //
@@ -1301,8 +1320,8 @@ namespace QDP {
 
   std::string llvm_get_ptx_kernel(const char* fname)
   {
-    QDPIO::cout << "get PTX..\n";
-    //std::cout << "enter get_ptx_kernel------\n";
+    //QDPIO::cout << "get PTX..\n";
+    //QDPIO::cout << "enter get_ptx_kernel------\n";
     //Mod->dump();
     //QDP_info_primary("Internalizing module");
 
@@ -1327,9 +1346,9 @@ namespace QDP {
     PM.run( *Mod );
 
 
-    // std::cout << "after globalDCE\n";
+    // QDPIO::cout << "after globalDCE\n";
     // Mod->dump();
-    // std::cout << "after globalDCE------\n";
+    // QDPIO::cout << "after globalDCE------\n";
 
     // Mod->dump();
 
@@ -1381,7 +1400,7 @@ namespace QDP {
 
     //QDP_info_primary("Loading PTX kernel with the CUDA driver");
 
-    //std::cout << ptx_kernel << "\n";
+    //QDPIO::cout << ptx_kernel << "\n";
     
     ret = cuModuleLoadData(&cuModule, (void*)ptx_kernel.c_str());
     //ret = cuModuleLoadDataEx( &cuModule , ptx_kernel.c_str() , 0 , 0 , 0 );

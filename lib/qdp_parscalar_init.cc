@@ -89,6 +89,9 @@ namespace QDP {
     QDPuseGPU=true;
     
     CudaCreateStreams();
+
+    // Initialize the LLVM wrapper
+    llvm_wrapper_init();
   }
 
 
@@ -134,8 +137,6 @@ namespace QDP {
     QDP_setGPU();
     QDP_initialize_QMP(argc, argv);
     QDP_startGPU();
-    // Initialize the LLVM wrapper
-    llvm_wrapper_init();
   }
 	
   //! Turn on the machine
