@@ -13,6 +13,10 @@
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/PassRegistry.h"
 #include "llvm/CodeGen/CommandFlags.h"
+
+#include "llvm/Transforms/IPO/PassManagerBuilder.h"
+#include "llvm/Transforms/IPO/AlwaysInliner.h"
+
 #include <memory>
 
 namespace QDP {
@@ -136,7 +140,6 @@ namespace QDP {
     llvm::Function *func = Mod->getFunction(name);
     if (!func)
       QDP_error_exit("Function %s not found.\n",name);
-    //QDP_info_primary("Found libdevice function: %s",name);
     return func;
   }
 
@@ -197,12 +200,14 @@ namespace QDP {
 
   void llvm_setup_math_functions() 
   {
+    QDPIO::cout << "Setup math functions..\n";
+
+    llvm_init_libdevice();
+
     std::string ErrorMsg;
     if (llvm::Linker::linkModules( *Mod , std::move(module_libdevice) )) {  // llvm::Linker::PreserveSource
       QDP_error_exit("Linking libdevice failed: %s",ErrorMsg.c_str());
     }
-
-    //QDP_info_primary("Initializing math functions");
 
     func_sin_f32 = llvm_get_func( "__nv_sinf" );
     func_acos_f32 = llvm_get_func( "__nv_acosf" );
@@ -273,8 +278,6 @@ namespace QDP {
     llvm_type<double*>::value = llvm::Type::getDoublePtrTy(TheContext);
     llvm_type<int*>::value    = llvm::Type::getIntNPtrTy(TheContext,32);
     llvm_type<bool*>::value   = llvm::Type::getIntNPtrTy(TheContext,1);
-
-    llvm_init_libdevice();
   }  
 
 
@@ -284,7 +287,7 @@ namespace QDP {
 
 
   void llvm_start_new_function() {
-    //QDP_info_primary( "Staring new LLVM function ...");
+    QDPIO::cout << "Starting new LLVM function..\n";
 
     Mod = new llvm::Module("module", TheContext);
     builder = new llvm::IRBuilder<>(TheContext);
@@ -862,47 +865,99 @@ namespace QDP {
   }
 
 
+  
+  /// This routine adds optimization passes based on selected optimization level,
+  /// OptLevel.
+  ///
+  /// OptLevel - Optimization Level
+  static void AddOptimizationPasses(legacy::PassManagerBase &MPM,
+				    legacy::FunctionPassManager &FPM,
+				    TargetMachine *TM, unsigned OptLevel,
+				    unsigned SizeLevel)
+  {
+    QDPIO::cout << " adding opt passes..\n";
 
+    const bool DisableInline = false;
+    const bool UnitAtATime = false;
+    const bool DisableLoopUnrolling = false;
+    const bool DisableLoopVectorization = false;
+    const bool DisableSLPVectorization = false;
+      
+    FPM.add(createVerifierPass()); // Verify that input is correct
+
+    PassManagerBuilder Builder;
+    Builder.OptLevel = OptLevel;
+    Builder.SizeLevel = SizeLevel;
+
+    if (DisableInline) {
+      // No inlining pass
+    } else if (OptLevel > 1) {
+      Builder.Inliner = createFunctionInliningPass(OptLevel, SizeLevel);
+    } else {
+      Builder.Inliner = createAlwaysInlinerLegacyPass();
+    }
+    Builder.DisableUnitAtATime = !UnitAtATime;
+    Builder.DisableUnrollLoops = DisableLoopUnrolling;
+
+    // This is final, unless there is a #pragma vectorize enable
+    if (DisableLoopVectorization)
+      Builder.LoopVectorize = false;
+    else 
+      Builder.LoopVectorize = OptLevel > 1 && SizeLevel < 2;
+
+    // When #pragma vectorize is on for SLP, do the same as above
+    Builder.SLPVectorize = DisableSLPVectorization ? false : OptLevel > 1 && SizeLevel < 2;
+
+    // Add target-specific passes that need to run as early as possible.
+    if (TM)
+      Builder.addExtension(
+			   llvm::PassManagerBuilder::EP_EarlyAsPossible,
+			   [&](const llvm::PassManagerBuilder &, llvm::legacy::PassManagerBase &PM) {
+			     TM->addEarlyAsPossiblePasses(PM);
+			   });
+
+    Builder.populateFunctionPassManager(FPM);
+    Builder.populateModulePassManager(MPM);
+  }
+
+
+  void optimize_module( std::unique_ptr< llvm::TargetMachine >& TM )
+  {
+    QDPIO::cout << "optimize module...\n";
+    
+    llvm::legacy::PassManager Passes;
+
+    llvm::Triple ModuleTriple(Mod->getTargetTriple());
+
+    llvm::TargetLibraryInfoImpl TLII(ModuleTriple);
+
+    Passes.add(new llvm::TargetLibraryInfoWrapperPass(TLII));
+
+    Passes.add(createTargetTransformInfoWrapperPass( TM->getTargetIRAnalysis() ) );
+
+    std::unique_ptr<llvm::legacy::FunctionPassManager> FPasses;
+
+    FPasses.reset(new llvm::legacy::FunctionPassManager(Mod));
+    FPasses->add(createTargetTransformInfoWrapperPass( TM->getTargetIRAnalysis() ) );
+    
+    AddOptimizationPasses(Passes, *FPasses, TM.get(), 3, 0);
+
+    if (FPasses) {
+      FPasses->doInitialization();
+      for (Function &F : *Mod)
+	FPasses->run(F);
+      FPasses->doFinalization();
+    }
+
+    Passes.add(createVerifierPass());
+
+    Passes.run(*Mod);
+  }
+  
 
   std::string get_PTX_from_Module_using_llvm( llvm::Module *Mod )
   {
-    //std::cout << "enter getPTX_llvm------\n";
-    //Mod->dump();
-
-
-    if (llvm::verifyModule(*Mod, &llvm::errs())) {
-      exit(1);
-    }
-
-    
-    llvm::legacy::FunctionPassManager OurFPM( Mod );
-    OurFPM.add(llvm::createCFGSimplificationPass());  // skip this for now. causes problems with CUDA generic pointers
-    //OurFPM.add(llvm::createBasicAliasAnalysisPass());
-    OurFPM.add(llvm::createInstructionCombiningPass()); // this causes problems. Not anymore!
-    OurFPM.add(llvm::createReassociatePass());
-    //OurFPM.add(llvm::createGVNPass());
-    OurFPM.doInitialization();
-
-    auto& func_list = Mod->getFunctionList();
-
-    QDP_info_primary("Running optimization passes on functions");
-
-    for(auto& x : func_list) {
-      //QDP_info("Running all optimization passes on function %s",x.getName());
-      OurFPM.run(x);
-    }
-
-
-
-    //
-    // Call NVPTX
-    //
-    // llvm::Triple TheTriple;
-    // TheTriple.setArch(llvm::Triple::nvptx64);
-    // TheTriple.setVendor(llvm::Triple::UnknownVendor);
-    // TheTriple.setOS(llvm::Triple::CUDA);
-    // TheTriple.setEnvironment(llvm::Triple::UnknownEnvironment);
-    // TheTriple.setObjectFormat(llvm::Triple::ELF );
+    QDPIO::cout << "get PTX using NVPTC..\n";
 
     llvm::Triple triple("nvptx64-nvidia-cuda");
       
@@ -933,9 +988,19 @@ namespace QDP {
     
     //std::unique_ptr<llvm::TargetMachine> target(TheTarget->createTargetMachine(TheTriple.getTriple(),"sm_50", "ptx50", Options , relocModel ));
 
+    auto major = DeviceParams::Instance().getMajor();
+    auto minor = DeviceParams::Instance().getMinor();
+
+    std::ostringstream oss;
+    oss << "sm_" << major * 10 + minor;
+
+    std::string compute = oss.str();
+
+    QDPIO::cout << "create target machine for compute capability " << compute << "\n";
+    
     std::unique_ptr<llvm::TargetMachine> target_machine(TheTarget->createTargetMachine(
 										       "nvptx64-nvidia-cuda",
-										       "sm_50",
+										       compute,
 										       "",
 										       llvm::TargetOptions(),
 										       getRelocModel(),
@@ -967,7 +1032,14 @@ namespace QDP {
 
     //setFunctionAttributes("sm_30", "", *Mod);  // !!!!!
 
+    //std::cout << "BEFORE OPT ---------------\n";
+    //Mod->dump();
     
+    optimize_module( target_machine );
+
+    //std::cout << "AFTER OPT ---------------\n";
+    //Mod->dump();
+
     
 #if 0
     // Add the target data from the target machine, if it exists, or the module.
@@ -1002,11 +1074,11 @@ namespace QDP {
     //Mod->dump();
     //std::cout << "(module right before PTX codegen)------\n";
 	
-    QDP_info_primary("PTX code generation");
+    QDPIO::cout << "PTX code generation\n";
     PM.run(*Mod);
     //bos.flush();
 
-    std::cout << "PTX generated2: " << bos.str().str() << " (end)\n";
+    //std::cout << "PTX generated2: " << bos.str().str() << " (end)\n";
 
     return bos.str().str();
   }
@@ -1229,6 +1301,7 @@ namespace QDP {
 
   std::string llvm_get_ptx_kernel(const char* fname)
   {
+    QDPIO::cout << "get PTX..\n";
     //std::cout << "enter get_ptx_kernel------\n";
     //Mod->dump();
     //QDP_info_primary("Internalizing module");
