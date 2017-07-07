@@ -210,7 +210,7 @@ void Set::make(const SetFunc& fun)
   bool first=true;
   bool hill0=false;
   bool valley0=false;
-  bool hill1=false;
+  //bool hill1=false;
 
   nonEmptySubsetsOnNode = 0;
 

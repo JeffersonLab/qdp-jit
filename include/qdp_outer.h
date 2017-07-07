@@ -37,7 +37,8 @@ namespace QDP {
   public:
     typedef T SubType_t;
 
-    OScalar() {
+    OScalar(): QDPType<T, OScalar<T> >()
+    {
       this->onHost=true;
     }
 
@@ -46,7 +47,7 @@ namespace QDP {
     }
 
 
-    OScalar(const typename WordType<T>::Type_t& rhs)
+    OScalar(const typename WordType<T>::Type_t& rhs): QDPType<T, OScalar<T> >()
     {
       this->onHost=true;
       typedef typename InternalScalar<T>::Type_t  Scalar_t;
@@ -54,7 +55,7 @@ namespace QDP {
     }
 
 
-    OScalar(const Zero& rhs)
+    OScalar(const Zero& rhs): QDPType<T, OScalar<T> >()
     {
       this->onHost=true;
       this->assign(rhs);
@@ -62,7 +63,7 @@ namespace QDP {
 
 
     template<class T1>
-    OScalar(const OScalar<T1>& rhs)
+    OScalar(const OScalar<T1>& rhs): QDPType<T, OScalar<T> >()
     {
       this->onHost=true;
       this->assign(rhs);
@@ -70,7 +71,7 @@ namespace QDP {
 
 
     template<class RHS, class T1>
-    OScalar(const QDPExpr<RHS, OScalar<T1> >& rhs)
+    OScalar(const QDPExpr<RHS, OScalar<T1> >& rhs): QDPType<T, OScalar<T> >()
     {
       this->onHost=true;
       this->assign(rhs);
@@ -118,7 +119,8 @@ namespace QDP {
 
 
 
-    OScalar(const OScalar& rhs) {
+    OScalar(const OScalar& rhs): QDPType<T, OScalar<T> >()
+    {
       this->onHost=true;
       this->assign(rhs);
     }
@@ -316,7 +318,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 
 
     template<class T1>
-    OLattice(const OScalar<T1>& rhs)
+    OLattice(const OScalar<T1>& rhs): QDPType<T, OLattice<T> >()
     {
       alloc_mem("construct from OScalar");
       this->assign(rhs);
@@ -324,7 +326,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 
 
     template<class T1>
-    OLattice(const OLattice<T1>& rhs)
+    OLattice(const OLattice<T1>& rhs): QDPType<T, OLattice<T> >()
     {
       alloc_mem("construct from OLattice");
       this->assign(rhs);
@@ -332,14 +334,14 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 
 
     template<class RHS, class T1>
-    OLattice(const QDPExpr<RHS, OLattice<T1> >& rhs)
+    OLattice(const QDPExpr<RHS, OLattice<T1> >& rhs): QDPType<T, OLattice<T> >()
     {
       alloc_mem("construct from expr");
       this->assign(rhs);
     }
 
 
-    OLattice(const typename WordType<T>::Type_t& rhs)
+    OLattice(const typename WordType<T>::Type_t& rhs): QDPType<T, OLattice<T> >()
     {
       alloc_mem("construct from const");
 
@@ -348,7 +350,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
     }
 
 
-    OLattice(const Zero& rhs)
+    OLattice(const Zero& rhs): QDPType<T, OLattice<T> >()
     {
       alloc_mem("construct from zero");
       this->assign(rhs);
@@ -397,7 +399,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
     {return OSubLattice<T>(*this,s);}
 
 
-    OLattice(const OLattice& rhs)
+    OLattice(const OLattice& rhs): QDPType<T, OLattice<T> >()
     {
       alloc_mem("copy");
       this->assign(rhs);
@@ -438,7 +440,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
       // QDP_info_primary("lim_col = %d" , lim_col );
       // QDP_info_primary("lim_spi = %d" , lim_spi );
 
-      for ( size_t site = 0 ; site < Layout::sitesOnNode() ; site++ ) {
+      for ( int site = 0 ; site < Layout::sitesOnNode() ; site++ ) {
 	for ( size_t reality = 0 ; reality < lim_rea ; reality++ ) {
 	  for ( size_t color = 0 ; color < lim_col ; color++ ) {
 	    for ( size_t spin = 0 ; spin < lim_spi ; spin++ ) {

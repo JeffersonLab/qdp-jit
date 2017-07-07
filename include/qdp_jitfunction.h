@@ -170,13 +170,13 @@ function_zero_rep_build(OLattice<T>& dest)
 
 
 
+#if 0
 template<class T, class T1, class Op, class RHS>
 CUfunction
 function_sca_sca_build(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
 {
   std::cout << __PRETTY_FUNCTION__ << ": entering\n";
   QDP_error_exit("ni");
-#if 0
 
   CUfunction func;
 
@@ -203,8 +203,8 @@ function_sca_sca_build(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar
   llvm_exit();
 
   return llvm_get_cufunction("ll_sca_sca.ll");
-#endif
 }
+#endif
 
 
 
@@ -297,8 +297,6 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
 {
   typedef typename WordType<T1>::Type_t WT;
 
-  CUfunction func;
-
   llvm_start_new_function();
 
   ParamRef p_lo      = llvm_add_param<int>();
@@ -314,7 +312,7 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
   typedef typename JITType< OLattice<T> >::Type_t DestView_t;
   DestView_t dest_jit( p_sndbuf );
 
-  llvm::Value * r_lo      = llvm_derefParam( p_lo );
+  llvm_derefParam( p_lo );  // r_lo not used
   llvm::Value * r_hi      = llvm_derefParam( p_hi );
   llvm::Value * r_idx     = llvm_thread_idx();  
 
@@ -335,7 +333,7 @@ void
 {
   AddressLeaf addr_leaf(subset);
 
-  int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
+  forEach(rhs, addr_leaf, NullCombine());
 
   //QDP_get_global_cache().printLockSets();
 
@@ -376,7 +374,7 @@ void
   addr.push_back( &send_buf );
   //std::cout << "addr send_buf =" << addr[4] << " " << send_buf << "\n";
 
-  for(int i=0; i < addr_leaf.addr.size(); ++i) {
+  for(unsigned i=0; i < addr_leaf.addr.size(); ++i) {
     addr.push_back( &addr_leaf.addr[i] );
     //std::cout << "addr rhs =" << addr[addr.size()-1] << " " << addr_leaf.addr[i] << "\n";
   }
@@ -451,9 +449,9 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
 
   AddressLeaf addr_leaf(s);
 
-  int junk_dest = forEach(dest, addr_leaf, NullCombine());
+  forEach(dest, addr_leaf, NullCombine());
   AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
-  int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
+  forEach(rhs, addr_leaf, NullCombine());
 
 
 
@@ -481,8 +479,8 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
   addr.push_back( &subset_member );
   //std::cout << "addr subset_dev (member_array) = " << addr[3] << " " << subset_member << "\n";
 
-  int addr_dest=addr.size();
-  for(int i=0; i < addr_leaf.addr.size(); ++i) {
+  //int addr_dest=addr.size();
+  for(unsigned i=0; i < addr_leaf.addr.size(); ++i) {
     addr.push_back( &addr_leaf.addr[i] );
     //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
   }
@@ -509,9 +507,9 @@ function_lat_sca_exec(CUfunction function, OLattice<T>& dest, const Op& op, cons
 
   AddressLeaf addr_leaf(s);
 
-  int junk_dest = forEach(dest, addr_leaf, NullCombine());
+  forEach(dest, addr_leaf, NullCombine());
   AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
-  int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
+  forEach(rhs, addr_leaf, NullCombine());
 
   int start = s.start();
   int end = s.end();
@@ -535,8 +533,8 @@ function_lat_sca_exec(CUfunction function, OLattice<T>& dest, const Op& op, cons
   addr.push_back( &subset_member );
   //std::cout << "addr idx_inner_dev = " << addr[3] << " " << idx_inner_dev << "\n";
 
-  int addr_dest=addr.size();
-  for(int i=0; i < addr_leaf.addr.size(); ++i) {
+  //int addr_dest=addr.size();
+  for(unsigned i=0; i < addr_leaf.addr.size(); ++i) {
     addr.push_back( &addr_leaf.addr[i] );
     //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
   }
@@ -557,7 +555,7 @@ function_zero_rep_exec(CUfunction function, OLattice<T>& dest, const Subset& s )
 
   AddressLeaf addr_leaf(s);
 
-  int junk_0 = forEach(dest, addr_leaf, NullCombine());
+  forEach(dest, addr_leaf, NullCombine());
 
   int start = s.start();
   int end = s.end();
@@ -583,8 +581,8 @@ function_zero_rep_exec(CUfunction function, OLattice<T>& dest, const Subset& s )
   addr.push_back( &subset_member );
   //std::cout << "addr idx_inner_dev = " << addr[3] << " " << idx_inner_dev << "\n";
 
-  int addr_dest=addr.size();
-  for(int i=0; i < addr_leaf.addr.size(); ++i) {
+  //int addr_dest=addr.size();
+  for(unsigned i=0; i < addr_leaf.addr.size(); ++i) {
     addr.push_back( &addr_leaf.addr[i] );
     //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
   }
@@ -610,14 +608,14 @@ function_sca_sca_exec(CUfunction function, OScalar<T>& dest, const Op& op, const
 #if 0
   AddressLeaf addr_leaf;
 
-  int junk_dest = forEach(dest, addr_leaf, NullCombine());
+  forEach(dest, addr_leaf, NullCombine());
   AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
-  int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
+  forEach(rhs, addr_leaf, NullCombine());
 
   std::vector<void*> addr;
 
   int addr_dest=addr.size();
-  for(int i=0; i < addr_leaf.addr.size(); ++i) {
+  for(unsigned i=0; i < addr_leaf.addr.size(); ++i) {
     addr.push_back( &addr_leaf.addr[i] );
     //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
   }
@@ -640,12 +638,12 @@ function_random_exec(CUfunction function, OLattice<T>& dest, const Subset& s , S
 
   AddressLeaf addr_leaf(s);
 
-  int junk_0 = forEach(dest, addr_leaf, NullCombine());
+  forEach(dest, addr_leaf, NullCombine());
 
-  int junk_1 = forEach(RNG::ran_seed, addr_leaf, NullCombine());
-  int junk_2 = forEach(seed_tmp, addr_leaf, NullCombine());
-  int junk_3 = forEach(RNG::ran_mult_n, addr_leaf, NullCombine());
-  int junk_4 = forEach(*RNG::lattice_ran_mult, addr_leaf, NullCombine());
+  forEach(RNG::ran_seed, addr_leaf, NullCombine());
+  forEach(seed_tmp, addr_leaf, NullCombine());
+  forEach(RNG::ran_mult_n, addr_leaf, NullCombine());
+  forEach(*RNG::lattice_ran_mult, addr_leaf, NullCombine());
 
   // lo <= idx < hi
   int lo = s.start();
@@ -659,8 +657,8 @@ function_random_exec(CUfunction function, OLattice<T>& dest, const Subset& s , S
   addr.push_back( &hi );
   //std::cout << "addr hi = " << addr[1] << " hi=" << hi << "\n";
 
-  int addr_dest=addr.size();
-  for(int i=0; i < addr_leaf.addr.size(); ++i) {
+  //int addr_dest=addr.size();
+  for(unsigned i=0; i < addr_leaf.addr.size(); ++i) {
     addr.push_back( &addr_leaf.addr[i] );
     //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
   }

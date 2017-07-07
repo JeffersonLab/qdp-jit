@@ -34,11 +34,11 @@ namespace QDP {
     OLatticeJIT<typename JITType<T1>::Type_t> idata(  p_idata );   // want coal   access later
     OLatticeJIT<typename JITType<T2>::Type_t> odata(  p_odata );   // want scalar access later
 
-    llvm::Value* r_lo     = llvm_derefParam( p_lo );
+    llvm_derefParam( p_lo ); // r_lo
     llvm::Value* r_hi     = llvm_derefParam( p_hi );
 
-    llvm::Value* r_idata      = llvm_derefParam( p_idata );  // Input  array
-    llvm::Value* r_odata      = llvm_derefParam( p_odata );  // output array
+    llvm_derefParam( p_idata );  // Input  array
+    llvm_derefParam( p_odata );  // output array
 
     llvm::Value* r_shared = llvm_get_shared_ptr( llvm_type<T2WT>::value );
 
@@ -186,11 +186,11 @@ namespace QDP {
     OLatticeJIT<typename JITType<T1>::Type_t> idata(  p_idata );   // want coal   access later
     OLatticeJIT<typename JITType<T1>::Type_t> odata(  p_odata );   // want scalar access later
 
-    llvm::Value* r_lo     = llvm_derefParam( p_lo );
+    llvm_derefParam( p_lo );
     llvm::Value* r_hi     = llvm_derefParam( p_hi );
 
-    llvm::Value* r_idata      = llvm_derefParam( p_idata );  // Input  array
-    llvm::Value* r_odata      = llvm_derefParam( p_odata );  // output array
+    llvm_derefParam( p_idata );  // Input  array
+    llvm_derefParam( p_odata );  // output array
 
     llvm::Value* r_shared = llvm_get_shared_ptr( llvm_type<WT>::value );
 

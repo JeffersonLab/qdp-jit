@@ -147,7 +147,7 @@ namespace QDP {
     double best_time;
     int best_cfg=-1;
     bool first=true;
-    for ( int cfg = 1 ; cfg <= DeviceParams::Instance().getMaxBlockX(); cfg *= 2 ) {
+    for ( unsigned cfg = 1 ; cfg <= DeviceParams::Instance().getMaxBlockX(); cfg *= 2 ) {
       kernel_geom_t now = getGeom( hi-lo , cfg );
 
       StopWatch w;

@@ -36,8 +36,8 @@ namespace QDP {
     size_t getMaxBlockY() const {return max_blocky;}
     size_t getMaxBlockZ() const {return max_blockz;}
 
-    int getMaxSMem() const {return smem;}
-    int getDefaultSMem() const {return smem_default;}
+    size_t getMaxSMem() const {return smem;}
+    size_t getDefaultSMem() const {return smem_default;}
 
     bool getDivRnd() { return divRnd; }
     bool getSyncDevice() { return syncDevice; }
@@ -57,9 +57,9 @@ namespace QDP {
       GPUDirect = direct;
     };
 
-    int& getMaxKernelArg() { return maxKernelArg; }
-    int getMajor() { return major; }
-    int getMinor() { return minor; }
+    unsigned getMaxKernelArg() { return maxKernelArg; }
+    unsigned getMajor() { return major; }
+    unsigned getMinor() { return minor; }
 
     bool getAsyncTransfers() { return asyncTransfers; }
 
@@ -73,28 +73,28 @@ namespace QDP {
 
   private:
     bool boolNoReadSM;
-    int device;
+    unsigned device;
     std::string envvar;
     bool GPUDirect;
     bool syncDevice;
     bool asyncTransfers;
     bool unifiedAddressing;
     bool divRnd;
-    int maxKernelArg;
+    unsigned maxKernelArg;
 
-    int smem;
-    int smem_default;
+    unsigned smem;
+    unsigned smem_default;
 
-    int max_gridx;
-    int max_gridy;
-    int max_gridz;
+    unsigned max_gridx;
+    unsigned max_gridy;
+    unsigned max_gridz;
 
-    int max_blockx;
-    int max_blocky;
-    int max_blockz;
+    unsigned max_blockx;
+    unsigned max_blocky;
+    unsigned max_blockz;
 
-    int major;
-    int minor;
+    unsigned major;
+    unsigned minor;
 
   };
 

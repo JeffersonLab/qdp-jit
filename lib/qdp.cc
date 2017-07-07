@@ -6,6 +6,8 @@
 
 namespace QDP {
 
+  Zero zero;
+
 // Currently empty
 
 } // namespace QDP;

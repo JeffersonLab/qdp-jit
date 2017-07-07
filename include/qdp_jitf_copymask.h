@@ -11,7 +11,7 @@ namespace QDP {
   {
     llvm_start_new_function();
 
-    ParamRef p_lo          = llvm_add_param<int>();
+    llvm_add_param<int>();   // we don't need p_lo, since copymask on sublattices is not jitted
     ParamRef p_hi          = llvm_add_param<int>();
 
     ParamLeaf param_leaf;
@@ -23,7 +23,7 @@ namespace QDP {
     FuncRet_t src_jit(forEach(src, param_leaf, TreeCombine()));
     FuncRet1_t mask_jit(forEach(mask, param_leaf, TreeCombine()));
 
-    llvm::Value * r_lo      = llvm_derefParam( p_lo );
+    //llvm::Value * r_lo      = llvm_derefParam( p_lo );
     llvm::Value * r_hi      = llvm_derefParam( p_hi );
 
     llvm::Value* r_idx          = llvm_thread_idx();  
@@ -53,9 +53,9 @@ namespace QDP {
   {
     AddressLeaf addr_leaf(all);
 
-    int junk_0 = forEach(dest, addr_leaf, NullCombine());
-    int junk_1 = forEach(src, addr_leaf, NullCombine());
-    int junk_2 = forEach(mask, addr_leaf, NullCombine());
+    forEach(dest, addr_leaf, NullCombine());
+    forEach(src, addr_leaf, NullCombine());
+    forEach(mask, addr_leaf, NullCombine());
 
     // lo <= idx < hi
     int lo = 0;
@@ -69,8 +69,8 @@ namespace QDP {
     addr.push_back( &hi );
     //std::cout << "addr hi = " << addr[1] << " hi=" << hi << "\n";
 
-    int addr_dest=addr.size();
-    for(int i=0; i < addr_leaf.addr.size(); ++i) {
+    //int addr_dest=addr.size();
+    for(unsigned i=0; i < addr_leaf.addr.size(); ++i) {
       addr.push_back( &addr_leaf.addr[i] );
       //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
     }

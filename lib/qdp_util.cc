@@ -113,6 +113,8 @@ QDP_debug (const char* format, ...)
 
   fprintf (stdout, "%s %s\n", info, buffer);
   return status;
+#else
+  return 0;
 #endif
 }
 
@@ -138,6 +140,8 @@ QDP_debug_deep (const char* format, ...)
 
   fprintf (stdout, "%s %s\n", info, buffer);
   return status;
+#else
+  return 0;
 #endif
 }
 #endif

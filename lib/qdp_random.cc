@@ -293,7 +293,7 @@ namespace RNG
     skewed_seed = ran_tmp2;
   }
 
-};
+}
 
 
 } // namespace QDP;

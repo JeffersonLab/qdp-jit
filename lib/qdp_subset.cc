@@ -52,8 +52,8 @@ namespace QDP
   //! Copy constructor
 
   Subset::Subset(const Subset& s):
-    ordRep(s.ordRep), startSite(s.startSite), endSite(s.endSite), 
-    sub_index(s.sub_index), sitetable(s.sitetable), membertable(s.membertable), set(s.set) , registered(false), id(s.id) { 
+    id(s.id), ordRep(s.ordRep), startSite(s.startSite), endSite(s.endSite), 
+    sub_index(s.sub_index), sitetable(s.sitetable), registered(false), set(s.set) , membertable(s.membertable)    { 
     //QDP_get_global_cache().sayHi();
   }
 

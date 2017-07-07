@@ -150,25 +150,25 @@ namespace QDP {
   }
 
 
-
+  
   int MasterMap::getIdInner(const Subset& s,int bitmask) const {
-    assert( s.getId() >= 0 && s.getId() < idInner.size() && "subset Id out of range");
-    assert( bitmask > 0 && bitmask < idInner[s.getId()].size() && "bitmask out of range");
+    assert( s.getId() >= 0 && (unsigned)s.getId() < idInner.size() && "subset Id out of range");
+    assert( bitmask > 0 && (unsigned)bitmask < idInner[s.getId()].size() && "bitmask out of range");
     return idInner[s.getId()][bitmask]; 
   }
   int MasterMap::getIdFace(const Subset& s,int bitmask) const {
-    assert( s.getId() >= 0 && s.getId() < idFace.size() && "subset Id out of range");
-    assert( bitmask > 0 && bitmask < idFace[s.getId()].size() && "bitmask out of range");
+    assert( s.getId() >= 0 && (unsigned)s.getId() < idFace.size() && "subset Id out of range");
+    assert( bitmask > 0 && (unsigned)bitmask < idFace[s.getId()].size() && "bitmask out of range");
     return idFace[s.getId()][bitmask];
   }
   int MasterMap::getCountInner(const Subset& s,int bitmask) const {
-    assert( s.getId() >= 0 && s.getId() < powerSet.size() && "subset Id out of range");
-    assert( bitmask > 0 && bitmask < powerSetC[s.getId()].size() && "bitmask out of range");
+    assert( s.getId() >= 0 && (unsigned)s.getId() < powerSet.size() && "subset Id out of range");
+    assert( bitmask > 0 && (unsigned)bitmask < powerSetC[s.getId()].size() && "bitmask out of range");
     return powerSetC[s.getId()][bitmask]->size(); 
   }
   int MasterMap::getCountFace(const Subset& s,int bitmask) const {
-    assert( s.getId() >= 0 && s.getId() < powerSet.size() && "subset Id out of range");
-    assert( bitmask > 0 && bitmask < powerSet[s.getId()].size() && "bitmask out of range");
+    assert( s.getId() >= 0 && (unsigned)s.getId() < powerSet.size() && "subset Id out of range");
+    assert( bitmask > 0 && (unsigned)bitmask < powerSet[s.getId()].size() && "bitmask out of range");
     return powerSet[s.getId()][bitmask]->size(); 
   }
 

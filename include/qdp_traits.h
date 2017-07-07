@@ -194,9 +194,9 @@ struct NoComplex {};
 struct Zero {};
 
 //! Put zero in some unnamed space
-namespace {
- Zero zero;
-}
+//namespace {
+  extern Zero zero;
+  //}
 
 } // namespace QDP
 

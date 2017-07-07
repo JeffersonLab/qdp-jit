@@ -222,8 +222,8 @@ public:
   QDPHandle::Handle<RsrcWrapper> pRsrc;
 
   FnMapJIT(const FnMap& fnmap,const IndexRet& i): 
-    map(fnmap.map), pRsrc(fnmap.pRsrc), index(i) {}
-  FnMapJIT(const FnMapJIT& f) : map(f.map) , pRsrc(f.pRsrc), index(f.index) {}
+    index(i), map(fnmap.map), pRsrc(fnmap.pRsrc)  {}
+  FnMapJIT(const FnMapJIT& f) : index(f.index), map(f.map) , pRsrc(f.pRsrc)  {}
 
 public:
   template<class T>
@@ -261,8 +261,8 @@ struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
     {
       //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
-      const Map& map = expr.operation().map;
-      FnMap& fnmap = const_cast<FnMap&>(expr.operation());
+      //expr.operation().map;
+      //FnMap& fnmap = const_cast<FnMap&>(expr.operation());
 
       typedef typename WordType<InnerType_t>::Type_t AWordType_t;
 
@@ -302,7 +302,7 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
       llvm::BasicBlock * block_in_buffer = llvm_new_basic_block();
       llvm::BasicBlock * block_not_in_buffer = llvm_new_basic_block();
       llvm::BasicBlock * block_in_buffer_exit = llvm_new_basic_block();
-      llvm::BasicBlock * cond_exit;
+      //llvm::BasicBlock * cond_exit;
       llvm_cond_branch( llvm_lt( r_multi_index , 
 				 llvm_create_value(0) ) , 
 			block_in_buffer , 
@@ -400,7 +400,7 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
     const Map& map = expr.operation().map;
     FnMap& fnmap = const_cast<FnMap&>(expr.operation());
 
-    const int nodeSites = Layout::sitesOnNode();
+    //const int nodeSites = Layout::sitesOnNode();
     int returnVal=0;
 
     Expr subexpr(expr.child());
@@ -420,7 +420,7 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
 
 	const FnMapRsrc& rRSrc = fnmap.getResource(srcnum,dstnum);
 
-	const int my_node = Layout::nodeNumber();
+	//const int my_node = Layout::nodeNumber();
 
 	// Make sure the inner expression's map function
 	// send and receive before recursing down
@@ -483,7 +483,7 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase2 , CTag>
       //QDP_info("ShiftPhase2: FnMap");
       rRSrc.qmp_wait();
     }
-    ForEach<A, ShiftPhase2, CTag>::apply(expr.child(), f, c);
+    return ForEach<A, ShiftPhase2, CTag>::apply(expr.child(), f, c);
   }
 };
 

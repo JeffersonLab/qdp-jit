@@ -78,15 +78,15 @@ namespace QDP {
     prof.stime(getClockTime());
 #endif
 
-    int actsize=s.numSiteTable();
+    unsigned actsize=s.numSiteTable();
     bool first=true;
     while (1) {
 
-      int numThreads = DeviceParams::Instance().getMaxBlockX();
+      unsigned numThreads = DeviceParams::Instance().getMaxBlockX();
       while ((numThreads*sizeof(T2) > DeviceParams::Instance().getMaxSMem()) || (numThreads > actsize)) {
 	numThreads >>= 1;
       }
-      int numBlocks=(int)ceil(float(actsize)/numThreads);
+      unsigned numBlocks=(int)ceil(float(actsize)/numThreads);
 
       if (numBlocks > DeviceParams::Instance().getMaxGridX()) {
 	QDP_error_exit( "sum(Lat,subset) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)DeviceParams::Instance().getMaxGridX());
@@ -206,7 +206,7 @@ namespace QDP {
 	//QDPIO::cout << "sumMulti(Lat) dev, ss.largest_subset = " << ss.largest_subset << "\n";
 
 	int numThreads = 
-	  ss.largest_subset > DeviceParams::Instance().getMaxBlockX() ? 
+	  (unsigned)ss.largest_subset > DeviceParams::Instance().getMaxBlockX() ? 
 	  DeviceParams::Instance().getMaxBlockX() : 
 	  ss.largest_subset;
 
@@ -234,7 +234,7 @@ namespace QDP {
 	/* 	    << " threads per block smem = " << numThreads*sizeof(T2)  */
 	/* 	    << " numBlocks = " << numBlocks << "\n"; */
 
-	if (numBlocks > DeviceParams::Instance().getMaxGridX() ) {
+	if ((unsigned)numBlocks > DeviceParams::Instance().getMaxGridX() ) {
 	  QDP_info_primary( "sum(Lat) numBlocks > maxGrixX, continue on host" );
 	  break;
 	}
@@ -294,7 +294,7 @@ namespace QDP {
 
 	  virt_size /= numThreads;
 
-	  numThreads = virt_size > DeviceParams::Instance().getMaxBlockX() ? DeviceParams::Instance().getMaxBlockX() : virt_size;
+	  numThreads = (unsigned)virt_size > DeviceParams::Instance().getMaxBlockX() ? DeviceParams::Instance().getMaxBlockX() : virt_size;
 	  actsize = numBlocks;
 	  numBlocks=(int)ceil(float(actsize)/numThreads);
 

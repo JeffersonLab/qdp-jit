@@ -26,7 +26,7 @@ namespace QDP {
 
   const Subset& MasterSet::getSubset(int id)
   {
-    assert( id >= 0 && id < vecSubset.size() && "MasterSet::getSubset out of range");
+    assert( id >= 0 && (unsigned)id < vecSubset.size() && "MasterSet::getSubset out of range");
     return *vecSubset[id];
   }
 

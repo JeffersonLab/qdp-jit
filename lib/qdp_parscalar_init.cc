@@ -99,7 +99,7 @@ namespace QDP {
   int QDP_setGPU()
   {
     int deviceCount;
-    int ret = 0;
+    //int ret = 0;
     CudaGetDeviceCount(&deviceCount);
     if (deviceCount == 0) {
       QDP_error_exit("No CUDA devices found");

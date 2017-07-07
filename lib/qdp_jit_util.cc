@@ -213,7 +213,7 @@ namespace QDP {
     llvm::Value * r_ordered      = llvm_derefParam( vec[0] );
     llvm::Value * r_th_count     = llvm_derefParam( vec[1] );
     llvm::Value * r_start        = llvm_derefParam( vec[2] );
-    llvm::Value * r_end          = llvm_derefParam( vec[3]);
+                                   llvm_derefParam( vec[3]);     // r_end not used
     ParamRef      p_member_array = vec[4];
 
     llvm::Value * r_idx_phi0 = llvm_thread_idx();

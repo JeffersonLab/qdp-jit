@@ -693,7 +693,7 @@ namespace QDP
 
 
 
-  QDPCache::QDPCache() : currLS(0) , prevLS(-1), vecEntry(1024) {
+  QDPCache::QDPCache() : vecEntry(1024), currLS(0) , prevLS(-1)  {
 #ifdef GPU_DEBUG_DEEP
     QDP_info_primary("Constructing cache ..");
     QDP_info_primary("cache: pushing %u elements into stack",(unsigned)vecEntry.size());

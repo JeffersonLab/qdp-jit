@@ -24,7 +24,7 @@ namespace QDP
 
     //! Check if this will be a new file
     bool checkForNewFile(const std::string& filename, std::ios_base::openmode mode);
-  };
+  }
 
 
 
