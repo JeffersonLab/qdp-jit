@@ -38,9 +38,9 @@ function_gaussian_exec(CUfunction function, OLattice<T>& dest,OLattice<T>& r1,OL
 {
   AddressLeaf addr_leaf(s);
 
-  int junk_0 = forEach(dest, addr_leaf, NullCombine());
-  int junk_1 = forEach(r1, addr_leaf, NullCombine());
-  int junk_2 = forEach(r2, addr_leaf, NullCombine());
+  forEach(dest, addr_leaf, NullCombine());
+  forEach(r1, addr_leaf, NullCombine());
+  forEach(r2, addr_leaf, NullCombine());
 
   int start = s.start();
   int end = s.end();
@@ -66,8 +66,8 @@ function_gaussian_exec(CUfunction function, OLattice<T>& dest,OLattice<T>& r1,OL
   addr.push_back( &subset_member );
   //std::cout << "addr idx_inner_dev = " << addr[3] << " " << idx_inner_dev << "\n";
 
-  int addr_dest=addr.size();
-  for(int i=0; i < addr_leaf.addr.size(); ++i) {
+  //int addr_dest=addr.size();
+  for(unsigned i=0; i < addr_leaf.addr.size(); ++i) {
     addr.push_back( &addr_leaf.addr[i] );
     //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
   }

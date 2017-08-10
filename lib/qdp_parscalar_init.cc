@@ -326,6 +326,12 @@ namespace QDP {
 	    
 	    setPoolSize = true;
 	  }
+	else if (strcmp((*argv)[i], "-llvm-opt")==0) 
+	  {
+	    char tmp[1024];
+	    sscanf((*argv)[++i], "%s", &tmp);
+	    llvm_set_opt(tmp);
+	  }
 	else if (strcmp((*argv)[i], "-geom")==0) 
 	  {
 	    setGeomP = true;

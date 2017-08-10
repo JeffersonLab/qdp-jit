@@ -5,6 +5,7 @@
 
 #include "qdp.h"
 #include "qdp_byteorder.h"
+#include <complex>
 
 namespace QDP
 {
@@ -42,7 +43,7 @@ namespace QDP
     QDPInternal::broadcast(lleng);
 
     // Now every node can alloc space for string
-    dd_tmp = new(nothrow) char[lleng];
+    dd_tmp = new(std::nothrow) char[lleng];
     if( dd_tmp == 0x0 ) { 
       QDP_error_exit("Unable to allocate dd_tmp in qdp_io.cc\n");
     }
@@ -352,14 +353,14 @@ namespace QDP
   }
 
 
-  void TextWriter::write(const string& output)
+  void TextWriter::write(const std::string& output)
   {
-    writePrimitive<string>(output);
+    writePrimitive<std::string>(output);
   }
 
   void TextWriter::write(const char* output)
   {
-    write(string(output));
+    write(std::string(output));
   }
 
   void TextWriter::write(const char& output) 
@@ -605,11 +606,8 @@ namespace QDP
   }
 
 
-
-
-
   // Readers
-  void BinaryReader::readDesc(string& input)
+  void BinaryReader::readDesc(std::string& input)
   {
     if (Layout::primaryNode())
     {
@@ -629,9 +627,9 @@ namespace QDP
     QDPInternal::broadcast(input);
   }
 
-  void BinaryReader::read(string& input, size_t maxBytes)
+  void BinaryReader::read(std::string& input, size_t maxBytes)
   {
-    char *str = new(nothrow) char[maxBytes];
+    char *str = new(std::nothrow) char[maxBytes];
     if( str == 0x0 ) { 
       QDP_error_exit("Couldnt new str in qdp_io.cc\n");
     }
@@ -733,23 +731,22 @@ namespace QDP
   }
 
 
-
   void BinaryReader::readArrayLittleEndian(char* input, size_t size, size_t nmemb)
   {
     if (Layout::primaryNode())
-      {
-	// Read
-	// By default, we expect all data to be in big-endian
-	getIstream().read(input, size*nmemb);
-	// internalChecksum() = QDPUtil::crc32(internalChecksum(), input, size*nmemb);
+    {
+      // Read
+      // By default, we expect all data to be in big-endian
+      getIstream().read(input, size*nmemb);
+     // internalChecksum() = QDPUtil::crc32(internalChecksum(), input, size*nmemb);
 
-	if (QDPUtil::big_endian())
-	  {
-	    // big-endian
-	    // Swap
-	    QDPUtil::byte_swap(input, size, nmemb);
-	  }
+      if (QDPUtil::big_endian())
+      {
+	// big-endian
+	// Swap
+	QDPUtil::byte_swap(input, size, nmemb);
       }
+    }
     // Now broadcast back out to all nodes
     QDPInternal::broadcast((void*)input, size*nmemb);
   }
@@ -757,19 +754,19 @@ namespace QDP
   void BinaryReader::readArrayPrimaryNodeLittleEndian(char* input, size_t size, size_t nmemb)
   {
     if (Layout::primaryNode())
-      {
-	// Read
-	// By default, we expect all data to be in big-endian
-	getIstream().read(input, size*nmemb);
-	// internalChecksum() = QDPUtil::crc32(internalChecksum(), input, size*nmemb);
+    {
+      // Read
+      // By default, we expect all data to be in big-endian
+      getIstream().read(input, size*nmemb);
+     // internalChecksum() = QDPUtil::crc32(internalChecksum(), input, size*nmemb);
 
-	if (QDPUtil::big_endian())
-	  {
-	    // big-endian
-	    // Swap
-	    QDPUtil::byte_swap(input, size, nmemb);
-	  }
+      if (QDPUtil::big_endian())
+      {
+	// big-endian
+	// Swap
+	QDPUtil::byte_swap(input, size, nmemb);
       }
+    }
   }
 
 
@@ -825,6 +822,26 @@ namespace QDP
   void read(BinaryReader& bin, bool& input)
   {
     bin.read(input);
+  }
+
+  //! Complex reader
+  void read(BinaryReader& bin, std::complex<float>& param)
+  {
+    // NOTE: the C++-11 standard says a "real()" function returns a r-value - not an "l-value", so
+    // cannot simply read into a param.real()
+    float re, im;
+    read(bin, re);
+    read(bin, im);
+    param = std::complex<float>(re,im);
+  }
+
+  //! Complex reader
+  void read(BinaryReader& bin, std::complex<double>& param)
+  {
+    double re, im;
+    read(bin, re);
+    read(bin, im);
+    param = std::complex<double>(re,im);
   }
 
 
@@ -1069,14 +1086,14 @@ namespace QDP
   }
 
 
-  void BinaryWriter::writeDesc(const string& output)
+  void BinaryWriter::writeDesc(const std::string& output)
   {
     size_t n = output.length();
     writePrimitive<int>(n);
     writeArray(output.c_str(), sizeof(char), n);
   }
 
-  void BinaryWriter::write(const string& output)
+  void BinaryWriter::write(const std::string& output)
   {
     // WARNING: CHECK ON NEWLINE IN CHECKSUM
     size_t n = output.length();
@@ -1086,7 +1103,7 @@ namespace QDP
 
   void BinaryWriter::write(const char* output)
   {
-    write(string(output));
+    write(std::string(output));
   }
   void BinaryWriter::write(const char& output) 
   {
@@ -1235,6 +1252,20 @@ namespace QDP
   void write(BinaryWriter& bin, bool output)
   {
     bin.write(output);
+  }
+
+  //! Complex writer
+  void write(BinaryWriter& bin, const std::complex<float>& param)
+  {
+    write(bin, param.real());
+    write(bin, param.imag());
+  }
+
+  //! Complex writer
+  void write(BinaryWriter& bin, const std::complex<double>& param)
+  {
+    write(bin, param.real());
+    write(bin, param.imag());
   }
 
 

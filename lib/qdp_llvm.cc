@@ -72,6 +72,66 @@ namespace QDP {
     std::string name_additional;
   }
 
+  namespace llvm_opt {
+    int opt_level   = 3;   // opt -O level
+    int nvptx_FTZ   = 0;   // NVPTX Flush subnormals to zero
+    bool DisableInline = false;
+    bool UnitAtATime = false;
+    bool DisableLoopUnrolling = false;
+    bool DisableLoopVectorization = false;
+    bool DisableSLPVectorization = false;
+  }
+
+  void llvm_set_opt( const char * c_str ) {
+    std::string str(c_str);
+    if (str.find("DisableInline") != string::npos) {
+      llvm_opt::DisableInline = true;
+      return;
+    }
+    if (str.find("UnitAtATime") != string::npos) {
+      llvm_opt::UnitAtATime = true;
+      return;
+    }
+    if (str.find("DisableLoopUnrolling") != string::npos) {
+      llvm_opt::DisableLoopUnrolling = true;
+      return;
+    }
+    if (str.find("DisableLoopVectorization") != string::npos) {
+      llvm_opt::DisableLoopVectorization = true;
+      return;
+    }
+    if (str.find("DisableSLPVectorization") != string::npos) {
+      llvm_opt::DisableSLPVectorization = true;
+      return;
+    }
+    if (str.find("O0") != string::npos) {
+      llvm_opt::opt_level = 0;
+      return;
+    }
+    if (str.find("O1") != string::npos) {
+      llvm_opt::opt_level = 1;
+      return;
+    }
+    if (str.find("O2") != string::npos) {
+      llvm_opt::opt_level = 2;
+      return;
+    }
+    if (str.find("O3") != string::npos) {
+      llvm_opt::opt_level = 3;
+      return;
+    }
+    if (str.find("FTZ0") != string::npos) {
+      llvm_opt::nvptx_FTZ = 0;
+      return;
+    }
+    if (str.find("FTZ1") != string::npos) {
+      llvm_opt::nvptx_FTZ = 1;
+      return;
+    }
+    QDP_error_exit("unknown llvm-opt argument: %s",c_str);
+  }
+
+
   void llvm_set_debug( const char * c_str ) {
     std::string str(c_str);
     if (str.find("loop-vectorize") != string::npos) {
@@ -292,6 +352,9 @@ namespace QDP {
     llvm_type<double*>::value = llvm::Type::getDoublePtrTy(TheContext);
     llvm_type<int*>::value    = llvm::Type::getIntNPtrTy(TheContext,32);
     llvm_type<bool*>::value   = llvm::Type::getIntNPtrTy(TheContext,1);
+
+    QDPIO::cout << "LLVM optimization level : " << llvm_opt::opt_level << "\n";
+    QDPIO::cout << "NVPTX Flush to zero     : " << llvm_opt::nvptx_FTZ << "\n";
 
     //
     // I initialize libdevice in math_setup
@@ -896,11 +959,11 @@ namespace QDP {
   {
     //QDPIO::cout << " adding opt passes..\n";
 
-    const bool DisableInline = false;
-    const bool UnitAtATime = false;
-    const bool DisableLoopUnrolling = false;
-    const bool DisableLoopVectorization = false;
-    const bool DisableSLPVectorization = false;
+    const bool DisableInline = llvm_opt::DisableInline;
+    const bool UnitAtATime = llvm_opt::UnitAtATime;
+    const bool DisableLoopUnrolling = llvm_opt::DisableLoopUnrolling;
+    const bool DisableLoopVectorization = llvm_opt::DisableLoopVectorization;
+    const bool DisableSLPVectorization = llvm_opt::DisableSLPVectorization;
       
     FPM.add(createVerifierPass()); // Verify that input is correct
 
@@ -958,8 +1021,8 @@ namespace QDP {
 
     FPasses.reset(new llvm::legacy::FunctionPassManager(Mod));
     FPasses->add(createTargetTransformInfoWrapperPass( TM->getTargetIRAnalysis() ) );
-    
-    AddOptimizationPasses(Passes, *FPasses, TM.get(), 3, 0);
+
+    AddOptimizationPasses(Passes, *FPasses, TM.get(), llvm_opt::opt_level , 0);
 
     if (FPasses) {
       FPasses->doInitialization();
@@ -1327,9 +1390,8 @@ namespace QDP {
 
     //const char *ExportList[] = { "main" };
 
-    
     llvm::StringMap<int> Mapping;
-    Mapping["__CUDA_FTZ"] = 0;
+    Mapping["__CUDA_FTZ"] = llvm_opt::nvptx_FTZ;
 
     std::string banner;
 

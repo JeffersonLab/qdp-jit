@@ -80,6 +80,11 @@ namespace QDP {
     extern bool debug_loop_vectorizer;
   }
 
+  namespace llvm_opt {
+    extern int opt_level;   // opt -O level
+    extern int nvptx_FTZ;   // NVPTX Flush subnormals to zero
+  }
+  
   extern llvm::LLVMContext TheContext;
 
   typedef int ParamRef;
@@ -92,6 +97,7 @@ namespace QDP {
 
 
   void llvm_set_debug( const char * str );
+  void llvm_set_opt( const char * c_str );
   void llvm_debug_write_set_name( const char* pretty, const char* additional );
 
   llvm::Value * llvm_create_value( double v );

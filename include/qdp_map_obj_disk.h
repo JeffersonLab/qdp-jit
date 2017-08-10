@@ -36,7 +36,7 @@ namespace QDP
   {
   public:
     //! Empty constructor
-    MapObjectDisk() : file_version(1), state(INIT), level(0) {}
+    MapObjectDisk() : state(INIT), file_version(1), level(0) {}
 
     //! Finalizes object
     ~MapObjectDisk();
