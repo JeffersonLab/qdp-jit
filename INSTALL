@@ -1,92 +1,15 @@
-Installation instructions for Chroma over QDP-JIT/NVVM
-======================================================
-
 General remarks and requirements:
 --------------------------------
 
  - C++ compiler with C++11 support (GCC 4.8.2 known to work)
 
- - CUDA 5.5 or higher (which includes libNVVM)
+ - CUDA 5.5 or higher (which includes libdevice, CUDA 7/8 known to work)
 
- - GPUs with compute capability 2.0 (or higher)
+ - GPUs with compute capability 2.0 (or higher, tested on 20, 35, 50)
 
+ - LLVM (4.0.0/4.0.1 known to work)
 
+ - libdevice included with CUDA7/8 are buggy for double precision -> requires patching (patch_libdevice.sh)
+   NVIDIA notified, expect clean version from CUDA 9 on
 
-
-1) Install LLVM
-
-- Download release 3.4:
-  svn co https://llvm.org/svn/llvm-project/llvm/branches/release_34 llvm-3.4
-
-- Configure:
-    --prefix=$INSTALL/llvm-$TYPE  \
-    --enable-targets="x86_64,nvptx" \
-    --enable-shared \
-    --disable-terminfo \
-    --disable-zlib \
-    --disable-libedit \
-
-
-
-2) Install QMP
-
-- Nothing special here
-
-
-
-3) Install QDP-JIT/NVVM
-
-- Download source code:
-  git clone -b llvm-nvvm --recursive https://github.com/fwinter/qdp-jit.git
-
-- Remake the autobuild system:
-  autoreconf
-
-- Configure:
-CUDADIR=/usr/local/cuda
-NVVMDIR=/usr/local/cuda/nvvm
-LLVMDIR=$INSTALL/llvm-$TYPE
-CXXFLAGS="-O3 -std=c++0x -fexceptions -frtti"
-CFLAGS="-O3 -std=c99"
-        --disable-generics \
-        --disable-filedb \
-        --prefix=$INSTALL/qdp++-$TYPE  \
-        --with-cuda=${CUDADIR} \
-        --with-qmp=$INSTALL/qmp-$TYPE  \
-        --with-llvm=${LLVMDIR} \
-        --with-nvvm=${NVVMDIR} \
-        --enable-parallel-arch=parscalar \
-        --enable-precision=$PRECISION \
-        CXX=${CXX} \
-        CXXFLAGS="$CXXFLAGS" \
-        CFLAGS="$CFLAGS"
-
-4) Install QUDA
-
-- Download current master branch.
-
-- Configure with the QUDA features as needed, and make sure to also enable:
-  --enable-qdp-interface
-  --enable-qdpjit-interface
-  --enable-qdp-jit
-  --with-cuda=${CUDADIR}
-  --with-qdp=$INSTALL/qdp++-$TYPE  (QDP-JIT/NVVM install directory)
-  --with-qmp=$INSTALL/qmp-$TYPE
-  --with-mpi=$MPI_HOME
-
-5) Install Chroma
-
-- Download Chroma (master branch)
-https://github.com/JeffersonLab/chroma.git
-
-- Configure:
-  --enable-jit-clover \
-  --enable-quda-deviface \
-  --with-quda=${QUDADIR} \
-  --prefix=$INSTALL/chroma-$TYPE \
-  --with-qdp=$INSTALL/qdp++-$TYPE \ (QDP-JIT/NVVM install directory)
-
-
-
-
-
+ - 0) patch libdevice, 1) pack libdevice, 2) build

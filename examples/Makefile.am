@@ -16,7 +16,7 @@ AM_CXXFLAGS += -I@top_srcdir@/other_libs/filedb/src \
                -I@top_srcdir@/other_libs/filedb/filehash
 endif
 
-AM_LDFLAGS = -L@top_builddir@/lib @CUDA_LDFLAGS@ @CUDA_LDFLAGS@ @LLVM_LDFLAGS@ @NVVM_LDFLAGS@
+AM_LDFLAGS = -L@top_builddir@/lib @CUDA_LDFLAGS@ @CUDA_LDFLAGS@ @LLVM_LDFLAGS@
 
 if QDP_USE_LIBXML2
 AM_LDFLAGS += -L@top_builddir@/other_libs/qio/lib \
@@ -35,7 +35,7 @@ LDADD = -lqdp
 if QDP_USE_LIBXML2
 LDADD += -lXPathReader -lxmlWriter -lqio -llime
 endif
-LDADD += @BAGEL_QDP_LIBS@ @LIBXML2_LIBS@ @QMP_LIBS@ @QMT_LIBS@ @LIBS@ @CUDA_LIBS@ @LLVM_LIBS@ @NVVM_LIBS@
+LDADD += @BAGEL_QDP_LIBS@ @LIBXML2_LIBS@ @QMP_LIBS@ @QMT_LIBS@ @LIBS@ @CUDA_LIBS@ @LLVM_LIBS@
 
 if BUILD_FILEDB
 LDADD += -lfiledb -lfilehash
