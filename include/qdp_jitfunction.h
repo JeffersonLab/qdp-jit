@@ -390,7 +390,7 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
 {
   //std::cout << __PRETTY_FUNCTION__ << "\n";
 
-  assert( s.hasOrderedRep() && "only ordered subsets are supported");
+  //assert( s.hasOrderedRep() && "only ordered subsets are supported");
   //static int offnode_maps_previous_call = -1;
 
   ShiftPhase1 phase1(s);
