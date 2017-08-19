@@ -9,6 +9,12 @@ namespace QDP {
   CUfunction
   function_copymask_build( OLattice<T>& dest , const OLattice<T1>& mask , const OLattice<T>& src )
   {
+    if (ptx_db::db_enabled) {
+      CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
+      if (func)
+	return func;
+    }
+
     llvm_start_new_function();
 
     llvm_add_param<int>();   // we don't need p_lo, since copymask on sublattices is not jitted
@@ -42,7 +48,7 @@ namespace QDP {
 
     llvm_exit();
 
-    return llvm_get_cufunction("jit_copymask.ptx");
+    return llvm_get_cufunction("jit_copymask.ptx", __PRETTY_FUNCTION__ );
   }
 
 

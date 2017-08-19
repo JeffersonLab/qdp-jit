@@ -8,6 +8,8 @@ namespace QDP {
 			 int size, int threads, int blocks, int shared_mem_usage,
 			 void *d_idata, void *d_odata, void *siteTable)
   {
+    //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+    
     // lo <= idx < hi
     int lo = 0;
     int hi = size;
@@ -48,6 +50,8 @@ namespace QDP {
 		     int size, int threads, int blocks, int shared_mem_usage,
 		     void *d_idata, void *d_odata)
   {
+    //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+
     //  QDP_info("function_sum_ind_coal_exec size=%d threads=%d blocks=%d shared_mem=%d idata=%p odata=%p ",	   size,threads,blocks,shared_mem_usage,d_idata,d_odata);
 
     // lo <= idx < hi
@@ -89,6 +93,8 @@ namespace QDP {
 				 int size, int threads, int blocks, int shared_mem_usage,
 				 void *d_idata, void *d_odata)
   {
+    //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+
     //QDP_info("function_global_max_exec size=%d threads=%d blocks=%d shared_mem=%d idata=%p odata=%p ",	   size,threads,blocks,shared_mem_usage,d_idata,d_odata);
 
     int lo = 0;

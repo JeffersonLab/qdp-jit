@@ -812,6 +812,12 @@ namespace QDP
   template<typename T>
   void QDPFileReader::read(XMLReader& rec_xml, multi1d< OScalar<T> >& s1)
   {
+    // Won't work since the OScalar has additional data
+    // multi1d<Oscalar>.slice() does not point to pure payload
+    //
+    assert(!"ni");
+#if 0
+
     /* For now I may not be able to read Dirk's stuff, but I should
      * be able to read what I wrote */
     QIO_RecordInfo rec_info;
@@ -897,6 +903,7 @@ namespace QDP
     rec_xml.open(ss);
   
     QIO_string_destroy(xml_c);
+#endif
   }
 
 
@@ -993,6 +1000,11 @@ namespace QDP
   template<class T>
   void QDPFileWriter::write(XMLBufferWriter& rec_xml, const multi1d< OScalar<T> >& s1)
   {
+    // This routine is not working as the OScalar has additional data
+    // thus, the multi1d<Oscal<T>>.slice() is not pointing to pure payload
+    //
+    assert(!"ni");
+#if 0
     QIO_RecordInfo* info = QIO_create_record_info(QIO_GLOBAL, NULL, NULL, 0,
 						  QIOStringTraits<multi1d< OScalar<T> > >::tname,
 						  QIOStringTraits<typename WordType<T>::Type_t>::tprec, 
@@ -1025,6 +1037,7 @@ namespace QDP
     // Cleanup
     QIO_string_destroy(xml_c);
     QIO_destroy_record_info(info);
+#endif
   }
 
 

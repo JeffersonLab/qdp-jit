@@ -18,6 +18,9 @@
 
 namespace QDP {
 
+namespace COUNT {
+  int count = 0;
+}
 	
 	namespace ThreadReductions {
 		REAL64* norm2_results;
@@ -114,17 +117,21 @@ namespace QDP {
     } 
 
     int dev=0;
-#if 0
     if (rank) {
       int local_rank = atoi(rank);
       dev = local_rank % deviceCount;
     } else {
+      std::cerr << "Couldnt determine local rank. Selecting device 0. In a multi-GPU per node run this is not what one wants.\n";
+      dev = 0;
+#if 0
+      // we don't have an initialized QMP at this point
        std::cerr << "Couldnt determine local rank. Selecting device based on global rank \n";
        std::cerr << "Please ensure that ranks increase fastest within the node for this to work \n";
        int rank_QMP = QMP_get_node_number();
        dev = rank_QMP % deviceCount;
-    }
 #endif
+    }
+
     std::cout << "Setting CUDA device to " << dev << "\n";
     CudaSetDevice( dev );
     return dev;
@@ -332,6 +339,12 @@ namespace QDP {
 	    sscanf((*argv)[++i], "%s", &tmp);
 	    llvm_set_opt(tmp);
 	  }
+	else if (strcmp((*argv)[i], "-ptxdb")==0) 
+	  {
+	    char tmp[1024];
+	    sscanf((*argv)[++i], "%s", &tmp);
+	    llvm_set_ptxdb(tmp);
+	  }
 	else if (strcmp((*argv)[i], "-geom")==0) 
 	  {
 	    setGeomP = true;
@@ -534,6 +547,15 @@ namespace QDP {
 			QDPIO::cerr << "QDP is not inited" << std::endl;
 			QDP_abort(1);
 		}
+
+		QDPIO::cout << "------------------\n";
+		QDPIO::cout << "-- JIT statistics:\n";
+		QDPIO::cout << "------------------\n";
+		QDPIO::cout << "lattices changed to device layout:     " << get_jit_stats_lattice2dev() << "\n";
+		QDPIO::cout << "lattices changed to host layout:       " << get_jit_stats_lattice2host() << "\n";
+		QDPIO::cout << "JIT functions built (not found in DB): " << get_jit_stats_jitted() << "\n";
+
+
 		
 		FnMapRsrcMatrix::Instance().cleanup();
 

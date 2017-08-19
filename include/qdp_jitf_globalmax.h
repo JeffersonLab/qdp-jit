@@ -18,6 +18,12 @@ namespace QDP {
   CUfunction 
   function_global_max_build()
   {
+    if (ptx_db::db_enabled) {
+      CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
+      if (func)
+	return func;
+    }
+
     llvm_start_new_function();
 
     ParamRef p_lo     = llvm_add_param<int>();
@@ -31,14 +37,17 @@ namespace QDP {
     OLatticeJIT<typename JITType<T1>::Type_t> idata(  p_idata );   // want coal   access later
     OLatticeJIT<typename JITType<T1>::Type_t> odata(  p_odata );   // want scalar access later
 
-    llvm::Value* r_lo     = llvm_derefParam( p_lo );
+    //llvm::Value* r_lo     = llvm_derefParam( p_lo );
+    llvm_derefParam( p_lo );
     llvm::Value* r_hi     = llvm_derefParam( p_hi );
 
     llvm::Value* r_idx = llvm_thread_idx();   
     // llvm_cond_exit( llvm_ge( r_idx , r_hi ) );  // We can't exit, because we have to initialize shared data
 
-    llvm::Value* r_idata      = llvm_derefParam( p_idata );  // Input  array
-    llvm::Value* r_odata      = llvm_derefParam( p_odata );  // output array
+    llvm_derefParam( p_idata );  // Input  array
+    llvm_derefParam( p_odata );  // output array
+    /* llvm::Value* r_idata      = llvm_derefParam( p_idata );  // Input  array */
+    /* llvm::Value* r_odata      = llvm_derefParam( p_odata );  // output array */
 
     llvm::Value* r_shared = llvm_get_shared_ptr( llvm_type<WT>::value );
 
@@ -181,7 +190,7 @@ namespace QDP {
     llvm_branch( block_not_store_global );
     llvm_set_insert_point(block_not_store_global);
 
-    return jit_function_epilogue_get_cuf("jit_max.ptx");
+    return jit_function_epilogue_get_cuf("jit_max.ptx" , __PRETTY_FUNCTION__ );
   }
 
 

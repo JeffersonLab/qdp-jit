@@ -19,6 +19,12 @@ namespace QDP {
   CUfunction 
   function_sum_ind_build()
   {
+    if (ptx_db::db_enabled) {
+      CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
+      if (func)
+	return func;
+    }
+
     llvm_start_new_function();
 
     ParamRef p_lo     = llvm_add_param<int>();
@@ -163,7 +169,7 @@ namespace QDP {
     llvm_branch( block_not_store_global );
     llvm_set_insert_point(block_not_store_global);
 
-    return jit_function_epilogue_get_cuf("jit_sum_ind.ptx");
+    return jit_function_epilogue_get_cuf("jit_sum_ind.ptx" , __PRETTY_FUNCTION__ );
   }
 
 
@@ -173,6 +179,13 @@ namespace QDP {
   CUfunction 
   function_sum_build()
   {
+
+    if (ptx_db::db_enabled) {
+      CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
+      if (func)
+	return func;
+    }
+
     llvm_start_new_function();
 
     ParamRef p_lo     = llvm_add_param<int>();
@@ -324,7 +337,7 @@ namespace QDP {
     llvm_branch( block_not_store_global );
     llvm_set_insert_point(block_not_store_global);
 
-    return jit_function_epilogue_get_cuf("jit_sum.ptx");
+    return jit_function_epilogue_get_cuf("jit_sum.ptx" , __PRETTY_FUNCTION__ );
   }
 
 } // namespace

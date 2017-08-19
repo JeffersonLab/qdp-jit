@@ -427,7 +427,14 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 
     void static changeLayout(bool toDev,void * outPtr,void * inPtr)
     {
-      QDP_info_primary("changing lattice data layout to %s format" , toDev? "device" : "host");
+      //QDP_info_primary("changing lattice data layout to %s format" , toDev? "device" : "host");
+
+      if (toDev)
+	jit_stats_lattice2dev();
+      else
+	jit_stats_lattice2host();
+
+
 
       typename WordType<T>::Type_t * in_data  = (typename WordType<T>::Type_t *)inPtr;
       typename WordType<T>::Type_t * out_data = (typename WordType<T>::Type_t *)outPtr;

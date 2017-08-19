@@ -225,16 +225,24 @@ public:
   const T* slice() const {return F;}
 
   //! Return ref to an element
-  T& operator()(int i) {return F[i];}
+  T& operator()(int i) {
+    //assert( i >= 0 && i < n1 );
+    return F[i];}
 
   //! Return const ref to an element
-  const T& operator()(int i) const {return F[i];}
+  const T& operator()(int i) const {
+    //assert( i >= 0 && i < n1 );
+    return F[i];}
 
   //! Return ref to an element
-  T& operator[](int i) {return F[i];}
+  T& operator[](int i) {
+    //assert( i >= 0 && i < n1 );
+    return F[i];}
 
   //! Return const ref to an element
-  const T& operator[](int i) const {return F[i];}
+  const T& operator[](int i) const {
+    //assert( i >= 0 && i < n1 );
+    return F[i];}
 
   //! moveToFastMemoryHint for the whole multi1d if the 
   //! internal type T supports it. Calls templated

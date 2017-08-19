@@ -452,7 +452,7 @@ namespace QDP
     //  list_stream.str(list_string);
     std::istringstream list_stream2(list_string);
 
-    for(int i=0; i < result.size(); i++) 
+    for(unsigned i=0; i < result.size(); i++) 
     {
       // read the element.
       list_stream2 >> result[i];
@@ -1057,7 +1057,7 @@ namespace QDP
     if (s1.size() > 0)
     {
       output << s1[0];
-      for(int index=1; index < s1.size(); index++) 
+      for(unsigned index=1; index < s1.size(); index++) 
 	output << " " << s1[index];
     }
     
@@ -1075,7 +1075,7 @@ namespace QDP
     if (s1.size() > 0)
     {
       output << s1[0];
-      for(int index=1; index < s1.size(); index++) 
+      for(unsigned index=1; index < s1.size(); index++) 
 	output << " " << s1[index];
     }
     
@@ -1102,7 +1102,7 @@ namespace QDP
     if (s1.size() > 0)
     {
       output << s1[0];
-      for(int index=1; index < s1.size(); index++) 
+      for(unsigned index=1; index < s1.size(); index++) 
 	output << " " << s1[index];
     }
     
@@ -1120,7 +1120,7 @@ namespace QDP
     if (s1.size() > 0)
     {
       output << s1[0];
-      for(int index=1; index < s1.size(); index++) 
+      for(unsigned index=1; index < s1.size(); index++) 
 	output << " " << s1[index];
     }
     

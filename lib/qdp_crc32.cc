@@ -163,6 +163,7 @@ namespace QDPUtil
   };
 #endif
 
+#if 0
 /* =========================================================================
  * This function can be used by asm versions of crc32()
  */
@@ -173,6 +174,7 @@ namespace QDPUtil
 #endif
     return (uLongf *)crc_table;
   }
+#endif
 
 /* ========================================================================= */
 #define DO1(buf) crc = crc_table[((int)crc ^ (*buf++)) & 0xff] ^ (crc >> 8);

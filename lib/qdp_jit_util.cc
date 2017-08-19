@@ -9,6 +9,22 @@ namespace QDP {
   llvm::Function    *func_seed2float;
   llvm::Function    *func_seedMultiply;
 
+  namespace JITSTATS {
+    long lattice2dev  = 0;   // changing lattice data layout to device format
+    long lattice2host = 0;   // changing lattice data layout to host format
+    long jitted       = 0;   // functions not in DB, thus jit-built
+  }
+
+
+  void jit_stats_lattice2dev()  { ++JITSTATS::lattice2dev; }
+  void jit_stats_lattice2host() { ++JITSTATS::lattice2host; }
+  void jit_stats_jitted()       { ++JITSTATS::jitted; }
+
+  long get_jit_stats_lattice2dev()  { return JITSTATS::lattice2dev; }
+  long get_jit_stats_lattice2host() { return JITSTATS::lattice2host; }
+  long get_jit_stats_jitted()       { return JITSTATS::jitted; }
+
+
   // seedMultiply
   //
   // We build a function that takes 2 seeds (4 ints each)
@@ -187,10 +203,10 @@ namespace QDP {
   }
 
 
-  CUfunction jit_function_epilogue_get_cuf(const char * fname)
+  CUfunction jit_function_epilogue_get_cuf(const char * fname, const char* pretty )
   {
     llvm_exit();
-    return llvm_get_cufunction( fname );
+    return llvm_get_cufunction( fname , pretty );
   }
 
 

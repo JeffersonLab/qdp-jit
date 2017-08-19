@@ -9,6 +9,12 @@ template<class T>
 CUfunction
 function_gaussian_build(OLattice<T>& dest ,OLattice<T>& r1 ,OLattice<T>& r2 )
 {
+  if (ptx_db::db_enabled) {
+    CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
+    if (func)
+      return func;
+  }
+
   std::vector<ParamRef> params = jit_function_preamble_param();
 
   ParamLeaf param_leaf;
@@ -28,7 +34,7 @@ function_gaussian_build(OLattice<T>& dest ,OLattice<T>& r1 ,OLattice<T>& r2 )
 
   fill_gaussian( dest_jit.elem(JitDeviceLayout::Coalesced , r_idx ) , r1_reg , r2_reg );
 
-  return jit_function_epilogue_get_cuf("jit_gaussian.ptx");
+  return jit_function_epilogue_get_cuf("jit_gaussian.ptx" , __PRETTY_FUNCTION__ );
 }
 
 

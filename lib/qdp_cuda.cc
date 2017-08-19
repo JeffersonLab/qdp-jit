@@ -85,27 +85,39 @@ namespace QDP {
 			 unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
 			 unsigned int  sharedMemBytes, CUstream hStream, void** kernelParams, void** extra )
   {
+#if 0
+    QDP_get_global_cache().releasePrevLockSet();
+    QDP_get_global_cache().beginNewLockSet();
+    return;
+#endif
+
 #ifdef GPU_DEBUG_DEEP
     QDP_debug_deep("CudaLaunchKernel ... ");
 #endif
 
     //std::cout << "shmem = " << sharedMemBytes << "\n";
 
+    // std::cout << "CudaLaunchKernel:"
+    // 	      << "  grid = " << gridDimX   << " " << gridDimY  << " " << gridDimZ   
+    // 	      << "  block = " << blockDimX  << " " <<  blockDimY  << " " << blockDimZ   << "  shmem = " << sharedMemBytes << "\n";
+
     // CudaSyncTransferStream();
     // CudaSyncKernelStream();
 
     // This call is async
+#if 1
     if ( blockDimX * blockDimY * blockDimZ > 0  &&  gridDimX * gridDimY * gridDimZ > 0 ) {
       CUresult result = cuLaunchKernel(f, gridDimX, gridDimY, gridDimZ, 
 				       blockDimX, blockDimY, blockDimZ, 
 				       sharedMemBytes, QDPcudastreams[KERNEL], kernelParams, extra);
       if (result != CUDA_SUCCESS) {
-	QDP_error_exit("CUDA launch error: grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
+	QDP_error_exit("CUDA launch error (CudaLaunchKernel): grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
 		       gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes );
       }
     } else {
       //std::cout << "skipping kernel launch due to zero block!!!\n";
     }
+#endif
 
     QDP_get_global_cache().releasePrevLockSet();
     QDP_get_global_cache().beginNewLockSet();
@@ -117,11 +129,13 @@ namespace QDP {
     // For now, pull the brakes
     // I've seen the GPU running away from CPU thread
     // This call is probably too much, but it's safe to call it.
+#if 1
     CUresult result = cuCtxSynchronize();
     if (result != CUDA_SUCCESS) {
-      QDP_error_exit("CUDA launch error (on sync): grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
+      QDP_error_exit("CUDA launch error (CudaLaunchKernel, on sync): grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
 		     gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes );
     }
+#endif
     //CudaDeviceSynchronize();
 
     if (DeviceParams::Instance().getSyncDevice()) {  
@@ -364,10 +378,10 @@ namespace QDP {
   }
 
 
-  void CudaHostFree(const void *mem)
+  void CudaHostFree(void *mem)
   {
     CUresult ret;
-    ret = cuMemFreeHost((void *)mem);
+    ret = cuMemFreeHost(mem);
     CudaRes("cuMemFreeHost",ret);
   }
 

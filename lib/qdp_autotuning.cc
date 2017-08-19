@@ -28,6 +28,12 @@ namespace QDP {
 
   void jit_launch(CUfunction function,int th_count,std::vector<void*>& args)
   {
+#if 0
+      QDP_get_global_cache().releasePrevLockSet();
+      QDP_get_global_cache().beginNewLockSet();
+      return;
+#endif
+
     // Check for thread count equals zero
     // This can happen, when inner count is zero
     if ( th_count == 0 )
@@ -52,8 +58,8 @@ namespace QDP {
 	CudaCheckResult(result);
 	LaunchPrintArgs(args);
 	QDPIO::cout << getPTXfromCUFunc(function);
-	QDP_error_exit("CUDA launch error: grid=(%u,%u,%u), block=(%d,%u,%u) ",
-		       now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1 );
+	QDP_error_exit("CUDA launch error (after successful tuning): grid=(%u,%u,%u), block=(%d,%u,%u) ",
+		       now.Nblock_x,now.Nblock_y,1,    tune.best,1,1 );
       }
 
       QDP_get_global_cache().releasePrevLockSet();
@@ -63,9 +69,9 @@ namespace QDP {
       if (result != CUDA_SUCCESS) {
 	CudaCheckResult(result);
 	LaunchPrintArgs(args);
-	QDPIO::cout << getPTXfromCUFunc(function);
-	QDP_error_exit("CUDA launch error (on sync): grid=(%u,%u,%u), block=(%d,%u,%u) ",
-		       now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1 );
+	QDPIO::cout << getPTXfromCUFunc(function) << "\n";
+	QDP_error_exit("CUDA launch error (after successful autotune, on sync): grid=(%u,%u,%u), block=(%d,%u,%u) ",
+		       now.Nblock_x,now.Nblock_y,1,    tune.best,1,1 );
       }
     } else {
 
@@ -101,7 +107,7 @@ namespace QDP {
 	    CudaCheckResult(result_sync);
 	    LaunchPrintArgs(args);
 	    QDPIO::cout << getPTXfromCUFunc(function);
-	    QDP_error_exit("CUDA launch error (on sync): grid=(%u,%u,%u), block=(%d,%u,%u) ",
+	    QDP_error_exit("CUDA launch error (during autotune, on sync): grid=(%u,%u,%u), block=(%d,%u,%u) ",
 			   now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1 );
 	  }
 	}

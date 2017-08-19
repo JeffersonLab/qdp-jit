@@ -25,11 +25,16 @@ namespace QDP {
 
   llvm::LLVMContext TheContext;
 
-  llvm::IRBuilder<> *builder;
+
   llvm::BasicBlock  *entry;
   llvm::Function    *mainFunc;
-  llvm::Module      *Mod;
-  //llvm::Value      *mainFunc;
+
+
+  std::unique_ptr< llvm::Module >      Mod;
+  std::unique_ptr< llvm::Module >      module_libdevice;
+  std::unique_ptr< llvm::IRBuilder<> > builder;
+
+
 
   std::map<CUfunction,std::string> mapCUFuncPTX;
 
@@ -47,8 +52,6 @@ namespace QDP {
   llvm::Value *r_arg_myId;
   llvm::Value *r_arg_ordered;
   llvm::Value *r_arg_start;
-
-  std::unique_ptr<llvm::Module> module_libdevice;
 
   llvm::Type* llvm_type<float>::value;
   llvm::Type* llvm_type<double>::value;
@@ -81,6 +84,90 @@ namespace QDP {
     bool DisableLoopVectorization = false;
     bool DisableSLPVectorization = false;
   }
+
+  namespace ptx_db {
+    bool db_enabled = false;
+    std::string dbname = "dummy.dat";
+    typedef std::map< std::string , std::string > DBType;
+    DBType db;
+  }
+
+
+  std::string get_ptx_db_id( const std::string& pretty )
+  {
+    std::ostringstream oss;
+    
+    oss << "sm_" <<  DeviceParams::Instance().getMajor() << DeviceParams::Instance().getMinor() << "_";
+
+    for ( int i = 0 ; i < Nd ; ++i )
+      oss << Layout::subgridLattSize()[i] << "_";
+
+    oss << pretty;
+
+    return oss.str();
+  }
+
+
+  CUfunction get_fptr_from_ptx( const char* fname , const std::string& kernel )
+  {
+    CUfunction func;
+    CUresult ret;
+    CUmodule cuModule;
+
+    ret = cuModuleLoadData(&cuModule, (const void *)kernel.c_str());
+    //ret = cuModuleLoadDataEx( &cuModule , ptx_kernel.c_str() , 0 , 0 , 0 );
+
+    if (ret) {
+      if (Layout::primaryNode()) {
+	QDP_info_primary("Error loading external data. Dumping kernel to %s.",fname);
+#if 1
+	std::ofstream out(fname);
+	out << kernel;
+	out.close();
+
+	//Mod->dump();
+#endif
+	QDP_error_exit("Abort.");
+      }
+    }
+
+    ret = cuModuleGetFunction(&func, cuModule, "main");
+    if (ret)
+      QDP_error_exit("Error returned from cuModuleGetFunction. Abort.");
+
+    mapCUFuncPTX[func] = kernel;
+
+    return func;
+  }
+
+
+
+
+  CUfunction llvm_ptx_db( const char * pretty )
+  {
+    std::string id = get_ptx_db_id( pretty );
+    
+    ptx_db::DBType::iterator it = ptx_db::db.find( id );
+
+    if ( it != ptx_db::db.end() )
+      {
+	return get_fptr_from_ptx( "generic.ptx" , it->second );
+      }
+    else
+      {
+	//QDPIO::cout << "function not in ptx DB. building...\n";
+	jit_stats_jitted();
+	return NULL;
+      }
+  }
+
+
+
+  void llvm_set_ptxdb( const char * c_str ) {
+    ptx_db::db_enabled = true;
+    ptx_db::dbname = std::string( c_str );
+  }
+  
 
   void llvm_set_opt( const char * c_str ) {
     std::string str(c_str);
@@ -356,6 +443,49 @@ namespace QDP {
     QDPIO::cout << "LLVM optimization level : " << llvm_opt::opt_level << "\n";
     QDPIO::cout << "NVPTX Flush to zero     : " << llvm_opt::nvptx_FTZ << "\n";
 
+    if (ptx_db::db_enabled) {
+      // Load DB
+      QDPIO::cout << "Checking for PTX DB " << ptx_db::dbname << "\n";
+      std::ifstream f(ptx_db::dbname);
+      if (f.good()) 
+	{
+	  QDPIO::cout << "Reading in PTX DB " << ptx_db::dbname << "\n";
+	  BinaryFileReader db( ptx_db::dbname );
+
+	  while ( ! db.fail() )
+	    {
+	      int size1;
+	      db.read( size1 );
+	      if (db.fail())
+		break;
+	      char* buf1 = new char[size1];
+	      db.readArray( buf1 , 1 , size1 );
+	      if (db.fail())
+		break;
+
+	      int size2;
+	      db.read( size2 );
+	      if (db.fail())
+		break;
+	      char* buf2 = new char[size2];
+	      db.readArray( buf2 , 1 , size2 );
+	      if (db.fail())
+		break;
+
+	      QDPIO::cout << "ptx_db: read key_size=" << size1 << " ptx_size=" << size2 << "\n";
+
+	      std::string key(buf1,size1);
+	      std::string val(buf2,size2);
+	      ptx_db::db.insert( std::make_pair( key , val ) );
+
+	      delete[] buf1;
+	      delete[] buf2;
+	    }
+	  db.close();
+	}
+
+    } // ptx db
+
     //
     // I initialize libdevice in math_setup
     //
@@ -371,8 +501,15 @@ namespace QDP {
   void llvm_start_new_function() {
     //QDPIO::cout << "Starting new LLVM function..\n";
 
-    Mod = new llvm::Module("module", TheContext);
-    builder = new llvm::IRBuilder<>(TheContext);
+#if 0
+    // C++14 version
+    Mod = std::make_unique< llvm::Module >( "module", TheContext);
+    builder = std::make_unique< llvm::IRBuilder<> >( TheContext );
+#else
+    Mod.reset( new llvm::Module( "module", TheContext) );
+    builder.reset( new llvm::IRBuilder<>( TheContext ) );
+#endif
+
 
     jit_build_seedToFloat();
     jit_build_seedMultiply();
@@ -396,7 +533,7 @@ namespace QDP {
       llvm::FunctionType::get( builder->getVoidTy() , 
 			       llvm::ArrayRef<llvm::Type*>( vecParamType.data() , vecParamType.size() ) , 
 			       false); // no vararg
-    mainFunc = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, "main", Mod);
+    mainFunc = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, "main", Mod.get());
 
     unsigned Idx = 0;
     for (llvm::Function::arg_iterator AI = mainFunc->arg_begin(), AE = mainFunc->arg_end() ; AI != AE ; ++AI, ++Idx) {
@@ -1019,7 +1156,7 @@ namespace QDP {
 
     std::unique_ptr<llvm::legacy::FunctionPassManager> FPasses;
 
-    FPasses.reset(new llvm::legacy::FunctionPassManager(Mod));
+    FPasses.reset(new llvm::legacy::FunctionPassManager(Mod.get()));
     FPasses->add(createTargetTransformInfoWrapperPass( TM->getTargetIRAnalysis() ) );
 
     AddOptimizationPasses(Passes, *FPasses, TM.get(), llvm_opt::opt_level , 0);
@@ -1037,7 +1174,7 @@ namespace QDP {
   }
   
 
-  std::string get_PTX_from_Module_using_llvm( llvm::Module *Mod )
+  std::string get_PTX_from_Module_using_llvm()
   {
     //QDPIO::cout << "get PTX using NVPTC..\n";
 
@@ -1223,8 +1360,6 @@ namespace QDP {
     llvm::StringMap<int> Mapping;
     Mapping["__CUDA_FTZ"] = llvm_opt::nvptx_FTZ;
 
-    std::string banner;
-
     llvm::legacy::PassManager OurPM;
     OurPM.add( llvm::createInternalizePass( all_but_main ) );
     OurPM.add( llvm::createNVVMReflectPass(Mapping));
@@ -1248,7 +1383,7 @@ namespace QDP {
     //llvm_print_module(Mod,"ir_internalized_reflected_globalDCE.ll");
 
     //std::string str = get_PTX_from_Module_using_nvvm( Mod );
-    std::string str = get_PTX_from_Module_using_llvm( Mod );
+    std::string str = get_PTX_from_Module_using_llvm();
 
 #if 0
     // Write PTX string to file
@@ -1277,45 +1412,49 @@ namespace QDP {
 
 
 
-  CUfunction llvm_get_cufunction(const char* fname)
+  CUfunction llvm_get_cufunction(const char* fname, const char* pretty_cstr)
   {
-    CUfunction func;
-    CUresult ret;
-    CUmodule cuModule;
-
     addKernelMetadata( mainFunc );
+
+    std::string pretty( pretty_cstr );
 
     // llvm::FunctionType *funcType = mainFunc->getFunctionType();
     // funcType->dump();
 
     std::string ptx_kernel = llvm_get_ptx_kernel(fname);
 
-    //QDP_info_primary("Loading PTX kernel with the CUDA driver");
+    CUfunction func = get_fptr_from_ptx( fname , ptx_kernel );
 
-    //QDPIO::cout << ptx_kernel << "\n";
-    
-    ret = cuModuleLoadData(&cuModule, (void*)ptx_kernel.c_str());
-    //ret = cuModuleLoadDataEx( &cuModule , ptx_kernel.c_str() , 0 , 0 , 0 );
+    if ( ptx_db::db_enabled ) {
 
-    if (ret) {
-      if (Layout::primaryNode()) {
-	QDP_info_primary("Error loading external data. Dumping kernel to %s.",fname);
-#if 1
-	std::ofstream out(fname);
-	out << ptx_kernel;
-	out.close();
+      std::string id = get_ptx_db_id( pretty );
 
-	//Mod->dump();
-#endif
-	QDP_error_exit("Abort.");
+      // Add kernel
+      //QDPIO::cout << "add kernel for id = " << id << "\n";
+
+      if ( ptx_db::db.find( id ) != ptx_db::db.end() ) {
+	QDPIO::cout << "internal error: key already exists in DB but wasn't found before\n" << id << "\n";
+	QDP_abort(1);
       }
-    }
 
-    ret = cuModuleGetFunction(&func, cuModule, "main");
-    if (ret)
-      QDP_error_exit("Error returned from cuModuleGetFunction. Abort.");
+      ptx_db::db[ id ] = ptx_kernel;
 
-    mapCUFuncPTX[func] = ptx_kernel;
+      // Store DB
+      //QDPIO::cout << "storing PTX DB " << ptx_db::dbname << "\n";
+      BinaryFileWriter db( ptx_db::dbname );
+      for ( ptx_db::DBType::iterator it = ptx_db::db.begin() ; it != ptx_db::db.end() ; ++it ) 
+	{
+	  int size1 = it->first.size();
+	  db.write(size1);
+	  db.writeArrayPrimaryNode( it->first.c_str() , 1 , size1 );
+
+	  int size2 = it->second.size();
+	  db.write(size2);
+	  db.writeArrayPrimaryNode( it->second.c_str() , 1 , size2 );
+	}
+      db.close();
+
+    } // ptx db
 
     return func;
   }

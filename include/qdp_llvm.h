@@ -84,6 +84,13 @@ namespace QDP {
     extern int opt_level;   // opt -O level
     extern int nvptx_FTZ;   // NVPTX Flush subnormals to zero
   }
+
+  namespace ptx_db {
+    extern bool db_enabled;
+    extern std::string dbname;
+  }
+
+  CUfunction llvm_ptx_db( const char * pretty );
   
   extern llvm::LLVMContext TheContext;
 
@@ -93,11 +100,12 @@ namespace QDP {
   // llvm::BasicBlock  *entry;
   extern llvm::Function    *mainFunc;
   extern llvm::Function    *mainFunc_extern;
-  extern llvm::Module      *Mod;
+  //extern llvm::Module      *Mod;
 
 
   void llvm_set_debug( const char * str );
   void llvm_set_opt( const char * c_str );
+  void llvm_set_ptxdb( const char * c_str );
   void llvm_debug_write_set_name( const char* pretty, const char* additional );
 
   llvm::Value * llvm_create_value( double v );
@@ -241,7 +249,7 @@ namespace QDP {
 
   void addKernelMetadata(llvm::Function *F);
 
-  CUfunction llvm_get_cufunction(const char* fname);
+  CUfunction llvm_get_cufunction(const char* fname, const char* pretty);
 
 
   llvm::Value* llvm_sin_f32( llvm::Value* lhs );

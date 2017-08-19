@@ -1602,6 +1602,7 @@ peekSite(const QDPExpr<RHS,OLattice<T1> > & l, const multi1d<int>& coord)
   @return object of the same primitive type but of promoted lattice type
   @ingroup group1
   @relates QDPType */
+#if 0
 template<class T1>
 inline OLattice<T1>&
 pokeSite(OLattice<T1>& l, const OScalar<T1>& r, const multi1d<int>& coord)
@@ -1613,6 +1614,39 @@ pokeSite(OLattice<T1>& l, const OScalar<T1>& r, const multi1d<int>& coord)
 
   return l;
 }
+#else
+template<class T1>
+inline OLattice<T1>&
+pokeSite(OLattice<T1>& l, const OScalar<T1>& r, const multi1d<int>& coord)
+{
+  //QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
+
+  static CUfunction function;
+
+  // Build the function
+  if (function == NULL)
+    {
+      //QDPIO::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
+      function = function_pokeSite_build(l, r);
+      //QDPIO::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
+    }
+  else
+    {
+      //QDPIO::cout << __PRETTY_FUNCTION__ << ": is already built\n";
+    }
+
+
+  if (Layout::nodeNumber() == Layout::nodeNumber(coord))
+    {
+      // Execute the function
+      function_pokeSite_exec(function, l, r, coord);
+    }
+
+  //QMP_barrier();
+
+  return l;
+}
+#endif
 
 
 //! Copy data values from field src to array dest

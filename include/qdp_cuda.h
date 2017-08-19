@@ -33,7 +33,7 @@ namespace QDP {
 
   bool CudaHostAlloc(void **mem , const size_t size, const int flags);
   void CudaHostAllocWrite(void **mem , size_t size);
-  void CudaHostFree(const void *mem);
+  void CudaHostFree(void *mem);
 
   void CudaSyncKernelStream();
   void CudaSyncTransferStream();
