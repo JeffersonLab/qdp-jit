@@ -24,19 +24,24 @@ How to install
 - RTTI enabled
 - ZLIB/TERMINFO disabled
 
-2) patch libdevice, pack libdevice
+2) (optional: patch libdevice), pack libdevice
 
 NVIDIA libdevice provides the support for math functions at the PTX language level.
 The libdevice is available for each compute capability (sm_35, sm_50, etc.) and can be found in the CUDA installation.
 
-Unfortunately the libdevice that ships with CUDA 7/8 contains a bug for double precision calculation.
-Therefor it is safe to patch the libdevice before packing it into the qdp-jit distribution.
-The patch requires the assembler/disassembler from LLVM built in step 1)
+Patching libdevice or not?
+I have seen cases (running HMC with Wilson clover on sm_20 and sm_35) where the LLVM NVPTX backend generates an instruction 'rsqrt.approx.ftz.f64'
+which according to NVIDIA was introducted in PTX 4.0. The driver on the system I was running on was version 'Kernel Module 346.46' and failed to load
+the generated PTX code. Running the same code with driver '367.48' fixed the issue. However if you're stuck with an older driver then you can still
+run the code by patching libdevice. The patch requires the assembler/disassembler from LLVM built in step 1:
 
 a) create and cd to an empty directory (call A)
 b) patch libdevice: (./patch_libdevice [path to CUDA libdevice])
 c) cd to qdp-jit root
 d) pack libdevice: (./patch_libdevice [path to A/or libdevice if no patching was done])
+
+otherwise just pack libdevice from the CUDA installation directory
+
 
 3) build QDP-JIT with the following configuration
 
