@@ -101,6 +101,7 @@ nobase_include_HEADERS = \
 		qdp_map_obj_memory.h \
 		qdp_map_obj_disk.h \
 		qdp_map_obj_disk_multiple.h \
+		qdp_hdf5.h \
 		qdp_disk_map_slice.h \
                 $(PETE_HDRS) \
                 $(JIT_HDRS) \
