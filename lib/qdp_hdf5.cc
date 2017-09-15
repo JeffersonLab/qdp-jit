@@ -6,6 +6,7 @@
 */
 
 #include "qdp.h"
+#include "mpi.h"
 
 #ifdef QDP_USE_HDF5
 
@@ -671,6 +672,7 @@ namespace QDP {
 		H5Dclose(dset_id);		
 	}
 
+#if 0
 	//complex types:
 	//Single element:
 	template<>void HDF5::read< PScalar< PScalar< RComplex<float> > > >(const std::string& dataname, ComplexF& datum){
@@ -761,7 +763,8 @@ namespace QDP {
 		//perform the actual read:
 		rd(dataname,datum,H5T_COMPOUND,true,false);
 	}
-
+#endif
+  
 	//***********************************************************************************************************************************
 	//***********************************************************************************************************************************
 	//READING Lattice Types:                                                                                                            
@@ -925,7 +928,7 @@ namespace QDP {
 		H5Dclose(dset_id);
 	} // readLattice()  
 
-
+#if 0
 	//read LatticeColorMatrix
 	template<>void HDF5::read< PScalar< PColorMatrix< RComplex<REAL64>, 3> > >(const std::string& name, 
 																				LatticeColorMatrixD3& field, 
@@ -1443,6 +1446,8 @@ namespace QDP {
 			QDPIO::cout << "\t MB read: " << Layout::vol()*sizeof(DiracPropagatorD3)/1024/1024 << std::endl;
 		}
 	}
+#endif
+  
 
 	//-------------------------------------------------------------------------------- 
 	//--------------------------------------------------------------------------------
@@ -1966,6 +1971,7 @@ namespace QDP {
 		wt(obj_name,datum,H5T_NATIVE_DOUBLE,mode);
 	}
 
+#if 0
 	//***********************************************************************************************************************************
 	//***********************************************************************************************************************************
 	//WRITING Compound types:                                                                                                                   
@@ -2122,7 +2128,8 @@ namespace QDP {
 		H5Tclose(complex_id);
 		H5Tclose(colmat_id);
 	}
-
+#endif
+  
 	//***********************************************************************************************************************************
 	//***********************************************************************************************************************************
 	//Lattice IO
@@ -2309,6 +2316,7 @@ namespace QDP {
 		}
 	}
 
+#if 0
 	//double lattice color matrix:
 	template<>
 	void HDF5Writer::write< PScalar< PColorMatrix< RComplex<REAL64>, 3> > >(const std::string& name, const LatticeColorMatrixD3& field, const HDF5Base::writemode& mode)
@@ -2680,6 +2688,7 @@ namespace QDP {
 			QDPIO::cout << "\t MB written: " << Layout::vol()*field.size()*sizeof(ColorMatrixD3)/1024/1024 << std::endl;
 		}
 	}
+#endif
 }
 #endif
 
