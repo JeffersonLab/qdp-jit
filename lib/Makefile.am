@@ -10,7 +10,10 @@ if QDP_USE_LIBXML2
 INCFLAGS += -I@top_srcdir@/other_libs/xpath_reader/include
 endif
 
-AM_CXXFLAGS = $(INCFLAGS) @LIBXML2_CXXFLAGS@ @QMP_CFLAGS@  @QMT_CXXFLAGS@  @LLVM_CXXFLAGS@ @CUDA_CXXFLAGS@
+#
+# need the HDF5 cxx flags with and without /include
+#
+AM_CXXFLAGS = $(INCFLAGS) @HDF5_CXXFLAGS@/include @HDF5_CXXFLAGS@ @LIBXML2_CXXFLAGS@ @QMP_CFLAGS@  @QMT_CXXFLAGS@  @LLVM_CXXFLAGS@ @CUDA_CXXFLAGS@
 
 lib_LIBRARIES = libqdp.a
 
@@ -30,6 +33,11 @@ libqdp_a_SOURCES = qdp_map.cc qdp_subset.cc qdp_random.cc qdp.cc \
 if QDP_USE_LIBXML2
 libqdp_a_SOURCES += qdp_xmlio.cc qdp_iogauge.cc qdp_qdpio.cc qdp_qio_strings.cc qdp_map_obj_disk.cc
 endif
+
+if QDP_USE_HDF5
+libqdp_a_SOURCES += qdp_hdf5.cc
+endif
+
 
 libqdp_a_SOURCES += qdp_parscalar_init.cc qdp_parscalar_layout.cc \
 	qdp_parscalar_specific.cc \

@@ -476,6 +476,58 @@ else
 
 fi
 
+
+
+dnl Abhinav Sarje, 10/09/2013
+dnl Andre Walker-Loud, 10/09/2013
+dnl
+dnl adding hdf5
+dnl
+dnl
+dnl --with-hdf5
+AC_ARG_WITH(hdf5,
+  AC_HELP_STRING(
+    [--with-hdf5=DIR],
+    [Build on top of hdf5 where hdf5 is installed in DIR]
+  ),
+  [ac_build_hdf5="yes";
+  HDF5_HOME="$with_hdf5"],
+  [ac_build_hdf5="no"]
+)
+
+if test "X${ac_build_hdf5}X" = "XnoX"; then
+  AC_MSG_NOTICE([Disabling HDF5])
+  AC_SUBST(HDF5_CFLAGS, "")
+  AC_SUBST(HDF5_CXXFLAGS, "")
+  AC_SUBST(HDF5_LDFLAGS,"")
+  AC_SUBST(HDF5_LIBS,"")
+   
+else
+  AC_DEFINE_UNQUOTED(QDP_USE_HDF5, [1], [Enable HDF5 support])
+  if test "X${HDF5_HOME}X" = "XX" ; then
+    AC_PATH_PROG(HDF5_BIN, [h5dump], [])
+  else
+    AC_PATH_PROG(HDF5_BIN, [h5dump], [], [${HDF5_HOME}/bin:${PATH}])
+  fi  
+  if test "X${HDF5_BIN}X" = "XX" ; then
+    AC_MSG_ERROR([hdf5 utility h5dump not found.])
+  fi
+  AC_MSG_NOTICE([Found hdf5 utility ${HDF5_BIN}])
+#  AC_SUBST(HDF5_CFLAGS, "-I${HDF5_HOME}/include")
+#  AC_SUBST(HDF5_CXXFLAGS, "-I${HDF5_HOME}/include")
+  AC_SUBST(HDF5_CFLAGS, "-I${HDF5_HOME}")
+  AC_SUBST(HDF5_CXXFLAGS, "-I${HDF5_HOME}")
+  AC_MSG_NOTICE([hdf5 c-compile flags: ${HDF5_CFLAGS}])
+  AC_MSG_NOTICE([hdf5 c++-compile flags: ${HDF5_CXXFLAGS}])
+  AC_SUBST(HDF5_LDFLAGS,     "-L${HDF5_HOME}/lib")
+  AC_MSG_NOTICE([hdf5 ldflags: ${HDF5_LDFLAGS}])
+  AC_SUBST(HDF5_LIBS,     "-lhdf5 -lz -lm")
+  AC_MSG_NOTICE([hdf5 libraries: ${HDF5_LIBS}])
+  AC_SUBST(CONFIG_HDF5,[1])
+  AC_MSG_NOTICE([Configuring QDP++ with HDF5 enabled]);
+fi
+
+
 AC_ARG_WITH(bagel-qdp,
   AC_HELP_STRING(
     [--with-bagel-qdp=DIR],
@@ -649,6 +701,9 @@ else
 fi
 
 AM_CONDITIONAL(QDP_USE_LIBXML2, [test "x${with_libxml2}x" != "xnox" ])
+
+AM_CONDITIONAL(QDP_USE_HDF5, [test "x${ac_build_hdf5}x" = "xyesx" ])
+
 
 ##################################
 # Check for programs to build docs

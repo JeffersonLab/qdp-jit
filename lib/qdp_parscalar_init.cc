@@ -547,17 +547,20 @@ namespace COUNT {
 			QDPIO::cerr << "QDP is not inited" << std::endl;
 			QDP_abort(1);
 		}
-
+		
 		QDPIO::cout << "------------------\n";
 		QDPIO::cout << "-- JIT statistics:\n";
 		QDPIO::cout << "------------------\n";
 		QDPIO::cout << "lattices changed to device layout:     " << get_jit_stats_lattice2dev() << "\n";
 		QDPIO::cout << "lattices changed to host layout:       " << get_jit_stats_lattice2host() << "\n";
 		QDPIO::cout << "JIT functions built (not found in DB): " << get_jit_stats_jitted() << "\n";
-
-
 		
 		FnMapRsrcMatrix::Instance().cleanup();
+
+#if defined(QDP_USE_HDF5)
+                H5close();
+#endif
+
 
 		//
 		// finalise qmt
