@@ -389,7 +389,14 @@ AC_ARG_WITH(llvm,
   [LLVM_HOME="$with_llvm"]
 )
 
-
+AC_ARG_ENABLE(llvm6-trunk,
+  AC_HELP_STRING(
+    [--enable-llvm6-trunk],
+    [Enable changes to compile with LLVM6 Trunk]
+  ),
+  [LLVM6_ENABLED=$enableval],
+  [LLVM6_ENABLED="no"]
+)
 
 if test "X${LLVM_HOME}X" = "XX" ; then
   AC_PATH_PROG(LLVM_CONFIG, [llvm-config], [])
@@ -401,7 +408,10 @@ if test "X${LLVM_CONFIG}X" = "XX" ; then
   AC_MSG_ERROR([LLVM configuration program llvm-config not found.])
 fi
 
-
+if test "X${LLVM6_ENABLED}X" = "XyesX"; then
+  AC_MSG_NOTICE([Enabling changes for LLVM6 ])
+  AC_DEFINE(QDP_LLVM6_TRUNK, [1], [ Compile for LLVM6  ])
+fi
 
 
 AC_MSG_NOTICE([Found LLVM configuration program ${LLVM_CONFIG}])

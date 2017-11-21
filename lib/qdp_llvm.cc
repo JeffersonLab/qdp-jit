@@ -1,4 +1,5 @@
 #include "qdp.h"
+#include "qdp_config.h"
 
 #include "qdp_libdevice.h"
 //#include "nvvm.h"
@@ -1220,7 +1221,8 @@ namespace QDP {
     std::string compute = oss.str();
 
     //QDPIO::cout << "create target machine for compute capability " << compute << "\n";
-    
+   
+#ifdef QDP_LLVM6_TRUNK 
     std::unique_ptr<llvm::TargetMachine> target_machine(TheTarget->createTargetMachine(
 										       "nvptx64-nvidia-cuda",
 										       compute,
@@ -1229,6 +1231,25 @@ namespace QDP {
 										       getRelocModel(),
 										       None,
 										       llvm::CodeGenOpt::Aggressive, true ));
+#else
+    std::unique_ptr<llvm::TargetMachine> target_machine(TheTarget->createTargetMachine(
+
+       "nvptx64-nvidia-cuda",
+
+       compute,
+
+       "",
+
+       llvm::TargetOptions(),
+
+       getRelocModel(),
+
+       llvm::CodeModel::Default,
+
+       llvm::CodeGenOpt::Aggressive));
+
+
+#endif
 
     assert(target_machine.get() && "Could not allocate target machine!");
 
