@@ -394,7 +394,7 @@ AC_ARG_ENABLE(llvm6-trunk,
     [--enable-llvm6-trunk],
     [Enable changes to compile with LLVM6 Trunk]
   ),
-  [LLVM6_ENABLED=$enableval],
+  [LLVM6_ENABLED=${enableval}],
   [LLVM6_ENABLED="no"]
 )
 
