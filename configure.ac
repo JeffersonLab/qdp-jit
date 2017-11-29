@@ -142,6 +142,19 @@ AC_ARG_ENABLE(filedb,
   [filedb_enabled="yes"]
 )
 
+dnl comm-split to find device id
+AC_ARG_ENABLE(comm-split-deviceinit,
+  AC_HELP_STRING([--enable-comm-split-deviceinit],
+     [Select Device by identifying Node Local Ranks using MPI_Comm_split ]),
+  [qdp_comm_split_init_enabled="${enableval}"],
+  [qdp_comm_split_init_enabled="no"]
+)
+
+if test "X${qdp_comm_split_init_enabled}X" == "XyesX";
+then
+ AC_MSG_NOTICE([Local Rank identification with MPI_Comm_split])
+ AC_DEFINE([QDP_USE_COMM_SPLIT_INIT], [1],[Comm split for local ranks])
+fi
 
 dnl if test "X${gpu_enabled}X" == "XyesX"; 
 dnl then
@@ -173,15 +186,6 @@ then
      AC_SUBST(GPU_DEBUGDEEP_CXX,"-DGPU_DEBUG_DEEP")
 fi
 
-dnl if QCDOC is enabled change some settings
-if test ${ac_qcdoc_enabled} -eq 1; then 
-   AC_DEFINE_UNQUOTED(QDP_USE_QCDOC, ${ac_qcdoc_enabled}, [Enable QCDOC opts])
-fi
-
-dnl if QCDOC is enabled change some settings
-if test ${ac_bgl_enabled} -eq 1; then 
-   AC_DEFINE_UNQUOTED(QDP_USE_BLUEGENEL, ${ac_bgl_enabled}, [Enable BGL opts])
-fi
 
 dnl Check if profiling is enabled
 if test ${ac_profile} -eq 1; then 
