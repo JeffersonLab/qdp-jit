@@ -1,8 +1,9 @@
 #include "qdp.h"
+#include "qdp_config.h"
 
 #include "qdp_libdevice.h"
 //#include "nvvm.h"
-
+#include "llvm/InitializePasses.h"
 #include "llvm/IR/DataLayout.h"
 //#include "llvm/Bitcode/ReaderWriter.h"
 #include "llvm/Support/FileSystem.h"
@@ -427,7 +428,7 @@ namespace QDP {
     llvm::initializeCodeGen(*Registry);
     llvm::initializeLoopStrengthReducePass(*Registry);
     llvm::initializeLowerIntrinsicsPass(*Registry);
-    llvm::initializeCountingFunctionInserterPass(*Registry);
+//    llvm::initializeCountingFunctionInserterPass(*Registry);
     llvm::initializeUnreachableBlockElimLegacyPassPass(*Registry);
     llvm::initializeConstantHoistingLegacyPassPass(*Registry);
 
@@ -984,8 +985,8 @@ namespace QDP {
 
     llvm::Constant *Bar = Mod->getOrInsertFunction( "llvm.nvvm.barrier0" , 
 						    IntrinFnTy , 
-						    llvm::AttributeSet::get(TheContext, 
-									    llvm::AttributeSet::FunctionIndex, 
+						    llvm::AttributeList::get(TheContext, 
+									    llvm::AttributeList::FunctionIndex, 
 									    ABuilder)
 						    );
 
@@ -1005,8 +1006,8 @@ namespace QDP {
 
     llvm::Constant *ReadTidX = Mod->getOrInsertFunction( name , 
 							 IntrinFnTy , 
-							 llvm::AttributeSet::get(TheContext, 
-										 llvm::AttributeSet::FunctionIndex, 
+							 llvm::AttributeList::get(TheContext, 
+										 llvm::AttributeList::FunctionIndex, 
 										 ABuilder)
 							 );
 
@@ -1111,7 +1112,7 @@ namespace QDP {
     if (DisableInline) {
       // No inlining pass
     } else if (OptLevel > 1) {
-      Builder.Inliner = createFunctionInliningPass(OptLevel, SizeLevel);
+      Builder.Inliner = createFunctionInliningPass(OptLevel, SizeLevel, false);
     } else {
       Builder.Inliner = createAlwaysInlinerLegacyPass();
     }
@@ -1128,12 +1129,16 @@ namespace QDP {
     Builder.SLPVectorize = DisableSLPVectorization ? false : OptLevel > 1 && SizeLevel < 2;
 
     // Add target-specific passes that need to run as early as possible.
+#if 0
     if (TM)
       Builder.addExtension(
 			   llvm::PassManagerBuilder::EP_EarlyAsPossible,
-			   [&](const llvm::PassManagerBuilder &, llvm::legacy::PassManagerBase &PM) {
-			     TM->addEarlyAsPossiblePasses(PM);
+			   [&](llvm::PassManagerBuilder &PMB, llvm::legacy::PassManagerBase &PM) {
+			     TM->adjustPassManager(PMB);
 			   });
+#else
+   if( TM ) TM->adjustPassManager(Builder);
+#endif
 
     Builder.populateFunctionPassManager(FPM);
     Builder.populateModulePassManager(MPM);
@@ -1216,15 +1221,35 @@ namespace QDP {
     std::string compute = oss.str();
 
     //QDPIO::cout << "create target machine for compute capability " << compute << "\n";
-    
+   
+#ifdef QDP_LLVM6_TRUNK 
     std::unique_ptr<llvm::TargetMachine> target_machine(TheTarget->createTargetMachine(
 										       "nvptx64-nvidia-cuda",
 										       compute,
 										       "",
 										       llvm::TargetOptions(),
 										       getRelocModel(),
-										       llvm::CodeModel::Default,
-										       llvm::CodeGenOpt::Aggressive ));
+										       None,
+										       llvm::CodeGenOpt::Aggressive, true ));
+#else
+    std::unique_ptr<llvm::TargetMachine> target_machine(TheTarget->createTargetMachine(
+
+       "nvptx64-nvidia-cuda",
+
+       compute,
+
+       "",
+
+       llvm::TargetOptions(),
+
+       getRelocModel(),
+
+       llvm::CodeModel::Default,
+
+       llvm::CodeGenOpt::Aggressive));
+
+
+#endif
 
     assert(target_machine.get() && "Could not allocate target machine!");
 
@@ -1362,7 +1387,7 @@ namespace QDP {
 
     llvm::legacy::PassManager OurPM;
     OurPM.add( llvm::createInternalizePass( all_but_main ) );
-    OurPM.add( llvm::createNVVMReflectPass(Mapping));
+    OurPM.add( llvm::createNVVMReflectPass());
     OurPM.run( *Mod );
 
 

@@ -15,6 +15,11 @@
 #include <qmt.h>
 #endif
 
+#include "qdp_init.h"
+
+#if defined(QDP_USE_COMM_SPLIT_INIT)
+#include <mpi.h>
+#endif
 
 namespace QDP {
 
@@ -137,12 +142,48 @@ namespace COUNT {
     return dev;
   }
 
+#ifdef QDP_USE_COMM_SPLIT_INIT
+  int QDP_setGPUCommSplit()
+  {
+    char hostname[256];
+
+    int np_global=0;
+    int np_local=0;
+    int rank_global=0;
+    int rank_local=0;
+
+    MPI_Comm_size(MPI_COMM_WORLD, &np_global);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank_global);
+
+    MPI_Comm nodeComm;
+    MPI_Comm_split_type( MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, rank_global,
+                     MPI_INFO_NULL, &nodeComm );
+
+    MPI_Comm_size(nodeComm, &np_local);
+    MPI_Comm_rank(nodeComm, &rank_local);
+
+    MPI_Comm_free(&nodeComm);
+    gethostname(hostname, 255);
+
+    printf("Global Rank: %d of %d Host: %s  Local Rank: %d of %d Setting CUDA Device to %d \n",
+        rank_global, np_global, hostname, rank_local, np_local, rank_local);
+    CudaSetDevice(rank_local);
+    return rank_local;
+ 
+  }
+#endif
 
   void QDP_initialize(int *argc, char ***argv) 
   {
     QDP_initialize_CUDA(argc, argv);
+#ifndef QDP_USE_COMM_SPLIT_INIT
     QDP_setGPU();
+#endif
     QDP_initialize_QMP(argc, argv);
+
+#ifdef QDP_USE_COMM_SPLIT_INIT
+    QDP_setGPUCommSplit();
+#endif
     QDP_startGPU();
   }
 	

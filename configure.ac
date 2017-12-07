@@ -142,6 +142,19 @@ AC_ARG_ENABLE(filedb,
   [filedb_enabled="yes"]
 )
 
+dnl comm-split to find device id
+AC_ARG_ENABLE(comm-split-deviceinit,
+  AC_HELP_STRING([--enable-comm-split-deviceinit],
+     [Select Device by identifying Node Local Ranks using MPI_Comm_split ]),
+  [qdp_comm_split_init_enabled="${enableval}"],
+  [qdp_comm_split_init_enabled="no"]
+)
+
+if test "X${qdp_comm_split_init_enabled}X" == "XyesX";
+then
+ AC_MSG_NOTICE([Local Rank identification with MPI_Comm_split])
+ AC_DEFINE([QDP_USE_COMM_SPLIT_INIT], [1],[Comm split for local ranks])
+fi
 
 dnl if test "X${gpu_enabled}X" == "XyesX"; 
 dnl then
@@ -173,15 +186,6 @@ then
      AC_SUBST(GPU_DEBUGDEEP_CXX,"-DGPU_DEBUG_DEEP")
 fi
 
-dnl if QCDOC is enabled change some settings
-if test ${ac_qcdoc_enabled} -eq 1; then 
-   AC_DEFINE_UNQUOTED(QDP_USE_QCDOC, ${ac_qcdoc_enabled}, [Enable QCDOC opts])
-fi
-
-dnl if QCDOC is enabled change some settings
-if test ${ac_bgl_enabled} -eq 1; then 
-   AC_DEFINE_UNQUOTED(QDP_USE_BLUEGENEL, ${ac_bgl_enabled}, [Enable BGL opts])
-fi
 
 dnl Check if profiling is enabled
 if test ${ac_profile} -eq 1; then 
@@ -389,7 +393,14 @@ AC_ARG_WITH(llvm,
   [LLVM_HOME="$with_llvm"]
 )
 
-
+AC_ARG_ENABLE(llvm6-trunk,
+  AC_HELP_STRING(
+    [--enable-llvm6-trunk],
+    [Enable changes to compile with LLVM6 Trunk]
+  ),
+  [LLVM6_ENABLED=${enableval}],
+  [LLVM6_ENABLED="no"]
+)
 
 if test "X${LLVM_HOME}X" = "XX" ; then
   AC_PATH_PROG(LLVM_CONFIG, [llvm-config], [])
@@ -401,7 +412,10 @@ if test "X${LLVM_CONFIG}X" = "XX" ; then
   AC_MSG_ERROR([LLVM configuration program llvm-config not found.])
 fi
 
-
+if test "X${LLVM6_ENABLED}X" = "XyesX"; then
+  AC_MSG_NOTICE([Enabling changes for LLVM6 ])
+  AC_DEFINE(QDP_LLVM6_TRUNK, [1], [ Compile for LLVM6  ])
+fi
 
 
 AC_MSG_NOTICE([Found LLVM configuration program ${LLVM_CONFIG}])

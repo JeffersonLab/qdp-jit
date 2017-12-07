@@ -1,6 +1,8 @@
 #ifndef QDP_LLVM
 #define QDP_LLVM
 
+#include "qdp_config.h"
+
 //#define __STDC_LIMIT_MACROS
 //#define __STDC_CONSTANT_MACROS
 
@@ -24,7 +26,13 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Target/TargetMachine.h"
+
+#ifdef QDP_LLVM6_TRUNK
+#include "llvm/CodeGen/TargetLowering.h"
+#else
 #include "llvm/Target/TargetLowering.h"
+#endif
+
 #include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/Support/ToolOutputFile.h"
@@ -66,7 +74,7 @@
 #include "llvm/IR/AssemblyAnnotationWriter.h"
 
 namespace llvm {
-ModulePass *createNVVMReflectPass(const StringMap<int>&);
+ModulePass *createNVVMReflectPass(void);
 }
 
 

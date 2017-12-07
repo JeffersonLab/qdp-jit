@@ -3,13 +3,16 @@
 #ifndef QDP_INIT
 #define QDP_INIT
 
+#ifndef QDP_CONFIG_H
+#include "qdp_config.h"
+#endif
+
 /*! \file
  * \brief Routines for top level QDP management
  *
  * Fundamental routines for turning on/off and inserting/extracting
  * variables.
  */
-
 
 // Info/error routines
 namespace QDP {
@@ -18,6 +21,9 @@ namespace QDP {
   extern bool QDPuseGPU;
   extern bool setPoolSize;
   int QDP_setGPU(); // returns the CUDA device number that was actually set
+#ifdef QDP_USE_COMM_SPLIT_INIT
+  int QDP_setGPUCommSplit();
+#endif
   void QDP_startGPU();
 #endif
 
