@@ -1,12 +1,17 @@
 #!/bin/bash
 
-if [ "$#" -ne 1 ] || ! [ -d "$1" ]; then
-  echo "Usage: $0 DIRECTORY" >&2
+if [ "$#" -ne 2 ] || ! [ -d "$1" ] || ! [ -d "$2" ]; then
+  echo "Usage: $0 libdevice_dir llvm_dir" >&2
   exit 1
 fi
 
-LLVMAS=/home/fwinter/toolchain/install/llvm-4.0.1/bin/llvm-as
-LLVMDIS=/home/fwinter/toolchain/install/llvm-4.0.1/bin/llvm-dis
+LLVMAS=$2/bin/llvm-as
+LLVMDIS=$2/bin/llvm-dis
+
+if ! [ -x $LLVMAS ] || ! [ -x ${LLVMDIS} ]; then
+   echo "either one of $LLVMAS or $LLVMDIS is not executable" >& 2
+   exit 1
+fi
 
 LIBDEVICE_DIR=$1
 
