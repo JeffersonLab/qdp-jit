@@ -492,11 +492,22 @@ namespace QDP {
   bool CudaMalloc(void **mem , size_t size )
   {
     CUresult ret;
+#ifndef QDP_USE_CUDA_MANAGED_MEMORY
     ret = cuMemAlloc( (CUdeviceptr*)mem,size);
+#else
+    ret = cuMemAllocManaged( (CUdeviceptr*)mem, size, CU_MEM_ATTACH_GLOBAL ); 
+#endif
+
 #ifdef GPU_DEBUG_DEEP
     QDP_debug_deep( "CudaMalloc %p", *mem );
 #endif
+
+#ifndef  QDP_USE_CUDA_MANAGED_MEMORY
     CudaRes("cuMemAlloc",ret);
+#else 
+    CudaRes("cuMemAllocManaged", ret);
+#endif
+
     return ret == CUDA_SUCCESS;
   }
 

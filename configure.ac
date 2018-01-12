@@ -20,9 +20,22 @@ AC_ARG_WITH(cuda,
   [ cuda_home="${withval}" ],
   [ cuda_home="/usr/local/cuda" ]
 )
+
+AC_ARG_ENABLE(cuda-managed-memory,
+   AC_HELP_STRING([--enable-cuda-managed-memory], [ Enable memory to be allocated with Cuda Managed Memory ] ),
+   [ cuda_managed_memory="${enableval}" ],
+   [ cuda_managed_memory="no" ]
+)
+
 AC_MSG_NOTICE([Configuring with CUDA installed in = ${cuda_home}])
 AC_DEFINE_UNQUOTED(CUDA_DIR,"${cuda_home}",[CUDA install path])
 AC_SUBST(SUBST_CUDA_DIR,"${cuda_home}")
+
+if test "X${cuda_managed_memory}X" == "XyesX";
+then
+  AC_MSG_NOTICE([Will Use CUDA Managed Memory for Allocations])
+  AC_DEFINE(QDP_USE_CUDA_MANAGED_MEMORY, [1], [ CUDA use managed memory ])
+fi
 
 
 dnl
