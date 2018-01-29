@@ -943,7 +943,7 @@ namespace QDP {
   }
 
 
-
+#if 0
   void llvm_bar_sync()
   {
     llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getVoidTy(TheContext), false);
@@ -960,7 +960,7 @@ namespace QDP {
 
     builder->CreateCall(Bar);
   }
-
+#endif
 
   
 

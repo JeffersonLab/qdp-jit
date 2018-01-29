@@ -274,7 +274,9 @@ namespace QDP {
   jit_llvm_builtin jit_type_promote(jit_llvm_builtin t0,jit_llvm_builtin t1);
   jit_llvm_type    jit_type_promote(jit_llvm_type t0   ,jit_llvm_type t1);
 
+#if 0
   void llvm_bar_sync( int a );
+#endif
 
   llvm::Value * llvm_add_param( jit_llvm_type type );
   llvm::Value * llvm_alloca( jit_llvm_builtin type , int count );

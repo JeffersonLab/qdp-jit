@@ -235,9 +235,9 @@ namespace QDP {
 
   llvm::Value * llvm_alloca( llvm::Type* type , int elements );
   //  llvm::Value * llvm_get_shared_ptr( llvm::Type *ty );
-
+#if 0
   void llvm_bar_sync();
-
+#endif
   void addKernelMetadata(llvm::Function *F);
 
 
