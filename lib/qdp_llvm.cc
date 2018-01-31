@@ -1,6 +1,9 @@
 #include "qdp.h"
 
 
+#include "llvm/Support/FileSystem.h"
+//#include "llvm/Support/MemoryBuffer.h"
+
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm-c/Core.h"
@@ -469,7 +472,11 @@ namespace QDP {
 	  B.addAlignmentAttr( QDP_ALIGNMENT_SIZE );
 	}
 
+#if 0
       	AI->addAttr( llvm::AttributeSet::get( TheContext , 0 ,  B ) );
+#else
+	  AI->addAttrs(  B  );
+#endif
       }
 
       vecArgument.push_back( &*AI );
@@ -943,7 +950,7 @@ namespace QDP {
   }
 
 
-
+#if 0
   void llvm_bar_sync()
   {
     llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getVoidTy(TheContext), false);
@@ -960,11 +967,11 @@ namespace QDP {
 
     builder->CreateCall(Bar);
   }
-
+#endif
 
   
 
-
+#if 0
   llvm::Value * llvm_special( const char * name )
   {
     llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getInt32Ty(TheContext), false);
@@ -982,7 +989,7 @@ namespace QDP {
     return builder->CreateCall(ReadTidX);
   }
 
-
+#endif
 
   // llvm::Value * llvm_call_special_tidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.tid.x"); }
   // llvm::Value * llvm_call_special_ntidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.ntid.x"); }

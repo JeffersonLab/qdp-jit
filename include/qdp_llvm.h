@@ -1,6 +1,7 @@
 #ifndef QDP_LLVM
 #define QDP_LLVM
 
+#include "qdp_config.h"
 //#define __STDC_LIMIT_MACROS
 //#define __STDC_CONSTANT_MACROS
 
@@ -25,7 +26,13 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Target/TargetMachine.h"
+
+#ifdef QDP_LLVM6_TRUNK
+#include "llvm/CodeGen/TargetLowering.h"
+#else
 #include "llvm/Target/TargetLowering.h"
+#endif
+
 #include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/Support/ToolOutputFile.h"
@@ -224,8 +231,9 @@ namespace QDP {
   void          llvm_store_ptr_idx( llvm::Value * val , llvm::Value * ptr , llvm::Value * idx );
 
   llvm::Value * llvm_array_type_indirection( ParamRef p , llvm::Value* idx );
-
+#if 0
   llvm::Value * llvm_special( const char * name );
+#endif
 
   //  llvm::Value * llvm_omp_get_num_threads();
 
@@ -235,9 +243,9 @@ namespace QDP {
 
   llvm::Value * llvm_alloca( llvm::Type* type , int elements );
   //  llvm::Value * llvm_get_shared_ptr( llvm::Type *ty );
-
+#if 0
   void llvm_bar_sync();
-
+#endif
   void addKernelMetadata(llvm::Function *F);
 
 

@@ -22,7 +22,6 @@ dnl --with-xxxx and --enable-xxxx switches
 dnl
 
 
-
 dnl --enable-Nd
 AC_ARG_ENABLE(Nd,
   AC_HELP_STRING([--enable-Nd=N ],
@@ -279,6 +278,19 @@ AC_ARG_WITH(llvm,
   [LLVM_HOME="$with_llvm"]
 )
 
+AC_ARG_ENABLE(llvm6-trunk,
+  AC_HELP_STRING(
+    [--enable-llvm6-trunk],
+    [Enable changes to compile with LLVM6 Trunk]
+  ),
+  [LLVM6_ENABLED=${enableval}],
+  [LLVM6_ENABLED="no"]
+)
+
+if test "X${LLVM6_ENABLED}X" = "XyesX"; then
+  AC_MSG_NOTICE([Enabling changes for LLVM6 ])
+  AC_DEFINE(QDP_LLVM6_TRUNK, [1], [ Compile for LLVM6  ])
+fi
 
 echo "X`${LLVM_HOME}/bin/llvm-config --libs`X"
 if test "X`${LLVM_HOME}/bin/llvm-config --libs`X" = "XX" ; then
