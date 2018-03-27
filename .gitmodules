@@ -1,9 +1,9 @@
 [submodule "other_libs/xpath_reader"]
 	path = other_libs/xpath_reader
-	url = https://github.com/usqcd-software/xpath_reader.git
+	url = ../xpath_reader.git
 [submodule "other_libs/qio"]
 	path = other_libs/qio
-	url = https://github.com/usqcd-software/qio.git
+	url = ../qio.git
 [submodule "other_libs/filedb"]
 	path = other_libs/filedb
-	url = https://github.com/usqcd-software/filedb.git
+	url = ../filedb.git
