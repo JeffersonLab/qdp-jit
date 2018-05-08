@@ -27,8 +27,6 @@ namespace QDP {
   CUdevice cuDevice;
   CUcontext cuContext;
 
-
-
   std::map<CUresult,std::string> mapCuErrorString= {
     {CUDA_SUCCESS,"CUDA_SUCCESS"},
     {CUDA_ERROR_INVALID_VALUE,"CUDA_ERROR_INVALID_VALUE"},
@@ -225,8 +223,10 @@ namespace QDP {
 
   void CudaGetSM(int* maj,int* min) {
     CUresult ret;
-    ret = cuDeviceComputeCapability( maj , min , cuDevice );
-    CudaRes("cuDeviceComputeCapability",ret);
+    ret = cuDeviceGetAttribute(maj, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR, cuDevice );
+    CudaRes("cuDeviceGetAttribute(CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR)",ret);
+    ret = cuDeviceGetAttribute(min, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR, cuDevice );
+    CudaRes("cuDeviceGetAttribute(CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR)",ret);
   }
 
   void CudaInit() {
@@ -284,11 +284,17 @@ namespace QDP {
 
     QDP_info_primary("trying to get device %d",dev);
     ret = cuDeviceGet(&cuDevice, dev);
-    CudaRes("",ret);
+    CudaRes(__func__,ret);
 
-    QDP_info_primary("trying to create a context");
-    ret = cuCtxCreate(&cuContext, CU_CTX_MAP_HOST, cuDevice);
-    CudaRes("",ret);
+    QDP_info_primary("trying to grab pre-existing context",dev);
+    ret = cuCtxGetCurrent(&cuContext);
+    
+    if (ret != CUDA_SUCCESS) {
+      QDP_info_primary("trying to create a context");
+      ret = cuCtxCreate(&cuContext, CU_CTX_MAP_HOST, cuDevice);
+    }
+    CudaRes(__func__,ret);
+
   }
 
 
