@@ -289,7 +289,7 @@ namespace QDP {
     QDP_info_primary("trying to grab pre-existing context",dev);
     ret = cuCtxGetCurrent(&cuContext);
     
-    if (ret != CUDA_SUCCESS) {
+    if (ret != CUDA_SUCCESS || cuContext == NULL) {
       QDP_info_primary("trying to create a context");
       ret = cuCtxCreate(&cuContext, CU_CTX_MAP_HOST, cuDevice);
     }
