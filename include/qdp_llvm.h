@@ -27,9 +27,11 @@
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Target/TargetMachine.h"
 
-#ifdef QDP_LLVM6_TRUNK
+
 #include "llvm/CodeGen/TargetLowering.h"
-#else
+
+// pre llvm6
+#if 0
 #include "llvm/Target/TargetLowering.h"
 #endif
 

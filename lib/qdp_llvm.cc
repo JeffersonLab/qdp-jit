@@ -5,6 +5,7 @@
 //#include "nvvm.h"
 #include "llvm/InitializePasses.h"
 #include "llvm/IR/DataLayout.h"
+#include "llvm/IR/LegacyPassManager.h"
 //#include "llvm/Bitcode/ReaderWriter.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/MemoryBuffer.h"
@@ -13,7 +14,8 @@
 
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/PassRegistry.h"
-#include "llvm/CodeGen/CommandFlags.h"
+#include "llvm/CodeGen/CommandFlags.def"
+#include "llvm/Support/CommandLine.h"
 
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Transforms/IPO/AlwaysInliner.h"
@@ -1069,7 +1071,7 @@ namespace QDP {
   }
 
 
-    void llvm_print_module( llvm::Module* m , const char * fname ) {
+  void llvm_print_module( llvm::Module* m , const char * fname ) {
     std::error_code EC;
     llvm::raw_fd_ostream outfd( fname , EC, llvm::sys::fs::OpenFlags::F_Text);
     //ASSERT_FALSE(outfd.has_error());
@@ -1085,16 +1087,18 @@ namespace QDP {
   }
 
 
+  //  namespace {
   
   /// This routine adds optimization passes based on selected optimization level,
   /// OptLevel.
   ///
   /// OptLevel - Optimization Level
-  static void AddOptimizationPasses(legacy::PassManagerBase &MPM,
-				    legacy::FunctionPassManager &FPM,
-				    TargetMachine *TM, unsigned OptLevel,
-				    unsigned SizeLevel)
+  void AddOptimizationPasses(llvm::legacy::PassManagerBase &MPM,
+  			     llvm::legacy::FunctionPassManager &FPM,
+  			     llvm::TargetMachine *TM, unsigned OptLevel,
+  			     unsigned SizeLevel)
   {
+#if 1
     //QDPIO::cout << " adding opt passes..\n";
 
     const bool DisableInline = llvm_opt::DisableInline;
@@ -1103,18 +1107,18 @@ namespace QDP {
     const bool DisableLoopVectorization = llvm_opt::DisableLoopVectorization;
     const bool DisableSLPVectorization = llvm_opt::DisableSLPVectorization;
       
-    FPM.add(createVerifierPass()); // Verify that input is correct
+    FPM.add(llvm::createVerifierPass()); // Verify that input is correct
 
-    PassManagerBuilder Builder;
+    llvm::PassManagerBuilder Builder;
     Builder.OptLevel = OptLevel;
     Builder.SizeLevel = SizeLevel;
 
     if (DisableInline) {
       // No inlining pass
     } else if (OptLevel > 1) {
-      Builder.Inliner = createFunctionInliningPass(OptLevel, SizeLevel, false);
+      Builder.Inliner = llvm::createFunctionInliningPass(OptLevel, SizeLevel, false);
     } else {
-      Builder.Inliner = createAlwaysInlinerLegacyPass();
+      Builder.Inliner = llvm::createAlwaysInlinerLegacyPass();
     }
     Builder.DisableUnitAtATime = !UnitAtATime;
     Builder.DisableUnrollLoops = DisableLoopUnrolling;
@@ -1142,8 +1146,10 @@ namespace QDP {
 
     Builder.populateFunctionPassManager(FPM);
     Builder.populateModulePassManager(MPM);
+#endif
   }
 
+    //  } // ann. namespace
 
   void optimize_module( std::unique_ptr< llvm::TargetMachine >& TM )
   {
@@ -1168,12 +1174,12 @@ namespace QDP {
 
     if (FPasses) {
       FPasses->doInitialization();
-      for (Function &F : *Mod)
+      for (llvm::Function &F : *Mod)
 	FPasses->run(F);
       FPasses->doFinalization();
     }
 
-    Passes.add(createVerifierPass());
+    Passes.add(llvm::createVerifierPass());
 
     Passes.run(*Mod);
   }
@@ -1222,7 +1228,7 @@ namespace QDP {
 
     //QDPIO::cout << "create target machine for compute capability " << compute << "\n";
    
-#ifdef QDP_LLVM6_TRUNK 
+
     std::unique_ptr<llvm::TargetMachine> target_machine(TheTarget->createTargetMachine(
 										       "nvptx64-nvidia-cuda",
 										       compute,
@@ -1231,7 +1237,8 @@ namespace QDP {
 										       getRelocModel(),
 										       None,
 										       llvm::CodeGenOpt::Aggressive, true ));
-#else
+// pre llvm6
+#if 0
     std::unique_ptr<llvm::TargetMachine> target_machine(TheTarget->createTargetMachine(
 
        "nvptx64-nvidia-cuda",
@@ -1247,8 +1254,6 @@ namespace QDP {
        llvm::CodeModel::Default,
 
        llvm::CodeGenOpt::Aggressive));
-
-
 #endif
 
     assert(target_machine.get() && "Could not allocate target machine!");
