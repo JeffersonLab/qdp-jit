@@ -591,7 +591,7 @@ namespace QDP {
 	return llvm::Type::getFloatTy(TheContext);
       }
     } else {
-      //llvm::outs() << "promote int\n";
+      //llvm::outs() << "promote int " << t0->getScalarSizeInBits() << " " << t1->getScalarSizeInBits() << "\n";
       unsigned upper = std::max( t0->getScalarSizeInBits() , t1->getScalarSizeInBits() );
       return llvm::Type::getIntNTy(TheContext , upper );
     }
@@ -622,6 +622,8 @@ namespace QDP {
     if (!llvm::CastInst::isCastable( src->getType() , dest_type ))
       QDP_error_exit("not castable");
 
+    //llvm::outs() << "cast instruction: dest type = " << dest_type << "   from " << src->getType() << "\n";
+    
     llvm::Value* ret = builder->CreateCast( llvm::CastInst::getCastOpcode( src , true , dest_type , true ) , 
 				src , dest_type , "" );
     return ret;
@@ -629,7 +631,7 @@ namespace QDP {
 
 
 
-
+#if 0
   llvm::Type* llvm_normalize_values(llvm::Value*& lhs , llvm::Value*& rhs)
   {
     llvm::Type* args_type = promote( lhs->getType() , rhs->getType() );
@@ -643,142 +645,174 @@ namespace QDP {
     }
     return args_type;
   }
+#endif
 
+  std::pair<llvm::Value*,llvm::Value*> llvm_normalize_values(llvm::Value* lhs , llvm::Value* rhs)
+  {
+    llvm::Value* lhs_new = lhs;
+    llvm::Value* rhs_new = rhs;
+    llvm::Type* args_type = promote( lhs->getType() , rhs->getType() );
+    if ( args_type != lhs->getType() ) {
+      //llvm::outs() << "lhs needs conversion\n";
+      lhs_new = llvm_cast( args_type , lhs );
+    }
+    if ( args_type != rhs->getType() ) {
+      //llvm::outs() << "rhs needs conversion\n";
+      rhs_new = llvm_cast( args_type , rhs );
+    }
+    return std::make_pair(lhs_new,rhs_new);
+  }
+  
 
 
 
   llvm::Value* llvm_neg( llvm::Value* rhs ) {
     llvm::Value* lhs = llvm_create_value(0);
-    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    auto vals = llvm_normalize_values(lhs,rhs);
+    llvm::Type* args_type = vals.first->getType();
     if ( args_type->isFloatingPointTy() )
-      return builder->CreateFSub( lhs , rhs );
+      return builder->CreateFSub( vals.first , vals.second );
     else
-      return builder->CreateSub( lhs , rhs );
+      return builder->CreateSub( vals.first , vals.second );
   }
 
 
-    llvm::Value* llvm_rem( llvm::Value* lhs , llvm::Value* rhs ) {
-    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+  llvm::Value* llvm_rem( llvm::Value* lhs , llvm::Value* rhs ) {
+    auto vals = llvm_normalize_values(lhs,rhs);
+    llvm::Type* args_type = vals.first->getType();
     if ( args_type->isFloatingPointTy() )
-      return builder->CreateFRem( lhs , rhs );
+      return builder->CreateFRem( vals.first , vals.second );
     else
-      return builder->CreateSRem( lhs , rhs );
+      return builder->CreateSRem( vals.first , vals.second );
   }
 
 
   llvm::Value* llvm_shr( llvm::Value* lhs , llvm::Value* rhs ) {  
-    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    auto vals = llvm_normalize_values(lhs,rhs);
+    llvm::Type* args_type = vals.first->getType();
     assert( !args_type->isFloatingPointTy() );
-    return builder->CreateAShr( lhs , rhs );
+    return builder->CreateAShr( vals.first , vals.second );
   }
 
 
   llvm::Value* llvm_shl( llvm::Value* lhs , llvm::Value* rhs ) {  
-    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    auto vals = llvm_normalize_values(lhs,rhs);
+    llvm::Type* args_type = vals.first->getType();
     assert( !args_type->isFloatingPointTy() );
-    return builder->CreateShl( lhs , rhs );
+    return builder->CreateShl( vals.first , vals.second );
   }
 
 
   llvm::Value* llvm_and( llvm::Value* lhs , llvm::Value* rhs ) {  
-    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    auto vals = llvm_normalize_values(lhs,rhs);
+    llvm::Type* args_type = vals.first->getType();
     assert( !args_type->isFloatingPointTy() );
-    return builder->CreateAnd( lhs , rhs );
+    return builder->CreateAnd( vals.first , vals.second );
   }
 
 
   llvm::Value* llvm_or( llvm::Value* lhs , llvm::Value* rhs ) {  
-    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    auto vals = llvm_normalize_values(lhs,rhs);
+    llvm::Type* args_type = vals.first->getType();
     assert( !args_type->isFloatingPointTy() );
-    return builder->CreateOr( lhs , rhs );
+    return builder->CreateOr( vals.first , vals.second );
   }
 
 
   llvm::Value* llvm_xor( llvm::Value* lhs , llvm::Value* rhs ) {  
-    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    auto vals = llvm_normalize_values(lhs,rhs);
+    llvm::Type* args_type = vals.first->getType();
     assert( !args_type->isFloatingPointTy() );
-    return builder->CreateXor( lhs , rhs );
+    return builder->CreateXor( vals.first , vals.second );
   }
 
 
   llvm::Value* llvm_mul( llvm::Value* lhs , llvm::Value* rhs ) {
-    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
-    if ( args_type->isFloatingPointTy() )
-      return builder->CreateFMul( lhs , rhs );
+    auto vals = llvm_normalize_values(lhs,rhs);
+    if ( vals.first->getType()->isFloatingPointTy() )
+      return builder->CreateFMul( vals.first , vals.second );
     else
-      return builder->CreateMul( lhs , rhs );
+      return builder->CreateMul( vals.first , vals.second );
   }
 
 
   llvm::Value* llvm_add( llvm::Value* lhs , llvm::Value* rhs ) {
-    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    auto vals = llvm_normalize_values(lhs,rhs);
+    llvm::Type* args_type = vals.first->getType();
     if ( args_type->isFloatingPointTy() )
-      return builder->CreateFAdd( lhs , rhs );
+      return builder->CreateFAdd( vals.first , vals.second );
     else
-      return builder->CreateNSWAdd( lhs , rhs );
+      return builder->CreateNSWAdd( vals.first , vals.second );
   }
 
 
   llvm::Value* llvm_sub( llvm::Value* lhs , llvm::Value* rhs ) {
-    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    auto vals = llvm_normalize_values(lhs,rhs);
+    llvm::Type* args_type = vals.first->getType();
     if ( args_type->isFloatingPointTy() )
-      return builder->CreateFSub( lhs , rhs );
+      return builder->CreateFSub( vals.first , vals.second );
     else
-      return builder->CreateSub( lhs , rhs );
+      return builder->CreateSub( vals.first , vals.second );
   }
 
 
   llvm::Value* llvm_div( llvm::Value* lhs , llvm::Value* rhs ) {
-    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    auto vals = llvm_normalize_values(lhs,rhs);
+    llvm::Type* args_type = vals.first->getType();
     if ( args_type->isFloatingPointTy() )
-      return builder->CreateFDiv( lhs , rhs );
+      return builder->CreateFDiv( vals.first , vals.second );
     else 
-      return builder->CreateSDiv( lhs , rhs );
+      return builder->CreateSDiv( vals.first , vals.second );
   }
 
 
   llvm::Value* llvm_eq( llvm::Value* lhs , llvm::Value* rhs ) {
-    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    auto vals = llvm_normalize_values(lhs,rhs);
+    llvm::Type* args_type = vals.first->getType();
     if ( args_type->isFloatingPointTy() )
-      return builder->CreateFCmpOEQ( lhs , rhs );
+      return builder->CreateFCmpOEQ( vals.first , vals.second );
     else
-      return builder->CreateICmpEQ( lhs , rhs );
+      return builder->CreateICmpEQ( vals.first , vals.second );
   }
 
 
   llvm::Value* llvm_ge( llvm::Value* lhs , llvm::Value* rhs ) {
-    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    auto vals = llvm_normalize_values(lhs,rhs);
+    llvm::Type* args_type = vals.first->getType();
     if ( args_type->isFloatingPointTy() )
-      return builder->CreateFCmpOGE( lhs , rhs );
+      return builder->CreateFCmpOGE( vals.first , vals.second );
     else
-      return builder->CreateICmpSGE( lhs , rhs );
+      return builder->CreateICmpSGE( vals.first , vals.second );
   }
 
 
   llvm::Value* llvm_gt( llvm::Value* lhs , llvm::Value* rhs ) {
-    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    auto vals = llvm_normalize_values(lhs,rhs);
+    llvm::Type* args_type = vals.first->getType();
     if ( args_type->isFloatingPointTy() )
-      return builder->CreateFCmpOGT( lhs , rhs );
+      return builder->CreateFCmpOGT( vals.first , vals.second );
     else
-      return builder->CreateICmpSGT( lhs , rhs );
+      return builder->CreateICmpSGT( vals.first , vals.second );
   }
 
 
   llvm::Value* llvm_le( llvm::Value* lhs , llvm::Value* rhs ) {
-    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    auto vals = llvm_normalize_values(lhs,rhs);
+    llvm::Type* args_type = vals.first->getType();
     if ( args_type->isFloatingPointTy() )
-      return builder->CreateFCmpOLE( lhs , rhs );
+      return builder->CreateFCmpOLE( vals.first , vals.second );
     else
-      return builder->CreateICmpSLE( lhs , rhs );
+      return builder->CreateICmpSLE( vals.first , vals.second );
   }
 
 
   llvm::Value* llvm_lt( llvm::Value* lhs , llvm::Value* rhs ) {
-    llvm::Type* args_type = llvm_normalize_values(lhs,rhs);
+    auto vals = llvm_normalize_values(lhs,rhs);
+    llvm::Type* args_type = vals.first->getType();
     if ( args_type->isFloatingPointTy() )
-      return builder->CreateFCmpOLT( lhs , rhs );
+      return builder->CreateFCmpOLT( vals.first , vals.second );
     else 
-      return builder->CreateICmpSLT( lhs , rhs );
+      return builder->CreateICmpSLT( vals.first , vals.second );
   }
 
 

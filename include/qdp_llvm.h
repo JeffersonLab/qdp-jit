@@ -164,7 +164,7 @@ namespace QDP {
 
   llvm::SwitchInst * llvm_switch( llvm::Value* val , llvm::BasicBlock* bb_default );
 
-  llvm::Type* llvm_normalize_values(llvm::Value*& lhs , llvm::Value*& rhs);
+  //llvm::Type* llvm_normalize_values(llvm::Value* lhs , llvm::Value* rhs);
 
 #if 0
   llvm::Value* llvm_b_op( llvm::Value *(*)(llvm::Value *, llvm::Value *) func_float,

@@ -36,6 +36,7 @@ namespace QDP {
     // }
 
     void setup(llvm::Value * v) {
+      //std::cout << __PRETTY_FUNCTION__ << "\n";
       val = llvm_cast( llvm_type<T>::value , v );
       //setup_m=true;
     }
@@ -251,7 +252,7 @@ namespace QDP {
   
 
   // Default binary(WordREG,WordREG) -> WordREG
-#if 0
+#if 1
   template<class T1, class T2, class Op>
   struct BinaryReturn<WordREG<T1>, WordREG<T2>, Op> {
     typedef WordREG<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
@@ -327,10 +328,10 @@ namespace QDP {
 
 
 
-template<class T1, class T2 >
-struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpLeftShift > {
-  typedef WordREG<typename BinaryReturn<T1, T2, OpLeftShift>::Type_t>  Type_t;
-};
+ template<class T1, class T2 >
+ struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpLeftShift > {
+   typedef WordREG<typename BinaryReturn<T1, T2, OpLeftShift>::Type_t>  Type_t;
+ };
  
 
 template<class T1, class T2>
@@ -344,10 +345,10 @@ operator<<(const WordREG<T1>& l, const WordREG<T2>& r)
 
 
 
-template<class T1, class T2 >
-struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpRightShift > {
-  typedef WordREG<typename BinaryReturn<T1, T2, OpRightShift>::Type_t>  Type_t;
-};
+ template<class T1, class T2 >
+ struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpRightShift > {
+   typedef WordREG<typename BinaryReturn<T1, T2, OpRightShift>::Type_t>  Type_t;
+ };
  
 
 template<class T1, class T2>
@@ -408,10 +409,10 @@ operator|(const WordREG<T1>& l, const WordREG<T2>& r)
 
 
 // Comparisons
-template<class T1, class T2 >
-struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpLT > {
-  typedef WordREG<typename BinaryReturn<T1, T2, OpLT>::Type_t>  Type_t;
-};
+ template<class T1, class T2 >
+ struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpLT > {
+   typedef WordREG<typename BinaryReturn<T1, T2, OpLT>::Type_t>  Type_t;
+ };
 
 template<class T1, class T2>
 inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpLT>::Type_t
@@ -423,10 +424,10 @@ operator<(const WordREG<T1>& l, const WordREG<T2>& r)
 }
 
 
-template<class T1, class T2 >
-struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpLE > {
-  typedef WordREG<typename BinaryReturn<T1, T2, OpLE>::Type_t>  Type_t;
-};
+ template<class T1, class T2 >
+ struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpLE > {
+   typedef WordREG<typename BinaryReturn<T1, T2, OpLE>::Type_t>  Type_t;
+ };
 
 template<class T1, class T2>
 inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpLE>::Type_t
@@ -438,10 +439,10 @@ operator<=(const WordREG<T1>& l, const WordREG<T2>& r)
 }
 
 
-template<class T1, class T2 >
-struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpGT > {
-  typedef WordREG<typename BinaryReturn<T1, T2, OpGT>::Type_t>  Type_t;
-};
+ template<class T1, class T2 >
+ struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpGT > {
+   typedef WordREG<typename BinaryReturn<T1, T2, OpGT>::Type_t>  Type_t;
+ };
 
 template<class T1, class T2>
 inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpGT>::Type_t
@@ -453,10 +454,10 @@ operator>(const WordREG<T1>& l, const WordREG<T2>& r)
 }
 
 
-template<class T1, class T2 >
-struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpGE > {
-  typedef WordREG<typename BinaryReturn<T1, T2, OpGE>::Type_t>  Type_t;
-};
+ template<class T1, class T2 >
+ struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpGE > {
+   typedef WordREG<typename BinaryReturn<T1, T2, OpGE>::Type_t>  Type_t;
+ };
 
 template<class T1, class T2>
 inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpGE>::Type_t
@@ -468,10 +469,10 @@ operator>=(const WordREG<T1>& l, const WordREG<T2>& r)
 }
 
 
-template<class T1, class T2 >
-struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpEQ > {
-  typedef WordREG<typename BinaryReturn<T1, T2, OpEQ>::Type_t>  Type_t;
-};
+ template<class T1, class T2 >
+ struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpEQ > {
+   typedef WordREG<typename BinaryReturn<T1, T2, OpEQ>::Type_t>  Type_t;
+ };
 
 template<class T1, class T2>
 inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpEQ>::Type_t
@@ -483,10 +484,10 @@ operator==(const WordREG<T1>& l, const WordREG<T2>& r)
 }
 
 
-template<class T1, class T2 >
-struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpNE > {
-  typedef WordREG<typename BinaryReturn<T1, T2, OpNE>::Type_t>  Type_t;
-};
+ template<class T1, class T2 >
+ struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpNE > {
+   typedef WordREG<typename BinaryReturn<T1, T2, OpNE>::Type_t>  Type_t;
+ };
 
 template<class T1, class T2>
 inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpNE>::Type_t
@@ -499,10 +500,10 @@ operator!=(const WordREG<T1>& l, const WordREG<T2>& r)
 
 
 
-template<class T1, class T2>
-struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpAnd > {
-  typedef WordREG<typename BinaryReturn<T1, T2, OpAnd>::Type_t>  Type_t;
-};
+ template<class T1, class T2>
+ struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpAnd > {
+   typedef WordREG<typename BinaryReturn<T1, T2, OpAnd>::Type_t>  Type_t;
+ };
 
 template<class T1, class T2>
 inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpAnd>::Type_t
@@ -514,10 +515,10 @@ operator&&(const WordREG<T1>& l, const WordREG<T2>& r)
 }
 
 
-template<class T1, class T2>
-struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpOr > {
-  typedef WordREG<typename BinaryReturn<T1, T2, OpOr>::Type_t>  Type_t;
-};
+ template<class T1, class T2>
+ struct BinaryReturn<WordREG<T1>, WordREG<T2>, OpOr > {
+   typedef WordREG<typename BinaryReturn<T1, T2, OpOr>::Type_t>  Type_t;
+ };
 
 template<class T1, class T2>
 inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, OpOr>::Type_t
@@ -583,15 +584,15 @@ localNorm2(const WordREG<T>& s1)
 
 
 //! WordREG<T> = InnerProduct(adj(WordREG<T1>)*WordREG<T2>)
-template<class T1, class T2>
-struct BinaryReturn<WordREG<T1>, WordREG<T2>, FnInnerProduct > {
-  typedef WordREG<typename BinaryReturn<T1, T2, FnInnerProduct>::Type_t>  Type_t;
-};
+ template<class T1, class T2>
+ struct BinaryReturn<WordREG<T1>, WordREG<T2>, FnInnerProduct > {
+   typedef WordREG<typename BinaryReturn<T1, T2, FnInnerProduct>::Type_t>  Type_t;
+ };
 
-template<class T1, class T2>
-struct BinaryReturn<WordREG<T1>, WordREG<T2>, FnLocalInnerProduct > {
-  typedef WordREG<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>  Type_t;
-};
+ template<class T1, class T2>
+ struct BinaryReturn<WordREG<T1>, WordREG<T2>, FnLocalInnerProduct > {
+   typedef WordREG<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>  Type_t;
+ };
 
 template<class T1, class T2>
 inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, FnLocalInnerProduct>::Type_t
@@ -605,15 +606,15 @@ localInnerProduct(const WordREG<T1>& s1, const WordREG<T2>& s2)
 
 //! WordREG<T> = InnerProductReal(adj(PMatrix<T1>)*PMatrix<T1>)
 // Real-ness is eaten at this level
-template<class T1, class T2>
-struct BinaryReturn<WordREG<T1>, WordREG<T2>, FnInnerProductReal > {
-  typedef WordREG<typename BinaryReturn<T1, T2, FnInnerProduct>::Type_t>  Type_t;
-};
+ template<class T1, class T2>
+ struct BinaryReturn<WordREG<T1>, WordREG<T2>, FnInnerProductReal > {
+   typedef WordREG<typename BinaryReturn<T1, T2, FnInnerProduct>::Type_t>  Type_t;
+ };
 
-template<class T1, class T2>
-struct BinaryReturn<WordREG<T1>, WordREG<T2>, FnLocalInnerProductReal > {
-  typedef WordREG<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>  Type_t;
-};
+ template<class T1, class T2>
+ struct BinaryReturn<WordREG<T1>, WordREG<T2>, FnLocalInnerProductReal > {
+   typedef WordREG<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>  Type_t;
+ };
 
 template<class T1, class T2>
 inline typename BinaryReturn<WordREG<T1>, WordREG<T2>, FnLocalInnerProductReal>::Type_t
@@ -701,7 +702,7 @@ typename UnaryReturn<WordREG<double>, FnHypTan>::Type_t tanh(const WordREG<doubl
 typename BinaryReturn<WordREG<float>, WordREG<float>, FnPow>::Type_t pow(const WordREG<float>& s1, const WordREG<float>& s2);
 typename BinaryReturn<WordREG<double>, WordREG<double>, FnPow>::Type_t pow(const WordREG<double>& s1, const WordREG<double>& s2);
 typename BinaryReturn<WordREG<float>, WordREG<float>, FnPow>::Type_t pow(const WordREG<double>& s1, const WordREG<float>& s2);
-  typename BinaryReturn<WordREG<float>, WordREG<float>, FnPow>::Type_t pow(const WordREG<float>& s1, const WordREG<double>& s2);
+typename BinaryReturn<WordREG<float>, WordREG<float>, FnPow>::Type_t pow(const WordREG<float>& s1, const WordREG<double>& s2);
 
 
 typename BinaryReturn<WordREG<float>, WordREG<float>, FnArcTan2>::Type_t atan2(const WordREG<float>& s1, const WordREG<float>& s2);
