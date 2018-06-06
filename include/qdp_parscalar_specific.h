@@ -323,8 +323,36 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
 }
 
 
+
+
+template<class T, class T1, class Op, class RHS>
+void evaluate_subtype(OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs,
+		      const Subset& s)
+{
+  static CUfunction function;
+
+  if (function == NULL)
+    {
+      //QDPIO::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
+      function = function_subtype_build(dest, op, rhs);
+      //QDPIO::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
+    }
+  else
+    {
+      //QDPIO::cout << __PRETTY_FUNCTION__ << ": is already built\n";
+    }
+
+  // Execute the function
+  function_subtype_exec(function, dest, op, rhs, s);
+}
+
+
+
+  
+
 //-----------------------------------------------------------------------------
 //! dest = (mask) ? s1 : dest
+#if 0
 template<class T1, class T2>
 void copymask(OSubLattice<T2> d, const OLattice<T1>& mask, const OLattice<T2>& s1) 
 {
@@ -340,7 +368,8 @@ void copymask(OSubLattice<T2> d, const OLattice<T1>& mask, const OLattice<T2>& s
     copymask(dest.elem(i), mask.elem(i), s1.elem(i));
   }
 }
-
+#endif
+  
 //! dest = (mask) ? s1 : dest
 template<class T1, class T2> 
 void copymask(OLattice<T2>& dest, const OLattice<T1>& mask, const OLattice<T2>& s1) 
@@ -518,6 +547,7 @@ random(OLattice<T>& d, const Subset& s)
 
 
 //! dest  = random   under a subset
+#if 0
 template<class T>
 void random(OSubLattice<T> dd)
 {
@@ -526,7 +556,7 @@ void random(OSubLattice<T> dd)
 
   random(d,s);
 }
-
+#endif
 
 //! dest  = random  
 template<class T>
@@ -578,6 +608,7 @@ void gaussian(OLattice<T>& d, const Subset& s)
 
 
 //! dest  = gaussian   under a subset
+#if 0
 template<class T>
 void gaussian(OSubLattice<T> dd)
 {
@@ -586,7 +617,7 @@ void gaussian(OSubLattice<T> dd)
 
   gaussian(d,s);
 }
-
+#endif
 
 //! dest  = gaussian
 template<class T>
@@ -629,7 +660,26 @@ void zero_rep(OLattice<T>& dest, const Subset& s)
 }
 
 
-//! dest  = 0 
+template<class T> 
+void zero_rep_subtype(OSubLattice<T>& dest, const Subset& s) 
+{
+  static CUfunction function;
+
+  if (function == NULL)
+    {
+      function = function_zero_rep_subtype_build( dest );
+    }
+  else
+    {
+      //QDPIO::cout << __PRETTY_FUNCTION__ << ": is already built\n";
+    }
+
+  function_zero_rep_subtype_exec( function , dest , s );
+}
+
+
+//! dest  = 0
+#if 0
 template<class T>
 void zero_rep(OSubLattice<T> dd) 
 {
@@ -638,7 +688,7 @@ void zero_rep(OSubLattice<T> dd)
   
   zero_rep(d,s);
 }
-
+#endif
 
 //! dest  = 0 
 template<class T> 
@@ -1830,6 +1880,7 @@ void writeOLattice(BinaryWriter& bin,
 
 //! Write a single site of a lattice quantity
 /*! Assumes no inner grid */
+#if 0
 template<class T>
 void write(BinaryWriter& bin, OSubLattice<T> dd)
 {
@@ -1840,7 +1891,8 @@ void write(BinaryWriter& bin, OSubLattice<T> dd)
 		sizeof(T) / sizeof(typename WordType<T>::Type_t),
 		dd.subset());
 }
-
+#endif
+  
 
 //! Read a lattice quantity
 /*! This code assumes no inner grid */
@@ -1882,6 +1934,7 @@ void readOLattice(BinaryReader& bin,
 
 //! Read a single site of a lattice quantity
 /*! Assumes no inner grid */
+#if 0
 template<class T>
 void read(BinaryReader& bin, OSubLattice<T> d)
 {
@@ -1890,7 +1943,7 @@ void read(BinaryReader& bin, OSubLattice<T> d)
 	       sizeof(T) / sizeof(typename WordType<T>::Type_t),
 	       d.subset());
 }
-
+#endif
 
 
 // **************************************************************

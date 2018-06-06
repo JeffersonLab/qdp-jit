@@ -7,6 +7,8 @@
 #include <iostream>
 #include <fstream>
 
+
+
 namespace QDP
 {
 
@@ -284,7 +286,7 @@ namespace QDP
 #ifdef GPU_DEBUG_DEEP
     QDP_debug_deep("cache get device ptr id=%lu",(long)id );
 #endif
-
+    
     if (id < 0) return NULL;
 
 #ifdef SANITY_CHECKS_CACHE
@@ -296,13 +298,9 @@ namespace QDP
     if (id >= vecEntry.size())
       QDP_error_exit("cache getDevicePtr: out of range");
 #endif
-
     Entry& e = vecEntry[id];
-
     assureDevice( e );
-
     lstTracker.splice( lstTracker.end(), lstTracker , e.iterTrack );
-
 #ifdef GPU_DEBUG_DEEP
     printTracker();
     printLockSets();

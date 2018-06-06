@@ -136,7 +136,7 @@ namespace QDP {
 #endif
 
 #ifndef QDP_USE_HDF5
-#warning not using hdf5
+//#warning not using hdf5
 #else
 #include "qdp_hdf5.h"
 #endif
@@ -153,6 +153,7 @@ namespace QDP {
 #include "qdp_qdpexpr.h"
 #include "qdp_qdptypejit.h"
 #include "qdp_qdptype.h"
+#include "qdp_qdpsubtypejit.h"
 #include "qdp_qdpsubtype.h"
 
 namespace QDP {
@@ -193,6 +194,7 @@ namespace QDP {
 #include "qdp_inner.h"
 #include "qdp_primitive.h"
 #include "qdp_outerjit.h"
+#include "qdp_outersubjit.h"
 #include "qdp_outer.h"
 #include "qdp_outersubtype.h"
 
@@ -250,5 +252,6 @@ namespace ThreadReductions {
 #endif
 
 #include "qdp_flopcount.h"
+#include "qdp_globalfuncs_subtype.h"
 
 #endif  // QDP_INCLUDE

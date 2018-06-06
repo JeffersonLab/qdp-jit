@@ -24,6 +24,12 @@ class QDPSubType
   typedef typename QDPSubTypeTrait<C>::Type_t CC;
 
 public:
+  //! Type of the first argument
+  typedef T Subtype_t;
+
+  //! Type of the container class
+  typedef C Container_t;
+
   //! Default constructor 
   QDPSubType() {}
 
@@ -39,262 +45,548 @@ public:
 
   inline
   void assign(const typename WordType<C>::Type_t& rhs)
-    {
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
-      evaluate(field(),OpAssign(),PETE_identity(Scalar_t(rhs)),subset());
+  {
+    typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpAssign(),PETE_identity(Scalar_t(rhs)),subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpAssign(),PETE_identity(Scalar_t(rhs)),subset());
     }
+  }
 
   inline
   void assign(const Zero&)
-    {
-      zero_rep(field(),subset());
+  {
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      zero_rep_subtype(*me,subset());
+    } else {
+      C tmp(getId(),1.0);
+      zero_rep(tmp,subset());
     }
+  }
 
   template<class T1,class C1>
   inline
   void assign(const QDPType<T1,C1>& rhs)
-    {
-      evaluate(field(),OpAssign(),PETE_identity(rhs),subset());
+  {
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpAssign(),PETE_identity(rhs),subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpAssign(),PETE_identity(rhs),subset());
     }
+  }
+
+
+  template<class T1,class C1>
+  inline
+  void assign(const QDPSubType<T1,C1>& rhs)
+  {
+    assert(!"ni");
+    if (getOwnsMemory() && rhs.getOwnsMemory()) {
+      if (subset().numSiteTable() != rhs.subset().numSiteTable())
+	QDP_error_exit("assignment with incompatible subset sizes");
+      for(int j=0; j < subset().numSiteTable(); ++j)
+	getId()[j] = rhs.getId()[j];
+    } else
+
+#if 0
+    if (!getOwnsMemory() && rhs.getOwnsMemory()) {
+      //std::cout << "view = own\n";
+      if (subset().numSiteTable() != rhs.subset().numSiteTable())
+	QDP_error_exit("assignment with incompatible subset sizes");
+      const int *tab = subset().siteTable().slice();
+      for(int j=0; j < subset().numSiteTable(); ++j) {
+	int i = tab[j];
+	getId()[i] = rhs.getId()[j];
+      }
+    }
+    if (getOwnsMemory() && !rhs.getOwnsMemory()) {
+      //std::cout << "own = view\n";
+      if (subset().numSiteTable() != rhs.subset().numSiteTable())
+	QDP_error_exit("assignment with incompatible subset sizes");
+      const int *tab = rhs.subset().siteTable().slice();
+      for(int j=0; j < rhs.subset().numSiteTable(); ++j) {
+	int i = tab[j];
+	getId()[j] = rhs.getId()[i];
+      }
+    }
+    if (!getOwnsMemory() && !rhs.getOwnsMemory())
+#endif
+      QDP_error_exit("assignment of two view subtypes is not supported");
+  }
+
 
   template<class T1,class C1>
   inline
   void assign(const QDPExpr<T1,C1>& rhs)
-    {
-      evaluate(field(),OpAssign(),rhs,subset());
+  {
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpAssign(),rhs,subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpAssign(),rhs,subset());
     }
+  }
 
   inline
   void operator+=(const typename WordType<C>::Type_t& rhs)
-    {
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
-      evaluate(field(),OpAddAssign(),PETE_identity(Scalar_t(rhs)),subset());
+  {
+    typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpAddAssign(),PETE_identity(Scalar_t(rhs)),subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpAddAssign(),PETE_identity(Scalar_t(rhs)),subset());
     }
+  }
 
   template<class T1,class C1>
   inline
   void operator+=(const QDPType<T1,C1>& rhs)
-    {
-      evaluate(field(),OpAddAssign(),PETE_identity(rhs),subset());
+  {
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpAddAssign(),PETE_identity(rhs),subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpAddAssign(),PETE_identity(rhs),subset());
     }
+  }
 
   template<class T1,class C1>
   inline
   void operator+=(const QDPExpr<T1,C1>& rhs)
-    {
-      evaluate(field(),OpAddAssign(),rhs,subset());
+  {
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpAddAssign(),rhs,subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpAddAssign(),rhs,subset());
     }
-
+  }
 
   inline
   void operator-=(const typename WordType<C>::Type_t& rhs)
-    {
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
-      evaluate(field(),OpSubtractAssign(),PETE_identity(Scalar_t(rhs)),subset());
+  {
+    typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpSubtractAssign(),PETE_identity(Scalar_t(rhs)),subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpSubtractAssign(),PETE_identity(Scalar_t(rhs)),subset());
     }
+  }
 
   template<class T1,class C1>
   inline
   void operator-=(const QDPType<T1,C1>& rhs)
-    {
-      evaluate(field(),OpSubtractAssign(),PETE_identity(rhs),subset());
+  {
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpSubtractAssign(),PETE_identity(rhs),subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpSubtractAssign(),PETE_identity(rhs),subset());
     }
+  }
 
   template<class T1,class C1>
   inline
   void operator-=(const QDPExpr<T1,C1>& rhs)
-    {
-      evaluate(field(),OpSubtractAssign(),rhs,subset());
+  {
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpSubtractAssign(),rhs,subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpSubtractAssign(),rhs,subset());
     }
-
+  }
 
   inline
   void operator*=(const typename WordType<C>::Type_t& rhs)
-    {
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
-      evaluate(field(),OpMultiplyAssign(),PETE_identity(Scalar_t(rhs)),subset());
+  {
+    typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpMultiplyAssign(),PETE_identity(Scalar_t(rhs)),subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpMultiplyAssign(),PETE_identity(Scalar_t(rhs)),subset());
     }
+  }
 
   template<class T1,class C1>
   inline
   void operator*=(const QDPType<T1,C1>& rhs)
-    {
-      evaluate(field(),OpMultiplyAssign(),PETE_identity(rhs),subset());
+  {
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpMultiplyAssign(),PETE_identity(rhs),subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpMultiplyAssign(),PETE_identity(rhs),subset());
     }
+  }
 
   template<class T1,class C1>
   inline
   void operator*=(const QDPExpr<T1,C1>& rhs)
-    {
-      evaluate(field(),OpMultiplyAssign(),rhs,subset());
+  {
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpMultiplyAssign(),rhs,subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpMultiplyAssign(),rhs,subset());
     }
-
+  }
 
   inline
   void operator/=(const typename WordType<C>::Type_t& rhs)
-    {
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
-      evaluate(field(),OpDivideAssign(),PETE_identity(Scalar_t(rhs)),subset());
+  {
+    typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpDivideAssign(),PETE_identity(Scalar_t(rhs)),subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpDivideAssign(),PETE_identity(Scalar_t(rhs)),subset());
     }
+  }
 
   template<class T1,class C1>
   inline
   void operator/=(const QDPType<T1,C1>& rhs)
-    {
-      evaluate(field(),OpDivideAssign(),PETE_identity(rhs),subset());
+  {
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpDivideAssign(),PETE_identity(rhs),subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpDivideAssign(),PETE_identity(rhs),subset());
     }
+  }
 
   template<class T1,class C1>
   inline
   void operator/=(const QDPExpr<T1,C1>& rhs)
-    {
-      evaluate(field(),OpDivideAssign(),rhs,subset());
+  {
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpDivideAssign(),rhs,subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpDivideAssign(),rhs,subset());
     }
-
+  }
 
   inline
   void operator%=(const typename WordType<C>::Type_t& rhs)
-    {
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
-      evaluate(field(),OpModAssign(),PETE_identity(Scalar_t(rhs)),subset());
+  {
+    typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpModAssign(),PETE_identity(Scalar_t(rhs)),subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpModAssign(),PETE_identity(Scalar_t(rhs)),subset());
     }
+  }
 
   template<class T1,class C1>
   inline
   void operator%=(const QDPType<T1,C1>& rhs)
-    {
-      evaluate(field(),OpModAssign(),PETE_identity(rhs),subset());
+  {
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpModAssign(),PETE_identity(rhs),subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpModAssign(),PETE_identity(rhs),subset());
     }
+  }
 
   template<class T1,class C1>
   inline
   void operator%=(const QDPExpr<T1,C1>& rhs)
-    {
-      evaluate(field(),OpModAssign(),rhs,subset());
+  {
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpModAssign(),rhs,subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpModAssign(),rhs,subset());
     }
-
+  }
 
   inline
   void operator|=(const typename WordType<C>::Type_t& rhs)
-    {
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
-      evaluate(field(),OpBitwiseOrAssign(),PETE_identity(Scalar_t(rhs)),subset());
+  {
+    typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpBitwiseOrAssign(),PETE_identity(Scalar_t(rhs)),subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpBitwiseOrAssign(),PETE_identity(Scalar_t(rhs)),subset());
     }
+  }
 
   template<class T1,class C1>
   inline
   void operator|=(const QDPType<T1,C1>& rhs)
-    {
-      evaluate(field(),OpBitwiseOrAssign(),PETE_identity(rhs),subset());
+  {
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpBitwiseOrAssign(),PETE_identity(rhs),subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpBitwiseOrAssign(),PETE_identity(rhs),subset());
     }
+  }
 
   template<class T1,class C1>
   inline
   void operator|=(const QDPExpr<T1,C1>& rhs)
-    {
-      evaluate(field(),OpBitwiseOrAssign(),PETE_identity(rhs),subset());
+  {
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpBitwiseOrAssign(),PETE_identity(rhs),subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpBitwiseOrAssign(),PETE_identity(rhs),subset());
     }
-
+  }
 
   inline
   void operator&=(const typename WordType<C>::Type_t& rhs)
-    {
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
-      evaluate(field(),OpBitwiseAndAssign(),PETE_identity(Scalar_t(rhs)),subset());
+  {
+    typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpBitwiseAndAssign(),PETE_identity(Scalar_t(rhs)),subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpBitwiseAndAssign(),PETE_identity(Scalar_t(rhs)),subset());
     }
+  }
 
   template<class T1,class C1>
   inline
   void operator&=(const QDPType<T1,C1>& rhs)
-    {
-      evaluate(field(),OpBitwiseAndAssign(),PETE_identity(rhs),subset());
+  {
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpBitwiseAndAssign(),PETE_identity(rhs),subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpBitwiseAndAssign(),PETE_identity(rhs),subset());
     }
+  }
 
   template<class T1,class C1>
   inline
   void operator&=(const QDPExpr<T1,C1>& rhs)
-    {
-      evaluate(field(),OpBitwiseAndAssign(),rhs,subset());
+  {
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpBitwiseAndAssign(),rhs,subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpBitwiseAndAssign(),rhs,subset());
     }
-
+  }
 
   inline
   void operator^=(const typename WordType<C>::Type_t& rhs)
-    {
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
-      evaluate(field(),OpBitwiseXorAssign(),PETE_identity(Scalar_t(rhs)));
+  {
+    typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpBitwiseXorAssign(),PETE_identity(Scalar_t(rhs)),subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpBitwiseXorAssign(),PETE_identity(Scalar_t(rhs)),subset());
     }
+  }
 
   template<class T1,class C1>
   inline
   void operator^=(const QDPType<T1,C1>& rhs)
-    {
-      evaluate(field(),OpBitwiseXorAssign(),PETE_identity(rhs),subset());
+  {
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpBitwiseXorAssign(),PETE_identity(rhs),subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpBitwiseXorAssign(),PETE_identity(rhs),subset());
     }
+  }
 
   template<class T1,class C1>
   inline
   void operator^=(const QDPExpr<T1,C1>& rhs)
-    {
-      evaluate(field(),OpBitwiseXorAssign(),rhs,subset());
+  {
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpBitwiseXorAssign(),rhs,subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpBitwiseXorAssign(),rhs,subset());
     }
-
+  }
 
   inline
   void operator<<=(const typename WordType<C>::Type_t& rhs)
-    {
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
-      evaluate(field(),OpLeftShiftAssign(),PETE_identity(Scalar_t(rhs)),subset());
+  {
+    typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpLeftShiftAssign(),PETE_identity(Scalar_t(rhs)),subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpLeftShiftAssign(),PETE_identity(Scalar_t(rhs)),subset());
     }
+  }
 
   template<class T1,class C1>
   inline
   void operator<<=(const QDPType<T1,C1>& rhs)
-    {
-      evaluate(field(),OpLeftShiftAssign(),PETE_identity(rhs),subset());
+  {
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpLeftShiftAssign(),PETE_identity(rhs),subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpLeftShiftAssign(),PETE_identity(rhs),subset());
     }
+  }
 
   template<class T1,class C1>
   inline
   void operator<<=(const QDPExpr<T1,C1>& rhs)
-    {
-      evaluate(field(),OpLeftShiftAssign(),rhs,subset());
+  {
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpLeftShiftAssign(),rhs,subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpLeftShiftAssign(),rhs,subset());
     }
+  }
 
 
   inline
   void operator>>=(const typename WordType<C>::Type_t& rhs)
-    {
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
-      evaluate(field(),OpRightShiftAssign(),PETE_identity(Scalar_t(rhs)),subset());
+  {
+    typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpRightShiftAssign(),PETE_identity(Scalar_t(rhs)),subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpRightShiftAssign(),PETE_identity(Scalar_t(rhs)),subset());
     }
+  }
 
   template<class T1,class C1>
   inline
   void operator>>=(const QDPType<T1,C1>& rhs)
-    {
-      evaluate(field(),OpRightShiftAssign(),PETE_identity(rhs),subset());
+  {
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpRightShiftAssign(),PETE_identity(rhs),subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpRightShiftAssign(),PETE_identity(rhs),subset());
     }
+  }
 
   template<class T1,class C1>
   inline
   void operator>>=(const QDPExpr<T1,C1>& rhs)
-    {
-      evaluate(field(),OpRightShiftAssign(),rhs,subset());
+  {
+    if (getOwnsMemory()) {
+      CC* me = static_cast<CC*>(this);
+      evaluate_subtype(*me,OpRightShiftAssign(),rhs,subset());
+    } else {
+      C tmp(getId(),1.0);
+      evaluate(tmp,OpRightShiftAssign(),rhs,subset());
     }
+  }
 
 private:
   //! Hide default operator=
   inline
   C& operator=(const QDPSubType& rhs) {}
 
-
 public:
-  C& field() {return static_cast<CC*>(this)->field();}
+  //C& field() {return static_cast<CC*>(this)->field();}
+  bool getOwnsMemory() { return static_cast<CC*>(this)->getOwnsMemory(); }
+  bool getOwnsMemory() const { return static_cast<const CC*>(this)->getOwnsMemory(); }
+
+  int getId() const   { return static_cast<const CC*>(this)->getId();}
+
+  T* getF() {return static_cast<CC*>(this)->getF();}
+  T* getF() const {return static_cast<CC const *>(this)->getF();}
   const Subset& subset() const {return static_cast<const CC*>(this)->subset();}
 
 };
 
+
+
+  
+template<class T>
+struct LeafFunctor<QDPSubType<T,OLattice<T> >, ParamLeaf>
+{
+  typedef QDPSubTypeJIT<typename JITType<T>::Type_t,typename JITType<OLattice<T> >::Type_t>  TypeA_t;
+  //typedef typename JITType< OLattice<T> >::Type_t  TypeA_t;
+  typedef TypeA_t  Type_t;
+  inline static Type_t apply(const QDPSubType<T,OLattice<T> > &a, const ParamLeaf& p)
+  {
+    ParamRef    base_addr = llvm_add_param< typename WordType<T>::Type_t * >();
+    return Type_t( base_addr );
+  }
+};
+
+template<class T>
+struct LeafFunctor<QDPSubType<T,OScalar<T> >, ParamLeaf>
+{
+  typedef QDPSubTypeJIT<typename JITType<T>::Type_t,typename JITType<OScalar<T> >::Type_t>  TypeA_t;
+  //typedef typename JITType< OScalar<T> >::Type_t  TypeA_t;
+  typedef TypeA_t  Type_t;
+  inline static Type_t apply(const QDPSubType<T,OScalar<T> > &a, const ParamLeaf& p)
+  {
+    ParamRef    base_addr = llvm_add_param< typename WordType<T>::Type_t * >();
+    return Type_t( base_addr );
+  }
+};
+
+
+
+template<class T, class C>
+struct LeafFunctor<QDPSubType<T,C>, AddressLeaf>
+{
+  typedef int Type_t;
+  inline static
+  Type_t apply(const QDPSubType<T,C>& s, const AddressLeaf& p) 
+  {
+    p.setAddr( QDP_get_global_cache().getDevicePtr( s.getId() ) );
+    return 0;
+  }
+};
+
+  
 
 } // namespace QDP
 

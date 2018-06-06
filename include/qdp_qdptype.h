@@ -502,7 +502,6 @@ struct LeafFunctor<QDPType<T,C>, AddressLeaf>
   inline static
   Type_t apply(const QDPType<T,C>& s, const AddressLeaf& p) 
   {
-    //p.setAddr( s.getFdev() );
     p.setAddr( QDP_get_global_cache().getDevicePtr( s.getId() ) );
     return 0;
   }

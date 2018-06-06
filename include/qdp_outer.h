@@ -315,6 +315,8 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
       free_mem();
     }
 
+    
+    OLattice( int Id , float f ): myId(Id), mem(false) {}
 
 
     template<class T1>
@@ -395,8 +397,8 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 
 
 
-    OSubLattice<T> operator[](const Subset& s) const
-    {return OSubLattice<T>(*this,s);}
+    OSubLattice<T> operator[](const Subset& s)
+    {return OSubLattice<T>(*this,const_cast<Subset&>(s));}
 
 
     OLattice(const OLattice& rhs): QDPType<T, OLattice<T> >()
@@ -473,17 +475,21 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
       }
     }
 
-    int getId() const { return myId; }
+    int getId() const {
+      return myId;
+    }
 
   private:
 
 
     inline void alloc_mem(const char* msg) const {
-      myId = QDP_get_global_cache().registrate( Layout::sitesOnNode() * sizeof(T) , 1 , &changeLayout ); 
+      myId = QDP_get_global_cache().registrate( Layout::sitesOnNode() * sizeof(T) , 1 , &changeLayout );
+      mem = true;
     }
     inline void free_mem()  { 
-      if (myId >= 0)
-	QDP_get_global_cache().signoff( myId ); 
+      if (myId >= 0 && mem)
+	QDP_get_global_cache().signoff( myId );
+      mem = false;
     }
 
 
@@ -498,6 +504,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 
     mutable T *F;
     mutable int myId = -2;
+    mutable bool mem = false;       // did this class register the memory?
 
   };
 

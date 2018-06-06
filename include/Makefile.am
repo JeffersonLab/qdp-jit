@@ -24,7 +24,7 @@ CUDA_HDRS = qdp_cuda.h \
 	    qdp_deviceparams.h \
 	    qdp_llvm.h qdp_viewleaf.h \
 	    qdp_word.h qdp_wordjit.h qdp_wordreg.h \
-	    qdp_jitfunction.h qdp_jit_util.h qdp_pete_visitors.h qdp_qdptypejit.h \
+	    qdp_jitfunction.h qdp_jit_util.h qdp_pete_visitors.h qdp_qdptypejit.h qdp_qdpsubtypejit.h \
 	    qdp_outerjit.h qdp_realityjit.h qdp_realityreg.h qdp_primscalarjit.h qdp_primscalarreg.h \
             qdp_basejit.h qdp_basereg.h \
 	    qdp_primmatrixjit.h qdp_primcolormatjit.h qdp_primspinmatjit.h \
@@ -43,6 +43,7 @@ nobase_include_HEADERS = \
 		qdp_config.h \
 		qdp_forward.h \
 		qdp_globalfuncs.h \
+		qdp_globalfuncs_subtype.h \
 		qdp_inner.h \
 		qdp_init.h \
 		qdp_io.h \
@@ -55,6 +56,7 @@ nobase_include_HEADERS = \
 		qdp_optops.h \
 		qdp_outer.h \
 		qdp_outersubtype.h \
+		qdp_outersubjit.h \
 		qdp_params.h \
 		qdp_precision.h \
 		qdp_primcolormat.h \

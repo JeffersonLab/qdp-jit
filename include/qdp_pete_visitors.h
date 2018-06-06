@@ -80,7 +80,6 @@ struct AddressLeaf
   const Subset& subset;
 
   void setAddr(void* p) const {
-    //std::cout << "AddressLeaf::setAddr " << p << "\n";
     Types t;
     t.ptr = p;
     addr.push_back(t);
