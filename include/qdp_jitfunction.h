@@ -277,6 +277,41 @@ function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScala
 
 
 
+
+template<class T, class T1, class Op, class RHS>
+CUfunction
+function_lat_sca_subtype_build(OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
+{
+  if (ptx_db::db_enabled) {
+    CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
+    if (func)
+      return func;
+  }
+
+  llvm_start_new_function();
+
+  ParamRef p_th_count     = llvm_add_param<int>();
+      
+  ParamLeaf param_leaf;
+
+  typename LeafFunctor<OSubLattice<T>, ParamLeaf>::Type_t   dest_jit(forEach(dest, param_leaf, TreeCombine()));
+  auto op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
+  typename ForEach<QDPExpr<RHS,OScalar<T1> >, ParamLeaf, TreeCombine>::Type_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
+
+  llvm::Value * r_th_count  = llvm_derefParam( p_th_count );
+  llvm::Value* r_idx_thread = llvm_thread_idx();
+
+  llvm_cond_exit( llvm_ge( r_idx_thread , r_th_count ) );
+
+  op_jit(dest_jit.elem( JitDeviceLayout::Scalar , r_idx_thread ), // Coalesced
+	 forEach(rhs_view, ViewLeaf( JitDeviceLayout::Scalar , r_idx_thread ), OpCombine()));
+
+  return jit_function_epilogue_get_cuf("jit_lat_sca.ptx" , __PRETTY_FUNCTION__ );
+}
+
+  
+
+
 template<class T, class T1>
 CUfunction
 function_pokeSite_build( const OLattice<T>& dest , const OScalar<T1>& r  )
@@ -753,6 +788,36 @@ function_lat_sca_exec(CUfunction function, OLattice<T>& dest, const Op& op, cons
   for(unsigned i=0; i < addr_leaf.addr.size(); ++i) {
     addr.push_back( &addr_leaf.addr[i] );
     //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
+  }
+
+  jit_launch(function,th_count,addr);
+}
+
+
+
+
+template<class T, class T1, class Op, class RHS>
+void 
+function_lat_sca_subtype_exec(CUfunction function, OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs, const Subset& s)
+{
+  int th_count = s.numSiteTable();
+
+  if (th_count < 1) {
+    QDPIO::cout << "skipping localInnerProduct since zero size subset on this MPI\n";
+    return;
+  }
+
+  AddressLeaf addr_leaf(s);
+
+  forEach(dest, addr_leaf, NullCombine());
+  AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
+  forEach(rhs, addr_leaf, NullCombine());
+
+  std::vector<void*> addr;
+  addr.push_back( &th_count );
+
+  for(unsigned i=0; i < addr_leaf.addr.size(); ++i) {
+    addr.push_back( &addr_leaf.addr[i] );
   }
 
   jit_launch(function,th_count,addr);

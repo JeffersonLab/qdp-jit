@@ -15,6 +15,7 @@ namespace QDP {
  * Only used for lvalues
  */
 
+#if 0
 template<class T>
 class OSubScalar: public QDPSubType<T, OScalar<T> >
 {
@@ -83,7 +84,19 @@ private:
 
   //const Subset& s;
 };
+#endif
+  
 
+
+// not sure about this
+#if 0
+template<class T, class T1, class Op, class RHS>
+void evaluate(OSubScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs, const Subset& s)
+{
+  // Subset is not used at this level. It may be needed, though, within an inner operation
+  op(dest.elem(), forEach(rhs, ElemLeaf(), OpCombine()));
+}
+#endif
 
 
 //-------------------------------------------------------------------------------------

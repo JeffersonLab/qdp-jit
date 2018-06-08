@@ -113,9 +113,11 @@ namespace QDP {
 
 
 
-    OSubScalar<T>  operator[](const Subset& s) const
-    {return OSubScalar<T>(*this,s);}
+    // OSubScalar<T>  operator[](const Subset& s) const
+    // {return OSubScalar<T>(*this,s);}
 
+    // OSubScalar<T> operator[](const Subset& s)
+    // {return OSubScalar<T>(*this,const_cast<Subset&>(s));}
 
 
 

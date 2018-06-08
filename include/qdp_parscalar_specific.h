@@ -349,6 +349,20 @@ void evaluate_subtype(OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLat
 
 
   
+template<class T, class T1, class Op, class RHS>
+void evaluate_subtype(OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs, const Subset& s)
+{
+  static CUfunction function;
+
+  if (function == NULL)
+    function = function_lat_sca_subtype_build(dest, op, rhs);
+
+  function_lat_sca_subtype_exec(function, dest, op, rhs, s);
+}
+
+
+
+  
 
 //-----------------------------------------------------------------------------
 //! dest = (mask) ? s1 : dest
