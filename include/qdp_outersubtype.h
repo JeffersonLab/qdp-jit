@@ -113,23 +113,20 @@ public:
   //OSubLattice(OLattice<T>& a, const Subset& ss): F(a.getF()), s(ss), ownsMemory(false) {}
 
   OSubLattice(OLattice<T>& a, const Subset& ss): myId(a.getId()), ownsMemory(false), s(&(const_cast<Subset&>(ss))) {}
+  
   OSubLattice(const OSubLattice& a): QDPSubType<T, OLattice<T> >() {
-    ownsMemory = a.ownsMemory; 
+    ownsMemory = a.ownsMemory;
     s = a.s;
     if (a.ownsMemory) {
-      QDPIO::cout << "OSubLattice copy ctor, must copy   subset size = " << s->numSiteTable() << "\n";
+      //QDPIO::cout << "OSubLattice copy ctor, must copy (now on GPU)  subset size = " << s->numSiteTable() << "\n";
       alloc_mem();
-      T* Fh = getF();
-      T* Fa = a.getF();
-      for( int i = 0 ; i < s->numSiteTable() ; ++i )
-	Fh[i] = Fa[i];
+      operator_subtype_subtype(*this,OpAssign(),a,subset());
     } else {
       myId = a.getId();
     }
   }
 
 
-#if 1
   OSubLattice(): QDPSubType<T, OLattice<T> >(), ownsMemory(false), s(NULL)  {}
 
 
@@ -150,13 +147,7 @@ public:
 
   OSubLattice(const Subset& ss , OLattice<T>& a): ownsMemory(true), s(&(const_cast<Subset&>(ss)))  {
     alloc_mem();
-    const int *tab = s->siteTable().slice();
-    T* Fh = getF();
-    QDPIO::cout << "OSubLattice ctor(subset,lat), must copy (on CPU)\n";
-    for( int j = 0 ; j < s->numSiteTable() ; ++j ) {
-      int i = tab[j];
-      Fh[j] = a.elem(i);
-    }
+    evaluate_subtype_type(*this,OpAssign(),PETE_identity(a),subset());
   }
 
 
@@ -177,13 +168,6 @@ public:
       free_mem();
     }
   }
-
-  // void free_mem() {
-  // 	  QDP::Allocator::theQDPAllocator::Instance().free(F);
-  // }
-#endif
-
-
 
 
   //---------------------------------------------------------

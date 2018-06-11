@@ -90,6 +90,30 @@ public:
     }
 
 
+  template<class T1,class C1>
+  inline
+  void assign(const QDPSubType<T1,C1>& rhs)
+  {
+    if (!rhs.getOwnsMemory()) 
+      QDP_error_exit("Assigning subtype(view) to qdptype is not supported");
+
+    //QDP_info("qdptype = subtype(own) %d",rhs.subset().numSiteTable());
+
+    //C1* Crhs = static_cast<C1*>(&rhs);
+    C* me = static_cast<C*>(this);
+
+    //operator_type_subtype(*me,OpAssign(),*Crhs,Crhs->subset());
+    operator_type_subtype(*me,OpAssign(),rhs,rhs.subset());
+
+    // const int *tab = rhs.subset().siteTable().slice();
+    // for(int j=0; j < rhs.subset().numSiteTable(); ++j) {
+    //   int i = tab[j];
+    //   elem(i) = rhs.getF()[j];
+    // }
+  }
+
+
+
   //! Use this for default operator=
   inline
   C& operator=(const QDPType& rhs)

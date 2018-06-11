@@ -49,7 +49,7 @@ public:
     typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpAssign(),PETE_identity(Scalar_t(rhs)),subset());
+      evaluate_subtype_type(*me,OpAssign(),PETE_identity(Scalar_t(rhs)),subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpAssign(),PETE_identity(Scalar_t(rhs)),subset());
@@ -74,7 +74,7 @@ public:
   {
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpAssign(),PETE_identity(rhs),subset());
+      evaluate_subtype_type(*me,OpAssign(),PETE_identity(rhs),subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpAssign(),PETE_identity(rhs),subset());
@@ -86,14 +86,12 @@ public:
   inline
   void assign(const QDPSubType<T1,C1>& rhs)
   {
-    assert(!"ni");
     if (getOwnsMemory() && rhs.getOwnsMemory()) {
       if (subset().numSiteTable() != rhs.subset().numSiteTable())
 	QDP_error_exit("assignment with incompatible subset sizes");
-      for(int j=0; j < subset().numSiteTable(); ++j)
-	getId()[j] = rhs.getId()[j];
+      CC* me = static_cast<CC*>(this);
+      operator_subtype_subtype(*me,OpAssign(),rhs,subset());
     } else
-
 #if 0
     if (!getOwnsMemory() && rhs.getOwnsMemory()) {
       //std::cout << "view = own\n";
@@ -127,7 +125,7 @@ public:
   {
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpAssign(),rhs,subset());
+      evaluate_subtype_type(*me,OpAssign(),rhs,subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpAssign(),rhs,subset());
@@ -140,7 +138,7 @@ public:
     typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpAddAssign(),PETE_identity(Scalar_t(rhs)),subset());
+      evaluate_subtype_type(*me,OpAddAssign(),PETE_identity(Scalar_t(rhs)),subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpAddAssign(),PETE_identity(Scalar_t(rhs)),subset());
@@ -153,7 +151,7 @@ public:
   {
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpAddAssign(),PETE_identity(rhs),subset());
+      evaluate_subtype_type(*me,OpAddAssign(),PETE_identity(rhs),subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpAddAssign(),PETE_identity(rhs),subset());
@@ -166,7 +164,7 @@ public:
   {
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpAddAssign(),rhs,subset());
+      evaluate_subtype_type(*me,OpAddAssign(),rhs,subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpAddAssign(),rhs,subset());
@@ -179,7 +177,7 @@ public:
     typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpSubtractAssign(),PETE_identity(Scalar_t(rhs)),subset());
+      evaluate_subtype_type(*me,OpSubtractAssign(),PETE_identity(Scalar_t(rhs)),subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpSubtractAssign(),PETE_identity(Scalar_t(rhs)),subset());
@@ -192,7 +190,7 @@ public:
   {
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpSubtractAssign(),PETE_identity(rhs),subset());
+      evaluate_subtype_type(*me,OpSubtractAssign(),PETE_identity(rhs),subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpSubtractAssign(),PETE_identity(rhs),subset());
@@ -205,7 +203,7 @@ public:
   {
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpSubtractAssign(),rhs,subset());
+      evaluate_subtype_type(*me,OpSubtractAssign(),rhs,subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpSubtractAssign(),rhs,subset());
@@ -218,7 +216,7 @@ public:
     typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpMultiplyAssign(),PETE_identity(Scalar_t(rhs)),subset());
+      evaluate_subtype_type(*me,OpMultiplyAssign(),PETE_identity(Scalar_t(rhs)),subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpMultiplyAssign(),PETE_identity(Scalar_t(rhs)),subset());
@@ -231,7 +229,7 @@ public:
   {
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpMultiplyAssign(),PETE_identity(rhs),subset());
+      evaluate_subtype_type(*me,OpMultiplyAssign(),PETE_identity(rhs),subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpMultiplyAssign(),PETE_identity(rhs),subset());
@@ -244,7 +242,7 @@ public:
   {
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpMultiplyAssign(),rhs,subset());
+      evaluate_subtype_type(*me,OpMultiplyAssign(),rhs,subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpMultiplyAssign(),rhs,subset());
@@ -257,7 +255,7 @@ public:
     typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpDivideAssign(),PETE_identity(Scalar_t(rhs)),subset());
+      evaluate_subtype_type(*me,OpDivideAssign(),PETE_identity(Scalar_t(rhs)),subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpDivideAssign(),PETE_identity(Scalar_t(rhs)),subset());
@@ -270,7 +268,7 @@ public:
   {
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpDivideAssign(),PETE_identity(rhs),subset());
+      evaluate_subtype_type(*me,OpDivideAssign(),PETE_identity(rhs),subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpDivideAssign(),PETE_identity(rhs),subset());
@@ -283,7 +281,7 @@ public:
   {
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpDivideAssign(),rhs,subset());
+      evaluate_subtype_type(*me,OpDivideAssign(),rhs,subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpDivideAssign(),rhs,subset());
@@ -296,7 +294,7 @@ public:
     typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpModAssign(),PETE_identity(Scalar_t(rhs)),subset());
+      evaluate_subtype_type(*me,OpModAssign(),PETE_identity(Scalar_t(rhs)),subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpModAssign(),PETE_identity(Scalar_t(rhs)),subset());
@@ -309,7 +307,7 @@ public:
   {
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpModAssign(),PETE_identity(rhs),subset());
+      evaluate_subtype_type(*me,OpModAssign(),PETE_identity(rhs),subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpModAssign(),PETE_identity(rhs),subset());
@@ -322,7 +320,7 @@ public:
   {
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpModAssign(),rhs,subset());
+      evaluate_subtype_type(*me,OpModAssign(),rhs,subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpModAssign(),rhs,subset());
@@ -335,7 +333,7 @@ public:
     typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpBitwiseOrAssign(),PETE_identity(Scalar_t(rhs)),subset());
+      evaluate_subtype_type(*me,OpBitwiseOrAssign(),PETE_identity(Scalar_t(rhs)),subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpBitwiseOrAssign(),PETE_identity(Scalar_t(rhs)),subset());
@@ -348,7 +346,7 @@ public:
   {
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpBitwiseOrAssign(),PETE_identity(rhs),subset());
+      evaluate_subtype_type(*me,OpBitwiseOrAssign(),PETE_identity(rhs),subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpBitwiseOrAssign(),PETE_identity(rhs),subset());
@@ -361,7 +359,7 @@ public:
   {
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpBitwiseOrAssign(),PETE_identity(rhs),subset());
+      evaluate_subtype_type(*me,OpBitwiseOrAssign(),PETE_identity(rhs),subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpBitwiseOrAssign(),PETE_identity(rhs),subset());
@@ -374,7 +372,7 @@ public:
     typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpBitwiseAndAssign(),PETE_identity(Scalar_t(rhs)),subset());
+      evaluate_subtype_type(*me,OpBitwiseAndAssign(),PETE_identity(Scalar_t(rhs)),subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpBitwiseAndAssign(),PETE_identity(Scalar_t(rhs)),subset());
@@ -387,7 +385,7 @@ public:
   {
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpBitwiseAndAssign(),PETE_identity(rhs),subset());
+      evaluate_subtype_type(*me,OpBitwiseAndAssign(),PETE_identity(rhs),subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpBitwiseAndAssign(),PETE_identity(rhs),subset());
@@ -400,7 +398,7 @@ public:
   {
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpBitwiseAndAssign(),rhs,subset());
+      evaluate_subtype_type(*me,OpBitwiseAndAssign(),rhs,subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpBitwiseAndAssign(),rhs,subset());
@@ -413,7 +411,7 @@ public:
     typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpBitwiseXorAssign(),PETE_identity(Scalar_t(rhs)),subset());
+      evaluate_subtype_type(*me,OpBitwiseXorAssign(),PETE_identity(Scalar_t(rhs)),subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpBitwiseXorAssign(),PETE_identity(Scalar_t(rhs)),subset());
@@ -426,7 +424,7 @@ public:
   {
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpBitwiseXorAssign(),PETE_identity(rhs),subset());
+      evaluate_subtype_type(*me,OpBitwiseXorAssign(),PETE_identity(rhs),subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpBitwiseXorAssign(),PETE_identity(rhs),subset());
@@ -439,7 +437,7 @@ public:
   {
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpBitwiseXorAssign(),rhs,subset());
+      evaluate_subtype_type(*me,OpBitwiseXorAssign(),rhs,subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpBitwiseXorAssign(),rhs,subset());
@@ -452,7 +450,7 @@ public:
     typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpLeftShiftAssign(),PETE_identity(Scalar_t(rhs)),subset());
+      evaluate_subtype_type(*me,OpLeftShiftAssign(),PETE_identity(Scalar_t(rhs)),subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpLeftShiftAssign(),PETE_identity(Scalar_t(rhs)),subset());
@@ -465,7 +463,7 @@ public:
   {
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpLeftShiftAssign(),PETE_identity(rhs),subset());
+      evaluate_subtype_type(*me,OpLeftShiftAssign(),PETE_identity(rhs),subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpLeftShiftAssign(),PETE_identity(rhs),subset());
@@ -478,7 +476,7 @@ public:
   {
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpLeftShiftAssign(),rhs,subset());
+      evaluate_subtype_type(*me,OpLeftShiftAssign(),rhs,subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpLeftShiftAssign(),rhs,subset());
@@ -492,7 +490,7 @@ public:
     typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpRightShiftAssign(),PETE_identity(Scalar_t(rhs)),subset());
+      evaluate_subtype_type(*me,OpRightShiftAssign(),PETE_identity(Scalar_t(rhs)),subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpRightShiftAssign(),PETE_identity(Scalar_t(rhs)),subset());
@@ -505,7 +503,7 @@ public:
   {
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpRightShiftAssign(),PETE_identity(rhs),subset());
+      evaluate_subtype_type(*me,OpRightShiftAssign(),PETE_identity(rhs),subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpRightShiftAssign(),PETE_identity(rhs),subset());
@@ -518,7 +516,7 @@ public:
   {
     if (getOwnsMemory()) {
       CC* me = static_cast<CC*>(this);
-      evaluate_subtype(*me,OpRightShiftAssign(),rhs,subset());
+      evaluate_subtype_type(*me,OpRightShiftAssign(),rhs,subset());
     } else {
       C tmp(getId(),1.0);
       evaluate(tmp,OpRightShiftAssign(),rhs,subset());

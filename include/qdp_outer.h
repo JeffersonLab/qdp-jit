@@ -398,6 +398,13 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
     }
 
 
+    template<class T1>
+    inline
+    void operator=(const OSubLattice<T1>& rhs)
+    {
+      this->assign(rhs);
+    }
+
 
     OSubLattice<T> operator[](const Subset& s)
     {return OSubLattice<T>(*this,const_cast<Subset&>(s));}

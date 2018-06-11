@@ -324,26 +324,53 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
 
 
 
-
+#if 0
 template<class T, class T1, class Op, class RHS>
-void evaluate_subtype(OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs,
-		      const Subset& s)
+void evaluate_subtype_type(OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs,
+			   const Subset& s)
 {
   static CUfunction function;
 
   if (function == NULL)
-    {
-      //QDPIO::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
-      function = function_subtype_build(dest, op, rhs);
-      //QDPIO::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
-    }
-  else
-    {
-      //QDPIO::cout << __PRETTY_FUNCTION__ << ": is already built\n";
-    }
+    function = function_subtype_type_build(dest, op, rhs);
 
-  // Execute the function
-  function_subtype_exec(function, dest, op, rhs, s);
+  function_subtype_type_exec(function, dest, op, rhs, s);
+}
+#else
+template<class T, class C1, class Op, class RHS>
+void evaluate_subtype_type(OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,C1 >& rhs,
+			   const Subset& s)
+{
+  static CUfunction function;
+
+  if (function == NULL)
+    function = function_subtype_type_build(dest, op, rhs);
+
+  function_subtype_type_exec(function, dest, op, rhs, s);
+}
+#endif
+
+template<class T, class T1, class Op>
+void operator_type_subtype(OLattice<T>& dest, const Op& op, const QDPSubType<T1,OLattice<T1> >& rhs, const Subset& s)
+{
+  static CUfunction function;
+
+  if (function == NULL)
+    function = operator_type_subtype_build(dest, op, rhs);
+
+  operator_type_subtype_exec(function, dest, op, rhs, s);
+}
+
+
+template<class T, class T1, class Op>
+void operator_subtype_subtype(OSubLattice<T>& dest, const Op& op, const QDPSubType<T1,OLattice<T1> >& rhs, const Subset& s)
+{
+  static CUfunction function;
+
+  if (function == NULL)
+    function = operator_subtype_subtype_build(dest, op, rhs);
+
+  operator_subtype_subtype_exec(function, dest, op, rhs, s);
 }
 
 
