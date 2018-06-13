@@ -201,6 +201,24 @@ namespace QDP {
   };
 
 
+  template<class T, class Op>
+  struct UnaryReturn<WordJIT<T>, Op> {
+    typedef WordJIT<typename UnaryReturn<T, Op>::Type_t>  Type_t;
+  };
+
+
+  template<>
+  struct UnaryReturn<float, FnIsFinite> {
+    typedef bool  Type_t;
+  };
+
+  template<>
+  struct UnaryReturn<double, FnIsFinite> {
+    typedef bool  Type_t;
+  };
+
+  
+
   template<class T1>
   inline typename UnaryReturn<WordREG<T1>, OpUnaryMinus>::Type_t
   operator-(const WordJIT<T1>& l)
@@ -216,8 +234,6 @@ namespace QDP {
   {
     typedef WordREG<typename REGType<T>::Type_t>  Type_t;
   };
-
-
 
 
   template<class T> 

@@ -922,6 +922,8 @@ tanh(const PScalar<T1>& s1)
 
 
 
+
+
 //! PScalar<T> = pow(PScalar<T> , PScalar<T>)
 template<class T1, class T2>
 inline typename BinaryReturn<PScalar<T1>, PScalar<T2>, FnPow>::Type_t

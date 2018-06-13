@@ -33,7 +33,15 @@ namespace QDP
     ret.setup( llvm_sqrt_f32( s1.get_val() ) );
     return ret;
   }
- 
+
+  typename UnaryReturn<WordREG<float>, FnIsFinite>::Type_t 
+  isfinite(const WordREG<float>& s1)
+  {
+    typename UnaryReturn<WordREG<float>, FnIsFinite>::Type_t ret;
+    ret.setup( llvm_isfinite_f32( s1.get_val() ) );
+    return ret;
+  }
+
 
   typename UnaryReturn<WordREG<float>, FnArcCos>::Type_t
   acos(const WordREG<float>& s1)
@@ -182,6 +190,14 @@ namespace QDP
   {
     typename UnaryReturn<WordREG<double>, FnSin>::Type_t ret;
     ret.setup( llvm_sqrt_f64( s1.get_val() ) );
+    return ret;
+  }
+
+  typename UnaryReturn<WordREG<double>, FnIsFinite>::Type_t 
+  isfinite(const WordREG<double>& s1)
+  {
+    typename UnaryReturn<WordREG<double>, FnSin>::Type_t ret;
+    ret.setup( llvm_isfinite_f64( s1.get_val() ) );
     return ret;
   }
 

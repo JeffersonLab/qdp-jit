@@ -432,6 +432,7 @@ cmplx(const PSpinVector<T1,N>& s1, const PSpinVector<T2,N>& s2)
 }
 
 
+
 //-----------------------------------------------------------------------------
 // Functions
 // Conjugate

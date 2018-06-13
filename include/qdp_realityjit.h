@@ -1318,6 +1318,15 @@ tanh(const RScalarJIT<T1>& s1)
   return tanh(s1.elem());
 }
 
+// IsFinite
+template<class T1>
+inline typename UnaryReturn<RScalarJIT<T1>, FnIsFinite>::Type_t
+isfinite(const RScalarJIT<T1>& s1)
+{
+  return isfinite(s1.elem());
+}
+
+
 
 //! RScalarJIT<T> = pow(RScalarJIT<T> , RScalarJIT<T>)
 template<class T1, class T2>
@@ -1863,6 +1872,18 @@ operator/(const RScalarJIT<T1>& l, const RComplexJIT<T2>& r)
 }
 
 
+
+
+// IsFinite
+template<class T1>
+inline typename UnaryReturn<RComplexJIT<T1>, FnIsFinite>::Type_t
+isfinite(const RComplexJIT<T1>& s1)
+{
+  return isfinite(s1.real()) && isfinite(s1.imag());
+}
+
+
+  
 
 //-----------------------------------------------------------------------------
 // Functions

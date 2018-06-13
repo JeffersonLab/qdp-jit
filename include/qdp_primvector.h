@@ -540,6 +540,7 @@ cmplx(const PVector<T1,N,C>& s1, const PVector<T2,N,C>& s2)
 }
 
 
+
 //-----------------------------------------------------------------------------
 // Functions
 // Conjugate

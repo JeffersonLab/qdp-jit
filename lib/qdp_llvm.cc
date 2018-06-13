@@ -259,6 +259,7 @@ namespace QDP {
   llvm::Function *func_tanh_f32;
   llvm::Function *func_fabs_f32;
   llvm::Function *func_sqrt_f32;
+  llvm::Function *func_isfinite_f32;
 
   //Imported PTX Binary operations single precision
   llvm::Function *func_pow_f32;
@@ -281,7 +282,8 @@ namespace QDP {
   llvm::Function *func_tanh_f64;
   llvm::Function *func_fabs_f64;
   llvm::Function *func_sqrt_f64;
-
+  llvm::Function *func_isfinite_f64;
+  
   //Imported PTX Binary operations double precision
   llvm::Function *func_pow_f64;
   llvm::Function *func_atan2_f64;
@@ -389,6 +391,7 @@ namespace QDP {
     func_tanh_f32 = llvm_get_func( "__nv_tanhf" );
     func_fabs_f32 = llvm_get_func( "__nv_fabsf" );
     func_sqrt_f32 = llvm_get_func( "__nv_fsqrt_rn" );
+    func_isfinite_f32 = llvm_get_func( "__nv_finitef" );
 
 
     func_pow_f32 = llvm_get_func( "__nv_powf" );
@@ -411,7 +414,8 @@ namespace QDP {
     func_tanh_f64 = llvm_get_func( "__nv_tanh" );
     func_fabs_f64 = llvm_get_func( "__nv_fabs" );
     func_sqrt_f64 = llvm_get_func( "__nv_dsqrt_rn" );
-
+    func_isfinite_f64 = llvm_get_func( "__nv_isfinited" );
+    
     func_pow_f64 = llvm_get_func( "__nv_pow" );
     func_atan2_f64 = llvm_get_func( "__nv_atan2" );
   }
@@ -703,7 +707,7 @@ namespace QDP {
   }
 
 
-  llvm::Value* llvm_and( llvm::Value* lhs , llvm::Value* rhs ) {  
+  llvm::Value* llvm_and( llvm::Value* lhs , llvm::Value* rhs ) {
     auto vals = llvm_normalize_values(lhs,rhs);
     llvm::Type* args_type = vals.first->getType();
     assert( !args_type->isFloatingPointTy() );
@@ -1568,6 +1572,7 @@ namespace QDP {
   llvm::Value* llvm_tanh_f32( llvm::Value* lhs ) { return llvm_call_f32( func_tanh_f32 , lhs ); }
   llvm::Value* llvm_fabs_f32( llvm::Value* lhs ) { return llvm_call_f32( func_fabs_f32 , lhs ); }
   llvm::Value* llvm_sqrt_f32( llvm::Value* lhs ) { return llvm_call_f32( func_sqrt_f32 , lhs ); }
+  llvm::Value* llvm_isfinite_f32( llvm::Value* lhs ) { return llvm_call_f32( func_isfinite_f32 , lhs ); }
 
   llvm::Value* llvm_pow_f32( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f32( func_pow_f32 , lhs , rhs ); }
   llvm::Value* llvm_atan2_f32( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f32( func_atan2_f32 , lhs , rhs ); }
@@ -1588,6 +1593,7 @@ namespace QDP {
   llvm::Value* llvm_tanh_f64( llvm::Value* lhs ) { return llvm_call_f64( func_tanh_f64 , lhs ); }
   llvm::Value* llvm_fabs_f64( llvm::Value* lhs ) { return llvm_call_f64( func_fabs_f64 , lhs ); }
   llvm::Value* llvm_sqrt_f64( llvm::Value* lhs ) { return llvm_call_f64( func_sqrt_f64 , lhs ); }
+  llvm::Value* llvm_isfinite_f64( llvm::Value* lhs ) { return llvm_call_f64( func_isfinite_f64 , lhs ); }
 
   llvm::Value* llvm_pow_f64( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f64( func_pow_f64 , lhs , rhs ); }
   llvm::Value* llvm_atan2_f64( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f64( func_atan2_f64 , lhs , rhs ); }

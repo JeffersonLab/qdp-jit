@@ -808,6 +808,11 @@ operator/(const PMatrix<T1,N,C>& l, const PScalar<T2>& r)
 
 
 //-----------------------------------------------------------------------------
+// These functions always return bool
+//! isnan
+
+
+//-----------------------------------------------------------------------------
 // Functions
 
 // Adjoint

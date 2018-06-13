@@ -179,7 +179,6 @@ namespace QDP {
   CUfunction 
   function_sum_build()
   {
-
     if (ptx_db::db_enabled) {
       CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
       if (func)

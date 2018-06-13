@@ -116,6 +116,14 @@ template<class T1, int N, class Op>
 struct UnaryReturn<PColorVectorREG<T1,N>, Op> {
   typedef PColorVectorREG<typename UnaryReturn<T1, Op>::Type_t, N>  Type_t;
 };
+
+
+template<class T1, int N>
+struct UnaryReturn<PColorVectorREG<T1,N>, FnIsFinite> {
+  typedef PScalarREG<  typename UnaryReturn<T1, FnIsFinite>::Type_t > Type_t;
+};
+
+  
 // Default binary(PScalarREG,PColorVectorREG) -> PColorVectorREG
 template<class T1, class T2, int N, class Op>
 struct BinaryReturn<PScalarREG<T1>, PColorVectorREG<T2,N>, Op> {
@@ -139,6 +147,8 @@ template<class T1, class T2, int N, class Op>
 struct BinaryReturn<PColorVectorREG<T1,N>, PColorVectorREG<T2,N>, Op> {
   typedef PColorVectorREG<typename BinaryReturn<T1, T2, Op>::Type_t, N>  Type_t;
 };
+
+
 
 
 #if 0

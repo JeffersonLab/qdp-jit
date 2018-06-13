@@ -441,6 +441,26 @@ cmplx(const PVectorJIT<T1,N,C>& s1, const PVectorJIT<T2,N,C>& s2)
 }
 
 
+//! isfinite
+template<class T1, int N, template<class,int> class C>
+struct UnaryReturn<PVectorJIT<T1,N,C>, FnIsFinite> {
+  bool Type_t;
+};
+
+template<class T1, int N, template<class,int> class C>
+inline typename UnaryReturn<PVectorJIT<T1,N,C>, FnIsFinite>::Type_t
+isfinite(const PVector<T1,N,C>& l)
+{
+  typename UnaryReturn<PVectorJIT<T1,N,C>, FnIsFinite>::Type_t d(l.func());
+  d = isfinite(l.elem(0));
+
+  for(int i=1; i < N; ++i)
+    d &= isfinite(l.elem(i));
+
+  return d;
+}
+
+
 //-----------------------------------------------------------------------------
 // Functions
 // Conjugate

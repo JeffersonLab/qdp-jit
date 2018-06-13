@@ -885,6 +885,14 @@ sqrt(const PScalarREG<T1>& s1)
   return sqrt(s1.elem());
 }
 
+template<class T1>
+inline typename UnaryReturn<PScalarREG<T1>, FnIsFinite>::Type_t
+isfinite(const PScalarREG<T1>& s1)
+{
+  return isfinite(s1.elem());
+}
+
+
 // Tan
 template<class T1>
 inline typename UnaryReturn<PScalarREG<T1>, FnTan>::Type_t

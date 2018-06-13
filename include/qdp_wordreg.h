@@ -148,12 +148,8 @@ namespace QDP {
     inline
     WordREG& operator&=(const WordREG<T1>& rhs) 
     {
-  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-  QDP_error_exit("ni");
-#if 0
       val = llvm_and( val , rhs.get_val() );
       return *this;
-#endif
     }
 
     //! WordREG ^= WordREG
@@ -236,6 +232,12 @@ namespace QDP {
   template<class T>
   struct UnaryReturn<WordREG<T>, FnSeedToFloat> {
     typedef WordREG<typename UnaryReturn<T, FnSeedToFloat>::Type_t>  Type_t;
+  };
+
+  
+  template<class T>
+  struct UnaryReturn<WordREG<T>, FnIsFinite> {
+    typedef WordREG<typename UnaryReturn<T, FnIsFinite>::Type_t>  Type_t;
   };
 
 
@@ -680,6 +682,7 @@ typename UnaryReturn<WordREG<float>, FnHypSin>::Type_t sinh(const WordREG<float>
 typename UnaryReturn<WordREG<float>, FnTan>::Type_t tan(const WordREG<float>& s1);
 typename UnaryReturn<WordREG<float>, FnHypTan>::Type_t tanh(const WordREG<float>& s1);
 
+typename UnaryReturn<WordREG<float>, FnIsFinite>::Type_t isfinite(const WordREG<float>& s1);
 
 typename UnaryReturn<WordREG<double>, FnCeil>::Type_t ceil(const WordREG<double>& s1);
 typename UnaryReturn<WordREG<double>, FnFloor>::Type_t floor(const WordREG<double>& s1);
@@ -698,6 +701,7 @@ typename UnaryReturn<WordREG<double>, FnHypSin>::Type_t sinh(const WordREG<doubl
 typename UnaryReturn<WordREG<double>, FnTan>::Type_t tan(const WordREG<double>& s1);
 typename UnaryReturn<WordREG<double>, FnHypTan>::Type_t tanh(const WordREG<double>& s1);
 
+typename UnaryReturn<WordREG<double>, FnIsFinite>::Type_t isfinite(const WordREG<double>& s1);
 
 typename BinaryReturn<WordREG<float>, WordREG<float>, FnPow>::Type_t pow(const WordREG<float>& s1, const WordREG<float>& s2);
 typename BinaryReturn<WordREG<double>, WordREG<double>, FnPow>::Type_t pow(const WordREG<double>& s1, const WordREG<double>& s2);

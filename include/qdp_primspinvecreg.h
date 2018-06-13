@@ -352,6 +352,31 @@ cmplx(const PSpinVectorREG<T1,N>& s1, const PSpinVectorREG<T2,N>& s2)
 }
 
 
+//! isfinite
+template<class T1, int N>
+struct UnaryReturn<PSpinVectorREG<T1,N>, FnIsFinite> {
+  typedef PScalarREG< typename UnaryReturn<T1, FnIsFinite>::Type_t > Type_t;
+};
+
+
+  
+template<class T1, int N>
+inline typename UnaryReturn<PSpinVectorREG<T1,N>, FnIsFinite>::Type_t
+isfinite(const PSpinVectorREG<T1,N>& l)
+{
+  typename UnaryReturn<PSpinVectorREG<T1,N>, FnIsFinite>::Type_t d;
+
+  d.elem() = isfinite(l.elem(0));
+
+  for(int i=1; i < N; ++i)
+    d.elem() &= isfinite(l.elem(i));
+
+  return d;
+}
+
+  
+
+
 //-----------------------------------------------------------------------------
 // Functions
 // Conjugate

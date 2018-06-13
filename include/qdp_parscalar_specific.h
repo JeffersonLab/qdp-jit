@@ -669,6 +669,23 @@ void gaussian(OLattice<T>& d)
 
 
 
+template<class T> 
+bool isfinite(const OLattice<T>& dest)
+{
+  static CUfunction function;
+
+  Boolean ret = true;
+  
+  if (function == NULL)
+    function = function_isfinite_build( ret , dest );
+
+  function_isfinite_exec( function , ret , dest );
+
+  return toBool(ret);
+}
+
+  
+
 //-----------------------------------------------------------------------------
 // Broadcast operations
 //! dest  = 0 

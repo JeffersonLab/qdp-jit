@@ -141,6 +141,7 @@ private:
 };
 
 
+
 //! Extract color matrix components
 /*! @ingroup group1
   @relates QDPType */

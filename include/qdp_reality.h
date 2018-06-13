@@ -1391,6 +1391,8 @@ tanh(const RScalar<T1>& s1)
 }
 
 
+
+//-----------------------------------------------------------------------------
 //! RScalar<T> = pow(RScalar<T> , RScalar<T>)
 template<class T1, class T2>
 inline typename BinaryReturn<RScalar<T1>, RScalar<T2>, FnPow>::Type_t
@@ -2011,6 +2013,7 @@ operator/(const RScalar<T1>& l, const RComplex<T2>& r)
   return Ret_t(l.elem() * r.real() * tmp,
 	       -l.elem() * r.imag() * tmp);
 }
+
 
 
 

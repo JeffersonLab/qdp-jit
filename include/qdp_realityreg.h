@@ -1486,6 +1486,17 @@ sqrt(const RScalarREG<T1>& s1)
   return sqrt(s1.elem());
 }
 
+
+template<class T1>
+inline typename UnaryReturn<RScalarREG<T1>, FnIsFinite>::Type_t
+isfinite(const RScalarREG<T1>& s1)
+{
+  return isfinite(s1.elem());
+}
+
+
+  
+
 // Tan
 template<class T1>
 inline typename UnaryReturn<RScalarREG<T1>, FnTan>::Type_t
@@ -2634,6 +2645,21 @@ qdpPHI(RComplexREG<T>& d,
   qdpPHI(d.imag(),
 	 phi0.imag(),bb0,
 	 phi1.imag(),bb1);
+}
+
+
+
+template<class T1>
+struct UnaryReturn<RComplexREG<T1>, FnIsFinite> {
+  typedef RScalarREG<typename UnaryReturn<T1, FnIsFinite>::Type_t>  Type_t;
+};
+
+
+template<class T1>
+inline typename UnaryReturn<RComplexREG<T1>, FnIsFinite>::Type_t
+isfinite(const RComplexREG<T1>& s1)
+{
+  return isfinite(s1.real()) && isfinite(s1.imag());
 }
 
 

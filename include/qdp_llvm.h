@@ -278,6 +278,7 @@ namespace QDP {
   llvm::Value* llvm_tanh_f32( llvm::Value* lhs );
   llvm::Value* llvm_fabs_f32( llvm::Value* lhs ); 
   llvm::Value* llvm_sqrt_f32( llvm::Value* lhs );
+  llvm::Value* llvm_isfinite_f32( llvm::Value* lhs );
 
   llvm::Value* llvm_pow_f32( llvm::Value* lhs, llvm::Value* rhs ); 
   llvm::Value* llvm_atan2_f32( llvm::Value* lhs, llvm::Value* rhs );
@@ -298,6 +299,7 @@ namespace QDP {
   llvm::Value* llvm_tanh_f64( llvm::Value* lhs );
   llvm::Value* llvm_fabs_f64( llvm::Value* lhs ); 
   llvm::Value* llvm_sqrt_f64( llvm::Value* lhs );
+  llvm::Value* llvm_isfinite_f64( llvm::Value* lhs );
 
   llvm::Value* llvm_pow_f64( llvm::Value* lhs, llvm::Value* rhs );
   llvm::Value* llvm_atan2_f64( llvm::Value* lhs, llvm::Value* rhs );
