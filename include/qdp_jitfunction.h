@@ -44,6 +44,38 @@ namespace QDP {
     jit_launch(function,th_count,addr);
   }
 
+
+  template<class T, class T1, class T2, class C1, class C2>
+  void 
+  function_localInnerProduct_subtype_type_exec(CUfunction function, OSubLattice<T>& ret,
+					       const QDPSubType<T1,C1> & l,const QDPType<T2,C2> & r,
+					       const Subset& s)
+  {
+    int th_count = s.numSiteTable();
+
+    if (th_count < 1) {
+      //QDPIO::cout << "skipping localInnerProduct since zero size subset on this MPI\n";
+      return;
+    }
+
+    void * site_table = QDP_get_global_cache().getDevicePtr( s.getIdSiteTable() );
+    AddressLeaf addr_leaf(s);
+    FnLocalInnerProduct op;
+    forEach(ret, addr_leaf, NullCombine());
+    AddOpAddress<FnLocalInnerProduct,AddressLeaf>::apply(op,addr_leaf);
+    forEach(l, addr_leaf, NullCombine());
+    forEach(r, addr_leaf, NullCombine());
+
+    std::vector<void*> addr;
+    addr.push_back( &th_count );
+    addr.push_back( &site_table );
+
+    for(unsigned i=0; i < addr_leaf.addr.size(); ++i) {
+      addr.push_back( &addr_leaf.addr[i] );
+    }
+    jit_launch(function,th_count,addr);
+  }
+
   
   
   template<class T, class T1, class T2, class C1, class C2>
@@ -93,6 +125,53 @@ namespace QDP {
     return jit_function_epilogue_get_cuf("jit_localInnerProduct_type_subtype.ptx" , __PRETTY_FUNCTION__ );
   }
 
+  
+  template<class T, class T1, class T2, class C1, class C2>
+  CUfunction
+  function_localInnerProduct_subtype_type_build(OSubLattice<T>& ret,
+						const QDPSubType<T1,C2> & l,const QDPType<T2,C1> & r)
+  {
+    typedef typename QDPSubType<T1,C1>::Subtype_t LT;
+    typedef typename QDPType<T2,C2>::Subtype_t    RT;
+    
+    if (ptx_db::db_enabled) {
+      CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
+      if (func)
+	return func;
+    }
+
+    llvm_start_new_function();
+
+    ParamRef p_th_count     = llvm_add_param<int>();
+    ParamRef p_site_table   = llvm_add_param<int*>();      // subset sitetable
+
+    ParamLeaf param_leaf;
+
+    typename LeafFunctor<OSubLattice<T>, ParamLeaf>::Type_t   ret_jit(forEach(ret, param_leaf, TreeCombine()));
+
+    FnLocalInnerProduct op;
+    auto op_jit = AddOpParam<FnLocalInnerProduct,ParamLeaf>::apply(op,param_leaf);
+
+    typename LeafFunctor<QDPSubType<T1,C1> , ParamLeaf>::Type_t   l_jit(forEach(l, param_leaf, TreeCombine()));
+    typename LeafFunctor<QDPType<T2,C2>    , ParamLeaf>::Type_t   r_jit(forEach(r, param_leaf, TreeCombine()));
+	
+    llvm::Value * r_th_count     = llvm_derefParam( p_th_count );
+    llvm::Value* r_idx_thread = llvm_thread_idx();
+
+    llvm_cond_exit( llvm_ge( r_idx_thread , r_th_count ) );
+
+    llvm::Value* r_idx_perm = llvm_array_type_indirection( p_site_table , r_idx_thread );
+
+    typename REGType< typename JITType< LT >::Type_t >::Type_t l_reg;
+    l_reg.setup( l_jit.elem( JitDeviceLayout::Scalar , r_idx_thread ) );
+
+    typename REGType< typename JITType< RT >::Type_t >::Type_t r_reg;
+    r_reg.setup( r_jit.elem( JitDeviceLayout::Coalesced , r_idx_perm ) );
+
+    ret_jit.elem( JitDeviceLayout::Scalar , r_idx_thread ) = op_jit( l_reg , r_reg );
+    
+    return jit_function_epilogue_get_cuf("jit_localInnerProduct_type_subtype.ptx" , __PRETTY_FUNCTION__ );
+  }
 
 
 

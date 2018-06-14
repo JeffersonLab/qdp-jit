@@ -38,16 +38,13 @@ namespace QDP
     typename QDPSubTypeTrait< typename BinaryReturn<C1,C2,FnLocalInnerProduct>::Type_t >::Type_t ret;
     ret.setSubset( l.subset() );
 
-    //QDP_info("localInnerProduct %d sites",l.subset().numSiteTable());
+    static CUfunction function;
 
-    const int *tab = l.subset().siteTable().slice();
-    for(int j=0; j < l.subset().numSiteTable(); ++j)
-      {
-	int i = tab[j];
-	FnLocalInnerProduct op;
-	ret.getF()[j] = op( l.getF()[j] , r.elem(i) );
-      }
+    if (function == NULL)
+      function = function_localInnerProduct_subtype_type_build(ret, l , r );
 
+    function_localInnerProduct_subtype_type_exec(function, ret, l, r, l.subset() );
+    
     return ret;
   }
 
