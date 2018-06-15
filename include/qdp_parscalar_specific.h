@@ -11,6 +11,7 @@
 
 namespace QDP {
 
+  
 // Use separate defs here. This will cause subroutine calls under g++
 
 //-----------------------------------------------------------------------------
@@ -681,7 +682,11 @@ bool isfinite(const OLattice<T>& dest)
 
   function_isfinite_exec( function , ret , dest );
 
-  return toBool(ret);
+  bool r = toBool(ret);
+  
+  QDPInternal::globalAnd(r);
+  
+  return r;
 }
 
   
