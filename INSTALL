@@ -1,53 +1,48 @@
 General remarks and requirements:
 --------------------------------
 
- - C++ compiler with C++11 support (GCC 4.8.2 and 6.3.0 known to work)
+ - C++ compiler with C++11 support (GCC known to work)
 
  - CUDA 5.5 or higher (which includes libdevice, CUDA 7/8 known to work)
 
  - GPUs with compute capability 2.0 (or higher, tested on 20, 35, 50)
 
- - LLVM (4.0.0/4.0.1 known to work)
-
- - libdevice included with CUDA7/8 are buggy for double precision -> requires patching (patch_libdevice.sh)
-   NVIDIA notified, expect clean version from CUDA 9 on
+ - LLVM 6.0
 
 
 How to install
 --------------
 
-1) build and install LLVM 4.0.1 with the following setup:
+1) LLVM 6.0
 
-- "Release" build (speeds up JIT compilation to the point of negligibility of overhead)
-- selected targets: "NVPTX"
-- shared libs enabled
-- RTTI enabled
-- ZLIB/TERMINFO disabled
+cmake -G "Unix Makefiles" \
+      -DBUILD_SHARED_LIBS="ON" \
+      -DLLVM_ENABLE_RTTI="ON" \
+      -DLLVM_ENABLE_ZLIB="OFF" \
+      -DLLVM_ENABLE_TERMINFO="OFF" \
+      -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+      -DCMAKE_INSTALL_PREFIX=$CMAKE_INSTALL_PREFIX \
+      -DLLVM_TARGETS_TO_BUILD=$LLVM_TARGETS_TO_BUILD \
+      $SRC
 
-2) (optional: patch libdevice), pack libdevice
+2) pack libdevice
 
-NVIDIA libdevice provides the support for math functions at the PTX language level.
-The libdevice is available for each compute capability (sm_35, sm_50, etc.) and can be found in the CUDA installation.
-
-Patching libdevice or not?
-I have seen cases (running HMC with Wilson clover on sm_20 and sm_35) where the LLVM NVPTX backend generates an instruction 'rsqrt.approx.ftz.f64'
-which according to NVIDIA was introducted in PTX 4.0. The driver on the system I was running on was version 'Kernel Module 346.46' and failed to load
-the generated PTX code. Running the same code with driver '367.48' fixed the issue. However if you're stuck with an older driver then you can still
-run the code by patching libdevice. The patch requires the assembler/disassembler from LLVM built in step 1:
-
-a) create and cd to an empty directory (call A)
-b) patch libdevice: (./patch_libdevice [path to CUDA libdevice])
-c) cd to qdp-jit root
-d) pack libdevice: (./patch_libdevice [path to A/or libdevice if no patching was done])
-
-otherwise just pack libdevice from the CUDA installation directory
+On your system find the directory containing the CUDA libdevice library for your GPU.
+Common places are:
+[Ubuntu/dpkg] /usr/lib/nvidia-cuda-toolkit/libdevice
+[Nvidia generic] /usr/local/cuda/nvvm/libdevice/
+Before version 9, several libraries were included - one for each compute capability.
+Since CUDA 9 only a single library is available.
+Make a copy of the libdevice library you want to use into an empty directory and name the copy 'libdevice.bc'.
+From the qdp-jit source directory run the command:
+./pack_libdevice.sh [directory containing the libdevice copy]
+This should create the two files:
+include/qdp_libdevice.h
+lib/qdp_libdevice.cc
 
 
-3) build QDP-JIT with the following configuration
+3) configure and build QDP-JIT with the automake system
 
-- set CUDA path
-- set QMP path
-- set LLVM path
 - only the 'parscalar' arch is supported
 - single/double precision is supported
 

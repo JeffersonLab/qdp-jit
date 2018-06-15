@@ -21,6 +21,11 @@ if [ -f $OUT_LIB ]; then
     exit 1
 fi
 
+if [ ! -f ${LIBDEVICE_DIR}/libdevice.bc ]; then
+    echo "${LIBDEVICE_FILE}/libdevice.bc not found."
+    exit 1
+fi
+
 
 
 if [ ! -d include ]; then
@@ -39,15 +44,10 @@ cat << 'EOF' > $OUT_HEADER
 namespace QDP {
 namespace LIBDEVICE {
 
-extern std::map<int, unsigned char* > map_sm_lib;
-extern std::map<int, unsigned int > map_sm_len;
-
 EOF
 
 
 cat << 'EOF' > $OUT_LIB
-#include <map>
-
 namespace QDP {
 namespace LIBDEVICE {
 
@@ -58,45 +58,19 @@ if [ -d $LIBDEVICE_DIR ]; then
     cd $LIBDEVICE_DIR
     echo "ok"
 
-    MAP_LIB="std::map<int, unsigned char* > map_sm_lib = {"$'\n'
-    MAP_LEN="std::map<int, unsigned int > map_sm_len = {"$'\n'
-
-
-    FIRST="1"
-    for libdev in `ls libdevice*.bc`; do
-	if [ "$FIRST" -eq "0" ]; then
-	    MAP_LIB=$MAP_LIB$","
-	    MAP_LIB=$MAP_LIB$'\n'
-	    MAP_LEN=$MAP_LEN$","
-	    MAP_LEN=$MAP_LEN$'\n'
-	fi
-	FIRST="0"
-	
+    for libdev in `ls libdevice.bc`; do
 	echo $libdev
 	head=`xxd -i $libdev | head -n 1| sed -e 's/\[\].*$/\[\];/'`
 	tail=`xxd -i $libdev | tail -n 1| sed -e 's/_len.*$/_len;/'`
 	name=`echo $head | sed -e 's/^.*char //'| sed -e 's/\[\]//' | sed -e 's/;//'`
 
-	# libdevice.compute_20.10.bc    [name]
+	# libdevice.compute_20.10.bc    [name] / name_len
 
-	sm=`echo $name | sed -e 's/^.*pute_//'| sed -e 's/_.*$//'`
-
-	MAP_LIB=$MAP_LIB$"{$sm , $name}"
-
-	MAP_LEN=$MAP_LEN$"{$sm , $name"
-	MAP_LEN=$MAP_LEN$"_len}"
-	
-	echo "$sm $name"
 	echo "extern $head" >> $OUT_HEADER
 	echo "extern $tail" >> $OUT_HEADER
 	xxd -i $libdev >> $OUT_LIB
     done
     
-    MAP_LIB=$MAP_LIB$"};"$'\n'
-    MAP_LEN=$MAP_LEN$"};"$'\n'
-
-    echo $MAP_LIB >> $OUT_LIB
-    echo $MAP_LEN >> $OUT_LIB
 fi
 
 cat << 'EOF' >> $OUT_HEADER

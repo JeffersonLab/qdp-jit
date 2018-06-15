@@ -308,26 +308,10 @@ namespace QDP {
 
   void llvm_init_libdevice()
   {
-    auto major = DeviceParams::Instance().getMajor();
-    auto minor = DeviceParams::Instance().getMinor();
-
-    //QDPIO::cout << "Loading CUDA libdevice for compute capability " << major << minor << "\n";
-    
     std::string ErrorMessage;
 
-    if ( QDP::LIBDEVICE::map_sm_lib.find( major*10 + minor ) == QDP::LIBDEVICE::map_sm_lib.end() )
-      {
-	QDPIO::cout << "Compute capability " << major*10 + minor << " not found in libdevice libmap\n";
-	QDP_abort(1);
-      }
-    if ( QDP::LIBDEVICE::map_sm_len.find( major*10 + minor ) == QDP::LIBDEVICE::map_sm_len.end() )
-      {
-	QDPIO::cout << "Compute capability " << major*10 + minor << " not found in libdevice lenmap\n";
-	QDP_abort(1);
-      }
-
-    llvm::StringRef libdevice_bc( (const char *) QDP::LIBDEVICE::map_sm_lib[ major*10 + minor ], 
-				  (size_t) QDP::LIBDEVICE::map_sm_len[ major*10 + minor ] );
+    llvm::StringRef libdevice_bc( (const char *) QDP::LIBDEVICE::libdevice_bc, 
+				  (size_t) QDP::LIBDEVICE::libdevice_bc_len );
 
     {
       llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer> > BufferOrErr =
