@@ -96,6 +96,16 @@ namespace QDP {
   }
 
 
+  std::string get_ptx_db_fname() {
+    return ptx_db::dbname;
+  }
+  bool get_ptx_db_enabled() {
+    return ptx_db::db_enabled;
+  }
+  int get_ptx_db_size() {
+    return ptx_db::db.size();
+  }
+
   std::string get_ptx_db_id( const std::string& pretty )
   {
     std::ostringstream oss;
@@ -158,8 +168,6 @@ namespace QDP {
       }
     else
       {
-	//QDPIO::cout << "function not in ptx DB. building...\n";
-	jit_stats_jitted();
 	return NULL;
       }
   }
@@ -506,6 +514,10 @@ namespace QDP {
 
 
   void llvm_start_new_function() {
+
+    // Count it
+    jit_stats_jitted();
+    
     //QDPIO::cout << "Starting new LLVM function..\n";
 
 #if 0

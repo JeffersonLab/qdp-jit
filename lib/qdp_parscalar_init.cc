@@ -594,7 +594,16 @@ namespace COUNT {
 		QDPIO::cout << "------------------\n";
 		QDPIO::cout << "lattices changed to device layout:     " << get_jit_stats_lattice2dev() << "\n";
 		QDPIO::cout << "lattices changed to host layout:       " << get_jit_stats_lattice2host() << "\n";
-		QDPIO::cout << "JIT functions built (not found in DB): " << get_jit_stats_jitted() << "\n";
+		QDPIO::cout << "functions jit-compiled:                " << get_jit_stats_jitted() << "\n";
+		if (get_ptx_db_enabled())
+		  {
+		    QDPIO::cout << "PTX DB, file:                          " << get_ptx_db_fname() << "\n";
+		    QDPIO::cout << "PTX DB, size (number of functions):    " << get_ptx_db_size() << "\n";
+		  }
+		else
+		  {
+		    QDPIO::cout << "PTX DB: (not used)\n";
+		  }
 		
 		FnMapRsrcMatrix::Instance().cleanup();
 

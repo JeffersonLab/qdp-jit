@@ -118,6 +118,10 @@ namespace QDP {
   void llvm_set_ptxdb( const char * c_str );
   void llvm_debug_write_set_name( const char* pretty, const char* additional );
 
+  std::string get_ptx_db_fname();
+  bool        get_ptx_db_enabled();
+  int         get_ptx_db_size();
+    
   llvm::Value * llvm_create_value( double v );
   llvm::Value * llvm_create_value( int v );
   llvm::Value * llvm_create_value( int64_t v );
