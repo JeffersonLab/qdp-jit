@@ -272,9 +272,12 @@ namespace QDP
     sitetables = s.sitetables;
     membertables = s.membertables;
 
-    QDP_error_exit("Sub::op= not yet implemented for GPU 3");
-
-
+    stride_offset = s.stride_offset;
+    nonEmptySubsetsOnNode = s.nonEmptySubsetsOnNode;
+    largest_subset = s.largest_subset;
+    enableGPU = s.enableGPU;
+    
+    //QDP_error_exit("Sub::op= not yet implemented for GPU 3");
     return *this;
   }
 
