@@ -163,12 +163,12 @@ namespace QDP {
     llvm::Value* r_idx_perm = llvm_array_type_indirection( p_site_table , r_idx_thread );
 
     typename REGType< typename JITType< LT >::Type_t >::Type_t l_reg;
-    l_reg.setup( l_jit.elem( JitDeviceLayout::Scalar , r_idx_thread ) );
+    l_reg.setup( l_jit.elem( JitDeviceLayout::Scalar , r_idx_thread ) );   // ok: Scalar
 
     typename REGType< typename JITType< RT >::Type_t >::Type_t r_reg;
     r_reg.setup( r_jit.elem( JitDeviceLayout::Coalesced , r_idx_perm ) );
 
-    ret_jit.elem( JitDeviceLayout::Scalar , r_idx_thread ) = op_jit( l_reg , r_reg );
+    ret_jit.elem( JitDeviceLayout::Scalar , r_idx_thread ) = op_jit( l_reg , r_reg );   // ok: Scalar
     
     return jit_function_epilogue_get_cuf("jit_localInnerProduct_type_subtype.ptx" , __PRETTY_FUNCTION__ );
   }

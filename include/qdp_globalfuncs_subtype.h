@@ -99,7 +99,7 @@ namespace QDP
 #endif
 
 
-
+#if 0
 template<class T>
 typename UnaryReturn<OLattice<T>, FnSum>::Type_t
 sum( const OSubLattice<T>& s1 )
@@ -119,7 +119,96 @@ sum( const OSubLattice<T>& s1 )
 
   return d;
  }
+#else
+template<class T>
+typename UnaryReturn<OLattice<T>, FnSum>::Type_t
+sum( const OSubLattice<T>& s1 )
+{
+  if (!s1.getOwnsMemory())
+    QDP_error_exit("sum with subtype view called");
 
+  typename UnaryReturn<OLattice<T>, FnSum>::Type_t  d;
+
+  typedef typename UnaryReturn<OLattice<T>, FnSum>::Type_t::SubType_t T2;
+    
+  //QDP_info("sum(lat,subset) dev");
+
+  T2 * out_dev;
+  T2 * in_dev;
+
+  unsigned actsize=s1.subset().numSiteTable();
+  bool first=true;
+  while (1) {
+
+    unsigned numThreads = DeviceParams::Instance().getMaxBlockX();
+    while ((numThreads*sizeof(T2) > DeviceParams::Instance().getMaxSMem()) || (numThreads > actsize)) {
+      numThreads >>= 1;
+    }
+    unsigned numBlocks=(int)ceil(float(actsize)/numThreads);
+    
+    if (numBlocks > DeviceParams::Instance().getMaxGridX()) {
+      QDP_error_exit( "sum(Lat,subset) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)DeviceParams::Instance().getMaxGridX());
+    }
+
+    int shared_mem_usage = numThreads*sizeof(T2);
+    //QDP_info("sum(Lat,subset): using %d threads per block, %d blocks, shared mem=%d" , numThreads , numBlocks , shared_mem_usage );
+
+    if (first) {
+      if (!QDP_get_global_cache().allocate_device_static( (void**)&out_dev , numBlocks*sizeof(T2) ))
+	QDP_error_exit( "sum(lat,subset) reduction buffer: 1st buffer no memory, exit");
+      if (!QDP_get_global_cache().allocate_device_static( (void**)&in_dev , numBlocks*sizeof(T2) ))
+	QDP_error_exit( "sum(lat,subset) reduction buffer: 2nd buffer no memory, exit");
+    }
+
+    if (numBlocks == 1)
+      {
+	if (first)
+	  {
+	    qdp_jit_reduce_convert<T,T2,JitDeviceLayout::Scalar>(actsize, numThreads, numBlocks, shared_mem_usage ,  // ok: Scalar
+								    (T*)QDP_get_global_cache().getDevicePtr( s1.getId() ),
+								    (T2*)QDP_get_global_cache().getDevicePtr( d.getId() ) );
+	  }
+	else
+	  {
+	    qdp_jit_reduce<T2>( actsize , numThreads , numBlocks, shared_mem_usage , 
+				in_dev , (T2*)QDP_get_global_cache().getDevicePtr( d.getId() ) );
+	  }
+      }
+    else
+      {
+      if (first)
+	{
+	  qdp_jit_reduce_convert<T,T2,JitDeviceLayout::Scalar>(actsize, numThreads, numBlocks, shared_mem_usage,       // ok: Scalar
+								  (T*)QDP_get_global_cache().getDevicePtr( s1.getId() ),
+								  out_dev );
+	}
+      else
+	{
+	  qdp_jit_reduce<T2>( actsize , numThreads , numBlocks , shared_mem_usage , in_dev , out_dev );
+	}
+      }
+  
+    first =false;
+    
+    if (numBlocks==1) 
+      break;
+
+    actsize=numBlocks;
+    
+    T2 * tmp = in_dev;
+    in_dev = out_dev;
+    out_dev = tmp;
+  }
+
+  QDP_get_global_cache().free_device_static( in_dev );
+  QDP_get_global_cache().free_device_static( out_dev );
+  
+  QDPInternal::globalSum(d);
+
+  return d;
+}
+#endif
+  
 
   template<class T> 
   inline

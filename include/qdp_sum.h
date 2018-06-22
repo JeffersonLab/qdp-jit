@@ -5,7 +5,7 @@ namespace QDP {
 
 
   template <class T2>
-  void reduce_convert(int size, int threads, int blocks, int shared_mem_usage,
+  void qdp_jit_reduce(int size, int threads, int blocks, int shared_mem_usage,
 		      T2 *d_idata, T2 *d_odata )
   {
     static CUfunction function;
@@ -29,13 +29,13 @@ namespace QDP {
   // T1 input
   // T2 output
   template < class T1 , class T2 , JitDeviceLayout input_layout >
-  void reduce_convert_indirection(int size, 
-				  int threads, 
-				  int blocks, 
-				  int shared_mem_usage,
-				  T1 *d_idata, 
-				  T2 *d_odata, 
-				  int * siteTable)
+  void qdp_jit_reduce_convert_indirection(int size, 
+					  int threads, 
+					  int blocks, 
+					  int shared_mem_usage,
+					  T1 *d_idata, 
+					  T2 *d_odata, 
+					  int * siteTable)
   {
     static CUfunction function;
 
@@ -43,7 +43,7 @@ namespace QDP {
     if (function == NULL)
       {
 	//std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
-	function = function_sum_ind_build<T1,T2,input_layout>();
+	function = function_sum_convert_ind_build<T1,T2,input_layout>();
 	//std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
       }
     else
@@ -52,8 +52,39 @@ namespace QDP {
       }
 
     // Execute the function
-    function_sum_ind_exec(function, size, threads, blocks, shared_mem_usage, 
-			  (void*)d_idata, (void*)d_odata, (void*)siteTable );
+    function_sum_convert_ind_exec(function, size, threads, blocks, shared_mem_usage, 
+				  (void*)d_idata, (void*)d_odata, (void*)siteTable );
+  }
+
+
+
+  // T1 input
+  // T2 output
+  template < class T1 , class T2 , JitDeviceLayout input_layout >
+  void qdp_jit_reduce_convert(int size, 
+			      int threads, 
+			      int blocks, 
+			      int shared_mem_usage,
+			      T1 *d_idata, 
+			      T2 *d_odata)
+  {
+    static CUfunction function;
+
+    // Build the function
+    if (function == NULL)
+      {
+	//std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
+	function = function_sum_convert_build<T1,T2,input_layout>();
+	//std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
+      }
+    else
+      {
+	//std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
+      }
+
+    // Execute the function
+    function_sum_convert_exec(function, size, threads, blocks, shared_mem_usage, 
+			      (void*)d_idata, (void*)d_odata );
   }
 
 
@@ -104,23 +135,23 @@ namespace QDP {
 
       if (numBlocks == 1) {
 	if (first) {
-	  reduce_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, shared_mem_usage ,  
+	  qdp_jit_reduce_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, shared_mem_usage ,  
 								       (T1*)QDP_get_global_cache().getDevicePtr( s1.getId() ),
 								       (T2*)QDP_get_global_cache().getDevicePtr( d.getId() ),
 								       (int*)QDP_get_global_cache().getDevicePtr( s.getIdSiteTable()));
 	}
 	else {
-	  reduce_convert<T2>( actsize , numThreads , numBlocks, shared_mem_usage , 
+	  qdp_jit_reduce<T2>( actsize , numThreads , numBlocks, shared_mem_usage , 
 			      in_dev , (T2*)QDP_get_global_cache().getDevicePtr( d.getId() ) );
 	}
       } else {
 	if (first) {
-	  reduce_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, shared_mem_usage,
+	  qdp_jit_reduce_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, shared_mem_usage,
 								       (T1*)QDP_get_global_cache().getDevicePtr( s1.getId() ),
 								       out_dev , (int*)QDP_get_global_cache().getDevicePtr(s.getIdSiteTable()));
 	}
 	else
-	  reduce_convert<T2>( actsize , numThreads , numBlocks , shared_mem_usage , in_dev , out_dev );
+	  qdp_jit_reduce<T2>( actsize , numThreads , numBlocks , shared_mem_usage , in_dev , out_dev );
 
       }
 
@@ -260,15 +291,15 @@ namespace QDP {
 	  //QDP_info("numBlocks=%d actsize=%d virt_size=%d smem=%d",numBlocks,actsize,virt_size,shared_mem_usage);
 
 	  if (first) {
-	    reduce_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(actsize, 
-									 numThreads, 
-									 numBlocks,  
-									 shared_mem_usage,
-									 (T1*)QDP_get_global_cache().getDevicePtr( s1.getId() ),
-									 out_dev , 
-									 (int*)QDP_get_global_cache().getDevicePtr( ss.getIdStrided() ) );
+	    qdp_jit_reduce_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(actsize, 
+										 numThreads, 
+										 numBlocks,  
+										 shared_mem_usage,
+										 (T1*)QDP_get_global_cache().getDevicePtr( s1.getId() ),
+										 out_dev , 
+										 (int*)QDP_get_global_cache().getDevicePtr( ss.getIdStrided() ) );
 	  } else {
-	    reduce_convert<T2>(actsize, 
+	    qdp_jit_reduce<T2>(actsize, 
 			       numThreads, 
 			       numBlocks, 
 			       shared_mem_usage,
