@@ -72,6 +72,7 @@ struct AddressLeaf
   AddressLeaf& operator=(const AddressLeaf& cp) {
     assert(!"strange");
     addr = cp.addr;
+    return *this;
     //std::cout << "AddressLeaf assignment my_size = " << addr.size() << "\n";
   }
 
