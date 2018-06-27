@@ -22,7 +22,7 @@ if [ -f $OUT_LIB ]; then
 fi
 
 if [ ! -f ${LIBDEVICE_DIR}/libdevice.bc ]; then
-    echo "${LIBDEVICE_FILE}/libdevice.bc not found."
+    echo "${LIBDEVICE_DIR}/libdevice.bc not found."
     exit 1
 fi
 
