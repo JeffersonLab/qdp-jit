@@ -27,11 +27,13 @@
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Target/TargetMachine.h"
 
-#ifdef QDP_LLVM6_TRUNK
 #include "llvm/CodeGen/TargetLowering.h"
-#else
+
+// pre llvm6
+#if 0
 #include "llvm/Target/TargetLowering.h"
 #endif
+
 
 #include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/Analysis/TargetLibraryInfo.h"
@@ -92,17 +94,21 @@ namespace QDP {
     extern bool debug_loop_vectorizer;
   }
 
-  extern llvm::LLVMContext TheContext;
+  //extern llvm::LLVMContext TheContext;
 
   typedef int ParamRef;
 
   // llvm::IRBuilder<> *builder;
   // llvm::BasicBlock  *entry;
-  extern llvm::Function    *mainFunc;
-  extern llvm::Function    *mainFunc_extern;
-  extern llvm::Module      *Mod;
+  //extern llvm::Function    *mainFunc;
+  //extern llvm::Function    *mainFunc_extern;
+  //extern llvm::Module      *Mod;
 
 
+  llvm::LLVMContext& llvm_get_context();
+  std::unique_ptr<llvm::IRBuilder<> >& llvm_get_builder();
+  std::unique_ptr<llvm::Module>& llvm_get_module();
+  
   void llvm_set_debug( const char * str );
   void llvm_debug_write_set_name( const char* pretty, const char* additional );
 
@@ -112,7 +118,7 @@ namespace QDP {
   llvm::Value * llvm_create_value( size_t v );
   llvm::Value * llvm_create_value( bool v );
 
-
+#if 1
   template<class T> struct llvm_type;
 
   template<> struct llvm_type<float> { static llvm::Type* value; };
@@ -123,7 +129,8 @@ namespace QDP {
   template<> struct llvm_type<double*> { static llvm::Type* value; };
   template<> struct llvm_type<int*> { static llvm::Type* value; };
   template<> struct llvm_type<bool*> { static llvm::Type* value; };
-
+#endif
+  
   struct IndexRet {
     IndexRet(){}
     ParamRef p_multi_index;  // if neg. -> recv. buffer, otherwise it's the local index

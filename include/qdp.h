@@ -31,8 +31,8 @@
 #define QDP_INCLUDE
 
 // Added this to compile with GCC 4.4
-#define __STDC_LIMIT_MACROS
-#define __STDC_CONSTANT_MACROS
+//#define __STDC_LIMIT_MACROS
+//#define __STDC_CONSTANT_MACROS
 
 //#define NDEBUG
 #include<cassert>

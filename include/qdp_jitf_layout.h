@@ -24,15 +24,16 @@ namespace QDP {
 
     typedef typename REGType<typename FuncRet_t::Subtype_t>::Type_t REGFuncRet_t;
 
+    //QDPIO::cout << "function_layout_to_jit_build changed\n";
+
     IndexDomainVector r_idx = loop.getIdx();
 
     REGFuncRet_t src_reg;
     src_reg.setup ( src_jit.elem( JitDeviceLayout::LayoutScalar , r_idx ) );
-
+    
     dest_jit.elem( JitDeviceLayout::LayoutCoalesced , r_idx ) = src_reg;
 
     loop.done();
-
     //QDPIO::cerr << "functionlayout_to_jit_build\n";
 
     func.func().push_back( jit_function_epilogue_get("jit_layout.ptx") );
@@ -58,6 +59,8 @@ namespace QDP {
     QDPIO::cerr << "calling layout(to JIT)..\n";
 
     jit_dispatch(function.func().at(0),th_count,getDataLayoutInnerSize(),true,0,addr_leaf);
+
+    //QDPIO::cerr << "calling layout(to JIT).. done\n";
   }
 
 

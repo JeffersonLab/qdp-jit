@@ -56,10 +56,11 @@ class FnMapRsrcMatrix {
   int numSendMsgSize;
   int numDestNode;
 
-  FnMapRsrcMatrix(): numSendMsgSize(32), 
-		     numDestNode(Nd*2), 
-		     sendMsgSize(0), 
-		     destNode(0) {
+  FnMapRsrcMatrix(): numSendMsgSize(32),
+		     destNode(0),
+		     sendMsgSize(0),
+		     numDestNode(Nd*2)
+		      {
     m2d.resize(numSendMsgSize,numDestNode);
 
     for(int i=0;i<numSendMsgSize;i++) {
@@ -91,7 +92,7 @@ class FnMapRsrcMatrix {
 						  int _sendMsgSize,int _rcvMsgSize) {
     bool found = false;
     int xDestNode=0;
-    for(; xDestNode < destNode.size(); ++xDestNode)
+    for(; xDestNode < (int)destNode.size(); ++xDestNode)
       if (destNode[xDestNode] == _destNode)
 	{
 	  found = true;
@@ -110,7 +111,7 @@ class FnMapRsrcMatrix {
 
     found = false;
     int xSendmsgsize=0;
-    for(; xSendmsgsize < sendMsgSize.size(); ++xSendmsgsize)
+    for(; xSendmsgsize < (int)sendMsgSize.size(); ++xSendmsgsize)
       if (sendMsgSize[xSendmsgsize] == _sendMsgSize)
 	{
 	  found = true;
@@ -130,12 +131,12 @@ class FnMapRsrcMatrix {
 
 #if QDP_DEBUG >= 3
     // SANITY
-    if ( pos.second.size() <  pos.first )
+    if ( (int)pos.second.size() <  pos.first )
       QDP_error_exit(" pos.second.size()=%d  pos.first=%d",pos.second.size(), pos.first);
 #endif
 
     // Vector's size large enough ?
-    if ( pos.second.size() ==  pos.first ) {
+    if ( (int)pos.second.size() ==  pos.first ) {
       QDPIO::cout << "allocate and setup new rsrc-obj (destnode=" << _destNode << ",sndmsgsize=" << _sendMsgSize << ")\n";
       pos.second.push_back( new FnMapRsrc() );
       pos.second.at(pos.first)->setup( _destNode, _srcNode, _sendMsgSize, _rcvMsgSize );

@@ -279,19 +279,7 @@ AC_ARG_WITH(llvm,
   [LLVM_HOME="$with_llvm"]
 )
 
-AC_ARG_ENABLE(llvm6-trunk,
-  AC_HELP_STRING(
-    [--enable-llvm6-trunk],
-    [Enable changes to compile with LLVM6 Trunk]
-  ),
-  [LLVM6_ENABLED=${enableval}],
-  [LLVM6_ENABLED="no"]
-)
 
-if test "X${LLVM6_ENABLED}X" = "XyesX"; then
-  AC_MSG_NOTICE([Enabling changes for LLVM6 ])
-  AC_DEFINE(QDP_LLVM6_TRUNK, [1], [ Compile for LLVM6  ])
-fi
 
 echo "X`${LLVM_HOME}/bin/llvm-config --libs`X"
 if test "X`${LLVM_HOME}/bin/llvm-config --libs`X" = "XX" ; then
@@ -307,14 +295,29 @@ if test "X${LLVM_CONFIG}X" = "XX" ; then
 fi
 
 
+dnl AC_MSG_NOTICE([Found LLVM configuration program ${LLVM_CONFIG}])
+dnl AC_SUBST(LLVM_CXXFLAGS, "-I${LLVM_HOME}/include")
+dnl dnl AC_SUBST(LLVM_CXXFLAGS, "`${LLVM_CONFIG} --cxxflags`")
+dnl AC_MSG_NOTICE([LLVM compile flags: ${LLVM_CXXFLAGS}])
+dnl AC_SUBST(LLVM_LDFLAGS,  "`${LLVM_CONFIG} --ldflags`")
+dnl AC_MSG_NOTICE([LLVM linking flags: ${LLVM_LDFLAGS}])
+dnl AC_SUBST(LLVM_LIBS,     "`${LLVM_CONFIG} --libs core mcjit native scalaropts vectorize irreader linker` -ldl")
+dnl AC_MSG_NOTICE([LLVM libraries flags: ${LLVM_LIBS}])
+
+
 AC_MSG_NOTICE([Found LLVM configuration program ${LLVM_CONFIG}])
-AC_SUBST(LLVM_CXXFLAGS, "-I${LLVM_HOME}/include")
-dnl AC_SUBST(LLVM_CXXFLAGS, "`${LLVM_CONFIG} --cxxflags`")
+#AC_SUBST(LLVM_CXXFLAGS, "-I${LLVM_HOME}/include")
+#AC_SUBST(LLVM_CXXFLAGS, "`${LLVM_CONFIG} --cxxflags`")
+AC_SUBST(LLVM_CXXFLAGS, "`${LLVM_CONFIG} --cxxflags| sed -e 's/-fno-exceptions//'| sed -e 's/-std=c++11//'`")
 AC_MSG_NOTICE([LLVM compile flags: ${LLVM_CXXFLAGS}])
 AC_SUBST(LLVM_LDFLAGS,  "`${LLVM_CONFIG} --ldflags`")
 AC_MSG_NOTICE([LLVM linking flags: ${LLVM_LDFLAGS}])
-AC_SUBST(LLVM_LIBS,     "`${LLVM_CONFIG} --libs core mcjit native scalaropts vectorize irreader linker` -ldl")
+AC_SUBST(LLVM_LIBS,     "`${LLVM_CONFIG} --libs`")
 AC_MSG_NOTICE([LLVM libraries flags: ${LLVM_LIBS}])
+
+
+dnl AC_SUBST(LLVM_CXXFLAGS, "`${LLVM_CONFIG} --cxxflags| sed -e 's/-fno-exceptions//'| sed -e 's/-std=c++11//'`")
+
 
 
 

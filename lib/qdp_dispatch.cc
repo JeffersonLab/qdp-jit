@@ -13,6 +13,7 @@ namespace QDP {
     omp_set_num_threads(n);
   }
 
+
   void jit_dispatch( void* function , int site_count, int inner, bool ordered, int64_t start, const AddressLeaf& args)
   {
     if (site_count == 0)
@@ -27,7 +28,7 @@ namespace QDP {
     int64_t hi = site_count;
     void * addr = args.addr.data();
 
-#if 0    
+#if 0
     QDPIO::cerr << "dispatch... site_counnt = " << site_count << "\n";
     QDPIO::cerr << "dispatch... ordered     = " << ordered << "\n";
     QDPIO::cerr << "dispatch... start       = " << start << "\n";
@@ -58,7 +59,7 @@ namespace QDP {
 #error "QMT threading not implemented"
 #endif
 
-#error "Must use threading"
+#error "Must use OMP threading"
 
 #endif
 
