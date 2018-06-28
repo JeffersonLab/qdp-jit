@@ -129,7 +129,7 @@ namespace QDP {
   template<class T, class T1, class T2, class C1, class C2>
   CUfunction
   function_localInnerProduct_subtype_type_build(OSubLattice<T>& ret,
-						const QDPSubType<T1,C2> & l,const QDPType<T2,C1> & r)
+						const QDPSubType<T1,C1> & l,const QDPType<T2,C2> & r)
   {
     typedef typename QDPSubType<T1,C1>::Subtype_t LT;
     typedef typename QDPType<T2,C2>::Subtype_t    RT;
