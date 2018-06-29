@@ -1,31 +1,32 @@
 #include "qdp.h"
 
-
-#include "llvm/Support/FileSystem.h"
-//#include "llvm/Support/MemoryBuffer.h"
-
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/ADT/SmallString.h"
 #include "llvm-c/Core.h"
+#include "llvm/Pass.h"
+
 #include "llvm/Transforms/Scalar/GVN.h"
+#include "llvm/Transforms/Scalar.h"
+#include "llvm/Transforms/IPO.h"
+#include "llvm/Transforms/Vectorize.h"
+
+#include "llvm/Analysis/Passes.h"
+#include "llvm/Analysis/TargetTransformInfo.h"
+#include "llvm/Analysis/TargetLibraryInfo.h"
+#include "llvm/Analysis/BasicAliasAnalysis.h"
 
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/CommandLine.h"
-#include "llvm/Target/TargetMachine.h"
+#include "llvm/Support/DynamicLibrary.h"
+#include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/raw_ostream.h"
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/StringSet.h"
-#include "llvm/IR/Function.h"
-#include "llvm/IR/BasicBlock.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/Constants.h"
-#include "llvm/IR/Attributes.h"
-#include "llvm/IR/DerivedTypes.h"
-#include "llvm/IR/Attributes.h"
-
 #include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/SmallString.h"
+
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/JITSymbol.h"
 #include "llvm/ExecutionEngine/RTDyldMemoryManager.h"
@@ -34,11 +35,20 @@
 #include "llvm/ExecutionEngine/Orc/IRCompileLayer.h"
 #include "llvm/ExecutionEngine/Orc/LambdaResolver.h"
 #include "llvm/ExecutionEngine/Orc/RTDyldObjectLinkingLayer.h"
+
+#include "llvm/IR/Function.h"
+#include "llvm/IR/BasicBlock.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/Attributes.h"
+#include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/Attributes.h"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/IR/Mangler.h"
 #include "llvm/IR/Verifier.h"
-#include "llvm/Support/DynamicLibrary.h"
-#include "llvm/Support/raw_ostream.h"
+#include "llvm/IR/AssemblyAnnotationWriter.h"
+
+#include "llvm/Target/TargetMachine.h"
 #include "llvm/Target/TargetMachine.h"
 
 //#include <memory>
@@ -48,11 +58,14 @@ namespace QDP {
 
   const char* getCurrentFunctionExternName();
 
-#if 1
+
+  namespace {
+    std::vector<std::string>  vec_mattr;
+  }
+
+
   class qdpjit_t
   {
-    //llvm::ExecutionSession ES;
-    //std::shared_ptr<SymbolResolver> Resolver;
     std::unique_ptr<llvm::TargetMachine> TM;
     llvm::DataLayout DL;
     llvm::orc::RTDyldObjectLinkingLayer ObjectLayer;
@@ -86,8 +99,8 @@ namespace QDP {
       char * argument = new char[128];
       sprintf( argument , "-vectorizer-min-trip-count=%d" , (int)getDataLayoutInnerSize() );
 
-      //QDPIO::cerr << "Using inner lattice size of " << (int)getDataLayoutInnerSize() << "\n";
-      //QDPIO::cerr << "Setting loop vectorizer minimum trip count to " << (int)getDataLayoutInnerSize() << "\n";
+      QDPIO::cout << "Using inner lattice size of " << (int)getDataLayoutInnerSize() << "\n";
+      QDPIO::cout << "Setting loop vectorizer minimum trip count to " << (int)getDataLayoutInnerSize() << "\n";
     
       const char *SetTinyVectorThreshold[] = {"program",argument};
       llvm::cl::ParseCommandLineOptions(2, SetTinyVectorThreshold);
@@ -95,30 +108,25 @@ namespace QDP {
       delete[] argument;
 
       llvm::InitializeNativeTarget();
-
       llvm::InitializeNativeTargetAsmPrinter(); // MCJIT
       llvm::InitializeNativeTargetAsmParser(); // MCJIT
-
       
       llvm::EngineBuilder engineBuilder;
-      //QDPIO::cout << "engineBuilder needs flags!!\n";
-      // engineBuilder.setMCPU(llvm::sys::getHostCPUName());
-      // if (vec_mattr.size() > 0) 
-      //   engineBuilder.setMAttrs( vec_mattr );
-      // engineBuilder.setEngineKind(llvm::EngineKind::JIT);
-      // engineBuilder.setOptLevel(llvm::CodeGenOpt::Aggressive);
+      engineBuilder.setMCPU(llvm::sys::getHostCPUName());
+      if (vec_mattr.size() > 0) 
+	engineBuilder.setMAttrs( vec_mattr );
+      engineBuilder.setEngineKind(llvm::EngineKind::JIT);
+      engineBuilder.setOptLevel(llvm::CodeGenOpt::Aggressive);
       std::string mcjit_error;
       engineBuilder.setErrorStr(&mcjit_error);
-      // llvm::TargetOptions targetOptions;
-      // targetOptions.AllowFPOpFusion = llvm::FPOpFusion::Fast;
-      // engineBuilder.setTargetOptions( targetOptions );
+      llvm::TargetOptions targetOptions;
+      targetOptions.AllowFPOpFusion = llvm::FPOpFusion::Fast;
+      engineBuilder.setTargetOptions( targetOptions );
 
-      std::cout << "target configured\n";
-	    
       return engineBuilder.selectTarget();
     }
 
-#if 1
+
     //ModuleHandle addModule(std::unique_ptr<Module> M) {
     void addModule(std::unique_ptr<llvm::Module> M) {
       // Build our symbol resolver:
@@ -143,23 +151,7 @@ namespace QDP {
       cantFail(CompileLayer.addModule(std::move(M),
 				      std::move(Resolver)));
     }
-#else
-    // what worked in simple test_jit
-    void addModule(std::unique_ptr<llvm::Module> M) {
-      cantFail( CompileLayer.addModule( std::move(M),
-					llvm::orc::createLambdaResolver(
-									[&](const std::string &Name)
-									{
-									  if (auto Sym = CompileLayer.findSymbol(Name, false))
-									    return Sym;
-									  return llvm::JITSymbol(nullptr);
-									},
-									[](const std::string &S) { return nullptr; }
-									)
-					)
-		);
-    }
-#endif
+
     
     void* getAddr()
     {
@@ -181,169 +173,27 @@ namespace QDP {
 	}
     }
   };
-#else
-  class qdpjit_t {
-    llvm::orc::ExecutionSession ES;
-    std::shared_ptr<llvm::orc::SymbolResolver> Resolver;
-    std::unique_ptr<llvm::TargetMachine> TM;
-    llvm::DataLayout DL;
-    llvm::orc::RTDyldObjectLinkingLayer ObjectLayer;
-    llvm::orc::IRCompileLayer<decltype(ObjectLayer), llvm::orc::SimpleCompiler> CompileLayer;
-  public:    
-    qdpjit_t():
-      Resolver(llvm::createLegacyLookupResolver(
-						ES,
-						[this](const std::string &Name) -> JITSymbol {
-						  if (auto Sym = CompileLayer.findSymbol(Name, false))
-						    return Sym;
-						  else if (auto Err = Sym.takeError())
-						    return std::move(Err);
-						  if (auto SymAddr =
-						      llvm::orc::RTDyldMemoryManager::getSymbolAddressInProcess(Name))
-						    return JITSymbol(SymAddr, llvm::orc::JITSymbolFlags::Exported);
-						  return nullptr;
-						},
-						[](Error Err) { cantFail(std::move(Err), "lookupFlags failed"); }
-						)
-	       ),
-      TM( configureTarget() ),
-      DL( TM->createDataLayout() ),
-      ObjectLayer(ES,
-		  [this](VModuleKey) {
-		    return llvm::orc::RTDyldObjectLinkingLayer::Resources{
-		      std::make_shared<llvm::SectionMemoryManager>(), Resolver};
-		  }),
-      CompileLayer( ObjectLayer, llvm::orc::SimpleCompiler(*TM) )
-    {
-      std::cout << "qdp-jit (Kaleido) initialized\n";
-    }
 
-    llvm::DataLayout getDL() const
-    {
-      return DL;
-    }
 
-    llvm::TargetMachine* getTM() const
-    {
-      return TM.get();
-    }
-    
-    llvm::TargetMachine* configureTarget() const
-    {
-      llvm::InitializeAllTargets();
-      llvm::InitializeAllTargetMCs();
-
-      char * argument = new char[128];
-      sprintf( argument , "-vectorizer-min-trip-count=%d" , (int)getDataLayoutInnerSize() );
-
-      //QDPIO::cerr << "Using inner lattice size of " << (int)getDataLayoutInnerSize() << "\n";
-      //QDPIO::cerr << "Setting loop vectorizer minimum trip count to " << (int)getDataLayoutInnerSize() << "\n";
-    
-      const char *SetTinyVectorThreshold[] = {"program",argument};
-      llvm::cl::ParseCommandLineOptions(2, SetTinyVectorThreshold);
-
-      delete[] argument;
-
-      llvm::InitializeNativeTarget();
-
-      llvm::InitializeNativeTargetAsmPrinter(); // MCJIT
-      llvm::InitializeNativeTargetAsmParser(); // MCJIT
-
-      
-      llvm::EngineBuilder engineBuilder;
-      //QDPIO::cout << "engineBuilder needs flags!!\n";
-      // engineBuilder.setMCPU(llvm::sys::getHostCPUName());
-      // if (vec_mattr.size() > 0) 
-      //   engineBuilder.setMAttrs( vec_mattr );
-      // engineBuilder.setEngineKind(llvm::EngineKind::JIT);
-      // engineBuilder.setOptLevel(llvm::CodeGenOpt::Aggressive);
-      std::string mcjit_error;
-      engineBuilder.setErrorStr(&mcjit_error);
-      // llvm::TargetOptions targetOptions;
-      // targetOptions.AllowFPOpFusion = llvm::FPOpFusion::Fast;
-      // engineBuilder.setTargetOptions( targetOptions );
-
-      std::cout << "target configured\n";
-	    
-      return engineBuilder.selectTarget();
-    }
-
-    // from Kaleidoscope
-    void addModule(std::unique_ptr<Module> M) {
-      // Add the module to the JIT with a new VModuleKey.
-      auto K = ES.allocateVModule();
-      cantFail(CompileLayer.addModule(K, std::move(M)));
-    }
-
-    void* getAddr()
-    {
-      std::string MangledName;
-      llvm::raw_string_ostream MangledNameStream(MangledName);
-      llvm::Mangler::getNameWithPrefix(MangledNameStream, getCurrentFunctionExternName() , DL);
-
-      if (auto Sym = CompileLayer.findSymbol(MangledNameStream.str(),true))   // ,true
-	{
-	  //QDPIO::cout << "extern function found\n";
-	  void* fptr = (void *)cantFail(Sym.getAddress());
-
-	  return fptr;
-	}
-      else
-	{
-	  QDPIO::cout << std::string(getCurrentFunctionExternName()) << "\n";
-	  QDP_error_exit("extern function not found!");
-	}
-    }
-    
-  };
-#endif
-
-  
-#if 0
-    llvm::orc::createLambdaResolver(
-				    [&](const std::string &Name) {
-				      if (auto Sym = CompileLayer.findSymbol(Name, false))
-					return Sym;
-				      return llvm::JITSymbol(nullptr);
-				    },
-				    [](const std::string &S) { return nullptr; }
-				    );
-
-    Resolver(createLegacyLookupResolver(
-            ES,
-            [this](const std::string &Name) -> JITSymbol {
-              if (auto Sym = CompileLayer.findSymbol(Name, false))
-                return Sym;
-              else if (auto Err = Sym.takeError())
-                return std::move(Err);
-              if (auto SymAddr =
-                      RTDyldMemoryManager::getSymbolAddressInProcess(Name))
-                return JITSymbol(SymAddr, JITSymbolFlags::Exported);
-              return nullptr;
-            },
-            [](Error Err) { cantFail(std::move(Err), "lookupFlags failed"); })),
-  };
-#endif
 
   namespace {
 
-    // llvm::orc::RTDyldObjectLinkingLayer ObjectLayer( []() { return std::make_shared<llvm::SectionMemoryManager>(); } );
-    // llvm::orc::IRCompileLayer<decltype(ObjectLayer), llvm::orc::SimpleCompiler> CompileLayer( ObjectLayer, llvm::orc::SimpleCompiler(*targetmachine) );
+    qdpjit_t& get_qdpjit() {
+      static std::unique_ptr<qdpjit_t> qdpjit_ptr;
 
-    qdpjit_t qdpjit;
+      if (!qdpjit_ptr) {
+	QDPIO::cout << "Creating JIT\n";
+	qdpjit_ptr = llvm::make_unique<qdpjit_t>();
+	QDPIO::cout << "JIT successfully created\n";
+      }
+
+      return *qdpjit_ptr;
+    }
     
     static llvm::LLVMContext context;
     static std::unique_ptr<llvm::Module> module;
-    //static std::unique_ptr<llvm::DataLayout> moddatalayout;
     static std::unique_ptr<llvm::IRBuilder<> > builder;
 
-    //static std::unique_ptr<llvm::TargetMachine> targetmachine;
-
-
-    //llvm::LLVMContext context;
-    //llvm::Module      *Mod;
-
-    //*builder;
     llvm::BasicBlock  *entry;
     llvm::BasicBlock  *entry_main;
     llvm::Function    *mainFunc;
@@ -361,8 +211,6 @@ namespace QDP {
     bool function_started;
     bool function_created;
 
-    std::vector<std::string>  vec_mattr;
-
     std::vector< llvm::Type* > vecParamType;
     std::vector< llvm::Value* > vecArgument;
 
@@ -371,8 +219,6 @@ namespace QDP {
     llvm::Value *r_arg_myId;
     llvm::Value *r_arg_ordered;
     llvm::Value *r_arg_start;
-
-    //std::unique_ptr<llvm::Module> module_libdevice;
 
     static int fcount = 0;
     static std::string fname;
@@ -636,29 +482,9 @@ namespace QDP {
 
 
   void llvm_wrapper_init() {
-
-    // "-print-machineinstrs"
-
-
     function_created = false;
     function_started = false;
 
-    
-
-    // llvm::InitializeAllAsmPrinters();
-    // llvm::InitializeAllAsmParsers();
-
-    
-#if 0
-    llvm_type<float>::value  = llvm::Type::getFloatTy(llvm::getGlobalContext());
-    llvm_type<double>::value = llvm::Type::getDoubleTy(llvm::getGlobalContext());
-    llvm_type<int>::value    = llvm::Type::getIntNTy(llvm::getGlobalContext(),32);
-    llvm_type<bool>::value   = llvm::Type::getIntNTy(llvm::getGlobalContext(),1);
-    llvm_type<float*>::value  = llvm::Type::getFloatPtrTy(llvm::getGlobalContext());
-    llvm_type<double*>::value = llvm::Type::getDoublePtrTy(llvm::getGlobalContext());
-    llvm_type<int*>::value    = llvm::Type::getIntNPtrTy(llvm::getGlobalContext(),32);
-    llvm_type<bool*>::value   = llvm::Type::getIntNPtrTy(llvm::getGlobalContext(),1);
-#else
     llvm_type<float>::value  = llvm::Type::getFloatTy(context);
     llvm_type<double>::value = llvm::Type::getDoubleTy(context);
     llvm_type<int>::value    = llvm::Type::getIntNTy(context,32);
@@ -667,8 +493,6 @@ namespace QDP {
     llvm_type<double*>::value = llvm::Type::getDoublePtrTy(context);
     llvm_type<int*>::value    = llvm::Type::getIntNPtrTy(context,32);
     llvm_type<bool*>::value   = llvm::Type::getIntNPtrTy(context,1);
-#endif
-
   }  
 
 
@@ -686,20 +510,10 @@ namespace QDP {
       QDPIO::cerr << "Creating new module ...\n";
     }
 
-
     module = llvm::make_unique<llvm::Module>("module", context);
-    //Mod = new llvm::Module("module", context);
-
-    // llvm::Triple TheTriple;
-    // TheTriple.setArch(llvm::Triple::x86_64);
-    // TheTriple.setVendor(llvm::Triple::UnknownVendor);
-    // TheTriple.setOS(llvm::Triple::Linux);
-    // TheTriple.setEnvironment(llvm::Triple::ELF);
-
-    // Mod->setTargetTriple(TheTriple.getTriple());
-
-    //Mod->setTargetTriple(llvm::sys::getProcessTriple());  // LLVM 3.8
-
+    module->setDataLayout( get_qdpjit().getDL() );
+    builder = llvm::make_unique< llvm::IRBuilder<> >(context);
+    
     if (llvm_debug::debug_func_build) {
       if (vec_mattr.size() > 0) {
 	QDPIO::cerr << "    MCPU attributes: ";
@@ -709,77 +523,14 @@ namespace QDP {
       }
     }
 
-    // llvm::EngineBuilder engineBuilder(std::move(std::unique_ptr<llvm::Module>(Mod)));
-    // engineBuilder.setMCPU(llvm::sys::getHostCPUName());
-    // if (vec_mattr.size() > 0) 
-    //   engineBuilder.setMAttrs( vec_mattr );
-    // engineBuilder.setEngineKind(llvm::EngineKind::JIT);
-    // engineBuilder.setOptLevel(llvm::CodeGenOpt::Aggressive);
-    // engineBuilder.setErrorStr(&mcjit_error);
-    // llvm::TargetOptions targetOptions;
-    // targetOptions.AllowFPOpFusion = llvm::FPOpFusion::Fast;
-    // engineBuilder.setTargetOptions( targetOptions );
-
-#if 0
-    llvm::EngineBuilder engineBuilder;
-    QDPIO::cout << "engineBuilder needs flags!!\n";
-    // engineBuilder.setMCPU(llvm::sys::getHostCPUName());
-    // if (vec_mattr.size() > 0) 
-    //   engineBuilder.setMAttrs( vec_mattr );
-    // engineBuilder.setEngineKind(llvm::EngineKind::JIT);
-    // engineBuilder.setOptLevel(llvm::CodeGenOpt::Aggressive);
-    engineBuilder.setErrorStr(&mcjit_error);
-    // llvm::TargetOptions targetOptions;
-    // targetOptions.AllowFPOpFusion = llvm::FPOpFusion::Fast;
-    // engineBuilder.setTargetOptions( targetOptions );
-
-    
-#if 0
-    TheExecutionEngine = engineBuilder.create(); // MCJIT
-
-    if (!TheExecutionEngine)
-      {	
-	QDPIO::cout << "failed to create LLVM ExecutionEngine with error: " << mcjit_error << "\n";
-	QDP_error_exit("giving up");
-      }
-#endif
-    
-    //assert(TheExecutionEngine && "failed to create LLVM ExecutionEngine with error");
-
-    //targetmachine = llvm::make_unique< llvm::TargetMachine >(engineBuilder.selectTarget());
-    targetmachine = std::unique_ptr< llvm::TargetMachine >(engineBuilder.selectTarget());
-    //targetmachine = engineBuilder.selectTarget();
-  
-    if (!targetmachine) {
-      std::cout << "no target machine. Error: "  << mcjit_error << "\n";
-      QDP_error_exit("giving up");
-    }
-
-    moddatalayout = llvm::make_unique< llvm::DataLayout >( targetmachine->createDataLayout() );
-    module->setDataLayout( *moddatalayout.get() );
-#endif
-    
-    module->setDataLayout( qdpjit.getDL() );
-
     if (llvm_debug::debug_func_build) {
       QDPIO::cerr << "    staring new LLVM function ...\n";
     }
 
-    builder = llvm::make_unique< llvm::IRBuilder<> >(context);
-
     llvm_setup_math_functions();
-
-    // jit_build_seedToFloat();
-    // jit_build_seedMultiply();
 
     vecParamType.clear();
     vecArgument.clear();
-
-    //llvm_setup_math_functions();
-
-    // llvm::outs() << "------------------------- linked module\n";
-    // llvm_print_module(Mod,"ir_linked.ll");
-    //Mod->dump();
   }
 
 
@@ -851,11 +602,7 @@ namespace QDP {
 	  B.addAlignmentAttr( QDP_ALIGNMENT_SIZE );
 	}
 
-#if 0
-      	AI->addAttr( llvm::AttributeSet::get( context , 0 ,  B ) );
-#else
-	  AI->addAttrs(  B  );
-#endif
+	AI->addAttrs(  B  );
       }
 
       vecArgument.push_back( &*AI );
@@ -869,7 +616,6 @@ namespace QDP {
 
     llvm_counters::label_counter = 0;
     function_created = true;
-
   }
 
 
@@ -963,36 +709,6 @@ namespace QDP {
     }
     return args_type;
   }
-
-
-#if 0
-  llvm::Value* llvm_b_op(  llvm::Value *(*)(llvm::Value *, llvm::Value *)  func_float,
-			   llvm::Value *(*)(llvm::Value *, llvm::Value *)  func_int,
-			  llvm::Value* lhs , llvm::Value* rhs )
-  {
-    llvm::Type* args_type;
-    args_type = llvm_normalize_values(lhs,rhs);
-    if ( args_type->isFloatingPointTy() ) {
-      //llvm::outs() << "float binary op\n";
-      return func_float( lhs , rhs );  
-    }  else {
-      //llvm::outs() << "integer binary op\n";
-      return func_int( lhs , rhs );  
-    }
-  }
-
-
-  llvm::Value* llvm_u_op(  llvm::Value *(*)(llvm::Value *)  func_float,
-			   llvm::Value *(*)(llvm::Value *)  func_int,
-			  llvm::Value* lhs )
-  {
-    if ( lhs->getType()->isFloatingPointTy() ) {
-      return func_float( lhs );  
-    }  else {
-      return func_int( lhs );  
-    }
-  }
-#endif
 
 
 
@@ -1140,35 +856,6 @@ namespace QDP {
   }
 
 
-  // std::string param_next()
-  // {
-  //   std::ostringstream oss;
-  //   oss << "arg" << llvm_counters::param_counter++;
-  //   llvm::outs() << "param_name = " << oss.str() << "\n";
-  //   return oss.str();
-  // }
-
-#if 0
-  llvm::Value* llvm_get_shared_ptr( llvm::Type *ty ) {
-
-    //
-
-    llvm::GlobalVariable *gv = new llvm::GlobalVariable ( *Mod , 
-							  llvm::ArrayType::get(ty,0) ,
-							  false , 
-							  llvm::GlobalVariable::ExternalLinkage, 
-							  0, 
-							  "shared_buffer", 
-							  0, //GlobalVariable *InsertBefore=0, 
-							  llvm::GlobalVariable::NotThreadLocal, //ThreadLocalMode=NotThreadLocal
-							  3, // unsigned AddressSpace=0, 
-							  false); //bool isExternallyInitialized=false)
-    return builder->CreatePointerCast(gv, llvm::PointerType::get(ty,3) );
-    //return builder->CreatePointerCast(gv,llvm_type<double*>::value);
-    //return gv;
-  }
-#endif
-
 
   llvm::Value * llvm_alloca( llvm::Type* type , int elements )
   {
@@ -1184,8 +871,6 @@ namespace QDP {
   template<> ParamRef llvm_add_param<bool>() { 
     vecParamType.push_back( llvm::Type::getInt1Ty(context) );
     return vecParamType.size()-1;
-    // llvm::Argument * u8 = new llvm::Argument( llvm::Type::getInt8Ty(context) , param_next() , mainFunc );
-    // return llvm_cast( llvm_type<bool>::value , u8 );
   }
   template<> ParamRef llvm_add_param<bool*>() { 
     vecParamType.push_back( llvm::Type::getInt1PtrTy(context) );
@@ -1307,8 +992,6 @@ namespace QDP {
   {
     assert(ptr->getType()->isPointerTy() && "llvm_store: not a pointer type");
     llvm::Value * val_cast = llvm_cast( ptr->getType()->getPointerElementType() , val );
-    // llvm::outs() << "\nstore: val_cast  = "; val_cast->dump();
-    // llvm::outs() << "\nstore: ptr  = "; ptr->dump();
     builder->CreateStore( val_cast , ptr );
   }
 
@@ -1321,80 +1004,9 @@ namespace QDP {
 
   void llvm_store_ptr_idx( llvm::Value * val , llvm::Value * ptr , llvm::Value * idx )
   {
-    // llvm::outs() << "\nstore_ptr: val->getType  = "; val->getType()->dump();
-    // llvm::outs() << "\nstore_ptr: ptr->getType  = "; ptr->getType()->dump();
-    // llvm::outs() << "\nstore_ptr: idx->getType  = "; idx->getType()->dump();
-
     llvm_store( val , llvm_createGEP( ptr , idx ) );
   }
 
-
-#if 0
-  void llvm_bar_sync()
-  {
-    llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getVoidTy(context), false);
-
-    llvm::AttrBuilder ABuilder;
-    ABuilder.addAttribute(llvm::Attribute::ReadNone);
-
-    llvm::Constant *Bar = Mod->getOrInsertFunction( "llvm.nvvm.barrier0" , 
-						    IntrinFnTy , 
-						    llvm::AttributeSet::get(context, 
-									    llvm::AttributeSet::FunctionIndex, 
-									    ABuilder)
-						    );
-
-    builder->CreateCall(Bar);
-  }
-#endif
-
-  
-
-#if 0
-  llvm::Value * llvm_special( const char * name )
-  {
-    llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getInt32Ty(context), false);
-
-    llvm::AttrBuilder ABuilder;
-    ABuilder.addAttribute(llvm::Attribute::ReadNone);
-
-    llvm::Constant *ReadTidX = Mod->getOrInsertFunction( name , 
-							 IntrinFnTy , 
-							 llvm::AttributeSet::get(context, 
-										 llvm::AttributeSet::FunctionIndex, 
-										 ABuilder)
-							 );
-
-    return builder->CreateCall(ReadTidX);
-  }
-
-#endif
-
-  // llvm::Value * llvm_call_special_tidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.tid.x"); }
-  // llvm::Value * llvm_call_special_ntidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.ntid.x"); }
-  // llvm::Value * llvm_call_special_ctaidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.x"); }
-
-
-
-
-#if 0
-  void addKernelMetadata(llvm::Function *F) {
-    llvm::Module *M = F->getParent();
-    llvm::LLVMContext &Ctx = M->getContext();
-
-    // Get "nvvm.annotations" metadata node
-    llvm::NamedMDNode *MD = M->getOrInsertNamedMetadata("nvvm.annotations");
-
-    // Create !{<func-ref>, metadata !"kernel", i32 1} node
-    llvm::SmallVector<llvm::Value *, 3> MDVals;
-    MDVals.push_back(F);
-    MDVals.push_back(llvm::MDString::get(Ctx, "kernel"));
-    MDVals.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), 1));
-
-    // Append metadata to nvvm.annotations
-    MD->addOperand(llvm::MDNode::get(Ctx, MDVals));
-  }
-#endif
 
 
   void llvm_print_module( llvm::Module* m , const char * fname ) {
@@ -1404,11 +1016,6 @@ namespace QDP {
     std::string banner;
     {
       llvm::outs() << "llvm_print_module ni\n";
-#if 0
-      llvm::PassManager PM;
-      PM.add( llvm::createPrintModulePass( &outfd, false, banner ) ); 
-      PM.run( *m );
-#endif
     }
   }
 
@@ -1424,236 +1031,6 @@ namespace QDP {
       }
   }
 
-#if 0
-  std::map<std::string,std::string> mapAttr;
-  std::map<std::string,std::string>::iterator mapAttrIter;
-
-  bool find_attr(std::string& str)
-  {
-    mapAttr.clear();
-    size_t pos = 0;
-    while((pos = str.find("attributes #", pos)) != std::string::npos)
-      {
-	size_t pos_space = str.find(" ", pos+12);
-	std::string num = str.substr(pos+12,pos_space-pos-12);
-	num = " #"+num;
-	std::cout << "# num found = " << num << "()\n";
-	size_t pos_open = str.find("{", pos_space);
-	size_t pos_close = str.find("}", pos_open);
-	std::string val = str.substr(pos_open+1,pos_close-pos_open-1);
-	std::cout << "# val found = " << val << "\n";
-	str.replace(pos, pos_close-pos+1, "");
-	if (mapAttr.count(num) > 0)
-	  QDP_error_exit("unexp.");
-	mapAttr[num]=val;
-      }
-  }
-#endif
-
-
-#if 0
-  std::string get_PTX_from_Module_using_nvvm( llvm::Module *Mod )
-  {
-    Mod->setDataLayout("e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v32:32:32-v64:64:64-v128:128:128-n16:32:64");
-
-    llvm::PassManager PMTM;
-#if 0
-    // Add the target data from the target machine, if it exists, or the module.
-    if (const DataLayout *TD = Target.getDataLayout()) {
-      QDP_info_primary( "Using targets's data layout" );
-      PMTM.add(new DataLayout(*TD));
-    }
-    else {
-      QDP_info_primary( "Using module's data layout" );
-      PMTM.add(new DataLayout(Mod));
-    }
-#else
-    QDP_info_primary( "Using module's data layout" );
-    PMTM.add(new llvm::DataLayout(Mod));
-#endif
-    QDP_info_primary("Adding data layout");
-    PMTM.run(*Mod);
-
-#if 1
-    std::string str;
-    llvm::raw_string_ostream rsos(str);
-    llvm::formatted_raw_ostream fros(rsos);
-
-    Mod->print(fros,NULL);
-
-    // std::cout << "Do we need the ostream in binary mode?\n";
-    // llvm::WriteBitcodeToFile(Mod,fros);
-    fros.flush();
-
-    find_attr(str);
-    for (mapAttrIter=mapAttr.begin(); mapAttrIter!=mapAttr.end(); ++mapAttrIter)
-      str_replace(str, mapAttrIter->first, mapAttrIter->second );
-
-    str_replace( str , "!nvvm.internalize.after.link = !{}" , "" );
-#endif
-
-
-#if 0
-    std::string error;
-    unsigned OpenFlags = 0;
-    OpenFlags |= llvm::raw_fd_ostream::F_Binary;
-    std::unique_ptr<llvm::tool_output_file> Out( new llvm::tool_output_file( "test.bc" , error, OpenFlags) );
-    if (!Out) {
-      llvm::errs() << "Could not create std::unique_ptr<tool_output_file>\n";
-      exit(1);
-    }
-    llvm::formatted_raw_ostream fros(Out->os());
-    llvm::WriteBitcodeToFile(Mod,fros);
-    fros.flush();
-    // open the file:
-    std::streampos fileSize;
-    std::ifstream file("test.bc", std::ios::binary);
-    // get its size:
-    file.seekg(0, std::ios::end);
-    fileSize = file.tellg();
-    file.seekg(0, std::ios::beg);
-    // read the data:
-    std::vector<char> buffer(fileSize);
-    file.read((char*) &buffer[0], fileSize);
-    file.close();
-#endif
-
-
-#if 0
-    std::ifstream input( "test.bc", std::ios::binary );
-    // copies all data into buffer
-    std::vector<unsigned char> buffer( std::istreambuf_iterator<unsigned char>(input) ,  
-				       std::istreambuf_iterator<unsigned char>() );
-#endif
-
-    //exit(1);
-
-    std::cout << str << "\n";
-
-    nvvmResult result;
-    nvvmProgram program;
-    size_t PTXSize;
-    char *PTX = NULL;
-
-    result = nvvmCreateProgram(&program);
-    if (result != NVVM_SUCCESS) {
-      fprintf(stderr, "nvvmCreateProgram: Failed\n");
-      exit(1); 
-    }
-
-    result = nvvmAddModuleToProgram(program, str.c_str() , str.size() , "module" );
-    //result = nvvmAddModuleToProgram(program, (const char*)buffer.data() , buffer.size() , "module" );
-    if (result != NVVM_SUCCESS) {
-        fprintf(stderr, "nvvmAddModuleToProgram: Failed\n");
-        exit(-1);
-    }
-
-    std::stringstream ss;
-    ss << "-arch=compute_" << DeviceParams::Instance().getMajor() << DeviceParams::Instance().getMinor();
-
-    std::string sm_str = ss.str();
-
-    const char * arch = sm_str.c_str();
-    const char * opt_val[] = {arch};
-
-    result = nvvmCompileProgram(program,  1, opt_val );
-    if (result != NVVM_SUCCESS) {
-        char *Msg = NULL;
-        size_t LogSize;
-        fprintf(stderr, "nvvmCompileProgram: Failed\n");
-        nvvmGetProgramLogSize(program, &LogSize);
-        Msg = (char*)malloc(LogSize);
-        nvvmGetProgramLog(program, Msg);
-        fprintf(stderr, "%s\n", Msg);
-        free(Msg);
-        exit(-1);
-    }
-    
-    result = nvvmGetCompiledResultSize(program, &PTXSize);
-    if (result != NVVM_SUCCESS) {
-        fprintf(stderr, "nvvmGetCompiledResultSize: Failed\n");
-        exit(-1);
-    }
-    
-    PTX = (char*)malloc(PTXSize);
-    result = nvvmGetCompiledResult(program, PTX);
-    if (result != NVVM_SUCCESS) {
-        fprintf(stderr, "nvvmGetCompiledResult: Failed\n");
-        free(PTX);
-        exit(-1);
-    }
-    
-    result = nvvmDestroyProgram(&program);
-    if (result != NVVM_SUCCESS) {
-      fprintf(stderr, "nvvmDestroyProgram: Failed\n");
-      free(PTX);
-      exit(-1);
-    }
-
-    std::string ret(PTX);
-    std::cout << ret << "\n";
-
-    return ret;
-    //
-  }
-#endif
-
-
-
-
-#if 0
-  std::string llvm_get_ptx_kernel(const char* fname)
-  {
-    QDP_info_primary("Internalizing module");
-
-    const char *ExportList[] = { "main" };
-
-    llvm::StringMap<int> Mapping;
-    Mapping["__CUDA_FTZ"] = 0;
-
-    std::string banner;
-
-    llvm::PassManager OurPM;
-    OurPM.add( llvm::createInternalizePass( llvm::ArrayRef<const char *>(ExportList, 1)));
-    OurPM.add( llvm::createNVVMReflectPass(Mapping));
-    OurPM.run( *Mod );
-
-
-    QDP_info_primary("Running optimization passes on module");
-
-    llvm::PassManager PM;
-    PM.add( llvm::createGlobalDCEPass() );
-    PM.run( *Mod );
-
-    llvm_print_module(Mod,"ir_internalized_reflected_globalDCE.ll");
-
-    std::string str = get_PTX_from_Module_using_nvvm( Mod );
-
-#if 1
-    // Write PTX string to file
-    std::ofstream ptxfile;
-    ptxfile.open ( fname );
-    ptxfile << str << "\n";
-    ptxfile.close();
-#endif
-
-
-#if 0
-    // Read PTX string from file
-    std::ifstream ptxfile(fname);
-    std::stringstream buffer;
-    buffer << ptxfile.rdbuf();
-    ptxfile.close();
-    str = buffer.str();
-#endif
-
-    //llvm::outs() << str << "\n";
-
-    return str;
-  }
-#endif
-
-
 
 
   void * llvm_get_function(const char* fname)
@@ -1661,55 +1038,11 @@ namespace QDP {
     assert(function_created && "Function not created");
     assert(function_started && "Function not started");
 
-#if 0
-    //
-    QDPIO::cerr << "loading module from f.ll\n";
-    llvm::SMDiagnostic Err;
-    //Mod = llvm::ParseIRFile("f.ll", Err, context);
-    unique_ptr<llvm::Module> Mod_unique = llvm::getLazyIRFileModule("f.ll", Err, context);
-    if (!Mod_unique)
-      {
-	QDPIO::cerr << Err.getMessage() << "\n";
-	exit(1);
-      }
-    QDPIO::cerr << "done\n";
-    Mod = Mod_unique.get();
-
-    //
-    // I need a new execution engine
-    //
-    llvm::EngineBuilder engineBuilder(std::move(Mod_unique));
-    engineBuilder.setMCPU(llvm::sys::getHostCPUName());
-    if (vec_mattr.size() > 0) 
-      engineBuilder.setMAttrs( vec_mattr );
-    engineBuilder.setEngineKind(llvm::EngineKind::JIT);
-    engineBuilder.setOptLevel(llvm::CodeGenOpt::Aggressive);
-    engineBuilder.setErrorStr(&mcjit_error);
-    llvm::TargetOptions targetOptions;
-    targetOptions.AllowFPOpFusion = llvm::FPOpFusion::Fast;
-    engineBuilder.setTargetOptions( targetOptions );
-    TheExecutionEngine = engineBuilder.create(); // MCJIT
-    assert(TheExecutionEngine && "failed to create LLVM ExecutionEngine with error");
-    QDPIO::cerr << "created new execution engine\n";
-
-    //Mod_unique.get()->dump();
-    //exit(0);
-    
-    mainFunc = Mod->getFunction("main");
-    if (!mainFunc)
-      {
-	QDPIO::cerr << "main not found!\n";
-	exit(1);
-      }
-    //llvm::Function *mainFunc_extern = Mod->getFunction("main_extern");
-    //
-#endif
-
     if (llvm_debug::debug_func_dump) {
       if (Layout::primaryNode()) {
 	QDPIO::cerr << "LLVM IR function (before passes)\n";
 	mainFunc->dump();
-	module->dump();
+	//module->dump();
       }
     }
 
@@ -1727,11 +1060,9 @@ namespace QDP {
     llvm::PassRegistry &registry = *llvm::PassRegistry::getPassRegistry();
     initializeScalarOpts(registry);
 
-    //functionPassManager->add(createTargetTransformInfoWrapperPass(targetmachine->getTargetIRAnalysis()));  // LLVM 3.8
-    functionPassManager->add(createTargetTransformInfoWrapperPass(qdpjit.getTM()->getTargetIRAnalysis()));  // LLVM 3.8
+    functionPassManager->add(createTargetTransformInfoWrapperPass(get_qdpjit().getTM()->getTargetIRAnalysis()));
 
-    //functionPassManager->add( new llvm::TargetLibraryInfoWrapperPass(llvm::TargetLibraryInfoImpl(targetmachine->getTargetTriple())) );
-    functionPassManager->add( new llvm::TargetLibraryInfoWrapperPass(llvm::TargetLibraryInfoImpl(qdpjit.getTM()->getTargetTriple())) );
+    functionPassManager->add( new llvm::TargetLibraryInfoWrapperPass(llvm::TargetLibraryInfoImpl(get_qdpjit().getTM()->getTargetTriple())) );
     functionPassManager->add(llvm::createBasicAAWrapperPass());
     functionPassManager->add(llvm::createLICMPass());
     functionPassManager->add(llvm::createGVNPass());
@@ -1804,7 +1135,7 @@ namespace QDP {
 	llvm::raw_svector_ostream dest(Str); 
 
 	//if (targetmachine->addPassesToEmitFile( PM , dest , llvm::TargetMachine::CGFT_AssemblyFile ) ) {
-	if (qdpjit.getTM()->addPassesToEmitFile( PM , dest , llvm::TargetMachine::CGFT_AssemblyFile ) ) {
+	if (get_qdpjit().getTM()->addPassesToEmitFile( PM , dest , llvm::TargetMachine::CGFT_AssemblyFile ) ) {
 	  std::cout << "addPassesToEmitFile failed\n";
 	  exit(1);
 	}
@@ -1816,27 +1147,6 @@ namespace QDP {
     }
 #endif
 
-
-#if 0
-    // Write assembly (not sure if this one works!)
-    {
-      llvm::FunctionPassManager *functionPassManager = new llvm::FunctionPassManager(Mod);
-      llvm::PassManager PM;
-
-      std::string str;
-      llvm::raw_string_ostream rsos(str);
-      llvm::formatted_raw_ostream FOS(rsos);
-
-      if (targetmachine->addPassesToEmitFile( PM , FOS , llvm::TargetMachine::CGFT_AssemblyFile ) ) {
-	std::cout << "addPassesToEmitFile failed\n";
-        exit(1);
-      }
-      PM.run(*Mod);
-      std::cerr << "Assembly:\n";
-      std::cerr << str << "\n";
-      std::cerr << "end assembly!\n";
-    }
-#endif
 
 
 #if 1
@@ -1901,10 +1211,6 @@ namespace QDP {
     llvm::BasicBlock* entry = llvm::BasicBlock::Create(context, "entrypoint", mainFunc_extern);
     builder->SetInsertPoint(entry);
 
-    // Extract each parameter
-
-    //std::cout << "Building trampoline with the following arguments:\n";
-
     int i=0;
     for( std::vector< llvm::Type* >::const_iterator param_type = vecParamType.begin() ; 
     	 param_type != vecParamType.end() ; 
@@ -1916,14 +1222,6 @@ namespace QDP {
       llvm::Value* arg = builder->CreateLoad( ptr_to_arg );
       vecCallArgument.push_back( arg );      
     }
-
-    // vecCallArgument.pop_back();
-    // vecCallArgument.pop_back();
-    // llvm::Value* val_0 = llvm_create_value( (int)0 );
-    // vecCallArgument.push_back( val_0 );
-    // vecCallArgument.push_back( val_0 );
-
-    // Call 'main' from 'main_extern'
 
     builder->CreateCall( mainFunc , llvm::ArrayRef<llvm::Value*>( vecCallArgument.data() , vecCallArgument.size() ) );
     builder->CreateRetVoid();
@@ -1948,62 +1246,13 @@ namespace QDP {
       //Mod->dump();
     }
 
-#if 0
-    TheExecutionEngine->finalizeObject();  // MCJIT
-
-    if (llvm_debug::debug_func_build) {
-      QDPIO::cerr << "    JIT compiling ...\n";
-    }
-    fptr_mainFunc_extern = TheExecutionEngine->getPointerToFunction( mainFunc_extern );
-    assert(fptr_mainFunc_extern!=NULL && "JIT failed");
-#endif
-
-    
-#if 0
-    auto Resolver = llvm::orc::createLambdaResolver(
-						    [&](const std::string &Name) {
-						      if (auto Sym = CompileLayer.findSymbol(Name, false))
-							return Sym;
-						      return llvm::JITSymbol(nullptr);
-						    },
-						    [](const std::string &S) { return nullptr; }
-					      );
-
-    cantFail( CompileLayer.addModule( std::move(module),
-				      std::move(Resolver) ) );
-#endif
-
-    qdpjit.addModule( std::move(module) );
-
+    get_qdpjit().addModule( std::move(module) );
 
     function_created = false;
     function_started = false;
     
-    return qdpjit.getAddr();
+    return get_qdpjit().getAddr();
     
-#if 0
-    std::string MangledName;
-    llvm::raw_string_ostream MangledNameStream(MangledName);
-    llvm::Mangler::getNameWithPrefix(MangledNameStream, "main_extern", *moddatalayout);
-    QDPIO::cout << "9\n";
-
-    if (auto Sym = CompileLayer.findSymbol(MangledNameStream.str(),true))   // ,true
-      {
-	QDPIO::cout << "main_extern found\n";
-	// Cast to function
-	void* fptr = (void *)cantFail(Sym.getAddress());
-
-	function_created = false;
-	function_started = false;
-
-	return fptr;
-      }
-    else
-      {
-	QDP_error_exit("main_extern not found!");
-      }
-    //return fptr_mainFunc_extern;
-#endif
   }
 
 
