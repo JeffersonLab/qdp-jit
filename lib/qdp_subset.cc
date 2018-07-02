@@ -42,7 +42,7 @@ namespace QDP
 
   Subset::Subset(const Subset& s):
     ordRep(s.ordRep), startSite(s.startSite), endSite(s.endSite), 
-    sub_index(s.sub_index), sitetable(s.sitetable), membertable(s.membertable), set(s.set), id(s.id) { 
+    sub_index(s.sub_index), sitetable(s.sitetable),  set(s.set), membertable(s.membertable), id(s.id) { 
   }
 
 

@@ -220,8 +220,8 @@ public:
   QDPHandle::Handle<RsrcWrapper> pRsrc;
 
   FnMapJIT(const FnMap& fnmap,const IndexRet& i): 
-    map(fnmap.map), pRsrc(fnmap.pRsrc), index(i) {}
-  FnMapJIT(const FnMapJIT& f) : map(f.map) , pRsrc(f.pRsrc), index(f.index) {}
+    index(i), map(fnmap.map), pRsrc(fnmap.pRsrc) {}
+  FnMapJIT(const FnMapJIT& f) : index(f.index), map(f.map), pRsrc(f.pRsrc) {}
 
 public:
   template<class T>
@@ -257,21 +257,11 @@ struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
     inline
     static Type_t apply(const UnaryNode<FnMap, A>& expr, const ParamLeaf &p, const TreeCombine &c)
     {
-      //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-
-      const Map& map = expr.operation().map;
-      FnMap& fnmap = const_cast<FnMap&>(expr.operation());
-
       typedef typename WordType<InnerType_t>::Type_t AWordType_t;
-
-      // if (llvm_debug::debug_func_write && Layout::primaryNode()) {
-      // 	std::cout << "site permutation buffer\n";
-      // 	std::cout << "receive buffer\n";
-      // }
 
       IndexRet index_pack;
       index_pack.p_multi_index = llvm_add_param<int*>();
-      index_pack.p_recv_buf    = llvm_add_param<AWordType_t*>(); // This deduces it's type from A
+      index_pack.p_recv_buf    = llvm_add_param<AWordType_t*>();
 
       return Type_t( FnMapJIT( expr.operation() , index_pack ) , 
 		     ForEach< A, ParamLeaf, TreeCombine >::apply( expr.child() , p , c ) );
@@ -289,15 +279,11 @@ struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
 template<class A>
 struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
   {
-    //typedef typename ForEach< UnaryNode<FnMapJIT, A> , ParamLeaf, TreeCombine>::Type_t Type_t;
     typedef typename ForEach<A, ViewLeaf, OpCombine>::Type_t TypeA_t;
     typedef typename Combine1<TypeA_t, FnMapJIT , OpCombine>::Type_t Type_t; // This is a REG container
-    //typedef typename REGType< Type_t >::Type_t REGType_t;
     inline
     static Type_t apply(const UnaryNode<FnMapJIT, A>& expr, const ViewLeaf &v, const OpCombine &o)
     {
-      //assert(!"ni");
-#if 1
       Type_t ret;
       Type_t ret_phi0;
       Type_t ret_phi1;
@@ -309,7 +295,6 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
       llvm::BasicBlock * block_in_buffer = llvm_new_basic_block();
       llvm::BasicBlock * block_not_in_buffer = llvm_new_basic_block();
       llvm::BasicBlock * block_in_buffer_exit = llvm_new_basic_block();
-      llvm::BasicBlock * cond_exit;
       llvm_cond_branch( llvm_lt( r_multi_index , 
 				 llvm_create_value(0) ) , 
 			block_in_buffer , 
@@ -352,7 +337,6 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
 	      ret_phi1 , block_not_in_buffer );
 
       return ret;
-#endif
     }
   };
 
@@ -410,7 +394,7 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
     const Map& map = expr.operation().map;
     FnMap& fnmap = const_cast<FnMap&>(expr.operation());
 
-    const int nodeSites = Layout::sitesOnNode();
+    //const int nodeSites = Layout::sitesOnNode();
     int returnVal=0;
 
     Expr subexpr(expr.child());
@@ -430,7 +414,7 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
 
 	const FnMapRsrc& rRSrc = fnmap.getResource(srcnum,dstnum);
 
-	const int my_node = Layout::nodeNumber();
+
 
 	// Make sure the inner expression's map function
 	// send and receive before recursing down

@@ -101,7 +101,7 @@ function_sum_exec(const JitFunction& function, typename UnaryReturn<OLattice<T>,
     func_num = 1;
   }
   
-  int junk_src = forEach(src, addr_leaf, NullCombine());
+  forEach(src, addr_leaf, NullCombine());
   addr_leaf.setAddr( dest );
 
 #ifdef LLVM_DEBUG

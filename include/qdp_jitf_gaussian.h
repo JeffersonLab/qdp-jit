@@ -58,9 +58,9 @@ function_gaussian_exec(const JitFunction& function, OLattice<T>& dest,OLattice<T
 
   AddressLeaf addr_leaf(s);
 
-  int junk_0 = forEach(dest, addr_leaf, NullCombine());
-  int junk_1 = forEach(r1, addr_leaf, NullCombine());
-  int junk_2 = forEach(r2, addr_leaf, NullCombine());
+  forEach(dest, addr_leaf, NullCombine());
+  forEach(r1, addr_leaf, NullCombine());
+  forEach(r2, addr_leaf, NullCombine());
 
   if (s.numSiteTable() % getDataLayoutInnerSize())
     QDP_error_exit("number of sites in ordered subset is %d, but inner length is %d" , 

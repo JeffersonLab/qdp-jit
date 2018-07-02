@@ -111,7 +111,7 @@ namespace QDP {
 
 
 
-    OScalar(const OScalar& rhs) {
+    OScalar(const OScalar& rhs): QDPType<T, OScalar<T> >( rhs ) {
       this->assign(rhs);
     }
 
@@ -129,7 +129,7 @@ namespace QDP {
 
   private:
 
-    mutable T F __attribute__((aligned(QDP_ALIGNMENT_SIZE)));;
+    mutable T F __attribute__((aligned(QDP_ALIGNMENT_SIZE)));
   };
 
 
@@ -379,7 +379,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
     {return OSubLattice<T>(*this,s);}
 
 
-    OLattice(const OLattice& rhs)
+    OLattice(const OLattice& rhs): QDPType<T, OLattice<T> >( rhs )
     {
       common_ctor();
       //alloc_mem("copy");

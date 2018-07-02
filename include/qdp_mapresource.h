@@ -56,9 +56,9 @@ class FnMapRsrcMatrix {
   int numSendMsgSize;
   int numDestNode;
 
-  FnMapRsrcMatrix(): numSendMsgSize(32),
+  FnMapRsrcMatrix(): sendMsgSize(0),
 		     destNode(0),
-		     sendMsgSize(0),
+		     numSendMsgSize(32),
 		     numDestNode(Nd*2)
 		      {
     m2d.resize(numSendMsgSize,numDestNode);
@@ -99,7 +99,7 @@ class FnMapRsrcMatrix {
 	  break;
 	}
     if (! found) {
-      if (destNode.size() == numDestNode) {
+      if ((int)destNode.size() == numDestNode) {
 	QDP_error_exit("FnMapRsrcMatrix not enough space in destNode");
       } else {
 	destNode.push_back(_destNode);
@@ -118,7 +118,7 @@ class FnMapRsrcMatrix {
 	  break;
 	}
     if (! found) {
-      if (sendMsgSize.size() == numSendMsgSize) {
+      if ((int)sendMsgSize.size() == numSendMsgSize) {
 	QDP_error_exit("FnMapRsrcMatrix not enough space in sendmsgsize");
       } else {
 	sendMsgSize.push_back(_sendMsgSize);
@@ -179,7 +179,7 @@ public:
     }
   }
   RsrcWrapper(  const multi1d<int>& destnodes_, const multi1d<int>& srcenodes_): 
-    destnodes(destnodes_),srcenodes(srcenodes_),rAlloc(false),cached(NULL) {
+    destnodes(destnodes_),srcenodes(srcenodes_),cached(NULL),rAlloc(false) {
     //QDPIO::cout << "wrapper ctor " << srcenodes.size() << " " << destnodes.size() << "\n";
   }
 

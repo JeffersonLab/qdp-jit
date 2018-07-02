@@ -13,6 +13,10 @@
 namespace QDP {
 
 
+  Zero zero;
+
+  
+
   void check_abort() {
     std::string input;
     int myNumber = 0;

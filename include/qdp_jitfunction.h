@@ -22,7 +22,7 @@ void function_build(JitFunction& func, OLattice<T>& dest, const Op& op, const QD
 #endif
 
   HasShift hasShift;
-  int withShift = forEach(rhs, hasShift , BitOrCombine());
+  forEach(rhs, hasShift , BitOrCombine());
 
   //QDPIO::cerr << "withShift = " << withShift << "\n";
 
@@ -175,9 +175,9 @@ function_exec(const JitFunction& function,
       t.ptr = const_cast<int*>( innerSites );
       addr_leaf.addr.push_back(t);
 
-      int junk_dest = forEach(dest, addr_leaf, NullCombine());
+      forEach(dest, addr_leaf, NullCombine());
       AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
-      int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
+      forEach(rhs, addr_leaf, NullCombine());
 
       //QDPIO::cerr << "Calling function for inner sites\n";
 
@@ -212,9 +212,9 @@ function_exec(const JitFunction& function,
       t.ptr = const_cast<int*>( faceSites );
       addr_leaf_face.addr.push_back(t);
 
-      junk_dest = forEach(dest, addr_leaf_face, NullCombine());
+      forEach(dest, addr_leaf_face, NullCombine());
       AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf_face);
-      junk_rhs = forEach(rhs, addr_leaf_face , NullCombine());
+      forEach(rhs, addr_leaf_face , NullCombine());
 
       //QDPIO::cerr << "Calling function for face sites\n";
 
@@ -243,11 +243,11 @@ function_exec(const JitFunction& function,
 	  AddressLeaf addr_leaf(s);
 
 	  //std::cout << "adding dest\n";
-	  int junk_dest = forEach(dest, addr_leaf, NullCombine());
+	  forEach(dest, addr_leaf, NullCombine());
 	  //std::cout << "adding op\n";
 	  AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
 	  //std::cout << "adding RHS\n";
-	  int junk_rhs = forEach(rhs, addr_leaf , NullCombine());
+	  forEach(rhs, addr_leaf , NullCombine());
 
 	  /* QDPIO::cerr << "Calling function for ordered subset count=" << s.numSiteTable() << " start=" << s.start()  */
 	  /* 	      << " addr_leaf.size()=" << addr_leaf.addr.size() << "\n"; */
@@ -286,9 +286,9 @@ function_exec(const JitFunction& function,
 	  // QDPIO::cerr << "\n";
 	  
 
-	  int junk_dest = forEach(dest, addr_leaf, NullCombine());
+	  forEach(dest, addr_leaf, NullCombine());
 	  AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
-	  int junk_rhs = forEach(rhs, addr_leaf , NullCombine());
+	  forEach(rhs, addr_leaf , NullCombine());
 
 	  //QDPIO::cerr << "Calling function for not ordered subset\n";
 
@@ -362,9 +362,9 @@ function_lat_sca_exec(const JitFunction& function,
 
   AddressLeaf addr_leaf(s);
 
-  int junk_dest = forEach(dest, addr_leaf, NullCombine());
+  forEach(dest, addr_leaf, NullCombine());
   AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
-  int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
+  forEach(rhs, addr_leaf, NullCombine());
 
 #ifdef LLVM_DEBUG
   std::cout << "calling eval(Lattice,Scalar)..\n";
@@ -428,7 +428,7 @@ function_zero_rep_exec(const JitFunction& function, OLattice<T>& dest, const Sub
 
   AddressLeaf addr_leaf(s);
 
-  int junk_0 = forEach(dest, addr_leaf, NullCombine());
+  forEach(dest, addr_leaf, NullCombine());
 
 #ifdef LLVM_DEBUG
   std::cout << "calling zero_rep(Lattice,Subset)..\n";
@@ -606,7 +606,7 @@ function_gather_exec( const JitFunction& function,
   t.ptr = send_buf;
   addr_leaf.addr.push_back(t);
 
-  int junk_rhs = forEach(rhs, addr_leaf, NullCombine());
+  forEach(rhs, addr_leaf, NullCombine());
 
   //QDP_info("gather sites into send_buf lo=%d hi=%d",lo,hi);
 

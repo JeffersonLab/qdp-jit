@@ -59,9 +59,9 @@ namespace QDP {
 
     AddressLeaf addr_leaf(all);
 
-    int junk_0 = forEach(dest, addr_leaf, NullCombine());
-    int junk_1 = forEach(src, addr_leaf, NullCombine());
-    int junk_2 = forEach(mask, addr_leaf, NullCombine());
+    forEach(dest, addr_leaf, NullCombine());
+    forEach(src, addr_leaf, NullCombine());
+    forEach(mask, addr_leaf, NullCombine());
 
     int th_count = Layout::sitesOnNode();
 

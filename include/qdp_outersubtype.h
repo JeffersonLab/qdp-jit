@@ -89,7 +89,7 @@ class OSubLattice: public QDPSubType<T, OLattice<T> >
 
 public:
   OSubLattice(const OLattice<T>& a, const Subset& ss): F(a), s(ss) {}
-  OSubLattice(const OSubLattice& a): F(a.F), s(a.s) {}
+  OSubLattice(const OSubLattice& a): QDPSubType<T, OLattice<T> >(a), F(a.F), s(a.s) {}
   ~OSubLattice() {}
 
   //---------------------------------------------------------

@@ -437,7 +437,7 @@ namespace QDP
     //  list_stream.str(list_string);
     std::istringstream list_stream2(list_string);
 
-    for(int i=0; i < result.size(); i++) 
+    for(int i=0; i < (int)result.size(); i++) 
     {
       // read the element.
       list_stream2 >> result[i];
@@ -1048,10 +1048,10 @@ namespace QDP
     if (s1.size() > 0)
     {
       output << s1[0];
-      for(int index=1; index < s1.size(); index++) 
+      for(int index=1; index < (int)s1.size(); index++) 
 	output << " " << s1[index];
     }
-    
+
     // Write the array - do not use a normal string write
     xml.openTag(s);
     xml << output.str();
@@ -1066,7 +1066,7 @@ namespace QDP
     if (s1.size() > 0)
     {
       output << s1[0];
-      for(int index=1; index < s1.size(); index++) 
+      for(int index=1; index < (int)s1.size(); index++) 
 	output << " " << s1[index];
     }
     
@@ -1093,7 +1093,7 @@ namespace QDP
     if (s1.size() > 0)
     {
       output << s1[0];
-      for(int index=1; index < s1.size(); index++) 
+      for(int index=1; index < (int)s1.size(); index++) 
 	output << " " << s1[index];
     }
     
@@ -1112,7 +1112,7 @@ namespace QDP
     if (s1.size() > 0)
     {
       output << s1[0];
-      for(int index=1; index < s1.size(); index++) 
+      for(int index=1; index < (int)s1.size(); index++) 
 	output << " " << s1[index];
     }
     

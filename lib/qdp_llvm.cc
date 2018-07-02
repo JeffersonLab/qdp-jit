@@ -170,6 +170,7 @@ namespace QDP {
 	{
 	  QDPIO::cout << std::string(getCurrentFunctionExternName()) << "\n";
 	  QDP_error_exit("extern function not found!");
+	  return NULL;
 	}
     }
   };
@@ -194,19 +195,19 @@ namespace QDP {
     static std::unique_ptr<llvm::Module> module;
     static std::unique_ptr<llvm::IRBuilder<> > builder;
 
-    llvm::BasicBlock  *entry;
+    //llvm::BasicBlock  *entry;
     llvm::BasicBlock  *entry_main;
     llvm::Function    *mainFunc;
-    llvm::Function    *mainFunc_extern;
+    //llvm::Function    *mainFunc_extern;
 
 
-    llvm::ExecutionEngine *TheExecutionEngine;
+    //llvm::ExecutionEngine *TheExecutionEngine;
 
-    llvm::legacy::FunctionPassManager *TheFPM;
+    //llvm::legacy::FunctionPassManager *TheFPM;
 
     std::string mcjit_error;
 
-    void * fptr_mainFunc_extern;
+    //void * fptr_mainFunc_extern;
 
     bool function_started;
     bool function_created;
@@ -517,7 +518,7 @@ namespace QDP {
     if (llvm_debug::debug_func_build) {
       if (vec_mattr.size() > 0) {
 	QDPIO::cerr << "    MCPU attributes: ";
-	for ( int i = 0 ; i < vec_mattr.size() ; i++ )
+	for ( int i = 0 ; i < (int)vec_mattr.size() ; i++ )
 	  QDPIO::cerr << vec_mattr.at(i) << " ";
 	QDPIO::cerr << "\n";
       }
@@ -623,7 +624,7 @@ namespace QDP {
   llvm::Value * llvm_derefParam( ParamRef r ) {
     if (!function_created)
       llvm_create_function();
-    assert( vecArgument.size() > (int)r && "derefParam out of range");
+    assert( (int)vecArgument.size() > (int)r && "derefParam out of range");
     return vecArgument.at(r);
   }
 
@@ -1128,7 +1129,7 @@ namespace QDP {
     // Write assembly
     if (llvm_debug::debug_func_dump_asm) {
       if (Layout::primaryNode()) {
-	llvm::legacy::FunctionPassManager *functionPassManager = new llvm::legacy::FunctionPassManager(module.get());
+	//llvm::legacy::FunctionPassManager *functionPassManager = new llvm::legacy::FunctionPassManager(module.get());
 	llvm::legacy::PassManager PM;
 
 	llvm::SmallString<128> Str;

@@ -65,7 +65,7 @@ namespace QDP {
     Lvi = idx.at(nIvi).first;
     ivi = idx.at(nIvi).second;
 
-    llvm::Value * Ivo = llvm_create_value(Lvo);
+    //llvm::Value * Ivo = llvm_create_value(Lvo);
     llvm::Value * Ivi = llvm_create_value(Lvi);
 
     llvm::Value * iv = llvm_add(llvm_mul( ivo , Ivi ) , ivi ); // reconstruct volume index
