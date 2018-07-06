@@ -8,8 +8,14 @@ namespace QDP {
   class MasterMap {
   public:
     static MasterMap& Instance();
-    int registrate(const Map& map);
-
+    //int registrate(const Map& map);
+    int  registrate_justid(const Map& map);
+#if 0
+    void registrate_work(const Map& map);
+#else
+    void registrate_work(const Map& map, const Subset& subset);
+#endif
+    
     // const multi1d<int>& getInnerSites(const Subset& s,int bitmask) const;
     // const multi1d<int>& getFaceSites(const Subset& s,int bitmask) const;
 

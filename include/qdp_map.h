@@ -54,6 +54,8 @@ public:
   //! Returns the array size - the number of directions which are to be used
   virtual int numArray() const = 0;
 };
+
+
     
 /** @} */ // end of group map
 
@@ -136,40 +138,177 @@ public:
 
 
 public:
+#if 0
+  void make_lazy() const;
   //! Accessor to offsets
   const multi1d<int>& goffset(const Subset& s) const {
-    std::cout << s.getId() << "\n";
+    if (!lazy_done)
+      QDP_error_exit("goffest used before lazy component was called");
+    //QDPIO::cout << "make lazy part of Map::make\n";
+    //lazy_done=true;
     assert( s.getId() >= 0 && s.getId() < goffsets.size() && "goffset: subset Id out of range");
     return goffsets[s.getId()];
   }
   const multi1d<int>& soffset(const Subset& s) const {
-    assert( s.getId() >= 0 && s.getId() < soffsets.size() && "soffset: subset Id out of range");
-    return soffsets[s.getId()];
-  }
-  multi1d<int>& soffset(const Subset& s) {
+    if (!lazy_done)
+      QDP_error_exit("soffest used before lazy component was called");
+    // QDPIO::cout << "make lazy part of Map::make\n";
+    // if (!lazy_done)
+    //   make_lazy();
+    // lazy_done=true;
     assert( s.getId() >= 0 && s.getId() < soffsets.size() && "soffset: subset Id out of range");
     return soffsets[s.getId()];
   }
   const multi1d<int>& roffset(const Subset& s) const {
+    if (!lazy_done)
+      QDP_error_exit("roffest used before lazy component was called");
+    // QDPIO::cout << "make lazy part of Map::make\n";
+    // if (!lazy_done)
+    //   make_lazy();
+    // lazy_done=true;
     assert( s.getId() >= 0 && s.getId() < roffsets.size() && "roffset: subset Id out of range");
     return roffsets[s.getId()];
   }
-
   int getRoffsetsId(const Subset& s) const { 
+    //QDPIO::cout << "make lazy part of Map::make\n";
+    if (!lazy_done)
+      make_lazy();
+    //lazy_done=true;
     assert( s.getId() >= 0 && s.getId() < roffsets.size() && "roffset: subset Id out of range");
     return roffsetsId[s.getId()];
   }
   int getSoffsetsId(const Subset& s) const { 
+    //QDPIO::cout << "make lazy part of Map::make\n";
+    if (!lazy_done)
+      make_lazy();
+    //lazy_done=true;
     assert( s.getId() >= 0 && s.getId() < soffsets.size() && "soffset: subset Id out of range");
     return soffsetsId[s.getId()];
   }
   int getGoffsetsId(const Subset& s) const { 
+    //QDPIO::cout << "make lazy part of Map::make\n";
+    if (!lazy_done)
+      make_lazy();
+    //lazy_done=true;
     assert( s.getId() >= 0 && s.getId() < goffsets.size() && "goffset: subset Id out of range");
     return goffsetsId[s.getId()];
   }
+  multi1d< multi1d<int> >& get_destnodes_num() const {
+    if (!lazy_done)
+      make_lazy();
+    return destnodes_num;
+  }
+  multi1d< multi1d<int> >& get_srcenodes_num() const {
+    if (!lazy_done)
+      make_lazy();
+    return srcenodes_num;
+  }
+  int getId() const {
+    if (!lazy_done)
+      make_lazy();
+    return myId;
+  }
+  bool get_offnodeP() const { return offnodeP; }
+  bool hasOffnode() const   { return offnodeP; }
+  const multi1d<int>& get_destnodes() const {
+    return destnodes;
+  }
+  const multi1d<int>& get_srcenodes() const {
+    return srcenodes;
+  }
+#else
+  void make_lazy(const Subset& s) const;
+  //! Accessor to offsets
+  const multi1d<int>& goffset(const Subset& s) const {
+    if (!lazy_done_s(s))
+      QDP_error_exit("goffest used before lazy component was called");
+    //QDPIO::cout << "make lazy part of Map::make\n";
+    //lazy_done=true;
+    assert( s.getId() >= 0 && s.getId() < goffsets.size() && "goffset: subset Id out of range");
+    return goffsets[s.getId()];
+  }
+  const multi1d<int>& soffset(const Subset& s) const {
+    if (!lazy_done_s(s))
+      QDP_error_exit("soffest used before lazy component was called");
+    // QDPIO::cout << "make lazy part of Map::make\n";
+    // if (!lazy_done)
+    //   make_lazy();
+    // lazy_done=true;
+    assert( s.getId() >= 0 && s.getId() < soffsets.size() && "soffset: subset Id out of range");
+    return soffsets[s.getId()];
+  }
+  const multi1d<int>& roffset(const Subset& s) const {
+    if (!lazy_done_s(s))
+      QDP_error_exit("roffest used before lazy component was called");
+    // QDPIO::cout << "make lazy part of Map::make\n";
+    // if (!lazy_done)
+    //   make_lazy();
+    // lazy_done=true;
+    assert( s.getId() >= 0 && s.getId() < roffsets.size() && "roffset: subset Id out of range");
+    return roffsets[s.getId()];
+  }
+  int getRoffsetsId(const Subset& s) const { 
+    //QDPIO::cout << "make lazy part of Map::make\n";
+    if (!lazy_done_s(s))
+      make_lazy(s);
+    //lazy_done=true;
+    assert( s.getId() >= 0 && s.getId() < roffsets.size() && "roffset: subset Id out of range");
+    return roffsetsId[s.getId()];
+  }
+  int getSoffsetsId(const Subset& s) const { 
+    //QDPIO::cout << "make lazy part of Map::make\n";
+    if (!lazy_done_s(s))
+      make_lazy(s);
+    //lazy_done=true;
+    assert( s.getId() >= 0 && s.getId() < soffsets.size() && "soffset: subset Id out of range");
+    return soffsetsId[s.getId()];
+  }
+  int getGoffsetsId(const Subset& s) const { 
+    //QDPIO::cout << "make lazy part of Map::make\n";
+    if (!lazy_done_s(s))
+      make_lazy(s);
+    //lazy_done=true;
+    assert( s.getId() >= 0 && s.getId() < goffsets.size() && "goffset: subset Id out of range");
+    return goffsetsId[s.getId()];
+  }
+  const multi1d<int>& get_destnodes_num(const Subset& s) const {
+    if (!lazy_done_s(s))
+      make_lazy(s);
+    return destnodes_num[s.getId()];
+  }
+  const multi1d<int>& get_srcenodes_num(const Subset& s) const {
+    if (!lazy_done_s(s))
+      make_lazy(s);
+    return srcenodes_num[s.getId()];
+  }
+  int getId() const {
+    QDPIO::cout << "Map::getId called\n";
+    if (myId < 0)
+      {
+	QDPIO::cout << "internal error. Map::getId called before lazy evaluation for any subset\n";
+	QDP_error_exit("giving up");
+      }
+    return myId;
+  }
+  bool get_offnodeP() const { return offnodeP; }
+  bool hasOffnode() const   { return offnodeP; }
+  const multi1d<int>& get_destnodes() const {
+    return destnodes;
+  }
+  const multi1d<int>& get_srcenodes() const {
+    return srcenodes;
+  }
+  bool lazy_done_s(const Subset& s) const {
+    if (lazy_done.size() > 0  &&  lazy_done.size() < s.getId() ) {
+      QDPIO::cout << "subset Id out of range. Did you use shift on a user-defined subset?\n";
+      QDP_error_exit("giving up");
+    }
+    if (lazy_done.size() < 1)
+      return false;
+    return lazy_done[ s.getId() ];
+  }
+#endif
 
-  int getId() const {return myId;}
-  bool hasOffnode() const { return offnodeP; }
 
 private:
   //! Hide copy constructor
@@ -179,33 +318,71 @@ private:
   void operator=(const Map&) {}
 
 private:
-  friend class FnMap;
-  friend class FnMapRsrc;
-  template<class E,class F,class C> friend class ForEach;
+  //friend class FnMap;
+  //friend class FnMapRsrc;
+  //template<class E,class F,class C> friend class ForEach;
 
   //! Offset table used for communications. 
   /*! 
    * The direction is in the sense of the Map or Shift functions from QDP.
    * goffsets(position) 
-   */ 
-  multi1d< multi1d<int> > goffsets;    // [subset no.][linear index] > 0 local, < 0 receive buffer index
-  multi1d< multi1d<int> > soffsets;    // [subset no.][0..N] = linear index   N = destnodes_num
-  multi1d< multi1d<int> > roffsets;    // [subset no.][0..N] = linear index   N = srcenodes_num
+   */
+#if 0
+  mutable multi1d< multi1d<int> > goffsets;    // [subset no.][linear index] > 0 local, < 0 receive buffer index
+  mutable multi1d< multi1d<int> > soffsets;    // [subset no.][0..N] = linear index   N = destnodes_num
+  mutable multi1d< multi1d<int> > roffsets;    // [subset no.][0..N] = linear index   N = srcenodes_num
 
-  multi1d<int> roffsetsId; // [subset no.]
-  multi1d<int> soffsetsId; // [subset no.]
-  multi1d<int> goffsetsId; // [subset no.]
+  mutable multi1d<int> roffsetsId; // [subset no.]
+  mutable multi1d<int> soffsetsId; // [subset no.]
+  mutable multi1d<int> goffsetsId; // [subset no.]
 
-  int myId; // master map id
+  mutable int myId; // master map id
 
   multi1d<int> srcenodes;                   // node number index = node number
   multi1d<int> destnodes;                   // node number index = node number
 
-  multi1d< multi1d<int> > srcenodes_num;    // [subset no.][node number index] = number of sites
-  multi1d< multi1d<int> > destnodes_num;    // [subset no.][node number index] = number of sites
+  mutable multi1d< multi1d<int> > srcenodes_num;    // [subset no.][node number index] = number of sites
+  mutable multi1d< multi1d<int> > destnodes_num;    // [subset no.][node number index] = number of sites
 
   // Indicate off-node communications is needed;
   bool offnodeP;
+
+
+  // LAZY
+  multi1d< multi1d<int> > lazy_fcoord;
+  multi1d< multi1d<int> > lazy_bcoord;
+  mutable multi1d<int>    srcnode;
+  multi1d< multi1d<int> > lazy_destnodes0_fcoord;
+  mutable bool            lazy_done;
+  //mutable multi1d<bool> lazy_done;                  // [subset no.]
+#else
+  mutable multi1d< multi1d<int> > goffsets;    // [subset no.][linear index] > 0 local, < 0 receive buffer index
+  mutable multi1d< multi1d<int> > soffsets;    // [subset no.][0..N] = linear index   N = destnodes_num
+  mutable multi1d< multi1d<int> > roffsets;    // [subset no.][0..N] = linear index   N = srcenodes_num
+
+  mutable multi1d<int> roffsetsId; // [subset no.]
+  mutable multi1d<int> soffsetsId; // [subset no.]
+  mutable multi1d<int> goffsetsId; // [subset no.]
+
+  mutable int myId = -1; // master map id
+
+  multi1d<int> srcenodes;                   // node number index = node number
+  multi1d<int> destnodes;                   // node number index = node number
+
+  mutable multi1d< multi1d<int> > srcenodes_num;    // [subset no.][node number index] = number of sites
+  mutable multi1d< multi1d<int> > destnodes_num;    // [subset no.][node number index] = number of sites
+
+  // Indicate off-node communications is needed;
+  bool offnodeP;
+
+
+  // LAZY
+  multi1d< multi1d<int> > lazy_fcoord;
+  multi1d< multi1d<int> > lazy_bcoord;
+  mutable multi1d<int>    srcnode;
+  multi1d< multi1d<int> > lazy_destnodes0_fcoord;
+  mutable multi1d<bool>   lazy_done;                  // [subset no.]
+#endif  
 };
 
 
@@ -405,17 +582,22 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
 
     Expr subexpr(expr.child());
 
-    if (map.offnodeP)
+    if (map.get_offnodeP())
       {
 #if QDP_DEBUG >= 3
 	QDP_info("Map: off-node communications required");
 #endif
 
-	//QDPIO::cerr << "map phase 1, off-node required, subset id = " << f.subset.getId() << "\n";
+	//QDPIO::cerr << "map phase 1, off-node required, subset id = " << f.subset.getId() << "   " << map.destnodes_num.size() << "\n";
 
-	int dstnum = map.destnodes_num[f.subset.getId()][0]*sizeof(InnerType_t);
-	int srcnum = map.srcenodes_num[f.subset.getId()][0]*sizeof(InnerType_t);
-
+#if 0
+	int dstnum = map.get_destnodes_num()[f.subset.getId()][0]*sizeof(InnerType_t);
+	int srcnum = map.get_srcenodes_num()[f.subset.getId()][0]*sizeof(InnerType_t);
+#else
+	int dstnum = map.get_destnodes_num(f.subset)[0]*sizeof(InnerType_t);
+	int srcnum = map.get_srcenodes_num(f.subset)[0]*sizeof(InnerType_t);
+#endif
+	
 	//QDPIO::cerr << "dest source site numbers = " << map.destnodes_num[f.subset.getId()][0] << " " << map.srcenodes_num[f.subset.getId()][0] << "\n";
 
 	const FnMapRsrc& rRSrc = fnmap.getResource(srcnum,dstnum);
@@ -478,7 +660,7 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase2 , CTag>
   {
     const Map& map = expr.operation().map;
     FnMap& fnmap = const_cast<FnMap&>(expr.operation());
-    if (map.offnodeP) {
+    if (map.get_offnodeP()) {
       const FnMapRsrc& rRSrc = fnmap.getCached();
       //QDP_info("ShiftPhase2: FnMap");
       rRSrc.qmp_wait();

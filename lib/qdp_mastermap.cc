@@ -88,11 +88,140 @@ namespace QDP {
 
   }
 
+#if 0
+  void MasterMap::registrate_work(const Map& map) {
+    int id = map.getId();
+
+    for (int s_no = 0 ; s_no < MasterSet::Instance().numSubsets() ; ++s_no ) 
+      {
+	const Subset& subset = MasterSet::Instance().getSubset(s_no);
+
+	//QDP_info("Resizing power set to %d", id << 1 );
+	powerSet[s_no].resize( id << 1 );
+	powerSetC[s_no].resize( id << 1 );
+	idInner[s_no].resize( id << 1 );
+	idFace[s_no].resize( id << 1 );
+
+	for (int i = 0 ; i < id ; ++i ) {
+
+	  multi1d<int> ct(Layout::sitesOnNode()); // complement, inner region
+	  multi1d<int> pt(Layout::sitesOnNode()); // positive, union of receive sites
+	  for(int q=0 ; q<Layout::sitesOnNode() ; ++q) {
+	    ct[q]=q;
+	    pt[q]=-1;
+	  }
+
+	  for (int q = 0 ; q < powerSet[s_no][i]->size() ; ++q ) {    // !!
+	    ct[ (*powerSet[s_no][i])[q] ] = -1;
+	    pt[ (*powerSet[s_no][i])[q] ] = (*powerSet[s_no][i])[q];
+	  }
+
+	  for (int q = 0; q < map.roffset( subset ).size() ; ++q ) {
+	    ct[ map.roffset( subset )[q] ] = -1;
+	    pt[ map.roffset( subset )[q] ] = map.roffset( subset )[q];
+	  }
+
+	  powerSet[s_no][i|id] = new multi1d<int>;
+	  powerSetC[s_no][i|id]= new multi1d<int>;
+
+	  // remove_neg( *powerSetC[i|id] , ct );
+	  // remove_neg( *powerSet[i|id] , pt );
+
+	  remove_neg_in_subset( *powerSetC[s_no][i|id] , ct , s_no );
+	  remove_neg_in_subset( *powerSet[s_no][i|id] , pt , s_no );
+
+	  //QDPIO::cout << "mastermap:reg: subset=" << s_no << " i|id=" << ((int)i|id) << " size=" << powerSet[s_no][i|id]->size() * sizeof(int) << "\n";
+
+	  assert( idFace.size() > s_no );
+	  assert( idFace[s_no].size() > (i|id) );
+
+	  assert( idInner.size() > s_no );
+	  assert( idInner[s_no].size() > (i|id) );
+
+	  idFace[s_no][i|id] = QDP_get_global_cache().registrateOwnHostMem( powerSet[s_no][i|id]->size() * sizeof(int) , 
+									  powerSet[s_no][i|id]->slice() , NULL );
+	  //QDPIO::cout << "mastermap:reg: subset=" << s_no << " i|id=" << ((int)i|id) << " size=" << powerSetC[s_no][i|id]->size() * sizeof(int) << "\n";
+
+	  idInner[s_no][i|id] = QDP_get_global_cache().registrateOwnHostMem( powerSetC[s_no][i|id]->size() * sizeof(int) , 
+									   powerSetC[s_no][i|id]->slice() , NULL );
+
+	}
+      }
+
+  }
+#else
+  void MasterMap::registrate_work(const Map& map, const Subset& subset) {
+    int id = map.getId();
+
+    int s_no = subset.getId();
+	
+    {
+      //QDP_info("Resizing power set to %d", id << 1 );
+      powerSet[s_no].resize( id << 1 );
+      powerSetC[s_no].resize( id << 1 );
+      idInner[s_no].resize( id << 1 );
+      idFace[s_no].resize( id << 1 );
+
+      for (int i = 0 ; i < id ; ++i ) {
+
+	multi1d<int> ct(Layout::sitesOnNode()); // complement, inner region
+	multi1d<int> pt(Layout::sitesOnNode()); // positive, union of receive sites
+	for(int q=0 ; q<Layout::sitesOnNode() ; ++q) {
+	  ct[q]=q;
+	  pt[q]=-1;
+	}
+
+	for (int q = 0 ; q < powerSet[s_no][i]->size() ; ++q ) {    // !!
+	  ct[ (*powerSet[s_no][i])[q] ] = -1;
+	  pt[ (*powerSet[s_no][i])[q] ] = (*powerSet[s_no][i])[q];
+	}
+
+	for (int q = 0; q < map.roffset( subset ).size() ; ++q ) {
+	  ct[ map.roffset( subset )[q] ] = -1;
+	  pt[ map.roffset( subset )[q] ] = map.roffset( subset )[q];
+	}
+
+	powerSet[s_no][i|id] = new multi1d<int>;
+	powerSetC[s_no][i|id]= new multi1d<int>;
+
+	// remove_neg( *powerSetC[i|id] , ct );
+	// remove_neg( *powerSet[i|id] , pt );
+
+	remove_neg_in_subset( *powerSetC[s_no][i|id] , ct , s_no );
+	remove_neg_in_subset( *powerSet[s_no][i|id] , pt , s_no );
+
+	//QDPIO::cout << "mastermap:reg: subset=" << s_no << " i|id=" << ((int)i|id) << " size=" << powerSet[s_no][i|id]->size() * sizeof(int) << "\n";
+
+	assert( idFace.size() > s_no );
+	assert( idFace[s_no].size() > (i|id) );
+
+	assert( idInner.size() > s_no );
+	assert( idInner[s_no].size() > (i|id) );
+
+	idFace[s_no][i|id] = QDP_get_global_cache().registrateOwnHostMem( powerSet[s_no][i|id]->size() * sizeof(int) , 
+									  powerSet[s_no][i|id]->slice() , NULL );
+	//QDPIO::cout << "mastermap:reg: subset=" << s_no << " i|id=" << ((int)i|id) << " size=" << powerSetC[s_no][i|id]->size() * sizeof(int) << "\n";
+
+	idInner[s_no][i|id] = QDP_get_global_cache().registrateOwnHostMem( powerSetC[s_no][i|id]->size() * sizeof(int) , 
+									   powerSetC[s_no][i|id]->slice() , NULL );
+
+      }
+    }
+
+  }
+#endif
+
+  int MasterMap::registrate_justid(const Map& map) {
+    //QDP_info("Map registered id=%d (total=%d)",1 << vecPMap.size(),vecPMap.size()+1 );
+    int id = 1 << vecPMap.size();
+    vecPMap.push_back(&map);
+    return id;
+  }
 
 
 
-
-  int MasterMap::registrate(const Map& map) {
+#if 0
+  void MasterMap::registrate_orig(const Map& map) {
     //QDP_info("Map registered id=%d (total=%d)",1 << vecPMap.size(),vecPMap.size()+1 );
     int id = 1 << vecPMap.size();
     vecPMap.push_back(&map);
@@ -148,7 +277,7 @@ namespace QDP {
       }
     return id;
   }
-
+#endif
 
   
   int MasterMap::getIdInner(const Subset& s,int bitmask) const {
