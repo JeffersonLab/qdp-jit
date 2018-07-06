@@ -282,7 +282,7 @@ public:
     return srcenodes_num[s.getId()];
   }
   int getId() const {
-    QDPIO::cout << "Map::getId called\n";
+    //QDPIO::cout << "Map::getId called\n";
     if (myId < 0)
       {
 	QDPIO::cout << "internal error. Map::getId called before lazy evaluation for any subset\n";

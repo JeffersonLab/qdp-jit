@@ -404,14 +404,16 @@ namespace QDP {
     const int nodeSites = Layout::sitesOnNode();
     const int my_node   = Layout::nodeNumber();
 
+#if 0
     if (lazy_done.size() > s.getId())
       {
 	if (!lazy_done[s.getId()])
 	  {
-	    QDPIO::cout << "internal error. did not expect finite lazy_done array, but false for the element in question\n";
+	    QDPIO::cout << "internal error. did not expect finite lazy_done array, but false for the element in question, id = " << s.getId() << "\n";
 	    QDP_error_exit("giving up");
 	  }
       }
+#endif
     
     if (lazy_done.size() < 1)
       {
