@@ -138,7 +138,7 @@ class FnMapRsrcMatrix {
 
     // Vector's size large enough ?
     if ( pos.second.size() ==  (unsigned)pos.first ) {
-      QDPIO::cout << "allocate and setup new rsrc-obj (destnode=" << _destNode << ",sndmsgsize=" << _sendMsgSize << ")\n";
+      //QDPIO::cout << "allocate and setup new rsrc-obj (destnode=" << _destNode << ",sndmsgsize=" << _sendMsgSize << ")\n";
       pos.second.push_back( new FnMapRsrc() );
       pos.second.at(pos.first)->setup( _destNode, _srcNode, _sendMsgSize, _rcvMsgSize );
     }

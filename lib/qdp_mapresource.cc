@@ -13,12 +13,6 @@ namespace QDP {
     int srcnode = _srcNode;
     int dstnode = _destNode;
 
-    // QDPIO::cout << 
-    //   "FnMapRsrc destNode=" << _destNode << 
-    //   " srcNode=" << _srcNode << 
-    //   " sendMsgSize=" << _sendMsgSize << 
-    //   " rcvMsgSize=" << _rcvMsgSize << "\n";
-
 #if 0
     send_buf_mem = QMP_allocate_aligned_memory(dstnum,QDP_ALIGNMENT_SIZE, (QMP_MEM_COMMS|QMP_MEM_FAST) ); // packed data to send
     if( send_buf_mem == 0x0 ) { 
@@ -42,11 +36,11 @@ namespace QDP {
       CudaHostAlloc(&recv_buf,srcnum,0);
     }
 
-    QDPIO::cout << "Allocating receive buffer on device: " << srcnum << " bytes\n";
+    //QDPIO::cout << "Allocating receive buffer on device: " << srcnum << " bytes\n";
     if (!QDP_get_global_cache().allocate_device_static( &recv_buf_dev , srcnum))
       QDP_error_exit("Error allocating GPU memory for receive buffer");
 
-    QDPIO::cout << "Allocating send buffer on device: " << dstnum << " bytes\n";
+    //QDPIO::cout << "Allocating send buffer on device: " << dstnum << " bytes\n";
     if (!QDP_get_global_cache().allocate_device_static( &send_buf_dev , dstnum))
       QDP_error_exit("Error allocating GPU memory for send buffer");
 
@@ -112,12 +106,7 @@ namespace QDP {
     if ((err = QMP_wait(mh)) != QMP_SUCCESS)
       QDP_error_exit(QMP_error_string(err));
 
-    //QDP_info("H2D %d bytes receive buffer p = %p",srcnum,rcv_buf_dev);
-    // for (int i=0;i<srcnum/4;i++)
-    //   ((float*)recv_buf)[i]=-1.11;
-
     if (!DeviceParams::Instance().getGPUDirect()) {
-      //QDPIO::cout << "no GPU Direct: H2D copy!\n";
       CudaMemcpyH2D( recv_buf_dev , recv_buf , srcnum );
     }
 
@@ -153,7 +142,6 @@ namespace QDP {
 #endif
 
     if (!DeviceParams::Instance().getGPUDirect()) {
-      //QDPIO::cout << "no GPU Direct: D2H copy!\n";
       CudaMemcpyD2H( send_buf , send_buf_dev , dstnum );
     }
 
