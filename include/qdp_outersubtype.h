@@ -337,12 +337,13 @@ struct JITType<OSubLattice<T> >
 };
 
 
+#if 0
 template<class T> 
 struct JITType<OSubScalar<T> >
 {
   typedef OSubScalarJIT<typename JITType<T>::Type_t>  Type_t;
 };
-
+#endif
 
 
 
