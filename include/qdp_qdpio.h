@@ -91,87 +91,87 @@ namespace QDP
   template<typename T>
   struct QIOStringTraits 
   {
-    static char* tname;
-    static char* tprec;
+    static const char* tname;
+    static const char* tprec;
   };
 
   //! Partial(?) Specialisation for OLattice Objects
   template<typename T>
   struct QIOStringTraits<OLattice<T> >
   {
-    static char* tname;
-    static char* tprec;
+    static const char* tname;
+    static const char* tprec;
   };
 
   //! Partial(?) Specialisation for OScalar Objects
   template<typename T>
   struct QIOStringTraits<OScalar<T> >
   {
-    static char* tname;
-    static char* tprec;
+    static const char* tname;
+    static const char* tprec;
   };
 
   //! Partial(?) Specialisation for OLattice Objects
   template<typename T>
   struct QIOStringTraits<multi1d< OLattice<T> > >
   {
-    static char* tname;
-    static char* tprec;
+    static const char* tname;
+    static const char* tprec;
   };
 
   //! Partial(?) Specialisation for OScalar Objects
   template<typename T>
   struct QIOStringTraits<multi1d< OScalar<T> > >
   {
-    static char* tname;
-    static char* tprec;
+    static const char* tname;
+    static const char* tprec;
   };
 
   //! Generic type
   template<typename T>
-  char* QIOStringTraits<T>::tname = (char *)"QDP_GenericType";
+  const char* QIOStringTraits<T>::tname = "QDP_GenericType";
 
   //! Lattice Type
   template<typename T> 
-  char* QIOStringTraits< OLattice<T> >::tname = (char *)"Lattice";
+  const char* QIOStringTraits< OLattice<T> >::tname = (const char *)"Lattice";
 
   //! Scalar Type
   template<typename T> 
-  char* QIOStringTraits< OScalar<T> >::tname = (char *)"Scalar";
+  const char* QIOStringTraits< OScalar<T> >::tname = (const char *)"Scalar";
 
   //! multi1d<LatticeType>
   template<typename T> 
-  char* QIOStringTraits< multi1d<OLattice<T> > >::tname = (char *)"Lattice";
+  const char* QIOStringTraits< multi1d<OLattice<T> > >::tname = (const char *)"Lattice";
 
   //! multi1d<ScalarType>
   template<typename T> 
-  char* QIOStringTraits< multi1d<OScalar<T> > >::tname = (char *)"Scalar";
+  const char* QIOStringTraits< multi1d<OScalar<T> > >::tname = (const char *)"Scalar";
 
   //! Unknown precision string
   template<typename T>
-  char*  QIOStringTraits<T>::tprec = (char *)"U"; 
+  const char*  QIOStringTraits<T>::tprec = (const char *)"U"; 
 
   // Full specialisations deferred to the qdp_qio_strings.cc file
   template<>
-  char* QIOStringTraits<float>::tprec;
+  const char* QIOStringTraits<float>::tprec;
 
   template<>
-  char* QIOStringTraits<double>::tprec;
+  const char* QIOStringTraits<double>::tprec;
 
   template<>
-  char* QIOStringTraits<int>::tprec;
+  const char* QIOStringTraits<int>::tprec;
   
   template<>
-  char* QIOStringTraits< multi1d<LatticeColorMatrixF3> >::tname;
+  const char* QIOStringTraits< multi1d<LatticeColorMatrixF3> >::tname;
   
   template<>
-  char* QIOStringTraits< multi1d<LatticeColorMatrixD3> >::tname;
+  const char* QIOStringTraits< multi1d<LatticeColorMatrixD3> >::tname;
 
   template<>
-  char* QIOStringTraits< multi1d<LatticeDiracFermionF3> >::tname;
+  const char* QIOStringTraits< multi1d<LatticeDiracFermionF3> >::tname;
   
   template<>
-  char* QIOStringTraits< multi1d<LatticeDiracFermionD3> >::tname;
+  const char* QIOStringTraits< multi1d<LatticeDiracFermionD3> >::tname;
 
 
   //--------------------------------------------------------------------------------

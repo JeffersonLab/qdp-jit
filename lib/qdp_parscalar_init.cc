@@ -340,7 +340,7 @@ namespace COUNT {
 	else if (strcmp((*argv)[i], "-envvar")==0) 
 	  {
 	    char buffer[1024];
-	    sscanf((*argv)[++i],"%s",&buffer);
+	    sscanf((*argv)[++i],"%s",&buffer[0]);
 	    DeviceParams::Instance().setENVVAR(buffer);
 	  }
 	else if (strcmp((*argv)[i], "-poolsize")==0) 
@@ -377,13 +377,13 @@ namespace COUNT {
 	else if (strcmp((*argv)[i], "-llvm-opt")==0) 
 	  {
 	    char tmp[1024];
-	    sscanf((*argv)[++i], "%s", &tmp);
+	    sscanf((*argv)[++i], "%s", &tmp[0]);
 	    llvm_set_opt(tmp);
 	  }
 	else if (strcmp((*argv)[i], "-ptxdb")==0) 
 	  {
 	    char tmp[1024];
-	    sscanf((*argv)[++i], "%s", &tmp);
+	    sscanf((*argv)[++i], "%s", &tmp[0]);
 	    llvm_set_ptxdb(tmp);
 	  }
 	else if (strcmp((*argv)[i], "-geom")==0) 

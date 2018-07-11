@@ -14,7 +14,7 @@ namespace QDP
     // Anonymous namespace
     namespace {
       const std::string file_magic="XXXXQDPLazyDiskMapObjFileXXXX";
-    };
+    }
 
     // Magic string at start of file.
     std::string getFileMagic() {return file_magic;}
