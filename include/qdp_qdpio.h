@@ -946,8 +946,8 @@ namespace QDP
   void QDPFileWriter::write(XMLBufferWriter& rec_xml, const OScalar<T>& s1)
   {
     QIO_RecordInfo* info = QIO_create_record_info(QIO_GLOBAL, NULL, NULL, 0,
-						  QIOStringTraits< OScalar<T> >::tname,
-						  QIOStringTraits< typename WordType<T>::Type_t >::tprec,
+						  const_cast<char *>(QIOStringTraits< OScalar<T> >::tname),
+						  const_cast<char *>(QIOStringTraits< typename WordType<T>::Type_t >::tprec),
 						  Nc, Ns, 
 						  sizeof(T), 1);
 
@@ -1006,8 +1006,8 @@ namespace QDP
     assert(!"ni");
 #if 0
     QIO_RecordInfo* info = QIO_create_record_info(QIO_GLOBAL, NULL, NULL, 0,
-						  QIOStringTraits<multi1d< OScalar<T> > >::tname,
-						  QIOStringTraits<typename WordType<T>::Type_t>::tprec, 
+						  const_cast<char *>(QIOStringTraits<multi1d< OScalar<T> > >::tname),
+						  const_cast<char *>(QIOStringTraits<typename WordType<T>::Type_t>::tprec), 
 						  Nc, Ns, 
 						  sizeof(T), s1.size());
 
@@ -1358,8 +1358,8 @@ namespace QDP
   void QDPFileWriter::write(XMLBufferWriter& rec_xml, const OLattice<T>& s1)
   {
     QIO_RecordInfo* info = QIO_create_record_info(QIO_FIELD, NULL, NULL,0,
-						  QIOStringTraits< OLattice<T> >::tname,
-						  QIOStringTraits<typename WordType<T>::Type_t >::tprec,
+						  const_cast<char *>(QIOStringTraits< OLattice<T> >::tname),
+						  const_cast<char *>(QIOStringTraits<typename WordType<T>::Type_t >::tprec),
 						  Nc, Ns, 
 						  sizeof(T),1 );
   
@@ -1414,8 +1414,8 @@ namespace QDP
 						  (int *)lower_left.slice(), 
 						  (int *)upper_right.slice(),
 						  lower_left.size(),
-						  QIOStringTraits< OLattice<T> >::tname,
-						  QIOStringTraits<typename WordType<T>::Type_t >::tprec,
+						  const_cast<char *>(QIOStringTraits< OLattice<T> >::tname),
+						  const_cast<char *>(QIOStringTraits<typename WordType<T>::Type_t >::tprec),
 						  Nc, Ns, 
 						  sizeof(T),1 );
   
@@ -1459,8 +1459,8 @@ namespace QDP
   {
     QIO_RecordInfo* info = QIO_create_record_info(QIO_FIELD, 
 						  NULL, NULL, 0,
-						  QIOStringTraits<multi1d< OLattice<T> > >::tname,
-						  QIOStringTraits<typename WordType<T>::Type_t>::tprec,
+						  const_cast<char *>(QIOStringTraits<multi1d< OLattice<T> > >::tname),
+						  const_cast<char *>(QIOStringTraits<typename WordType<T>::Type_t>::tprec),
 						  Nc, Ns, 
 						  sizeof(T), s1.size() );
 
@@ -1517,8 +1517,8 @@ namespace QDP
 						  (int *)(lower_left.slice()),
 						  (int *)(upper_right.slice()), 
 						  lower_left.size(),
-						  QIOStringTraits<multi1d< OLattice<T> > >::tname,
-						  QIOStringTraits<typename WordType<T>::Type_t>::tprec,
+						  const_cast<char *>(QIOStringTraits<multi1d< OLattice<T> > >::tname),
+						  const_cast<char *>(QIOStringTraits<typename WordType<T>::Type_t>::tprec),
 						  Nc, Ns, 
 						  sizeof(T), s1.size() );
 
