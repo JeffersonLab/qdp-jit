@@ -1480,7 +1480,7 @@ namespace QDP
 		  &(QDPOLatticeFactoryGetArray<T>),
 		  s1.size()*sizeof(T), 
 		  sizeof(typename WordType<T>::Type_t), 
-		  (void*)&s1) != QIO_SUCCESS)
+		  const_cast<void*>(static_cast<const void*>(&s1))) != QIO_SUCCESS)
     {
       QDPIO::cerr << "QDPFileWriter: error in write" << endl;
       clear(QDPIO_badbit);
