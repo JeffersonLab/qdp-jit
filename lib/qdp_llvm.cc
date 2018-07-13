@@ -530,8 +530,9 @@ namespace QDP {
 
 
   void llvm_create_function() {
-    assert(!function_created && "Function already created");
-    assert(vecParamType.size()>0 && "vecParamType.size()>0");
+    assert( !function_created );
+    assert( vecParamType.size() > 0 );
+
     llvm::FunctionType *funcType = 
       llvm::FunctionType::get( builder->getVoidTy() , 
 			       llvm::ArrayRef<llvm::Type*>( vecParamType.data() , vecParamType.size() ) , 
@@ -913,6 +914,16 @@ namespace QDP {
   }
 
 
+  template<> ParamRef llvm_add_param<float**>() {
+    vecParamType.push_back( llvm::PointerType::get( llvm::Type::getFloatPtrTy(TheContext) , 0 ) );  // AddressSpace = 0 ??
+    return vecParamType.size()-1;
+  }
+  template<> ParamRef llvm_add_param<double**>() {
+    vecParamType.push_back( llvm::PointerType::get( llvm::Type::getDoublePtrTy(TheContext) , 0 ) );  // AddressSpace = 0 ??
+    return vecParamType.size()-1;
+  }
+
+
 
   llvm::BasicBlock * llvm_new_basic_block()
   {
@@ -1214,6 +1225,7 @@ namespace QDP {
     FPasses.reset(new llvm::legacy::FunctionPassManager(Mod.get()));
     FPasses->add(createTargetTransformInfoWrapperPass( TM->getTargetIRAnalysis() ) );
 
+    //QDPIO::cout << "no optimization passes!!\n";
     AddOptimizationPasses(Passes, *FPasses, TM.get(), llvm_opt::opt_level , 0);
 
     if (FPasses) {
@@ -1421,6 +1433,12 @@ namespace QDP {
     return gv.getName().str() == "main";
   }
 
+
+  void llvm_module_dump()
+  {
+    QDPIO::cout << "Module dump...\n";
+    Mod->dump();
+  }
 
   std::string llvm_get_ptx_kernel(const char* fname)
   {

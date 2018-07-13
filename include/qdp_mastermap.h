@@ -8,8 +8,10 @@ namespace QDP {
   class MasterMap {
   public:
     static MasterMap& Instance();
-    int registrate(const Map& map);
-
+    //int registrate(const Map& map);
+    int  registrate_justid(const Map& map);
+    void registrate_work(const Map& map, const Subset& subset);
+    
     // const multi1d<int>& getInnerSites(const Subset& s,int bitmask) const;
     // const multi1d<int>& getFaceSites(const Subset& s,int bitmask) const;
 
@@ -25,9 +27,7 @@ namespace QDP {
     void uniquify_list_inplace(multi1d<int>& out , const multi1d<int>& ll) const;
 
     MasterMap() {
-      //QDP_info("MasterMap() reserving");
-
-      QDPIO::cout << "constructing master map with " << MasterSet::Instance().numSubsets() << " subsets\n";
+      //QDPIO::cout << "constructing master map with " << MasterSet::Instance().numSubsets() << " subsets\n";
 
       powerSet.resize( MasterSet::Instance().numSubsets() );
       powerSetC.resize( MasterSet::Instance().numSubsets() );

@@ -18,7 +18,7 @@ namespace QDP {
 
 
 
-
+#if 0
   template<class T>
   class OSubScalarJIT: public QDPTypeJIT<T, OSubScalarJIT<T> >
   {
@@ -30,22 +30,23 @@ namespace QDP {
   private:
     void operator=(const OSubScalarJIT& a) {}
   };
+#endif
 
-
-
-
+  
   template<class T>
   struct WordType<OSubLatticeJIT<T> >
   {
     typedef typename WordType<T>::Type_t  Type_t;
   };
+
   
+#if 0
   template<class T>
   struct WordType<OSubScalarJIT<T> >
   {
     typedef typename WordType<T>::Type_t  Type_t;
   };
-
+#endif
 
 
   // Default binary(OSubLattice,OSubLattice) -> OSubLattice
@@ -54,11 +55,14 @@ namespace QDP {
     typedef OSubLatticeJIT<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
   };
 
+  
+#if 0
   template<class T1, class T2, class Op>
   struct BinaryReturn<OSubScalarJIT<T1>, OSubScalarJIT<T2>, Op> {
     typedef OSubScalarJIT<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
   };
-
+#endif
+  
 
 }
 

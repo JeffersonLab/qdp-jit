@@ -83,6 +83,7 @@ namespace QDP {
 			 unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
 			 unsigned int  sharedMemBytes, CUstream hStream, void** kernelParams, void** extra )
   {
+    //QDPIO::cout << "kernel launch (manual)..\n";
 #if 0
     QDP_get_global_cache().releasePrevLockSet();
     QDP_get_global_cache().beginNewLockSet();
@@ -130,6 +131,12 @@ namespace QDP {
 #if 1
     CUresult result = cuCtxSynchronize();
     if (result != CUDA_SUCCESS) {
+
+      if (mapCuErrorString.count(result)) 
+	std::cout << " Error: " << mapCuErrorString.at(result) << "\n";
+      else
+	std::cout << " Error: (not known)\n";
+      
       QDP_error_exit("CUDA launch error (CudaLaunchKernel, on sync): grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
 		     gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes );
     }

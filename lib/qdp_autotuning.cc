@@ -28,6 +28,7 @@ namespace QDP {
 
   void jit_launch(CUfunction function,int th_count,std::vector<void*>& args)
   {
+    //QDPIO::cout << "kernel launch (jit_launch)..\n";
 #if 0
       QDP_get_global_cache().releasePrevLockSet();
       QDP_get_global_cache().beginNewLockSet();
@@ -143,6 +144,7 @@ namespace QDP {
 
   int jit_autotuning(CUfunction function,int lo,int hi,void ** param)
   {
+    //QDPIO::cout << "kernel launch (autotuning)..\n";
     // Check for thread count equals zero
     // This can happen, when inner count is zero
     if ( hi-lo == 0 )

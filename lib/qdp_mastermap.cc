@@ -89,66 +89,83 @@ namespace QDP {
   }
 
 
+  void MasterMap::registrate_work(const Map& map, const Subset& subset) {
 
+    int id = map.getId();
+    int s_no = subset.getId();
 
+    if (powerSet[ s_no].size() > id) {
+      return;
+    }
+    
+    {
+      if (powerSet[ s_no].size() < id)
+	{
+	  int tmp = id;
+	  int log2id = 0;
+	  while (tmp >>= 1) ++log2id;
+	  assert(log2id > 0);
+	  log2id--;
+	  assert( vecPMap.size() > log2id );
+	  registrate_work( *vecPMap.at(log2id) , subset );
+	}
 
-  int MasterMap::registrate(const Map& map) {
-    //QDP_info("Map registered id=%d (total=%d)",1 << vecPMap.size(),vecPMap.size()+1 );
-    int id = 1 << vecPMap.size();
-    vecPMap.push_back(&map);
+      assert( powerSet[ s_no].size() == id );
 
-    for (int s_no = 0 ; s_no < MasterSet::Instance().numSubsets() ; ++s_no ) 
-      {
-	const Subset& subset = MasterSet::Instance().getSubset(s_no);
+      powerSet[s_no].resize( id << 1 );
+      powerSetC[s_no].resize( id << 1 );
+      idInner[s_no].resize( id << 1 );
+      idFace[s_no].resize( id << 1 );
 
-	//QDP_info("Resizing power set to %d", id << 1 );
-	powerSet[s_no].resize( id << 1 );
-	powerSetC[s_no].resize( id << 1 );
-	idInner[s_no].resize( id << 1 );
-	idFace[s_no].resize( id << 1 );
+      for (int i = 0 ; i < id ; ++i ) {
+	
+	multi1d<int> ct(Layout::sitesOnNode()); // complement, inner region
+	multi1d<int> pt(Layout::sitesOnNode()); // positive, union of receive sites
+	for(int q=0 ; q<Layout::sitesOnNode() ; ++q) {
+	  ct[q]=q;
+	  pt[q]=-1;
+	}
 
-	for (int i = 0 ; i < id ; ++i ) {
+	for (int q = 0 ; q < powerSet[s_no][i]->size() ; ++q ) {    // !!
+	  ct[ (*powerSet[s_no][i])[q] ] = -1;
+	  pt[ (*powerSet[s_no][i])[q] ] = (*powerSet[s_no][i])[q];
+	}
 
-	  multi1d<int> ct(Layout::sitesOnNode()); // complement, inner region
-	  multi1d<int> pt(Layout::sitesOnNode()); // positive, union of receive sites
-	  for(int q=0 ; q<Layout::sitesOnNode() ; ++q) {
-	    ct[q]=q;
-	    pt[q]=-1;
-	  }
+	map.getRoffsetsId( subset ); // make sure the lazy part was computed!
+	for (int q = 0; q < map.roffset( subset ).size() ; ++q ) {
+	  ct[ map.roffset( subset )[q] ] = -1;
+	  pt[ map.roffset( subset )[q] ] = map.roffset( subset )[q];
+	}
 
-	  for (int q = 0 ; q < powerSet[s_no][i]->size() ; ++q ) {
-	    ct[ (*powerSet[s_no][i])[q] ] = -1;
-	    pt[ (*powerSet[s_no][i])[q] ] = (*powerSet[s_no][i])[q];
-	  }
+	powerSet[s_no][i|id] = new multi1d<int>;
+	powerSetC[s_no][i|id]= new multi1d<int>;
 
-	  for (int q = 0; q < map.roffset( subset ).size() ; ++q ) {
-	    ct[ map.roffset( subset )[q] ] = -1;
-	    pt[ map.roffset( subset )[q] ] = map.roffset( subset )[q];
-	  }
+	remove_neg_in_subset( *powerSetC[s_no][i|id] , ct , s_no );
+	remove_neg_in_subset( *powerSet[s_no][i|id] , pt , s_no );
 
-	  powerSet[s_no][i|id] = new multi1d<int>;
-	  powerSetC[s_no][i|id]= new multi1d<int>;
+	assert( idFace.size() > s_no );
+	assert( idFace[s_no].size() > (i|id) );
 
-	  // remove_neg( *powerSetC[i|id] , ct );
-	  // remove_neg( *powerSet[i|id] , pt );
+	assert( idInner.size() > s_no );
+	assert( idInner[s_no].size() > (i|id) );
 
-	  remove_neg_in_subset( *powerSetC[s_no][i|id] , ct , s_no );
-	  remove_neg_in_subset( *powerSet[s_no][i|id] , pt , s_no );
-
-	  //QDPIO::cout << "mastermap:reg: subset=" << s_no << " i|id=" << ((int)i|id) << " size=" << powerSet[s_no][i|id]->size() * sizeof(int) << "\n";
-
-	  idFace[s_no][i|id] = QDP_get_global_cache().registrateOwnHostMem( powerSet[s_no][i|id]->size() * sizeof(int) , 
+	idFace[s_no][i|id] = QDP_get_global_cache().registrateOwnHostMem( powerSet[s_no][i|id]->size() * sizeof(int) , 
 									  powerSet[s_no][i|id]->slice() , NULL );
-	  //QDPIO::cout << "mastermap:reg: subset=" << s_no << " i|id=" << ((int)i|id) << " size=" << powerSetC[s_no][i|id]->size() * sizeof(int) << "\n";
 
-	  idInner[s_no][i|id] = QDP_get_global_cache().registrateOwnHostMem( powerSetC[s_no][i|id]->size() * sizeof(int) , 
+	idInner[s_no][i|id] = QDP_get_global_cache().registrateOwnHostMem( powerSetC[s_no][i|id]->size() * sizeof(int) , 
 									   powerSetC[s_no][i|id]->slice() , NULL );
 
-	}
       }
-    return id;
+    }
+
   }
 
+
+  int MasterMap::registrate_justid(const Map& map) {
+    int id = 1 << vecPMap.size();
+    vecPMap.push_back(&map);
+    return id;
+  }
 
   
   int MasterMap::getIdInner(const Subset& s,int bitmask) const {

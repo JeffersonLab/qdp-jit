@@ -63,6 +63,24 @@ namespace QDP {
     // }
 
 
+    T& elem( JitDeviceLayout lay , llvm::Value * index , llvm::Value * multi_index ) {
+      IndexDomainVector args;
+      args.push_back( make_pair( Layout::sitesOnNode() , index ) );
+      F.setup( llvm_array_type_indirection( base_m , multi_index ) , lay , args );
+      //F.setup(getThreadedBase(lay),getInnerSites(lay),llvm_create_value(0));
+      return F;
+    }
+
+    const T& elem( JitDeviceLayout lay , llvm::Value * index , llvm::Value * multi_index ) const {
+      IndexDomainVector args;
+      args.push_back( make_pair( Layout::sitesOnNode() , index ) );
+      F.setup( llvm_array_type_indirection( base_m , multi_index ) , lay , args );
+      //F.setup(getThreadedBase(lay),getInnerSites(lay),llvm_create_value(0));
+      return F;
+    }
+
+
+
     T& elem( JitDeviceLayout lay , llvm::Value * index ) {
       IndexDomainVector args;
       args.push_back( make_pair( Layout::sitesOnNode() , index ) );

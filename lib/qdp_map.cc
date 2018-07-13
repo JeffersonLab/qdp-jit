@@ -11,7 +11,7 @@
 namespace QDP {
 
 
-  FnMap::FnMap(const Map& m): map(m), pRsrc(new RsrcWrapper( m.destnodes , m.srcenodes )) {}
+  FnMap::FnMap(const Map& m): map(m), pRsrc(new RsrcWrapper( m.get_destnodes() , m.get_srcenodes() )) {}
   FnMap::FnMap(const FnMap& f) : map(f.map) , pRsrc(f.pRsrc) {}
 
 

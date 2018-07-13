@@ -64,6 +64,11 @@ namespace QDP {
 
 
     T& elem( JitDeviceLayout lay , llvm::Value * index ) {
+      // It is an error to use outer sub types with coalesced data layout
+      // Reason being the attached subset has runtime number of sites and the jit code is tied to the type.
+      // Add new paramter to the jit function is the clean solution, but this prevents some optimization
+      assert( lay == JitDeviceLayout::Scalar );
+      
       IndexDomainVector args;
       args.push_back( make_pair( Layout::sitesOnNode() , index ) );
       F.setup( llvm_derefParam(base_m) , lay , args );
@@ -72,6 +77,9 @@ namespace QDP {
     }
 
     const T& elem( JitDeviceLayout lay , llvm::Value * index ) const {
+      // It is an error to use outer sub types with coalesced data layout
+      assert( lay == JitDeviceLayout::Scalar );
+
       IndexDomainVector args;
       args.push_back( make_pair( Layout::sitesOnNode() , index ) );
       F.setup( llvm_derefParam(base_m) , lay , args );
@@ -97,7 +105,7 @@ namespace QDP {
 
 
   private:
-    ParamRef    base_m;
+    ParamRef base_m;
     
     mutable T F;
   };

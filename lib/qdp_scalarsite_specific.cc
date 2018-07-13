@@ -25,7 +25,7 @@ namespace Layout
       QDP_error_exit("dimension out of bounds");
 
     if (!availCoord[mu]) {
-      QDPIO::cout << "creating latticeCoordinate " << mu << "\n";
+      //QDPIO::cout << "creating latticeCoordinate " << mu << "\n";
       const int nodeSites = Layout::sitesOnNode();
       const int nodeNumber = Layout::nodeNumber();
       LatticeInteger d;
@@ -201,7 +201,7 @@ void Set::make(const SetFunc& fun)
   MasterSet::Instance().registrate( *this );
 
 
-  QDPIO::cout << "Set: Building strided sitetables...\n";
+  //QDPIO::cout << "Set: Building strided sitetables...\n";
 
   int ss_size = sitetables[0].size();
 
@@ -247,7 +247,7 @@ void Set::make(const SetFunc& fun)
 
   unsigned dsize = sitetables_strided.size() * sizeof(int);
 
-  QDPIO::cout << "Set: Registering this set ...\n";
+  //QDPIO::cout << "Set: Registering this set ...\n";
 
   if (registered) {
     QDPIO::cout << "Set: Already registered, will sign it off first ...\n";

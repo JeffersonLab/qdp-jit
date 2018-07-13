@@ -160,13 +160,14 @@ sum( const OSubLattice<T>& s1 )
 	QDP_error_exit( "sum(lat,subset) reduction buffer: 2nd buffer no memory, exit");
     }
 
+
     if (numBlocks == 1)
       {
 	if (first)
 	  {
 	    qdp_jit_reduce_convert<T,T2,JitDeviceLayout::Scalar>(actsize, numThreads, numBlocks, shared_mem_usage ,  // ok: Scalar
-								    (T*)QDP_get_global_cache().getDevicePtr( s1.getId() ),
-								    (T2*)QDP_get_global_cache().getDevicePtr( d.getId() ) );
+								 (T*)QDP_get_global_cache().getDevicePtr( s1.getId() ),
+								 (T2*)QDP_get_global_cache().getDevicePtr( d.getId() ) );
 	  }
 	else
 	  {
@@ -179,14 +180,16 @@ sum( const OSubLattice<T>& s1 )
       if (first)
 	{
 	  qdp_jit_reduce_convert<T,T2,JitDeviceLayout::Scalar>(actsize, numThreads, numBlocks, shared_mem_usage,       // ok: Scalar
-								  (T*)QDP_get_global_cache().getDevicePtr( s1.getId() ),
-								  out_dev );
+							       (T*)QDP_get_global_cache().getDevicePtr( s1.getId() ),
+							       out_dev );
 	}
       else
 	{
 	  qdp_jit_reduce<T2>( actsize , numThreads , numBlocks , shared_mem_usage , in_dev , out_dev );
 	}
       }
+
+    
   
     first =false;
     
