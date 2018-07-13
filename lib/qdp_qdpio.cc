@@ -528,14 +528,15 @@ namespace QDP
   void QDPFileWriter::write(XMLBufferWriter& rec_xml, BinaryBufferWriter& s1)
   {
     std::string ss = s1.str();
-    char *typestr=(char *)"char";
-    char *signtype=(char *)"U";
+    const char *typestr="char";
+    const char *signtype="U";
 
     QIO_RecordInfo* info = QIO_create_record_info(QIO_GLOBAL, NULL, NULL, 0,
-						  typestr,
-						  signtype,
+						  const_cast<char *>(typestr),
+						  const_cast<char *>(signtype),
 						  0, 0, 
-						  sizeof(char), ss.size());
+						  static_cast<int>(sizeof(char)), 
+					          static_cast<int>(ss.size()));
 
 
     // Copy metadata string into simple qio string container
@@ -554,7 +555,7 @@ namespace QDP
 		  &(QDPOScalarFactoryGet<char>),
 		  ss.size()*sizeof(char), 
 		  sizeof(char), 
-		  (void *)ss.c_str()) != QIO_SUCCESS)
+		  const_cast<void*>(static_cast<const void *>(ss.c_str()))) != QIO_SUCCESS)
     {
       QDPIO::cerr << "QDPFileWriter: error in write" << endl;
       clear(QDPIO_badbit);

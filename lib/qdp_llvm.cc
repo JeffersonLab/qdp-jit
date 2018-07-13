@@ -690,40 +690,50 @@ namespace QDP {
 
   llvm::Value* llvm_shr( llvm::Value* lhs , llvm::Value* rhs ) {  
     auto vals = llvm_normalize_values(lhs,rhs);
-    llvm::Type* args_type = vals.first->getType();
-    assert( !args_type->isFloatingPointTy() );
+ //   llvm::Type* args_type = vals.first->getType();
+ //   assert( !args_type->isFloatingPointTy() );
+
+    assert( ! ( vals.first->getType()->isFloatingPointTy() ) );
     return builder->CreateAShr( vals.first , vals.second );
   }
 
 
   llvm::Value* llvm_shl( llvm::Value* lhs , llvm::Value* rhs ) {  
     auto vals = llvm_normalize_values(lhs,rhs);
-    llvm::Type* args_type = vals.first->getType();
-    assert( !args_type->isFloatingPointTy() );
+  //  llvm::Type* args_type = vals.first->getType();
+  //  assert( !args_type->isFloatingPointTy() );
+
+    assert( ! ( vals.first->getType()->isFloatingPointTy()  ) );
     return builder->CreateShl( vals.first , vals.second );
   }
 
 
   llvm::Value* llvm_and( llvm::Value* lhs , llvm::Value* rhs ) {
     auto vals = llvm_normalize_values(lhs,rhs);
-    llvm::Type* args_type = vals.first->getType();
-    assert( !args_type->isFloatingPointTy() );
+    // llvm::Type* args_type = vals.first->getType();
+    // assert( !args_type->isFloatingPointTy() );
+    assert( ! ( vals.first->getType()->isFloatingPointTy()  ) );
     return builder->CreateAnd( vals.first , vals.second );
   }
 
 
   llvm::Value* llvm_or( llvm::Value* lhs , llvm::Value* rhs ) {  
     auto vals = llvm_normalize_values(lhs,rhs);
-    llvm::Type* args_type = vals.first->getType();
-    assert( !args_type->isFloatingPointTy() );
+  //  llvm::Type* args_type = vals.first->getType();
+   // assert( !args_type->isFloatingPointTy() );
+    assert( ! ( vals.first->getType()->isFloatingPointTy()  ) );
+
     return builder->CreateOr( vals.first , vals.second );
   }
 
 
   llvm::Value* llvm_xor( llvm::Value* lhs , llvm::Value* rhs ) {  
     auto vals = llvm_normalize_values(lhs,rhs);
-    llvm::Type* args_type = vals.first->getType();
-    assert( !args_type->isFloatingPointTy() );
+//    llvm::Type* args_type = vals.first->getType();
+//    assert( !args_type->isFloatingPointTy() );
+
+    assert( ! ( vals.first->getType()->isFloatingPointTy()  ) );
+
     return builder->CreateXor( vals.first , vals.second );
   }
 
