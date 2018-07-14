@@ -63,8 +63,8 @@ namespace QDP {
 		       now.Nblock_x,now.Nblock_y,1,    tune.best,1,1 );
       }
 
-      QDP_get_global_cache().releasePrevLockSet();
-      QDP_get_global_cache().beginNewLockSet();
+      //QDP_get_global_cache().releasePrevLockSet();
+      QDP_get_global_cache().newLockSet();
 
       result = cuCtxSynchronize();
       if (result != CUDA_SUCCESS) {
@@ -100,8 +100,8 @@ namespace QDP {
 
 	if (result == CUDA_SUCCESS) {
 
-	  QDP_get_global_cache().releasePrevLockSet();
-	  QDP_get_global_cache().beginNewLockSet();
+	  //QDP_get_global_cache().releasePrevLockSet();
+	  QDP_get_global_cache().newLockSet();
 
 	  result_sync = cuCtxSynchronize();
 	  if (result_sync != CUDA_SUCCESS) {

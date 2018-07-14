@@ -37,7 +37,7 @@ namespace Layout
       latCoord[mu] = d;
       availCoord[mu] = true;
     }
-
+    
     return latCoord[mu];
   }
 }

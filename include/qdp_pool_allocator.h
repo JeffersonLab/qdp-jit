@@ -272,7 +272,7 @@ namespace QDP
 
     typename QDPPoolAllocator::listEntry_t::iterator candidate = iterNextNotAllocated;
     if (candidate == listEntry.end() || candidate->allocated) {
-      QDP_info("Pool allocator (alignment=%u): no candidate, means pool full!",(unsigned)Allocator::ALIGNMENT_SIZE);
+      //QDP_info("Pool allocator (alignment=%u): no candidate, means pool full!",(unsigned)Allocator::ALIGNMENT_SIZE);
       //printListPool();
       return false;
     }
