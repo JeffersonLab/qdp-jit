@@ -22,7 +22,7 @@ namespace QDP {
       QDP_info("%2d: %12d %12d %p",i++,*(bool*)addr,*(int*)addr,*(void**)addr);
     QDP_info("Device pool info:");
     //CUDADevicePoolAllocator::Instance().printPoolInfo();
-    QDP_get_global_cache().get_allocator().printPoolInfo();
+    //QDP_get_global_cache().get_allocator().printPoolInfo();
   }
 
 

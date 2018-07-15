@@ -17,10 +17,7 @@ namespace QDP
   struct QDPCache::Entry {
     int    Id;
     size_t size;
-    // 1 - OLattice (fully managed)
-    // 2 - own host memory
-    // 3 - OScalar
-    int    flags;
+    Flags  flags;
     void*  hstPtr;  // NULL if not allocated
     void*  devPtr;  // NULL if not allocated
     Status status;
@@ -33,14 +30,11 @@ namespace QDP
 
 
   void QDPCache::newLockSet() {
-
     while ( vecLocked.size() > 0 ) {
-
       assert( vecEntry.size() > vecLocked.back() );
-      
       Entry& e = vecEntry[ vecLocked.back() ];
       e.lockCount--;
-
+      assert( e.lockCount == 0 );
       vecLocked.pop_back();
     }
   }
@@ -79,8 +73,28 @@ namespace QDP
   }
 
 
-  int QDPCache::registrate( size_t size, unsigned flags, LayoutFptr func)
+
+  int QDPCache::registrateOwnHostMem( size_t size, const void* ptr , QDPCache::LayoutFptr func )
   {
+    return add( size , Flags::OwnHostMemory , ptr , func , NULL );
+  }
+
+  int QDPCache::registrateOScalar( size_t size, void* ptr , QDPCache::LayoutFptr func , const QDPCached* object)
+  {
+    return add( size , Flags::OwnHostMemory | Flags::UpdateCachedFlag , ptr , func , object ); 
+  }
+
+  int QDPCache::registrate( size_t size, unsigned flags, QDPCache::LayoutFptr func )
+  {
+    return add( size , Flags::Empty , NULL , func , NULL );
+  }
+  
+
+
+  int QDPCache::add( size_t size, Flags flags, const void* hstptr_, QDPCache::LayoutFptr func , const QDPCached* object)
+  {
+    void * hstptr = const_cast<void*>(hstptr_);
+    
     if (stackFree.size() == 0) {
       growStack();
     }
@@ -93,72 +107,35 @@ namespace QDP
     e.Id        = Id;
     e.size      = size;
     e.flags     = flags;
-    e.hstPtr    = NULL;
+    e.hstPtr    = hstptr;
     e.devPtr    = NULL;
     e.lockCount = 0;
-    e.status    = Status::undef;
     e.iterTrack = lstTracker.insert( lstTracker.end() , Id );
     e.fptr      = func;
-      
-    stackFree.pop();
-
-    return Id;
-  }
-
-
-
-  int QDPCache::registrateOwnHostMem( size_t size, const void* ptr_, LayoutFptr func)
-  {
-    void * ptr = const_cast<void*>(ptr_);
-    if (stackFree.size() == 0) {
-      growStack();
-    }
-
-    int Id = stackFree.top();
-    Entry& e = vecEntry[ Id ];
-
-    e.Id        = Id;
-    e.fptr      = func;
-    e.size      = size;
-    e.flags     = 2;
-    e.hstPtr    = ptr;
-    e.devPtr    = NULL;
-    e.status    = Status::host;
-    e.lockCount = 0;
-    e.iterTrack = lstTracker.insert( lstTracker.end() , Id );
-      
-    stackFree.pop();
-
-    return Id;
-  }
-    
-
-  int QDPCache::registrateOScalar( size_t size, void* ptr, LayoutFptr func, const QDPCached* object)
-  {
-    if (stackFree.size() == 0) {
-      growStack();
-    }
-
-    int Id = stackFree.top();
-    Entry& e = vecEntry[ Id ];
-
-    e.Id        = Id;
-    e.fptr      = func;
-    e.size      = size;
-    e.flags     = 3;
-    e.hstPtr    = ptr;
-    e.devPtr    = NULL;
-    e.status    = Status::host;
-    e.lockCount = 0;
-    e.iterTrack = lstTracker.insert( lstTracker.end() , Id );
     e.object    = object;
-      
+
+    if (flags & Flags::OwnHostMemory)
+      e.status    = Status::host;
+    else
+      e.status    = Status::undef;
+
     stackFree.pop();
 
     return Id;
   }
-    
 
+  int QDPCache::add( size_t size, Flags flags, const void* hstptr, QDPCache::LayoutFptr func )
+  {
+    return add(  size,  flags, hstptr, func , NULL );
+  }
+
+  int QDPCache::add( size_t size, Flags flags, const void* hstptr )
+  {
+    return add( size, flags, hstptr, NULL , NULL );
+  }
+
+
+  
 
   void QDPCache::signoff(int id) {
     assert( vecEntry.size() > id );
@@ -208,96 +185,61 @@ namespace QDP
 
 
   void QDPCache::freeHostMemory(Entry& e) {
-    switch(e.flags) {
-    case 1:
-      if (!e.hstPtr)
-	return;
-      QDP::Allocator::theQDPAllocator::Instance().free( e.hstPtr );
-      e.hstPtr=NULL;
-      break;
-    case 2:
-      break;
-    case 3:
-      break;
-    default:
-      QDP_error_exit("cache delete objects: unkown host memory allocator");
-      break;
-    }
+    if ( e.flags & Flags::OwnHostMemory )
+      return;
+    
+    if (!e.hstPtr)
+      return;
+    
+    QDP::Allocator::theQDPAllocator::Instance().free( e.hstPtr );
+    e.hstPtr=NULL;
   }
 
 
   
   void QDPCache::allocateHostMemory(Entry& e) {
+    if ( e.flags & Flags::OwnHostMemory )
+      return;
+    
     if (e.hstPtr)
       return;
     
-    switch(e.flags) {
-    case 1:
-      try {
-	e.hstPtr = (void*)QDP::Allocator::theQDPAllocator::Instance().allocate( e.size , QDP::Allocator::DEFAULT );
-      }
-      catch(std::bad_alloc) {
-	QDP_error_exit("cache allocateHostMemory: host memory allocator flags=1 failed");
-      }
-      break;
-    case 2:
-      // has it's own host memory
-      break;
-    case 3:
-      // it's an OScalar and has it's own host memory
-      break;
-    default:
-      QDP_error_exit("cache allocateHostMemory: unkown host memory allocator");
-      break;
+    try {
+      e.hstPtr = (void*)QDP::Allocator::theQDPAllocator::Instance().allocate( e.size , QDP::Allocator::DEFAULT );
+    }
+    catch(std::bad_alloc) {
+      QDP_error_exit("cache allocateHostMemory: host memory allocator flags=1 failed");
     }
   }
 
 
   void QDPCache::allocateDeviceMemory(Entry& e) {
+    if ( e.flags & Flags::OwnDeviceMemory )
+      return;
+
     if (e.devPtr)
       return;
 
-    switch(e.flags) {
-    case 1:
-    case 2:
-    case 3:
-      while (!pool_allocator.allocate( &e.devPtr , e.size )) {
-	if (!spill_lru()) {
-	  QDP_info("Device pool:");
-	  pool_allocator.printListPool();
-	  //printLockSets();
-	  QDP_error_exit("cache assureDevice: can't spill LRU object. Out of GPU memory!");
-	}
+    while (!pool_allocator.allocate( &e.devPtr , e.size )) {
+      if (!spill_lru()) {
+	QDP_info("Device pool:");
+	pool_allocator.printListPool();
+	//printLockSets();
+	QDP_error_exit("cache assureDevice: can't spill LRU object. Out of GPU memory!");
       }
-      break;
-    case 4:
-      // scratch OScalar manages it's own memory
-      break;
-    default:
-      QDP_error_exit("cache allocateDeviceMemory: unkown flag");
-      break;
     }
   }
 
 
   void QDPCache::freeDeviceMemory(Entry& e) {
+    if ( e.flags & Flags::OwnDeviceMemory )
+      return;
+    
     if (!e.devPtr)
       return;
 
-    switch(e.flags) {
-    case 1:
-    case 2:
-    case 3:
-      pool_allocator.free( e.devPtr );
-      e.devPtr = NULL;
-      break;
-    case 4:
-      // scratch OScalar manages it's own memory
-      break;
-    default:
-      QDP_error_exit("cache freeDeviceMemory: unkown flag");
-      break;
-    }
+    pool_allocator.free( e.devPtr );
+    e.devPtr = NULL;
   }
 
 
@@ -324,7 +266,8 @@ namespace QDP
       }
 
     e.status = Status::device;
-    if (e.flags == 3)
+
+    if ( e.flags & Flags::UpdateCachedFlag )
       e.object->onHost=false;
   }
 
@@ -355,7 +298,8 @@ namespace QDP
       }
 
     e.status = Status::host;
-    if (e.flags == 3)
+
+    if ( e.flags & Flags::UpdateCachedFlag )
       e.object->onHost=true;
 
     freeDeviceMemory(e);
@@ -376,20 +320,13 @@ namespace QDP
     while ( !found  &&  it_key != lstTracker.end() ) {
       e = &vecEntry[ *it_key ];
 
-      switch (e->flags) {
-      case 1:
-      case 2:
-      case 3:
-	found = ( (e->lockCount == 0) && (e->devPtr != NULL) );
-	break;
-      default:
-	found = false;
-      }
-      
+      found = ( (e->lockCount == 0) &&
+		(e->devPtr != NULL) &&
+		( ! (e->flags & Flags::OwnDeviceMemory) ) );
+    
       if (!found)
 	it_key++;
     }
-
 
     if (found) {
       assureHost( *e );
@@ -401,9 +338,6 @@ namespace QDP
 
 
 
-
-  void QDPCache::printTracker() {
-  }
 
 
 
@@ -417,8 +351,6 @@ namespace QDP
 
 
 
-  QDPCache::~QDPCache() {
-  }
 
 
 
@@ -430,6 +362,12 @@ namespace QDP
     }
     return *global_cache;
   }
+
+  QDPCache::Flags operator|(QDPCache::Flags a, QDPCache::Flags b)
+  {
+    return static_cast<QDPCache::Flags>(static_cast<int>(a) | static_cast<int>(b));
+  }
+
 
 
 } // QDP
