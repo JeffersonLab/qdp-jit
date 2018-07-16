@@ -12,7 +12,53 @@
 namespace QDP
 {
 
-  enum class Status { undef , host , device };
+  namespace STACK {
+    bool stack_scalars = false;
+    void* stack_ptr;
+    void* current;
+    size_t size;
+  }
+  
+  void qdp_stack_scalars_start( size_t size )
+  {
+    assert(!STACK::stack_scalars);
+    
+    if (!QDP_get_global_cache().allocate_device_static( &STACK::stack_ptr, size ))
+      QDP_error_exit("out of memory (GPU)");
+
+    STACK::current = STACK::stack_ptr;
+    STACK::stack_scalars = true;
+    STACK::size = size;
+  }
+  
+  void qdp_stack_scalars_end()
+  {
+    assert(STACK::stack_scalars);
+    QDP_get_global_cache().free_device_static( STACK::stack_ptr );
+    STACK::stack_scalars = false;
+  }
+
+  bool qdp_stack_scalars_enabled()
+  {
+    return STACK::stack_scalars;
+  }
+
+  void* qdp_stack_scalars_alloc( size_t size )
+  {
+    if ( (size_t)STACK::current + size - (size_t)STACK::stack_ptr > STACK::size )
+      QDP_error_exit("out of memory (stack scalars)");
+      
+    void* ret = STACK::current;
+    STACK::current = (void*)((size_t)STACK::current + size);
+    
+    return ret;
+  }
+
+
+  
+
+
+
 
   struct QDPCache::Entry {
     int    Id;
@@ -24,7 +70,6 @@ namespace QDP
     int    lockCount;
     list<int>::iterator iterTrack;
     LayoutFptr fptr;
-    const QDPCached* object;
   };
 
 
@@ -76,24 +121,20 @@ namespace QDP
 
   int QDPCache::registrateOwnHostMem( size_t size, const void* ptr , QDPCache::LayoutFptr func )
   {
-    return add( size , Flags::OwnHostMemory , ptr , func , NULL );
-  }
-
-  int QDPCache::registrateOScalar( size_t size, void* ptr , QDPCache::LayoutFptr func , const QDPCached* object)
-  {
-    return add( size , Flags::OwnHostMemory | Flags::UpdateCachedFlag , ptr , func , object ); 
+    return add( size , Flags::OwnHostMemory , Status::host , ptr , NULL , func );
   }
 
   int QDPCache::registrate( size_t size, unsigned flags, QDPCache::LayoutFptr func )
   {
-    return add( size , Flags::Empty , NULL , func , NULL );
+    return add( size , Flags::Empty , Status::undef , NULL , NULL , func );
   }
   
 
 
-  int QDPCache::add( size_t size, Flags flags, const void* hstptr_, QDPCache::LayoutFptr func , const QDPCached* object)
+  int QDPCache::add( size_t size, Flags flags, Status status, const void* hstptr_, const void* devptr_, QDPCache::LayoutFptr func )
   {
     void * hstptr = const_cast<void*>(hstptr_);
+    void * devptr = const_cast<void*>(devptr_);
     
     if (stackFree.size() == 0) {
       growStack();
@@ -107,32 +148,18 @@ namespace QDP
     e.Id        = Id;
     e.size      = size;
     e.flags     = flags;
+    e.status    = status;
     e.hstPtr    = hstptr;
-    e.devPtr    = NULL;
+    e.devPtr    = devptr;
     e.lockCount = 0;
     e.iterTrack = lstTracker.insert( lstTracker.end() , Id );
     e.fptr      = func;
-    e.object    = object;
-
-    if (flags & Flags::OwnHostMemory)
-      e.status    = Status::host;
-    else
-      e.status    = Status::undef;
 
     stackFree.pop();
 
     return Id;
   }
 
-  int QDPCache::add( size_t size, Flags flags, const void* hstptr, QDPCache::LayoutFptr func )
-  {
-    return add(  size,  flags, hstptr, func , NULL );
-  }
-
-  int QDPCache::add( size_t size, Flags flags, const void* hstptr )
-  {
-    return add( size, flags, hstptr, NULL , NULL );
-  }
 
 
   
@@ -232,6 +259,8 @@ namespace QDP
 
 
   void QDPCache::freeDeviceMemory(Entry& e) {
+    //QDPIO::cout << "free size = " << e.size << "\n";
+    
     if ( e.flags & Flags::OwnDeviceMemory )
       return;
     
@@ -266,9 +295,6 @@ namespace QDP
       }
 
     e.status = Status::device;
-
-    if ( e.flags & Flags::UpdateCachedFlag )
-      e.object->onHost=false;
   }
 
 
@@ -298,9 +324,6 @@ namespace QDP
       }
 
     e.status = Status::host;
-
-    if ( e.flags & Flags::UpdateCachedFlag )
-      e.object->onHost=true;
 
     freeDeviceMemory(e);
   }

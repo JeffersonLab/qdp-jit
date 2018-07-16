@@ -10,13 +10,6 @@
 namespace QDP {
 
 
-class QDPCached
-{
-public:
-  mutable bool onHost;
-};
-
-
 /*! \addtogroup group1 QDP main operations
  *
  *  Lattice site-wide operations that can be applied to QDPTypes.
@@ -32,7 +25,7 @@ public:
  * and infix operations
  */
 template<class T, class C> 
-class QDPType: public QDPCached
+class QDPType
 {
 public:
   //! Type of the first argument
@@ -97,19 +90,9 @@ public:
     if (!rhs.getOwnsMemory()) 
       QDP_error_exit("Assigning subtype(view) to qdptype is not supported");
 
-    //QDP_info("qdptype = subtype(own) %d",rhs.subset().numSiteTable());
-
-    //C1* Crhs = static_cast<C1*>(&rhs);
     C* me = static_cast<C*>(this);
 
-    //operator_type_subtype(*me,OpAssign(),*Crhs,Crhs->subset());
     operator_type_subtype(*me,OpAssign(),rhs,rhs.subset());
-
-    // const int *tab = rhs.subset().siteTable().slice();
-    // for(int j=0; j < rhs.subset().numSiteTable(); ++j) {
-    //   int i = tab[j];
-    //   elem(i) = rhs.getF()[j];
-    // }
   }
 
 
@@ -402,8 +385,6 @@ public:
     }
 
 public:
-  //T* getFdev() const   { return static_cast<const C*>(this)->getFdev();}
-
   int getId() const   { return static_cast<const C*>(this)->getId();}
 
 
@@ -512,7 +493,6 @@ struct LeafFunctor<QDPType<T,OScalar<T> >, ParamLeaf>
   inline static Type_t apply(const QDPType<T,OScalar<T> > &a, const ParamLeaf& p)
   {
     ParamRef    base_addr = llvm_add_param< typename WordType<T>::Type_t * >();
-    //cout << "QDPTypeOScalar ParamLeaf 2er\n";
     return Type_t( base_addr );
   }
 };

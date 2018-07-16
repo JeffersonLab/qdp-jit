@@ -16,36 +16,37 @@ using namespace std;
 namespace QDP 
 {  
   class QDPJitArgs;
-  class QDPCached;
 
   namespace {
     typedef QDPPoolAllocator<QDPCUDAAllocator>     CUDADevicePoolAllocator;
   }
-  
+
+  void qdp_stack_scalars_start( size_t size );
+  void qdp_stack_scalars_end();
+  bool qdp_stack_scalars_enabled();
+  void* qdp_stack_scalars_alloc( size_t size );
+    
   class QDPCache
   {
   public:
     enum Flags {
       Empty = 0,
       OwnHostMemory = 1,
-      OwnDeviceMemory = 2,
-      UpdateCachedFlag = 4
+      OwnDeviceMemory = 2
     };
 
+    enum class Status { undef , host , device };
     
     QDPCache();
     
     typedef void (* LayoutFptr)(bool toDev,void * outPtr,void * inPtr);
 
 
-    int add( size_t size, Flags flags, const void* ptr  );
-    int add( size_t size, Flags flags, const void* ptr, LayoutFptr func );
-    int add( size_t size, Flags flags, const void* ptr, LayoutFptr func , const QDPCached* object);
+    int add( size_t size, Flags flags, Status st, const void* ptr_host, const void* ptr_dev, LayoutFptr func );
     
     // Wrappers to the previous interface
     int registrate( size_t size, unsigned flags, LayoutFptr func );
     int registrateOwnHostMem( size_t size, const void* ptr , LayoutFptr func );
-    int registrateOScalar( size_t size, void* ptr , LayoutFptr func , const QDPCached* object);
     
     void signoff(int id);
     void assureOnHost(int id);

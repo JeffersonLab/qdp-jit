@@ -39,7 +39,13 @@ namespace QDP {
 
     OScalar(): QDPType<T, OScalar<T> >()
     {
-      this->onHost=true;
+      if (qdp_stack_scalars_enabled()) {
+	dev_ptr = qdp_stack_scalars_alloc( sizeof(T) );
+	myId = QDP_get_global_cache().add( sizeof(T) ,
+					   QDPCache::Flags::OwnHostMemory | QDPCache::Flags::OwnDeviceMemory ,
+					   QDPCache::Status::undef , 
+					   &F , dev_ptr , NULL );
+      }
     }
 
     virtual ~OScalar() {
@@ -49,7 +55,6 @@ namespace QDP {
 
     OScalar(const typename WordType<T>::Type_t& rhs): QDPType<T, OScalar<T> >()
     {
-      this->onHost=true;
       typedef typename InternalScalar<T>::Type_t  Scalar_t;
       elem() = Scalar_t(rhs);
     }
@@ -57,7 +62,6 @@ namespace QDP {
 
     OScalar(const Zero& rhs): QDPType<T, OScalar<T> >()
     {
-      this->onHost=true;
       this->assign(rhs);
     }
 
@@ -65,7 +69,6 @@ namespace QDP {
     template<class T1>
     OScalar(const OScalar<T1>& rhs): QDPType<T, OScalar<T> >()
     {
-      this->onHost=true;
       this->assign(rhs);
     }
 
@@ -73,7 +76,6 @@ namespace QDP {
     template<class RHS, class T1>
     OScalar(const QDPExpr<RHS, OScalar<T1> >& rhs): QDPType<T, OScalar<T> >()
     {
-      this->onHost=true;
       this->assign(rhs);
     }
 
@@ -123,7 +125,6 @@ namespace QDP {
 
     OScalar(const OScalar& rhs): QDPType<T, OScalar<T> >()
     {
-      this->onHost=true;
       this->assign(rhs);
     }
 
@@ -144,32 +145,31 @@ namespace QDP {
 
   private:
 
-    // OScalar uses the same data layout on the device
-    // and the host.
-
     inline void alloc_mem() const {
       if (myId >= 0)
 	return;
-      myId = QDP_get_global_cache().registrateOScalar( sizeof(T) , &F , NULL , this );
+
+      QDPCache::Status status = accessed_on_host ? QDPCache::Status::host : QDPCache::Status::undef;
+
+      myId = QDP_get_global_cache().add( sizeof(T) , QDPCache::Flags::OwnHostMemory , status , &F , NULL , NULL );
     }
     inline void free_mem() {
       if (myId >= 0)
 	QDP_get_global_cache().signoff( myId );
     }
     inline void assert_on_host() const {
-      if (this->onHost)
+      accessed_on_host = true;
+      
+      if (myId < 0)
 	return;
-      // Here or somewhere we sould make sure that 
-      // if the pointer is still valid, we do not too much
-      if (myId >= 0)
-	QDP_get_global_cache().assureOnHost( myId );
-      else
-	QDP_error_exit("Oscalar assert on host, but resource moved");
-      this->onHost=true;
+      
+      QDP_get_global_cache().assureOnHost( myId );
     }
 
     mutable T F;
     mutable int myId = -1;
+    mutable void* dev_ptr;
+    mutable bool accessed_on_host = false;
   };
 
 
