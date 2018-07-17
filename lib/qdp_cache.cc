@@ -14,7 +14,7 @@ namespace QDP
 
   namespace STACK {
     bool stack_scalars = false;
-    void* stack_ptr;
+    void* stack_ptr = NULL;
     void* current;
     size_t size;
   }
@@ -34,8 +34,15 @@ namespace QDP
   void qdp_stack_scalars_end()
   {
     assert(STACK::stack_scalars);
-    QDP_get_global_cache().free_device_static( STACK::stack_ptr );
     STACK::stack_scalars = false;
+  }
+
+  void qdp_stack_scalars_free_stack()
+  {
+    assert(!STACK::stack_scalars);
+    assert(STACK::stack_ptr);
+    QDP_get_global_cache().free_device_static( STACK::stack_ptr );
+    STACK::stack_ptr = NULL;
   }
 
   bool qdp_stack_scalars_enabled()
@@ -75,13 +82,28 @@ namespace QDP
 
 
   void QDPCache::newLockSet() {
+    
+    //std::vector<int> tmp; // sanity
+    
     while ( vecLocked.size() > 0 ) {
       assert( vecEntry.size() > vecLocked.back() );
       Entry& e = vecEntry[ vecLocked.back() ];
       e.lockCount--;
-      assert( e.lockCount == 0 );
+      //tmp.push_back(e.Id);
       vecLocked.pop_back();
     }
+
+    // A sanity check can't be done this way
+    // since the object Id might have already been re-assigned to a different object.
+#if 0
+    for (i : tmp)
+      {
+	if ( vecEntry[i].lockCount != 0 )
+	  {
+	    QDPIO::cout << "id = " << i << "  lockCount = " << vecEntry[i].lockCount << "\n";
+	  }
+      }
+#endif
   }
 
 
@@ -257,6 +279,13 @@ namespace QDP
     }
   }
 
+  void QDPCache::printLockSet() {
+    QDPIO::cout << "lockset: ";
+    for (auto a : vecLocked)
+      QDPIO::cout << a << "(" << vecEntry[a].lockCount << "), ";
+    QDPIO::cout << "\n";
+  }
+
 
   void QDPCache::freeDeviceMemory(Entry& e) {
     //QDPIO::cout << "free size = " << e.size << "\n";
@@ -293,6 +322,8 @@ namespace QDP
 	CudaSyncTransferStream();
 
       }
+
+    //lockId(e.Id);
 
     e.status = Status::device;
   }

@@ -21,11 +21,12 @@ namespace QDP
     typedef QDPPoolAllocator<QDPCUDAAllocator>     CUDADevicePoolAllocator;
   }
 
-  void qdp_stack_scalars_start( size_t size );
-  void qdp_stack_scalars_end();
-  bool qdp_stack_scalars_enabled();
+  void  qdp_stack_scalars_start( size_t size );
+  void  qdp_stack_scalars_end();
+  bool  qdp_stack_scalars_enabled();
   void* qdp_stack_scalars_alloc( size_t size );
-    
+  void  qdp_stack_scalars_free_stack();
+  
   class QDPCache
   {
   public:
@@ -58,7 +59,8 @@ namespace QDP
     void newLockSet();
     bool allocate_device_static( void** ptr, size_t n_bytes );
     void free_device_static( void* ptr );
-
+    void printLockSet();
+    
     CUDADevicePoolAllocator& get_allocator() { return pool_allocator; }
 
   private:
