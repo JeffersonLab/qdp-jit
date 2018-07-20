@@ -3,9 +3,9 @@
 
 namespace QDP {
 
-  void jit_launch(CUfunction function,int th_count,std::vector<void *>& args);
+  void jit_launch(CUfunction function,int th_count,std::vector<int>& ids);
 
-  int jit_autotuning(CUfunction function,int lo,int hi,void ** param);
+  //int jit_autotuning(CUfunction function,int lo,int hi,void ** param);
 
 }
 

@@ -609,7 +609,8 @@ struct LeafFunctor<OLattice<T>, AddressLeaf>
   inline static
   Type_t apply(const OLattice<T>& s, const AddressLeaf& p) 
   {
-    p.setAddr( QDP_get_global_cache().getDevicePtr( s.getId() ) );
+    //p.setAddr( QDP_get_global_cache().getDevicePtr( s.getId() ) );
+    p.setId( s.getId() );
     return 0;
   }
 };
@@ -621,7 +622,8 @@ struct LeafFunctor<OScalar<T>, AddressLeaf>
   inline static
   Type_t apply(const OScalar<T>& s, const AddressLeaf& p) 
   {
-    p.setAddr( QDP_get_global_cache().getDevicePtr( s.getId() ) );
+    //p.setAddr( QDP_get_global_cache().getDevicePtr( s.getId() ) );
+    p.setId( s.getId() );
     return 0;
   }
 };

@@ -1,5 +1,3 @@
-// -*- C++ -*-
-
 #ifndef QDP_GLOBALFUNCS_SUBTYPE_H
 #define QDP_GLOBALFUNCS_SUBTYPE_H
 
@@ -133,8 +131,7 @@ sum( const OSubLattice<T>& s1 )
     
   //QDP_info("sum(lat,subset) dev");
 
-  T2 * out_dev;
-  T2 * in_dev;
+  int out_id, in_id;
 
   unsigned actsize=s1.subset().numSiteTable();
   bool first=true;
@@ -154,25 +151,22 @@ sum( const OSubLattice<T>& s1 )
     //QDP_info("sum(Lat,subset): using %d threads per block, %d blocks, shared mem=%d" , numThreads , numBlocks , shared_mem_usage );
 
     if (first) {
-      if (!QDP_get_global_cache().allocate_device_static( (void**)&out_dev , numBlocks*sizeof(T2) ))
-	QDP_error_exit( "sum(lat,subset) reduction buffer: 1st buffer no memory, exit");
-      if (!QDP_get_global_cache().allocate_device_static( (void**)&in_dev , numBlocks*sizeof(T2) ))
-	QDP_error_exit( "sum(lat,subset) reduction buffer: 2nd buffer no memory, exit");
+      out_id = QDP_get_global_cache().add( numBlocks*sizeof(T2) , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
+      in_id  = QDP_get_global_cache().add( numBlocks*sizeof(T2) , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
     }
-
 
     if (numBlocks == 1)
       {
 	if (first)
 	  {
 	    qdp_jit_reduce_convert<T,T2,JitDeviceLayout::Scalar>(actsize, numThreads, numBlocks, shared_mem_usage ,  // ok: Scalar
-								 (T*)QDP_get_global_cache().getDevicePtr( s1.getId() ),
-								 (T2*)QDP_get_global_cache().getDevicePtr( d.getId() ) );
+								 s1.getId(),
+								 d.getId() );
 	  }
 	else
 	  {
 	    qdp_jit_reduce<T2>( actsize , numThreads , numBlocks, shared_mem_usage , 
-				in_dev , (T2*)QDP_get_global_cache().getDevicePtr( d.getId() ) );
+				in_id , d.getId() );
 	  }
       }
     else
@@ -180,12 +174,12 @@ sum( const OSubLattice<T>& s1 )
       if (first)
 	{
 	  qdp_jit_reduce_convert<T,T2,JitDeviceLayout::Scalar>(actsize, numThreads, numBlocks, shared_mem_usage,       // ok: Scalar
-							       (T*)QDP_get_global_cache().getDevicePtr( s1.getId() ),
-							       out_dev );
+							       s1.getId(),
+							       out_id );
 	}
       else
 	{
-	  qdp_jit_reduce<T2>( actsize , numThreads , numBlocks , shared_mem_usage , in_dev , out_dev );
+	  qdp_jit_reduce<T2>( actsize , numThreads , numBlocks , shared_mem_usage , in_id , out_id );
 	}
       }
 
@@ -198,13 +192,13 @@ sum( const OSubLattice<T>& s1 )
 
     actsize=numBlocks;
     
-    T2 * tmp = in_dev;
-    in_dev = out_dev;
-    out_dev = tmp;
+    int tmp = in_id;
+    in_id = out_id;
+    out_id = tmp;
   }
 
-  QDP_get_global_cache().free_device_static( in_dev );
-  QDP_get_global_cache().free_device_static( out_dev );
+  QDP_get_global_cache().signoff( in_id );
+  QDP_get_global_cache().signoff( out_id );
   
   QDPInternal::globalSum(d);
 

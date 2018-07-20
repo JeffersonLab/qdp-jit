@@ -7,15 +7,15 @@ namespace QDP {
 
   void function_sum_convert_ind_exec( CUfunction function, 
 				      int size, int threads, int blocks, int shared_mem_usage,
-				      void *d_idata, void *d_odata, void *siteTable);
+				      int in_id, int out_id, int siteTableId );
 
   void function_sum_convert_exec( CUfunction function, 
 				  int size, int threads, int blocks, int shared_mem_usage,
-				  void *d_idata, void *d_odata);
+				  int in_id, int out_id);
 
   void function_sum_exec( CUfunction function, 
 			  int size, int threads, int blocks, int shared_mem_usage,
-			  void *d_idata, void *d_odata);
+			  int in_id, int out_id);
 
   // T1 input
   // T2 output

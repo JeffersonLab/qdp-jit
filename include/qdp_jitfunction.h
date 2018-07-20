@@ -26,7 +26,6 @@ namespace QDP {
       return;
     }
 
-    void * site_table = QDP_get_global_cache().getDevicePtr( s.getIdSiteTable() );
     AddressLeaf addr_leaf(s);
     FnLocalInnerProduct op;
     forEach(ret, addr_leaf, NullCombine());
@@ -34,14 +33,15 @@ namespace QDP {
     forEach(l, addr_leaf, NullCombine());
     forEach(r, addr_leaf, NullCombine());
 
-    std::vector<void*> addr;
-    addr.push_back( &th_count );
-    addr.push_back( &site_table );
+    JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
 
-    for(unsigned i=0; i < addr_leaf.addr.size(); ++i) {
-      addr.push_back( &addr_leaf.addr[i] );
-    }
-    jit_launch(function,th_count,addr);
+    std::vector<int> ids;
+    ids.push_back( jit_th_count.get_id() );
+    ids.push_back( s.getIdSiteTable() );
+    for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
+      ids.push_back( addr_leaf.ids[i] );
+ 
+    jit_launch(function,th_count,ids);
   }
 
 
@@ -58,7 +58,6 @@ namespace QDP {
       return;
     }
 
-    void * site_table = QDP_get_global_cache().getDevicePtr( s.getIdSiteTable() );
     AddressLeaf addr_leaf(s);
     FnLocalInnerProduct op;
     forEach(ret, addr_leaf, NullCombine());
@@ -66,14 +65,15 @@ namespace QDP {
     forEach(l, addr_leaf, NullCombine());
     forEach(r, addr_leaf, NullCombine());
 
-    std::vector<void*> addr;
-    addr.push_back( &th_count );
-    addr.push_back( &site_table );
+    JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
 
-    for(unsigned i=0; i < addr_leaf.addr.size(); ++i) {
-      addr.push_back( &addr_leaf.addr[i] );
-    }
-    jit_launch(function,th_count,addr);
+    std::vector<int> ids;
+    ids.push_back( jit_th_count.get_id() );
+    ids.push_back( s.getIdSiteTable() );
+    for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
+      ids.push_back( addr_leaf.ids[i] );
+ 
+    jit_launch(function,th_count,ids);
   }
 
   
@@ -176,6 +176,8 @@ namespace QDP {
 
 
 
+
+  
 template<class T, class T1, class Op, class RHS>
 CUfunction
 function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs)
@@ -285,41 +287,7 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 
 
 
-#if 0
-template<class T, class T1, class Op, class RHS>
-CUfunction
-function_subtype_type_build(OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs)
-{
-  if (ptx_db::db_enabled) {
-    CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (func)
-      return func;
-  }
 
-  llvm_start_new_function();
-
-  ParamRef p_th_count     = llvm_add_param<int>();
-  ParamRef p_site_table   = llvm_add_param<int*>();      // subset sitetable
-
-  ParamLeaf param_leaf;
-
-  typename LeafFunctor<OSubLattice<T>, ParamLeaf>::Type_t   dest_jit(forEach(dest, param_leaf, TreeCombine()));
-  auto op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
-  typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t rhs_jit(forEach(rhs, param_leaf, TreeCombine()));
-  
-  llvm::Value * r_th_count     = llvm_derefParam( p_th_count );
-  llvm::Value* r_idx_thread = llvm_thread_idx();
-
-  llvm_cond_exit( llvm_ge( r_idx_thread , r_th_count ) );
-
-  llvm::Value* r_idx_perm = llvm_array_type_indirection( p_site_table , r_idx_thread );
-
-  op_jit( dest_jit.elem( JitDeviceLayout::Scalar , r_idx_thread ), // Coalesced
-	  forEach(rhs_jit, ViewLeaf( JitDeviceLayout::Coalesced , r_idx_perm ), OpCombine()));
-
-  return jit_function_epilogue_get_cuf("jit_eval_subtype_expr.ptx" , __PRETTY_FUNCTION__ );
-}
-#else
 template<class T, class C1, class Op, class RHS>
 CUfunction
 function_subtype_type_build(OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,C1 >& rhs)
@@ -353,7 +321,7 @@ function_subtype_type_build(OSubLattice<T>& dest, const Op& op, const QDPExpr<RH
 
   return jit_function_epilogue_get_cuf("jit_eval_subtype_expr.ptx" , __PRETTY_FUNCTION__ );
 }
-#endif
+
 
   
 template<class T, class T1, class Op>
@@ -401,6 +369,7 @@ operator_type_subtype_build(OLattice<T>& dest, const Op& op, const QDPSubType<T1
 }
 
 
+  
 template<class T, class T1, class Op>
 CUfunction
 operator_subtype_subtype_build(OSubLattice<T>& dest, const Op& op, const QDPSubType<T1,OLattice<T1> >& rhs)
@@ -434,6 +403,41 @@ operator_subtype_subtype_build(OSubLattice<T>& dest, const Op& op, const QDPSubT
 
   return jit_function_epilogue_get_cuf("jit_eval_subtype_expr.ptx" , __PRETTY_FUNCTION__ );
 }
+
+
+  
+
+template<class T, class T1, class Op, class RHS>
+void
+function_lat_sca_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs, const Subset& s)
+{
+  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+
+  AddressLeaf addr_leaf(s);
+
+  forEach(dest, addr_leaf, NullCombine());
+  AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
+  forEach(rhs, addr_leaf, NullCombine());
+
+  int th_count = s.hasOrderedRep() ? s.numSiteTable() : Layout::sitesOnNode();
+
+  JitParam jit_ordered( QDP_get_global_cache().addJitParamBool( s.hasOrderedRep() ) );
+  JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
+  JitParam jit_start( QDP_get_global_cache().addJitParamInt( s.start() ) );
+  JitParam jit_end( QDP_get_global_cache().addJitParamInt( s.end() ) );
+  
+  std::vector<int> ids;
+  ids.push_back( jit_ordered.get_id() );
+  ids.push_back( jit_th_count.get_id() );
+  ids.push_back( jit_start.get_id() );
+  ids.push_back( jit_end.get_id() );
+  ids.push_back( s.getIdMemberTable() );
+  for(unsigned i=0; i < addr_leaf.ids.size(); ++i)
+    ids.push_back( addr_leaf.ids[i] );
+ 
+  jit_launch(function,th_count,ids);
+}
+
 
 
   
@@ -472,6 +476,8 @@ function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScala
 
 
 
+
+
 template<class T, class T1, class Op, class RHS>
 CUfunction
 function_lat_sca_subtype_build(OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
@@ -504,6 +510,7 @@ function_lat_sca_subtype_build(OSubLattice<T>& dest, const Op& op, const QDPExpr
 }
 
   
+
 
 
 template<class T, class T1>
@@ -551,17 +558,14 @@ function_pokeSite_exec(CUfunction function, OLattice<T>& dest, const OScalar<T1>
   forEach(dest, addr_leaf, NullCombine());
   forEach(rhs, addr_leaf, NullCombine());
 
-  int siteindex = Layout::linearSiteIndex(coord);
-  int th_count = 1;
+  JitParam jit_siteindex( QDP_get_global_cache().addJitParamInt( Layout::linearSiteIndex(coord) ) );
 
-  std::vector<void*> addr;
-
-  addr.push_back( &siteindex );
-  for(unsigned i=0; i < addr_leaf.addr.size(); ++i) {
-    addr.push_back( &addr_leaf.addr[i] );
-  }
-
-  jit_launch(function,th_count,addr);
+  std::vector<int> ids;
+  ids.push_back( jit_siteindex.get_id() );
+  for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
+    ids.push_back( addr_leaf.ids[i] );
+ 
+  jit_launch(function,1,ids);   // 1 - thread count
 }
 
 
@@ -636,27 +640,21 @@ function_isfinite_build(const Boolean& ret, const OLattice<T>& rhs)
 template<class T>
 void function_isfinite_exec(CUfunction function, const Boolean& ret, const OLattice<T>& rhs)
 {
-  int num_sites = Layout::sitesOnNode();
-
-  std::vector<void*> addr;
-  addr.push_back( &num_sites );
-
   AddressLeaf addr_leaf(all);
   forEach(ret, addr_leaf, NullCombine());
   forEach(rhs, addr_leaf, NullCombine());
 
+  JitParam jit_numsites( QDP_get_global_cache().addJitParamInt( Layout::sitesOnNode() ) );
 
-  for(unsigned i=0; i < addr_leaf.addr.size(); ++i) {
-    addr.push_back( &addr_leaf.addr[i] );
-  }
-  //jit_launch(function,1,addr);
-
-  int threads = 1;
-  kernel_geom_t now = getGeom( 1 , threads );
-  int shared_mem_usage = 0;
-  CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threads,1,1,    shared_mem_usage, 0, &addr[0] , 0);
+  std::vector<int> ids;
+  ids.push_back( jit_numsites.get_id() );
+  for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
+    ids.push_back( addr_leaf.ids[i] );
+ 
+  jit_launch(function,1,ids);   // 1 - thread count
 }
 
+  
 
 
 template<class T>
@@ -712,8 +710,6 @@ function_zero_rep_subtype_build(OSubLattice<T>& dest)
   return jit_function_epilogue_get_cuf("jit_zero_rep_subtype.ptx" , __PRETTY_FUNCTION__ );
 }
   
-
-
 
 
 
@@ -806,11 +802,10 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
 
 
 
-
-
 template<class T, class T1, class RHS>
 CUfunction
-function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs )
+//function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs )
+function_gather_build( const QDPExpr<RHS,OLattice<T1> >& rhs )
 {
   if (ptx_db::db_enabled) {
     CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
@@ -850,48 +845,50 @@ function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLatt
 }
 
 
+
+
+
 template<class T1, class RHS>
 void
-  function_gather_exec( CUfunction function, void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs , const Subset& subset )
+  function_gather_exec( CUfunction function, int send_buf_id , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs , const Subset& subset )
 {
 
   AddressLeaf addr_leaf(subset);
 
   forEach(rhs, addr_leaf, NullCombine());
 
-  //QDP_get_global_cache().printLockSets();
-
-  // lo <= idx < hi
-  int lo = 0;
   int hi = map.soffset(subset).size();
 
-  //QDP_info("gather sites into send_buf lo=%d hi=%d",lo,hi);
+  JitParam jit_lo( QDP_get_global_cache().addJitParamInt( 0 ) );        // lo, leave it in
+  JitParam jit_hi( QDP_get_global_cache().addJitParamInt( hi ) );
+
+  std::vector<int> ids;
+  ids.push_back( jit_lo.get_id() );
+  ids.push_back( jit_hi.get_id() );
+  ids.push_back( map.getSoffsetsId(subset) );
+  ids.push_back( send_buf_id );
+  for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
+    ids.push_back( addr_leaf.ids[i] );
+ 
+  jit_launch(function,hi,ids);
+#if 0  
+  int lo = 0;
+  int hi = map.soffset(subset).size();
 
   int soffsetsId = map.getSoffsetsId(subset);
   void * soffsetsDev = QDP_get_global_cache().getDevicePtr( soffsetsId );
 
-  //QDP_get_global_cache().printLockSets();
-
   std::vector<void*> addr;
 
   addr.push_back( &lo );
-  //std::cout << "addr lo =" << addr[0] << "\n";
-
   addr.push_back( &hi );
-  //std::cout << "addr hi =" << addr[1] << "\n";
-
   addr.push_back( &soffsetsDev );
-  //std::cout << "addr soffsetsDev =" << addr[3] << " " << soffsetsDev << "\n";
-
   addr.push_back( &send_buf );
-  //std::cout << "addr send_buf =" << addr[4] << " " << send_buf << "\n";
-
   for(unsigned i=0; i < addr_leaf.addr.size(); ++i) {
     addr.push_back( &addr_leaf.addr[i] );
-    //std::cout << "addr rhs =" << addr[addr.size()-1] << " " << addr_leaf.addr[i] << "\n";
   }
-
   jit_launch(function,hi-lo,addr);
+#endif
 }
 
 
@@ -906,129 +903,100 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
 {
   //QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
 
-  // This should be supported
-  //assert( s.hasOrderedRep() && "only ordered subsets are supported");
-
   ShiftPhase1 phase1(s);
   int offnode_maps = forEach(rhs, phase1 , BitOrCombine());
-  //QDP_info("offnode_maps = %d",offnode_maps);
-
-
-  void * idx_inner_dev = NULL;
-  void * idx_face_dev = NULL;
-
-  // lo <= idx < hi
-  int start = s.start();
-  int end = s.end();
-  int th_count;
-  bool ordered = s.hasOrderedRep();
-  bool do_soffset_index;
-
-  int innerCount, faceCount;
-
-  if (offnode_maps > 0) {
-    int innerId, faceId;
-    innerId = MasterMap::Instance().getIdInner(s,offnode_maps);
-    innerCount = MasterMap::Instance().getCountInner(s,offnode_maps);
-    faceId = MasterMap::Instance().getIdFace(s,offnode_maps);
-    faceCount = MasterMap::Instance().getCountFace(s,offnode_maps);
-    idx_inner_dev = QDP_get_global_cache().getDevicePtr( innerId );
-    idx_face_dev = QDP_get_global_cache().getDevicePtr( faceId );
-    th_count = innerCount;
-    do_soffset_index = true;
-    //QDP_info("innerId = %d innerCount = %d faceId = %d  faceCount = %d",innerId,innerCount,faceId,faceCount);
-    //QDPIO::cout << "innerId = "<< innerId <<" innerCount = "<<innerCount<<" faceId = "<<faceId<<"  faceCount = " <<faceCount << "\n";
-  } else {
-    th_count = s.hasOrderedRep() ? s.numSiteTable() : Layout::sitesOnNode();
-    do_soffset_index = false;
-  }
-
-
-
-  void * subset_member = QDP_get_global_cache().getDevicePtr( s.getIdMemberTable() );
-
 
   AddressLeaf addr_leaf(s);
-
   forEach(dest, addr_leaf, NullCombine());
   AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
   forEach(rhs, addr_leaf, NullCombine());
 
+  if (offnode_maps == 0)
+    {
+      int th_count = s.hasOrderedRep() ? s.numSiteTable() : Layout::sitesOnNode();
 
+      JitParam jit_ordered( QDP_get_global_cache().addJitParamBool( s.hasOrderedRep() ) );
+      JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
+      JitParam jit_start( QDP_get_global_cache().addJitParamInt( s.start() ) );
+      JitParam jit_end( QDP_get_global_cache().addJitParamInt( s.end() ) );
+      JitParam jit_do_soffset_index( QDP_get_global_cache().addJitParamBool( false ) );   // do soffset index
 
-  std::vector<void*> addr;
-
-  /* if (COUNT::count == 12357) */
-  /*   { */
-  /*     QDPIO::cout << "ordered = " << ordered << "\n"; */
-  /*     QDPIO::cout << "th_count = " << th_count << "\n"; */
-  /*     QDPIO::cout << "start = " << start << "\n"; */
-  /*     QDPIO::cout << "end = " << end << "\n"; */
-  /*     QDPIO::cout << "do_soffset_index  = " << do_soffset_index  << "\n"; */
-  /*     QDPIO::cout << "idx_inner_dev = " << idx_inner_dev << "\n"; */
-  /*     QDPIO::cout << "subset_member = " << subset_member << "\n"; */
-  /*   } */
-
-  addr.push_back( &ordered );
-  addr.push_back( &th_count );
-  addr.push_back( &start );
-  addr.push_back( &end );
-  addr.push_back( &do_soffset_index );
-  addr.push_back( &idx_inner_dev );
-  addr.push_back( &subset_member );
-
-
-  for(unsigned i=0; i < addr_leaf.addr.size(); ++i) {
-    addr.push_back( &addr_leaf.addr[i] );
-    //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
-  }
-
+      std::vector<int> ids;
+      ids.push_back( jit_ordered.get_id() );
+      ids.push_back( jit_th_count.get_id() );
+      ids.push_back( jit_start.get_id() );
+      ids.push_back( jit_end.get_id() );
+      ids.push_back( jit_do_soffset_index.get_id() );
+      ids.push_back( -1 );  // soffset index table
+      ids.push_back( s.getIdMemberTable() );
+      for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
+	ids.push_back( addr_leaf.ids[i] );
  
-  jit_launch(function,th_count,addr);
+      jit_launch(function,th_count,ids);
+    }
+  else
+    {
+      // 1st. call: inner
+      {
+	int th_count = MasterMap::Instance().getCountInner(s,offnode_maps);
+      
+	JitParam jit_ordered( QDP_get_global_cache().addJitParamBool( s.hasOrderedRep() ) );
+	JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
+	JitParam jit_start( QDP_get_global_cache().addJitParamInt( s.start() ) );
+	JitParam jit_end( QDP_get_global_cache().addJitParamInt( s.end() ) );
+	JitParam jit_do_soffset_index( QDP_get_global_cache().addJitParamBool( true ) );   // do soffset index
+
+	std::vector<int> ids;
+	ids.push_back( jit_ordered.get_id() );
+	ids.push_back( jit_th_count.get_id() );
+	ids.push_back( jit_start.get_id() );
+	ids.push_back( jit_end.get_id() );
+	ids.push_back( jit_do_soffset_index.get_id() );
+	ids.push_back( MasterMap::Instance().getIdInner(s,offnode_maps) );
+	ids.push_back( s.getIdMemberTable() );
+	for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
+	  ids.push_back( addr_leaf.ids[i] );
+ 
+	jit_launch(function,th_count,ids);
+      }
+      
+      // 2nd call: face
+      {
+	ShiftPhase2 phase2;
+	forEach(rhs, phase2 , NullCombine());
+
+	int th_count = MasterMap::Instance().getCountFace(s,offnode_maps);
+      
+	JitParam jit_ordered( QDP_get_global_cache().addJitParamBool( s.hasOrderedRep() ) );
+	JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
+	JitParam jit_start( QDP_get_global_cache().addJitParamInt( s.start() ) );
+	JitParam jit_end( QDP_get_global_cache().addJitParamInt( s.end() ) );
+	JitParam jit_do_soffset_index( QDP_get_global_cache().addJitParamBool( true ) );   // do soffset index
+
+	std::vector<int> ids;
+	ids.push_back( jit_ordered.get_id() );
+	ids.push_back( jit_th_count.get_id() );
+	ids.push_back( jit_start.get_id() );
+	ids.push_back( jit_end.get_id() );
+	ids.push_back( jit_do_soffset_index.get_id() );
+	ids.push_back( MasterMap::Instance().getIdFace(s,offnode_maps) );
+	ids.push_back( s.getIdMemberTable() );
+	for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
+	  ids.push_back( addr_leaf.ids[i] );
+ 
+	jit_launch(function,th_count,ids);
+      }
+
+      
+    }
 
 
-  if (offnode_maps > 0) {
-    ShiftPhase2 phase2;
-    forEach(rhs, phase2 , NullCombine());
-
-    th_count = faceCount;
-    idx_inner_dev = idx_face_dev;
-
-    jit_launch(function,th_count,addr);
-  }
-  /* ++COUNT::count; */
 }
 
 
 
-#if 0
-template<class T, class T1, class Op, class RHS>
-void 
-function_subtype_type_exec(CUfunction function, OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
-{
-  int th_count = s.numSiteTable();
 
-  if (th_count < 1) {
-    QDPIO::cout << "skipping localInnerProduct since zero size subset on this MPI\n";
-    return;
-  }
 
-  void * site_table = QDP_get_global_cache().getDevicePtr( s.getIdSiteTable() );
-  AddressLeaf addr_leaf(s);
-  forEach(dest, addr_leaf, NullCombine());
-  AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
-  forEach(rhs, addr_leaf, NullCombine());
-
-  std::vector<void*> addr;
-  addr.push_back( &th_count );
-  addr.push_back( &site_table );
-
-  for(unsigned i=0; i < addr_leaf.addr.size(); ++i) {
-    addr.push_back( &addr_leaf.addr[i] );
-  }
-  jit_launch(function,th_count,addr);
-}
-#else
 template<class T, class C1, class Op, class RHS>
 void 
 function_subtype_type_exec(CUfunction function, OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,C1 >& rhs, const Subset& s)
@@ -1040,22 +1008,22 @@ function_subtype_type_exec(CUfunction function, OSubLattice<T>& dest, const Op& 
     return;
   }
 
-  void * site_table = QDP_get_global_cache().getDevicePtr( s.getIdSiteTable() );
   AddressLeaf addr_leaf(s);
   forEach(dest, addr_leaf, NullCombine());
   AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
   forEach(rhs, addr_leaf, NullCombine());
 
-  std::vector<void*> addr;
-  addr.push_back( &th_count );
-  addr.push_back( &site_table );
+  JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
 
-  for(unsigned i=0; i < addr_leaf.addr.size(); ++i) {
-    addr.push_back( &addr_leaf.addr[i] );
-  }
-  jit_launch(function,th_count,addr);
+  std::vector<int> ids;
+  ids.push_back( jit_th_count.get_id() );
+  ids.push_back( s.getIdSiteTable() );
+  for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
+    ids.push_back( addr_leaf.ids[i] );
+ 
+  jit_launch(function,th_count,ids);
 }
-#endif
+
 
 
 template<class T, class T1, class Op>
@@ -1069,20 +1037,20 @@ operator_type_subtype_exec(CUfunction function, OLattice<T>& dest, const Op& op,
     return;
   }
 
-  void * site_table = QDP_get_global_cache().getDevicePtr( s.getIdSiteTable() );
   AddressLeaf addr_leaf(s);
   forEach(dest, addr_leaf, NullCombine());
   AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
   forEach(rhs, addr_leaf, NullCombine());
 
-  std::vector<void*> addr;
-  addr.push_back( &th_count );
-  addr.push_back( &site_table );
+  JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
 
-  for(unsigned i=0; i < addr_leaf.addr.size(); ++i) {
-    addr.push_back( &addr_leaf.addr[i] );
-  }
-  jit_launch(function,th_count,addr);
+  std::vector<int> ids;
+  ids.push_back( jit_th_count.get_id() );
+  ids.push_back( s.getIdSiteTable() );
+  for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
+    ids.push_back( addr_leaf.ids[i] );
+ 
+  jit_launch(function,th_count,ids);
 }
 
 
@@ -1103,62 +1071,19 @@ operator_subtype_subtype_exec(CUfunction function, OSubLattice<T>& dest, const O
   AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
   forEach(rhs, addr_leaf, NullCombine());
 
-  std::vector<void*> addr;
-  addr.push_back( &th_count );
+  JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
 
-  for(unsigned i=0; i < addr_leaf.addr.size(); ++i) {
-    addr.push_back( &addr_leaf.addr[i] );
-  }
-  jit_launch(function,th_count,addr);
+  std::vector<int> ids;
+  ids.push_back( jit_th_count.get_id() );
+  for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
+    ids.push_back( addr_leaf.ids[i] );
+ 
+  jit_launch(function,th_count,ids);
 }
 
 
 
   
-template<class T, class T1, class Op, class RHS>
-void 
-function_lat_sca_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs, const Subset& s)
-{
-  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
-
-  AddressLeaf addr_leaf(s);
-
-  forEach(dest, addr_leaf, NullCombine());
-  AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
-  forEach(rhs, addr_leaf, NullCombine());
-
-  int start = s.start();
-  int end = s.end();
-  bool ordered = s.hasOrderedRep();
-  int th_count = ordered ? s.numSiteTable() : Layout::sitesOnNode();
-
-  void * subset_member = QDP_get_global_cache().getDevicePtr( s.getIdMemberTable() );
-
-  std::vector<void*> addr;
-
-  addr.push_back( &ordered );
-
-  addr.push_back( &th_count );
-
-  addr.push_back( &start );
-  //std::cout << "addr lo = " << addr[0] << " lo=" << lo << "\n";
-
-  addr.push_back( &end );
-  //std::cout << "addr hi = " << addr[1] << " hi=" << hi << "\n";
-
-  addr.push_back( &subset_member );
-  //std::cout << "addr idx_inner_dev = " << addr[3] << " " << idx_inner_dev << "\n";
-
-  //int addr_dest=addr.size();
-  for(unsigned i=0; i < addr_leaf.addr.size(); ++i) {
-    addr.push_back( &addr_leaf.addr[i] );
-    //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
-  }
-
-  jit_launch(function,th_count,addr);
-}
-
-
 
 
 template<class T, class T1, class Op, class RHS>
@@ -1178,16 +1103,15 @@ function_lat_sca_subtype_exec(CUfunction function, OSubLattice<T>& dest, const O
   AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
   forEach(rhs, addr_leaf, NullCombine());
 
-  std::vector<void*> addr;
-  addr.push_back( &th_count );
+  JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
 
-  for(unsigned i=0; i < addr_leaf.addr.size(); ++i) {
-    addr.push_back( &addr_leaf.addr[i] );
-  }
-
-  jit_launch(function,th_count,addr);
+  std::vector<int> ids;
+  ids.push_back( jit_th_count.get_id() );
+  for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
+    ids.push_back( addr_leaf.ids[i] );
+ 
+  jit_launch(function,th_count,ids);
 }
-
 
 
 
@@ -1200,41 +1124,25 @@ function_zero_rep_exec(CUfunction function, OLattice<T>& dest, const Subset& s )
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   AddressLeaf addr_leaf(s);
-
   forEach(dest, addr_leaf, NullCombine());
 
-  int start = s.start();
-  int end = s.end();
-  bool ordered = s.hasOrderedRep();
-  int th_count = ordered ? s.numSiteTable() : Layout::sitesOnNode();
+  int th_count = s.hasOrderedRep() ? s.numSiteTable() : Layout::sitesOnNode();
 
-  void * subset_member = QDP_get_global_cache().getDevicePtr( s.getIdMemberTable() );
-
-  std::vector<void*> addr;
-
-  addr.push_back( &ordered );
-  //std::cout << "ordered = " << ordered << "\n";
-
-  addr.push_back( &th_count );
-  //std::cout << "thread_count = " << th_count << "\n";
-
-  addr.push_back( &start );
-  //std::cout << "start        = " << start << "\n";
-
-  addr.push_back( &end );
-  //std::cout << "end          = " << end << "\n";
-
-  addr.push_back( &subset_member );
-  //std::cout << "addr idx_inner_dev = " << addr[3] << " " << idx_inner_dev << "\n";
-
-  //int addr_dest=addr.size();
-  for(unsigned i=0; i < addr_leaf.addr.size(); ++i) {
-    addr.push_back( &addr_leaf.addr[i] );
-    //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
-  }
-
-
-  jit_launch(function,th_count,addr);
+  JitParam jit_ordered( QDP_get_global_cache().addJitParamBool( s.hasOrderedRep() ) );
+  JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
+  JitParam jit_start( QDP_get_global_cache().addJitParamInt( s.start() ) );
+  JitParam jit_end( QDP_get_global_cache().addJitParamInt( s.end() ) );
+  
+  std::vector<int> ids;
+  ids.push_back( jit_ordered.get_id() );
+  ids.push_back( jit_th_count.get_id() );
+  ids.push_back( jit_start.get_id() );
+  ids.push_back( jit_end.get_id() );
+  ids.push_back( s.getIdMemberTable() );
+  for(unsigned i=0; i < addr_leaf.ids.size(); ++i)
+    ids.push_back( addr_leaf.ids[i] );
+ 
+  jit_launch(function,th_count,ids);
 }
 
 
@@ -1252,17 +1160,16 @@ void function_zero_rep_subtype_exec(CUfunction function, OSubLattice<T>& dest, c
   AddressLeaf addr_leaf(s);
   forEach(dest, addr_leaf, NullCombine());
 
-  std::vector<void*> addr;
-  addr.push_back( &th_count );
-
-  for(unsigned i=0; i < addr_leaf.addr.size(); ++i) {
-    addr.push_back( &addr_leaf.addr[i] );
-  }
-  jit_launch(function,th_count,addr);
+  JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
+  
+  std::vector<int> ids;
+  ids.push_back( jit_th_count.get_id() );
+  for(unsigned i=0; i < addr_leaf.ids.size(); ++i)
+    ids.push_back( addr_leaf.ids[i] );
+ 
+  jit_launch(function,th_count,ids);
 }
 
-
-  
 
 
 template<class T>
@@ -1283,25 +1190,16 @@ function_random_exec(CUfunction function, OLattice<T>& dest, const Subset& s , S
   forEach(RNG::ran_mult_n, addr_leaf, NullCombine());
   forEach(*RNG::lattice_ran_mult, addr_leaf, NullCombine());
 
-  // lo <= idx < hi
-  int lo = s.start();
-  int hi = s.end();
-
-  std::vector<void*> addr;
-
-  addr.push_back( &lo );
-  //std::cout << "addr lo = " << addr[0] << " lo=" << lo << "\n";
-
-  addr.push_back( &hi );
-  //std::cout << "addr hi = " << addr[1] << " hi=" << hi << "\n";
-
-  //int addr_dest=addr.size();
-  for(unsigned i=0; i < addr_leaf.addr.size(); ++i) {
-    addr.push_back( &addr_leaf.addr[i] );
-    //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
-  }
-
-  jit_launch(function,s.numSiteTable(),addr);
+  JitParam jit_lo( QDP_get_global_cache().addJitParamInt( s.start() ) );
+  JitParam jit_hi( QDP_get_global_cache().addJitParamInt( s.end() ) );
+  
+  std::vector<int> ids;
+  ids.push_back( jit_lo.get_id() );
+  ids.push_back( jit_hi.get_id() );
+  for(unsigned i=0; i < addr_leaf.ids.size(); ++i)
+    ids.push_back( addr_leaf.ids[i] );
+ 
+  jit_launch(function,s.numSiteTable(),ids);
 }
 
 

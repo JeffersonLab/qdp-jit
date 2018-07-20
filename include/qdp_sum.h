@@ -5,8 +5,7 @@ namespace QDP {
 
 
   template <class T2>
-  void qdp_jit_reduce(int size, int threads, int blocks, int shared_mem_usage,
-		      T2 *d_idata, T2 *d_odata )
+  void qdp_jit_reduce(int size, int threads, int blocks, int shared_mem_usage, int in_id, int out_id )
   {
     static CUfunction function;
 
@@ -22,7 +21,7 @@ namespace QDP {
 	//std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
       }
 
-    function_sum_exec(function, size, threads, blocks, shared_mem_usage, (void*)d_idata, (void*)d_odata );
+    function_sum_exec(function, size, threads, blocks, shared_mem_usage, in_id, out_id );
   }
 
 
@@ -33,9 +32,9 @@ namespace QDP {
 					  int threads, 
 					  int blocks, 
 					  int shared_mem_usage,
-					  T1 *d_idata, 
-					  T2 *d_odata, 
-					  int * siteTable)
+					  int in_id, 
+					  int out_id, 
+					  int siteTableId)
   {
     static CUfunction function;
 
@@ -53,9 +52,9 @@ namespace QDP {
 
     // Execute the function
     function_sum_convert_ind_exec(function, size, threads, blocks, shared_mem_usage, 
-				  (void*)d_idata, (void*)d_odata, (void*)siteTable );
+				  in_id, out_id, siteTableId );
   }
-
+  
 
 
   // T1 input
@@ -65,8 +64,8 @@ namespace QDP {
 			      int threads, 
 			      int blocks, 
 			      int shared_mem_usage,
-			      T1 *d_idata, 
-			      T2 *d_odata)
+			      int in_id, 
+			      int out_id)
   {
     static CUfunction function;
 
@@ -84,7 +83,7 @@ namespace QDP {
 
     // Execute the function
     function_sum_convert_exec(function, size, threads, blocks, shared_mem_usage, 
-			      (void*)d_idata, (void*)d_odata );
+			      in_id, out_id );
   }
 
 
@@ -99,8 +98,7 @@ namespace QDP {
     
     //QDP_info("sum(lat,subset) dev");
 
-    T2 * out_dev;
-    T2 * in_dev;
+    int out_id,in_id;
 
     typename UnaryReturn<OLattice<T1>, FnSum>::Type_t  d;
 
@@ -127,31 +125,24 @@ namespace QDP {
       //QDP_info("sum(Lat,subset): using %d threads per block, %d blocks, shared mem=%d" , numThreads , numBlocks , shared_mem_usage );
 
       if (first) {
-	if (!QDP_get_global_cache().allocate_device_static( (void**)&out_dev , numBlocks*sizeof(T2) ))
-	  QDP_error_exit( "sum(lat,subset) reduction buffer: 1st buffer no memory, exit");
-	if (!QDP_get_global_cache().allocate_device_static( (void**)&in_dev , numBlocks*sizeof(T2) ))
-	  QDP_error_exit( "sum(lat,subset) reduction buffer: 2nd buffer no memory, exit");
+	out_id = QDP_get_global_cache().add( numBlocks*sizeof(T2) , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
+	in_id  = QDP_get_global_cache().add( numBlocks*sizeof(T2) , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
       }
 
+      
       if (numBlocks == 1) {
 	if (first) {
-	  qdp_jit_reduce_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, shared_mem_usage ,  
-								       (T1*)QDP_get_global_cache().getDevicePtr( s1.getId() ),
-								       (T2*)QDP_get_global_cache().getDevicePtr( d.getId() ),
-								       (int*)QDP_get_global_cache().getDevicePtr( s.getIdSiteTable()));
+	  qdp_jit_reduce_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, shared_mem_usage, s1.getId(), d.getId(), s.getIdSiteTable());
 	}
 	else {
-	  qdp_jit_reduce<T2>( actsize , numThreads , numBlocks, shared_mem_usage , 
-			      in_dev , (T2*)QDP_get_global_cache().getDevicePtr( d.getId() ) );
+	  qdp_jit_reduce<T2>( actsize , numThreads , numBlocks, shared_mem_usage , in_id , d.getId() );
 	}
       } else {
 	if (first) {
-	  qdp_jit_reduce_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, shared_mem_usage,
-								       (T1*)QDP_get_global_cache().getDevicePtr( s1.getId() ),
-								       out_dev , (int*)QDP_get_global_cache().getDevicePtr(s.getIdSiteTable()));
+	  qdp_jit_reduce_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, shared_mem_usage, s1.getId(), out_id, s.getIdSiteTable());
 	}
 	else
-	  qdp_jit_reduce<T2>( actsize , numThreads , numBlocks , shared_mem_usage , in_dev , out_dev );
+	  qdp_jit_reduce<T2>( actsize , numThreads , numBlocks , shared_mem_usage , in_id , out_id );
 
       }
 
@@ -162,13 +153,13 @@ namespace QDP {
 
       actsize=numBlocks;
 
-      T2 * tmp = in_dev;
-      in_dev = out_dev;
-      out_dev = tmp;
+      int tmp = in_id;
+      in_id = out_id;
+      out_id = tmp;
     }
 
-    QDP_get_global_cache().free_device_static( in_dev );
-    QDP_get_global_cache().free_device_static( out_dev );
+    QDP_get_global_cache().signoff( in_id );
+    QDP_get_global_cache().signoff( out_id );
 
     QDPInternal::globalSum(d);
 
@@ -186,7 +177,7 @@ namespace QDP {
   // globalMax
   //
   template <class T>
-  void globalMax_kernel(int size, int threads, int blocks, T *d_idata, T *d_odata)
+  void globalMax_kernel(int size, int threads, int blocks, int in_id, int out_id)
   {
     int shared_mem_usage = threads * sizeof(T);
 
@@ -204,7 +195,7 @@ namespace QDP {
 	//std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
       }
 
-    function_global_max_exec(function, size, threads, blocks, shared_mem_usage, (void*)d_idata, (void*)d_odata );
+    function_global_max_exec(function, size, threads, blocks, shared_mem_usage, in_id, out_id );
   }
 
 
@@ -218,6 +209,7 @@ namespace QDP {
     typename UnaryReturn<OLattice<T1>, FnSumMulti>::Type_t
     sumMulti( const OLattice<T1>& s1 , const Set& ss )
     {
+      QDPIO::cout << "using this too\n";
       typename UnaryReturn<OLattice<T1>, FnSumMulti>::Type_t  dest(ss.numSubsets());
       const int nodeSites = Layout::sitesOnNode();
 
@@ -273,12 +265,11 @@ namespace QDP {
 	T2 * out_dev;
 	T2 * in_dev;
 
-	if (!QDP_get_global_cache().allocate_device_static( (void**)&out_dev , numBlocks*sizeof(T2) ))
-	  QDP_error_exit( "sumMulti(lat) reduction buffer: 2nd buffer no memory" );
-
-	if (!QDP_get_global_cache().allocate_device_static( (void**)&in_dev , numBlocks*sizeof(T2) ))
-	  QDP_error_exit("sumMulti(lat) reduction buffer: 3rd buffer no memory" );
-
+	int out_id, in_id;
+	
+	out_id = QDP_get_global_cache().addDeviceStatic( (void**)&out_dev , numBlocks*sizeof(T2) );
+	in_id  = QDP_get_global_cache().addDeviceStatic( (void**)&in_dev , numBlocks*sizeof(T2) );
+	
 	int virt_size = ss.largest_subset;
 
 	int actsize=nodeSites;
@@ -295,16 +286,16 @@ namespace QDP {
 										 numThreads, 
 										 numBlocks,  
 										 shared_mem_usage,
-										 (T1*)QDP_get_global_cache().getDevicePtr( s1.getId() ),
-										 out_dev , 
-										 (int*)QDP_get_global_cache().getDevicePtr( ss.getIdStrided() ) );
+										 s1.getId(),
+										 out_id , 
+										 ss.getIdStrided() );
 	  } else {
 	    qdp_jit_reduce<T2>(actsize, 
 			       numThreads, 
 			       numBlocks, 
 			       shared_mem_usage,
-			       in_dev, 
-			       out_dev );
+			       in_id, 
+			       out_id );
 	  }
 
 	  if (first) {
@@ -314,7 +305,11 @@ namespace QDP {
 	  T2 * tmp = in_dev;
 	  in_dev = out_dev;
 	  out_dev = tmp;
-      
+
+	  int tmpid = in_id;
+	  in_id = out_id;
+	  out_id = tmpid;
+	  
 #ifdef GPU_DEBUG_DEEP
 	  QDP_debug_deep( "checking for break numBlocks = %d %d" , numBlocks , ss.nonEmptySubsetsOnNode );
 #endif
@@ -365,12 +360,16 @@ namespace QDP {
 	in_dev = out_dev;
 	out_dev = tmp;
 
+	int tmpid = in_id;
+	in_id = out_id;
+	out_id = tmpid;
+
 	T2* slice = new T2[ss.numSubsets()];
 
 	CudaMemcpyD2H( (void*)slice , (void*)out_dev , ss.numSubsets()*sizeof(T2) );
 
-	QDP_get_global_cache().free_device_static( in_dev );
-	QDP_get_global_cache().free_device_static( out_dev );
+	QDP_get_global_cache().signoff( in_id );
+	QDP_get_global_cache().signoff( out_id );
     
 	if (!success) {
 	  QDP_info_primary("sumMulti: there was a problem, continue on host");
@@ -440,15 +439,12 @@ namespace QDP {
 
 
 
-
       template<class T>
 	typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t
 	globalMax(const OLattice<T>& s1)
 	{
-	  //    QDP_info("globalMax(lat) dev");
-
-	  T * out_dev;
-	  T * in_dev;
+	  int out_id, in_id;
+	  
 	  const int nodeSites = Layout::sitesOnNode();
 
 	  typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t  d;
@@ -473,30 +469,21 @@ namespace QDP {
 	    }
 
 	    if (first) {
-	      if (!QDP_get_global_cache().allocate_device_static( (void**)&out_dev , numBlocks*sizeof(T) ))
-		QDP_error_exit( "globMax(lat) reduction buffer: 1st buffer no memory, exit");
-	      if (!QDP_get_global_cache().allocate_device_static( (void**)&in_dev , numBlocks*sizeof(T) ))
-		QDP_error_exit( "globMax(lat) reduction buffer: 2nd buffer no memory, exit");
+	      out_id = QDP_get_global_cache().add( numBlocks*sizeof(T) , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
+	      in_id  = QDP_get_global_cache().add( numBlocks*sizeof(T) , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
 	    }
+
 
 	    if (numBlocks == 1) {
 	      if (first)
-		globalMax_kernel<T>(actsize, numThreads, numBlocks, 
-				    (T*)QDP_get_global_cache().getDevicePtr( s1.getId() ),
-				    (T*)QDP_get_global_cache().getDevicePtr( d.getId() ) );
+		globalMax_kernel<T>(actsize, numThreads, numBlocks, s1.getId() , d.getId() );
 	      else
-		globalMax_kernel<T>(actsize, numThreads, numBlocks, 
-				    in_dev, 
-				    (T*)QDP_get_global_cache().getDevicePtr( d.getId() ) );
+		globalMax_kernel<T>(actsize, numThreads, numBlocks, in_id, d.getId() );
 	    } else {
 	      if (first)
-		globalMax_kernel<T>(actsize, numThreads, numBlocks, 
-				    (T*)QDP_get_global_cache().getDevicePtr( s1.getId() ),
-				    out_dev );
+		globalMax_kernel<T>(actsize, numThreads, numBlocks, s1.getId() , out_id );
 	      else
-		globalMax_kernel<T>(actsize, numThreads, numBlocks, 
-				    in_dev, 
-				    out_dev );
+		globalMax_kernel<T>(actsize, numThreads, numBlocks, in_id, out_id );
 	    }
 
 	    first =false;
@@ -506,13 +493,13 @@ namespace QDP {
 
 	    actsize=numBlocks;
 
-	    T * tmp = in_dev;
-	    in_dev = out_dev;
-	    out_dev = tmp;
+	    int tmp = in_id;
+	    in_id = out_id;
+	    out_id = tmp;
 	  }
 
-	  QDP_get_global_cache().free_device_static( in_dev );
-	  QDP_get_global_cache().free_device_static( out_dev );
+	  QDP_get_global_cache().signoff( in_id );
+	  QDP_get_global_cache().signoff( out_id );
 
 	  QDPInternal::globalMax(d);
 

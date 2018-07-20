@@ -105,22 +105,15 @@ AC_MSG_NOTICE([Configuring QDP++ Alignment size=${ac_alignment}])
 
 
 
-dnl gpu
-AC_ARG_ENABLE(gpudebug,
-  AC_HELP_STRING([--enable-gpudebug],
-    [Produce GPU debug output]),
-  [gpudebug_enabled="${enableval}"],
-  [gpudebug_enabled="no"]
-)
 
-dnl gpu
-AC_ARG_ENABLE(gpudebugdeep,
-  AC_HELP_STRING([--enable-gpudebugdeep],
-    [Produce GPU deep debug output]),
-  [gpudebugdeep_enabled="${enableval}"],
-  [gpudebugdeep_enabled="no"]
-)
 
+dnl --enable-custom-kernels
+AC_ARG_ENABLE(custom-kernels,
+  AC_HELP_STRING([--enable-custom-kernels],
+    [Includes custom kernels]),
+  [ac_custom="yes"],
+  [ac_custom="no"]
+)
 
 dnl --enable-profiling
 AC_ARG_ENABLE(profiling,
@@ -185,20 +178,12 @@ dnl fi
 
 
 
-if test "X${gpudebug_enabled}X" == "XyesX"; 
-then
-     AC_MSG_NOTICE([Configuring to produce GPU debug output])
-     AC_DEFINE([GPU_DEBUG],[1],[GPU debugging output])
-     AC_SUBST(GPU_DEBUG_CXX,"-DGPU_DEBUG")
-fi
 
-if test "X${gpudebugdeep_enabled}X" == "XyesX"; 
-then
-     AC_MSG_NOTICE([Configuring to produce GPU deep debug output])
-     AC_DEFINE([GPU_DEBUG_DEEP],[1],[GPU deep debugging output])
-     AC_SUBST(GPU_DEBUGDEEP_CXX,"-DGPU_DEBUG_DEEP")
+dnl Check if profiling is enabled
+if test "X${ac_custom}X" = "XyesX"; then
+   AC_DEFINE_UNQUOTED(QDP_CUSTOM_KERNELS, ${ac_custom}, [Include custom kernels])
+   AC_MSG_NOTICE([Include custom kernels])
 fi
-
 
 dnl Check if profiling is enabled
 if test ${ac_profile} -eq 1; then 
@@ -730,6 +715,8 @@ fi
 AM_CONDITIONAL(QDP_USE_LIBXML2, [test "x${with_libxml2}x" != "xnox" ])
 
 AM_CONDITIONAL(QDP_USE_HDF5, [test "x${ac_build_hdf5}x" = "xyesx" ])
+
+AM_CONDITIONAL(QDP_CUSTOM_KERNELS, [test "x${ac_custom}x" = "xyesx" ])
 
 
 ##################################

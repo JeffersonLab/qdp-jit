@@ -13,36 +13,16 @@ namespace QDP {
     int srcnode = _srcNode;
     int dstnode = _destNode;
 
-#if 0
-    send_buf_mem = QMP_allocate_aligned_memory(dstnum,QDP_ALIGNMENT_SIZE, (QMP_MEM_COMMS|QMP_MEM_FAST) ); // packed data to send
-    if( send_buf_mem == 0x0 ) { 
-      send_buf_mem = QMP_allocate_aligned_memory(dstnum, QDP_ALIGNMENT_SIZE, QMP_MEM_COMMS);
-      if( send_buf_mem == 0x0 ) { 
-	QDP_error_exit("Unable to allocate send_buf_mem\n");
-      }
-    }
-    recv_buf_mem = QMP_allocate_aligned_memory(srcnum,QDP_ALIGNMENT_SIZE, (QMP_MEM_COMMS|QMP_MEM_FAST)); // packed receive data
-    if( recv_buf_mem == 0x0 ) { 
-      recv_buf_mem = QMP_allocate_aligned_memory(srcnum, QDP_ALIGNMENT_SIZE, QMP_MEM_COMMS); 
-      if( recv_buf_mem == 0x0 ) { 
-	QDP_error_exit("Unable to allocate recv_buf_mem\n");
-      }
-    }
-    send_buf=QMP_get_memory_pointer(send_buf_mem);
-    recv_buf=QMP_get_memory_pointer(recv_buf_mem);
-#endif
     if (!DeviceParams::Instance().getGPUDirect()) {
       CudaHostAlloc(&send_buf,dstnum,0);
       CudaHostAlloc(&recv_buf,srcnum,0);
     }
 
     //QDPIO::cout << "Allocating receive buffer on device: " << srcnum << " bytes\n";
-    if (!QDP_get_global_cache().allocate_device_static( &recv_buf_dev , srcnum))
-      QDP_error_exit("Error allocating GPU memory for receive buffer");
+    recv_buf_id = QDP_get_global_cache().addDeviceStatic( &recv_buf_dev , srcnum);
 
     //QDPIO::cout << "Allocating send buffer on device: " << dstnum << " bytes\n";
-    if (!QDP_get_global_cache().allocate_device_static( &send_buf_dev , dstnum))
-      QDP_error_exit("Error allocating GPU memory for send buffer");
+    send_buf_id = QDP_get_global_cache().addDeviceStatic( &send_buf_dev , dstnum);
 
     if (!DeviceParams::Instance().getGPUDirect()) {
       msg[0] = QMP_declare_msgmem( recv_buf , srcnum );
@@ -93,8 +73,8 @@ namespace QDP {
       QMP_free_memory(recv_buf_mem);
       QMP_free_memory(send_buf_mem);
 #endif
-      QDP_get_global_cache().free_device_static( send_buf_dev );
-      QDP_get_global_cache().free_device_static( recv_buf_dev );
+      QDP_get_global_cache().signoff( send_buf_id );
+      QDP_get_global_cache().signoff( recv_buf_id );
       CudaHostFree(send_buf);
       CudaHostFree(recv_buf);
     }

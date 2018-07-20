@@ -119,7 +119,7 @@ namespace QDP {
 #endif
 
     //QDP_get_global_cache().releasePrevLockSet();
-    QDP_get_global_cache().newLockSet();
+    //QDP_get_global_cache().newLockSet();
 
 #ifdef GPU_DEBUG_DEEP
     QDP_get_global_cache().printLockSets();

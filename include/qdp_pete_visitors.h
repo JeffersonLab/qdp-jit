@@ -51,69 +51,56 @@ struct ParamLeaf {};
 
 struct AddressLeaf
 {
-  union Types {
-    void * ptr;
-    float  fl;
-    int    in;
-    int64_t in64;
-    double db;
-    bool   bl;
-  };
-
+  ~AddressLeaf() {
+    //QDPIO::cout << "signing off: ";
+    for (auto i : ids_signoff) {
+      //QDPIO::cout << i << ", ";
+      QDP_get_global_cache().signoff(i);
+    }
+    //QDPIO::cout << "\n";
+  }
+  
   AddressLeaf(const Subset& s): subset(s) {    
     //std::cout << "AddressLeaf default ctor\n";
   }
 
+#if 0
   AddressLeaf(const AddressLeaf& cp): subset(cp.subset) {
     addr = cp.addr;
     //std::cout << "AddressLeaf copy ctor my_size = " << addr.size() << "\n";
   }
+#endif
 
-  AddressLeaf& operator=(const AddressLeaf& cp) {
-    assert(!"strange");
-    addr = cp.addr;
-    return *this;
-    //std::cout << "AddressLeaf assignment my_size = " << addr.size() << "\n";
-  }
+  AddressLeaf& operator=(const AddressLeaf& cp) = delete;
+  AddressLeaf(const AddressLeaf& cp) = delete;
 
   
-  mutable std::vector<Types> addr;
+  mutable std::vector<int> ids;
+  mutable std::vector<int> ids_signoff;
   const Subset& subset;
 
-  void setAddr(void* p) const {
-    Types t;
-    t.ptr = p;
-    addr.push_back(t);
+  void setId( int id ) const {
+    ids.push_back( id );
   }
   void setLit( float f ) const {
-    //std::cout << "AddressLeaf::setLit float " << f << "\n";
-    Types t;
-    t.fl = f;
-    addr.push_back(t);
+    ids.push_back( QDP_get_global_cache().addJitParamFloat(f) );
+    ids_signoff.push_back( ids.back() );
   }
   void setLit( double d ) const {
-    //std::cout << "AddressLeaf::setLit double " << d << "\n";
-    Types t;
-    t.db = d;
-    addr.push_back(t);
+    ids.push_back( QDP_get_global_cache().addJitParamDouble(d) );
+    ids_signoff.push_back( ids.back() );
   }
   void setLit( int i ) const {
-    //std::cout << "AddressLeaf::setLit int " << i << "\n";
-    Types t;
-    t.in = i;
-    addr.push_back(t);
+    ids.push_back( QDP_get_global_cache().addJitParamInt(i) );
+    ids_signoff.push_back( ids.back() );
   }
   void setLit( int64_t i ) const {
-    //std::cout << "AddressLeaf::setLit int64_t " << i << "\n";
-    Types t;
-    t.in64 = i;
-    addr.push_back(t);
+    ids.push_back( QDP_get_global_cache().addJitParamInt64(i) );
+    ids_signoff.push_back( ids.back() );
   }
   void setLit( bool b ) const {
-    //std::cout << "AddressLeaf::setLit bool " << b << "\n";
-    Types t;
-    t.bl = b;
-    addr.push_back(t);
+    ids.push_back( QDP_get_global_cache().addJitParamBool(b) );
+    ids_signoff.push_back( ids.back() );
   }
 };
 

@@ -33,17 +33,35 @@ namespace QDP
     enum Flags {
       Empty = 0,
       OwnHostMemory = 1,
-      OwnDeviceMemory = 2
+      OwnDeviceMemory = 2,
+      JitParam = 4,
+      Static = 8,
+      Multi = 16
     };
 
     enum class Status { undef , host , device };
+
+    enum class JitParamType { float_, int_, int64_, double_, bool_ };
+
+
     
     QDPCache();
     
     typedef void (* LayoutFptr)(bool toDev,void * outPtr,void * inPtr);
 
+    std::vector<void*> get_kernel_args(std::vector<int>& ids);
+    
+    int addJitParamFloat(float i);
+    int addJitParamDouble(double i);
+    int addJitParamInt(int i);
+    int addJitParamInt64(int64_t i);
+    int addJitParamBool(bool i);
+
+    int addDeviceStatic( void** ptr, size_t n_bytes );
 
     int add( size_t size, Flags flags, Status st, const void* ptr_host, const void* ptr_dev, LayoutFptr func );
+
+    int addMulti( const multi1d<int>& ids );
     
     // Wrappers to the previous interface
     int registrate( size_t size, unsigned flags, LayoutFptr func );
@@ -52,13 +70,12 @@ namespace QDP
     void signoff(int id);
     void assureOnHost(int id);
 
-    void * getDevicePtr(int id);
+    //void * getDevicePtr(int id);
     void getHostPtr(void ** ptr , int id);
 
     size_t getSize(int id);
-    void newLockSet();
-    bool allocate_device_static( void** ptr, size_t n_bytes );
-    void free_device_static( void* ptr );
+    //bool allocate_device_static( void** ptr, size_t n_bytes );
+    //void free_device_static( void* ptr );
     void printLockSet();
     
     CUDADevicePoolAllocator& get_allocator() { return pool_allocator; }
@@ -68,14 +85,18 @@ namespace QDP
     void growStack();
 
     void lockId(int id);
-
+    int getNewId();
+    
     void freeHostMemory(Entry& e);
     void allocateHostMemory(Entry& e);
     void freeDeviceMemory(Entry& e);
     void allocateDeviceMemory(Entry& e);
     
     void assureDevice(Entry& e);
+    void assureDevice(int id);
+    
     void assureHost(Entry& e);
+    bool isOnDevice(int id);
     
     bool spill_lru();
     void printTracker();
@@ -88,10 +109,25 @@ namespace QDP
     CUDADevicePoolAllocator pool_allocator;
   };
 
+  QDPCache& QDP_get_global_cache();
+
+
+  class JitParam
+  {
+  private:
+    int id;
+  public:
+    JitParam( int id ): id(id) {}
+    ~JitParam() {
+      QDP_get_global_cache().signoff(id);
+    }
+    int get_id() const { return id; }
+  };
+
+
   QDPCache::Flags operator|(QDPCache::Flags a, QDPCache::Flags b);
 
 
-  QDPCache& QDP_get_global_cache();
 
 }
 

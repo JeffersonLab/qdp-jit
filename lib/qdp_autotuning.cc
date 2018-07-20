@@ -26,11 +26,17 @@ namespace QDP {
   }
 
 
-  void jit_launch(CUfunction function,int th_count,std::vector<void*>& args)
+  void jit_launch(CUfunction function,int th_count,std::vector<int>& ids)
   {
     //QDP_get_global_cache().printLockSet();
-    QDP_get_global_cache().newLockSet();
- 
+    //QDP_get_global_cache().newLockSet();
+
+    // for (auto i : ids)
+    //   QDPIO::cout << i << ", ";
+    // QDPIO::cout << "\n";
+    
+     std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
+    
     // Check for thread count equals zero
     // This can happen, when inner count is zero
     if ( th_count == 0 )

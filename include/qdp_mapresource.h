@@ -17,9 +17,14 @@ struct FnMapRsrc
 {
 private:
   FnMapRsrc(const FnMapRsrc&);
+  int send_buf_id = -1;
+  int recv_buf_id = -1;
 public:
   FnMapRsrc():bSet(false) {};
 
+  int getSendBufId() const { assert(send_buf_id>=0); return send_buf_id; }
+  int getRecvBufId() const { assert(recv_buf_id>=0); return recv_buf_id; }
+  
   void setup(int _destNode,int _srcNode,int _sendMsgSize,int _rcvMsgSize);
   void cleanup();
 
@@ -38,6 +43,7 @@ public:
   mutable void * recv_buf;
   void * send_buf_dev;
   void * recv_buf_dev;
+
   int srcnum, dstnum;
   QMP_msgmem_t msg[2];
   QMP_msghandle_t mh_a[2], mh;
@@ -181,7 +187,6 @@ public:
   }
   RsrcWrapper(  const multi1d<int>& destnodes_, const multi1d<int>& srcenodes_): 
     destnodes(destnodes_),srcenodes(srcenodes_),cached(NULL),rAlloc(false) {
-    //QDPIO::cout << "wrapper ctor " << srcenodes.size() << " " << destnodes.size() << "\n";
   }
 
   const FnMapRsrc& getResource(int srcnum_, int dstnum_) {
@@ -190,7 +195,6 @@ public:
       QDP_error_exit("FnMapRsrc& getResource srcnode_size=%d destnode_size=%d", srcenodes.size() , destnodes.size() );
 #endif
     pPair = FnMapRsrcMatrix::Instance().get( destnodes[0] , srcenodes[0] , dstnum_ , srcnum_ );
-    //QDPIO::cout << "wrapper: returning obj " << pPair->first << "\n";
     cached = pPair->second.at(pPair->first++);
     rAlloc=true;
     return *cached;

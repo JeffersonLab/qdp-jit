@@ -325,19 +325,7 @@ void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >&
 
 
 
-#if 0
-template<class T, class T1, class Op, class RHS>
-void evaluate_subtype_type(OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs,
-			   const Subset& s)
-{
-  static CUfunction function;
 
-  if (function == NULL)
-    function = function_subtype_type_build(dest, op, rhs);
-
-  function_subtype_type_exec(function, dest, op, rhs, s);
-}
-#else
 template<class T, class C1, class Op, class RHS>
 void evaluate_subtype_type(OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,C1 >& rhs,
 			   const Subset& s)
@@ -349,7 +337,7 @@ void evaluate_subtype_type(OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS
 
   function_subtype_type_exec(function, dest, op, rhs, s);
 }
-#endif
+
 
 template<class T, class T1, class Op>
 void operator_type_subtype(OLattice<T>& dest, const Op& op, const QDPSubType<T1,OLattice<T1> >& rhs, const Subset& s)
@@ -413,29 +401,17 @@ void copymask(OSubLattice<T2> d, const OLattice<T1>& mask, const OLattice<T2>& s
 #endif
   
 //! dest = (mask) ? s1 : dest
-template<class T1, class T2> 
-void copymask(OLattice<T2>& dest, const OLattice<T1>& mask, const OLattice<T2>& s1) 
+template<class T1, class T2>
+void copymask(OLattice<T2>& dest, const OLattice<T1>& mask, const OLattice<T2>& s1)
 {
-  //QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
   static CUfunction function;
-  // Build the function
+
   if (function == NULL)
     {
-      //QDPIO::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
       function = function_copymask_build( dest , mask , s1 );
-      //QDPIO::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
-    }
-  else
-    {
-      //QDPIO::cout << __PRETTY_FUNCTION__ << ": is already built\n";
     }
 
-  // Execute the function
   function_copymask_exec(function, dest , mask , s1 );
-
-  // int nodeSites = Layout::sitesOnNode();
-  // for(int i=0; i < nodeSites; ++i) 
-  //   copymask(dest.elem(i), mask.elem(i), s1.elem(i));
 }
 
 

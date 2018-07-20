@@ -398,16 +398,32 @@ struct ForEach<UnaryNode<FnMap, A>, AddressLeaf, NullCombine>
       const Map& map = expr.operation().map;
       FnMap& fnmap = const_cast<FnMap&>(expr.operation());
 
-      int goffsetsId = expr.operation().map.getGoffsetsId(a.subset);
-      void * goffsetsDev = QDP_get_global_cache().getDevicePtr( goffsetsId );
-      a.setAddr( goffsetsDev );
+      // int goffsetsId = expr.operation().map.getGoffsetsId(a.subset);
+      // void * goffsetsDev = QDP_get_global_cache().getDevicePtr( goffsetsId );
+      // a.setAddr( goffsetsDev );
+      
+      a.setId( expr.operation().map.getGoffsetsId(a.subset) );
 
+#if 0
       void * rcvBuf = NULL;
       if (map.hasOffnode()) {
 	const FnMapRsrc& rRSrc = fnmap.getCached();
 	rcvBuf = rRSrc.getRecvBufDevPtr();
       }
       a.setAddr(rcvBuf);
+#else
+#if 0
+      //int rid = map.hasOffnode() ? fnmap.getCached().getRecvBufId() : -1;
+      int rid = -1;
+      //void * rcvBuf = NULL;
+      if (map.hasOffnode()) {
+	const FnMapRsrc& rRSrc = fnmap.getCached();
+	//rRSrc.getRecvBufDevPtr();
+	rid = rRSrc.getRecvBufId();
+      }
+#endif
+      a.setId( map.hasOffnode() ? fnmap.getCached().getRecvBufId() : -1 );
+#endif
 
       return Type_t( ForEach<A, AddressLeaf, NullCombine>::apply( expr.child() , a , n ) );
     }
@@ -443,7 +459,7 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
 
 	int dstnum = map.get_destnodes_num(f.subset)[0]*sizeof(InnerType_t);
 	int srcnum = map.get_srcenodes_num(f.subset)[0]*sizeof(InnerType_t);
-	
+
 	const FnMapRsrc& rRSrc = fnmap.getResource(srcnum,dstnum);
 
 	// Make sure the inner expression's map function
@@ -457,20 +473,12 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
 
 	static CUfunction function;
 
-	// Build the function
 	if (function == NULL)
 	  {
-	    //std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
-	    function = function_gather_build<InnerType_t>( rRSrc.getSendBufDevPtr() , map , subexpr );
-	    //std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
-	  }
-	else
-	  {
-	    //std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
+	    function = function_gather_build<InnerType_t>( subexpr );
 	  }
 
-	// Execute the function
-	function_gather_exec(function, rRSrc.getSendBufDevPtr() , map , subexpr , f.subset );
+	function_gather_exec(function, rRSrc.getSendBufId() , map , subexpr , f.subset );
 
 	rRSrc.send_receive();
 	

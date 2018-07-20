@@ -53,32 +53,35 @@ function_gaussian_exec(CUfunction function, OLattice<T>& dest,OLattice<T>& r1,OL
   bool ordered = s.hasOrderedRep();
   int th_count = ordered ? s.numSiteTable() : Layout::sitesOnNode();
 
+  JitParam jit_ordered( QDP_get_global_cache().addJitParamBool( s.hasOrderedRep() ) );
+  JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
+  JitParam jit_start( QDP_get_global_cache().addJitParamInt( s.start() ) );
+  JitParam jit_end( QDP_get_global_cache().addJitParamInt( s.end() ) );
+
+  std::vector<int> ids;
+  ids.push_back( jit_ordered.get_id() );
+  ids.push_back( jit_th_count.get_id() );
+  ids.push_back( jit_start.get_id() );
+  ids.push_back( jit_end.get_id() );
+  ids.push_back( s.getIdMemberTable() );
+  for(unsigned i=0; i < addr_leaf.ids.size(); ++i)
+    ids.push_back( addr_leaf.ids[i] );
+  
+  jit_launch(function,Layout::sitesOnNode(),ids);
+#if 0
   void * subset_member = QDP_get_global_cache().getDevicePtr( s.getIdMemberTable() );
-
+  
   std::vector<void*> addr;
-
   addr.push_back( &ordered );
-  //std::cout << "ordered = " << ordered << "\n";
-
   addr.push_back( &th_count );
-  //std::cout << "thread_count = " << th_count << "\n";
-
   addr.push_back( &start );
-  //std::cout << "start        = " << start << "\n";
-
   addr.push_back( &end );
-  //std::cout << "end          = " << end << "\n";
-
   addr.push_back( &subset_member );
-  //std::cout << "addr idx_inner_dev = " << addr[3] << " " << idx_inner_dev << "\n";
-
-  //int addr_dest=addr.size();
   for(unsigned i=0; i < addr_leaf.addr.size(); ++i) {
     addr.push_back( &addr_leaf.addr[i] );
-    //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
   }
-
   jit_launch(function,th_count,addr);
+#endif
 }
 
 

@@ -63,25 +63,16 @@ namespace QDP {
     forEach(src, addr_leaf, NullCombine());
     forEach(mask, addr_leaf, NullCombine());
 
-    // lo <= idx < hi
-    int lo = 0;
-    int hi = Layout::sitesOnNode();
-
-    std::vector<void*> addr;
-
-    addr.push_back( &lo );
-    //std::cout << "addr lo = " << addr[0] << " lo=" << lo << "\n";
-
-    addr.push_back( &hi );
-    //std::cout << "addr hi = " << addr[1] << " hi=" << hi << "\n";
-
-    //int addr_dest=addr.size();
-    for(unsigned i=0; i < addr_leaf.addr.size(); ++i) {
-      addr.push_back( &addr_leaf.addr[i] );
-      //std::cout << "addr = " << addr_leaf.addr[i] << "\n";
-    }
-
-    jit_launch(function,hi-lo,addr);
+    JitParam jit_lo( QDP_get_global_cache().addJitParamInt( 0 ) );
+    JitParam jit_hi( QDP_get_global_cache().addJitParamInt( Layout::sitesOnNode() ) );
+  
+    std::vector<int> ids;
+    ids.push_back( jit_lo.get_id() );
+    ids.push_back( jit_hi.get_id() );
+    for(unsigned i=0; i < addr_leaf.ids.size(); ++i)
+      ids.push_back( addr_leaf.ids[i] );
+    
+    jit_launch(function,Layout::sitesOnNode(),ids);
   }
 
 }

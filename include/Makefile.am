@@ -16,7 +16,7 @@ MEMORY_HDRS = qdp_allocator.h \
 	      qdp_qcdoc_allocator.h
 
 CUDA_HDRS = qdp_cuda.h \
-	    qdp_cache.h \
+            qdp_cache.h \
 	    qdp_quda.h \
 	    qdp_mapresource.h \
             qdp_pool_allocator.h \
@@ -36,6 +36,12 @@ CUDA_HDRS = qdp_cuda.h \
             qdp_handle.h qdp_mastermap.h qdp_masterset.h qdp_autotuning.h qdp_sum.h qdp_datalayout.h \
             qdp_jitf_copymask.h qdp_jitf_sum.h qdp_jitf_globalmax.h qdp_jitf_gaussian.h qdp_internal.h qdp_newopsreg.h qdp_libdevice.h
 
+
+
+if QDP_CUSTOM_KERNELS
+CUDA_HDRS += custom_kernels/custom_kernels.h \
+             custom_kernels/stream_local_inner_product.h
+endif
 
 
 # All the include files - avoid flattening of dirs by using nobase
