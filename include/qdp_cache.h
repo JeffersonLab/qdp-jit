@@ -6,15 +6,17 @@
 #include <vector>
 #include <stack>
 #include <list>
-#include "string.h"
-#include "math.h"
+//#include "string.h"
+//#include "math.h"
 
 //#define SANITY_CHECKS_CACHE
 
 using namespace std;
 
 namespace QDP 
-{  
+{
+  template<class T> class multi1d;
+
   class QDPJitArgs;
 
   namespace {
@@ -57,8 +59,10 @@ namespace QDP
     int addJitParamInt64(int64_t i);
     int addJitParamBool(bool i);
 
-    int addDeviceStatic( void** ptr, size_t n_bytes );
-
+    // track_ptr - this enables to free the memory later via the pointer (needed for QUDA, where we hijack cudaMalloc)
+    int addDeviceStatic( void** ptr, size_t n_bytes , bool track_ptr = false );
+    void signoffViaPtr( void* ptr );
+    
     int add( size_t size, Flags flags, Status st, const void* ptr_host, const void* ptr_dev, LayoutFptr func );
 
     int addMulti( const multi1d<int>& ids );

@@ -31,19 +31,13 @@
 
 inline cudaError_t QDP_allocate(void **dst, size_t size, char * cstrFile , int intLine )
 {
-  bool op;
-
-  op = QDP::QDP_get_global_cache().allocate_device_static( dst , size );
-
-  if (!op)
-    return cudaErrorMemoryAllocation;
-  else
-    return cudaSuccess;
+  QDP::QDP_get_global_cache().addDeviceStatic( dst , size , true );
+  return cudaSuccess;
 }
 
 inline cudaError_t QDP_free(void *dst)
 {
-  QDP::QDP_get_global_cache().free_device_static( dst );
+  QDP::QDP_get_global_cache().signoffViaPtr( dst );
   return cudaSuccess;
 }
 

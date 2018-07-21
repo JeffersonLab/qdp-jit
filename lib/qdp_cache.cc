@@ -232,8 +232,25 @@ namespace QDP
     return Id;
   }
 
+  namespace QDP_JIT_CACHE
+  {
+    std::map<void*,int> map_ptr_id;
+  }
+
   
-  int QDPCache::addDeviceStatic( void** ptr, size_t n_bytes )
+  void QDPCache::signoffViaPtr( void* ptr )
+  {
+    auto search = QDP_JIT_CACHE::map_ptr_id.find(ptr);
+    if(search != QDP_JIT_CACHE::map_ptr_id.end()) {
+      signoff( search->second );
+      QDP_JIT_CACHE::map_ptr_id.erase(search);
+    } else {
+      QDPIO::cout << "QDP Cache: Ptr (sign off via ptr) not found\n";
+    }
+  }
+
+  
+  int QDPCache::addDeviceStatic( void** ptr, size_t n_bytes , bool track_ptr )
   {
     int Id = getNewId();
     Entry& e = vecEntry[ Id ];
@@ -252,6 +269,15 @@ namespace QDP
 
     e.iterTrack = lstTracker.insert( lstTracker.end() , Id );
 
+    if (track_ptr)
+      {
+	// Sanity: make sure the address is not already stored
+	auto search = QDP_JIT_CACHE::map_ptr_id.find(e.devPtr);
+	assert(search == QDP_JIT_CACHE::map_ptr_id.end());
+	
+	QDP_JIT_CACHE::map_ptr_id.insert( std::make_pair( e.devPtr , Id ) );
+      }
+    
     return Id;
   }
 
