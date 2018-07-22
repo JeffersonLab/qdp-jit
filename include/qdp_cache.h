@@ -51,7 +51,7 @@ namespace QDP
     
     typedef void (* LayoutFptr)(bool toDev,void * outPtr,void * inPtr);
 
-    std::vector<void*> get_kernel_args(std::vector<int>& ids);
+    std::vector<void*> get_kernel_args(std::vector<int>& ids , bool for_kernel = true );
     
     int addJitParamFloat(float i);
     int addJitParamDouble(double i);

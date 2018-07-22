@@ -688,7 +688,7 @@ namespace QDP
     return ret;
   }
 #else
-  std::vector<void*> QDPCache::get_kernel_args(std::vector<int>& ids)
+  std::vector<void*> QDPCache::get_kernel_args(std::vector<int>& ids , bool for_kernel )
   {
     // Here we do two cycles through the ids:
     // 1) cache all objects
@@ -813,6 +813,7 @@ namespace QDP
 	      }
 	    }
 	  
+	  assert(for_kernel);
 	  ret.push_back( &e.param );
 	  
 	} else {
@@ -822,7 +823,7 @@ namespace QDP
 	      QDPIO::cout << (size_t)e.devPtr << ", ";
 	    }
 	  
-	  ret.push_back( &e.devPtr );
+	  ret.push_back( for_kernel ? &e.devPtr : e.devPtr );
 	}
       } else {
 	
@@ -830,7 +831,8 @@ namespace QDP
 	  {
 	    QDPIO::cout << "NULL(id=" << i<< "), ";
 	  }
-	
+
+	assert(for_kernel);
 	ret.push_back( &jit_param_null_ptr );
 	
       }
