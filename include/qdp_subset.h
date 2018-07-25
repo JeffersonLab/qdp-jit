@@ -56,7 +56,7 @@ public:
 
   int getIdSiteTable() const {
     if (!registered) {
-      QDPIO::cout << "Subset not registered\n";
+      //QDPIO::cout << "Subset not registered\n";
       return -1;
     }
     return idSiteTable;

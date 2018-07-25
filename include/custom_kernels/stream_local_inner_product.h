@@ -44,7 +44,7 @@ namespace QDP
 
     llvm::Value* r_block_idx  = llvm_call_special_ctaidx();
     llvm::Value* r_tidx       = llvm_call_special_tidx();
-    llvm::Value* r_ntidx       = llvm_call_special_ntidx(); // needed later
+    llvm::Value* r_ntidx       = llvm_call_special_ntidx(); // this is a power of 2
 
     IndexDomainVector args;
     args.push_back( make_pair( Layout::sitesOnNode() , r_tidx ) );  // sitesOnNode irrelevant since Scalar access later
@@ -82,34 +82,7 @@ namespace QDP
 
       llvm_bar_sync();
 
-      //llvm::Value* val_ntid = llvm_call_special_ntidx();
-
-      //
-      // Find next power of 2 loop
-      //
-      llvm::BasicBlock * block_power_loop_start = llvm_new_basic_block();
-      llvm::BasicBlock * block_power_loop_inc = llvm_new_basic_block();
-      llvm::BasicBlock * block_power_loop_exit = llvm_new_basic_block();
-      llvm::Value* r_pow_phi;
-
-      llvm_branch( block_power_loop_start );
-
-      llvm_set_insert_point( block_power_loop_start );
-
-      llvm::PHINode * r_pow = llvm_phi( llvm_type<int>::value , 2 );
-      r_pow->addIncoming( llvm_create_value(1) , block_input_loop_inc );   // entry_block, block_input_loop_exit
-
-      llvm_cond_branch( llvm_ge( r_pow , r_ntidx ) , block_power_loop_exit , block_power_loop_inc );
-      {
-	llvm_set_insert_point(block_power_loop_inc);
-	r_pow_phi = llvm_shl( r_pow , llvm_create_value(1) );
-	r_pow->addIncoming( r_pow_phi , block_power_loop_inc );
-	llvm_branch( block_power_loop_start );
-      }
-
-      llvm_set_insert_point(block_power_loop_exit);
-
-      llvm::Value* r_pow_shr1 = llvm_shr( r_pow , llvm_create_value(1) );
+      llvm::Value* r_pow_shr1 = llvm_shr( r_ntidx , llvm_create_value(1) );
 
       //
       // Shared memory reduction loop
@@ -125,7 +98,7 @@ namespace QDP
       llvm_set_insert_point(block_red_loop_start);
     
       llvm::PHINode * r_red_pow = llvm_phi( llvm_type<int>::value , 2 );    
-      r_red_pow->addIncoming( r_pow_shr1 , block_power_loop_exit );
+      r_red_pow->addIncoming( r_pow_shr1 , block_input_loop_inc );
       llvm_cond_branch( llvm_le( r_red_pow , llvm_create_value(0) ) , block_red_loop_end , block_red_loop_start_1 );
 
       llvm_set_insert_point(block_red_loop_start_1);
@@ -197,6 +170,9 @@ namespace QDP
 					int size, int threads, int blocks, int shared_mem_usage,
 					multi1d<int>& in_ids, multi1d<int>& out_ids )
   {
+    // Make sure 'threads' is a power of two (the jit kernel make this assumption)
+    assert( (threads & (threads - 1)) == 0 );
+
     assert( in_ids.size() == out_ids.size() );
 
     const unsigned N = in_ids.size();
@@ -258,7 +234,8 @@ namespace QDP
 							  multi1d<int>& in_ids, multi1d<int>& out_ids , int v_id ,
 							  const Subset& s )
   {
-    //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+    // Make sure 'threads' is a power of two (the jit kernel make this assumption)
+    assert( (threads & (threads - 1)) == 0 );
 
     assert( in_ids.size() == out_ids.size() );
 
@@ -381,35 +358,7 @@ namespace QDP
 
       llvm_bar_sync();
 
-
-      //llvm::Value* val_ntid = llvm_call_special_ntidx();
-
-      //
-      // Find next power of 2 loop
-      //
-      llvm::BasicBlock * block_power_loop_start = llvm_new_basic_block();
-      llvm::BasicBlock * block_power_loop_inc = llvm_new_basic_block();
-      llvm::BasicBlock * block_power_loop_exit = llvm_new_basic_block();
-      llvm::Value* r_pow_phi;
-
-      llvm_branch( block_power_loop_start );
-
-      llvm_set_insert_point( block_power_loop_start );
-
-      llvm::PHINode * r_pow = llvm_phi( llvm_type<int>::value , 2 );
-      r_pow->addIncoming( llvm_create_value(1) , block_input_loop_inc );   // entry_block, block_input_loop_exit
-
-      llvm_cond_branch( llvm_ge( r_pow , r_ntidx ) , block_power_loop_exit , block_power_loop_inc );
-      {
-	llvm_set_insert_point(block_power_loop_inc);
-	r_pow_phi = llvm_shl( r_pow , llvm_create_value(1) );
-	r_pow->addIncoming( r_pow_phi , block_power_loop_inc );
-	llvm_branch( block_power_loop_start );
-      }
-
-      llvm_set_insert_point(block_power_loop_exit);
-
-      llvm::Value* r_pow_shr1 = llvm_shr( r_pow , llvm_create_value(1) );
+      llvm::Value* r_pow_shr1 = llvm_shr( r_ntidx , llvm_create_value(1) );
 
       //
       // Shared memory reduction loop
@@ -425,7 +374,7 @@ namespace QDP
       llvm_set_insert_point(block_red_loop_start);
     
       llvm::PHINode * r_red_pow = llvm_phi( llvm_type<int>::value , 2 );    
-      r_red_pow->addIncoming( r_pow_shr1 , block_power_loop_exit );
+      r_red_pow->addIncoming( r_pow_shr1 , block_input_loop_inc );
       llvm_cond_branch( llvm_le( r_red_pow , llvm_create_value(0) ) , block_red_loop_end , block_red_loop_start_1 );
 
       llvm_set_insert_point(block_red_loop_start_1);

@@ -8,8 +8,12 @@ namespace QDP {
 				 int size, int threads, int blocks, int shared_mem_usage,
 				 int in_id, int out_id, int siteTableId )
   {
+    // Make sure 'threads' is a power of two (the jit kernel make this assumption)
+    assert( (threads & (threads - 1)) == 0 );
+    
     int lo = 0;
     int hi = size;
+    
 
     JitParam jit_lo( QDP_get_global_cache().addJitParamInt( lo ) );
     JitParam jit_hi( QDP_get_global_cache().addJitParamInt( hi ) );
@@ -36,6 +40,9 @@ namespace QDP {
 				      const multi1d<int>& sizes,
 				      const multi1d<int>& table_ids )
   {
+    // Make sure 'threads' is a power of two (the jit kernel make this assumption)
+    assert( (threads & (threads - 1)) == 0 );
+
     int sizes_id = QDP_get_global_cache().add( sizes.size()*sizeof(int) , QDPCache::Flags::OwnHostMemory , QDPCache::Status::host , sizes.slice() , NULL , NULL );
 
     JitParam jit_numsubsets( QDP_get_global_cache().addJitParamInt( numsubsets ) );
@@ -65,6 +72,9 @@ namespace QDP {
 			  int numsubsets,
 			  const multi1d<int>& sizes )
   {
+    // Make sure 'threads' is a power of two (the jit kernel make this assumption)
+    assert( (threads & (threads - 1)) == 0 );
+
     int sizes_id = QDP_get_global_cache().add( sizes.size()*sizeof(int) , QDPCache::Flags::OwnHostMemory , QDPCache::Status::host , sizes.slice() , NULL , NULL );
 
     JitParam jit_numsubsets( QDP_get_global_cache().addJitParamInt( numsubsets ) );
@@ -90,6 +100,9 @@ namespace QDP {
 			     int size, int threads, int blocks, int shared_mem_usage,
 			     int in_id, int out_id)
   {
+    // Make sure 'threads' is a power of two (the jit kernel make this assumption)
+    assert( (threads & (threads - 1)) == 0 );
+
     int lo = 0;
     int hi = size;
 
@@ -115,6 +128,8 @@ namespace QDP {
 		     int size, int threads, int blocks, int shared_mem_usage,
 		     int in_id, int out_id)
   {
+    // Make sure 'threads' is a power of two (the jit kernel make this assumption)
+    assert( (threads & (threads - 1)) == 0 );
 
     int lo = 0;
     int hi = size;
@@ -140,6 +155,9 @@ namespace QDP {
 				 int size, int threads, int blocks, int shared_mem_usage,
 				 int in_id, int out_id)
   {
+    // Make sure 'threads' is a power of two (the jit kernel make this assumption)
+    assert( (threads & (threads - 1)) == 0 );
+
     int lo = 0;
     int hi = size;
 
