@@ -35,8 +35,7 @@ namespace QDP
     if (registered) {
 #ifdef GPU_DEBUG    
       QDP_debug("Set::~Set: Strided:  Will sign off now...");
-#endif      
-      QDP_get_global_cache().signoff( idStrided );
+#endif
     }
 
   }
@@ -272,12 +271,6 @@ namespace QDP
     sitetables = s.sitetables;
     membertables = s.membertables;
 
-    stride_offset = s.stride_offset;
-    nonEmptySubsetsOnNode = s.nonEmptySubsetsOnNode;
-    largest_subset = s.largest_subset;
-    enableGPU = s.enableGPU;
-    
-    //QDP_error_exit("Sub::op= not yet implemented for GPU 3");
     return *this;
   }
 

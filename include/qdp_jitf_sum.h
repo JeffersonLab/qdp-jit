@@ -17,6 +17,7 @@ namespace QDP {
 			  int size, int threads, int blocks, int shared_mem_usage,
 			  int in_id, int out_id);
 
+
   // T1 input
   // T2 output
   template< class T1 , class T2 , JitDeviceLayout input_layout >

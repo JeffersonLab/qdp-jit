@@ -23,12 +23,7 @@ namespace QDP
     typedef QDPPoolAllocator<QDPCUDAAllocator>     CUDADevicePoolAllocator;
   }
 
-  void  qdp_stack_scalars_start( size_t size );
-  void  qdp_stack_scalars_end();
-  bool  qdp_stack_scalars_enabled();
-  void* qdp_stack_scalars_alloc( size_t size );
-  void  qdp_stack_scalars_free_stack();
-  
+    
   class QDPCache
   {
   public:
@@ -131,6 +126,14 @@ namespace QDP
 
   QDPCache::Flags operator|(QDPCache::Flags a, QDPCache::Flags b);
 
+  void  qdp_stack_scalars_start( size_t size );
+  void  qdp_stack_scalars_start_from_id( int id );
+  
+  void  qdp_stack_scalars_end();
+  bool  qdp_stack_scalars_enabled();
+  void* qdp_stack_scalars_alloc( size_t size );
+  void  qdp_stack_scalars_free_stack();
+  QDPCache::Status qdp_stack_scalars_get_create_status();
 
 
 }

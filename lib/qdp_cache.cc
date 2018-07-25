@@ -18,6 +18,7 @@ namespace QDP
     void* current;
     size_t size;
     int id;
+    QDPCache::Status create_status;
   }
   
   void qdp_stack_scalars_start( size_t size )
@@ -28,8 +29,23 @@ namespace QDP
     STACK::current = STACK::stack_ptr;
     STACK::stack_scalars = true;
     STACK::size = size;
+    STACK::create_status = QDPCache::Status::undef;
   }
-  
+
+  void qdp_stack_scalars_start_from_id( int id )
+  {
+    assert(!STACK::stack_scalars);
+    
+    std::vector<int> ids = {id};
+    auto ptrs = QDP_get_global_cache().get_kernel_args( ids , false );
+
+    STACK::stack_ptr = ptrs[0];
+    STACK::current = STACK::stack_ptr;
+    STACK::stack_scalars = true;
+    STACK::size = QDP_get_global_cache().getSize( id );
+    STACK::create_status = QDPCache::Status::device;
+  }
+
   void qdp_stack_scalars_end()
   {
     assert(STACK::stack_scalars);
@@ -49,6 +65,11 @@ namespace QDP
     return STACK::stack_scalars;
   }
 
+  QDPCache::Status qdp_stack_scalars_get_create_status()
+  {
+    return STACK::create_status;
+  }
+  
   void* qdp_stack_scalars_alloc( size_t size )
   {
     if ( (size_t)STACK::current + size - (size_t)STACK::stack_ptr > STACK::size )
@@ -769,11 +790,18 @@ namespace QDP
 		int count=0;
 		for( auto q : e.multi )
 		  {
-		    assert( vecEntry.size() > q );
-		    Entry& qe = vecEntry[q];
-		    assert( ! (qe.flags & QDPCache::Flags::Multi) );
-		    assert( isOnDevice(q) );
-		    dev_ptr[count++] = qe.devPtr;
+		    if ( q >= 0 )
+		      {
+			assert( vecEntry.size() > q );
+			Entry& qe = vecEntry[q];
+			assert( ! (qe.flags & QDPCache::Flags::Multi) );
+			assert( isOnDevice(q) );
+			dev_ptr[count++] = qe.devPtr;
+		      }
+		    else
+		      {
+			dev_ptr[count++] = NULL;
+		      }
 		  }
 		
 		CudaMemcpyH2D( e.devPtr , dev_ptr.slice() , e.multi.size() * sizeof(void*) );

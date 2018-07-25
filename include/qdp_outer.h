@@ -43,7 +43,7 @@ namespace QDP {
 	dev_ptr = qdp_stack_scalars_alloc( sizeof(T) );
 	myId = QDP_get_global_cache().add( sizeof(T) ,
 					   QDPCache::Flags::OwnHostMemory | QDPCache::Flags::OwnDeviceMemory ,
-					   QDPCache::Status::undef , 
+					   qdp_stack_scalars_get_create_status() , 
 					   &F , dev_ptr , NULL );
       }
     }

@@ -569,6 +569,13 @@ namespace QDP {
     return llvm_load( gep );
   }
 
+  
+  llvm::Value* llvm_array_type_indirection( llvm::Value* base , llvm::Value* idx )
+  {
+    llvm::Value* gep = llvm_createGEP( base , idx );
+    return llvm_load( gep );
+  }
+
 
   llvm::SwitchInst * llvm_switch( llvm::Value* val , llvm::BasicBlock* bb_default ) 
   {
@@ -914,6 +921,10 @@ namespace QDP {
   }
 
 
+  template<> ParamRef llvm_add_param<int**>() {
+    vecParamType.push_back( llvm::PointerType::get( llvm::Type::getInt32PtrTy(TheContext) , 0 ) );  // AddressSpace = 0 ??
+    return vecParamType.size()-1;
+  }
   template<> ParamRef llvm_add_param<float**>() {
     vecParamType.push_back( llvm::PointerType::get( llvm::Type::getFloatPtrTy(TheContext) , 0 ) );  // AddressSpace = 0 ??
     return vecParamType.size()-1;

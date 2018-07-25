@@ -214,6 +214,7 @@ namespace QDP {
 #include "qdp_jitfunction.h"
 #include "qdp_jitf_copymask.h"
 #include "qdp_jitf_sum.h"
+#include "qdp_jitf_summulti.h"
 #include "qdp_jitf_globalmax.h"
 #include "qdp_jitf_gaussian.h"
 

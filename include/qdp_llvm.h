@@ -219,6 +219,7 @@ namespace QDP {
   template<> ParamRef llvm_add_param<double>();
   template<> ParamRef llvm_add_param<double*>();
 
+  template<> ParamRef llvm_add_param<int**>();
   template<> ParamRef llvm_add_param<float**>();
   template<> ParamRef llvm_add_param<double**>();
 
@@ -251,13 +252,15 @@ namespace QDP {
   llvm::Value * llvm_load_ptr_idx( llvm::Value * ptr , llvm::Value * idx );
   void          llvm_store_ptr_idx( llvm::Value * val , llvm::Value * ptr , llvm::Value * idx );
 
-  llvm::Value * llvm_array_type_indirection( ParamRef p , llvm::Value* idx );
+  llvm::Value * llvm_array_type_indirection( ParamRef p        , llvm::Value* idx );
+  llvm::Value * llvm_array_type_indirection( llvm::Value* base , llvm::Value* idx );
 
   llvm::Value * llvm_special( const char * name );
 
   llvm::Value * llvm_call_special_tidx();
   llvm::Value * llvm_call_special_ntidx();
   llvm::Value * llvm_call_special_ctaidx();
+  llvm::Value * llvm_call_special_nctaidx();
 
   llvm::Value * llvm_alloca( llvm::Type* type , int elements );
   llvm::Value * llvm_get_shared_ptr( llvm::Type *ty );

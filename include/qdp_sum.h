@@ -54,7 +54,84 @@ namespace QDP {
     function_sum_convert_ind_exec(function, size, threads, blocks, shared_mem_usage, 
 				  in_id, out_id, siteTableId );
   }
-  
+
+
+  // T1 input
+  // T2 output
+  template < class T1 , class T2 , JitDeviceLayout input_layout >
+  void qdp_jit_summulti_convert_indirection(int size, 
+					    int threads, 
+					    int blocks, 
+					    int shared_mem_usage,
+					    int in_id, 
+					    int out_id,
+					    int numsubsets,
+					    const multi1d<int>& sizes,
+					    const multi1d<int>& table_ids)
+  {
+    static CUfunction function;
+
+    assert( sizes.size() == numsubsets );
+    assert( table_ids.size() == numsubsets );
+
+    // Build the function
+    if (function == NULL)
+      {
+	//std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
+	function = function_summulti_convert_ind_build<T1,T2,input_layout>();
+	//std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
+      }
+    else
+      {
+	//std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
+      }
+
+    // Execute the function
+    function_summulti_convert_ind_exec(function,
+				       size, threads, blocks, shared_mem_usage, 
+				       in_id, out_id,
+				       numsubsets ,
+				       sizes ,
+				       table_ids );
+  }
+
+
+
+  // T input/output
+  template < class T >
+  void qdp_jit_summulti(int size, 
+			int threads, 
+			int blocks, 
+			int shared_mem_usage,
+			int in_id, 
+			int out_id,
+			int numsubsets,
+			const multi1d<int>& sizes)
+  {
+    static CUfunction function;
+
+    assert( sizes.size() == numsubsets );
+
+    // Build the function
+    if (function == NULL)
+      {
+	//std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
+	function = function_summulti_build<T>();
+	//std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
+      }
+    else
+      {
+	//std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
+      }
+
+    // Execute the function
+    function_summulti_exec(function,
+			   size, threads, blocks, shared_mem_usage, 
+			   in_id, out_id,
+			   numsubsets ,
+			   sizes );
+  }
+
 
 
   // T1 input
@@ -206,311 +283,223 @@ namespace QDP {
   // sumMulti DOUBLE PRECISION
   //
   template<class T1>
-    typename UnaryReturn<OLattice<T1>, FnSumMulti>::Type_t
-    sumMulti( const OLattice<T1>& s1 , const Set& ss )
-    {
-      QDPIO::cout << "using this too\n";
-      typename UnaryReturn<OLattice<T1>, FnSumMulti>::Type_t  dest(ss.numSubsets());
-      const int nodeSites = Layout::sitesOnNode();
+  typename UnaryReturn<OLattice<T1>, FnSumMulti>::Type_t
+  sumMulti( const OLattice<T1>& s1 , const Set& ss )
+  {
+    typedef typename UnaryReturn<OLattice<T1>, FnSum>::Type_t::SubType_t T2;
 
-      while(1) {
-
-	//
-	// T2 is the upcasted version of T1
-	// FnSum is okay to use here!
-	//
-	typedef typename UnaryReturn<OLattice<T1>, FnSum>::Type_t::SubType_t T2;
-
-	if (!ss.enableGPU) {
-	  QDPIO::cout << "sumMulti called with a set, that is not supported for execution on the device\n";
-	  break;
-	}
-
-	//QDPIO::cout << "sumMulti(Lat) dev, ss.largest_subset = " << ss.largest_subset << "\n";
-
-	int numThreads = 
-	  (unsigned)ss.largest_subset > DeviceParams::Instance().getMaxBlockX() ? 
-	  DeviceParams::Instance().getMaxBlockX() : 
-	  ss.largest_subset;
-
-	bool no_way=false;
-
-	while ( (numThreads*sizeof(T2) > DeviceParams::Instance().getMaxSMem()) || 
-		(ss.largest_subset % numThreads) ) {
-	  numThreads >>= 1;
-	  if (numThreads == 0) {
-	    no_way=true;
-	    break;
-	  }
-	  /* string tmp = ss.largest_subset % numThreads ? "true":"false"; */
-	  /* QDP_debug("numThreads=%d subset size mod=%s" , numThreads , tmp.c_str()); */
-	}
-
-	if (no_way) {
-	  QDPIO::cout << "sumMulti: No suitable number of threads per blocks found. Largest subset size = " << ss.largest_subset << "\n";
-	  break;
-	}
-
-	int numBlocks=(int)ceil(float(nodeSites)/numThreads);
-
-	/* QDPIO::cout << "using " << numThreads  */
-	/* 	    << " threads per block smem = " << numThreads*sizeof(T2)  */
-	/* 	    << " numBlocks = " << numBlocks << "\n"; */
-
-	if ((unsigned)numBlocks > DeviceParams::Instance().getMaxGridX() ) {
-	  QDP_info_primary( "sum(Lat) numBlocks > maxGrixX, continue on host" );
-	  break;
-	}
-
-	T2 * out_dev;
-	T2 * in_dev;
-
-	int out_id, in_id;
-	
-	out_id = QDP_get_global_cache().addDeviceStatic( (void**)&out_dev , numBlocks*sizeof(T2) );
-	in_id  = QDP_get_global_cache().addDeviceStatic( (void**)&in_dev , numBlocks*sizeof(T2) );
-	
-	int virt_size = ss.largest_subset;
-
-	int actsize=nodeSites;
-	bool first=true;
-	bool success=false;
-	while (1) {
-
-	  int shared_mem_usage = numThreads*sizeof(T2);
-
-	  //QDP_info("numBlocks=%d actsize=%d virt_size=%d smem=%d",numBlocks,actsize,virt_size,shared_mem_usage);
-
-	  if (first) {
-	    qdp_jit_reduce_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(actsize, 
-										 numThreads, 
-										 numBlocks,  
-										 shared_mem_usage,
-										 s1.getId(),
-										 out_id , 
-										 ss.getIdStrided() );
-	  } else {
-	    qdp_jit_reduce<T2>(actsize, 
-			       numThreads, 
-			       numBlocks, 
-			       shared_mem_usage,
-			       in_id, 
-			       out_id );
-	  }
-
-	  if (first) {
-	    first =false;
-	  }
-
-	  T2 * tmp = in_dev;
-	  in_dev = out_dev;
-	  out_dev = tmp;
-
-	  int tmpid = in_id;
-	  in_id = out_id;
-	  out_id = tmpid;
-	  
-#ifdef GPU_DEBUG_DEEP
-	  QDP_debug_deep( "checking for break numBlocks = %d %d" , numBlocks , ss.nonEmptySubsetsOnNode );
-#endif
-	  if ( numBlocks == ss.nonEmptySubsetsOnNode ) {
-	    success=true;
-	    break;
-	  }
-
-	  virt_size /= numThreads;
-
-	  numThreads = (unsigned)virt_size > DeviceParams::Instance().getMaxBlockX() ? DeviceParams::Instance().getMaxBlockX() : virt_size;
-	  actsize = numBlocks;
-	  numBlocks=(int)ceil(float(actsize)/numThreads);
-
-	  //QDP_info("numThreads=%d numBlocks=%d",numThreads,numBlocks);
-
-	  no_way=false;
-	  while ( (numThreads*sizeof(T2) > DeviceParams::Instance().getMaxSMem()) || 
-		  (virt_size % numThreads) ) {
-#ifdef GPU_DEBUG_DEEP
-	    QDP_debug_deep( "loop entered %d %d %d" , numThreads*sizeof(T2) , virt_size , numThreads );
-#endif
-	    numThreads >>= 1;
-	    if (numThreads == 0) {
-	      no_way=true;
-	      break;
-	    }
-	    numBlocks=(int)ceil(float(actsize)/numThreads);
-/* 	    string tmp = virt_size % numThreads ? "true":"false"; */
-/* #ifdef GPU_DEBUG_DEEP */
-/* 	    QDP_debug_deep("numThreads=%d subset size mod=%s" , numThreads , tmp.c_str() ); */
-/* #endif */
-	  }
+    const int numsubsets = ss.numSubsets();
+    
+    int maxsize = 0;
+    multi1d<int> table_ids( numsubsets );
+    for (int i = 0 ; i < numsubsets ; ++i )
+      {
+	table_ids[i] = ss[i].getIdSiteTable();
+	if ( ss[i].numSiteTable() > maxsize )
+	  maxsize = ss[i].numSiteTable();
+      }
+    
+    //QDPIO::cout << "number of subsets:           " << ss.numSubsets() << "\n";
       
-	  if (no_way) {
-	    QDP_info_primary( "sumMulti: No number of threads per blocks found that suits the requirements. Largest subset size = %d",
-		      ss.largest_subset);
-	    break;
-	  }
+    //QDPIO::cout << "sizes = ";
+    multi1d<int> sizes(numsubsets);
+    for (int i = 0 ; i < numsubsets ; ++i )
+      {
+	sizes[i] = ss[i].numSiteTable();
+	//QDPIO::cout << sizes[i] << " ";
+      }
+    //QDPIO::cout << "\n";
+    
+    bool first=true;
+    
+    int out_id,in_id;
+    
+    while( 1 ) {
 
-#ifdef GPU_DEBUG_DEEP
-	  QDP_debug_deep("using %d threads per block smem=%d numBlocks=%d" , numThreads , numThreads*sizeof(T2) , numBlocks);
-#endif
+      int maxsize = 0;
+      for (int i = 0 ; i < numsubsets ; ++i )
+	{
+	  if ( sizes[i] > maxsize )
+	    maxsize = sizes[i];
+	}
       
-	}
+      //QDPIO::cout << "maxsize: " << maxsize << "\n";
 
-	T2 * tmp = in_dev;
-	in_dev = out_dev;
-	out_dev = tmp;
+      unsigned numThreads = DeviceParams::Instance().getMaxBlockX();
+      while ((numThreads*sizeof(T2) > DeviceParams::Instance().getMaxSMem()) || (numThreads > maxsize)) {
+	numThreads >>= 1;
+      }
+      unsigned numBlocks=(int)ceil(float(maxsize)/numThreads);
 
-	int tmpid = in_id;
-	in_id = out_id;
-	out_id = tmpid;
-
-	T2* slice = new T2[ss.numSubsets()];
-
-	CudaMemcpyD2H( (void*)slice , (void*)out_dev , ss.numSubsets()*sizeof(T2) );
-
-	QDP_get_global_cache().signoff( in_id );
-	QDP_get_global_cache().signoff( out_id );
-    
-	if (!success) {
-	  QDP_info_primary("sumMulti: there was a problem, continue on host");
-	  delete[] slice;
-	  break;
-	}
-
-	for (int i = 0 ; i < ss.numSubsets() ; ++i ) {
-	  zero_rep(dest[i].elem());
-	}
-
-	//QDP_debug("ss.stride_offset = %d ss.nonEmptySubsetsOnNode = %d" ,ss.stride_offset, ss.nonEmptySubsetsOnNode);
-
-	//
-	// "dest" and "slice" are both on DP
-	//
-	for (int i = 0 ; i < ss.nonEmptySubsetsOnNode ; ++i ) {
-	  dest[ ss.stride_offset + i ].elem() = slice[i];
-	}
-    
-	delete[] slice;
-
-	//
-	// We need to unlock things, so that the global sum can be carried out
-	//
-    
-	QDPInternal::globalSumArray(dest);
-
-	return dest;
+      if (numBlocks > DeviceParams::Instance().getMaxGridX()) {
+	QDP_error_exit( "sum(Lat,subset) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)DeviceParams::Instance().getMaxGridX());
       }
 
-      QDPIO::cout << "sumMulti on host\n";
+      int shared_mem_usage = numThreads*sizeof(T2);
+      //QDP_info("sum(Lat,subset): using %d threads per block, %d blocks, shared mem=%d" , numThreads , numBlocks , shared_mem_usage );
 
-#if defined(QDP_USE_PROFILING)   
-	static QDPProfile_t prof(dest[0], OpAssign(), FnSum(), s1);
-	prof.time -= getClockTime();
+      if (first) {
+	out_id = QDP_get_global_cache().add( numBlocks*sizeof(T2)*numsubsets , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
+	in_id  = QDP_get_global_cache().add( numBlocks*sizeof(T2)*numsubsets , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
+      }
+
+      if (numBlocks == 1) {
+	if (first) {
+	  qdp_jit_summulti_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(maxsize, numThreads, numBlocks,
+										 shared_mem_usage,
+										 s1.getId(), out_id,
+										 numsubsets,
+										 sizes,
+										 table_ids);
+	}
+	else {
+	  qdp_jit_summulti<T2>(maxsize, numThreads, numBlocks,
+			       shared_mem_usage,
+			       in_id, out_id,
+			       numsubsets,
+			       sizes);
+	}
+      } else {
+	if (first) {
+	      qdp_jit_summulti_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(maxsize, numThreads, numBlocks,
+										     shared_mem_usage,
+										     s1.getId(), out_id,
+										     numsubsets,
+										     sizes,
+										     table_ids);
+	}
+	else {
+	  qdp_jit_summulti<T2>(maxsize, numThreads, numBlocks,
+			       shared_mem_usage,
+			       in_id, out_id,
+			       numsubsets,
+			       sizes);
+	}
+
+      }
+
+#if 0
+      {
+	multi1d<double> tmp(numBlocks*numsubsets);
+	std::vector<int> ids = {out_id};
+	auto ptrs = QDP_get_global_cache().get_kernel_args( ids , false );
+      
+	CudaMemcpyD2H( (void*)tmp.slice() , ptrs[0] , numBlocks*numsubsets*sizeof(double) );
+	QDPIO::cout << "out: ";
+	for(int i=0;i<tmp.size();i++)
+	  QDPIO::cout << tmp[i] << " ";
+	QDPIO::cout << "\n";
+      }
 #endif
+      
+      first =false;
 
-	// Initialize result with zero
-	for(int k=0; k < ss.numSubsets(); ++k)
-	  zero_rep(dest[k]);
+      if (numBlocks==1)
+	break;
 
-	// Loop over all sites and accumulate based on the coloring 
-	const multi1d<int>& lat_color =  ss.latticeColoring();
-	//const int nodeSites = Layout::sitesOnNode();
+      //QDPIO::cout << "new sizes = ";
+      for (int i = 0 ; i < numsubsets ; ++i )
+	{
+	  sizes[i] = numBlocks;
+	  //QDPIO::cout << sizes[i] << " ";
+	}
+      //QDPIO::cout << "\n";
 
-	for(int i=0; i < nodeSites; ++i) 
-	  {
-	    int j = lat_color[i];
-	    dest[j].elem() += s1.elem(i);
-	  }
-
-	// Do a global sum on the result
-	QDPInternal::globalSumArray(dest);
-
-#if defined(QDP_USE_PROFILING)   
-	prof.time += getClockTime();
-	prof.count++;
-	prof.print();
-#endif
-
-	return dest;
+      int tmp = in_id;
+      in_id = out_id;
+      out_id = tmp;
     }
 
+    
+    qdp_stack_scalars_start_from_id( out_id );
+
+    typename UnaryReturn<OLattice<T1>, FnSumMulti>::Type_t  dest(ss.numSubsets());
+
+    qdp_stack_scalars_end();
+    
+    QDPInternal::globalSumArray(dest);
+    
+    QDP_get_global_cache().signoff( in_id );
+    QDP_get_global_cache().signoff( out_id );
+      
+    return dest;
+  }
 
 
 
 
-
-      template<class T>
-	typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t
-	globalMax(const OLattice<T>& s1)
-	{
-	  int out_id, in_id;
+  template<class T>
+  typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t
+  globalMax(const OLattice<T>& s1)
+  {
+    int out_id, in_id;
 	  
-	  const int nodeSites = Layout::sitesOnNode();
+    const int nodeSites = Layout::sitesOnNode();
 
-	  typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t  d;
-
-#if defined(QDP_USE_PROFILING)   
-	  static QDPProfile_t prof(d, OpAssign(), FnGlobalMax(), s1);
-	  prof.stime(getClockTime());
-#endif
-
-	  int actsize=nodeSites;
-	  bool first=true;
-	  while (1) {
-
-	    int numThreads = DeviceParams::Instance().getMaxBlockX();
-	    while ((numThreads*sizeof(T) > DeviceParams::Instance().getMaxSMem()) || (numThreads > actsize)) {
-	      numThreads >>= 1;
-	    }
-	    int numBlocks=(int)ceil(float(actsize)/numThreads);
-
-	    if (numBlocks > DeviceParams::Instance().getMaxGridX()) {
-	      QDP_error_exit( "sum(Lat,subset) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)DeviceParams::Instance().getMaxGridX());
-	    }
-
-	    if (first) {
-	      out_id = QDP_get_global_cache().add( numBlocks*sizeof(T) , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
-	      in_id  = QDP_get_global_cache().add( numBlocks*sizeof(T) , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
-	    }
-
-
-	    if (numBlocks == 1) {
-	      if (first)
-		globalMax_kernel<T>(actsize, numThreads, numBlocks, s1.getId() , d.getId() );
-	      else
-		globalMax_kernel<T>(actsize, numThreads, numBlocks, in_id, d.getId() );
-	    } else {
-	      if (first)
-		globalMax_kernel<T>(actsize, numThreads, numBlocks, s1.getId() , out_id );
-	      else
-		globalMax_kernel<T>(actsize, numThreads, numBlocks, in_id, out_id );
-	    }
-
-	    first =false;
-
-	    if (numBlocks==1) 
-	      break;
-
-	    actsize=numBlocks;
-
-	    int tmp = in_id;
-	    in_id = out_id;
-	    out_id = tmp;
-	  }
-
-	  QDP_get_global_cache().signoff( in_id );
-	  QDP_get_global_cache().signoff( out_id );
-
-	  QDPInternal::globalMax(d);
+    typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t  d;
 
 #if defined(QDP_USE_PROFILING)   
-	  prof.etime( getClockTime() );
-	  prof.count++;
-	  prof.print();
+    static QDPProfile_t prof(d, OpAssign(), FnGlobalMax(), s1);
+    prof.stime(getClockTime());
 #endif
 
-	  return d;
-	}
+    int actsize=nodeSites;
+    bool first=true;
+    while (1) {
+
+      int numThreads = DeviceParams::Instance().getMaxBlockX();
+      while ((numThreads*sizeof(T) > DeviceParams::Instance().getMaxSMem()) || (numThreads > actsize)) {
+	numThreads >>= 1;
+      }
+      int numBlocks=(int)ceil(float(actsize)/numThreads);
+
+      if (numBlocks > DeviceParams::Instance().getMaxGridX()) {
+	QDP_error_exit( "sum(Lat,subset) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)DeviceParams::Instance().getMaxGridX());
+      }
+
+      if (first) {
+	out_id = QDP_get_global_cache().add( numBlocks*sizeof(T) , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
+	in_id  = QDP_get_global_cache().add( numBlocks*sizeof(T) , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
+      }
+
+
+      if (numBlocks == 1) {
+	if (first)
+	  globalMax_kernel<T>(actsize, numThreads, numBlocks, s1.getId() , d.getId() );
+	else
+	  globalMax_kernel<T>(actsize, numThreads, numBlocks, in_id, d.getId() );
+      } else {
+	if (first)
+	  globalMax_kernel<T>(actsize, numThreads, numBlocks, s1.getId() , out_id );
+	else
+	  globalMax_kernel<T>(actsize, numThreads, numBlocks, in_id, out_id );
+      }
+
+      first =false;
+
+      if (numBlocks==1) 
+	break;
+
+      actsize=numBlocks;
+
+      int tmp = in_id;
+      in_id = out_id;
+      out_id = tmp;
+    }
+
+    QDP_get_global_cache().signoff( in_id );
+    QDP_get_global_cache().signoff( out_id );
+
+    QDPInternal::globalMax(d);
+
+#if defined(QDP_USE_PROFILING)   
+    prof.etime( getClockTime() );
+    prof.count++;
+    prof.print();
+#endif
+
+    return d;
+  }
 
 
     }

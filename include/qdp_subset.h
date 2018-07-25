@@ -55,8 +55,10 @@ public:
   int getId() const { return id; }
 
   int getIdSiteTable() const {
-    if (!registered) 
-      QDP_error_exit("Subset::getIdSiteTable not registered");
+    if (!registered) {
+      QDPIO::cout << "Subset not registered\n";
+      return -1;
+    }
     return idSiteTable;
   }
 
@@ -146,12 +148,6 @@ public:
   Set& operator=(const Set& s);
 
 
-  int getIdStrided() const {
-    if (!registered)
-      QDP_error_exit("You are trying to use a Set which was not set up properly.");
-    return idStrided;
-  }
-
 
 protected:
   //! A set is composed of an array of subsets
@@ -166,28 +162,13 @@ protected:
   //! Array of sitetable arrays
   multi1d<multi1d<bool> > membertables;
 
-
-  //! This is part of an attempt to port sumMulti to GPUs -- really not made for them
-  multi1d<int> sitetables_strided;
-
   // Cache registered
-  int idStrided;
   bool registered;
-
-
-
 
 
 public:
   //! The coloring of the lattice sites
   const multi1d<int>& latticeColoring() const {return lat_color;}
-
-
-  int stride_offset;
-  int nonEmptySubsetsOnNode;
-  int largest_subset;
-  bool enableGPU;
-
 };
 
 
