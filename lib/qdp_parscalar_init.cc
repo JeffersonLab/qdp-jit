@@ -11,10 +11,6 @@
 #include "qdp.h"
 #include "qmp.h"
 
-#if defined(QDP_USE_QMT_THREADS)
-#include <qmt.h>
-#endif
-
 #include "qdp_init.h"
 
 #if defined(QDP_USE_COMM_SPLIT_INIT)
@@ -27,10 +23,7 @@ namespace COUNT {
   int count = 0;
 }
 	
-	namespace ThreadReductions {
-		REAL64* norm2_results;
-		REAL64* innerProd_results;
-	}
+
 
   //! Private flag for status
   static bool isInit = false;
@@ -518,49 +511,6 @@ namespace COUNT {
 	    Layout::setIONodeGrid(logical_iogeom);
 			
 	  }
-	  //
-	  // add qmt inilisisation
-	  //
-#ifdef QDP_USE_QMT_THREADS
-		
-	  // Initialize threads
-	  if( Layout::primaryNode() ) { 
-	    cout << "QDP use qmt threading: Initializing threads..." ;
-	  } 
-	  int thread_status = qmt_init();
-		
-	  if( thread_status == 0 ) { 
-	    if (  Layout::primaryNode() ) { 
-	      cout << "Success. We have " << qdpNumThreads() << " threads \n";
-	    } 
-	  }
-	  else { 
-	    cout << "Failure... qmt_init() returned " << thread_status << endl;
-	    QDP_abort(1);
-	  }
-		
-#else
-#ifdef QDP_USE_OMP_THREADS
-		
-	  if( Layout::primaryNode()) {
-	    cout << "QDP use OpenMP threading. We have " << qdpNumThreads() << " threads\n"; 
-	  }
-		
-#endif
-#endif
-		
-	  // Alloc space for reductions
-	  ThreadReductions::norm2_results = new REAL64 [ qdpNumThreads() ];
-	  if( ThreadReductions::norm2_results == 0x0 ) { 
-	    cout << "Failure... space for norm2 results failed "  << endl;
-	    QDP_abort(1);
-	  }
-		
-	  ThreadReductions::innerProd_results = new REAL64 [ 2*qdpNumThreads() ];
-	  if( ThreadReductions::innerProd_results == 0x0 ) { 
-	    cout << "Failure... space for innerProd results failed "  << endl;
-	    QDP_abort(1);
-	  }
 
 	  // Initialize the LLVM wrapper
 	  //llvm_wrapper_init();
@@ -611,18 +561,6 @@ namespace COUNT {
                 H5close();
 #endif
 
-
-		//
-		// finalise qmt
-		//
-		delete [] ThreadReductions::norm2_results;
-		delete [] ThreadReductions::innerProd_results;
-#if defined(QMT_USE_QMT_THREADS)
-		// Finalize threads
-		cout << "QDP use qmt threading: Finalizing threads" << endl;
-		qmt_finalize();
-#endif 
-		
 		printProfile();
 		
 		QMP_finalize_msg_passing();

@@ -13,8 +13,8 @@ endif
 #
 # need the HDF5 cxx flags with and without /include
 #
-#AM_CXXFLAGS = $(INCFLAGS) @HDF5_CXXFLAGS@/include @HDF5_CXXFLAGS@ @LIBXML2_CXXFLAGS@ @QMP_CFLAGS@  @QMT_CXXFLAGS@  @LLVM_CXXFLAGS@ @CUDA_CXXFLAGS@
-AM_CXXFLAGS = $(INCFLAGS) @HDF5_CXXFLAGS@ @LIBXML2_CXXFLAGS@ @QMP_CFLAGS@  @QMT_CXXFLAGS@  @LLVM_CXXFLAGS@ @CUDA_CXXFLAGS@
+#AM_CXXFLAGS = $(INCFLAGS) @HDF5_CXXFLAGS@/include @HDF5_CXXFLAGS@ @LIBXML2_CXXFLAGS@ @QMP_CFLAGS@ @LLVM_CXXFLAGS@ @CUDA_CXXFLAGS@
+AM_CXXFLAGS = $(INCFLAGS) @HDF5_CXXFLAGS@ @LIBXML2_CXXFLAGS@ @QMP_CFLAGS@ @LLVM_CXXFLAGS@ @CUDA_CXXFLAGS@
 
 lib_LIBRARIES = libqdp.a
 
@@ -40,9 +40,29 @@ libqdp_a_SOURCES += qdp_hdf5.cc
 endif
 
 
-libqdp_a_SOURCES += qdp_parscalar_init.cc qdp_parscalar_layout.cc \
-	qdp_parscalar_specific.cc \
+# Scalar	
+if ARCH_SCALAR
+libqdp_a_SOURCES += \
+	qdp_scalar_init.cc \
+	qdp_scalar_layout.cc \
+	qdp_scalar_specific.cc \
+	qdp_scalar_mapresource.cc	\
 	qdp_scalarsite_specific.cc
+endif
+
+# Parallel-scalar
+if ARCH_PARSCALAR
+libqdp_a_SOURCES += \
+	qdp_parscalar_init.cc \
+	qdp_parscalar_layout.cc \
+	qdp_parscalar_specific.cc \
+	qdp_parscalar_mapresource.cc	\
+	qdp_scalarsite_specific.cc
+endif
+
+#libqdp_a_SOURCES += qdp_parscalar_init.cc qdp_parscalar_layout.cc \
+#	qdp_parscalar_specific.cc \
+#	qdp_scalarsite_specific.cc
 
 
 libqdp_a_SOURCES += qdp_default_allocator.cc

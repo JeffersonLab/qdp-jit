@@ -1,4 +1,4 @@
-AC_INIT([qdp++],[1.42.0],[edwards@jlab.org])
+AC_INIT([qdp-jit],[0.1],[fwinter@jlab.org])
 
 AC_CONFIG_AUX_DIR(config)
 
@@ -115,13 +115,6 @@ AC_ARG_ENABLE(custom-kernels,
   [ac_custom="no"]
 )
 
-dnl --enable-profiling
-AC_ARG_ENABLE(profiling,
-  AC_HELP_STRING([--enable-profiling],
-    [Enable profiling. Diagnostic use only.]),
-  [ac_profile=1],
-  [ac_profile=0]
-)
 
 dnl --enable-parallel-arch argument
 AC_ARG_ENABLE(parallel-arch,
@@ -179,17 +172,12 @@ dnl fi
 
 
 
-dnl Check if profiling is enabled
+dnl Include custom kernels
 if test "X${ac_custom}X" = "XyesX"; then
    AC_DEFINE_UNQUOTED(QDP_CUSTOM_KERNELS, ${ac_custom}, [Include custom kernels])
    AC_MSG_NOTICE([Include custom kernels])
 fi
 
-dnl Check if profiling is enabled
-if test ${ac_profile} -eq 1; then 
-   AC_DEFINE_UNQUOTED(QDP_USE_PROFILING, ${ac_profile}, [Enable profiling])
-   AC_MSG_NOTICE([Enable profiling])
-fi
 
 dnl Check if memory debugging is enabled
 if test ${ac_memdebug_enabled} -eq 1; then 
@@ -447,7 +435,7 @@ if test "X${with_libxml2}X" = "XnoX" ; then
   AC_MSG_NOTICE([Disabling Libxml])
   AC_SUBST(LIBXML2_CXXFLAGS, "")
   AC_SUBST(LIBXML2_LIBS,"")
-  AC_DEFINE(QDP_NO_LIBXML2, [1], [ Dont use LIBXML2 ])
+
 else
 
   if test "X${LIBXML2_HOME}X" = "XX" ; then
@@ -465,7 +453,8 @@ else
   AC_MSG_NOTICE([libxml2 compile flags: ${LIBXML2_CXXFLAGS}])
   AC_SUBST(LIBXML2_LIBS,     "`${LIBXML2_CONFIG} --libs`")
   AC_MSG_NOTICE([libxml2 libraries flags: ${LIBXML2_LIBS}])
-
+  AC_DEFINE_UNQUOTED(QDP_USE_LIBXML2, [1], [Enable LIBXML2 support])
+  
   dnl This function is defined in acinclude.m4
   dnl it tries to try to compile the program 
   AC_MSG_CHECKING([if we can compile/link a simple libxml2 program])
@@ -540,65 +529,7 @@ else
 fi
 
 
-AC_ARG_WITH(bagel-qdp,
-  AC_HELP_STRING(
-    [--with-bagel-qdp=DIR],
-    [Build QDP++ using bagel_qdp where bagel_qdp is in DIR.]
-  ),
-  [BAGEL_QDP_DIR=${with_bagel_qdp}
-   BAGEL_QDP_ENABLED="yes"],
-  [BAGEL_QDP_DIR=""
-   BAGEL_QDP_ENABLED="no" ]
-)
 
-if test "X${BAGEL_QDP_ENABLED}X" = "XyesX";
-then 
-     AC_MSG_NOTICE([Using BAGEL QDP])
-     AC_DEFINE(QDP_USE_BAGEL_QDP, [1], [Use Bagel QDP library for BLAS])
-     dnl get flags
-     if test "X${BAGEL_QDP_DIR}X" = "XX" ; 
-     then
-       AC_PATH_PROG([BAGEL_QDP_CONFIG], [bagel-qdp-config], [])
-     else
-       AC_PATH_PROG([BAGEL_QDP_CONFIG], [bagel-qdp-config], [], [${BAGEL_QDP_DIR}/bin:${PATH}])
-     fi     	
-
-     if test "X${BAGEL_QDP_CONFIG}X" = "XX"; 
-     then
-       AC_MSG_ERROR([bagel-qdp-config not found])
-     fi
-     AC_MSG_NOTICE([Found bagel_qdp configuration program ${BAGEL_QDP_CONFIG}])
-     AC_SUBST(BAGEL_QDP_CXXFLAGS, "`${BAGEL_QDP_CONFIG} --cxxflags`")
-     AC_MSG_NOTICE([bagel_qdp compile flags: ${BAGEL_QDP_CXXFLAGS}])
-     AC_SUBST(BAGEL_QDP_LDFLAGS, "`${BAGEL_QDP_CONFIG} --ldflags`")
-     AC_MSG_NOTICE([bagel_qdp link flags : ${BAGEL_QDP_LDFLAGS}])
-     AC_SUBST(BAGEL_QDP_LIBS,     "`${BAGEL_QDP_CONFIG} --libs`")
-     AC_MSG_NOTICE([bagel_qdp libraries flags: ${BAGEL_QDP_LIBS}])
-
-     AC_MSG_CHECKING([if we can compile/link a simple bagel_qdp program])
-     PAC_BAGEL_QDP_LINK_CXX_FUNC(
-       ${BAGEL_QDP_CXXFLAGS},
-       ${BAGEL_QDP_LDFLAGS},
-       ${BAGEL_QDP_LIBS},
-       ,
-       ,
-       [bagelqdp_link_ok=yes],
-       [bagelqdp_link_ok=no]
-     )
-
-     if test "X${bagelqdp_link_ok}X" = "XyesX" ; then 
-        AC_MSG_RESULT(yes)
-     else 
-         AC_MSG_RESULT(no)
-         AC_MSG_ERROR([Cannot compile/link a program with bagel_qdp. Use --with-bagel-qdp=<dir> to select a working version.])
-     fi 
-else
-     AC_MSG_NOTICE([not using bagel_qdp])
-     AC_DEFINE(QDP_USE_BAGEL_QDP, [0], [Donot use Bagel QDP library for BLAS])
-     AC_SUBST(BAGEL_QDP_CXXFLAGS, "")
-     AC_SUBST(BAGEL_QDP_LDFLAGS, "")
-     AC_SUBST(BAGEL_QDP_LIBS,     "")
-fi
       
 dnl Build filedb
 if test "X${filedb_enabled}X" == "XyesX"; 
@@ -614,63 +545,6 @@ fi
 
 AM_CONDITIONAL(BUILD_FILEDB,
   [test "x${filedb_enabled}x" = "xyesx" ])
-
-dnl Use Jie Chens threads library
-AC_ARG_WITH(qmt,
-   AC_HELP_STRING(
-    [--with-qmt=<DIR>],
-    [Enable use of QMT Threads library installed in DIR]
-   ),
-   [ qmt_enabled="yes"
-     QMT_HOME=${with_qmt} ],
-   [ qmt_enabled="no" ]
-)
-dnl QMT Threads stuff
-if test "X${qmt_enabled}X" == "XyesX"; 
-then
-	AC_MSG_NOTICE([Configuring QMT Threading])
-	if test "X${omp_enabled}X" == "XyesX";
-	then 
-	  AC_MSG_ERROR([Cannot have OpenMP and QMT threading defined simultaneously])
-	else
-	  AC_DEFINE([QDP_USE_QMT_THREADS], [1], [ Use QMT Threads library ])
-	  AC_SUBST(QMT_HOME, "${QMT_HOME}")
-	  AC_MSG_NOTICE(QMT_HOME: ${QMT_HOME})
-	  AC_SUBST(QMT_CXXFLAGS, "-I${QMT_HOME}/include")
-	  AC_MSG_NOTICE(QMT_CXXFLAGS: ${QMT_CXXFLAGS})
-	  AC_SUBST(QMT_LDFLAGS, "-L${QMT_HOME}/lib")
-	  AC_MSG_NOTICE(QMT_LDFLAGS: ${QMT_LDFLAGS})
-	  AC_SUBST(QMT_LIBS, "-lqmt -lpthread -lm")
-	  AC_MSG_NOTICE(QMT_LIBS: ${QMT_LIBS})
-	fi
-else 
-	AC_SUBST(QMT_CXXFLAGS, "")
-	AC_SUBST(QMT_LDFLAGS, "")
-	AC_SUBST(QMT_LIBS, "")
-
-fi
-
-
-dnl Use OpenMP threading
-AC_ARG_ENABLE(openmp,
-   AC_HELP_STRING(
-    [--enable-openmp],
-    [Enable building of OpenMP dispatcher. Pass flags necessary for OpenMP on CFLAGS]
-   ),
-   [ omp_enabled="yes" ],
-   [ omp_enabled="no" ]
-)
-dnl OpenMP Threads stuff
-if test "X${omp_enabled}X" == "XyesX";
-then
-	AC_MSG_NOTICE([Configuring OpenMP Threading])
-	if test "X${qmt_enabled}X" == "XyesX";
-        then 
-          AC_MSG_ERROR([Cannot have OpenMP and QMT threading defined simultaneously])
-	fi
-	  
-	AC_DEFINE([QDP_USE_OMP_THREADS], [1], [ Use OpenMP Threads ])
-fi
 
 dnl
 dnl
@@ -697,19 +571,11 @@ AM_CONDITIONAL(BUILD_DEFAULT_ALLOCATOR,
   [test "X${ac_qcdoc_enabled}X" = "X0X"])
 
 #
-# Conditional for use qmt
-#
-AM_CONDITIONAL(QDP_USE_QMT_THREADS, [test "x${qmt_enabled}x" = "xyesx" ])
-#
-# Conditional for use omp
-#
-AM_CONDITIONAL(QDP_USE_OMP_THREADS, [test "x${omp_enabled}x" = "xyesx" ])
-#
 # Conditional for use of libxml
 if test "x${with_libxml2}x" != "xnox"; then
- echo True
+ echo "True, we use libxml2"
 else
- echo False
+ echo "False, we don't use libxml2"
 fi
 
 AM_CONDITIONAL(QDP_USE_LIBXML2, [test "x${with_libxml2}x" != "xnox" ])

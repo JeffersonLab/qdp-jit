@@ -8,9 +8,6 @@
 
 #include <vector>
 
-#ifdef DSLASH_USE_QMT_THREADS
-#include <qmt.h>
-#endif
 using namespace QDP; 
 
 namespace Assertions { 
@@ -104,20 +101,6 @@ private:
   {
     
     QDP_initialize(argc, argv);
-#ifdef DSLASH_USE_QMT_THREADS
-    // Initialize threads
-    int thread_status = qmt_init();
-    if( thread_status == 0 ) { 
-      QDPIO::cout << "Success" << endl;
-      QDPIO::cout << "Created: " << qmt_num_threads() << " threads" << endl;
-      QDPIO::cout << "My tread ID is: " << qmt_thread_id() << endl;
-    }
-    else { 
-      QDPIO::cout << "Failure... qmt_init() returned " << thread_status << endl;
-      
-      QDP_abort(1);
-    }
-#endif
 
     multi1d<int> nrow(Nd);
     nrow = latdims;

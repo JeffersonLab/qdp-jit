@@ -1,7 +1,7 @@
 #ifndef QDP_JITF_SUM_H
 #define QDP_JITF_SUM_H
 
-#include "qmp.h"
+//#include "qmp.h"
 
 namespace QDP {
 
@@ -71,7 +71,7 @@ namespace QDP {
 
     llvm::Value* r_idx_perm = llvm_array_type_indirection( p_site_perm , r_idx );
 
-    typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_elem;   // this is stupid
+    typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_elem;   
     reg_idata_elem.setup( idata.elem( input_layout , r_idx_perm ) );
 
     sdata_jit = reg_idata_elem; // This should do the precision conversion (SP->DP)
@@ -142,7 +142,7 @@ namespace QDP {
 		      block_store_global , 
 		      block_not_store_global );
     llvm_set_insert_point(block_store_global);
-    typename REGType< typename JITType<T2>::Type_t >::Type_t sdata_reg;   // this is stupid
+    typename REGType< typename JITType<T2>::Type_t >::Type_t sdata_reg;   
     sdata_reg.setup( sdata_jit );
     odata.elem( JitDeviceLayout::Scalar , r_block_idx ) = sdata_reg;
     llvm_branch( block_not_store_global );
@@ -275,7 +275,7 @@ namespace QDP {
 		      block_store_global , 
 		      block_not_store_global );
     llvm_set_insert_point(block_store_global);
-    typename REGType< typename JITType<T2>::Type_t >::Type_t sdata_reg;   // this is stupid
+    typename REGType< typename JITType<T2>::Type_t >::Type_t sdata_reg;   
     sdata_reg.setup( sdata_jit );
     odata.elem( JitDeviceLayout::Scalar , r_block_idx ) = sdata_reg;
     llvm_branch( block_not_store_global );
@@ -327,7 +327,7 @@ namespace QDP {
     llvm::Value* r_tidx       = llvm_call_special_tidx();
     llvm::Value* r_ntidx       = llvm_call_special_ntidx(); // needed later
 
-    typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_elem;   // this is stupid
+    typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_elem;   
     reg_idata_elem.setup( idata.elem( JitDeviceLayout::Scalar , r_idx ) ); 
 
     IndexDomainVector args;
@@ -415,7 +415,7 @@ namespace QDP {
 		      block_store_global , 
 		      block_not_store_global );
     llvm_set_insert_point(block_store_global);
-    typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_reg;   // this is stupid
+    typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_reg;   
     sdata_reg.setup( sdata_jit );
     odata.elem( JitDeviceLayout::Scalar , r_block_idx ) = sdata_reg;
     llvm_branch( block_not_store_global );

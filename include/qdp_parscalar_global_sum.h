@@ -1,7 +1,7 @@
 #ifndef QDP_GLOBAL_SUM_H
 #define QDP_GLOBAL_SUM_H
  
-#include <qmp.h>
+//#include <qmp.h>
  
 namespace QDPGlobalSums {
   QMP_status_t QDP_sum_int(int *i);

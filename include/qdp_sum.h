@@ -9,17 +9,8 @@ namespace QDP {
   {
     static CUfunction function;
 
-    // Build the function
     if (function == NULL)
-      {
-	//std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
-	function = function_sum_build<T2>();
-	//std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
-      }
-    else
-      {
-	//std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
-      }
+      function = function_sum_build<T2>();
 
     function_sum_exec(function, size, threads, blocks, shared_mem_usage, in_id, out_id );
   }
@@ -38,19 +29,9 @@ namespace QDP {
   {
     static CUfunction function;
 
-    // Build the function
     if (function == NULL)
-      {
-	//std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
-	function = function_sum_convert_ind_build<T1,T2,input_layout>();
-	//std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
-      }
-    else
-      {
-	//std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
-      }
+      function = function_sum_convert_ind_build<T1,T2,input_layout>();
 
-    // Execute the function
     function_sum_convert_ind_exec(function, size, threads, blocks, shared_mem_usage, 
 				  in_id, out_id, siteTableId );
   }
@@ -74,19 +55,9 @@ namespace QDP {
     assert( sizes.size() == numsubsets );
     assert( table_ids.size() == numsubsets );
 
-    // Build the function
     if (function == NULL)
-      {
-	//std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
-	function = function_summulti_convert_ind_build<T1,T2,input_layout>();
-	//std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
-      }
-    else
-      {
-	//std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
-      }
+      function = function_summulti_convert_ind_build<T1,T2,input_layout>();
 
-    // Execute the function
     function_summulti_convert_ind_exec(function,
 				       size, threads, blocks, shared_mem_usage, 
 				       in_id, out_id,
@@ -108,23 +79,12 @@ namespace QDP {
 			int numsubsets,
 			const multi1d<int>& sizes)
   {
+    assert( sizes.size() == numsubsets );
     static CUfunction function;
 
-    assert( sizes.size() == numsubsets );
-
-    // Build the function
     if (function == NULL)
-      {
-	//std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
-	function = function_summulti_build<T>();
-	//std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
-      }
-    else
-      {
-	//std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
-      }
+      function = function_summulti_build<T>();
 
-    // Execute the function
     function_summulti_exec(function,
 			   size, threads, blocks, shared_mem_usage, 
 			   in_id, out_id,
@@ -146,19 +106,9 @@ namespace QDP {
   {
     static CUfunction function;
 
-    // Build the function
     if (function == NULL)
-      {
-	//std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
-	function = function_sum_convert_build<T1,T2,input_layout>();
-	//std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
-      }
-    else
-      {
-	//std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
-      }
+      function = function_sum_convert_build<T1,T2,input_layout>();
 
-    // Execute the function
     function_sum_convert_exec(function, size, threads, blocks, shared_mem_usage, 
 			      in_id, out_id );
   }
@@ -173,16 +123,9 @@ namespace QDP {
   {
     typedef typename UnaryReturn<OLattice<T1>, FnSum>::Type_t::SubType_t T2;
     
-    //QDP_info("sum(lat,subset) dev");
-
     int out_id,in_id;
 
     typename UnaryReturn<OLattice<T1>, FnSum>::Type_t  d;
-
-#if defined(QDP_USE_PROFILING)   
-    static QDPProfile_t prof(d, OpAssign(), FnSum(), s1);
-    prof.stime(getClockTime());
-#endif
 
     unsigned actsize=s.numSiteTable();
     bool first=true;
@@ -240,12 +183,6 @@ namespace QDP {
 
     QDPInternal::globalSum(d);
 
-#if defined(QDP_USE_PROFILING)   
-    prof.etime(getClockTime());
-    prof.count++;
-    prof.print();
-#endif
-
     return d;
   }
 
@@ -260,17 +197,8 @@ namespace QDP {
 
     static CUfunction function;
 
-    // Build the function
     if (function == NULL)
-      {
-	//std::cout << __PRETTY_FUNCTION__ << ": does not exist - will build\n";
-	function = function_global_max_build<T>();
-	//std::cout << __PRETTY_FUNCTION__ << ": did not exist - finished building\n";
-      }
-    else
-      {
-	//std::cout << __PRETTY_FUNCTION__ << ": is already built\n";
-      }
+      function = function_global_max_build<T>();
 
     function_global_max_exec(function, size, threads, blocks, shared_mem_usage, in_id, out_id );
   }
@@ -280,7 +208,7 @@ namespace QDP {
 
 
   //
-  // sumMulti DOUBLE PRECISION
+  // sumMulti 
   //
   template<class T1>
   typename UnaryReturn<OLattice<T1>, FnSumMulti>::Type_t
@@ -438,11 +366,6 @@ namespace QDP {
 
     typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t  d;
 
-#if defined(QDP_USE_PROFILING)   
-    static QDPProfile_t prof(d, OpAssign(), FnGlobalMax(), s1);
-    prof.stime(getClockTime());
-#endif
-
     int actsize=nodeSites;
     bool first=true;
     while (1) {
@@ -491,12 +414,6 @@ namespace QDP {
     QDP_get_global_cache().signoff( out_id );
 
     QDPInternal::globalMax(d);
-
-#if defined(QDP_USE_PROFILING)   
-    prof.etime( getClockTime() );
-    prof.count++;
-    prof.print();
-#endif
 
     return d;
   }

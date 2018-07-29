@@ -1,7 +1,6 @@
 #ifndef QDP_JITF_GAUSS_H
 #define QDP_JITF_GAUSS_H
 
-#include "qmp.h"
 
 namespace QDP {
 

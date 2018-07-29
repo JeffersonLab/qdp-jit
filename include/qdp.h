@@ -38,13 +38,6 @@
 #include <qdp_config.h>
 #include "qdp_precision.h"
 
-// GNU specific stuff
-#if defined(__GNUC__)
-// Under g++, enforce using V3 or greater
-#if __GNUC__ < 3
-#error "QDP++ requires g++ 3.0 or higher. This version of the g++ compiler is not supported"
-#endif
-#endif
 
 // Under gcc, set some attributes
 #if defined(__GNUC__)
@@ -98,6 +91,7 @@ using std::ostream;
 #include "cuda.h"
 #include "qdp_llvm.h"
 
+#include "qdp_dispatch.h"
 
 #include "qdp_forward.h"
 #include "qdp_datalayout.h"
@@ -163,13 +157,8 @@ namespace QDP {
 
 
 #include "qdp_basejit.h"
-//#include "qdp_basereg.h"
 
-
-// Include the allocator stuff here, before QDP_outer
 #include "qdp_allocator.h"
-
-
 
 #include "qdp_newops.h"
 #include "qdp_newopsreg.h"
@@ -178,6 +167,14 @@ namespace QDP {
 #include "qdp_mastermap.h"
 
 #include "qdp_profile.h"
+
+#if defined(ARCH_SCALAR)
+#include "qdp_scalar_mapresource.h"
+#elif defined(ARCH_PARSCALAR)
+#include "qdp_parscalar_mapresource.h"
+#else
+#error "Unknown architecture ARCH"
+#endif
 
 #include "qdp_mapresource.h"
 #include "qdp_handle.h"
@@ -206,10 +203,17 @@ namespace QDP {
 #include "qdp_globalfuncs.h"
 #include "qdp_specializations.h"
 
-//#include "qdp_special.h"
 #include "qdp_random.h"
 
-//#include "qdp_newopsjit.h"
+#if defined(ARCH_SCALAR)
+#include "qdp_scalar_internal.h"
+#elif defined(ARCH_PARSCALAR)
+#include "qdp_parscalar_internal.h"
+#else
+#error "Unknown architecture ARCH"
+#endif
+
+
 #include "qdp_internal.h"
 #include "qdp_jitfunction.h"
 #include "qdp_jitf_copymask.h"
@@ -218,37 +222,13 @@ namespace QDP {
 #include "qdp_jitf_globalmax.h"
 #include "qdp_jitf_gaussian.h"
 
-// Include threading code here if applicable
-#include "qdp_dispatch.h"
-
-namespace ThreadReductions { 
- 
-}
-
+#include "qdp_sum.h"
+#include "qdp_functions.h"
 
 #if defined(ARCH_SCALAR)
-// Architectural specific code to a single node/single proc box
-#warning "Using scalar architecture"
 #include "qdp_scalar_specific.h"
-// Include SSE code here if applicable
 #elif defined(ARCH_PARSCALAR)
-// Architectural specific code to a parallel/single proc box
-//#warning "Using parallel scalar architecture"
-#include "qdp_sum.h"
 #include "qdp_parscalar_specific.h"
-
-#elif defined(ARCH_SCALARVEC)
-// Architectural specific code to a single node/single proc box 
-// with vector extension
-#warning "Using scalar architecture with vector extensions"
-#include "qdp_scalarvec_specific.h"
-
-#elif defined(ARCH_PARSCALARVEC)
-// Architectural specific code to a parallel/single proc box
-// with vector extension
-#warning "Using parallel scalar architecture with vector extensions"
-#include "qdp_parscalarvec_specific.h"
-
 #else
 #error "Unknown architecture ARCH"
 #endif

@@ -404,26 +404,7 @@ struct ForEach<UnaryNode<FnMap, A>, AddressLeaf, NullCombine>
       
       a.setId( expr.operation().map.getGoffsetsId(a.subset) );
 
-#if 0
-      void * rcvBuf = NULL;
-      if (map.hasOffnode()) {
-	const FnMapRsrc& rRSrc = fnmap.getCached();
-	rcvBuf = rRSrc.getRecvBufDevPtr();
-      }
-      a.setAddr(rcvBuf);
-#else
-#if 0
-      //int rid = map.hasOffnode() ? fnmap.getCached().getRecvBufId() : -1;
-      int rid = -1;
-      //void * rcvBuf = NULL;
-      if (map.hasOffnode()) {
-	const FnMapRsrc& rRSrc = fnmap.getCached();
-	//rRSrc.getRecvBufDevPtr();
-	rid = rRSrc.getRecvBufId();
-      }
-#endif
       a.setId( map.hasOffnode() ? fnmap.getCached().getRecvBufId() : -1 );
-#endif
 
       return Type_t( ForEach<A, AddressLeaf, NullCombine>::apply( expr.child() , a , n ) );
     }

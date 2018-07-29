@@ -5,7 +5,6 @@
 //#undef JIT_DO_MEMBER
 
 
-#include "qmp.h"
 
 namespace QDP {
 

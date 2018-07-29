@@ -2,7 +2,7 @@
 #define QDP_JITF_GLOBMAX_H
 
 
-#include "qmp.h"
+//#include "qmp.h"
 
 namespace QDP {
 
@@ -155,7 +155,7 @@ namespace QDP {
 		      block_store_global , 
 		      block_not_store_global );
     llvm_set_insert_point(block_store_global);
-    //typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_reg;   // this is stupid
+
     sdata_reg.setup( sdata_jit );
     odata.elem( JitDeviceLayout::Scalar , r_block_idx ) = sdata_reg;
     llvm_branch( block_not_store_global );

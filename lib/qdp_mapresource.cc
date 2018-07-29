@@ -3,131 +3,77 @@
 namespace QDP {
 
 
-  void FnMapRsrc::setup(int _destNode,int _srcNode,int _sendMsgSize,int _rcvMsgSize) {
-
-    bSet=true;
-
-    srcnum=_rcvMsgSize;
-    dstnum=_sendMsgSize;
-
-    int srcnode = _srcNode;
-    int dstnode = _destNode;
-
-    if (!DeviceParams::Instance().getGPUDirect()) {
-      CudaHostAlloc(&send_buf,dstnum,0);
-      CudaHostAlloc(&recv_buf,srcnum,0);
-    }
-
-    //QDPIO::cout << "Allocating receive buffer on device: " << srcnum << " bytes\n";
-    recv_buf_id = QDP_get_global_cache().addDeviceStatic( &recv_buf_dev , srcnum);
-
-    //QDPIO::cout << "Allocating send buffer on device: " << dstnum << " bytes\n";
-    send_buf_id = QDP_get_global_cache().addDeviceStatic( &send_buf_dev , dstnum);
-
-    if (!DeviceParams::Instance().getGPUDirect()) {
-      msg[0] = QMP_declare_msgmem( recv_buf , srcnum );
-    } else {
-      msg[0] = QMP_declare_msgmem( recv_buf_dev , srcnum );
-    }
-
-    if( msg[0] == (QMP_msgmem_t)NULL ) { 
-      QDP_error_exit("QMP_declare_msgmem for msg[0] failed in Map::operator()\n");
-    }
-
-    if (!DeviceParams::Instance().getGPUDirect()) {
-      msg[1] = QMP_declare_msgmem( send_buf , dstnum );
-    } else {
-      msg[1] = QMP_declare_msgmem( send_buf_dev , dstnum );
-    }
-
-
-    if( msg[1] == (QMP_msgmem_t)NULL ) {
-      QDP_error_exit("QMP_declare_msgmem for msg[1] failed in Map::operator()\n");
-    }
-
-    mh_a[0] = QMP_declare_receive_from(msg[0], srcnode, 0);
-    if( mh_a[0] == (QMP_msghandle_t)NULL ) { 
-      QDP_error_exit("QMP_declare_receive_from for mh_a[0] failed in Map::operator()\n");
-    }
-
-    mh_a[1] = QMP_declare_send_to(msg[1], dstnode , 0);
-    if( mh_a[1] == (QMP_msghandle_t)NULL ) {
-      QDP_error_exit("QMP_declare_send_to for mh_a[1] failed in Map::operator()\n");
-    }
-
-    mh = QMP_declare_multiple(mh_a, 2);
-    if( mh == (QMP_msghandle_t)NULL ) { 
-      QDP_error_exit("QMP_declare_multiple for mh failed in Map::operator()\n");
-    }
-
-  }
-
-  void FnMapRsrc::cleanup() {
-    if (bSet) {
-      QMP_free_msghandle(mh);
-      // QMP_free_msghandle(mh_a[1]);
-      // QMP_free_msghandle(mh_a[0]);
-      QMP_free_msgmem(msg[1]);
-      QMP_free_msgmem(msg[0]);
-#if 0
-      QMP_free_memory(recv_buf_mem);
-      QMP_free_memory(send_buf_mem);
-#endif
-      QDP_get_global_cache().signoff( send_buf_id );
-      QDP_get_global_cache().signoff( recv_buf_id );
-      CudaHostFree(send_buf);
-      CudaHostFree(recv_buf);
+  void FnMapRsrcMatrix::cleanup() {
+    //QDPIO::cout << "FnMapRsrcMatrix cleanup\n";
+    for(unsigned int i=0;i<numSendMsgSize;i++) {
+      for(unsigned int q=0;q<numDestNode;q++) {
+	//QDPIO::cout << "cleanup m2d(" << i << "," << q << ")\n";
+	for (std::vector<FnMapRsrc*>::iterator v = (*m2d(i,q)).second.begin() ; v != (*m2d(i,q)).second.end() ; ++v )
+	  delete *v;
+	//std::for_each( (*m2d(i,q)).second.begin() , (*m2d(i,q)).second.end() , this->*del );
+	delete m2d(i,q);
+      }
     }
   }
 
 
-  void FnMapRsrc::qmp_wait() const {
-    QMP_status_t err;
-    if ((err = QMP_wait(mh)) != QMP_SUCCESS)
-      QDP_error_exit(QMP_error_string(err));
-
-    if (!DeviceParams::Instance().getGPUDirect()) {
-      CudaMemcpyH2D( recv_buf_dev , recv_buf , srcnum );
+  std::pair< int , std::vector<FnMapRsrc*> >* FnMapRsrcMatrix::get(int _destNode,int _srcNode,
+								   int _sendMsgSize,int _rcvMsgSize) {
+    bool found = false;
+    unsigned int xDestNode=0;
+    for(; xDestNode < destNode.size(); ++xDestNode)
+      if (destNode[xDestNode] == _destNode)
+	{
+	  found = true;
+	  break;
+	}
+    if (! found) {
+      if (destNode.size() == numDestNode) {
+	QDP_error_exit("FnMapRsrcMatrix not enough space in destNode");
+      } else {
+	destNode.push_back(_destNode);
+	xDestNode=destNode.size()-1;
+      }
     }
+    //QDPIO::cout << "using node place = " << xDestNode << "\n";
+
+
+    found = false;
+    unsigned int xSendmsgsize=0;
+    for(; xSendmsgsize < sendMsgSize.size(); ++xSendmsgsize)
+      if (sendMsgSize[xSendmsgsize] == _sendMsgSize)
+	{
+	  found = true;
+	  break;
+	}
+    if (! found) {
+      if (sendMsgSize.size() == numSendMsgSize) {
+	QDP_error_exit("FnMapRsrcMatrix not enough space in sendmsgsize");
+      } else {
+	sendMsgSize.push_back(_sendMsgSize);
+	xSendmsgsize=sendMsgSize.size()-1;
+      }
+    }
+    //QDPIO::cout << "using msg_size place = " << xSendmsgsize << "\n";
+
+    std::pair< int , std::vector<FnMapRsrc*> >& pos = *m2d(xSendmsgsize,xDestNode);
 
 #if QDP_DEBUG >= 3
-    QDP_info("Map: calling free msgs");
-#endif
-  }
-
-
-  void FnMapRsrc::send_receive() const {
-
-    QMP_status_t err;
-#if QDP_DEBUG >= 3
-    QDP_info("Map: send = 0x%x  recv = 0x%x",send_buf,recv_buf);
-    QDP_info("Map: establish send=%d recv=%d",destnodes[0],srcenodes[0]);
-    {
-      const multi1d<int>& me = Layout::nodeCoord();
-      multi1d<int> scrd = Layout::getLogicalCoordFrom(destnodes[0]);
-      multi1d<int> rcrd = Layout::getLogicalCoordFrom(srcenodes[0]);
-
-      QDP_info("Map: establish-info   my_crds=[%d,%d,%d,%d]",me[0],me[1],me[2],me[3]);
-      QDP_info("Map: establish-info send_crds=[%d,%d,%d,%d]",scrd[0],scrd[1],scrd[2],scrd[3]);
-      QDP_info("Map: establish-info recv_crds=[%d,%d,%d,%d]",rcrd[0],rcrd[1],rcrd[2],rcrd[3]);
-    }
+    // SANITY
+    if ( pos.second.size() <  pos.first )
+      QDP_error_exit(" pos.second.size()=%d  pos.first=%d",pos.second.size(), pos.first);
 #endif
 
-#if QDP_DEBUG >= 3
-    QDP_info("Map: calling start send=%d recv=%d",destnodes[0],srcenodes[0]);
-#endif
-
-#ifdef GPU_DEBUG_DEEP
-    QDP_info("D2H %d bytes receive buffer",dstnum);
-#endif
-
-    if (!DeviceParams::Instance().getGPUDirect()) {
-      CudaMemcpyD2H( send_buf , send_buf_dev , dstnum );
+    // Vector's size large enough ?
+    if ( pos.second.size() ==  (unsigned)pos.first ) {
+      //QDPIO::cout << "allocate and setup new rsrc-obj (destnode=" << _destNode << ",sndmsgsize=" << _sendMsgSize << ")\n";
+      pos.second.push_back( new FnMapRsrc() );
+      pos.second.at(pos.first)->setup( _destNode, _srcNode, _sendMsgSize, _rcvMsgSize );
     }
 
-    // Launch the faces
-    if ((err = QMP_start(mh)) != QMP_SUCCESS)
-      QDP_error_exit(QMP_error_string(err));
+    //QDPIO::cout << "returning rsrc-obj " << pos.first << "\n";
+
+    return &pos;
   }
 
 

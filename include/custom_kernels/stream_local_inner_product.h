@@ -75,7 +75,7 @@ namespace QDP
     {
       llvm_set_insert_point(block_input_loop_inc);
     
-      typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_elem;   // this is stupid
+      typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_elem;   
       reg_idata_elem.setup( idata.elem( input_layout , r_idx , r_input ) );
 
       sdata_jit = reg_idata_elem; // This should do the precision conversion (SP->DP)
@@ -144,7 +144,7 @@ namespace QDP
 			block_store_global , 
 			block_not_store_global );
       llvm_set_insert_point(block_store_global);
-      typename REGType< typename JITType<T2>::Type_t >::Type_t sdata_reg;   // this is stupid
+      typename REGType< typename JITType<T2>::Type_t >::Type_t sdata_reg;   
       sdata_reg.setup( sdata_jit );
       odata.elem( JitDeviceLayout::Scalar , r_block_idx , r_input ) = sdata_reg;
 
@@ -420,7 +420,7 @@ namespace QDP
 			block_store_global , 
 			block_not_store_global );
       llvm_set_insert_point(block_store_global);
-      typename REGType< typename JITType<T2>::Type_t >::Type_t sdata_reg;   // this is stupid
+      typename REGType< typename JITType<T2>::Type_t >::Type_t sdata_reg;   
       sdata_reg.setup( sdata_jit );
       odata.elem( JitDeviceLayout::Scalar , r_block_idx , r_input ) = sdata_reg;
 

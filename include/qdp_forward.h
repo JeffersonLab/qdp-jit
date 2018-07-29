@@ -9,6 +9,7 @@ namespace QDP
 
   enum class JitDeviceLayout { Coalesced , Scalar };
 
+  class FnMapRsrc;
 
   // IO
   class TextReader;
