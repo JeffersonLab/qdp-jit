@@ -34,7 +34,7 @@ namespace QDP {
 
     JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
 
-    std::vector<int> ids;
+    std::vector<QDPCache::ArgKey> ids;
     ids.push_back( jit_th_count.get_id() );
     ids.push_back( s.getIdSiteTable() );
     for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
@@ -66,7 +66,7 @@ namespace QDP {
 
     JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
 
-    std::vector<int> ids;
+    std::vector<QDPCache::ArgKey> ids;
     ids.push_back( jit_th_count.get_id() );
     ids.push_back( s.getIdSiteTable() );
     for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
@@ -425,7 +425,7 @@ function_lat_sca_exec(CUfunction function, OLattice<T>& dest, const Op& op, cons
   JitParam jit_start( QDP_get_global_cache().addJitParamInt( s.start() ) );
   JitParam jit_end( QDP_get_global_cache().addJitParamInt( s.end() ) );
   
-  std::vector<int> ids;
+  std::vector<QDPCache::ArgKey> ids;
   ids.push_back( jit_ordered.get_id() );
   ids.push_back( jit_th_count.get_id() );
   ids.push_back( jit_start.get_id() );
@@ -559,7 +559,7 @@ function_pokeSite_exec(CUfunction function, OLattice<T>& dest, const OScalar<T1>
 
   JitParam jit_siteindex( QDP_get_global_cache().addJitParamInt( Layout::linearSiteIndex(coord) ) );
 
-  std::vector<int> ids;
+  std::vector<QDPCache::ArgKey> ids;
   ids.push_back( jit_siteindex.get_id() );
   for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
     ids.push_back( addr_leaf.ids[i] );
@@ -645,7 +645,7 @@ void function_isfinite_exec(CUfunction function, const Boolean& ret, const OLatt
 
   JitParam jit_numsites( QDP_get_global_cache().addJitParamInt( Layout::sitesOnNode() ) );
 
-  std::vector<int> ids;
+  std::vector<QDPCache::ArgKey> ids;
   ids.push_back( jit_numsites.get_id() );
   for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
     ids.push_back( addr_leaf.ids[i] );
@@ -861,7 +861,7 @@ void
   JitParam jit_lo( QDP_get_global_cache().addJitParamInt( 0 ) );        // lo, leave it in
   JitParam jit_hi( QDP_get_global_cache().addJitParamInt( hi ) );
 
-  std::vector<int> ids;
+  std::vector<QDPCache::ArgKey> ids;
   ids.push_back( jit_lo.get_id() );
   ids.push_back( jit_hi.get_id() );
   ids.push_back( map.getSoffsetsId(subset) );
@@ -920,7 +920,7 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
       JitParam jit_end( QDP_get_global_cache().addJitParamInt( s.end() ) );
       JitParam jit_do_soffset_index( QDP_get_global_cache().addJitParamBool( false ) );   // do soffset index
 
-      std::vector<int> ids;
+      std::vector<QDPCache::ArgKey> ids;
       ids.push_back( jit_ordered.get_id() );
       ids.push_back( jit_th_count.get_id() );
       ids.push_back( jit_start.get_id() );
@@ -945,7 +945,7 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
 	JitParam jit_end( QDP_get_global_cache().addJitParamInt( s.end() ) );
 	JitParam jit_do_soffset_index( QDP_get_global_cache().addJitParamBool( true ) );   // do soffset index
 
-	std::vector<int> ids;
+	std::vector<QDPCache::ArgKey> ids;
 	ids.push_back( jit_ordered.get_id() );
 	ids.push_back( jit_th_count.get_id() );
 	ids.push_back( jit_start.get_id() );
@@ -972,7 +972,7 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
 	JitParam jit_end( QDP_get_global_cache().addJitParamInt( s.end() ) );
 	JitParam jit_do_soffset_index( QDP_get_global_cache().addJitParamBool( true ) );   // do soffset index
 
-	std::vector<int> ids;
+	std::vector<QDPCache::ArgKey> ids;
 	ids.push_back( jit_ordered.get_id() );
 	ids.push_back( jit_th_count.get_id() );
 	ids.push_back( jit_start.get_id() );
@@ -1014,7 +1014,7 @@ function_subtype_type_exec(CUfunction function, OSubLattice<T>& dest, const Op& 
 
   JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
 
-  std::vector<int> ids;
+  std::vector<QDPCache::ArgKey> ids;
   ids.push_back( jit_th_count.get_id() );
   ids.push_back( s.getIdSiteTable() );
   for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
@@ -1043,7 +1043,7 @@ operator_type_subtype_exec(CUfunction function, OLattice<T>& dest, const Op& op,
 
   JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
 
-  std::vector<int> ids;
+  std::vector<QDPCache::ArgKey> ids;
   ids.push_back( jit_th_count.get_id() );
   ids.push_back( s.getIdSiteTable() );
   for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
@@ -1072,7 +1072,7 @@ operator_subtype_subtype_exec(CUfunction function, OSubLattice<T>& dest, const O
 
   JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
 
-  std::vector<int> ids;
+  std::vector<QDPCache::ArgKey> ids;
   ids.push_back( jit_th_count.get_id() );
   for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
     ids.push_back( addr_leaf.ids[i] );
@@ -1104,7 +1104,7 @@ function_lat_sca_subtype_exec(CUfunction function, OSubLattice<T>& dest, const O
 
   JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
 
-  std::vector<int> ids;
+  std::vector<QDPCache::ArgKey> ids;
   ids.push_back( jit_th_count.get_id() );
   for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
     ids.push_back( addr_leaf.ids[i] );
@@ -1132,7 +1132,7 @@ function_zero_rep_exec(CUfunction function, OLattice<T>& dest, const Subset& s )
   JitParam jit_start( QDP_get_global_cache().addJitParamInt( s.start() ) );
   JitParam jit_end( QDP_get_global_cache().addJitParamInt( s.end() ) );
   
-  std::vector<int> ids;
+  std::vector<QDPCache::ArgKey> ids;
   ids.push_back( jit_ordered.get_id() );
   ids.push_back( jit_th_count.get_id() );
   ids.push_back( jit_start.get_id() );
@@ -1161,7 +1161,7 @@ void function_zero_rep_subtype_exec(CUfunction function, OSubLattice<T>& dest, c
 
   JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
   
-  std::vector<int> ids;
+  std::vector<QDPCache::ArgKey> ids;
   ids.push_back( jit_th_count.get_id() );
   for(unsigned i=0; i < addr_leaf.ids.size(); ++i)
     ids.push_back( addr_leaf.ids[i] );
@@ -1192,7 +1192,7 @@ function_random_exec(CUfunction function, OLattice<T>& dest, const Subset& s , S
   JitParam jit_lo( QDP_get_global_cache().addJitParamInt( s.start() ) );
   JitParam jit_hi( QDP_get_global_cache().addJitParamInt( s.end() ) );
   
-  std::vector<int> ids;
+  std::vector<QDPCache::ArgKey> ids;
   ids.push_back( jit_lo.get_id() );
   ids.push_back( jit_hi.get_id() );
   for(unsigned i=0; i < addr_leaf.ids.size(); ++i)

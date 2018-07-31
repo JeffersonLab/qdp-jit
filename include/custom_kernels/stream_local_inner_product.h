@@ -186,7 +186,7 @@ namespace QDP
     JitParam jit_in_ids( QDP_get_global_cache().addMulti( in_ids ) );
     JitParam jit_out_ids( QDP_get_global_cache().addMulti( out_ids ) );
   
-    std::vector<int> ids;
+    std::vector<QDPCache::ArgKey> ids;
     ids.push_back( jit_lo.get_id() );
     ids.push_back( jit_hi.get_id() );
     ids.push_back( jit_inputnum.get_id() );
@@ -250,7 +250,7 @@ namespace QDP
     JitParam jit_in_ids( QDP_get_global_cache().addMulti( in_ids ) );
     JitParam jit_out_ids( QDP_get_global_cache().addMulti( out_ids ) );
   
-    std::vector<int> ids;
+    std::vector<QDPCache::ArgKey> ids;
     ids.push_back( jit_lo.get_id() );
     ids.push_back( jit_hi.get_id() );
     ids.push_back( jit_inputnum.get_id() );

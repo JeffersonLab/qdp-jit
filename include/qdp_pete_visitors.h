@@ -36,71 +36,52 @@ struct ViewLeaf
 struct ParamLeaf {};
 
 
-  // int getParamLattice( int idx_multiplier ) const {
-  //   return func.addParamLatticeBaseAddr( r_idx , idx_multiplier );
-  // }
-  // int getParamScalar() const {
-  //   return func.addParamScalarBaseAddr();
-  // }
-  // int getParamIndexFieldAndOption() const {
-  //   return r_idx = func.addParamIndexFieldAndOption();
-  // }
-
 
 
 
 struct AddressLeaf
 {
   ~AddressLeaf() {
-    //QDPIO::cout << "signing off: ";
     for (auto i : ids_signoff) {
-      //QDPIO::cout << i << ", ";
       QDP_get_global_cache().signoff(i);
     }
-    //QDPIO::cout << "\n";
   }
   
-  AddressLeaf(const Subset& s): subset(s) {    
-    //std::cout << "AddressLeaf default ctor\n";
-  }
-
-#if 0
-  AddressLeaf(const AddressLeaf& cp): subset(cp.subset) {
-    addr = cp.addr;
-    //std::cout << "AddressLeaf copy ctor my_size = " << addr.size() << "\n";
-  }
-#endif
-
-  AddressLeaf& operator=(const AddressLeaf& cp) = delete;
+  AddressLeaf(const Subset& s): subset(s) {}
   AddressLeaf(const AddressLeaf& cp) = delete;
 
+  AddressLeaf& operator=(const AddressLeaf& cp) = delete;
+
   
-  mutable std::vector<int> ids;
+  mutable std::vector<QDPCache::ArgKey> ids;
   mutable std::vector<int> ids_signoff;
   const Subset& subset;
 
   void setId( int id ) const {
-    ids.push_back( id );
+    ids.push_back( QDPCache::ArgKey(id) );
+  }
+  void setIdElem( int id , int elem ) const {
+    ids.push_back( QDPCache::ArgKey(id,elem) );
   }
   void setLit( float f ) const {
-    ids.push_back( QDP_get_global_cache().addJitParamFloat(f) );
-    ids_signoff.push_back( ids.back() );
+    ids.push_back( QDPCache::ArgKey(QDP_get_global_cache().addJitParamFloat(f)) );
+    ids_signoff.push_back( ids.back().id );
   }
   void setLit( double d ) const {
-    ids.push_back( QDP_get_global_cache().addJitParamDouble(d) );
-    ids_signoff.push_back( ids.back() );
+    ids.push_back( QDPCache::ArgKey(QDP_get_global_cache().addJitParamDouble(d)) );
+    ids_signoff.push_back( ids.back().id );
   }
   void setLit( int i ) const {
-    ids.push_back( QDP_get_global_cache().addJitParamInt(i) );
-    ids_signoff.push_back( ids.back() );
+    ids.push_back( QDPCache::ArgKey(QDP_get_global_cache().addJitParamInt(i)) );
+    ids_signoff.push_back( ids.back().id );
   }
   void setLit( int64_t i ) const {
-    ids.push_back( QDP_get_global_cache().addJitParamInt64(i) );
-    ids_signoff.push_back( ids.back() );
+    ids.push_back( QDPCache::ArgKey(QDP_get_global_cache().addJitParamInt64(i)) );
+    ids_signoff.push_back( ids.back().id );
   }
   void setLit( bool b ) const {
-    ids.push_back( QDP_get_global_cache().addJitParamBool(b) );
-    ids_signoff.push_back( ids.back() );
+    ids.push_back( QDPCache::ArgKey(QDP_get_global_cache().addJitParamBool(b)) );
+    ids_signoff.push_back( ids.back().id );
   }
 };
 

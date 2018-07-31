@@ -33,20 +33,27 @@ namespace QDP
       OwnDeviceMemory = 2,
       JitParam = 4,
       Static = 8,
-      Multi = 16
+      Multi = 16,
+      Array = 32
     };
 
     enum class Status { undef , host , device };
 
     enum class JitParamType { float_, int_, int64_, double_, bool_ };
 
-
+    struct ArgKey {
+      ArgKey(int id): id(id), elem(-1) {}
+      ArgKey(int id,int elem): id(id), elem(elem) {}
+      int id;
+      int elem;
+    };
+    
     
     QDPCache();
     
     typedef void (* LayoutFptr)(bool toDev,void * outPtr,void * inPtr);
 
-    std::vector<void*> get_kernel_args(std::vector<int>& ids , bool for_kernel = true );
+    std::vector<void*> get_kernel_args(std::vector<ArgKey>& ids , bool for_kernel = true );
     
     int addJitParamFloat(float i);
     int addJitParamDouble(double i);
@@ -54,11 +61,13 @@ namespace QDP
     int addJitParamInt64(int64_t i);
     int addJitParamBool(bool i);
 
-    // track_ptr - this enables to free the memory later via the pointer (needed for QUDA, where we hijack cudaMalloc)
+    // track_ptr - this enables to sign off later via the pointer (needed for QUDA, where we hijack cudaMalloc)
     int addDeviceStatic( void** ptr, size_t n_bytes , bool track_ptr = false );
     void signoffViaPtr( void* ptr );
+    int addDeviceStatic( size_t n_bytes );
     
     int add( size_t size, Flags flags, Status st, const void* ptr_host, const void* ptr_dev, LayoutFptr func );
+    int addArray( size_t element_size , int num_elements );
 
     int addMulti( const multi1d<int>& ids );
     
@@ -68,10 +77,12 @@ namespace QDP
     
     void signoff(int id);
     void assureOnHost(int id);
+    void assureOnHost(int id, int elem_num);
 
     //void * getDevicePtr(int id);
-    void getHostPtr(void ** ptr , int id);
-
+    void  getHostPtr(void ** ptr , int id);
+    void* getHostArrayPtr( int id , int elem );
+    
     size_t getSize(int id);
     //bool allocate_device_static( void** ptr, size_t n_bytes );
     //void free_device_static( void* ptr );
@@ -92,10 +103,16 @@ namespace QDP
     void allocateDeviceMemory(Entry& e);
     
     void assureDevice(Entry& e);
+    void assureDevice(Entry& e,int elem);
+
     void assureDevice(int id);
+    void assureDevice(int id,int elem);
     
-    void assureHost(Entry& e);
+    void assureHost( Entry& e);
+    void assureHost( Entry& e, int elem_num );
+
     bool isOnDevice(int id);
+    bool isOnDevice(int id, int elem);
     
     bool spill_lru();
     void printTracker();
@@ -104,7 +121,6 @@ namespace QDP
     vector<Entry>       vecEntry;
     stack<int>          stackFree;
     list<int>           lstTracker;
-    vector<int>         vecLocked;   // with duplicate entries
     CUDADevicePoolAllocator pool_allocator;
   };
 
@@ -125,15 +141,6 @@ namespace QDP
 
 
   QDPCache::Flags operator|(QDPCache::Flags a, QDPCache::Flags b);
-
-  void  qdp_stack_scalars_start( size_t size );
-  void  qdp_stack_scalars_start_from_id( int id );
-  
-  void  qdp_stack_scalars_end();
-  bool  qdp_stack_scalars_enabled();
-  void* qdp_stack_scalars_alloc( size_t size );
-  void  qdp_stack_scalars_free_stack();
-  QDPCache::Status qdp_stack_scalars_get_create_status();
 
 
 }

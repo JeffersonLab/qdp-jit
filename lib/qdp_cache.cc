@@ -12,79 +12,6 @@
 namespace QDP
 {
 
-  namespace STACK {
-    bool stack_scalars = false;
-    void* stack_ptr = NULL;
-    void* current;
-    size_t size;
-    int id;
-    QDPCache::Status create_status;
-  }
-  
-  void qdp_stack_scalars_start( size_t size )
-  {
-    assert(!STACK::stack_scalars);
-    
-    STACK::id = QDP_get_global_cache().addDeviceStatic( &STACK::stack_ptr, size );
-    STACK::current = STACK::stack_ptr;
-    STACK::stack_scalars = true;
-    STACK::size = size;
-    STACK::create_status = QDPCache::Status::undef;
-  }
-
-  void qdp_stack_scalars_start_from_id( int id )
-  {
-    assert(!STACK::stack_scalars);
-    
-    std::vector<int> ids = {id};
-    auto ptrs = QDP_get_global_cache().get_kernel_args( ids , false );
-
-    STACK::stack_ptr = ptrs[0];
-    STACK::current = STACK::stack_ptr;
-    STACK::stack_scalars = true;
-    STACK::size = QDP_get_global_cache().getSize( id );
-    STACK::create_status = QDPCache::Status::device;
-  }
-
-  void qdp_stack_scalars_end()
-  {
-    assert(STACK::stack_scalars);
-    STACK::stack_scalars = false;
-  }
-
-  void qdp_stack_scalars_free_stack()
-  {
-    assert(!STACK::stack_scalars);
-    assert(STACK::stack_ptr);
-    QDP_get_global_cache().signoff( STACK::id );
-    STACK::stack_ptr = NULL;
-  }
-
-  bool qdp_stack_scalars_enabled()
-  {
-    return STACK::stack_scalars;
-  }
-
-  QDPCache::Status qdp_stack_scalars_get_create_status()
-  {
-    return STACK::create_status;
-  }
-  
-  void* qdp_stack_scalars_alloc( size_t size )
-  {
-    if ( (size_t)STACK::current + size - (size_t)STACK::stack_ptr > STACK::size )
-      QDP_error_exit("out of memory (stack scalars)");
-      
-    void* ret = STACK::current;
-    STACK::current = (void*)((size_t)STACK::current + size);
-    
-    return ret;
-  }
-
-
-  
-
-
 
   struct QDPCache::Entry {
     union JitParamUnion {
@@ -98,16 +25,17 @@ namespace QDP
 
     int    Id;
     size_t size;
+    size_t elem_size;
     Flags  flags;
     void*  hstPtr;  // NULL if not allocated
     void*  devPtr;  // NULL if not allocated
-    Status status;
     int    lockCount;
     list<int>::iterator iterTrack;
     LayoutFptr fptr;
     JitParamUnion param;
     QDPCache::JitParamType param_type;
     std::vector<int> multi;
+    std::vector<Status> status_vec;
   };
 
 
@@ -166,6 +94,7 @@ namespace QDP
     e.Id           = Id;
     e.size         = 0;
     e.flags        = Flags::JitParam;
+    e.status_vec.clear();
     e.param.float_ = i;
     e.param_type   = JitParamType::float_;
     e.multi.clear();
@@ -180,6 +109,7 @@ namespace QDP
     e.Id            = Id;
     e.size         = 0;
     e.flags         = Flags::JitParam;
+    e.status_vec.clear();
     e.param.double_ = i;
     e.param_type   = JitParamType::double_;
     e.multi.clear();
@@ -194,6 +124,7 @@ namespace QDP
     e.Id           = Id;
     e.size         = 0;
     e.flags        = Flags::JitParam;
+    e.status_vec.clear();
     e.param.int_   = i;
     e.param_type   = JitParamType::int_;
     e.multi.clear();
@@ -208,6 +139,7 @@ namespace QDP
     e.Id            = Id;
     e.size         = 0;
     e.flags         = Flags::JitParam;
+    e.status_vec.clear();
     e.param.int64_  = i;
     e.param_type    = JitParamType::int64_;
     e.multi.clear();
@@ -222,6 +154,7 @@ namespace QDP
     e.Id           = Id;
     e.size         = 0;
     e.flags        = Flags::JitParam;
+    e.status_vec.clear();
     e.param.bool_  = i;
     e.param_type   = JitParamType::bool_;
     e.multi.clear();
@@ -236,7 +169,7 @@ namespace QDP
     Entry& e = vecEntry[ Id ];
     e.Id        = Id;
     e.flags     = Flags::Multi;
-    e.status    = Status::undef;
+    e.status_vec.clear();
     e.hstPtr    = NULL;
     e.devPtr    = NULL;
     e.fptr      = NULL;
@@ -267,10 +200,17 @@ namespace QDP
       QDP_JIT_CACHE::map_ptr_id.erase(search);
     } else {
       QDPIO::cout << "QDP Cache: Ptr (sign off via ptr) not found\n";
+      QDP_error_exit("giving up");
     }
   }
 
-  
+
+  int QDPCache::addDeviceStatic( size_t n_bytes )
+  {
+    void* dummy;
+    return addDeviceStatic( &dummy, n_bytes );
+  }
+
   int QDPCache::addDeviceStatic( void** ptr, size_t n_bytes , bool track_ptr )
   {
     int Id = getNewId();
@@ -287,6 +227,7 @@ namespace QDP
     e.flags     = Flags::Static;
     e.devPtr    = *ptr;
     e.multi.clear();
+    e.status_vec.clear();
 
     e.iterTrack = lstTracker.insert( lstTracker.end() , Id );
 
@@ -320,12 +261,15 @@ namespace QDP
     e.Id        = Id;
     e.size      = size;
     e.flags     = flags;
-    e.status    = status;
+    //e.status    = status;
     e.hstPtr    = hstptr;
     e.devPtr    = devptr;
     e.fptr      = func;
     e.multi.clear();
 
+    e.status_vec.clear();
+    e.status_vec.resize(1,status);
+	
     e.iterTrack = lstTracker.insert( lstTracker.end() , Id );
 
     stackFree.pop();
@@ -334,7 +278,58 @@ namespace QDP
   }
 
 
+  
+  int QDPCache::addArray( size_t element_size , int num_elements )
+  {
+    if (stackFree.size() == 0) {
+      growStack();
+    }
 
+    int Id = stackFree.top();
+
+    size_t size = element_size * num_elements;
+    void* dev_ptr;
+    void* hst_ptr;
+    
+    while (!pool_allocator.allocate( &dev_ptr , size )) {
+      if (!spill_lru()) {
+	QDP_error_exit("cache allocate_device_static: can't spill LRU object");
+      }
+    }
+
+    try {
+      hst_ptr = (void*)QDP::Allocator::theQDPAllocator::Instance().allocate( size , QDP::Allocator::DEFAULT );
+    }
+    catch(std::bad_alloc) {
+      QDP_error_exit("cache allocateHostMemory: host memory allocator flags=1 failed");
+    }
+
+    assert( vecEntry.size() > Id );
+    Entry& e = vecEntry[ Id ];
+
+    e.Id        = Id;
+    e.size      = size;
+    e.elem_size = element_size;
+    //e.flags     = QDPCache::Flags::OwnHostMemory | QDPCache::Flags::OwnDeviceMemory | QDPCache::Flags::Array;
+    e.flags     = QDPCache::Flags::Array;
+    //e.status    = Status::undef;
+    e.hstPtr    = hst_ptr;
+    e.devPtr    = dev_ptr;
+    e.fptr      = NULL;
+    
+    e.multi.clear();
+    
+    e.status_vec.clear();
+    e.status_vec.resize( num_elements , Status::undef );
+
+    e.iterTrack = lstTracker.insert( lstTracker.end() , Id );
+
+    stackFree.pop();
+
+    //QDPIO::cout << "addArray id = " << Id << " flags = " << e.flags << "\n";
+    
+    return Id;
+  }
   
 
   void QDPCache::signoff(int id) {
@@ -353,9 +348,10 @@ namespace QDP
 	freeDeviceMemory( e );
       }
 
-    if ( e.flags & ( Flags::Multi ) )
+    if ( e.flags & ( Flags::Multi | Flags::Array ) )
       {
 	e.multi.clear();
+	e.status_vec.clear();
       }
     
     stackFree.push( id );
@@ -365,10 +361,19 @@ namespace QDP
   
 
   void QDPCache::assureOnHost(int id) {
+    assert( vecEntry.size() > id );
     Entry& e = vecEntry[id];
     assert(e.flags != Flags::JitParam);
     assert(e.flags != Flags::Static);
     assureHost( e );
+  }
+
+  void QDPCache::assureOnHost(int id, int elem_num) {
+    assert( vecEntry.size() > id );
+    Entry& e = vecEntry[id];
+    assert(e.flags != Flags::JitParam);
+    assert(e.flags != Flags::Static);
+    assureHost( e , elem_num );
   }
 
 
@@ -382,6 +387,22 @@ namespace QDP
     assureHost( e );
 
     *ptr = e.hstPtr;
+  }
+
+
+  void* QDPCache::getHostArrayPtr( int id , int elem ) {
+    assert( vecEntry.size() > id );
+    Entry& e = vecEntry[id];
+
+    //QDPIO::cout << "getHostArrayPtr id = " << id << " flags = " << e.flags << " elem = " << elem << "\n";
+	
+    assert(e.flags != Flags::JitParam);
+    assert(e.flags != Flags::Static);
+    assert(e.flags & Flags::Array);
+
+    assureOnHost( id , elem );
+
+    return (void*)((size_t)e.hstPtr + e.elem_size * elem);
   }
 
 
@@ -441,12 +462,6 @@ namespace QDP
     }
   }
 
-  void QDPCache::printLockSet() {
-    QDPIO::cout << "lockset: ";
-    for (auto a : vecLocked)
-      QDPIO::cout << a << "(" << vecEntry[a].lockCount << "), ";
-    QDPIO::cout << "\n";
-  }
 
 
   void QDPCache::freeDeviceMemory(Entry& e) {
@@ -455,7 +470,7 @@ namespace QDP
     
     if ( e.flags & Flags::OwnDeviceMemory )
       return;
-    
+
     if (!e.devPtr)
       return;
 
@@ -471,7 +486,15 @@ namespace QDP
     Entry& e = vecEntry[id];
     assureDevice(e);
   }
-  
+
+  void QDPCache::assureDevice(int id,int elem) {
+    if (id < 0)
+      return;
+    assert( vecEntry.size() > id );
+    Entry& e = vecEntry[id];
+    assureDevice(e,elem);
+  }
+
   
   void QDPCache::assureDevice(Entry& e) {
     if (e.flags & Flags::JitParam)
@@ -482,37 +505,86 @@ namespace QDP
     // new
     lstTracker.splice( lstTracker.end(), lstTracker , e.iterTrack );
 
-    if (e.status == Status::device)
-      return;
-    
-    allocateDeviceMemory(e);
-
-    if ( e.status == Status::host )
+    if (e.flags & Flags::Array)
       {
-	if (e.fptr) {
+	//std::cout << "cache: making sure whole array is on device size " << e.status_vec.size() << "\n";
+	assert( e.status_vec.size() == ( e.size / e.elem_size));
+	for( int i = 0 ; i < e.status_vec.size() ; ++i )
+	  {
+	    assureDevice( e , i );
+	  }
+      }
+    else
+      {
+	//std::cout << "id = " << e.Id << "  flags = " << e.flags << "\n";
 
-	  char * tmp = new char[e.size];
-	  e.fptr(true,tmp,e.hstPtr);
-	  CudaMemcpyH2D( e.devPtr , tmp , e.size );
-	  delete[] tmp;
+	if (e.flags & Flags::Multi)
+	  {
+	    allocateDeviceMemory(e);
+	  }
+	else
+	  {
+	    assert( e.status_vec.size() == 1 );
+	
+	    if (e.status_vec[0] == Status::device)
+	      return;
+    
+	    allocateDeviceMemory(e);
 
-	} else {
-	  CudaMemcpyH2D( e.devPtr , e.hstPtr , e.size );
-	}
-	CudaSyncTransferStream();
+	    if ( e.status_vec[0] == Status::host )
+	      {
+		if (e.fptr) {
+
+		  char * tmp = new char[e.size];
+		  e.fptr(true,tmp,e.hstPtr);
+		  CudaMemcpyH2D( e.devPtr , tmp , e.size );
+		  delete[] tmp;
+
+		} else {
+		  CudaMemcpyH2D( e.devPtr , e.hstPtr , e.size );
+		}
+		CudaSyncTransferStream();
+	      }
+
+	    e.status_vec[0] = Status::device;
+	  }
+      }
+  }
+
+
+  
+  void QDPCache::assureDevice(Entry& e,int elem) {
+    if (e.flags & Flags::JitParam)
+      return;
+    if (e.flags & Flags::Static)
+      return;
+
+    assert( e.flags & Flags::Array );
+    assert( e.status_vec.size() > elem );
+    
+    // new
+    lstTracker.splice( lstTracker.end(), lstTracker , e.iterTrack );
+
+    if (e.status_vec[elem] == Status::device) {
+      //std::cout << "already is on device\n";
+      return;
+    }
+    
+    //allocateDeviceMemory(e);
+
+    if ( e.status_vec[elem] == Status::host )
+      {
+	assert( e.fptr == NULL );
+	CudaMemcpyH2D( (void*)((size_t)e.devPtr + e.elem_size * elem) ,
+		       (void*)((size_t)e.hstPtr + e.elem_size * elem) , e.elem_size );
+	//std::cout << "copy to device\n";
       }
 
-    e.status = Status::device;
+    e.status_vec[elem] = Status::device;
   }
 
+  
 
-#if 0
-  void QDPCache::lockId(int id) {
-    Entry& e = vecEntry[id];
-    vecLocked.push_back(e.Id);
-    e.lockCount++;
-  }
-#endif
 
 
 
@@ -522,21 +594,55 @@ namespace QDP
     
     allocateHostMemory(e);
 
-    if ( e.status == Status::device )
+    if (e.flags & Flags::Array)
       {
-	if (e.fptr) {
-	  char * tmp = new char[e.size];
-	  CudaMemcpyD2H( tmp , e.devPtr , e.size );
-	  e.fptr(false,e.hstPtr,tmp);
-	  delete[] tmp;
-	} else {
-	  CudaMemcpyD2H( e.hstPtr , e.devPtr , e.size );
-	}
+	//QDPIO::cout << "cache: making sure whole array is on host\n";
+	assert( e.status_vec.size() == ( e.size / e.elem_size));
+	for( int i = 0 ; i < e.status_vec.size() ; ++i )
+	  {
+	    assureHost( e , i );
+	  }
+      }
+    else
+      {
+	assert( e.status_vec.size() == 1 );
+
+	if ( e.status_vec[0] == Status::device )
+	  {
+	    if (e.fptr) {
+	      char * tmp = new char[e.size];
+	      CudaMemcpyD2H( tmp , e.devPtr , e.size );
+	      e.fptr(false,e.hstPtr,tmp);
+	      delete[] tmp;
+	    } else {
+	      CudaMemcpyD2H( e.hstPtr , e.devPtr , e.size );
+	    }
+	  }
+
+	e.status_vec[0] = Status::host;
+
+	freeDeviceMemory(e);
+      }
+  }
+
+
+  void QDPCache::assureHost( Entry& e, int elem_num ) {
+    assert(e.flags != Flags::JitParam);
+    assert(e.flags != Flags::Static);
+
+    assert( e.flags & Flags::Array );
+    assert(e.status_vec.size() > elem_num );
+
+    // allocateHostMemory(e);
+
+    if ( e.status_vec[elem_num] == Status::device )
+      {
+	assert( e.fptr == NULL );
+	CudaMemcpyD2H( (void*)((size_t)e.hstPtr + e.elem_size * elem_num) ,
+		       (void*)((size_t)e.devPtr + e.elem_size * elem_num) , e.elem_size );
       }
 
-    e.status = Status::host;
-
-    freeDeviceMemory(e);
+    e.status_vec[elem_num] = Status::host;
   }
 
 
@@ -558,6 +664,7 @@ namespace QDP
 		(e->flags != Flags::JitParam) &&
 		(e->flags != Flags::Static) &&
 		(e->flags != Flags::Multi) &&
+		(e->flags != Flags::Array) &&
 		( ! (e->flags & Flags::OwnDeviceMemory) ) );
     
       if (!found)
@@ -583,7 +690,6 @@ namespace QDP
     for ( int i = vecEntry.size()-1 ; i >= 0 ; --i ) {
       stackFree.push(i);
     }
-    vecLocked.reserve(1024);
   }
 
 
@@ -601,115 +707,55 @@ namespace QDP
     if (e.flags & QDPCache::Static)
       return true;
 
-    return ( e.status == QDPCache::Status::device );
+    if (e.flags & QDPCache::Multi)
+      {
+	return e.devPtr != NULL;
+      }
+
+    if (e.flags & QDPCache::Array)
+      {
+	bool ret = true;
+	assert( e.status_vec.size() > 0 );
+	for( int i = 0 ; i < e.status_vec.size() ; ++i )
+	  ret = ret && (e.status_vec[i] == QDPCache::Status::device);
+	return ret;
+      }
+    else
+      {
+	assert( e.status_vec.size() == 1 );
+	return ( e.status_vec[0] == QDPCache::Status::device );
+      }
   }
 
+
+  bool QDPCache::isOnDevice(int id, int elem) {
+    // An id < 0 indicates a NULL pointer
+    if (id < 0)
+      return true;
+    
+    assert( vecEntry.size() > id );
+    Entry& e = vecEntry[id];
+
+    if (e.flags & QDPCache::JitParam)
+      return true;
+
+    if (e.flags & QDPCache::Static)
+      return true;
+
+    assert(e.flags & QDPCache::Array);
+    assert( e.status_vec.size() > elem );
+    
+    return ( e.status_vec[elem] == QDPCache::Status::device );
+  }
+
+  
   namespace {
     void* jit_param_null_ptr = NULL;
   }
 
 
-#if 0
-  std::vector<void*> QDPCache::get_kernel_args(std::vector<int>& ids)
-  {
-    // Here we do two cycles through the ids:
-    // 1) cache all objects
-    // 2) check all are cached
-    // This should replace the old 'lock set'
 
-    for ( auto i : ids )
-      assureDevice(i);
-
-    bool all = true;
-    for ( auto i : ids ) 
-      all = all && isOnDevice(i);
-
-    if (!all) {
-      QDPIO::cout << "It was not possible to put all required objects on the device memory cache\n";
-      for ( auto i : ids ) {
-	if (i >= 0) {
-	  assert( vecEntry.size() > i );
-	  Entry& e = vecEntry[i];
-	  QDPIO::cout << "id = " << i << "  size = " << e.size << "  flags = " << e.flags << "  status = ";
-	  switch (e.status) {
-	  case Status::undef:
-	    QDPIO::cout << "undef\n";
-	    break;
-	  case Status::host:
-	    QDPIO::cout << "host\n";
-	    break;
-	  case Status::device:
-	    QDPIO::cout << "device\n";
-	    break;
-	  default:
-	    QDPIO::cout << "unkown\n";
-	  }
-	} else {
-	  QDPIO::cout << "id = " << i << "\n";
-	}
-      }
-      QDP_error_exit("giving up");
-    }
-
-    const bool print_param = false;
-
-    if (print_param)
-      QDPIO::cout << "Jit function param: ";
-
-    std::vector<void*> ret;
-    for ( auto i : ids ) {
-      if (i >= 0) {
-	Entry& e = vecEntry[i];
-	if (e.flags & QDPCache::Flags::JitParam) {
-	  
-	  if (print_param)
-	    {
-	      switch(e.param_type) {
-	      case JitParamType::float_: QDPIO::cout << (float)e.param.float_ << ", "; break;
-	      case JitParamType::double_: QDPIO::cout << (double)e.param.double_ << ", "; break;
-	      case JitParamType::int_: QDPIO::cout << (int)e.param.int_ << ", "; break;
-	      case JitParamType::int64_: QDPIO::cout << (int64_t)e.param.int64_ << ", "; break;
-	      case JitParamType::bool_:
-		if (e.param.bool_)
-		  QDPIO::cout << "true, ";
-		else
-		  QDPIO::cout << "false, ";
-		break;
-	      default:
-		QDPIO::cout << "(unkown jit param type)\n"; break;
-		assert(0);
-	      }
-	    }
-	  
-	  ret.push_back( &e.param );
-	  
-	} else {
-	  
-	  if (print_param)
-	    {
-	      QDPIO::cout << (size_t)e.devPtr << ", ";
-	    }
-	  
-	  ret.push_back( &e.devPtr );
-	}
-      } else {
-	
-	if (print_param)
-	  {
-	    QDPIO::cout << "NULL(id=" << i<< "), ";
-	  }
-	
-	ret.push_back( &jit_param_null_ptr );
-	
-      }
-    }
-    if (print_param)
-      QDPIO::cout << "\n";
-
-    return ret;
-  }
-#else
-  std::vector<void*> QDPCache::get_kernel_args(std::vector<int>& ids , bool for_kernel )
+  std::vector<void*> QDPCache::get_kernel_args(std::vector<ArgKey>& ids , bool for_kernel )
   {
     // Here we do two cycles through the ids:
     // 1) cache all objects
@@ -717,20 +763,20 @@ namespace QDP
     // This should replace the old 'lock set'
 
     //QDPIO::cout << "ids: ";
-    std::vector<int> allids;
+    std::vector<ArgKey> allids;
     for ( auto i : ids )
       {
 	allids.push_back(i);
-	if (i >= 0)
+	if (i.id >= 0)
 	  {
 	    //QDPIO::cout << i << " ";
-	    assert( vecEntry.size() > i );
-	    Entry& e = vecEntry[i];
+	    assert( vecEntry.size() > i.id );
+	    Entry& e = vecEntry[i.id];
 	    if (e.flags & QDPCache::Flags::Multi)
 	      {
 		for ( auto u : e.multi )
 		  {
-		    allids.push_back(u);
+		    allids.push_back(ArgKey(u));
 		  }
 	      }
 	  }
@@ -740,37 +786,49 @@ namespace QDP
     //QDPIO::cout << "allids: ";
     for ( auto i : allids ) {
       //QDPIO::cout << i << " ";
-      assureDevice(i);
+      if (i.elem < 0)
+	assureDevice(i.id);
+      else
+	assureDevice(i.id,i.elem);
     }
     //QDPIO::cout << "\n";
     
     bool all = true;
     for ( auto i : allids )
-      all = all && isOnDevice(i);
+      if (i.elem < 0)
+	all = all && isOnDevice(i.id);
+      else
+	all = all && isOnDevice(i.id,i.elem);
 
+    
     if (!all) {
       QDPIO::cout << "It was not possible to load all objects required by the kernel into device memory\n";
       for ( auto i : ids ) {
-	if (i >= 0) {
-	  assert( vecEntry.size() > i );
-	  Entry& e = vecEntry[i];
-	  QDPIO::cout << "id = " << i << "  size = " << e.size << "  flags = " << e.flags << "  status = ";
-	  switch (e.status) {
-	  case Status::undef:
-	    QDPIO::cout << "undef\n";
-	    break;
-	  case Status::host:
-	    QDPIO::cout << "host\n";
-	    break;
-	  case Status::device:
-	    QDPIO::cout << "device\n";
-	    break;
-	  default:
-	    QDPIO::cout << "unkown\n";
-	  }
-	} else {
-	  QDPIO::cout << "id = " << i << "\n";
+	if (i.id >= 0) {
+	  assert( vecEntry.size() > i.id );
+	  Entry& e = vecEntry[i.id];
+	  QDPIO::cout << "id = " << i.id << "  size = " << e.size << "  flags = " << e.flags << "  status = ";
+	  for ( auto st : e.status_vec )
+	    {
+	      switch (st) {
+	      case Status::undef:
+		QDPIO::cout << "undef,";
+		break;
+	      case Status::host:
+		QDPIO::cout << "host,";
+		break;
+	      case Status::device:
+		QDPIO::cout << "device,";
+		break;
+	      default:
+		QDPIO::cout << "unkown\n";
+	      }
+	    }
 	}
+	else
+	  {
+	    QDPIO::cout << "id = " << i.id << "\n";
+	  }
       }
       QDP_error_exit("giving up");
     }
@@ -779,12 +837,12 @@ namespace QDP
     // Handle multi-ids
     for ( auto i : ids )
       {
-	if (i >= 0)
+	if (i.id >= 0)
 	  {
-	    Entry& e = vecEntry[i];
+	    Entry& e = vecEntry[i.id];
 	    if (e.flags & QDPCache::Flags::Multi)
 	      {
-		assert( isOnDevice(i) );
+		assert( isOnDevice(i.id) );
 		multi1d<void*> dev_ptr(e.multi.size());
 
 		int count=0;
@@ -818,8 +876,8 @@ namespace QDP
     
     std::vector<void*> ret;
     for ( auto i : ids ) {
-      if (i >= 0) {
-	Entry& e = vecEntry[i];
+      if (i.id >= 0) {
+	Entry& e = vecEntry[i.id];
 	if (e.flags & QDPCache::Flags::JitParam) {
 	  
 	  if (print_param)
@@ -857,7 +915,7 @@ namespace QDP
 	
 	if (print_param)
 	  {
-	    QDPIO::cout << "NULL(id=" << i<< "), ";
+	    QDPIO::cout << "NULL(id=" << i.id << "), ";
 	  }
 
 	assert(for_kernel);
@@ -870,7 +928,7 @@ namespace QDP
 
     return ret;
   }
-#endif
+
 
 
   QDPCache& QDP_get_global_cache()

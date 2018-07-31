@@ -65,7 +65,7 @@ namespace QDP {
     JitParam jit_lo( QDP_get_global_cache().addJitParamInt( 0 ) );
     JitParam jit_hi( QDP_get_global_cache().addJitParamInt( Layout::sitesOnNode() ) );
   
-    std::vector<int> ids;
+    std::vector<QDPCache::ArgKey> ids;
     ids.push_back( jit_lo.get_id() );
     ids.push_back( jit_hi.get_id() );
     for(unsigned i=0; i < addr_leaf.ids.size(); ++i)

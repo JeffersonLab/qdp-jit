@@ -29,6 +29,8 @@ namespace QDP {
  * @{
  */
 
+  
+  
 //! Outer grid Scalar class */
 /*! All outer lattices are of OScalar or OLattice type */
   template<class T>
@@ -39,19 +41,11 @@ namespace QDP {
 
     OScalar(): QDPType<T, OScalar<T> >()
     {
-      if (qdp_stack_scalars_enabled()) {
-	dev_ptr = qdp_stack_scalars_alloc( sizeof(T) );
-	myId = QDP_get_global_cache().add( sizeof(T) ,
-					   QDPCache::Flags::OwnHostMemory | QDPCache::Flags::OwnDeviceMemory ,
-					   qdp_stack_scalars_get_create_status() , 
-					   &F , dev_ptr , NULL );
-      }
     }
 
     virtual ~OScalar() {
       free_mem();
     }
-
 
     OScalar(const typename WordType<T>::Type_t& rhs): QDPType<T, OScalar<T> >()
     {
@@ -115,14 +109,6 @@ namespace QDP {
 
 
 
-    // OSubScalar<T>  operator[](const Subset& s) const
-    // {return OSubScalar<T>(*this,s);}
-
-    // OSubScalar<T> operator[](const Subset& s)
-    // {return OSubScalar<T>(*this,const_cast<Subset&>(s));}
-
-
-
     OScalar(const OScalar& rhs): QDPType<T, OScalar<T> >()
     {
       this->assign(rhs);
@@ -130,58 +116,145 @@ namespace QDP {
 
   public:
 
-    inline T* getF() const { assert_on_host(); return &F; };
+    inline T* getF() const {
+      if ( elem_num < 0 )
+	{
+	  assert_on_host();
+	  return &F;
+	}
+      else
+	{
+	  assert( myId >= 0 );
+	  Fptr = (T*)QDP_get_global_cache().getHostArrayPtr( myId , elem_num );
+	  return Fptr;
+	}
+    };
 
 
-    inline T& elem() { assert_on_host(); return F;  }
-    inline const T& elem() const { assert_on_host(); return F; }
-    inline T& elem(int i) { assert_on_host(); return F; }
-    inline const T& elem(int i) const { assert_on_host(); return F; }
+    inline T& elem() {
+      if ( elem_num < 0 )
+	{
+	  assert_on_host();
+	  return F;
+	}
+      else
+	{
+	  assert( myId >= 0 );
+	  Fptr = (T*)QDP_get_global_cache().getHostArrayPtr( myId , elem_num );
+	  return *Fptr;
+	}
+    }
+    
+    inline const T& elem() const {
+      if ( elem_num < 0 )
+	{
+	  assert_on_host();
+	  return F;
+	}
+      else
+	{
+	  assert( myId >= 0 );
+	  Fptr = (T*)QDP_get_global_cache().getHostArrayPtr( myId , elem_num );
+	  return *Fptr;
+	}
+    }
 
-    int getId() const {       
+    inline T& elem(int i) {
+      if ( elem_num < 0 )
+	{
+	  assert_on_host();
+	  return F;
+	}
+      else
+	{
+	  assert( myId >= 0 );
+	  Fptr = (T*)QDP_get_global_cache().getHostArrayPtr( myId , elem_num );
+	  return *Fptr;
+	}
+    }
+
+    inline const T& elem(int i) const {
+      if ( elem_num < 0 )
+	{
+	  assert_on_host();
+	  return F;
+	}
+      else
+	{
+	  assert( myId >= 0 );
+	  Fptr = (T*)QDP_get_global_cache().getHostArrayPtr( myId , elem_num );
+	  return *Fptr;
+	}
+    }
+
+
+    int getId() const {
       alloc_mem(); 
       return myId; 
     }
 
+    int getElemNum() const {       
+      return elem_num;
+    }
+
+    void setId(int id) {
+      myId = id;
+    }
+
+    void setElemNum(int elemnum) {
+      elem_num = elemnum;
+    }
+
+
   private:
 
     inline void alloc_mem() const {
-      if (myId >= 0)
+      if ( myId >= 0 )
 	return;
 
       QDPCache::Status status = accessed_on_host ? QDPCache::Status::host : QDPCache::Status::undef;
 
       myId = QDP_get_global_cache().add( sizeof(T) , QDPCache::Flags::OwnHostMemory , status , &F , NULL , NULL );
     }
+    
     inline void free_mem() {
-      if (myId >= 0)
+      if ( myId >= 0  &&  elem_num < 0 )
 	QDP_get_global_cache().signoff( myId );
     }
+    
     inline void assert_on_host() const {
+      //std::cout << "Oscalar assert on host\n";
+      
       accessed_on_host = true;
       
       if (myId < 0)
 	return;
-      
-      QDP_get_global_cache().assureOnHost( myId );
+
+      if ( elem_num < 0 )
+	QDP_get_global_cache().assureOnHost( myId );
+      else
+	QDP_get_global_cache().assureOnHost( myId , elem_num );
     }
 
-    mutable T F;
     mutable int myId = -1;
-    mutable void* dev_ptr;
     mutable bool accessed_on_host = false;
+    mutable int elem_num = -1;
+    mutable T  F;
+    mutable T* Fptr;
   };
 
 
 //! Ascii input
 /*! Treat all istreams here like all nodes can read. To use specialized ones
  *  that can broadcast, use TextReader */
+  
 template<class T>
 istream& operator>>(istream& s, OScalar<T>& d)
 {
   return s >> d.elem();
 }
 
+  
 //! Ascii output
 /*! Treat all ostreams here like all nodes can write. To use specialized ones
  *  that can broadcast, use TextReader */
@@ -623,7 +696,10 @@ struct LeafFunctor<OScalar<T>, AddressLeaf>
   Type_t apply(const OScalar<T>& s, const AddressLeaf& p) 
   {
     //p.setAddr( QDP_get_global_cache().getDevicePtr( s.getId() ) );
-    p.setId( s.getId() );
+    if ( s.getElemNum() < 0 )
+      p.setId( s.getId() );
+    else
+      p.setIdElem( s.getId() , s.getElemNum() );
     return 0;
   }
 };

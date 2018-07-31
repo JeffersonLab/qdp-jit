@@ -18,7 +18,7 @@ namespace QDP {
     JitParam jit_lo( QDP_get_global_cache().addJitParamInt( lo ) );
     JitParam jit_hi( QDP_get_global_cache().addJitParamInt( hi ) );
   
-    std::vector<int> ids;
+    std::vector<QDPCache::ArgKey> ids;
     ids.push_back( jit_lo.get_id() );
     ids.push_back( jit_hi.get_id() );
     ids.push_back( siteTableId );
@@ -48,7 +48,7 @@ namespace QDP {
     JitParam jit_numsubsets( QDP_get_global_cache().addJitParamInt( numsubsets ) );
     JitParam jit_tables(     QDP_get_global_cache().addMulti(       table_ids  ) );
 						      
-    std::vector<int> ids;
+    std::vector<QDPCache::ArgKey> ids;
     ids.push_back( jit_numsubsets.get_id() );
     ids.push_back( sizes_id );
     ids.push_back( jit_tables.get_id() );
@@ -79,7 +79,7 @@ namespace QDP {
 
     JitParam jit_numsubsets( QDP_get_global_cache().addJitParamInt( numsubsets ) );
 						      
-    std::vector<int> ids;
+    std::vector<QDPCache::ArgKey> ids;
     ids.push_back( jit_numsubsets.get_id() );
     ids.push_back( sizes_id );
     ids.push_back( in_id );
@@ -109,7 +109,7 @@ namespace QDP {
     JitParam jit_lo( QDP_get_global_cache().addJitParamInt( lo ) );
     JitParam jit_hi( QDP_get_global_cache().addJitParamInt( hi ) );
   
-    std::vector<int> ids;
+    std::vector<QDPCache::ArgKey> ids;
     ids.push_back( jit_lo.get_id() );
     ids.push_back( jit_hi.get_id() );
     ids.push_back( in_id );
@@ -137,7 +137,7 @@ namespace QDP {
     JitParam jit_lo( QDP_get_global_cache().addJitParamInt( lo ) );
     JitParam jit_hi( QDP_get_global_cache().addJitParamInt( hi ) );
   
-    std::vector<int> ids;
+    std::vector<QDPCache::ArgKey> ids;
     ids.push_back( jit_lo.get_id() );
     ids.push_back( jit_hi.get_id() );
     ids.push_back( in_id );
@@ -164,7 +164,7 @@ namespace QDP {
     JitParam jit_lo( QDP_get_global_cache().addJitParamInt( lo ) );
     JitParam jit_hi( QDP_get_global_cache().addJitParamInt( hi ) );
   
-    std::vector<int> ids;
+    std::vector<QDPCache::ArgKey> ids;
     ids.push_back( jit_lo.get_id() );
     ids.push_back( jit_hi.get_id() );
     ids.push_back( in_id );

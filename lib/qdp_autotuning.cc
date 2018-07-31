@@ -26,7 +26,7 @@ namespace QDP {
   }
 
 
-  void jit_launch(CUfunction function,int th_count,std::vector<int>& ids)
+  void jit_launch(CUfunction function,int th_count,std::vector<QDPCache::ArgKey>& ids)
   {
     //QDP_get_global_cache().printLockSet();
     //QDP_get_global_cache().newLockSet();

@@ -206,7 +206,6 @@ namespace QDP {
 
 
 
-
   //
   // sumMulti 
   //
@@ -214,7 +213,11 @@ namespace QDP {
   typename UnaryReturn<OLattice<T1>, FnSumMulti>::Type_t
   sumMulti( const OLattice<T1>& s1 , const Set& ss )
   {
+    //QDPIO::cout << "using jit version of sumMulti\n";
+    
     typedef typename UnaryReturn<OLattice<T1>, FnSum>::Type_t::SubType_t T2;
+
+    typename UnaryReturn<OLattice<T1>, FnSumMulti>::Type_t  dest(ss.numSubsets());
 
     const int numsubsets = ss.numSubsets();
     
@@ -275,7 +278,7 @@ namespace QDP {
 	if (first) {
 	  qdp_jit_summulti_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(maxsize, numThreads, numBlocks,
 										 shared_mem_usage,
-										 s1.getId(), out_id,
+										 s1.getId(), dest.getId(),
 										 numsubsets,
 										 sizes,
 										 table_ids);
@@ -283,7 +286,7 @@ namespace QDP {
 	else {
 	  qdp_jit_summulti<T2>(maxsize, numThreads, numBlocks,
 			       shared_mem_usage,
-			       in_id, out_id,
+			       in_id, dest.getId(),
 			       numsubsets,
 			       sizes);
 	}
@@ -338,13 +341,6 @@ namespace QDP {
       out_id = tmp;
     }
 
-    
-    qdp_stack_scalars_start_from_id( out_id );
-
-    typename UnaryReturn<OLattice<T1>, FnSumMulti>::Type_t  dest(ss.numSubsets());
-
-    qdp_stack_scalars_end();
-    
     QDPInternal::globalSumArray(dest);
     
     QDP_get_global_cache().signoff( in_id );

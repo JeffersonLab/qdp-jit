@@ -57,7 +57,7 @@ function_gaussian_exec(CUfunction function, OLattice<T>& dest,OLattice<T>& r1,OL
   JitParam jit_start( QDP_get_global_cache().addJitParamInt( s.start() ) );
   JitParam jit_end( QDP_get_global_cache().addJitParamInt( s.end() ) );
 
-  std::vector<int> ids;
+  std::vector<QDPCache::ArgKey> ids;
   ids.push_back( jit_ordered.get_id() );
   ids.push_back( jit_th_count.get_id() );
   ids.push_back( jit_start.get_id() );

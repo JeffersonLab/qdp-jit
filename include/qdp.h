@@ -181,6 +181,8 @@ namespace QDP {
 #include "qdp_map.h"
 #include "qdp_autotuning.h"
 
+#include "qdp_multi_outer.h"
+
 
 #include "qdp_simpleword.h"
 #include "qdp_wordjit.h"
@@ -232,6 +234,7 @@ namespace QDP {
 #else
 #error "Unknown architecture ARCH"
 #endif
+
 
 #include "qdp_flopcount.h"
 #include "qdp_globalfuncs_subtype.h"
