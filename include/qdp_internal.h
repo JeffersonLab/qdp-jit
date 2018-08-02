@@ -66,10 +66,10 @@ namespace QDPInternal
     typedef typename WordType<T>::Type_t  W;   // find the machine word type
     typedef typename T::SubType_t         P;   // Primitive type
 
-#if 0
+#if 1
     QDPIO::cout << "sizeof(P) = " << sizeof(P) << endl;
     QDPIO::cout << "sizeof(W) = " << sizeof(W) << endl;
-    QDPIO::cout << "Calling multi1d global sum array with length " << sizeof(P)/sizeof(W) << endl;
+    QDPIO::cout << "Calling " << dest.size() << "x global sum array with length " << sizeof(P)/sizeof(W) << endl;
 #endif
 
     for (int i = 0 ; i < dest.size() ; ++i )

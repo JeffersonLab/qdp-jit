@@ -29,14 +29,76 @@ namespace QDP
     Flags  flags;
     void*  hstPtr;  // NULL if not allocated
     void*  devPtr;  // NULL if not allocated
-    int    lockCount;
     list<int>::iterator iterTrack;
     LayoutFptr fptr;
     JitParamUnion param;
     QDPCache::JitParamType param_type;
     std::vector<int> multi;
     std::vector<Status> status_vec;
+    std::vector<void* > karg_vec;
   };
+
+
+  void QDPCache::printInfo(int id) {
+    assert( vecEntry.size() > id );
+    const Entry& e = vecEntry[id];
+
+    QDPIO::cout << "id = " << e.Id
+		<< ", size = " << e.size
+		<< ", flags = ";
+    
+    if (e.flags & OwnHostMemory) QDPIO::cout << "own hst|";
+    if (e.flags & OwnDeviceMemory) QDPIO::cout << "own dev|";
+    if (e.flags & JitParam) QDPIO::cout << "param|";
+    if (e.flags & Static) QDPIO::cout << "static|";
+    if (e.flags & Multi) QDPIO::cout << "multi|";
+    if (e.flags & Array) QDPIO::cout << "array|";
+    QDPIO::cout << ", ";
+
+    if (e.flags & Array) {
+      QDPIO::cout << ", elem_size = " << e.elem_size;
+    }
+
+    QDPIO::cout << ", status = ";
+    for ( auto st : e.status_vec )
+      {
+	switch (st) {
+	case Status::undef:
+	  QDPIO::cout << "-,";
+	  break;
+	case Status::host:
+	  QDPIO::cout << "host,";
+	  break;
+	case Status::device:
+	  QDPIO::cout << "device,";
+	  break;
+	default:
+	  QDPIO::cout << "unknown, \n";
+	}
+      }
+
+    if (e.flags & QDPCache::Flags::JitParam)
+      {
+	switch(e.param_type) {
+	case JitParamType::float_: QDPIO::cout << (float)e.param.float_ << ", "; break;
+	case JitParamType::double_: QDPIO::cout << (double)e.param.double_ << ", "; break;
+	case JitParamType::int_: QDPIO::cout << (int)e.param.int_ << ", "; break;
+	case JitParamType::int64_: QDPIO::cout << (int64_t)e.param.int64_ << ", "; break;
+	case JitParamType::bool_:
+	  if (e.param.bool_)
+	    QDPIO::cout << "true, ";
+	  else
+	    QDPIO::cout << "false, ";
+	  break;
+	default:
+	  QDPIO::cout << "(unkown jit param type)\n"; break;
+	  assert(0);
+	}
+      }
+
+    QDPIO::cout << "\n";
+
+  }
 
 
 
@@ -95,6 +157,7 @@ namespace QDP
     e.size         = 0;
     e.flags        = Flags::JitParam;
     e.status_vec.clear();
+    e.karg_vec.clear();
     e.param.float_ = i;
     e.param_type   = JitParamType::float_;
     e.multi.clear();
@@ -110,6 +173,7 @@ namespace QDP
     e.size         = 0;
     e.flags         = Flags::JitParam;
     e.status_vec.clear();
+    e.karg_vec.clear();
     e.param.double_ = i;
     e.param_type   = JitParamType::double_;
     e.multi.clear();
@@ -125,6 +189,7 @@ namespace QDP
     e.size         = 0;
     e.flags        = Flags::JitParam;
     e.status_vec.clear();
+    e.karg_vec.clear();
     e.param.int_   = i;
     e.param_type   = JitParamType::int_;
     e.multi.clear();
@@ -140,6 +205,7 @@ namespace QDP
     e.size         = 0;
     e.flags         = Flags::JitParam;
     e.status_vec.clear();
+    e.karg_vec.clear();
     e.param.int64_  = i;
     e.param_type    = JitParamType::int64_;
     e.multi.clear();
@@ -155,6 +221,7 @@ namespace QDP
     e.size         = 0;
     e.flags        = Flags::JitParam;
     e.status_vec.clear();
+    e.karg_vec.clear();
     e.param.bool_  = i;
     e.param_type   = JitParamType::bool_;
     e.multi.clear();
@@ -170,6 +237,7 @@ namespace QDP
     e.Id        = Id;
     e.flags     = Flags::Multi;
     e.status_vec.clear();
+    e.karg_vec.clear();
     e.hstPtr    = NULL;
     e.devPtr    = NULL;
     e.fptr      = NULL;
@@ -228,6 +296,7 @@ namespace QDP
     e.devPtr    = *ptr;
     e.multi.clear();
     e.status_vec.clear();
+    e.karg_vec.clear();
 
     e.iterTrack = lstTracker.insert( lstTracker.end() , Id );
 
@@ -269,6 +338,8 @@ namespace QDP
 
     e.status_vec.clear();
     e.status_vec.resize(1,status);
+
+    e.karg_vec.clear();
 	
     e.iterTrack = lstTracker.insert( lstTracker.end() , Id );
 
@@ -310,9 +381,7 @@ namespace QDP
     e.Id        = Id;
     e.size      = size;
     e.elem_size = element_size;
-    //e.flags     = QDPCache::Flags::OwnHostMemory | QDPCache::Flags::OwnDeviceMemory | QDPCache::Flags::Array;
     e.flags     = QDPCache::Flags::Array;
-    //e.status    = Status::undef;
     e.hstPtr    = hst_ptr;
     e.devPtr    = dev_ptr;
     e.fptr      = NULL;
@@ -321,6 +390,9 @@ namespace QDP
     
     e.status_vec.clear();
     e.status_vec.resize( num_elements , Status::undef );
+
+    e.karg_vec.clear();
+    e.karg_vec.resize( num_elements , NULL );
 
     e.iterTrack = lstTracker.insert( lstTracker.end() , Id );
 
@@ -352,6 +424,7 @@ namespace QDP
       {
 	e.multi.clear();
 	e.status_vec.clear();
+	e.karg_vec.clear();
       }
     
     stackFree.push( id );
@@ -488,6 +561,7 @@ namespace QDP
   }
 
   void QDPCache::assureDevice(int id,int elem) {
+    //QDPIO::cout << "assureDevice id=" << id << "  elem=" << elem << "\n";
     if (id < 0)
       return;
     assert( vecEntry.size() > id );
@@ -908,8 +982,22 @@ namespace QDP
 	    {
 	      QDPIO::cout << (size_t)e.devPtr << ", ";
 	    }
-	  
-	  ret.push_back( for_kernel ? &e.devPtr : e.devPtr );
+
+	  if (e.flags & QDPCache::Flags::Array)
+	    {
+	      QDPIO::cout << "e.karg_vec.size() = " << e.karg_vec.size() << "\n";
+	      QDPIO::cout << "i.elem = " << i.elem << "\n";
+	      assert(for_kernel);
+	      assert( i.elem >= 0 );
+	      assert( e.karg_vec.size() > i.elem );
+	      e.karg_vec[i.elem] = (void*)((size_t)e.devPtr + e.elem_size * i.elem);
+	      
+	      ret.push_back( &e.karg_vec[i.elem] );
+	    }
+	  else
+	    {
+	      ret.push_back( for_kernel ? &e.devPtr : e.devPtr );
+	    }
 	}
       } else {
 	

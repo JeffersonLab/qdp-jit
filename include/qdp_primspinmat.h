@@ -1815,6 +1815,22 @@ quarkContract34(const PSpinMatrix<T1,4>& s1, const PSpinMatrix<T2,4>& s2)
   return d;
 }
 
+
+// Output
+//! Ascii output
+template<class T, int N>  
+inline
+StandardOutputStream& operator<<(StandardOutputStream& s, const PSpinMatrix<T,N>& d)
+{
+  for(int j=0; j < N; ++j) {
+    for(int i=0; i < N; ++i)
+      s << d.elem(i,j);
+    s << "\n";
+  }
+  return s;
+}
+
+  
 /*! @} */   // end of group primspinmatrix
 
 } // namespace QDP

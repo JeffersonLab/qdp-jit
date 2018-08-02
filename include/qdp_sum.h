@@ -205,7 +205,7 @@ namespace QDP {
 
 
 
-
+#if 0
   //
   // sumMulti 
   //
@@ -213,7 +213,7 @@ namespace QDP {
   typename UnaryReturn<OLattice<T1>, FnSumMulti>::Type_t
   sumMulti( const OLattice<T1>& s1 , const Set& ss )
   {
-    //QDPIO::cout << "using jit version of sumMulti\n";
+    QDPIO::cout << "using jit version of sumMulti\n";
     
     typedef typename UnaryReturn<OLattice<T1>, FnSum>::Type_t::SubType_t T2;
 
@@ -348,7 +348,46 @@ namespace QDP {
       
     return dest;
   }
+#else
+  template<class RHS, class T>
+  typename UnaryReturn<OLattice<T>, FnSumMulti>::Type_t
+  sumMulti(const QDPExpr<RHS,OLattice<T> >& s1, const Set& ss)
+  {
+    QDPIO::cout << "using non-jit version of sumMulti\n";
+    typename UnaryReturn<OLattice<T>, FnSumMulti>::Type_t	 dest(ss.numSubsets());
 
+#if defined(QDP_USE_PROFILING)	 
+    static QDPProfile_t prof(dest[0], OpAssign(), FnSum(), s1);
+    prof.time -= getClockTime();
+#endif
+
+    // Initialize result with zero
+    for(int k=0; k < ss.numSubsets(); ++k)
+      zero_rep(dest[k]);
+
+    // Loop over all sites and accumulate based on the coloring 
+    const multi1d<int>& lat_color =	 ss.latticeColoring();
+    const int nodeSites = Layout::sitesOnNode();
+
+    for(int i=0; i < nodeSites; ++i) 
+      {
+	int j = lat_color[i];
+	dest[j].elem() += forEach(s1, EvalLeaf1(i), OpCombine());
+      }
+
+    // Do a global sum on the result
+    QDPInternal::globalSumArray(dest);
+
+#if defined(QDP_USE_PROFILING)	 
+    prof.time += getClockTime();
+    prof.count++;
+    prof.print();
+#endif
+
+    return dest;
+  }
+
+#endif
 
 
 

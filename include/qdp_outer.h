@@ -124,6 +124,7 @@ namespace QDP {
 	}
       else
 	{
+	  accessed_on_host = true;
 	  assert( myId >= 0 );
 	  Fptr = (T*)QDP_get_global_cache().getHostArrayPtr( myId , elem_num );
 	  return Fptr;
@@ -139,6 +140,7 @@ namespace QDP {
 	}
       else
 	{
+	  accessed_on_host = true;
 	  assert( myId >= 0 );
 	  Fptr = (T*)QDP_get_global_cache().getHostArrayPtr( myId , elem_num );
 	  return *Fptr;
@@ -153,6 +155,7 @@ namespace QDP {
 	}
       else
 	{
+	  accessed_on_host = true;
 	  assert( myId >= 0 );
 	  Fptr = (T*)QDP_get_global_cache().getHostArrayPtr( myId , elem_num );
 	  return *Fptr;
@@ -167,6 +170,7 @@ namespace QDP {
 	}
       else
 	{
+	  accessed_on_host = true;
 	  assert( myId >= 0 );
 	  Fptr = (T*)QDP_get_global_cache().getHostArrayPtr( myId , elem_num );
 	  return *Fptr;
@@ -181,6 +185,7 @@ namespace QDP {
 	}
       else
 	{
+	  accessed_on_host = true;
 	  assert( myId >= 0 );
 	  Fptr = (T*)QDP_get_global_cache().getHostArrayPtr( myId , elem_num );
 	  return *Fptr;
@@ -204,6 +209,9 @@ namespace QDP {
     void setElemNum(int elemnum) {
       elem_num = elemnum;
     }
+
+    bool accessed() const { return accessed_on_host; }
+
 
 
   private:
@@ -561,6 +569,11 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
       return myId;
     }
 
+    int getElemNum() const {       
+      return -1;
+    }
+
+
   private:
 
 
@@ -682,8 +695,7 @@ struct LeafFunctor<OLattice<T>, AddressLeaf>
   inline static
   Type_t apply(const OLattice<T>& s, const AddressLeaf& p) 
   {
-    //p.setAddr( QDP_get_global_cache().getDevicePtr( s.getId() ) );
-    p.setId( s.getId() );
+    p.setIdElem( s.getId() , s.getElemNum() );
     return 0;
   }
 };
@@ -695,11 +707,7 @@ struct LeafFunctor<OScalar<T>, AddressLeaf>
   inline static
   Type_t apply(const OScalar<T>& s, const AddressLeaf& p) 
   {
-    //p.setAddr( QDP_get_global_cache().getDevicePtr( s.getId() ) );
-    if ( s.getElemNum() < 0 )
-      p.setId( s.getId() );
-    else
-      p.setIdElem( s.getId() , s.getElemNum() );
+    p.setIdElem( s.getId() , s.getElemNum() );
     return 0;
   }
 };

@@ -65,6 +65,7 @@ namespace QDP {
   void CudaProfilerStart();
   void CudaProfilerStop();
 
+  void CudaMemset( void * dest , unsigned val , size_t N );
 }
 
 #endif

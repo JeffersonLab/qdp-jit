@@ -551,6 +551,14 @@ namespace QDP {
     CudaRes("cuCtxSynchronize",ret);
   }
 
+  void CudaMemset( void * dest , unsigned val , size_t N )
+  {
+    CUresult ret;
+    ret = cuMemsetD32((CUdeviceptr)const_cast<void*>(dest), val, N);
+    CudaRes("cuMemsetD32",ret);
+  }
+
+  
 }
 
 

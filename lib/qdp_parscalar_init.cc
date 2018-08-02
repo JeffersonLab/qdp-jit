@@ -330,6 +330,12 @@ namespace COUNT {
 	  {
 	    DeviceParams::Instance().setGPUDirect(true);
 	  }
+	else if (strcmp((*argv)[i], "-poolmemset")==0) 
+	  {
+	    unsigned val;
+	    sscanf((*argv)[++i],"%u",&val);
+	    QDP_get_global_cache().get_allocator().enableMemset(val);
+	  }
 	else if (strcmp((*argv)[i], "-envvar")==0) 
 	  {
 	    char buffer[1024];

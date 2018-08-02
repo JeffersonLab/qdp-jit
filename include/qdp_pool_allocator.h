@@ -40,6 +40,7 @@ namespace QDP
     void free(const void *mem);
     void setPoolSize(size_t s);
 
+    void enableMemset(unsigned val);
 
   private:
     friend class QDPCache;
@@ -62,6 +63,9 @@ namespace QDP
     listEntryIter_t    listAllocOrder;
     typename listEntry_t::iterator iterNextNotAllocated;
 
+    bool setMemory = false;
+    unsigned setMemoryVal;
+    
     bool findNextNotAllocated( typename listEntry_t::iterator & start , size_t & size );
 
   };
@@ -194,6 +198,13 @@ namespace QDP
 
     iterNextNotAllocated = listEntry.begin();
 
+    if (setMemory)
+      {
+	assert(sizeof(unsigned) == 4);
+	std::cout << "Initializing device memory with value = " << setMemoryVal << "\n";
+	CudaMemset( poolPtr , setMemoryVal , poolSize/sizeof(unsigned) );
+      }
+    
     bufferAllocated=true;
   }
     
@@ -379,6 +390,13 @@ namespace QDP
     //QDP_info_primary("Pool allocator: set pool size %lu bytes" , (unsigned long)s );
     poolSize = s;
   }
+
+    template<class Allocator>
+  void QDPPoolAllocator<Allocator>::enableMemset(unsigned val) {
+      setMemory = true;
+      setMemoryVal = val;
+    }
+
 
   template<class Allocator>
   size_t QDPPoolAllocator<Allocator>::getPoolSize() {
