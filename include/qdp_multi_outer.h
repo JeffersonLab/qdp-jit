@@ -222,7 +222,18 @@ namespace QDP {
     }
 
 
-
+    // globalSumArray uses slice()
+    // however, in qdp-jit a pointer to an array of OScalar cannot be used
+    // to access the contained values. So, an explicitly different name is used
+    // to get access to the host values.
+    //
+    //const T* slice() const {return F;}
+    T1* slice_host() const {
+      assert( id >= 0 );
+      void* ptr;
+      QDP_get_global_cache().getHostPtr( &ptr , id );
+      return static_cast<T1*>(ptr);
+    }
 
     //! Return ref to an element
     OScalar<T1>& operator()(int i) {

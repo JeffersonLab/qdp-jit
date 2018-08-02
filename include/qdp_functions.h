@@ -342,7 +342,7 @@ namespace QDP {
     return dest;
   }
 
-#if 0
+#if 1
   template<class RHS, class T>
   typename UnaryReturn<OLattice<T>, FnSumMulti>::Type_t
   sumMulti(const QDPExpr<RHS,OLattice<T> >& s1, const Set& ss)

@@ -205,7 +205,7 @@ namespace QDP {
 
 
 
-#if 0
+#if 1
   //
   // sumMulti 
   //
@@ -213,7 +213,7 @@ namespace QDP {
   typename UnaryReturn<OLattice<T1>, FnSumMulti>::Type_t
   sumMulti( const OLattice<T1>& s1 , const Set& ss )
   {
-    QDPIO::cout << "using jit version of sumMulti\n";
+    //QDPIO::cout << "using jit version of sumMulti\n";
     
     typedef typename UnaryReturn<OLattice<T1>, FnSum>::Type_t::SubType_t T2;
 

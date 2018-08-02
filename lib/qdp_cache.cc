@@ -581,7 +581,7 @@ namespace QDP
 
     if (e.flags & Flags::Array)
       {
-	//std::cout << "cache: making sure whole array is on device size " << e.status_vec.size() << "\n";
+	//QDPIO::cout << "cache: making sure whole array is on device, size = " << e.status_vec.size() << "\n";
 	assert( e.status_vec.size() == ( e.size / e.elem_size));
 	for( int i = 0 ; i < e.status_vec.size() ; ++i )
 	  {
@@ -788,6 +788,7 @@ namespace QDP
 
     if (e.flags & QDPCache::Array)
       {
+	//QDPIO::cout << "making sure all elements of the array are on the device\n";
 	bool ret = true;
 	assert( e.status_vec.size() > 0 );
 	for( int i = 0 ; i < e.status_vec.size() ; ++i )
@@ -985,14 +986,20 @@ namespace QDP
 
 	  if (e.flags & QDPCache::Flags::Array)
 	    {
-	      QDPIO::cout << "e.karg_vec.size() = " << e.karg_vec.size() << "\n";
-	      QDPIO::cout << "i.elem = " << i.elem << "\n";
 	      assert(for_kernel);
-	      assert( i.elem >= 0 );
-	      assert( e.karg_vec.size() > i.elem );
-	      e.karg_vec[i.elem] = (void*)((size_t)e.devPtr + e.elem_size * i.elem);
-	      
-	      ret.push_back( &e.karg_vec[i.elem] );
+
+	      if ( i.elem == -1 )
+		{
+		  // This ArgKey comes from an multiXd<OScalar> access, like in sumMulti
+		  ret.push_back( &e.devPtr );
+		}
+	      else
+		{
+		  // This ArgKey comes from an OScalar access through multiXd<OScalar> 
+		  assert( e.karg_vec.size() > i.elem );
+		  e.karg_vec[i.elem] = (void*)((size_t)e.devPtr + e.elem_size * i.elem);
+		  ret.push_back( &e.karg_vec[i.elem] );
+		}
 	    }
 	  else
 	    {

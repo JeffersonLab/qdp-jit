@@ -61,22 +61,42 @@ namespace QDPInternal
   template<class T>
   inline void globalSumArray(multi1d<T>& dest)
   {
+  // The implementation here is relying on the structure being packed
+  // tightly in memory - no padding
+  typedef typename WordType<T>::Type_t  W;   // find the machine word type
+  typedef typename T::SubType_t         P;   // Primitive type
+
+#if 0
+  QDPIO::cout << "sizeof(P) = " << sizeof(P) << endl;
+  QDPIO::cout << "sizeof(W) = " << sizeof(W) << endl;
+  QDPIO::cout << "Calling " << dest.size() << "x global sum array with length " << sizeof(P)/sizeof(W) << endl;
+#endif
+  
+  for (int i = 0 ; i < dest.size() ; ++i )
+    globalSumArray( (W *)dest[i].getF(), sizeof(P)/sizeof(W)); // call appropriate hook
+}
+
+
+    //! Global sum on a multi1d
+  template<class T1>
+  inline void globalSumArray(multi1d< OScalar<T1> >& dest)
+  {
+  //QDPIO::cout << "globalSumArray special " << endl;
     // The implementation here is relying on the structure being packed
     // tightly in memory - no padding
-    typedef typename WordType<T>::Type_t  W;   // find the machine word type
-    typedef typename T::SubType_t         P;   // Primitive type
+    typedef typename WordType<T1>::Type_t  W;   // find the machine word type
+    typedef          T1                    P;   // Primitive type
 
-#if 1
-    QDPIO::cout << "sizeof(P) = " << sizeof(P) << endl;
-    QDPIO::cout << "sizeof(W) = " << sizeof(W) << endl;
-    QDPIO::cout << "Calling " << dest.size() << "x global sum array with length " << sizeof(P)/sizeof(W) << endl;
+#if 0
+  QDPIO::cout << "sizeof(P) = " << sizeof(P) << endl;
+  QDPIO::cout << "sizeof(W) = " << sizeof(W) << endl;
+  QDPIO::cout << "Calling multi1d global sum array with length " << dest.size()*sizeof(P)/sizeof(W) << endl;
 #endif
 
-    for (int i = 0 ; i < dest.size() ; ++i )
-      globalSumArray( (W *)dest[i].getF(), sizeof(P)/sizeof(W)); // call appropriate hook
-
     //globalSumArray((W *)dest.slice(), dest.size()*sizeof(T)/sizeof(W)); // call appropriate hook
+    globalSumArray((W *)dest.slice_host(), dest.size()*sizeof(P)/sizeof(W)); // call appropriate hook
   }
+
 
   //! Global sum on a multi2d
   template<class T>

@@ -246,7 +246,7 @@ namespace QDP
    * slow. Otherwise, generalized sums happen so infrequently the slow
    * version is fine.
    */
-#if 1
+#if 0
   template<class T, class C>
   inline typename UnaryReturn<C, FnSumMulti>::Type_t
   sumMulti(const QDPType<T,C>& s1, const Set& ss)
