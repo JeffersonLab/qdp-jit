@@ -41,6 +41,9 @@ template<class T>
 void 
 function_gaussian_exec(CUfunction function, OLattice<T>& dest,OLattice<T>& r1,OLattice<T>& r2, const Subset& s )
 {
+  if (s.numSiteTable() < 1)
+    return;
+
   AddressLeaf addr_leaf(s);
 
   forEach(dest, addr_leaf, NullCombine());

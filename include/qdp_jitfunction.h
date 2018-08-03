@@ -411,6 +411,8 @@ void
 function_lat_sca_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs, const Subset& s)
 {
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  if (s.numSiteTable() < 1)
+    return;
 
   AddressLeaf addr_leaf(s);
 
@@ -851,6 +853,8 @@ template<class T1, class RHS>
 void
   function_gather_exec( CUfunction function, int send_buf_id , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs , const Subset& subset )
 {
+  if (subset.numSiteTable() < 1)
+    return;
 
   AddressLeaf addr_leaf(subset);
 
@@ -901,6 +905,9 @@ void
 function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
 {
   //QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
+
+  if (s.numSiteTable() < 1)
+    return;
 
   ShiftPhase1 phase1(s);
   int offnode_maps = forEach(rhs, phase1 , BitOrCombine());
@@ -1003,7 +1010,7 @@ function_subtype_type_exec(CUfunction function, OSubLattice<T>& dest, const Op& 
   int th_count = s.numSiteTable();
 
   if (th_count < 1) {
-    QDPIO::cout << "skipping localInnerProduct since zero size subset on this MPI\n";
+    //QDPIO::cout << "skipping localInnerProduct since zero size subset on this MPI node\n";
     return;
   }
 
@@ -1032,7 +1039,7 @@ operator_type_subtype_exec(CUfunction function, OLattice<T>& dest, const Op& op,
   int th_count = s.numSiteTable();
 
   if (th_count < 1) {
-    QDPIO::cout << "skipping localInnerProduct since zero size subset on this MPI\n";
+    //QDPIO::cout << "skipping localInnerProduct since zero size subset on this MPI\n";
     return;
   }
 
@@ -1061,7 +1068,7 @@ operator_subtype_subtype_exec(CUfunction function, OSubLattice<T>& dest, const O
   int th_count = s.numSiteTable();
 
   if (th_count < 1) {
-    QDPIO::cout << "skipping localInnerProduct since zero size subset on this MPI\n";
+    //QDPIO::cout << "skipping localInnerProduct since zero size subset on this MPI\n";
     return;
   }
 
@@ -1092,7 +1099,7 @@ function_lat_sca_subtype_exec(CUfunction function, OSubLattice<T>& dest, const O
   int th_count = s.numSiteTable();
 
   if (th_count < 1) {
-    QDPIO::cout << "skipping localInnerProduct since zero size subset on this MPI\n";
+    //QDPIO::cout << "skipping localInnerProduct since zero size subset on this MPI\n";
     return;
   }
 
@@ -1121,6 +1128,8 @@ void
 function_zero_rep_exec(CUfunction function, OLattice<T>& dest, const Subset& s )
 {
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  if (s.numSiteTable() < 1)
+    return;
 
   AddressLeaf addr_leaf(s);
   forEach(dest, addr_leaf, NullCombine());
@@ -1152,7 +1161,7 @@ void function_zero_rep_subtype_exec(CUfunction function, OSubLattice<T>& dest, c
   int th_count = s.numSiteTable();
 
   if (th_count < 1) {
-    QDPIO::cout << "skipping localInnerProduct since zero size subset on this MPI\n";
+    //QDPIO::cout << "skipping localInnerProduct since zero size subset on this MPI\n";
     return;
   }
 
