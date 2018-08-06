@@ -213,27 +213,6 @@ namespace QDP {
   }
 
   
-  
-  template<class T> 
-  bool isfinite(const OLattice<T>& dest)
-  {
-    static CUfunction function;
-
-    Boolean ret = true;
-  
-    if (function == NULL)
-      function = function_isfinite_build( ret , dest );
-
-    function_isfinite_exec( function , ret , dest );
-
-    bool r = toBool(ret);
-  
-    QDPInternal::globalAnd(r);
-  
-    return r;
-  }
-
-
 
   template<class T> 
   inline

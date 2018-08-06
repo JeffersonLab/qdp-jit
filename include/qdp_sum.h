@@ -114,6 +114,38 @@ namespace QDP {
   }
 
 
+  
+
+  template <class T2>
+  void qdp_jit_isfinite(int size, int threads, int blocks, int shared_mem_usage, int in_id, int out_id )
+  {
+    static CUfunction function;
+
+    if (function == NULL)
+      function = function_isfinite_build<T2>();
+
+    function_isfinite_exec(function, size, threads, blocks, shared_mem_usage, in_id, out_id );
+  }
+
+  
+  // T1 input
+  // T2 output
+  template < class T1 , class T2 , JitDeviceLayout input_layout >
+  void qdp_jit_isfinite_convert(int size, 
+				int threads, 
+				int blocks, 
+				int shared_mem_usage,
+				int in_id, 
+				int out_id)
+  {
+    static CUfunction function;
+
+    if (function == NULL)
+      function = function_isfinite_convert_build<T1,T2,input_layout>();
+
+    function_isfinite_convert_exec(function, size, threads, blocks, shared_mem_usage, 
+				   in_id, out_id );
+  }
 
 
 
@@ -452,6 +484,81 @@ namespace QDP {
 
     return d;
   }
+
+
+
+
+  template<class T1>
+  //typename UnaryReturn<OLattice<T1>, FnIsFinite>::Type_t
+  bool
+  isfinite(const OLattice<T1>& s1)
+  {
+    typedef Boolean Ret_t;
+    typedef typename Ret_t::SubType_t T2;
+    
+    Ret_t d;
+
+    int out_id,in_id;
+    unsigned actsize=Layout::sitesOnNode();
+    bool first=true;
+    while (1) {
+
+      unsigned numThreads = DeviceParams::Instance().getMaxBlockX();
+      while ((numThreads*sizeof(T2) > DeviceParams::Instance().getMaxSMem()) || (numThreads > actsize)) {
+	numThreads >>= 1;
+      }
+      unsigned numBlocks=(int)ceil(float(actsize)/numThreads);
+
+      if (numBlocks > DeviceParams::Instance().getMaxGridX()) {
+	QDP_error_exit( "sum(Lat,subset) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)DeviceParams::Instance().getMaxGridX());
+      }
+
+      int shared_mem_usage = numThreads*sizeof(T2);
+      //QDP_info("sum(Lat,subset): using %d threads per block, %d blocks, shared mem=%d" , numThreads , numBlocks , shared_mem_usage );
+
+      if (first) {
+	out_id = QDP_get_global_cache().add( numBlocks*sizeof(T2) , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
+	in_id  = QDP_get_global_cache().add( numBlocks*sizeof(T2) , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
+      }
+
+      
+      if (numBlocks == 1) {
+	if (first) {
+	  qdp_jit_isfinite_convert<T1,T2,JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, shared_mem_usage, s1.getId(), d.getId() );
+	}
+	else {
+	  qdp_jit_isfinite<T2>( actsize , numThreads , numBlocks, shared_mem_usage , in_id , d.getId() );
+	}
+      } else {
+	if (first) {
+	  qdp_jit_isfinite_convert<T1,T2,JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, shared_mem_usage, s1.getId(), out_id );
+	}
+	else
+	  qdp_jit_isfinite<T2>( actsize , numThreads , numBlocks , shared_mem_usage , in_id , out_id );
+
+      }
+
+      first =false;
+
+      if (numBlocks==1) 
+	break;
+
+      actsize=numBlocks;
+
+      int tmp = in_id;
+      in_id = out_id;
+      out_id = tmp;
+    }
+
+    QDP_get_global_cache().signoff( in_id );
+    QDP_get_global_cache().signoff( out_id );
+
+    bool ret_ = toBool(d);
+    QDPInternal::globalAnd(ret_);
+
+    return ret_;
+  }
+
 
 
     }
