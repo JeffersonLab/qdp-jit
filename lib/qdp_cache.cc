@@ -50,7 +50,7 @@ namespace QDP
     LayoutFptr fptr;
     JitParamUnion param;
     QDPCache::JitParamType param_type;
-    std::vector<int> multi;
+    std::vector<QDPCache::ArgKey> multi;
     std::vector<Status> status_vec;
     std::vector<void* > karg_vec;
   };
@@ -275,7 +275,7 @@ namespace QDP
   }
 
   
-  int QDPCache::addMulti( const multi1d<int>& ids )
+  int QDPCache::addMulti( const multi1d<QDPCache::ArgKey>& ids )
   {
     int Id = getNewId();
     Entry& e = vecEntry[ Id ];
@@ -289,9 +289,14 @@ namespace QDP
     e.size      = ids.size() * sizeof(void*);
     
     e.multi.clear();
+#if 1
     e.multi.resize(ids.size());
     for( int i = 0 ; i < ids.size() ; ++i )
       e.multi[i] = ids[i];
+#else
+    for( int i = 0 ; i < ids.size() ; ++i )
+      e.multi.push_back( ids[i] );
+#endif    
 
     e.iterTrack = lstTracker.insert( lstTracker.end() , Id );
 
@@ -1076,9 +1081,9 @@ namespace QDP
 	    Entry& e = vecEntry[i.id];
 	    if (e.flags & QDPCache::Flags::Multi)
 	      {
-		for ( auto u : e.multi )
+		for ( auto ak : e.multi )
 		  {
-		    allids.push_back(ArgKey(u));
+		    allids.push_back( ak );
 		  }
 	      }
 	  }
@@ -1149,15 +1154,22 @@ namespace QDP
 		multi1d<void*> dev_ptr(e.multi.size());
 
 		int count=0;
-		for( auto q : e.multi )
+		for( auto ak : e.multi )  // q == id
 		  {
-		    if ( q >= 0 )
+		    if ( ak.id >= 0 )
 		      {
-			assert( vecEntry.size() > q );
-			Entry& qe = vecEntry[q];
+			assert( vecEntry.size() > ak.id );
+			Entry& qe = vecEntry[ ak.id ];
 			assert( ! (qe.flags & QDPCache::Flags::Multi) );
-			assert( isOnDevice(q) );
-			dev_ptr[count++] = qe.devPtr;
+			assert( isOnDevice( ak.id ) );
+			if (ak.elem == -1)
+			  {
+			    dev_ptr[count++] = qe.devPtr;
+			  }
+			else
+			  {
+			    dev_ptr[count++] = (void*)((size_t)qe.devPtr + qe.elem_size * ak.elem);
+			  }
 		      }
 		    else
 		      {

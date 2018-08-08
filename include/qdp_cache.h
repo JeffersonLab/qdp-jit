@@ -51,6 +51,8 @@ namespace QDP
     enum class JitParamType { float_, int_, int64_, double_, bool_ };
 
     struct ArgKey {
+      // The default constructor is needed in the custom streaming kernel where multi1d<ArgKey> is used -- don't see a simple way around it
+      ArgKey(): id(-1), elem(-1) {}
       ArgKey(int id): id(id), elem(-1) {}
       ArgKey(int id,int elem): id(id), elem(elem) {}
       int id;
@@ -81,7 +83,8 @@ namespace QDP
     int add( size_t size, Flags flags, Status st, const void* ptr_host, const void* ptr_dev, LayoutFptr func );
     int addArray( size_t element_size , int num_elements );
 
-    int addMulti( const multi1d<int>& ids );
+    //int addMulti( const multi1d<int>& ids );
+    int addMulti( const multi1d<QDPCache::ArgKey>& ids );
     
     // Wrappers to the previous interface
     int registrate( size_t size, unsigned flags, LayoutFptr func );

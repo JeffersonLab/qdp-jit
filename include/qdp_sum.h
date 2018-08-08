@@ -48,7 +48,7 @@ namespace QDP {
 					    int out_id,
 					    int numsubsets,
 					    const multi1d<int>& sizes,
-					    const multi1d<int>& table_ids)
+					    const multi1d<QDPCache::ArgKey>& table_ids)
   {
     static CUfunction function;
 
@@ -158,10 +158,12 @@ namespace QDP {
     int out_id,in_id;
 
     typename UnaryReturn<OLattice<T1>, FnSum>::Type_t  d;
-
+    zero_rep(d);
+    
     unsigned actsize=s.numSiteTable();
     bool first=true;
-    while (1) {
+    bool allocated=false;
+    while (actsize > 0) {
 
       unsigned numThreads = DeviceParams::Instance().getMaxBlockX();
       while ((numThreads*sizeof(T2) > DeviceParams::Instance().getMaxSMem()) || (numThreads > actsize)) {
@@ -177,6 +179,7 @@ namespace QDP {
       //QDP_info("sum(Lat,subset): using %d threads per block, %d blocks, shared mem=%d" , numThreads , numBlocks , shared_mem_usage );
 
       if (first) {
+	allocated=true;
 	out_id = QDP_get_global_cache().add( numBlocks*sizeof(T2) , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
 	in_id  = QDP_get_global_cache().add( numBlocks*sizeof(T2) , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
       }
@@ -210,9 +213,12 @@ namespace QDP {
       out_id = tmp;
     }
 
-    QDP_get_global_cache().signoff( in_id );
-    QDP_get_global_cache().signoff( out_id );
-
+    if (allocated)
+      {
+	QDP_get_global_cache().signoff( in_id );
+	QDP_get_global_cache().signoff( out_id );
+      }
+    
     QDPInternal::globalSum(d);
 
     return d;
@@ -254,10 +260,10 @@ namespace QDP {
     const int numsubsets = ss.numSubsets();
     
     int maxsize = 0;
-    multi1d<int> table_ids( numsubsets );
+    multi1d<QDPCache::ArgKey> table_ids( numsubsets );
     for (int i = 0 ; i < numsubsets ; ++i )
       {
-	table_ids[i] = ss[i].getIdSiteTable();
+	table_ids[i] = QDPCache::ArgKey( ss[i].getIdSiteTable() );
 	if ( ss[i].numSiteTable() > maxsize )
 	  maxsize = ss[i].numSiteTable();
       }
@@ -295,7 +301,7 @@ namespace QDP {
       unsigned numBlocks=(int)ceil(float(maxsize)/numThreads);
 
       if (numBlocks > DeviceParams::Instance().getMaxGridX()) {
-	QDP_error_exit( "sum(Lat,subset) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)DeviceParams::Instance().getMaxGridX());
+	QDP_error_exit( "sumMulti(Lat,set) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)DeviceParams::Instance().getMaxGridX());
       }
 
       int shared_mem_usage = numThreads*sizeof(T2);
@@ -444,7 +450,7 @@ namespace QDP {
       int numBlocks=(int)ceil(float(actsize)/numThreads);
 
       if (numBlocks > DeviceParams::Instance().getMaxGridX()) {
-	QDP_error_exit( "sum(Lat,subset) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)DeviceParams::Instance().getMaxGridX());
+	QDP_error_exit( "globalMax(Lat) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)DeviceParams::Instance().getMaxGridX());
       }
 
       if (first) {
@@ -510,7 +516,7 @@ namespace QDP {
       unsigned numBlocks=(int)ceil(float(actsize)/numThreads);
 
       if (numBlocks > DeviceParams::Instance().getMaxGridX()) {
-	QDP_error_exit( "sum(Lat,subset) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)DeviceParams::Instance().getMaxGridX());
+	QDP_error_exit( "isfinite(Lat) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)DeviceParams::Instance().getMaxGridX());
       }
 
       int shared_mem_usage = numThreads*sizeof(T2);

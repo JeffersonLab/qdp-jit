@@ -148,6 +148,10 @@ namespace QDP {
       
     int num_threads = blockDimX * blockDimY * blockDimZ * gridDimX * gridDimY * gridDimZ;
     int local = CudaGetAttributesLocalSize(f);
+
+    // Actually, what I want here is
+    // local * num(SM) * threads/block
+    // 
     int local_use = local * num_threads;
 
     //QDPIO::cout << "local mem (bytes) = " << num_threads << "\n";

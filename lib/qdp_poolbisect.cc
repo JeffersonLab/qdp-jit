@@ -64,6 +64,8 @@ namespace QDP {
     unsigned  sharedMemBytes = geom[6];
     
     QDPIO::cout << "Starting pool bisecting\n";
+
+    size_t last_success = 0;
     
     while ( step > 1024*1024   &&   cur <= max )
       {
@@ -90,17 +92,13 @@ namespace QDP {
 	
 	if (success)
 	  {
-	    //QDPIO::cout << "success\n";
-	    
-	    if (cur + step > max)
-	      break;
+	    last_success = cur;
 	    
 	    cur = cur + step;
 	    step >>= 1;
 	  }
 	else
 	  {
-	    //QDPIO::cout << "failed\n";
 	    cur = cur - step;
 	    step >>= 1;
 	  }
@@ -109,7 +107,14 @@ namespace QDP {
 	//CudaDeviceSynchronize(); // checks the state
       }
 
-    QDPIO::cout << "Memory pool bisection resulted in " << cur << " bytes (-poolsize " << cur/1024/1024 << "m)\n";
+    if (last_success > 0)
+      {
+	QDPIO::cout << "Memory pool bisection resulted in " << last_success << " bytes (-poolsize " << last_success/1024/1024 << "m)\n";
+      }
+    else
+      {
+	QDPIO::cout << "Memory pool bisection unsuccessful\n";
+      }
     
   }
 

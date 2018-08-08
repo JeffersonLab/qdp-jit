@@ -126,6 +126,7 @@ sum( const OSubLattice<T>& s1 )
     QDP_error_exit("sum with subtype view called");
 
   typename UnaryReturn<OLattice<T>, FnSum>::Type_t  d;
+  zero_rep(d);
 
   typedef typename UnaryReturn<OLattice<T>, FnSum>::Type_t::SubType_t T2;
     
@@ -135,7 +136,8 @@ sum( const OSubLattice<T>& s1 )
 
   unsigned actsize=s1.subset().numSiteTable();
   bool first=true;
-  while (1) {
+  bool allocated=false;
+  while (actsize > 0) {
 
     unsigned numThreads = DeviceParams::Instance().getMaxBlockX();
     while ((numThreads*sizeof(T2) > DeviceParams::Instance().getMaxSMem()) || (numThreads > actsize)) {
@@ -144,13 +146,14 @@ sum( const OSubLattice<T>& s1 )
     unsigned numBlocks=(int)ceil(float(actsize)/numThreads);
     
     if (numBlocks > DeviceParams::Instance().getMaxGridX()) {
-      QDP_error_exit( "sum(Lat,subset) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)DeviceParams::Instance().getMaxGridX());
+      QDP_error_exit( "sum(SubLat) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)DeviceParams::Instance().getMaxGridX());
     }
 
     int shared_mem_usage = numThreads*sizeof(T2);
     //QDP_info("sum(Lat,subset): using %d threads per block, %d blocks, shared mem=%d" , numThreads , numBlocks , shared_mem_usage );
 
     if (first) {
+      allocated=true;
       out_id = QDP_get_global_cache().add( numBlocks*sizeof(T2) , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
       in_id  = QDP_get_global_cache().add( numBlocks*sizeof(T2) , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
     }
@@ -182,8 +185,6 @@ sum( const OSubLattice<T>& s1 )
 	  qdp_jit_reduce<T2>( actsize , numThreads , numBlocks , shared_mem_usage , in_id , out_id );
 	}
       }
-
-    
   
     first =false;
     
@@ -197,8 +198,11 @@ sum( const OSubLattice<T>& s1 )
     out_id = tmp;
   }
 
-  QDP_get_global_cache().signoff( in_id );
-  QDP_get_global_cache().signoff( out_id );
+  if (allocated)
+    {
+      QDP_get_global_cache().signoff( in_id );
+      QDP_get_global_cache().signoff( out_id );
+    }
   
   QDPInternal::globalSum(d);
 

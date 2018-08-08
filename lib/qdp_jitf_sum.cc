@@ -38,7 +38,7 @@ namespace QDP {
 				      int in_id, int out_id,
 				      int numsubsets,
 				      const multi1d<int>& sizes,
-				      const multi1d<int>& table_ids )
+				      const multi1d<QDPCache::ArgKey>& table_ids )
   {
     // Make sure 'threads' is a power of two (the jit kernel make this assumption)
     assert( (threads & (threads - 1)) == 0 );

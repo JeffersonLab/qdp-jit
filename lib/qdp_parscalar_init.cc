@@ -591,12 +591,12 @@ namespace COUNT {
 		  {
 		    QDPIO::cout << "PTX DB: (not used)\n";
 		  }
-		QDPIO::cout << "Max. local memory size (bytes)         " << CudaGetMaxLocalSize() << "\n";
-		QDPIO::cout << "Max. local memory usage (MB)           " << (float)CudaGetMaxLocalUsage()/1024./1024. << "\n";
-
 
 		if (qdp_cache_get_pool_bisect())
 		  {
+		    QDPIO::cout << "Max. local memory size (bytes)         " << CudaGetMaxLocalSize() << "\n";
+		    QDPIO::cout << "Max. local memory usage (MB)           " << (float)CudaGetMaxLocalUsage()/1024./1024. << "\n";
+
 		    QDPIO::cout << "Suspend global cache\n";
 		    QDP_get_global_cache().suspend();
 		    

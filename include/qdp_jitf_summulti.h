@@ -11,7 +11,7 @@ namespace QDP {
 				      int in_id, int out_id,
 				      int numsubsets,
 				      const multi1d<int>& sizes,
-				      const multi1d<int>& table_ids );
+				      const multi1d<QDPCache::ArgKey>& table_ids );
 
   void
   function_summulti_exec( CUfunction function, 
