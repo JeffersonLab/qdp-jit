@@ -22,7 +22,6 @@ namespace QDP {
 namespace COUNT {
   int count = 0;
 }
-	
 
 
   //! Private flag for status
@@ -32,6 +31,7 @@ namespace COUNT {
   bool setIOGeomP = false;
   multi1d<int> logical_geom(Nd);   // apriori logical geometry of the machine
   multi1d<int> logical_iogeom(Nd); // apriori logical 	
+
 
 
 #if 1
@@ -336,6 +336,37 @@ namespace COUNT {
 	    sscanf((*argv)[++i],"%u",&val);
 	    QDP_get_global_cache().get_allocator().enableMemset(val);
 	  }
+	else if (strcmp((*argv)[i], "-poolbisect")==0) 
+	  {
+	    qdp_cache_set_pool_bisect(true);
+	  }
+	else if (strcmp((*argv)[i], "-bisectmax")==0) 
+	  {
+	    float f;
+	    char c;
+	    sscanf((*argv)[++i],"%f%c",&f,&c);
+	    double mul;
+	    switch (tolower(c)) {
+	    case 'k': 
+	      mul=1024.; 
+	      break;
+	    case 'm': 
+	      mul=1024.*1024; 
+	      break;
+	    case 'g': 
+	      mul=1024.*1024*1024; 
+	      break;
+	    case 't':
+	      mul=1024.*1024*1024*1024;
+	      break;
+	    case '\0':
+	      break;
+	    default:
+	      QDP_error_exit("unknown multiplication factor");
+	    }
+	    size_t val = (size_t)((double)(f) * mul);
+	    qdp_cache_set_pool_bisect_max(val);
+	  }
 	else if (strcmp((*argv)[i], "-envvar")==0) 
 	  {
 	    char buffer[1024];
@@ -559,6 +590,20 @@ namespace COUNT {
 		else
 		  {
 		    QDPIO::cout << "PTX DB: (not used)\n";
+		  }
+		QDPIO::cout << "Max. local memory size (bytes)         " << CudaGetMaxLocalSize() << "\n";
+		QDPIO::cout << "Max. local memory usage (MB)           " << (float)CudaGetMaxLocalUsage()/1024./1024. << "\n";
+
+
+		if (qdp_cache_get_pool_bisect())
+		  {
+		    QDPIO::cout << "Suspend global cache\n";
+		    QDP_get_global_cache().suspend();
+		    
+		    qdp_pool_bisect();
+
+		    QDPIO::cout << "Resume global cache\n";
+		    QDP_get_global_cache().resume();
 		  }
 		
 		FnMapRsrcMatrix::Instance().cleanup();

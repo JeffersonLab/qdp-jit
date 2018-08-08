@@ -36,7 +36,8 @@ namespace QDP {
     // QDPIO::cout << "\n";
     
      std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
-    
+
+     
     // Check for thread count equals zero
     // This can happen, when inner count is zero
     if ( th_count == 0 )
@@ -55,7 +56,7 @@ namespace QDP {
 
       //QDP_info("CUDA launch (settled): grid=(%u,%u,%u), block=(%d,%u,%u) ",now.Nblock_x,now.Nblock_y,1,    tune.best,1,1 );
 	
-      CUresult result = cuLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    tune.best,1,1,    0, 0, &args[0] , 0);
+      CUresult result = CudaLaunchKernelNoSync(function,   now.Nblock_x,now.Nblock_y,1,    tune.best,1,1,    0, 0, &args[0] , 0);
 
       if (result != CUDA_SUCCESS) {
 	CudaCheckResult(result);
@@ -90,7 +91,7 @@ namespace QDP {
 
 	//QDP_info("CUDA launch (trying): grid=(%u,%u,%u), block=(%d,%u,%u) ",now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1 );
 
-	result = cuLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1,    0, 0, &args[0] , 0);
+	result = CudaLaunchKernelNoSync(function,   now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1,    0, 0, &args[0] , 0);
 
 	if (result != CUDA_SUCCESS && result != CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES) {
 	  CudaCheckResult(result);

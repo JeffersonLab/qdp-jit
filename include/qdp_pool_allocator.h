@@ -21,13 +21,15 @@ namespace QDP
     struct entry_t;
 
     static QDPPoolAllocator& Instance();
-    void sayHi ();
 
     typedef typename std::list< entry_t >              listEntry_t;
     typedef std::list< typename  listEntry_t::iterator> listEntryIter_t;
 
   public:
 
+    void suspend();
+    void resume();
+    
     void registerMemory();
     void unregisterMemory();
 
@@ -42,16 +44,18 @@ namespace QDP
 
     void enableMemset(unsigned val);
 
+    QDPPoolAllocator();
+    ~QDPPoolAllocator();
+
+    bool allocateInternalBuffer();
+
   private:
     friend class QDPCache;
 
-    QDPPoolAllocator();
-    ~QDPPoolAllocator();
 
     QDPPoolAllocator(const QDPPoolAllocator&);                 // Prevent copy-construction
     QDPPoolAllocator& operator=(const QDPPoolAllocator&);
 
-    void allocateInternalBuffer();
     void freeInternalBuffer();
     bool bufferAllocated;
     
@@ -75,7 +79,7 @@ namespace QDP
   void QDPPoolAllocator<Allocator>::registerMemory() {
       if (!bufferAllocated)
 	allocateInternalBuffer();
-      QDP_info_primary("Pool allocator: Registering memory pool with NVIDIA driver (%lu bytes)",(unsigned long)bytes_allocated);
+      //QDP_info_primary("Pool allocator: Registering memory pool with NVIDIA driver (%lu bytes)",(unsigned long)bytes_allocated);
       CudaHostRegister(unaligned,bytes_allocated);
     }
 
@@ -97,8 +101,6 @@ namespace QDP
     return singleton;
   }
 
-  template<class Allocator>
-  void QDPPoolAllocator<Allocator>::sayHi () {}
 
   template<class Allocator>
   struct QDPPoolAllocator<Allocator>::entry_t {
@@ -119,8 +121,9 @@ namespace QDP
 
   template<class Allocator>
     QDPPoolAllocator<Allocator>::~QDPPoolAllocator() { 
-    QDP_info_primary("Destructing pool, but not deallocating the internal buffer.");
-#if 0
+    //QDP_info_primary("Destructing pool, but not deallocating the internal buffer.");
+    //QDPIO::cout << "Destructing pool, deallocating the internal buffer.\n";
+#if 1
       freeInternalBuffer();
 #endif
     }
@@ -145,7 +148,7 @@ namespace QDP
   template<class Allocator>
   void QDPPoolAllocator<Allocator>::freeInternalBuffer() {
     if (bufferAllocated) {
-      QDP_info_primary("pool allocator: Deallocating internal buffer");
+      //QDP_info_primary("pool allocator: Deallocating internal buffer");
       Allocator::free(unaligned);
       bufferAllocated=false;
     } else {
@@ -155,9 +158,27 @@ namespace QDP
     }
   }
 
+  template<class Allocator>
+  void QDPPoolAllocator<Allocator>::suspend()
+  {
+    if (bufferAllocated) {
+      Allocator::free( unaligned );
+    }
+  }
 
   template<class Allocator>
-  void QDPPoolAllocator<Allocator>::allocateInternalBuffer()
+  void QDPPoolAllocator<Allocator>::resume()
+  {
+    if (!Allocator::allocate( (void**)&unaligned , bytes_allocated )) {
+      QDPIO::cout << "upon resume, the pool allocater could not allocate " << bytes_allocated << "\n";
+      QDP_error_exit("giving up");
+    }
+    poolPtr = (unsigned char *)( ( (unsigned long)unaligned + (QDP_ALIGNMENT_SIZE-1) ) & ~(QDP_ALIGNMENT_SIZE - 1));
+  }
+
+
+  template<class Allocator>
+  bool QDPPoolAllocator<Allocator>::allocateInternalBuffer()
   {
     //QDP_info_primary("Pool allocator: allocate internal buffer (%lld)",(unsigned long long)poolSize);
 
@@ -166,6 +187,7 @@ namespace QDP
       QDP_debug("memory was allocated before, I will free it first..");
 #endif      
       Allocator::free( unaligned );
+      bufferAllocated = false;
 #ifdef GPU_DEBUG      
       QDP_debug("listEntry size (should be 1) = %d" , listEntry.size());
 #endif      
@@ -183,7 +205,9 @@ namespace QDP
     QDP_debug("Pool allocater: Allocating buffer %d bytes" , bytes_allocated );
 #endif	
     if (!Allocator::allocate( (void**)&unaligned , bytes_allocated )) {
-      QDP_error_exit("Pool allocater: Error allocating %lu bytes" , bytes_allocated );
+      QDPIO::cout << "Pool allocater could not allocate " << bytes_allocated << "\n";
+      //QDP_error_exit("giving up");
+      return false;
     }
 
     poolPtr = (unsigned char *)( ( (unsigned long)unaligned + (QDP_ALIGNMENT_SIZE-1) ) & ~(QDP_ALIGNMENT_SIZE - 1));
@@ -206,6 +230,7 @@ namespace QDP
       }
     
     bufferAllocated=true;
+    return true;
   }
     
 
@@ -260,7 +285,10 @@ namespace QDP
   bool QDPPoolAllocator<Allocator>::allocate( void ** ptr , size_t n_bytes ) {
 
     if (!bufferAllocated)
-      allocateInternalBuffer();
+      {
+	if (!allocateInternalBuffer())
+	  return false;
+      }
 
     //size_t alignment = QDP_ALIGNMENT_SIZE;
     size_t alignment = Allocator::ALIGNMENT_SIZE;

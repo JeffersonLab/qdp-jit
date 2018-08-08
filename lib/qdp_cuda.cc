@@ -18,8 +18,18 @@
 using namespace std;
 
 
+namespace {
+  int max_local_size = 0;
+  int max_local_usage = 0;
+  size_t total_free = 0;
+}
+
 
 namespace QDP {
+
+  int CudaGetMaxLocalSize() { return max_local_size; }
+  int CudaGetMaxLocalUsage() { return max_local_usage; }
+  size_t CudaGetInitialFreeMemory() { return total_free; }
 
   CUstream * QDPcudastreams;
   CUevent * QDPevCopied;
@@ -83,72 +93,103 @@ namespace QDP {
 			 unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
 			 unsigned int  sharedMemBytes, CUstream hStream, void** kernelParams, void** extra )
   {
-    //QDPIO::cout << "kernel launch (manual)..\n";
-#if 0
-    QDP_get_global_cache().releasePrevLockSet();
-    QDP_get_global_cache().beginNewLockSet();
-    return;
-#endif
-
-#ifdef GPU_DEBUG_DEEP
-    QDP_debug_deep("CudaLaunchKernel ... ");
-#endif
-
-    //std::cout << "shmem = " << sharedMemBytes << "\n";
-
-    // std::cout << "CudaLaunchKernel:"
-    // 	      << "  grid = " << gridDimX   << " " << gridDimY  << " " << gridDimZ   
-    // 	      << "  block = " << blockDimX  << " " <<  blockDimY  << " " << blockDimZ   << "  shmem = " << sharedMemBytes << "\n";
-
-    // CudaSyncTransferStream();
-    // CudaSyncKernelStream();
-
-    // This call is async
-#if 1
-    if ( blockDimX * blockDimY * blockDimZ > 0  &&  gridDimX * gridDimY * gridDimZ > 0 ) {
-      CUresult result = cuLaunchKernel(f, gridDimX, gridDimY, gridDimZ, 
-				       blockDimX, blockDimY, blockDimZ, 
-				       sharedMemBytes, QDPcudastreams[KERNEL], kernelParams, extra);
-      if (result != CUDA_SUCCESS) {
-	QDP_error_exit("CUDA launch error (CudaLaunchKernel): grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
-		       gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes );
-      }
-    } else {
-      //std::cout << "skipping kernel launch due to zero block!!!\n";
-    }
-#endif
-
-    //QDP_get_global_cache().releasePrevLockSet();
-    //QDP_get_global_cache().newLockSet();
-
-#ifdef GPU_DEBUG_DEEP
-    QDP_get_global_cache().printLockSets();
-#endif
-
-    // For now, pull the brakes
-    // I've seen the GPU running away from CPU thread
-    // This call is probably too much, but it's safe to call it.
-#if 1
-    CUresult result = cuCtxSynchronize();
+    //if ( blockDimX * blockDimY * blockDimZ > 0  &&  gridDimX * gridDimY * gridDimZ > 0 ) {
+    
+    CUresult result = CudaLaunchKernelNoSync(f, gridDimX, gridDimY, gridDimZ, 
+					     blockDimX, blockDimY, blockDimZ, 
+					     sharedMemBytes, 0, kernelParams, extra);
     if (result != CUDA_SUCCESS) {
+      QDP_error_exit("CUDA launch error (CudaLaunchKernel): grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
+		     gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes );
 
-      if (mapCuErrorString.count(result)) 
-	std::cout << " Error: " << mapCuErrorString.at(result) << "\n";
-      else
-	std::cout << " Error: (not known)\n";
-      
+      CUresult result = cuCtxSynchronize();
+      if (result != CUDA_SUCCESS) {
+
+	if (mapCuErrorString.count(result)) 
+	  std::cout << " Error: " << mapCuErrorString.at(result) << "\n";
+	else
+	  std::cout << " Error: (not known)\n";
+      }      
       QDP_error_exit("CUDA launch error (CudaLaunchKernel, on sync): grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
 		     gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes );
     }
-#endif
-    //CudaDeviceSynchronize();
 
     if (DeviceParams::Instance().getSyncDevice()) {  
-      QDP_info_primary("Pulling the brakes: device sync after kernel launch!");
       //CudaDeviceSynchronize();
     }
   }
 
+  
+  int CudaGetAttributesLocalSize( CUfunction f )
+  {
+    int local_mem = 0;
+    cuFuncGetAttribute( &local_mem , CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES , f );
+    return local_mem;
+  }
+
+
+  namespace {
+    std::vector<unsigned> __kernel_geom;
+    CUfunction            __kernel_ptr;
+  }
+
+  std::vector<unsigned> get_backed_kernel_geom() { return __kernel_geom; }
+  CUfunction            get_backed_kernel_ptr() { return __kernel_ptr; }
+
+
+  CUresult CudaLaunchKernelNoSync( CUfunction f, 
+				   unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
+				   unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
+				   unsigned int  sharedMemBytes, CUstream hStream, void** kernelParams, void** extra  )
+  {
+    // QDP_info("CudaLaunchKernelNoSync: grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
+    // 	     gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes );
+    // QDPIO::cout << "CUfunction = " << (size_t)(void*)f << "\n";
+      
+    int num_threads = blockDimX * blockDimY * blockDimZ * gridDimX * gridDimY * gridDimZ;
+    int local = CudaGetAttributesLocalSize(f);
+    int local_use = local * num_threads;
+
+    //QDPIO::cout << "local mem (bytes) = " << num_threads << "\n";
+    //
+    
+    auto res = cuLaunchKernel(f, gridDimX, gridDimY, gridDimZ, 
+			      blockDimX, blockDimY, blockDimZ, 
+			      sharedMemBytes, 0, kernelParams, extra);
+
+    if (res == CUDA_SUCCESS)
+      {
+	//QDPIO::cout << "CUDA_SUCCESS\n";
+        if (qdp_cache_get_pool_bisect())
+	  {
+	    if (local_use > max_local_usage)
+	      {
+		QDP_get_global_cache().backup_last_kernel_args();
+		__kernel_geom.clear();
+		__kernel_geom.push_back(gridDimX);
+		__kernel_geom.push_back(gridDimY);
+		__kernel_geom.push_back(gridDimZ);
+		__kernel_geom.push_back(blockDimX);
+		__kernel_geom.push_back(blockDimY);
+		__kernel_geom.push_back(blockDimZ);
+		__kernel_geom.push_back(sharedMemBytes);
+		__kernel_ptr = f;
+	      }
+      
+	    max_local_size = local > max_local_size ? local : max_local_size;
+	    max_local_usage = local_use > max_local_usage ? local_use : max_local_usage;
+	  }
+      }
+    else
+      {
+	//QDPIO::cout << "no CUDA_SUCCESS " << mapCuErrorString[res] << "\n";
+      }
+
+    return res;
+  }
+
+
+    
 
   void CudaCheckResult(CUresult result) {
     if (result != CUDA_SUCCESS) {
@@ -166,6 +207,7 @@ namespace QDP {
       exit(1);
     }
   }
+
 
 
   int CudaAttributeNumRegs( CUfunction f ) {
@@ -304,6 +346,11 @@ namespace QDP {
 
   }
 
+  void CudaMemGetInfo(size_t *free,size_t *total)
+  {
+    CUresult ret = cuMemGetInfo(free, total);
+    CudaRes("cuMemGetInfo",ret);
+  }
 
 
   void CudaGetDeviceProps()
@@ -315,11 +362,15 @@ namespace QDP {
     size_t free, total;
     ret = cuMemGetInfo(&free, &total);
     CudaRes("cuMemGetInfo",ret);
+    total_free = free;
 
-    QDP_info_primary("GPU memory: free = %lld,  total = %lld",(unsigned long long)free ,(unsigned long long)total);
+    QDP_info_primary("GPU memory: free = %lld (%f MB),  total = %lld (%f MB)",
+		     (unsigned long long)free , (float)free/1024./1024.,
+		     (unsigned long long)total, (float)total/1024./1024. );
     if (!setPoolSize) {
 
       size_t val = (size_t)((double)(0.90) * (double)free);
+
       int val_in_MiB = val/1024/1024;
 
       if (val_in_MiB < 1)
@@ -336,7 +387,7 @@ namespace QDP {
 	QDP_info("Global minimum %f of available GPU memory smaller than local value %d. Using global minimum.",val_min,val_in_MiB);
       }
       int val_min_int = (int)val_min;
-      QDP_info_primary("Using device pool size: %d MiB",(int)val_min_int);
+      QDP_info_primary("Using device memory pool size: %d MB",(int)val_min_int);
 
       //CUDADevicePoolAllocator::Instance().setPoolSize( ((size_t)val_min_int) * 1024 * 1024 );
       QDP_get_global_cache().get_allocator().setPoolSize( ((size_t)val_min_int) * 1024 * 1024 );
@@ -516,14 +567,17 @@ namespace QDP {
 #endif
 
 #ifndef  QDP_USE_CUDA_MANAGED_MEMORY
-    CudaRes("cuMemAlloc",ret);
+    //CudaRes("cuMemAlloc",ret);
 #else 
-    CudaRes("cuMemAllocManaged", ret);
+    //CudaRes("cuMemAllocManaged", ret);
 #endif
 
     return ret == CUDA_SUCCESS;
   }
 
+
+
+  
   void CudaFree(const void *mem )
   {
 #ifdef GPU_DEBUG_DEEP
@@ -549,6 +603,12 @@ namespace QDP {
 #endif
     CUresult ret = cuCtxSynchronize();
     CudaRes("cuCtxSynchronize",ret);
+  }
+
+  bool CudaCtxSynchronize()
+  {
+    CUresult ret = cuCtxSynchronize();
+    return ret == CUDA_SUCCESS;
   }
 
   void CudaMemset( void * dest , unsigned val , size_t N )

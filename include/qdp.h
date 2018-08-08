@@ -109,9 +109,13 @@ namespace QDP {
 #include "qdp_deviceparams.h"
 #include "qdp_cuda.h"
 #include "qdp_cuda_allocator.h"
-#include "qdp_pool_allocator.h"
 
 #include "qdp_multi.h"
+#include "qdp_stdio.h"
+#include "qdp_pool_allocator.h"
+
+
+//#include "qdp_multi.h"
 #include "qdp_cache.h"
 
 //
@@ -121,7 +125,8 @@ namespace QDP {
 #include "qdp_params.h"
 #include "qdp_layout.h"
 #include "qdp_io.h"
-#include "qdp_stdio.h"
+//#include "qdp_stdio.h"
+
 
 #ifdef QDP_NO_LIBXML2
 #warning not using libxml2
@@ -206,6 +211,7 @@ namespace QDP {
 #include "qdp_specializations.h"
 
 #include "qdp_random.h"
+#include "qdp_poolbisect.h"
 
 #if defined(ARCH_SCALAR)
 #include "qdp_scalar_internal.h"

@@ -23,10 +23,19 @@ namespace QDP
     typedef QDPPoolAllocator<QDPCUDAAllocator>     CUDADevicePoolAllocator;
   }
 
+  bool   qdp_cache_get_pool_bisect();
+  size_t qdp_cache_get_pool_bisect_max();
+  
+  void qdp_cache_set_pool_bisect(bool b);
+  void qdp_cache_set_pool_bisect_max(size_t val);
+
+  std::vector<void*> get_backed_kernel_args( CUDADevicePoolAllocator& pool_allocator );
     
   class QDPCache
   {
   public:
+    class Entry;
+
     enum Flags {
       Empty = 0,
       OwnHostMemory = 1,
@@ -54,7 +63,8 @@ namespace QDP
     typedef void (* LayoutFptr)(bool toDev,void * outPtr,void * inPtr);
 
     std::vector<void*> get_kernel_args(std::vector<ArgKey>& ids , bool for_kernel = true );
-
+    void backup_last_kernel_args();
+    
     void printInfo(int id);
 
     int addJitParamFloat(float i);
@@ -92,8 +102,11 @@ namespace QDP
     
     CUDADevicePoolAllocator& get_allocator() { return pool_allocator; }
 
+    void suspend();
+    void resume();
+    
   private:
-    class Entry;
+    void printInfo(const Entry& e);
     void growStack();
 
     void lockId(int id);

@@ -43,7 +43,6 @@ namespace QDP
 
 
   Subset::Subset():registered(false) {
-    //QDP_get_global_cache().sayHi();
     id=-1;
   }
 
@@ -53,7 +52,6 @@ namespace QDP
   Subset::Subset(const Subset& s):
     id(s.id), ordRep(s.ordRep), startSite(s.startSite), endSite(s.endSite), 
     sub_index(s.sub_index), sitetable(s.sitetable), registered(false), set(s.set) , membertable(s.membertable)    { 
-    //QDP_get_global_cache().sayHi();
   }
 
 
@@ -73,14 +71,12 @@ namespace QDP
 
 
   Set::Set(): registered(false) {
-    //QDP_get_global_cache().sayHi();
   }
 
 
 
   //! Constructor from a function object
   Set::Set(const SetFunc& fn): registered(false) {
-    //QDP_get_global_cache().sayHi();
     make(fn);    
   }
 

@@ -11,6 +11,9 @@ namespace QDP {
 
   extern std::map<CUresult,std::string> mapCuErrorString;
 
+  std::vector<unsigned> get_backed_kernel_geom();
+  CUfunction            get_backed_kernel_ptr();
+
   void CudaCheckResult(CUresult ret);
 
   void CudaInit();
@@ -23,6 +26,15 @@ namespace QDP {
 			 unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
 			 unsigned int  sharedMemBytes, CUstream hStream, void** kernelParams, void** extra );
 
+  CUresult CudaLaunchKernelNoSync( CUfunction f, 
+				   unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
+				   unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
+				   unsigned int  sharedMemBytes, CUstream hStream, void** kernelParams, void** extra );
+
+  int CudaGetMaxLocalSize();
+  int CudaGetMaxLocalUsage();
+  size_t CudaGetInitialFreeMemory();
+  
   int CudaAttributeNumRegs( CUfunction f );
   int CudaAttributeLocalSize( CUfunction f );
   int CudaAttributeConstSize( CUfunction f );
@@ -60,6 +72,8 @@ namespace QDP {
 
   void CudaThreadSynchronize();
   void CudaDeviceSynchronize();
+
+  bool CudaCtxSynchronize();
 
   void CudaProfilerInitialize();
   void CudaProfilerStart();
