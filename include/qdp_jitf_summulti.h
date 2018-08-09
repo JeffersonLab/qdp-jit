@@ -82,6 +82,9 @@ namespace QDP {
     llvm_cond_branch( llvm_ge( r_subset , r_subsetnum ) , block_subset_loop_exit , block_subset_loop_body );
     {
       llvm_set_insert_point(block_subset_loop_body);
+
+      llvm_bar_sync();  // make sure thread block is synchronized
+      
       llvm::Value* r_subset_inc = llvm_add( r_subset , llvm_create_value(1) );
 
       llvm::BasicBlock * block_store_global = llvm_new_basic_block();
@@ -141,7 +144,7 @@ namespace QDP {
       llvm_set_insert_point(block_red_loop_start_2);
 
       llvm::Value * v = llvm_add( r_red_pow , r_tidx );
-      llvm_cond_branch( llvm_ge( v , r_ntidx ) , block_red_loop_sync , block_red_loop_add );
+      llvm_cond_branch( llvm_ge( v , r_ntidx ) , block_red_loop_sync , block_red_loop_add );   
 
       llvm_set_insert_point(block_red_loop_add);
 
@@ -184,7 +187,8 @@ namespace QDP {
       llvm_branch( block_not_store_global );
       llvm_set_insert_point(block_not_store_global);
 
-
+      llvm_bar_sync();  // make sure thread block is synchronized
+      
       llvm_branch( block_subset_loop_start );
     }
 
@@ -254,6 +258,9 @@ namespace QDP {
     llvm_cond_branch( llvm_ge( r_subset , r_subsetnum ) , block_subset_loop_exit , block_subset_loop_body );
     {
       llvm_set_insert_point(block_subset_loop_body);
+      
+      llvm_bar_sync();  // make sure thread block is synchronized
+      
       llvm::Value* r_subset_inc = llvm_add( r_subset , llvm_create_value(1) );
 
       llvm::BasicBlock * block_store_global = llvm_new_basic_block();
@@ -354,7 +361,8 @@ namespace QDP {
       odata.elem( JitDeviceLayout::Scalar , store_idx ) = sdata_reg;
       llvm_branch( block_not_store_global );
       llvm_set_insert_point(block_not_store_global);
-
+      
+      llvm_bar_sync();  // make sure thread block is synchronized
 
       llvm_branch( block_subset_loop_start );
     }

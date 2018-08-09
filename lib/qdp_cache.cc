@@ -1229,19 +1229,19 @@ namespace QDP
 
 		if (e.flags & QDPCache::Flags::Array)
 		  {
-		    assert(for_kernel);
+		    //assert(for_kernel);
 
 		    if ( i.elem == -1 )
 		      {
 			// This ArgKey comes from an multiXd<OScalar> access, like in sumMulti
-			ret.push_back( &e.devPtr );
+			ret.push_back( for_kernel ? &e.devPtr : e.devPtr );
 		      }
 		    else
 		      {
 			// This ArgKey comes from an OScalar access through multiXd<OScalar> 
 			assert( e.karg_vec.size() > i.elem );
 			e.karg_vec[i.elem] = (void*)((size_t)e.devPtr + e.elem_size * i.elem);
-			ret.push_back( &e.karg_vec[i.elem] );
+			ret.push_back( for_kernel ? &e.karg_vec[i.elem] : e.karg_vec[i.elem] );
 		      }
 		  }
 		else

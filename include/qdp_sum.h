@@ -255,32 +255,27 @@ namespace QDP {
     
     typedef typename UnaryReturn<OLattice<T1>, FnSum>::Type_t::SubType_t T2;
 
-    typename UnaryReturn<OLattice<T1>, FnSumMulti>::Type_t  dest(ss.numSubsets());
-
     const int numsubsets = ss.numSubsets();
+
+    typename UnaryReturn<OLattice<T1>, FnSumMulti>::Type_t  dest( numsubsets );
+
     
-    int maxsize = 0;
+    //QDPIO::cout << "number of subsets: " << numsubsets << "\n";
+
     multi1d<QDPCache::ArgKey> table_ids( numsubsets );
-    for (int i = 0 ; i < numsubsets ; ++i )
-      {
-	table_ids[i] = QDPCache::ArgKey( ss[i].getIdSiteTable() );
-	if ( ss[i].numSiteTable() > maxsize )
-	  maxsize = ss[i].numSiteTable();
-      }
-    
-    //QDPIO::cout << "number of subsets:           " << ss.numSubsets() << "\n";
-      
+    multi1d<int>              sizes    ( numsubsets );
+
     //QDPIO::cout << "sizes = ";
-    multi1d<int> sizes(numsubsets);
     for (int i = 0 ; i < numsubsets ; ++i )
       {
-	sizes[i] = ss[i].numSiteTable();
+	sizes[i]     = ss[i].numSiteTable();
 	//QDPIO::cout << sizes[i] << " ";
+
+	table_ids[i] = QDPCache::ArgKey( ss[i].getIdSiteTable() );
       }
-    //QDPIO::cout << "\n";
-    
+    //QDPIO::cout << "\n";    
+      
     bool first=true;
-    
     int out_id,in_id;
     
     while( 1 ) {
@@ -349,11 +344,12 @@ namespace QDP {
 
 #if 0
       {
-	multi1d<double> tmp(numBlocks*numsubsets);
-	std::vector<int> ids = {out_id};
+	multi1d<T1> tmp(numBlocks*numsubsets);
+	std::vector<QDPCache::ArgKey> ids;
+	ids.push_back(dest.getId());
 	auto ptrs = QDP_get_global_cache().get_kernel_args( ids , false );
       
-	CudaMemcpyD2H( (void*)tmp.slice() , ptrs[0] , numBlocks*numsubsets*sizeof(double) );
+	CudaMemcpyD2H( (void*)tmp.slice() , ptrs[0] , numBlocks*numsubsets*sizeof(T1) );
 	QDPIO::cout << "out: ";
 	for(int i=0;i<tmp.size();i++)
 	  QDPIO::cout << tmp[i] << " ";
