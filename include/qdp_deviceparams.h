@@ -61,6 +61,8 @@ namespace QDP {
     unsigned getMajor() { return major; }
     unsigned getMinor() { return minor; }
 
+    int getSMcount() { return sm_count; }
+
     bool getAsyncTransfers() { return asyncTransfers; }
 
     void autoDetect();
@@ -84,7 +86,8 @@ namespace QDP {
 
     unsigned smem;
     unsigned smem_default;
-
+    int      sm_count;
+    
     unsigned max_gridx;
     unsigned max_gridy;
     unsigned max_gridz;

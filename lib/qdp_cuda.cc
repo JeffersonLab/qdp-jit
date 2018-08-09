@@ -31,7 +31,6 @@ namespace QDP {
   int CudaGetMaxLocalUsage() { return max_local_usage; }
   size_t CudaGetInitialFreeMemory() { return total_free; }
 
-  CUstream * QDPcudastreams;
   CUevent * QDPevCopied;
 
   CUdevice cuDevice;
@@ -146,13 +145,7 @@ namespace QDP {
     // 	     gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes );
     // QDPIO::cout << "CUfunction = " << (size_t)(void*)f << "\n";
       
-    int num_threads = blockDimX * blockDimY * blockDimZ * gridDimX * gridDimY * gridDimZ;
-    int local = CudaGetAttributesLocalSize(f);
 
-    // Actually, what I want here is
-    // local * num(SM) * threads/block
-    // 
-    int local_use = local * num_threads;
 
     //QDPIO::cout << "local mem (bytes) = " << num_threads << "\n";
     //
@@ -166,6 +159,12 @@ namespace QDP {
 	//QDPIO::cout << "CUDA_SUCCESS\n";
         if (qdp_cache_get_pool_bisect())
 	  {
+	    int num_threads = blockDimX * blockDimY * blockDimZ * gridDimX * gridDimY * gridDimZ;
+	    int local = CudaGetAttributesLocalSize( f );
+
+	    // Total local memory for this kernel launch
+	    int local_use = local * DeviceParams::Instance().getSMcount() * blockDimZ * blockDimY * blockDimX;
+	    
 	    if (local_use > max_local_usage)
 	      {
 		QDP_get_global_cache().backup_last_kernel_args();
@@ -301,36 +300,6 @@ namespace QDP {
 
 
 
-  void * CudaGetKernelStream() {
-    return (void*)&QDPcudastreams[KERNEL];
-  }
-
-  void CudaCreateStreams() {
-    QDPcudastreams = new CUstream[2];
-    for (int i=0; i<2; i++) {
-      QDP_info_primary("JIT: Creating CUDA stream %d",i);
-      cuStreamCreate(&QDPcudastreams[i],0);
-    }
-    QDP_info_primary("JIT: Creating CUDA event for transfers");
-    QDPevCopied = new CUevent;
-    cuEventCreate(QDPevCopied,CU_EVENT_BLOCKING_SYNC);
-  }
-
-  void CudaSyncKernelStream() {
-    CUresult ret = cuStreamSynchronize(QDPcudastreams[KERNEL]);
-    CudaRes("cuStreamSynchronize",ret);    
-  }
-
-  void CudaSyncTransferStream() {
-    CUresult ret = cuStreamSynchronize(QDPcudastreams[TRANSFER]);
-    CudaRes("cuStreamSynchronize",ret);    
-  }
-
-  void CudaRecordAndWaitEvent() {
-    cuEventRecord( *QDPevCopied , QDPcudastreams[TRANSFER] );
-    cuStreamWaitEvent( QDPcudastreams[KERNEL] , *QDPevCopied , 0);
-  }
-
   void CudaSetDevice(int dev)
   {
     CUresult ret;
@@ -455,85 +424,6 @@ namespace QDP {
 
 
 
-#if 0
-  void CudaMemcpy( const void * dest , const void * src , size_t size)
-  {
-    CUresult ret;
-#ifdef GPU_DEBUG_DEEP
-    QDP_debug_deep("cudaMemcpy dest=%p src=%p size=%d" ,  dest , src , size );
-#endif
-
-    ret = cuMemcpy((CUdeviceptr)const_cast<void*>(dest),
-		   (CUdeviceptr)const_cast<void*>(src),
-		   size);
-
-    CudaRes("cuMemcpy",ret);
-  }
-
-  void CudaMemcpyAsync( const void * dest , const void * src , size_t size )
-  {
-    CUresult ret;
-#ifdef GPU_DEBUG_DEEP
-    QDP_debug_deep("cudaMemcpy dest=%p src=%p size=%d" ,  dest , src , size );
-#endif
-
-    if (DeviceParams::Instance().getAsyncTransfers()) {
-      ret = cuMemcpyAsync((CUdeviceptr)const_cast<void*>(dest),
-			  (CUdeviceptr)const_cast<void*>(src),
-			  size,QDPcudastreams[TRANSFER]);
-    } else {
-      std::cout << "using sync copy\n";
-      ret = cuMemcpy((CUdeviceptr)const_cast<void*>(dest),
-		     (CUdeviceptr)const_cast<void*>(src),
-		     size);
-    }
-
-    CudaRes("cuMemcpyAsync",ret);
-  }
-#endif
-
-  
-  void CudaMemcpyH2DAsync( void * dest , const void * src , size_t size )
-  {
-    CUresult ret;
-#ifdef GPU_DEBUG_DEEP
-    QDP_debug_deep("CudaMemcpyH2DAsync dest=%p src=%p size=%d" ,  dest , src , size );
-#endif
-
-    if (DeviceParams::Instance().getAsyncTransfers()) {
-      ret = cuMemcpyHtoDAsync((CUdeviceptr)const_cast<void*>(dest),
-			      src,
-			      size,QDPcudastreams[TRANSFER]);
-    } else {
-      std::cout << "using sync H2D copy\n";
-      ret = cuMemcpyHtoD((CUdeviceptr)const_cast<void*>(dest),
-			 src,
-			 size);
-    }
-
-    CudaRes("cuMemcpyH2DAsync",ret);
-  }
-
-  void CudaMemcpyD2HAsync( void * dest , const void * src , size_t size )
-  {
-    CUresult ret;
-#ifdef GPU_DEBUG_DEEP
-    QDP_debug_deep("CudaMemcpyD2HAsync dest=%p src=%p size=%d" ,  dest , src , size );
-#endif
-
-    if (DeviceParams::Instance().getAsyncTransfers()) {
-      ret = cuMemcpyDtoHAsync( dest,
-			      (CUdeviceptr)const_cast<void*>(src),
-			      size,QDPcudastreams[TRANSFER]);
-    } else {
-      std::cout << "using sync D2H copy\n";
-      ret = cuMemcpyDtoH( const_cast<void*>(dest),
-			 (CUdeviceptr)const_cast<void*>(src),
-			 size);
-    }
-
-    CudaRes("cuMemcpyH2DAsync",ret);
-  }
 
 
   void CudaMemcpyH2D( void * dest , const void * src , size_t size )

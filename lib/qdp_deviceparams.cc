@@ -26,6 +26,7 @@ namespace QDP {
   void DeviceParams::autoDetect() {
     unifiedAddressing = CudaGetConfig(CU_DEVICE_ATTRIBUTE_UNIFIED_ADDRESSING) == 1;
     asyncTransfers = CudaGetConfig(CU_DEVICE_ATTRIBUTE_GPU_OVERLAP) == 1;
+    sm_count = CudaGetConfig( CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT );
     smem = CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_SHARED_MEMORY_PER_BLOCK );
     smem_default = 0;
     max_gridx = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_X ) );
@@ -35,6 +36,7 @@ namespace QDP {
     max_blocky = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y ) );
     max_blockz = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Z ) );
 
+    
     int ma,mi;
     if (!boolNoReadSM)
       CudaGetSM(&ma,&mi);
@@ -55,6 +57,7 @@ namespace QDP {
     QDP_info_primary("max_blockx                              = %d",max_blockx);
     QDP_info_primary("max_blocky                              = %d",max_blocky);
     QDP_info_primary("max_blockz                              = %d",max_blockz);
+    QDP_info_primary("SM count                                = %d",sm_count);
   }
 
   void DeviceParams::setSM(int sm) {

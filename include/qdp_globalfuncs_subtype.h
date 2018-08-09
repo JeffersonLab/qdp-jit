@@ -140,7 +140,7 @@ sum( const OSubLattice<T>& s1 )
   while (actsize > 0) {
 
     unsigned numThreads = DeviceParams::Instance().getMaxBlockX();
-    while ((numThreads*sizeof(T2) > DeviceParams::Instance().getMaxSMem()) || (numThreads > actsize)) {
+    while ((numThreads*sizeof(T2) > DeviceParams::Instance().getMaxSMem()) || (numThreads > (unsigned)actsize)) {
       numThreads >>= 1;
     }
     unsigned numBlocks=(int)ceil(float(actsize)/numThreads);

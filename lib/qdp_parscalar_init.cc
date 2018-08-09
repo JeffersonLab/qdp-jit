@@ -89,8 +89,6 @@ namespace COUNT {
     QDP_info_primary("Trigger GPU evaluation");
     QDPuseGPU=true;
     
-    CudaCreateStreams();
-
     // Initialize the LLVM wrapper
     llvm_wrapper_init();
   }

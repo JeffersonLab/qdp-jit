@@ -265,7 +265,7 @@ namespace QDP
   {
     const int N = ms1.size();
 
-    QDPIO::cout << "multi_innerProduct (GPU) with N = " << N << "\n";
+    //QDPIO::cout << "multi_innerProduct (GPU) with N = " << N << "\n";
 
     assert( N > 0 );
     assert( ret.size() == N );
@@ -309,7 +309,7 @@ namespace QDP
       //QDPIO::cout << "maxsize: " << maxsize << "\n";
 
       unsigned numThreads = DeviceParams::Instance().getMaxBlockX();
-      while ((numThreads*sizeof(T2) > DeviceParams::Instance().getMaxSMem()) || (numThreads > maxsize)) {
+      while ((numThreads*sizeof(T2) > DeviceParams::Instance().getMaxSMem()) || (numThreads > (unsigned)maxsize)) {
 	numThreads >>= 1;
       }
       unsigned numBlocks=(int)ceil(float(maxsize)/numThreads);
@@ -391,13 +391,10 @@ namespace QDP
     QDP_get_global_cache().signoff( out_id );
 
     for (int i = 0 ; i < N ; ++i )
-      QDPIO::cout << dest[i] << "\n";
+      {
+	*ret[i] = dest[i];
+      }
     
-    // Now, dest --> ret
-
-    QDPIO::cout << "not done yet\n";
-    
-    //return d;
   }
 
 

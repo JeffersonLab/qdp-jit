@@ -48,11 +48,16 @@ namespace QDP {
 	cur  = max;
       }
     
-    QDPIO::cout << "Intersection interval: max = " << max << ", min = " << min << "\n";
-
 
     CUfunction f = get_backed_kernel_ptr();
     auto geom = get_backed_kernel_geom();
+
+    if (!geom.size())
+      {
+	QDPIO::cout << "No jit kernel used any local memory. As a result a bisection test of the memory pool would not be meaningful.\n";
+	QDPIO::cout << "Suggested poolsize: -poolsize " << mem_min/1024/1024<< "m\n";
+	return;
+      }
 	
     assert( geom.size() == 7 );
     unsigned  gridDimX = geom[0];
@@ -63,7 +68,7 @@ namespace QDP {
     unsigned  blockDimZ = geom[5];
     unsigned  sharedMemBytes = geom[6];
     
-    QDPIO::cout << "Starting pool bisecting\n";
+    QDPIO::cout << "Starting pool bisecting with intersection interval: max = " << max << ", min = " << min << "\n";
 
     size_t last_success = 0;
     

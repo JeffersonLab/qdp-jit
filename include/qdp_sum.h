@@ -166,7 +166,7 @@ namespace QDP {
     while (actsize > 0) {
 
       unsigned numThreads = DeviceParams::Instance().getMaxBlockX();
-      while ((numThreads*sizeof(T2) > DeviceParams::Instance().getMaxSMem()) || (numThreads > actsize)) {
+      while ((numThreads*sizeof(T2) > DeviceParams::Instance().getMaxSMem()) || (numThreads > (unsigned)actsize)) {
 	numThreads >>= 1;
       }
       unsigned numBlocks=(int)ceil(float(actsize)/numThreads);
@@ -288,9 +288,9 @@ namespace QDP {
 	}
       
       //QDPIO::cout << "maxsize: " << maxsize << "\n";
-
+      
       unsigned numThreads = DeviceParams::Instance().getMaxBlockX();
-      while ((numThreads*sizeof(T2) > DeviceParams::Instance().getMaxSMem()) || (numThreads > maxsize)) {
+      while ((numThreads*sizeof(T2) > DeviceParams::Instance().getMaxSMem()) || (numThreads > (unsigned)maxsize)) {
 	numThreads >>= 1;
       }
       unsigned numBlocks=(int)ceil(float(maxsize)/numThreads);
@@ -440,7 +440,7 @@ namespace QDP {
     while (1) {
 
       int numThreads = DeviceParams::Instance().getMaxBlockX();
-      while ((numThreads*sizeof(T) > DeviceParams::Instance().getMaxSMem()) || (numThreads > actsize)) {
+      while ((numThreads*sizeof(T) > DeviceParams::Instance().getMaxSMem()) || (numThreads > (unsigned)actsize)) {
 	numThreads >>= 1;
       }
       int numBlocks=(int)ceil(float(actsize)/numThreads);
@@ -506,7 +506,7 @@ namespace QDP {
     while (1) {
 
       unsigned numThreads = DeviceParams::Instance().getMaxBlockX();
-      while ((numThreads*sizeof(T2) > DeviceParams::Instance().getMaxSMem()) || (numThreads > actsize)) {
+      while ((numThreads*sizeof(T2) > DeviceParams::Instance().getMaxSMem()) || (numThreads > (unsigned)actsize)) {
 	numThreads >>= 1;
       }
       unsigned numBlocks=(int)ceil(float(actsize)/numThreads);

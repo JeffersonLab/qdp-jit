@@ -666,7 +666,7 @@ namespace QDP
 		} else {
 		  CudaMemcpyH2D( e.devPtr , e.hstPtr , e.size );
 		}
-		CudaSyncTransferStream();
+
 	      }
 
 	    e.status_vec[0] = Status::device;
