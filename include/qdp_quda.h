@@ -5,11 +5,6 @@
 
 #warning "Using QDP-JIT/LLVM memory allocator"
 
-//#include <iostream>
-
-//#define QDP_IS_QDPJIT
-//#define QDP_ALIGNMENT_SIZE 4096
-
 #include <qdp_cache.h>
 
 #define cudaMalloc(dst, size) QDP_allocate(dst, size , __FILE__ , __LINE__ )

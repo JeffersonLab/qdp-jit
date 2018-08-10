@@ -112,7 +112,7 @@ namespace QDP {
 		      else
 			{
 			  // .. or an element view
-			  assert( e.karg_vec.size() > e.param.int_ );
+			  assert( e.karg_vec.size() > (unsigned)e.param.int_ );
 			  e.karg_vec[ e.param.int_ ] = (void*)((size_t)e.devPtr + e.elem_size * e.param.int_ );
 			  ret.push_back( &e.karg_vec[ e.param.int_ ] );
 			}

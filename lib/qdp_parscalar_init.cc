@@ -339,6 +339,10 @@ namespace COUNT {
 	  {
 	    qdp_cache_set_pool_bisect(true);
 	  }
+	else if (strcmp((*argv)[i], "-cacheverbose")==0) 
+	  {
+	    qdp_cache_set_cache_verbose(true);
+	  }
 	else if (strcmp((*argv)[i], "-bisectmax")==0) 
 	  {
 	    float f;

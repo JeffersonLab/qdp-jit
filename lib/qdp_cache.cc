@@ -16,10 +16,20 @@ namespace QDP
   namespace {
     QDPPoolAllocator<QDPCUDAAllocator> __cache_pool_allocator;
 
+    bool __poolbisect = false;
+    size_t __poolbisectmax = 0;
+    bool __cacheverbose = false;
   }
 
   std::vector<QDPCache::Entry>& QDPCache::get__vec_backed() {
     return __vec_backed;
+  }
+
+
+  bool qdp_cache_get_cache_verbose() { return __cacheverbose; }
+  void qdp_cache_set_cache_verbose(bool b) {
+    std::cout << "Set cache to verbose\n";
+    __cacheverbose = b;
   }
 
 
@@ -639,6 +649,14 @@ namespace QDP
 
 	    if ( e.status_vec[0] == Status::host )
 	      {
+		if (qdp_cache_get_cache_verbose())
+		  {
+		    if (e.size >= 1024*1024)
+		      QDPIO::cerr << "copy host --> GPU " << e.size/1024/1024 << " MB\n";
+		    else
+		      QDPIO::cerr << "copy host --> GPU " << e.size << " bytes\n";
+		  }
+
 		if (e.fptr) {
 
 		  char * tmp = new char[e.size];
@@ -715,6 +733,15 @@ namespace QDP
 
 	if ( e.status_vec[0] == Status::device )
 	  {
+	    
+	    if (qdp_cache_get_cache_verbose())
+	      {
+		if (e.size >= 1024*1024)
+		  QDPIO::cerr << "copy host <-- GPU " << e.size/1024/1024 << " MB\n";
+		else
+		  QDPIO::cerr << "copy host <-- GPU " << e.size << " bytes\n";
+	      }
+	    
 	    if (e.fptr) {
 	      char * tmp = new char[e.size];
 	      CudaMemcpyD2H( tmp , e.devPtr , e.size );

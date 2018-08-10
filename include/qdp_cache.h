@@ -11,6 +11,9 @@ namespace QDP
 {
   template<class T> class multi1d;
 
+  bool qdp_cache_get_cache_verbose();
+  void qdp_cache_set_cache_verbose(bool b);
+
     
   class QDPCache
   {
