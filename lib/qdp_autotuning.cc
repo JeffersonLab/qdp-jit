@@ -21,20 +21,11 @@ namespace QDP {
     for (void *addr : args)	
       QDP_info("%2d: %12d %12d %p",i++,*(bool*)addr,*(int*)addr,*(void**)addr);
     QDP_info("Device pool info:");
-    //CUDADevicePoolAllocator::Instance().printPoolInfo();
-    //QDP_get_global_cache().get_allocator().printPoolInfo();
   }
 
 
   void jit_launch(CUfunction function,int th_count,std::vector<QDPCache::ArgKey>& ids)
   {
-    //QDP_get_global_cache().printLockSet();
-    //QDP_get_global_cache().newLockSet();
-
-    // for (auto i : ids)
-    //   QDPIO::cout << i << ", ";
-    // QDPIO::cout << "\n";
-    
      std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
 
      

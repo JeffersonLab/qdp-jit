@@ -159,7 +159,6 @@ namespace QDP {
 	//QDPIO::cout << "CUDA_SUCCESS\n";
         if (qdp_cache_get_pool_bisect())
 	  {
-	    int num_threads = blockDimX * blockDimY * blockDimZ * gridDimX * gridDimY * gridDimZ;
 	    int local = CudaGetAttributesLocalSize( f );
 
 	    // Total local memory for this kernel launch
@@ -363,12 +362,12 @@ namespace QDP {
       QDP_info_primary("Using device memory pool size: %d MB",(int)val_min_int);
 
       //CUDADevicePoolAllocator::Instance().setPoolSize( ((size_t)val_min_int) * 1024 * 1024 );
-      QDP_get_global_cache().get_allocator().setPoolSize( ((size_t)val_min_int) * 1024 * 1024 );
+      QDP_get_global_cache().setPoolSize( ((size_t)val_min_int) * 1024 * 1024 );
 
       setPoolSize = true;
     } else {
       //QDP_info_primary("Using device pool size: %d MiB",(int)(CUDADevicePoolAllocator::Instance().getPoolSize()/1024/1024));
-      QDP_info_primary("Using device pool size: %d MiB",(int)(QDP_get_global_cache().get_allocator().getPoolSize()/1024/1024));
+      QDP_info_primary("Using device pool size: %d MiB",(int)(QDP_get_global_cache().getPoolSize()/1024/1024));
     }
 
     // int major = DeviceParams::Instance().getMajor();

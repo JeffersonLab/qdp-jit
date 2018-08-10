@@ -9,6 +9,139 @@
 
 namespace QDP {
 
+  namespace {
+    void* jit_param_null_dummy_ptr = NULL;
+  }
+
+  namespace {
+    bool __poolbisect = false;
+    size_t __poolbisectmax = 0;
+  }
+
+  bool   qdp_cache_get_pool_bisect() { return __poolbisect; }
+  size_t qdp_cache_get_pool_bisect_max() { return __poolbisectmax; }
+  
+  void qdp_cache_set_pool_bisect(bool b) {
+    std::cout << "Pool bisect run\n";
+    __poolbisect = b;
+  }
+  
+  void qdp_cache_set_pool_bisect_max(size_t val) {
+    std::cout << "Pool bisect max. " << val << "\n";
+    __poolbisectmax = val;
+  }
+
+
+
+  namespace 
+  {
+    template<class Allocator>
+    std::vector<void*> get_backed_kernel_args( Allocator& pool_allocator )
+    {
+      assert( QDP_get_global_cache().get__vec_backed().size() > 0 );
+
+      //QDPIO::cout << "get backed kernel args with " << __vec_backed.size() << " elements\n";
+
+      const bool print_param = false;
+
+      if (print_param)
+	QDPIO::cout << "Jit function param: ";
+    
+      std::vector<void*> ret;
+
+      for ( auto e : QDP_get_global_cache().get__vec_backed() )
+	{
+	  //printInfo(e);
+	  //QDPIO::cout << "elem " << cnt++ << "\n";
+	
+	  if (e.Id >= 0)
+	    {
+	      if (e.flags & QDPCache::Flags::JitParam)
+		{
+		  if (print_param)
+		    {
+		      switch(e.param_type) {
+		      case QDPCache::JitParamType::float_: QDPIO::cout << (float)e.param.float_ << ", "; break;
+		      case QDPCache::JitParamType::double_: QDPIO::cout << (double)e.param.double_ << ", "; break;
+		      case QDPCache::JitParamType::int_: QDPIO::cout << (int)e.param.int_ << ", "; break;
+		      case QDPCache::JitParamType::int64_: QDPIO::cout << (int64_t)e.param.int64_ << ", "; break;
+		      case QDPCache::JitParamType::bool_:
+			if (e.param.bool_)
+			  QDPIO::cout << "true, ";
+			else
+			  QDPIO::cout << "false, ";
+			break;
+		      default:
+			QDPIO::cout << "(unkown jit param type)\n"; break;
+			assert(0);
+		      }
+		    }
+		  ret.push_back( &e.param );
+		}
+	      else
+		{
+		  // We need to copy from host memory
+		  //QDPIO::cout << "allocate " << e.size << " bytes\n";
+		  if ( !pool_allocator.allocate( &e.devPtr , e.size ) )
+		    {
+		      QDPIO::cout << "could not allocate memory\n";
+		      QDP_error_exit("giving up");
+		    }
+
+		  // QDPIO::cout << "copy H2D " << e.size
+		  // 	    << " bytes, from = " << (size_t)e.hstPtr
+		  // 	    << " bytes, to = " << (size_t)e.devPtr
+		  // 	    << "\n";
+
+		  CudaMemcpyH2D( e.devPtr , e.hstPtr , e.size );
+
+		  if (print_param)
+		    {
+		      //QDPIO::cout << (size_t)e.devPtr << ", ";
+		    }
+
+		  if (e.flags & QDPCache::Flags::Array)
+		    {
+		      // We store the elem access field in the parameter field
+		      // This is safe since it's unused for an array.
+		      if (e.param.int_ == -1)
+			{
+			  // Could be a whole array view
+			  ret.push_back( &e.devPtr );
+			}
+		      else
+			{
+			  // .. or an element view
+			  assert( e.karg_vec.size() > e.param.int_ );
+			  e.karg_vec[ e.param.int_ ] = (void*)((size_t)e.devPtr + e.elem_size * e.param.int_ );
+			  ret.push_back( &e.karg_vec[ e.param.int_ ] );
+			}
+		    }
+		  else
+		    {
+		      ret.push_back( &e.devPtr );
+		    }
+		}
+	    }
+	  else
+	    {
+	      if (print_param)
+		{
+		  QDPIO::cout << "NULL(), ";
+		}
+
+	      ret.push_back( &jit_param_null_dummy_ptr );
+	
+	    }
+	}
+    
+      if (print_param)
+	QDPIO::cout << "\n";
+    
+      return ret;
+    }
+  }  // ns
+
 
   void qdp_pool_bisect()
   {

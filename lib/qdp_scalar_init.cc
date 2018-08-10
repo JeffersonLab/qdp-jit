@@ -287,7 +287,8 @@ namespace COUNT {
 	    size_t val = (size_t)((double)(f) * mul);
 
 	    //CUDADevicePoolAllocator::Instance().setPoolSize(val);
-	    QDP_get_global_cache().get_allocator().setPoolSize(val);
+	    //QDP_get_global_cache().get_allocator().setPoolSize(val);
+	    QDP_get_global_cache().setPoolSize(val);
 	    
 	    setPoolSize = true;
 	  }

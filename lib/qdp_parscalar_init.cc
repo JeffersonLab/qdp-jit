@@ -332,7 +332,8 @@ namespace COUNT {
 	  {
 	    unsigned val;
 	    sscanf((*argv)[++i],"%u",&val);
-	    QDP_get_global_cache().get_allocator().enableMemset(val);
+	    //QDP_get_global_cache().get_allocator().enableMemset(val);
+	    QDP_get_global_cache().enableMemset(val);
 	  }
 	else if (strcmp((*argv)[i], "-poolbisect")==0) 
 	  {
@@ -398,7 +399,8 @@ namespace COUNT {
 	    size_t val = (size_t)((double)(f) * mul);
 
 	    //CUDADevicePoolAllocator::Instance().setPoolSize(val);
-	    QDP_get_global_cache().get_allocator().setPoolSize(val);
+	    //QDP_get_global_cache().get_allocator().setPoolSize(val);
+	    QDP_get_global_cache().setPoolSize(val);
 	    
 	    setPoolSize = true;
 	  }

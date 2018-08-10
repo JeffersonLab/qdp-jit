@@ -3,26 +3,14 @@
 
 #ifndef __CUDACC__
 
-#warning "Using QDP-JIT/PTX memory allocator"
+#warning "Using QDP-JIT/LLVM memory allocator"
 
-#include <iostream>
+//#include <iostream>
 
-#define QDP_IS_QDPJIT
+//#define QDP_IS_QDPJIT
+//#define QDP_ALIGNMENT_SIZE 4096
 
-#define QDP_ALIGNMENT_SIZE 4096
-
-#include <qdp_init.h>
-#include <qdp_cuda.h>
-#include <qdp_singleton.h>
-//#include <qdp_forward.h>
-//#include <qdp_stopwatch.h>
-#include <qdp_allocator.h>
-#include <qdp_default_allocator.h>
-#include <qdp_cuda_allocator.h>
-#include <qdp_pool_allocator.h>
 #include <qdp_cache.h>
-
-
 
 #define cudaMalloc(dst, size) QDP_allocate(dst, size , __FILE__ , __LINE__ )
 #define cudaFree(dst) QDP_free(dst)

@@ -2,40 +2,19 @@
 #define QDP_CACHE
 
 #include <iostream>
-#include <map>
 #include <vector>
 #include <stack>
 #include <list>
-//#include "string.h"
-//#include "math.h"
 
-//#define SANITY_CHECKS_CACHE
-
-using namespace std;
 
 namespace QDP 
 {
   template<class T> class multi1d;
 
-  class QDPJitArgs;
-
-  namespace {
-    typedef QDPPoolAllocator<QDPCUDAAllocator>     CUDADevicePoolAllocator;
-  }
-
-  bool   qdp_cache_get_pool_bisect();
-  size_t qdp_cache_get_pool_bisect_max();
-  
-  void qdp_cache_set_pool_bisect(bool b);
-  void qdp_cache_set_pool_bisect_max(size_t val);
-
-  std::vector<void*> get_backed_kernel_args( CUDADevicePoolAllocator& pool_allocator );
     
   class QDPCache
   {
   public:
-    class Entry;
-
     enum Flags {
       Empty = 0,
       OwnHostMemory = 1,
@@ -46,9 +25,9 @@ namespace QDP
       Array = 32
     };
 
-    enum class Status { undef , host , device };
-
-    enum class JitParamType { float_, int_, int64_, double_, bool_ };
+    enum class Status       { undef , host , device };
+    enum class JitParamType { float_, int_ , int64_, double_, bool_ };
+    typedef void (* LayoutFptr)(bool toDev,void * outPtr,void * inPtr);
 
     struct ArgKey {
       // The default constructor is needed in the custom streaming kernel where multi1d<ArgKey> is used -- don't see a simple way around it
@@ -59,10 +38,35 @@ namespace QDP
       int elem;
     };
     
+    struct Entry 
+    {
+      union JitParamUnion {
+	void *  ptr;
+	float   float_;
+	int     int_;
+	int64_t int64_;
+	double  double_;
+	bool    bool_;
+      };
+
+      int    Id;
+      size_t size;
+      size_t elem_size;
+      Flags  flags;
+      void*  hstPtr;  // NULL if not allocated
+      void*  devPtr;  // NULL if not allocated
+      std::list<int>::iterator iterTrack;
+      LayoutFptr fptr;
+      JitParamUnion param;
+      JitParamType param_type;
+      std::vector<ArgKey> multi;
+      std::vector<Status> status_vec;
+      std::vector<void* > karg_vec;
+    };
+
+
     
     QDPCache();
-    
-    typedef void (* LayoutFptr)(bool toDev,void * outPtr,void * inPtr);
 
     std::vector<void*> get_kernel_args(std::vector<ArgKey>& ids , bool for_kernel = true );
     void backup_last_kernel_args();
@@ -75,7 +79,7 @@ namespace QDP
     int addJitParamInt64(int64_t i);
     int addJitParamBool(bool i);
 
-    // track_ptr - this enables to sign off later via the pointer (needed for QUDA, where we hijack cudaMalloc)
+    // track_ptr - this enables to sign off via the pointer (needed for QUDA, where we hijack cudaMalloc)
     int addDeviceStatic( void** ptr, size_t n_bytes , bool track_ptr = false );
     void signoffViaPtr( void* ptr );
     int addDeviceStatic( size_t n_bytes );
@@ -83,7 +87,6 @@ namespace QDP
     int add( size_t size, Flags flags, Status st, const void* ptr_host, const void* ptr_dev, LayoutFptr func );
     int addArray( size_t element_size , int num_elements );
 
-    //int addMulti( const multi1d<int>& ids );
     int addMulti( const multi1d<QDPCache::ArgKey>& ids );
     
     // Wrappers to the previous interface
@@ -94,19 +97,20 @@ namespace QDP
     void assureOnHost(int id);
     void assureOnHost(int id, int elem_num);
 
-    //void * getDevicePtr(int id);
     void  getHostPtr(void ** ptr , int id);
     void* getHostArrayPtr( int id , int elem );
     
     size_t getSize(int id);
-    //bool allocate_device_static( void** ptr, size_t n_bytes );
-    //void free_device_static( void* ptr );
     void printLockSet();
     
-    CUDADevicePoolAllocator& get_allocator() { return pool_allocator; }
-
     void suspend();
     void resume();
+
+    void   setPoolSize(size_t s);
+    size_t getPoolSize();
+    void   enableMemset(unsigned val);
+
+    std::vector<QDPCache::Entry>&  get__vec_backed();
     
   private:
     void printInfo(const Entry& e);
@@ -134,12 +138,15 @@ namespace QDP
     
     bool spill_lru();
     void printTracker();
-    
+
   private:
-    vector<Entry>       vecEntry;
-    stack<int>          stackFree;
-    list<int>           lstTracker;
-    CUDADevicePoolAllocator pool_allocator;
+    std::vector<Entry>       vecEntry;
+    std::stack<int>          stackFree;
+    std::list<int>           lstTracker;
+
+    std::vector<QDPCache::ArgKey> __ids_last;
+    std::vector<QDPCache::Entry> __vec_backed;
+    std::vector<void*>  __hst_ptr;
   };
 
   QDPCache& QDP_get_global_cache();

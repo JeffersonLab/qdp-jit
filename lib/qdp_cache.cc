@@ -12,59 +12,42 @@
 namespace QDP
 {
 
+
   namespace {
-    bool __poolbisect = false;
-    size_t __poolbisectmax = 0;
+    QDPPoolAllocator<QDPCUDAAllocator> __cache_pool_allocator;
+
   }
 
-  bool   qdp_cache_get_pool_bisect() { return __poolbisect; }
-  size_t qdp_cache_get_pool_bisect_max() { return __poolbisectmax; }
-  
-  void qdp_cache_set_pool_bisect(bool b) {
-    std::cout << "Pool bisect run\n";
-    __poolbisect = b;
-  }
-  
-  void qdp_cache_set_pool_bisect_max(size_t val) {
-    std::cout << "Pool bisect max. " << val << "\n";
-    __poolbisectmax = val;
+  std::vector<QDPCache::Entry>& QDPCache::get__vec_backed() {
+    return __vec_backed;
   }
 
-  struct QDPCache::Entry {
-    union JitParamUnion {
-      void *  ptr;
-      float   float_;
-      int     int_;
-      int64_t int64_;
-      double  double_;
-      bool    bool_;
-    };
 
-    int    Id;
-    size_t size;
-    size_t elem_size;
-    Flags  flags;
-    void*  hstPtr;  // NULL if not allocated
-    void*  devPtr;  // NULL if not allocated
-    list<int>::iterator iterTrack;
-    LayoutFptr fptr;
-    JitParamUnion param;
-    QDPCache::JitParamType param_type;
-    std::vector<QDPCache::ArgKey> multi;
-    std::vector<Status> status_vec;
-    std::vector<void* > karg_vec;
-  };
+  void QDPCache::enableMemset(unsigned val)
+  {
+    __cache_pool_allocator.enableMemset(val);
+  }
+
+  void QDPCache::setPoolSize(size_t s)
+  {
+    __cache_pool_allocator.setPoolSize(s);
+  }
+
+  size_t QDPCache::getPoolSize()
+  {
+    return __cache_pool_allocator.getPoolSize();
+  }
 
 
   void QDPCache::suspend()
   {
-    pool_allocator.suspend();
+    __cache_pool_allocator.suspend();
   }
 
 
   void QDPCache::resume()
   {
-    pool_allocator.resume();
+    __cache_pool_allocator.resume();
   }
   
 
@@ -333,7 +316,7 @@ namespace QDP
     int Id = getNewId();
     Entry& e = vecEntry[ Id ];
 
-    while (!pool_allocator.allocate( ptr , n_bytes )) {
+    while (!__cache_pool_allocator.allocate( ptr , n_bytes )) {
       if (!spill_lru()) {
 	QDP_error_exit("cache allocate_device_static: can't spill LRU object");
       }
@@ -411,7 +394,7 @@ namespace QDP
     void* dev_ptr;
     void* hst_ptr;
     
-    while (!pool_allocator.allocate( &dev_ptr , size )) {
+    while (!__cache_pool_allocator.allocate( &dev_ptr , size )) {
       if (!spill_lru()) {
 	QDP_error_exit("cache allocate_device_static: can't spill LRU object");
       }
@@ -574,10 +557,10 @@ namespace QDP
     if (e.devPtr)
       return;
 
-    while (!pool_allocator.allocate( &e.devPtr , e.size )) {
+    while (!__cache_pool_allocator.allocate( &e.devPtr , e.size )) {
       if (!spill_lru()) {
 	QDP_info("Device pool:");
-	pool_allocator.printListPool();
+	__cache_pool_allocator.printListPool();
 	//printLockSets();
 	QDP_error_exit("cache assureDevice: can't spill LRU object. Out of GPU memory!");
       }
@@ -596,7 +579,7 @@ namespace QDP
     if (!e.devPtr)
       return;
 
-    pool_allocator.free( e.devPtr );
+    __cache_pool_allocator.free( e.devPtr );
     e.devPtr = NULL;
   }
 
@@ -875,117 +858,9 @@ namespace QDP
   
   namespace {
     void* jit_param_null_ptr = NULL;
-    std::vector<QDPCache::ArgKey> __ids_last;
-    std::vector<QDPCache::Entry> __vec_backed;
-    std::vector<void*>  __hst_ptr;
   }
 
 
-
-  std::vector<void*> get_backed_kernel_args( CUDADevicePoolAllocator& pool_allocator )
-  {
-    assert( __vec_backed.size() > 0 );
-
-    //QDPIO::cout << "get backed kernel args with " << __vec_backed.size() << " elements\n";
-
-    const bool print_param = false;
-
-    if (print_param)
-      QDPIO::cout << "Jit function param: ";
-    
-    std::vector<void*> ret;
-
-    for ( auto e : __vec_backed )
-      {
-	//printInfo(e);
-	//QDPIO::cout << "elem " << cnt++ << "\n";
-	
-	if (e.Id >= 0)
-	  {
-	    if (e.flags & QDPCache::Flags::JitParam)
-	      {
-		if (print_param)
-		  {
-		    switch(e.param_type) {
-		    case QDPCache::JitParamType::float_: QDPIO::cout << (float)e.param.float_ << ", "; break;
-		    case QDPCache::JitParamType::double_: QDPIO::cout << (double)e.param.double_ << ", "; break;
-		    case QDPCache::JitParamType::int_: QDPIO::cout << (int)e.param.int_ << ", "; break;
-		    case QDPCache::JitParamType::int64_: QDPIO::cout << (int64_t)e.param.int64_ << ", "; break;
-		    case QDPCache::JitParamType::bool_:
-		      if (e.param.bool_)
-			QDPIO::cout << "true, ";
-		      else
-			QDPIO::cout << "false, ";
-		      break;
-		    default:
-		      QDPIO::cout << "(unkown jit param type)\n"; break;
-		      assert(0);
-		    }
-		  }
-		ret.push_back( &e.param );
-	      }
-	    else
-	      {
-		// We need to copy from host memory
-		//QDPIO::cout << "allocate " << e.size << " bytes\n";
-		if ( !pool_allocator.allocate( &e.devPtr , e.size ) )
-		  {
-		    QDPIO::cout << "could not allocate memory\n";
-		    QDP_error_exit("giving up");
-		  }
-
-		// QDPIO::cout << "copy H2D " << e.size
-		// 	    << " bytes, from = " << (size_t)e.hstPtr
-		// 	    << " bytes, to = " << (size_t)e.devPtr
-		// 	    << "\n";
-
-		CudaMemcpyH2D( e.devPtr , e.hstPtr , e.size );
-
-		if (print_param)
-		  {
-		    //QDPIO::cout << (size_t)e.devPtr << ", ";
-		  }
-
-		if (e.flags & QDPCache::Flags::Array)
-		  {
-		    // We store the elem access field in the parameter field
-		    // This is safe since it's unused for an array.
-		    if (e.param.int_ == -1)
-		      {
-			// Could be a whole array view
-			ret.push_back( &e.devPtr );
-		      }
-		    else
-		      {
-			// .. or an element view
-			assert( e.karg_vec.size() > e.param.int_ );
-			e.karg_vec[ e.param.int_ ] = (void*)((size_t)e.devPtr + e.elem_size * e.param.int_ );
-			ret.push_back( &e.karg_vec[ e.param.int_ ] );
-		      }
-		  }
-		else
-		  {
-		    ret.push_back( &e.devPtr );
-		  }
-	      }
-	  }
-	else
-	  {
-	    if (print_param)
-	      {
-		QDPIO::cout << "NULL(), ";
-	      }
-
-	    ret.push_back( &jit_param_null_ptr );
-	
-	  }
-      }
-    
-    if (print_param)
-      QDPIO::cout << "\n";
-    
-    return ret;
-  }
   
   
   void QDPCache::backup_last_kernel_args()
