@@ -12,6 +12,7 @@
 // #include "cuda.h"
 
 #include <string>
+#include <signal.h>
 
 #include "cudaProfiler.h"
 
@@ -206,7 +207,9 @@ namespace QDP {
 	std::cout << s << " Error: " << mapCuErrorString.at(ret) << "\n";
       else
 	std::cout << s << " Error: (not known)\n";
-      exit(1);
+      
+      raise(SIGSEGV);
+      //exit(1);
     }
   }
 

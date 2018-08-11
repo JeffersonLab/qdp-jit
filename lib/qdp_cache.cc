@@ -12,14 +12,23 @@
 namespace QDP
 {
 
+  typedef QDPPoolAllocator<QDPCUDAAllocator> CUDAPOOL;
 
-  namespace {
-    QDPPoolAllocator<QDPCUDAAllocator> __cache_pool_allocator;
+  namespace
+  {
+    static CUDAPOOL* __cache_pool_allocator;
 
-    bool __poolbisect = false;
-    size_t __poolbisectmax = 0;
     bool __cacheverbose = false;
+
+    CUDAPOOL& get__cache_pool_allocator()
+    {
+      if (!__cache_pool_allocator) {
+	__cache_pool_allocator = new CUDAPOOL();
+      }
+      return *__cache_pool_allocator;
+    }
   }
+
 
   std::vector<QDPCache::Entry>& QDPCache::get__vec_backed() {
     return __vec_backed;
@@ -35,29 +44,29 @@ namespace QDP
 
   void QDPCache::enableMemset(unsigned val)
   {
-    __cache_pool_allocator.enableMemset(val);
+    get__cache_pool_allocator().enableMemset(val);
   }
 
   void QDPCache::setPoolSize(size_t s)
   {
-    __cache_pool_allocator.setPoolSize(s);
+    get__cache_pool_allocator().setPoolSize(s);
   }
 
   size_t QDPCache::getPoolSize()
   {
-    return __cache_pool_allocator.getPoolSize();
+    return get__cache_pool_allocator().getPoolSize();
   }
 
 
   void QDPCache::suspend()
   {
-    __cache_pool_allocator.suspend();
+    get__cache_pool_allocator().suspend();
   }
 
 
   void QDPCache::resume()
   {
-    __cache_pool_allocator.resume();
+    get__cache_pool_allocator().resume();
   }
   
 
@@ -326,7 +335,7 @@ namespace QDP
     int Id = getNewId();
     Entry& e = vecEntry[ Id ];
 
-    while (!__cache_pool_allocator.allocate( ptr , n_bytes )) {
+    while (!get__cache_pool_allocator().allocate( ptr , n_bytes )) {
       if (!spill_lru()) {
 	QDP_error_exit("cache allocate_device_static: can't spill LRU object");
       }
@@ -404,7 +413,7 @@ namespace QDP
     void* dev_ptr;
     void* hst_ptr;
     
-    while (!__cache_pool_allocator.allocate( &dev_ptr , size )) {
+    while (!get__cache_pool_allocator().allocate( &dev_ptr , size )) {
       if (!spill_lru()) {
 	QDP_error_exit("cache allocate_device_static: can't spill LRU object");
       }
@@ -567,10 +576,10 @@ namespace QDP
     if (e.devPtr)
       return;
 
-    while (!__cache_pool_allocator.allocate( &e.devPtr , e.size )) {
+    while (!get__cache_pool_allocator().allocate( &e.devPtr , e.size )) {
       if (!spill_lru()) {
 	QDP_info("Device pool:");
-	__cache_pool_allocator.printListPool();
+	get__cache_pool_allocator().printListPool();
 	//printLockSets();
 	QDP_error_exit("cache assureDevice: can't spill LRU object. Out of GPU memory!");
       }
@@ -589,7 +598,7 @@ namespace QDP
     if (!e.devPtr)
       return;
 
-    __cache_pool_allocator.free( e.devPtr );
+    get__cache_pool_allocator().free( e.devPtr );
     e.devPtr = NULL;
   }
 

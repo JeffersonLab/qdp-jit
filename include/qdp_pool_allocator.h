@@ -48,7 +48,7 @@ namespace QDP
     ~QDPPoolAllocator();
 
     bool allocateInternalBuffer();
-
+    
   private:
     friend class QDPCache;
 
@@ -69,7 +69,7 @@ namespace QDP
 
     bool setMemory = false;
     unsigned setMemoryVal;
-    
+
     bool findNextNotAllocated( typename listEntry_t::iterator & start , size_t & size );
 
   };
@@ -120,13 +120,10 @@ namespace QDP
 
 
   template<class Allocator>
-    QDPPoolAllocator<Allocator>::~QDPPoolAllocator() { 
-    //QDP_info_primary("Destructing pool, but not deallocating the internal buffer.");
-    //QDPIO::cout << "Destructing pool, deallocating the internal buffer.\n";
-#if 1
-      freeInternalBuffer();
-#endif
-    }
+  QDPPoolAllocator<Allocator>::~QDPPoolAllocator()
+  { 
+    freeInternalBuffer();
+  }
 
 
 
