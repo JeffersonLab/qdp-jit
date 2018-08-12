@@ -1,18 +1,12 @@
 // -*- c++ -*-
 
 
-#include <iostream>
 
 #include "qdp_config_internal.h" 
-
 #include "qdp.h"
-// #include "qdp_init.h"
-// #include "qdp_deviceparams.h"
-// #include "qdp_cuda.h"
-// #include "cuda.h"
 
+#include <iostream>
 #include <string>
-#include <signal.h>
 
 #include "cudaProfiler.h"
 
@@ -207,9 +201,7 @@ namespace QDP {
 	std::cout << s << " Error: " << mapCuErrorString.at(ret) << "\n";
       else
 	std::cout << s << " Error: (not known)\n";
-      
-      raise(SIGSEGV);
-      //exit(1);
+      exit(1);
     }
   }
 

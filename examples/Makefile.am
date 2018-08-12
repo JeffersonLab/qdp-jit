@@ -9,7 +9,7 @@ AM_CXXFLAGS = -I@top_srcdir@/include -I@top_builddir@/include \
               -I@top_srcdir@/other_libs/qio/other_libs/c-lime/include \
               -I@top_builddir@/other_libs/qio/other_libs/c-lime/include \
               -I@top_srcdir@/other_libs/xpath_reader/include \
-              @BAGEL_QDP_CXXFLAGS@ @LIBXML2_CXXFLAGS@ @QMP_CFLAGS@ @CUDA_CXXFLAGS@ @LLVM_CXXFLAGS@
+              @LIBXML2_CXXFLAGS@ @QMP_CFLAGS@ @CUDA_CXXFLAGS@ @LLVM_CXXFLAGS@
 
 if BUILD_FILEDB
 AM_CXXFLAGS += -I@top_srcdir@/other_libs/filedb/src \
@@ -23,7 +23,7 @@ AM_LDFLAGS += -L@top_builddir@/other_libs/qio/lib \
              -L@top_builddir@/other_libs/qio/other_libs/c-lime/lib \
              -L@top_builddir@/other_libs/xpath_reader/lib
 endif
-AM_LDFLAGS += @LDFLAGS@ @BAGEL_QDP_LDFLAGS@ @QMP_LDFLAGS@
+AM_LDFLAGS += @LDFLAGS@ @QMP_LDFLAGS@
 
 if BUILD_FILEDB
 AM_LDFLAGS += -L@top_builddir@/other_libs/filedb/src \
@@ -35,7 +35,7 @@ LDADD = -lqdp
 if QDP_USE_LIBXML2
 LDADD += -lXPathReader -lxmlWriter -lqio -llime
 endif
-LDADD += @BAGEL_QDP_LIBS@ @LIBXML2_LIBS@ @QMP_LIBS@ @LIBS@ @CUDA_LIBS@ @LLVM_LIBS@
+LDADD += @LIBXML2_LIBS@ @QMP_LIBS@ @LIBS@ @CUDA_LIBS@ @LLVM_LIBS@
 
 if BUILD_FILEDB
 LDADD += -lfiledb -lfilehash
