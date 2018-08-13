@@ -1,8 +1,5 @@
-// -*- C++ -*-
-
-/*! @file
- * @brief Forward declarations for QDP
- */
+#ifndef QDP_FORWARD
+#define QDP_FORWARD
 
 namespace QDP
 {
@@ -196,3 +193,4 @@ namespace QDP
 } // namespace QDP
 
   
+#endif

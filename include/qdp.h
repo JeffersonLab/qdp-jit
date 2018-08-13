@@ -89,11 +89,11 @@ using std::ostream;
 
 
 #include "cuda.h"
-#include "qdp_llvm.h"
 
 #include "qdp_dispatch.h"
 
 #include "qdp_forward.h"
+#include "qdp_llvm.h"
 #include "qdp_datalayout.h"
 
 #include "qdp_jit_util.h"

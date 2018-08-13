@@ -51,7 +51,7 @@ namespace QDP
   function_multi_localInnerProduct_sum_convert_build()
   {
     if (ptx_db::db_enabled) {
-      CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
+      CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ , input_layout );
       if (func)
 	return func;
     }
@@ -256,15 +256,12 @@ namespace QDP
 
 
   
-
-  
-
   template<class T, class T3>
   void
   multi_innerProduct( multi1d< ComplexD* >& ret , const multi1d< OSubLattice<T>* >& ms1 , const OLattice<T3>& v1 )
   {
     const int N = ms1.size();
-
+    
     //QDPIO::cout << "multi_innerProduct (GPU) with N = " << N << "\n";
 
     assert( N > 0 );
@@ -287,12 +284,14 @@ namespace QDP
     multi1d<int>              sizes    ( N );
     
     for (int i = 0 ; i < N ; ++i ) {
+      zero_rep( dest[i] );
       ms1_ids[i]  = QDPCache::ArgKey( ms1[i]->getId() );
       table_ids[i] = QDPCache::ArgKey( ms1[i]->subset().getIdSiteTable() );
       sizes[i]     = ms1[i]->subset().numSiteTable();
     }
 
     bool first=true;
+    bool allocated=false;
     int out_id,in_id;
 
     while (1) {
@@ -305,6 +304,8 @@ namespace QDP
 	  if ( sizes[i] > maxsize )
 	    maxsize = sizes[i];
 	}
+      if (maxsize == 0)
+	break;
       //QDPIO::cout << "   ";
       //QDPIO::cout << "maxsize: " << maxsize << "\n";
 
@@ -322,6 +323,7 @@ namespace QDP
       //QDP_info("multi_innerProductsum(): using %d threads per block, %d blocks, shared mem=%d" , numThreads , numBlocks , shared_mem_usage );
 
       if (first) {
+	allocated=true;
 	out_id = QDP_get_global_cache().add( numBlocks*sizeof(T2)*N , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
 	in_id  = QDP_get_global_cache().add( numBlocks*sizeof(T2)*N , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
       }
@@ -386,16 +388,21 @@ namespace QDP
     }
 
     QDPInternal::globalSumArray(dest);
-    
-    QDP_get_global_cache().signoff( in_id );
-    QDP_get_global_cache().signoff( out_id );
 
+    if (allocated)
+      {
+	QDP_get_global_cache().signoff( in_id );
+	QDP_get_global_cache().signoff( out_id );
+      }
+    
     for (int i = 0 ; i < N ; ++i )
       {
 	*ret[i] = dest[i];
       }
     
   }
+
+  
 
 
   

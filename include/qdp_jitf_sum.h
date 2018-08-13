@@ -35,7 +35,7 @@ namespace QDP {
   function_sum_convert_ind_build()
   {
     if (ptx_db::db_enabled) {
-      CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
+      CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ , input_layout );
       if (func)
 	return func;
     }
@@ -170,7 +170,7 @@ namespace QDP {
   function_sum_convert_build()
   {
     if (ptx_db::db_enabled) {
-      CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
+      CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ , input_layout );
       if (func)
 	return func;
     }
@@ -445,7 +445,7 @@ namespace QDP {
   function_isfinite_convert_build()
   {
     if (ptx_db::db_enabled) {
-      CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
+      CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ , input_layout );
       if (func)
 	return func;
     }

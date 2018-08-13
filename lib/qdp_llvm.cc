@@ -120,6 +120,8 @@ namespace QDP {
     return oss.str();
   }
 
+  
+  
 
   CUfunction get_fptr_from_ptx( const char* fname , const std::string& kernel )
   {
@@ -154,7 +156,19 @@ namespace QDP {
   }
 
 
+  CUfunction llvm_ptx_db( const char * pretty , JitDeviceLayout layout )
+  {
+    std::stringstream iss;
+    iss << std::string(pretty) << "layout=";
+    
+    if (layout == JitDeviceLayout::Scalar)
+      iss << "scalar";
+    else
+      iss << "coal";
 
+    return llvm_ptx_db( iss.str().c_str() );
+  }
+  
 
   CUfunction llvm_ptx_db( const char * pretty )
   {
