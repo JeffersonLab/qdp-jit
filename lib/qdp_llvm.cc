@@ -156,19 +156,6 @@ namespace QDP {
   }
 
 
-  CUfunction llvm_ptx_db( const char * pretty , JitDeviceLayout layout )
-  {
-    std::stringstream iss;
-    iss << std::string(pretty) << "layout=";
-    
-    if (layout == JitDeviceLayout::Scalar)
-      iss << "scalar";
-    else
-      iss << "coal";
-
-    return llvm_ptx_db( iss.str().c_str() );
-  }
-  
 
   CUfunction llvm_ptx_db( const char * pretty )
   {
@@ -459,30 +446,28 @@ namespace QDP {
     if (ptx_db::db_enabled) {
       // Load DB
       QDPIO::cout << "Checking for PTX DB " << ptx_db::dbname << "\n";
-      std::ifstream f(ptx_db::dbname);
+      std::ifstream f(ptx_db::dbname , ios::in | ios::binary );
       if (f.good()) 
 	{
 	  QDPIO::cout << "Reading in PTX DB " << ptx_db::dbname << "\n";
-	  BinaryFileReader db( ptx_db::dbname );
-
-	  while ( ! db.fail() )
+	  while ( ! f.eof() )
 	    {
 	      int size1;
-	      db.read( size1 );
-	      if (db.fail())
+	      f >> size1;
+	      if (f.eof())
 		break;
 	      char* buf1 = new char[size1];
-	      db.readArray( buf1 , 1 , size1 );
-	      if (db.fail())
+	      f.read( buf1 , size1 );
+	      if (f.eof())
 		break;
 
 	      int size2;
-	      db.read( size2 );
-	      if (db.fail())
+	      f >> size2;
+	      if (f.eof())
 		break;
 	      char* buf2 = new char[size2];
-	      db.readArray( buf2 , 1 , size2 );
-	      if (db.fail())
+	      f.read( buf2 , size2 );
+	      if (f.eof())
 		break;
 
 	      QDPIO::cout << "ptx_db: read key_size=" << size1 << " ptx_size=" << size2 << "\n";
@@ -494,7 +479,6 @@ namespace QDP {
 	      delete[] buf1;
 	      delete[] buf2;
 	    }
-	  db.close();
 	}
 
     } // ptx db
@@ -1544,33 +1528,38 @@ namespace QDP {
 
     if ( ptx_db::db_enabled ) {
 
-      std::string id = get_ptx_db_id( pretty );
-
-      // Add kernel
-      //QDPIO::cout << "add kernel for id = " << id << "\n";
-
-      if ( ptx_db::db.find( id ) != ptx_db::db.end() ) {
-	QDPIO::cout << "internal error: key already exists in DB but wasn't found before\n" << id << "\n";
-	QDP_abort(1);
-      }
-
-      ptx_db::db[ id ] = ptx_kernel;
-
-      // Store DB
-      //QDPIO::cout << "storing PTX DB " << ptx_db::dbname << "\n";
-      BinaryFileWriter db( ptx_db::dbname );
-      for ( ptx_db::DBType::iterator it = ptx_db::db.begin() ; it != ptx_db::db.end() ; ++it ) 
+      if (Layout::primaryNode())
 	{
-	  int size1 = it->first.size();
-	  db.write(size1);
-	  db.writeArrayPrimaryNode( it->first.c_str() , 1 , size1 );
+	  std::string id = get_ptx_db_id( pretty );
 
-	  int size2 = it->second.size();
-	  db.write(size2);
-	  db.writeArrayPrimaryNode( it->second.c_str() , 1 , size2 );
+	  // Add kernel
+	  //QDPIO::cout << "llvm_get_cufunction: add kernel for id = " << id << "\n";
+
+	  if ( ptx_db::db.find( id ) != ptx_db::db.end() ) {
+	    QDPIO::cout << "internal error: key already exists in DB but wasn't found before\n" << id << "\n";
+	    QDP_abort(1);
+	  }
+
+	  ptx_db::db[ id ] = ptx_kernel;
+
+	  // Store DB
+	  //QDPIO::cout << "storing PTX DB " << ptx_db::dbname << "\n";
+
+	  // Simple minded, but enough for writing out only from a single node
+	  std::ofstream db;
+	  db.open ( ptx_db::dbname , ios::out | ios::binary );
+	  for ( ptx_db::DBType::iterator it = ptx_db::db.begin() ; it != ptx_db::db.end() ; ++it ) 
+	    {
+	      int size1 = it->first.size();
+	      db << size1;
+	      db.write( it->first.c_str() , size1 );
+
+	      int size2 = it->second.size();
+	      db << size2;
+	      db.write( it->second.c_str() , size2 );
+	    }
+	  db.close();
 	}
-      db.close();
-
     } // ptx db
 
     return func;

@@ -101,7 +101,6 @@ namespace QDP {
   }
 
   CUfunction llvm_ptx_db( const char * pretty );
-  CUfunction llvm_ptx_db( const char * pretty , JitDeviceLayout layout );
 
   
   extern llvm::LLVMContext TheContext;

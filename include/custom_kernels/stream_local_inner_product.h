@@ -51,7 +51,7 @@ namespace QDP
   function_multi_localInnerProduct_sum_convert_build()
   {
     if (ptx_db::db_enabled) {
-      CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ , input_layout );
+      CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
       if (func)
 	return func;
     }
