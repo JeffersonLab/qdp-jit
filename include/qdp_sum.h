@@ -265,6 +265,9 @@ namespace QDP {
     multi1d<QDPCache::ArgKey> table_ids( numsubsets );
     multi1d<int>              sizes    ( numsubsets );
 
+    // Zero-out the result (in case of empty subsets on the node)
+    zero_rep( dest );
+
     //QDPIO::cout << "sizes = ";
     for (int i = 0 ; i < numsubsets ; ++i )
       {
@@ -276,6 +279,7 @@ namespace QDP {
     //QDPIO::cout << "\n";    
       
     bool first=true;
+    bool allocated=false;
     int out_id,in_id;
     
     while( 1 ) {
@@ -286,6 +290,8 @@ namespace QDP {
 	  if ( sizes[i] > maxsize )
 	    maxsize = sizes[i];
 	}
+      if (maxsize == 0)
+	break;
       
       //QDPIO::cout << "maxsize: " << maxsize << "\n";
       
@@ -375,11 +381,17 @@ namespace QDP {
       out_id = tmp;
     }
 
-    QDPInternal::globalSumArray(dest);
+    if (allocated)
+      {
+	QDP_get_global_cache().signoff( in_id );
+	QDP_get_global_cache().signoff( out_id );
+      }
+
+    // This avoids an element-wise cuda memory copy
+    dest.copyD2H();
     
-    QDP_get_global_cache().signoff( in_id );
-    QDP_get_global_cache().signoff( out_id );
-      
+    QDPInternal::globalSumArray(dest);
+
     return dest;
   }
 #else

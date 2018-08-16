@@ -136,8 +136,8 @@ namespace QDP {
 				   unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
 				   unsigned int  sharedMemBytes, CUstream hStream, void** kernelParams, void** extra  )
   {
-    // QDP_info("CudaLaunchKernelNoSync: grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
-    // 	     gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes );
+     // QDP_info("CudaLaunchKernelNoSync: grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
+     // 	      gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes );
     // QDPIO::cout << "CUfunction = " << (size_t)(void*)f << "\n";
       
 
@@ -152,6 +152,12 @@ namespace QDP {
     if (res == CUDA_SUCCESS)
       {
 	//QDPIO::cout << "CUDA_SUCCESS\n";
+	if (qdp_cache_get_launch_verbose())
+	  {
+	    QDP_info("CudaLaunchKernelNoSync: grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
+		     gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes );
+	  }
+	
         if (qdp_cache_get_pool_bisect())
 	  {
 	    int local = CudaGetAttributesLocalSize( f );

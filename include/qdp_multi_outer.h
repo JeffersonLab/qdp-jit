@@ -222,6 +222,11 @@ namespace QDP {
     }
 
 
+    void copyD2H() {
+      assert( id >= 0 );
+      QDP_get_global_cache().copyD2H( id );
+    }
+
     // globalSumArray uses slice()
     // however, in qdp-jit a pointer to an array of OScalar cannot be used
     // to access the contained values. So, an explicitly different name is used
@@ -264,6 +269,7 @@ namespace QDP {
     {
       // std::cout << __PRETTY_FUNCTION__ << " " << this << "  copymem = " << copymem << "  F = " << F << "  id = " << id << "\n";
 
+      assert( ns1 > 0 );
       assert(!copymem);
 
       //QDPIO::cout << "resize multi1d<OScalar> specialization\n";
@@ -307,6 +313,14 @@ namespace QDP {
   };
 
 
+  template<class T1> 
+  void zero_rep(multi1d< OScalar<T1> >& dest) 
+  {
+    assert( dest.getId() >= 0 );
+    QDP_get_global_cache().zero_rep( dest.getId() );
+  }
+
+  
 
   template<>
   template<class T1> class multi2d< OScalar<T1> >

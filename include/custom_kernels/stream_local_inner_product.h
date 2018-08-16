@@ -282,9 +282,11 @@ namespace QDP
     multi1d<QDPCache::ArgKey> ms1_ids(N);
     multi1d<QDPCache::ArgKey> table_ids( N );
     multi1d<int>              sizes    ( N );
+
+    // Zero-out the result (in case of empty subsets on the node)
+    zero_rep( dest );
     
     for (int i = 0 ; i < N ; ++i ) {
-      zero_rep( dest[i] );
       ms1_ids[i]  = QDPCache::ArgKey( ms1[i]->getId() );
       table_ids[i] = QDPCache::ArgKey( ms1[i]->subset().getIdSiteTable() );
       sizes[i]     = ms1[i]->subset().numSiteTable();
@@ -386,6 +388,9 @@ namespace QDP
       out_id = tmp;
     
     }
+
+    // This avoids an element-wise cuda memory copy
+    dest.copyD2H();
 
     QDPInternal::globalSumArray(dest);
 

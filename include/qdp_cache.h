@@ -14,6 +14,9 @@ namespace QDP
   bool qdp_cache_get_cache_verbose();
   void qdp_cache_set_cache_verbose(bool b);
 
+  bool qdp_cache_get_launch_verbose();
+  void qdp_cache_set_launch_verbose(bool b);
+
     
   class QDPCache
   {
@@ -91,6 +94,9 @@ namespace QDP
     int addArray( size_t element_size , int num_elements );
 
     int addMulti( const multi1d<QDPCache::ArgKey>& ids );
+
+    void zero_rep( int id );
+    void copyD2H(int id);
     
     // Wrappers to the previous interface
     int registrate( size_t size, unsigned flags, LayoutFptr func );
@@ -117,6 +123,8 @@ namespace QDP
     
   private:
     void printInfo(const Entry& e);
+    std::string stringStatus( Status s );
+    
     void growStack();
 
     void lockId(int id);

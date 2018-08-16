@@ -19,6 +19,7 @@ namespace QDP
     static CUDAPOOL* __cache_pool_allocator;
 
     bool __cacheverbose = false;
+    bool __launchverbose = false;
 
     CUDAPOOL& get__cache_pool_allocator()
     {
@@ -39,6 +40,12 @@ namespace QDP
   void qdp_cache_set_cache_verbose(bool b) {
     std::cout << "Set cache to verbose\n";
     __cacheverbose = b;
+  }
+
+  bool qdp_cache_get_launch_verbose() { return __launchverbose; }
+  void qdp_cache_set_launch_verbose(bool b) {
+    std::cout << "Set launch to verbose\n";
+    __launchverbose = b;
   }
 
 
@@ -68,8 +75,24 @@ namespace QDP
   {
     get__cache_pool_allocator().resume();
   }
-  
 
+  
+  std::string QDPCache::stringStatus( Status s )
+  {
+    switch (s)
+      {
+      case Status::undef:
+	return "-";
+      case Status::host:
+	return "host";
+      case Status::device:
+	return "device";
+      default:
+	return "unknown";
+      }
+  }
+
+  
   void QDPCache::printInfo(int id)
   {
     if (id >= 0)
@@ -453,8 +476,30 @@ namespace QDP
     
     return Id;
   }
+
+
+  
+  void QDPCache::zero_rep( int id )
+  {
+    assert( vecEntry.size() > id );
+    Entry& e = vecEntry[id];
+
+    // For now, we support zero_rep only on arrays
+    assert( e.flags & QDPCache::Flags::Array );
+
+    // We only support, zero_rep on word type float/double/int (which are multiple of 4 bytes)
+    assert( e.size % 4 == 0 );
+    
+    // Arrays always have legal dev/hst memory pointers and are never spilled
+    CudaMemset( e.devPtr , 0 , e.size/sizeof(unsigned) );
+    
+    e.status_vec.clear();
+    e.status_vec.resize( e.size / e.elem_size , Status::device );
+  }
+
   
 
+  
   void QDPCache::signoff(int id) {
     assert( vecEntry.size() > id );
     Entry& e = vecEntry[id];
@@ -603,6 +648,28 @@ namespace QDP
   }
 
 
+
+
+  void QDPCache::copyD2H(int id) {
+    assert( vecEntry.size() > id );
+    Entry& e = vecEntry[id];
+    assert( e.flags & Flags::Array );
+
+    if (qdp_cache_get_cache_verbose())
+      {
+	if (e.size >= 1024*1024)
+	  QDPIO::cerr << "copy host <-- GPU " << e.size/1024/1024 << " MB\n";
+	else
+	  QDPIO::cerr << "copy host <-- GPU " << e.size << " bytes\n";
+      }
+    CudaMemcpyD2H( e.hstPtr , e.devPtr , e.size );
+    for( int i = 0 ; i < e.status_vec.size() ; ++i )
+      e.status_vec[i] = Status::host;
+  }
+
+
+  
+
   void QDPCache::assureDevice(int id) {
     if (id < 0)
       return;
@@ -708,6 +775,12 @@ namespace QDP
     if ( e.status_vec[elem] == Status::host )
       {
 	assert( e.fptr == NULL );
+
+	if (qdp_cache_get_cache_verbose())
+	  {
+	    QDPIO::cerr << "copy host --> GPU " << e.elem_size << " bytes\n";
+	  }
+
 	CudaMemcpyH2D( (void*)((size_t)e.devPtr + e.elem_size * elem) ,
 		       (void*)((size_t)e.hstPtr + e.elem_size * elem) , e.elem_size );
 	//std::cout << "copy to device\n";
@@ -717,7 +790,6 @@ namespace QDP
   }
 
   
-
 
 
 
@@ -780,10 +852,17 @@ namespace QDP
     if ( e.status_vec[elem_num] == Status::device )
       {
 	assert( e.fptr == NULL );
+
+	if (qdp_cache_get_cache_verbose())
+	  {
+	    QDPIO::cerr << "copy host <-- GPU " << e.elem_size << " bytes\n";
+	  }
+
 	CudaMemcpyD2H( (void*)((size_t)e.hstPtr + e.elem_size * elem_num) ,
 		       (void*)((size_t)e.devPtr + e.elem_size * elem_num) , e.elem_size );
       }
 
+    //QDPIO::cout << "status was:" << stringStatus(e.status_vec[elem_num]) << "  new:" << stringStatus(Status::host) << "\n";
     e.status_vec[elem_num] = Status::host;
   }
 
@@ -1001,15 +1080,15 @@ namespace QDP
       }
     //QDPIO::cout << "\n";
 
-    //QDPIO::cout << "allids: ";
+    //QDPIO::cout << "assureDevice:\n";
     for ( auto i : allids ) {
-      //QDPIO::cout << i << " ";
+      //QDPIO::cout << "id = " << i.id << ", elem = " << i.elem << "\n";
       if (i.elem < 0)
 	assureDevice(i.id);
       else
 	assureDevice(i.id,i.elem);
     }
-    //QDPIO::cout << "\n";
+    //QDPIO::cout << "done\n";
     
     bool all = true;
     for ( auto i : allids )
@@ -1086,6 +1165,11 @@ namespace QDP
 		      {
 			dev_ptr[count++] = NULL;
 		      }
+		  }
+		
+		if (qdp_cache_get_cache_verbose())
+		  {
+		    QDPIO::cerr << "copy host --> GPU " << e.multi.size() * sizeof(void*) << " bytes (kernel args, multi)\n";
 		  }
 		
 		CudaMemcpyH2D( e.devPtr , dev_ptr.slice() , e.multi.size() * sizeof(void*) );
