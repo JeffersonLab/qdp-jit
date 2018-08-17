@@ -155,15 +155,17 @@ public:
     else
       {
 	// here we have an optimization opportunity
-	//QDPIO::cout << "OSubLat ctor, parent Lat on host\n";
 
-	T* aF = a.getF();
-	T* thisF = this->getF();
-
-	const int *tab = ss.siteTable().slice();
-	for(int n=0; n < ss.numSiteTable(); ++n)
+	if (ss.numSiteTable())
 	  {
-	    thisF[ n ] = aF[ tab[n] ];
+	    T* aF = a.getF();
+	    T* thisF = this->getF();
+
+	    const int *tab = ss.siteTable().slice();
+	    for(int n=0; n < ss.numSiteTable(); ++n)
+	      {
+		thisF[ n ] = aF[ tab[n] ];
+	      }
 	  }
       }
 #else
