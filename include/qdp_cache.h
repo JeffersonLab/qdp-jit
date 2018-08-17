@@ -120,7 +120,9 @@ namespace QDP
     void   enableMemset(unsigned val);
 
     std::vector<QDPCache::Entry>&  get__vec_backed();
-    
+
+    bool isOnDevice(int id);
+
   private:
     void printInfo(const Entry& e);
     std::string stringStatus( Status s );
@@ -144,13 +146,11 @@ namespace QDP
     void assureHost( Entry& e);
     void assureHost( Entry& e, int elem_num );
 
-    bool isOnDevice(int id);
     bool isOnDevice(int id, int elem);
     
     bool spill_lru();
     void printTracker();
 
-  private:
     std::vector<Entry>       vecEntry;
     std::stack<int>          stackFree;
     std::list<int>           lstTracker;

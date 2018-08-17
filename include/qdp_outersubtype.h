@@ -147,7 +147,28 @@ public:
 
   OSubLattice(const Subset& ss , OLattice<T>& a): ownsMemory(true), s(&(const_cast<Subset&>(ss)))  {
     alloc_mem();
+#if 1
+    if (QDP_get_global_cache().isOnDevice( a.getId() ))
+      {
+	evaluate_subtype_type(*this,OpAssign(),PETE_identity(a),subset());
+      }
+    else
+      {
+	// here we have an optimization opportunity
+	//QDPIO::cout << "OSubLat ctor, parent Lat on host\n";
+
+	T* aF = a.getF();
+	T* thisF = this->getF();
+
+	const int *tab = ss.siteTable().slice();
+	for(int n=0; n < ss.numSiteTable(); ++n)
+	  {
+	    thisF[ n ] = aF[ tab[n] ];
+	  }
+      }
+#else
     evaluate_subtype_type(*this,OpAssign(),PETE_identity(a),subset());
+#endif
   }
 
 
