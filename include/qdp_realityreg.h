@@ -29,6 +29,9 @@ public:
     setup( rhs.elem() );
   }
 
+  RScalarREG(const typename WordType<T>::Type_t& rhs): F(rhs) {}
+
+  
   // RScalarREG& operator=( const RScalarJIT< typename JITType<T>::Type_t >& rhs) {
   //   setup(rhs);
   //   return *this;

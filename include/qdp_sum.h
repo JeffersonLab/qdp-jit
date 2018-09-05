@@ -114,37 +114,58 @@ namespace QDP {
   }
 
 
+  namespace {
+    struct AndAssign {
+      template<class J,class R>
+      static void apply( J& j , const R& r )
+      {
+	j &= r;
+      }
+      template<class J>
+      static void initNeutral( J& j )
+      {
+	typedef typename REGType<J>::Type_t R;
+	j = R( true );
+      }
+    };
+    struct IsFiniteAssign {
+      template<class J,class R>
+      static void apply( J& j , const R& r )
+      {
+	j = isfinite( r );
+      }
+    };
+  }
   
 
-  template <class T2>
-  void qdp_jit_isfinite(int size, int threads, int blocks, int shared_mem_usage, int in_id, int out_id )
+  template <class T2, class ReductionOp >
+  void qdp_jit_bool_reduction(int size, int threads, int blocks, int shared_mem_usage, int in_id, int out_id )
   {
     static CUfunction function;
 
     if (function == NULL)
-      function = function_isfinite_build<T2>();
+      function = function_bool_reduction_build<T2,ReductionOp>();
 
-    function_isfinite_exec(function, size, threads, blocks, shared_mem_usage, in_id, out_id );
+    function_bool_reduction_exec(function, size, threads, blocks, shared_mem_usage, in_id, out_id );
   }
 
   
   // T1 input
   // T2 output
-  template < class T1 , class T2 , JitDeviceLayout input_layout >
-  void qdp_jit_isfinite_convert(int size, 
-				int threads, 
-				int blocks, 
-				int shared_mem_usage,
-				int in_id, 
-				int out_id)
+  template < class T1 , class T2 , JitDeviceLayout input_layout , class ConvertOp, class ReductionOp >
+  void qdp_jit_bool_reduction_convert(int size, 
+				      int threads, 
+				      int blocks, 
+				      int shared_mem_usage,
+				      int in_id, 
+				      int out_id)
   {
     static CUfunction function;
 
     if (function == NULL)
-      function = function_isfinite_convert_build<T1,T2,input_layout>();
+      function = function_bool_reduction_convert_build< T1 , T2 , input_layout , ConvertOp , ReductionOp >();
 
-    function_isfinite_convert_exec(function, size, threads, blocks, shared_mem_usage, 
-				   in_id, out_id );
+    function_bool_reduction_exec(function, size, threads, blocks, shared_mem_usage, in_id, out_id );
   }
 
 
@@ -503,7 +524,6 @@ namespace QDP {
 
 
   template<class T1>
-  //typename UnaryReturn<OLattice<T1>, FnIsFinite>::Type_t
   bool
   isfinite(const OLattice<T1>& s1)
   {
@@ -538,17 +558,17 @@ namespace QDP {
       
       if (numBlocks == 1) {
 	if (first) {
-	  qdp_jit_isfinite_convert<T1,T2,JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, shared_mem_usage, s1.getId(), d.getId() );
+	  qdp_jit_bool_reduction_convert<T1,T2,JitDeviceLayout::Coalesced,IsFiniteAssign,AndAssign>(actsize, numThreads, numBlocks, shared_mem_usage, s1.getId(), d.getId() );
 	}
 	else {
-	  qdp_jit_isfinite<T2>( actsize , numThreads , numBlocks, shared_mem_usage , in_id , d.getId() );
+	  qdp_jit_bool_reduction<T2,AndAssign>( actsize , numThreads , numBlocks, shared_mem_usage , in_id , d.getId() );
 	}
       } else {
 	if (first) {
-	  qdp_jit_isfinite_convert<T1,T2,JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, shared_mem_usage, s1.getId(), out_id );
+	  qdp_jit_bool_reduction_convert<T1,T2,JitDeviceLayout::Coalesced,IsFiniteAssign,AndAssign>(actsize, numThreads, numBlocks, shared_mem_usage, s1.getId(), out_id );
 	}
 	else
-	  qdp_jit_isfinite<T2>( actsize , numThreads , numBlocks , shared_mem_usage , in_id , out_id );
+	  qdp_jit_bool_reduction<T2,AndAssign>( actsize , numThreads , numBlocks , shared_mem_usage , in_id , out_id );
 
       }
 

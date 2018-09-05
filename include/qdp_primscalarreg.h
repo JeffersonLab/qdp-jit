@@ -30,6 +30,8 @@ namespace QDP {
       F.setup( rhs.elem() );
     }
 
+    PScalarREG(const typename WordType<T>::Type_t& rhs): F(rhs) {}
+
 
     // Default constructing should be possible
     // then there is no need for MPL index when

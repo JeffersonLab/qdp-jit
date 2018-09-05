@@ -208,9 +208,9 @@ namespace QDP {
 
 
   void
-  function_isfinite_exec( CUfunction function, 
-			  int size, int threads, int blocks, int shared_mem_usage,
-			  int in_id, int out_id)
+  function_bool_reduction_exec( CUfunction function, 
+				int size, int threads, int blocks, int shared_mem_usage,
+				int in_id, int out_id)
   {
     // Make sure 'threads' is a power of two (the jit kernel make this assumption)
     assert( (threads & (threads - 1)) == 0 );

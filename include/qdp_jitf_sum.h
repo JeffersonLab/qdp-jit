@@ -18,13 +18,9 @@ namespace QDP {
 			  int in_id, int out_id);
 
 
-  void function_isfinite_convert_exec( CUfunction function, 
-				       int size, int threads, int blocks, int shared_mem_usage,
-				       int in_id, int out_id);
-
-  void function_isfinite_exec( CUfunction function, 
-			       int size, int threads, int blocks, int shared_mem_usage,
-			       int in_id, int out_id);
+  void function_bool_reduction_exec( CUfunction function, 
+				     int size, int threads, int blocks, int shared_mem_usage,
+				     int in_id, int out_id);
 
   
 
@@ -437,12 +433,11 @@ namespace QDP {
 
 
 
-
   // T1 input
   // T2 output
-  template< class T1 , class T2 , JitDeviceLayout input_layout >
+  template< class T1 , class T2 , JitDeviceLayout input_layout , class ConvertOp, class ReductionOp >
   CUfunction 
-  function_isfinite_convert_build()
+  function_bool_reduction_convert_build()
   {
     if (ptx_db::db_enabled) {
       CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
@@ -484,15 +479,16 @@ namespace QDP {
     args.push_back( make_pair( Layout::sitesOnNode() , r_tidx ) );  // sitesOnNode irrelevant since Scalar access later
     T2JIT sdata_jit;
     sdata_jit.setup( r_shared , JitDeviceLayout::Scalar , args );
-    //zero_rep( sdata_jit );
 
+    ReductionOp::initNeutral( sdata_jit );
+    
     llvm_cond_exit( llvm_ge( r_idx , r_hi ) );
 
     typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_elem;
     //reg_idata_elem.setup( idata.elem( input_layout , r_idx_perm ) );
     reg_idata_elem.setup( idata.elem( input_layout , r_idx ) );
 
-    sdata_jit = isfinite( reg_idata_elem );
+    ConvertOp::apply( sdata_jit , reg_idata_elem );
 
     llvm_bar_sync();
 
@@ -539,8 +535,7 @@ namespace QDP {
     typename REGType< typename JITType<T2>::Type_t >::Type_t sdata_reg_plus;    // 
     sdata_reg_plus.setup( sdata_jit_plus );
 
-    sdata_jit &= sdata_reg_plus;
-
+    ReductionOp::apply( sdata_jit , sdata_reg_plus );
 
     llvm_branch( block_red_loop_sync );
 
@@ -569,11 +564,12 @@ namespace QDP {
     return jit_function_epilogue_get_cuf("jit_sum_ind.ptx" , __PRETTY_FUNCTION__ );
   }
 
+  
 
 
-  template<class T1>
+  template<class T1, class ReductionOp>
   CUfunction 
-  function_isfinite_build()
+  function_bool_reduction_build()
   {
     if (ptx_db::db_enabled) {
       CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
@@ -619,24 +615,16 @@ namespace QDP {
 
     T1JIT sdata_jit;
     sdata_jit.setup( r_shared , JitDeviceLayout::Scalar , args );
+    
+    ReductionOp::initNeutral( sdata_jit );
+    
+    llvm_cond_exit( llvm_ge( r_idx , r_hi ) );
 
-    llvm::BasicBlock * block_zero = llvm_new_basic_block();
-    llvm::BasicBlock * block_not_zero = llvm_new_basic_block();
-    llvm::BasicBlock * block_zero_exit = llvm_new_basic_block();
-    llvm_cond_branch( llvm_ge( r_idx , r_hi ) , block_zero , block_not_zero );
-    {
-      llvm_set_insert_point(block_zero);
-      //zero_rep( sdata_jit );
-      llvm_branch( block_zero_exit );
-    }
-    {
-      llvm_set_insert_point(block_not_zero);
-      sdata_jit = reg_idata_elem; // This should do the precision conversion (SP->DP)
-      llvm_branch( block_zero_exit );
-    }
-    llvm_set_insert_point(block_zero_exit);
+    sdata_jit = reg_idata_elem; // This is just copying booleans
 
     llvm_bar_sync();
+
+    llvm::BasicBlock * entry_block = llvm_get_insert_block();
 
     llvm::Value* r_pow_shr1 = llvm_shr( r_ntidx , llvm_create_value(1) );
 
@@ -654,7 +642,7 @@ namespace QDP {
     llvm_set_insert_point(block_red_loop_start);
     
     llvm::PHINode * r_red_pow = llvm_phi( llvm_type<int>::value , 2 );    
-    r_red_pow->addIncoming( r_pow_shr1 , block_zero_exit );
+    r_red_pow->addIncoming( r_pow_shr1 , entry_block );   // block_zero_exit
     llvm_cond_branch( llvm_le( r_red_pow , llvm_create_value(0) ) , block_red_loop_end , block_red_loop_start_1 );
 
     llvm_set_insert_point(block_red_loop_start_1);
@@ -679,8 +667,7 @@ namespace QDP {
     typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_reg_plus;    // 
     sdata_reg_plus.setup( sdata_jit_plus );
 
-    sdata_jit &= sdata_reg_plus;
-
+    ReductionOp::apply( sdata_jit , sdata_reg_plus );
 
     llvm_branch( block_red_loop_sync );
 
