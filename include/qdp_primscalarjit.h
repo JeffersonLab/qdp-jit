@@ -378,15 +378,6 @@ struct BinaryReturn<PScalarJIT<T1>, PScalarJIT<T2>, OpRightShiftAssign > {
 };
 
 
-  
-template<class T1>
-inline typename UnaryReturn<PScalarJIT<T1>, FnIsFinite>::Type_t
-isfinite(const PScalarJIT<T1>& s1)
-{
-  return isfinite(s1.elem());
-}
-
-  
 
 #if 0
 

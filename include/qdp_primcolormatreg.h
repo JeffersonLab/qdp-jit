@@ -309,6 +309,30 @@ struct BinaryReturn<PScalarREG<T1>, PColorMatrixREG<T2,N>, FnLocalInnerProductRe
 
 
 
+template<class T1, int N>
+struct UnaryReturn<PColorMatrixREG<T1,N>, FnIsFinite> {
+  typedef PScalarREG< typename UnaryReturn<T1, FnIsFinite >::Type_t > Type_t;
+};
+
+
+template<class T1, int N>
+inline typename UnaryReturn<PColorMatrixREG<T1,N>, FnIsFinite>::Type_t
+isfinite(const PColorMatrixREG<T1,N>& l)
+{
+  typedef typename UnaryReturn<PColorMatrixREG<T1,N>, FnIsFinite>::Type_t Ret_t;
+  Ret_t d(true);
+
+  for(int i=0; i < N; ++i)
+    for(int j=0; j < N; ++j)
+      d.elem() &= isfinite(l.elem(i,j));
+
+  return d;
+}
+
+
+
+
+
 //-----------------------------------------------------------------------------
 // Operators
 //-----------------------------------------------------------------------------

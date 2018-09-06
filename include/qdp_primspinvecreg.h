@@ -364,11 +364,9 @@ template<class T1, int N>
 inline typename UnaryReturn<PSpinVectorREG<T1,N>, FnIsFinite>::Type_t
 isfinite(const PSpinVectorREG<T1,N>& l)
 {
-  typename UnaryReturn<PSpinVectorREG<T1,N>, FnIsFinite>::Type_t d;
+  typename UnaryReturn<PSpinVectorREG<T1,N>, FnIsFinite>::Type_t d(true);
 
-  d.elem() = isfinite(l.elem(0));
-
-  for(int i=1; i < N; ++i)
+  for(int i=0; i < N; ++i)
     d.elem() &= isfinite(l.elem(i));
 
   return d;

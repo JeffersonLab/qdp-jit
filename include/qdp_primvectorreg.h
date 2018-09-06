@@ -445,22 +445,20 @@ cmplx(const PVectorREG<T1,N,C>& s1, const PVectorREG<T2,N,C>& s2)
 
 
 
-#if 1
+
 template<class T1, int N, template<class,int> class C>
 struct UnaryReturn<PVectorREG<T1,N,C>, FnIsFinite> {
   typedef PScalarREG< typename UnaryReturn<T1, FnIsFinite >::Type_t > Type_t;
 };
-#endif
+
   
 template<class T1, int N, template<class,int> class C>
 inline typename UnaryReturn<PVectorREG<T1,N,C>, FnIsFinite>::Type_t
 isfinite(const PVectorREG<T1,N,C>& l)
 {
-  typename UnaryReturn<PVectorREG<T1,N,C>, FnIsFinite>::Type_t  d;
+  typedef typename UnaryReturn<PVectorREG<T1,N,C>, FnIsFinite>::Type_t Ret_t(true);
 
-  d.elem() = isfinite(l.elem(0));
-
-  for(int i=1; i < N; ++i)
+  for(int i=0; i < N; ++i)
     d.elem() &= isfinite(l.elem(i));
 
   return d;

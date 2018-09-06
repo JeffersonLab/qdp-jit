@@ -1238,6 +1238,27 @@ cmplx(const PMatrixREG<T1,N,C>& s1, const PMatrixREG<T2,N,C>& s2)
 
 
 
+  //! isfinite
+template<class T1, int N, template<class,int> class C>
+struct UnaryReturn<PMatrixREG<T1,N,C>, FnIsFinite> {
+  typedef PScalarREG< typename UnaryReturn<T1, FnIsFinite >::Type_t > Type_t;
+};
+
+template<class T1, int N, template<class,int> class C>
+inline typename UnaryReturn<PMatrixREG<T1,N,C>, FnIsFinite>::Type_t
+isfinite(const PMatrixREG<T1,N,C>& l)
+{
+  typename UnaryReturn<PMatrixREG<T1,N,C>, FnIsFinite>::Type_t Ret_t(true);
+
+  for(int i=0; i < N; ++i)
+    for(int j=0; j < N; ++j)
+      d.elem() &= isfinite(l.elem(i,j));
+
+  return d;
+}
+
+
+
 // Functions
 //! PMatrixREG = i * PMatrixREG
 template<class T, int N, template<class,int> class C>
