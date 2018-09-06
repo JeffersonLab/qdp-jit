@@ -385,7 +385,8 @@ namespace QDP {
     func_fabs_f32 = llvm_get_func( "__nv_fabsf" );
     func_sqrt_f32 = llvm_get_func( "__nv_fsqrt_rn" );
     func_isfinite_f32 = llvm_get_func( "__nv_finitef" );
-
+    // func_isinf_f32 = llvm_get_func( "__nv_isinff" );
+    // func_isnan_f32 = llvm_get_func( "__nv_isnanf" );
 
     func_pow_f32 = llvm_get_func( "__nv_powf" );
     func_atan2_f32 = llvm_get_func( "__nv_atan2f" );
@@ -408,6 +409,8 @@ namespace QDP {
     func_fabs_f64 = llvm_get_func( "__nv_fabs" );
     func_sqrt_f64 = llvm_get_func( "__nv_dsqrt_rn" );
     func_isfinite_f64 = llvm_get_func( "__nv_isfinited" );
+    // func_isinf_f64 = llvm_get_func( "__nv_isinfd" );
+    // func_isnan_f64 = llvm_get_func( "__nv_isnand" );
     
     func_pow_f64 = llvm_get_func( "__nv_pow" );
     func_atan2_f64 = llvm_get_func( "__nv_atan2" );

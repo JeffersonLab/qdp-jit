@@ -594,6 +594,10 @@ namespace QDP {
   }
 
 
+  template<class T1> bool isnormal(const OLattice<T1>& s1) { return isfinite(s1); }
+  template<class T1> bool isnan(const OLattice<T1>& s1) { return !isfinite(s1); }
+  template<class T1> bool isinf(const OLattice<T1>& s1) { return !isfinite(s1); }
+
 
     }
 
