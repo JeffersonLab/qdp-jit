@@ -1248,7 +1248,7 @@ template<class T1, int N, template<class,int> class C>
 inline typename UnaryReturn<PMatrixREG<T1,N,C>, FnIsFinite>::Type_t
 isfinite(const PMatrixREG<T1,N,C>& l)
 {
-  typename UnaryReturn<PMatrixREG<T1,N,C>, FnIsFinite>::Type_t Ret_t(true);
+  typename UnaryReturn<PMatrixREG<T1,N,C>, FnIsFinite>::Type_t d(true);
 
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
