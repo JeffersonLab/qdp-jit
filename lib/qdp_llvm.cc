@@ -129,17 +129,48 @@ namespace QDP {
     CUresult ret;
     CUmodule cuModule;
 
+    CUresult ret_sync = cuCtxSynchronize();
+    if (ret_sync != CUDA_SUCCESS) {
+      QDPIO::cerr << "Error on sync before loading image.\n";
+
+      CudaCheckResult(ret_sync);
+
+      const char* pStr_name;
+      cuGetErrorName ( ret, &pStr_name );
+
+      QDPIO::cerr << "Error: " << pStr_name << "\n";
+	
+      const char* pStr_string;
+      cuGetErrorString ( ret, &pStr_string );
+
+      QDPIO::cerr << "String: " << pStr_string << "\n";
+
+      QDP_error_exit("Sync failed right before loading the PTX module.");
+    }
+
     ret = cuModuleLoadData(&cuModule, (const void *)kernel.c_str());
     //ret = cuModuleLoadDataEx( &cuModule , ptx_kernel.c_str() , 0 , 0 , 0 );
 
     if (ret) {
       if (Layout::primaryNode()) {
-	QDP_info_primary("Error loading external data. Dumping kernel to %s.",fname);
+
+	QDPIO::cerr << "Error loading external data.\n";
+	
+	const char* pStr_name;
+	cuGetErrorName ( ret, &pStr_name );
+
+	QDPIO::cerr << "Error: " << pStr_name << "\n";
+	
+	const char* pStr_string;
+	cuGetErrorString ( ret, &pStr_string );
+
+	QDPIO::cerr << "String: " << pStr_string << "\n";
+
+	QDPIO::cerr << "Dumping kernel to " << fname << "\n";
 #if 1
 	std::ofstream out(fname);
 	out << kernel;
 	out.close();
-
 	//Mod->dump();
 #endif
 	QDP_error_exit("Abort.");
