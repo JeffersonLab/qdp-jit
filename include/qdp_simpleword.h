@@ -375,6 +375,13 @@ int localInnerProduct(int s1, int s2)
 }
 
 inline
+int localColorInnerProduct(int s1, int s2)
+{
+  return s1*s2;
+}
+
+  
+inline
 unsigned int sum(unsigned int s1)
 {
   return s1;
@@ -392,6 +399,13 @@ unsigned int localInnerProduct(unsigned int s1, unsigned int s2)
   return s1*s2;
 }
 
+inline
+unsigned int localColorInnerProduct(unsigned int s1, unsigned int s2)
+{
+  return s1*s2;
+}
+
+  
 inline
 double sum(float s1)
 {
@@ -411,6 +425,13 @@ double localInnerProduct(float s1, float s2)
 }
 
 inline
+double localColorInnerProduct(float s1, float s2)
+{
+  return double(s1*s2);
+}
+
+  
+inline
 double sum(double s1)
 {
   return s1;
@@ -428,6 +449,11 @@ double localInnerProduct(double s1, double s2)
   return s1*s2;
 }
 
+inline
+double localColorInnerProduct(double s1, double s2)
+{
+  return s1*s2;
+}
 
 
 /*! @} */  // end of group simpleword
@@ -483,6 +509,11 @@ struct BinaryReturn<int, int, FnLocalInnerProduct> {
 };
 
 template<>
+struct BinaryReturn<int, int, FnLocalColorInnerProduct> {
+  typedef int  Type_t;
+};
+
+template<>
 struct TrinaryReturn<bool, int, int, FnWhere> {
   typedef int  Type_t;
 };
@@ -525,6 +556,11 @@ struct UnaryReturn<float, FnLocalNorm2> {
 
 template<>
 struct BinaryReturn<float, float, FnLocalInnerProduct> {
+  typedef DOUBLE_TYPE  Type_t;
+};
+
+template<>
+struct BinaryReturn<float, float, FnLocalColorInnerProduct> {
   typedef DOUBLE_TYPE  Type_t;
 };
 

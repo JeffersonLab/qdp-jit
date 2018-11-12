@@ -279,6 +279,27 @@ struct BinaryReturn<PSpinMatrixREG<T1,N>, PSpinMatrixREG<T2,N>, FnLocalInnerProd
   typedef PScalarREG<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>  Type_t;
 };
 
+
+
+template<class T1, class T2, int N>
+inline typename BinaryReturn<PSpinMatrixREG<T1,N>, PSpinMatrixREG<T2,N>, FnLocalColorInnerProduct>::Type_t
+localColorInnerProduct(const PSpinMatrixREG<T1,N>& l, const PSpinMatrixREG<T2,N>& r)
+{
+  typename BinaryReturn<PSpinMatrixREG<T1,N>, PSpinMatrixREG<T2,N>, FnLocalColorInnerProduct>::Type_t d;
+
+  for(int i=0; i < N; ++i)
+    for(int j=0; j < N; ++j)
+      {
+	d.elem(i,j) = localColorInnerProduct(l.elem(0,i), r.elem(0,j));
+	for(int k=1; k < N; ++k)
+	  d.elem(i,j) += localColorInnerProduct(l.elem(k,i), r.elem(k,j));
+      }
+    
+  return d;
+}
+
+
+  
 template<class T1, class T2, int N>
 struct BinaryReturn<PSpinMatrixREG<T1,N>, PScalarREG<T2>, FnLocalInnerProduct> {
   typedef PScalarREG<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>  Type_t;

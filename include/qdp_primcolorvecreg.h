@@ -209,6 +209,11 @@ struct BinaryReturn<PColorVectorREG<T1,N>, PColorVectorREG<T2,N>, FnLocalInnerPr
 };
 
 template<class T1, class T2, int N>
+struct BinaryReturn<PColorVectorREG<T1,N>, PColorVectorREG<T2,N>, FnLocalColorInnerProduct> {
+  typedef PScalarREG<typename BinaryReturn<T1, T2, FnLocalColorInnerProduct>::Type_t>  Type_t;
+};
+
+template<class T1, class T2, int N>
 struct BinaryReturn<PColorVectorREG<T1,N>, PColorVectorREG<T2,N>, FnInnerProductReal> {
   typedef PScalarREG<typename BinaryReturn<T1, T2, FnInnerProductReal>::Type_t>  Type_t;
 };
@@ -225,6 +230,23 @@ struct BinaryReturn<PColorVectorREG<T1,N>, PColorVectorREG<T2,N>, FnLocalInnerPr
 // Operators
 //-----------------------------------------------------------------------------
 
+
+  
+template<class T1, class T2, int N>
+inline PScalarREG<typename BinaryReturn<T1, T2, FnLocalColorInnerProduct>::Type_t>
+localColorInnerProduct(const PColorVectorREG<T1,N>& s1, const PColorVectorREG<T2,N>& s2)
+{
+  PScalarREG<typename BinaryReturn<T1, T2, FnLocalColorInnerProduct>::Type_t>  d;
+
+  d.elem() = adj( s1.elem(0) ) * s2.elem(0);
+  for(int i=1; i < N; ++i)
+    d.elem() += adj( s1.elem(i) ) * s2.elem(i);
+
+  return d;
+}
+
+
+  
 // Peeking and poking
 //! Extract color vector components 
 template<class T, int N>

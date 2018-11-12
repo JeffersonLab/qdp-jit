@@ -256,6 +256,11 @@ struct BinaryReturn<PSpinMatrix<T1,N>, PSpinMatrix<T2,N>, FnLocalInnerProduct> {
 };
 
 template<class T1, class T2, int N>
+struct BinaryReturn<PSpinMatrix<T1,N>, PSpinMatrix<T2,N>, FnLocalColorInnerProduct> {
+  typedef PSpinMatrix<typename BinaryReturn<T1, T2, FnLocalColorInnerProduct>::Type_t, N>  Type_t;
+};
+  
+template<class T1, class T2, int N>
 struct BinaryReturn<PSpinMatrix<T1,N>, PScalar<T2>, FnLocalInnerProduct> {
   typedef PScalar<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>  Type_t;
 };

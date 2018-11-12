@@ -1444,6 +1444,20 @@ localInnerProduct(const PScalarREG<T1>& s1, const PScalarREG<T2>& s2)
 }
 
 
+template<class T1, class T2>
+struct BinaryReturn<PScalarREG<T1>, PScalarREG<T2>, FnLocalColorInnerProduct > {
+  typedef PScalarREG<typename BinaryReturn<T1, T2, FnLocalColorInnerProduct>::Type_t>  Type_t;
+};
+
+template<class T1, class T2>
+inline typename BinaryReturn<PScalarREG<T1>, PScalarREG<T2>, FnLocalColorInnerProduct>::Type_t
+localColorInnerProduct(const PScalarREG<T1>& s1, const PScalarREG<T2>& s2)
+{
+  return localColorInnerProduct(s1.elem(), s2.elem());
+}
+
+  
+
 //! PScalarREG<T> = InnerProductReal(adj(PMatrix<T1>)*PMatrix<T1>)
 template<class T1, class T2>
 struct BinaryReturn<PScalarREG<T1>, PScalarREG<T2>, FnInnerProductReal > {

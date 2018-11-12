@@ -1739,6 +1739,13 @@ localInnerProduct(const RScalarREG<T1>& s1, const RScalarREG<T2>& s2)
   return localInnerProduct(s1.elem(), s2.elem());
 }
 
+template<class T1, class T2>
+inline typename BinaryReturn<RScalarREG<T1>, RScalarREG<T2>, FnLocalColorInnerProduct>::Type_t
+localColorInnerProduct(const RScalarREG<T1>& s1, const RScalarREG<T2>& s2)
+{
+  return localColorInnerProduct(s1.elem(), s2.elem());
+}
+
 
 //! RScalarREG<T> = InnerProductReal(adj(PMatrix<T1>)*PMatrix<T1>)
 // Real-ness is eaten at this level
@@ -2449,6 +2456,24 @@ localInnerProduct(const RComplexREG<T1>& l, const RComplexREG<T2>& r)
 	       localInnerProduct(l.real(),r.imag()) - localInnerProduct(l.imag(),r.real()));
 }
 
+
+
+template<class T1, class T2>
+struct BinaryReturn<RComplexREG<T1>, RComplexREG<T2>, FnLocalColorInnerProduct > {
+  typedef RComplexREG<typename BinaryReturn<T1, T2, FnLocalColorInnerProduct>::Type_t>  Type_t;
+};
+
+template<class T1, class T2>
+inline typename BinaryReturn<RComplexREG<T1>, RComplexREG<T2>, FnLocalColorInnerProduct>::Type_t
+localColorInnerProduct(const RComplexREG<T1>& l, const RComplexREG<T2>& r)
+{
+  typedef typename BinaryReturn<RComplexREG<T1>, RComplexREG<T2>, FnLocalColorInnerProduct>::Type_t  Ret_t;
+
+  return Ret_t(localColorInnerProduct(l.real(),r.real()) + localColorInnerProduct(l.imag(),r.imag()),
+	       localColorInnerProduct(l.real(),r.imag()) - localColorInnerProduct(l.imag(),r.real()));
+}
+
+  
 
 //! RScalarREG<T> = InnerProductReal(adj(RComplexREG<T1>)*RComplexREG<T1>)
 // Real-ness is eaten at this level

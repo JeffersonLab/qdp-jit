@@ -1009,6 +1009,11 @@ struct BinaryReturn<OScalar<T1>, OScalar<T2>, FnLocalInnerProduct > {
 };
 
 template<class T1, class T2>
+struct BinaryReturn<OScalar<T1>, OScalar<T2>, FnLocalColorInnerProduct > {
+  typedef OScalar<typename BinaryReturn<T1, T2, FnLocalColorInnerProduct>::Type_t>  Type_t;
+};
+
+template<class T1, class T2>
 struct BinaryReturn<OScalar<T1>, OScalar<T2>, FnLocalInnerProductReal > {
   typedef OScalar<typename BinaryReturn<T1, T2, FnLocalInnerProductReal>::Type_t>  Type_t;
 };
@@ -1237,6 +1242,11 @@ struct BinaryReturn<OLattice<T1>, OLattice<T2>, FnLocalInnerProduct > {
 };
 
 template<class T1, class T2>
+struct BinaryReturn<OLattice<T1>, OLattice<T2>, FnLocalColorInnerProduct > {
+  typedef OLattice<typename BinaryReturn<T1, T2, FnLocalColorInnerProduct>::Type_t>  Type_t;
+};
+
+template<class T1, class T2>
 struct BinaryReturn<OLattice<T1>, OLattice<T2>, FnLocalInnerProductReal > {
   typedef OLattice<typename BinaryReturn<T1, T2, FnLocalInnerProductReal>::Type_t>  Type_t;
 };
@@ -1438,6 +1448,11 @@ struct BinaryReturn<OLattice<T1>, OScalar<T2>, FnLocalInnerProduct > {
 };
 
 template<class T1, class T2>
+struct BinaryReturn<OLattice<T1>, OScalar<T2>, FnLocalColorInnerProduct > {
+  typedef OLattice<typename BinaryReturn<T1, T2, FnLocalColorInnerProduct>::Type_t>  Type_t;
+};
+
+template<class T1, class T2>
 struct BinaryReturn<OLattice<T1>, OScalar<T2>, FnLocalInnerProductReal > {
   typedef OLattice<typename BinaryReturn<T1, T2, FnLocalInnerProductReal>::Type_t>  Type_t;
 };
@@ -1445,6 +1460,11 @@ struct BinaryReturn<OLattice<T1>, OScalar<T2>, FnLocalInnerProductReal > {
 template<class T1, class T2>
 struct BinaryReturn<OScalar<T1>, OLattice<T2>, FnLocalInnerProduct > {
   typedef OLattice<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>  Type_t;
+};
+
+template<class T1, class T2>
+struct BinaryReturn<OScalar<T1>, OLattice<T2>, FnLocalColorInnerProduct > {
+  typedef OLattice<typename BinaryReturn<T1, T2, FnLocalColorInnerProduct>::Type_t>  Type_t;
 };
 
 template<class T1, class T2>

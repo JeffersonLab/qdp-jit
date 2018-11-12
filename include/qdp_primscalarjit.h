@@ -1471,6 +1471,19 @@ localInnerProduct(const PScalarJIT<T1>& s1, const PScalarJIT<T2>& s2)
 }
 
 
+template<class T1, class T2>
+struct BinaryReturn<PScalarJIT<T1>, PScalarJIT<T2>, FnLocalColorInnerProduct > {
+  typedef PScalarJIT<typename BinaryReturn<T1, T2, FnLocalColorInnerProduct>::Type_t>  Type_t;
+};
+
+template<class T1, class T2>
+inline typename BinaryReturn<PScalarJIT<T1>, PScalarJIT<T2>, FnLocalColorInnerProduct>::Type_t
+localInnerProduct(const PScalarJIT<T1>& s1, const PScalarJIT<T2>& s2)
+{
+  return localColorInnerProduct(s1.elem(), s2.elem());
+}
+
+
 //! PScalarJIT<T> = InnerProductReal(adj(PMatrix<T1>)*PMatrix<T1>)
 template<class T1, class T2>
 struct BinaryReturn<PScalarJIT<T1>, PScalarJIT<T2>, FnInnerProductReal > {

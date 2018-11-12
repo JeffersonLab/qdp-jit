@@ -182,6 +182,11 @@ struct BinaryReturn<PColorVector<T1,N>, PColorVector<T2,N>, FnLocalInnerProduct>
 };
 
 template<class T1, class T2, int N>
+struct BinaryReturn<PColorVector<T1,N>, PColorVector<T2,N>, FnLocalColorInnerProduct> {
+  typedef PScalar<typename BinaryReturn<T1, T2, FnLocalColorInnerProduct>::Type_t>  Type_t;
+};
+
+template<class T1, class T2, int N>
 struct BinaryReturn<PColorVector<T1,N>, PColorVector<T2,N>, FnInnerProductReal> {
   typedef PScalar<typename BinaryReturn<T1, T2, FnInnerProductReal>::Type_t>  Type_t;
 };

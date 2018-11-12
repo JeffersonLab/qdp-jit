@@ -234,6 +234,11 @@ struct BinaryReturn<PColorVectorJIT<T1,N>, PColorVectorJIT<T2,N>, FnLocalInnerPr
 };
 
 template<class T1, class T2, int N>
+struct BinaryReturn<PColorVectorJIT<T1,N>, PColorVectorJIT<T2,N>, FnLocalColorInnerProduct> {
+  typedef PScalarJIT<typename BinaryReturn<T1, T2, FnLocalColorInnerProduct>::Type_t>  Type_t;
+};
+
+template<class T1, class T2, int N>
 struct BinaryReturn<PColorVectorJIT<T1,N>, PColorVectorJIT<T2,N>, FnInnerProductReal> {
   typedef PScalarJIT<typename BinaryReturn<T1, T2, FnInnerProductReal>::Type_t>  Type_t;
 };

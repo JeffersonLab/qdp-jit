@@ -1646,6 +1646,12 @@ struct BinaryReturn<RScalar<T1>, RScalar<T2>, FnLocalInnerProduct > {
 };
 
 template<class T1, class T2>
+struct BinaryReturn<RScalar<T1>, RScalar<T2>, FnLocalColorInnerProduct > {
+  typedef RScalar<typename BinaryReturn<T1, T2, FnLocalColorInnerProduct>::Type_t>  Type_t;
+};
+
+
+template<class T1, class T2>
 inline typename BinaryReturn<RScalar<T1>, RScalar<T2>, FnLocalInnerProduct>::Type_t
 localInnerProduct(const RScalar<T1>& s1, const RScalar<T2>& s2)
 {
