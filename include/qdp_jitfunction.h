@@ -1,9 +1,6 @@
 #ifndef QDP_JITFUNC_H
 #define QDP_JITFUNC_H
 
-#define JIT_DO_MEMBER
-//#undef JIT_DO_MEMBER
-
 
 
 namespace QDP {
@@ -43,71 +40,6 @@ namespace QDP {
 
 
 
-#if 0
-  template<class T, class T1, class T2, class C1, class C2>
-  void 
-  function_localInnerProduct_type_subtype_exec(CUfunction function, OSubLattice<T>& ret,
-					       const QDPType<T1,C1> & l,const QDPSubType<T2,C2> & r,
-					       const Subset& s)
-  {
-    int th_count = s.numSiteTable();
-
-    if (th_count < 1) {
-      //QDPIO::cout << "skipping localInnerProduct since zero size subset on this MPI\n";
-      return;
-    }
-
-    AddressLeaf addr_leaf(s);
-    FnLocalInnerProduct op;
-    forEach(ret, addr_leaf, NullCombine());
-    AddOpAddress<FnLocalInnerProduct,AddressLeaf>::apply(op,addr_leaf);
-    forEach(l, addr_leaf, NullCombine());
-    forEach(r, addr_leaf, NullCombine());
-
-    JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
-
-    std::vector<QDPCache::ArgKey> ids;
-    ids.push_back( jit_th_count.get_id() );
-    ids.push_back( s.getIdSiteTable() );
-    for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
-      ids.push_back( addr_leaf.ids[i] );
- 
-    jit_launch(function,th_count,ids);
-  }
-
-
-  template<class T, class T1, class T2, class C1, class C2>
-  void 
-  function_localInnerProduct_subtype_type_exec(CUfunction function, OSubLattice<T>& ret,
-					       const QDPSubType<T1,C1> & l,const QDPType<T2,C2> & r,
-					       const Subset& s)
-  {
-    int th_count = s.numSiteTable();
-
-    if (th_count < 1) {
-      //QDPIO::cout << "skipping localInnerProduct since zero size subset on this MPI\n";
-      return;
-    }
-
-    AddressLeaf addr_leaf(s);
-    FnLocalInnerProduct op;
-    forEach(ret, addr_leaf, NullCombine());
-    AddOpAddress<FnLocalInnerProduct,AddressLeaf>::apply(op,addr_leaf);
-    forEach(l, addr_leaf, NullCombine());
-    forEach(r, addr_leaf, NullCombine());
-
-    JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
-
-    std::vector<QDPCache::ArgKey> ids;
-    ids.push_back( jit_th_count.get_id() );
-    ids.push_back( s.getIdSiteTable() );
-    for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
-      ids.push_back( addr_leaf.ids[i] );
- 
-    jit_launch(function,th_count,ids);
-  }
-#endif
-  
   
   template<class OP,class T, class T1, class T2, class C1, class C2>
   CUfunction

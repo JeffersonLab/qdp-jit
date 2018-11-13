@@ -71,51 +71,6 @@ namespace QDP
 
 
 
-#if 0
-  template<class T1,class C1,class T2,class C2>
-  typename QDPSubTypeTrait< typename BinaryReturn<C1,C2,FnLocalColorInnerProduct>::Type_t >::Type_t
-  localColorInnerProduct(const QDPSubType<T1,C1> & l,const QDPType<T2,C2> & r)
-  {
-    if (!l.getOwnsMemory())
-      QDP_error_exit("localColorInnerProduct with subtype view called");
-
-    typename QDPSubTypeTrait< typename BinaryReturn<C1,C2,FnLocalColorInnerProduct>::Type_t >::Type_t ret;
-    ret.setSubset( l.subset() );
-
-    static CUfunction function;
-
-    if (function == NULL)
-      function = function_OP_subtype_type_build<FnLocalColorInnerProduct>(ret, l , r );
-
-    function_OP_exec<FnLocalColorInnerProduct>(function, ret, l, r, l.subset() );
-    
-    return ret;
-  }
-
-
-
-  template<class T1,class C1,class T2,class C2>
-  typename QDPSubTypeTrait< typename BinaryReturn<C1,C2,FnLocalColorInnerProduct>::Type_t >::Type_t
-  localColorInnerProduct(const QDPType<T1,C1> & l,const QDPSubType<T2,C2> & r)
-  {
-    if (!r.getOwnsMemory())
-      QDP_error_exit("localColorInnerProduct with subtype view called");
-
-    typename QDPSubTypeTrait< typename BinaryReturn<C1,C2,FnLocalColorInnerProduct>::Type_t >::Type_t ret;
-    ret.setSubset( r.subset() );
-
-    static CUfunction function;
-
-    if (function == NULL)
-      function = function_OP_type_subtype_build<FnLocalColorInnerProduct>(ret, l , r );
-
-    function_OP_exec<FnLocalColorInnerProduct>(function, ret, l, r, r.subset() );
-    
-    return ret;
-  }
-#endif
-
-  
 
 #if 0
   template<class T1,class C1,class T2,class C2>
