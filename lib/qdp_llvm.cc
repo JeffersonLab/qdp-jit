@@ -1480,7 +1480,8 @@ namespace QDP {
   void llvm_module_dump()
   {
     QDPIO::cout << "Module dump...\n";
-    Mod->dump();
+    QDPIO::cout << "(disabled, as to be able to build LLVM in release mode)\n";
+    //Mod->dump();
   }
 
   std::string llvm_get_ptx_kernel(const char* fname)
