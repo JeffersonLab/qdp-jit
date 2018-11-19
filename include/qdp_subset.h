@@ -48,24 +48,12 @@ public:
   // Simple constructor
   void make(const Subset& s);
 
-  //! Destructor for a subset
-  ~Subset();
-
-  void setId(int _id) { id = _id; }
-  int getId() const { return id; }
-
   int getIdSiteTable() const {
-    if (!registered) {
-      //QDPIO::cout << "Subset not registered\n";
-      return -1;
-    }
-    return idSiteTable;
+    return *idSiteTable;
   }
 
   int getIdMemberTable() const {
-    if (!registered) 
-      QDP_error_exit("Subset::getIdMemberTable not registered");
-    return idMemberTable;
+    return *idMemberTable;
   }
 
   //! The = operator
@@ -77,11 +65,13 @@ public:
   multi1d<bool>& getIsElement() const       { return *membertable; }
   bool           isElement(int index) const { return (*membertable)[index]; }
 
+  void setId(int _id) { id = _id; }
+  int getId() const { return id; }
+
 
 protected:
   // Simple constructor
-  void make(bool rep, int start, int end, multi1d<int>* ind, int cb, Set* set, multi1d<bool>* memb);
-  int id;
+  void make(bool rep, int start, int end, multi1d<int>* ind, int* ind_id, int cb, Set* set, multi1d<bool>* memb, int* memb_id , int id );
 
 private:
   bool ordRep;
@@ -91,20 +81,17 @@ private:
 
   //! Site lookup table
   multi1d<int>* sitetable;
-
-
-  // Cache registered
-  int idSiteTable;
-  int idMemberTable;
-  bool registered;
-
+  int* idSiteTable;
 
   //! Original set
   Set *set;
 
   // Constant time to know whether linear index in this subset
   multi1d<bool>* membertable;
+  int* idMemberTable;
 
+  int id; // masterset
+  
 public:
   inline bool hasOrderedRep() const {return ordRep;}
   inline int start() const {return startSite;}
@@ -147,6 +134,7 @@ public:
   //! The = operator
   Set& operator=(const Set& s);
 
+  void signOffTables();
 
 
 protected:
@@ -162,6 +150,9 @@ protected:
   //! Array of sitetable arrays
   multi1d<multi1d<bool> > membertables;
 
+  multi1d<int> idSiteTable;
+  multi1d<int> idMemberTable;
+  
   // Cache registered
   bool registered;
 

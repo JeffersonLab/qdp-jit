@@ -79,6 +79,12 @@ void Set::make(const SetFunc& fun)
   // Create the array holding the array of membertable info
   membertables.resize(nsubset_indices);
 
+  signOffTables();
+  
+  idSiteTable.resize(nsubset_indices);
+  idMemberTable.resize(nsubset_indices);
+
+  
   // Loop over linear sites determining their color
   for(int linear=0; linear < nodeSites; ++linear)
   {
@@ -179,7 +185,12 @@ void Set::make(const SetFunc& fun)
       start = end = -1;
     }
 
-    sub[cb].make(ordRep, start, end, &(sitetables[cb]), cb, this, &(membertables[cb]) );
+
+    idSiteTable[cb]   = sitetable.size()   > 0 ? QDP_get_global_cache().registrateOwnHostMem( sitetable.size()   * sizeof(int)  , sitetable.slice() , NULL ) : -1 ;
+    idMemberTable[cb] = membertable.size() > 0 ? QDP_get_global_cache().registrateOwnHostMem( membertable.size() * sizeof(bool) , membertable.slice() , NULL ) : -1 ;
+
+
+    sub[cb].make(ordRep, start, end, &sitetables[cb], &idSiteTable[cb], cb, this, &membertables[cb], &idMemberTable[cb] , -1 ); // -1 for the masterset id which is still unknown
 
 #if QDP_DEBUG >= 2
     QDP_info("Subset(%d)",cb);
