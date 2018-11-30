@@ -44,7 +44,7 @@ namespace QDP {
       if (! copymem)
 	{
 	  delete[] F;
-	  if ( id > 0 )
+	  if ( id != -1 )
 	    QDP_get_global_cache().signoff( id );
 	}
     }
@@ -58,7 +58,15 @@ namespace QDP {
       for(int i=0; i < n1; ++i)
 	F[i] = s.F[i];
 
-      // std::cout << __PRETTY_FUNCTION__ << " " << this << "  copymem = " << copymem << "  F = " << F << "  id = " << id << "\n";
+#if 0
+      std::cout << __PRETTY_FUNCTION__ << " "
+		<< this
+		<< "  copymem = " << copymem
+		<< "  F = " << F
+		<< "  id = " << id
+		<< "  n = " << n1
+		<< "\n";
+#endif
     }
 
     //! Size of array
