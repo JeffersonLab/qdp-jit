@@ -21,8 +21,6 @@
 #include "qdp_util.h"
 #include "qdp_stopwatch.h"
 
-#include "mpi.h"
-
 typedef unsigned long long ullong;
 
 namespace QDP {
@@ -34,25 +32,6 @@ namespace QDP {
 		//access modes
 		enum accessmode{ transpose_order=(1 << 0), maintain_order=(1 << 1) };
 	}
-
-#if 0
-  namespace{
-
-template<typename T>
-struct RealSize
-{
-  static const size_t size = sizeof(T);
-};
-    
-template<>
-template<typename T>
-struct RealSize< <T> >
-{
-  static const size_t size = sizeof(T);
-};
-    
-  } /// namespace
-#endif
     
 	//--------------------------------------------------------------------------------                                                                 
 	//! HDF5 reader class                                                                                                                              
@@ -582,7 +561,6 @@ struct RealSize< <T> >
 		//***********************************************************************************************************************************
 		//***********************************************************************************************************************************
 		//single datum
-#if 0
 		template<class T>
 		void read(const std::string& name, OScalar<T>& scalar)
 		{
@@ -851,7 +829,7 @@ struct RealSize< <T> >
 			const int mynode=Layout::nodeNumber();
 			const int nodeSites = Layout::sitesOnNode();
 			size_t tot_size = obj_size*arr_size*nodeSites;
-			char* buf = new(std::nothrow) REAL[tot_size*hdf5_float_size];
+			char* buf = new(std::nothrow) char[tot_size*hdf5_float_size];
 			if( buf == 0x0 ) {
 				HDF5_error_exit("Unable to allocate buf!");
 			}
@@ -908,7 +886,7 @@ struct RealSize< <T> >
 		//Qlua
 		void readQlua(const std::string& name, multi1d<LatticeColorMatrixD3>& field);
 		void readQlua(const std::string& name, LatticeDiracPropagatorD3& prop);
-#endif    
+    
 	};
 
 	template<typename ctype>
@@ -941,7 +919,6 @@ struct RealSize< <T> >
 			QDP_error_exit("qdp_hdf5.h  assert_global_size: multi2d.size1 not global!");
 	}
 
-#if 0
 	//template specializations:
 	//complex types
 	//single datum
@@ -969,8 +946,6 @@ struct RealSize< <T> >
 	template<>void HDF5::read< PScalar< PColorMatrix< RComplex<REAL64>, 3> > >(const std::string& name, 
 																				multi1d<LatticeColorMatrixD3>& field, 
 																				const HDF5Base::accessmode& accmode);
-#endif
-  
 	//--------------------------------------------------------------------------------
 	//! HDF5 reader class
 	/*!
@@ -1500,7 +1475,6 @@ struct RealSize< <T> >
 
 	};
 
-#if 0
 	//template specializations for OScalar<T> datatypes:
 	//complex types
 	//single datum
@@ -1522,16 +1496,22 @@ struct RealSize< <T> >
 	template<>
 	void HDF5Writer::write< PScalar< PColorMatrix< RComplex<REAL64>, 3> > >(const std::string& dataname, const ColorMatrixD3& datum, const HDF5Base::writemode& mode);
 
+  //template specializations for OLattice<T> datatypes:
 	//LatticeColorMatrix
 	template<>
 	void HDF5Writer::write< PScalar< PColorMatrix< RComplex<REAL32>, 3> > >(const std::string& name, const LatticeColorMatrixF3& field, const HDF5Base::writemode& mode);
 	template<>
 	void HDF5Writer::write< PScalar< PColorMatrix< RComplex<REAL64>, 3> > >(const std::string& name, const LatticeColorMatrixD3& field, const HDF5Base::writemode& mode);
+  
+  //LatticePropagator
+  template<>
+  void HDF5Writer::write< PSpinMatrix< PColorMatrix< RComplex<REAL32>, 3>, 4> >(const std::string& name, const LatticePropagatorF3& field, const HDF5Base::writemode& mode);
+	template<>
+	void HDF5Writer::write< PSpinMatrix< PColorMatrix< RComplex<REAL64>, 3>, 4> >(const std::string& name, const LatticePropagatorD3& field, const HDF5Base::writemode& mode);
 
-	//multi1d<OLattice> specializations
+  //template specializations for multi1d<OLattice<T> > datatypes:
+  //multi1d<LatticeColorMatrix>
 	template<>
 	void HDF5Writer::write< PScalar< PColorMatrix< RComplex<REAL64>, 3> > >(const std::string& name, const multi1d<LatticeColorMatrixD3>& field, const HDF5Base::writemode& mode);
-#endif
-  
 }
 #endif
