@@ -39,6 +39,10 @@ if QDP_USE_HDF5
 libqdp_a_SOURCES += qdp_hdf5.cc
 endif
 
+if QDP_CUSTOM_KERNELS
+libqdp_a_SOURCES += stream_local_inner_product.cc
+endif
+
 
 # Scalar	
 if ARCH_SCALAR
