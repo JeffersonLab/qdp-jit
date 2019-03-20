@@ -117,8 +117,16 @@ namespace COUNT {
       int local_rank = atoi(rank);
       dev = local_rank % deviceCount;
     } else {
-      std::cerr << "Couldnt determine local rank. Selecting device 0. In a multi-GPU per node run this is not what one wants.\n";
-      dev = 0;
+      if ( DeviceParams::Instance().getDefaultGPU() == -1 )
+	{
+	  std::cerr << "Couldnt determine local rank. Selecting device 0. In a multi-GPU per node run this is not what one wants.\n";
+	  dev = 0;
+	}
+      else
+	{
+	  dev = DeviceParams::Instance().getDefaultGPU();
+	  std::cerr << "Couldnt determine local rank. Selecting device " << dev << " as per user request.\n";
+	}
 #if 0
       // we don't have an initialized QMP at this point
        std::cerr << "Couldnt determine local rank. Selecting device based on global rank \n";
@@ -423,6 +431,13 @@ namespace COUNT {
 	    char tmp[1024];
 	    sscanf((*argv)[++i], "%s", &tmp[0]);
 	    llvm_set_ptxdb(tmp);
+	  }
+	else if (strcmp((*argv)[i], "-defaultgpu")==0) 
+	  {
+	    int ngpu;
+	    sscanf((*argv)[++i], "%d", &ngpu);
+	    DeviceParams::Instance().setDefaultGPU(ngpu);
+	    std::cout << "Default GPU set to " << ngpu << "\n";
 	  }
 	else if (strcmp((*argv)[i], "-geom")==0) 
 	  {

@@ -67,4 +67,9 @@ namespace QDP {
     boolNoReadSM = true;
   }
 
+  void DeviceParams::setDefaultGPU(int ngpu) {
+    defaultGPU = ngpu;
+  }
+
+
 }

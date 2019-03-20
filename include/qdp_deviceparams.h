@@ -27,6 +27,8 @@ namespace QDP {
     }
 
     void setSM(int sm);
+    void setDefaultGPU(int ngpu);
+    int  getDefaultGPU() { return defaultGPU; }
 
     size_t getMaxGridX() const {return max_gridx;}
     size_t getMaxGridY() const {return max_gridy;}
@@ -99,6 +101,7 @@ namespace QDP {
     unsigned major;
     unsigned minor;
 
+    int defaultGPU = -1;
   };
 
 
