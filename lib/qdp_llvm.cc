@@ -2,11 +2,11 @@
 #include "qdp_config.h"
 
 #include "qdp_libdevice.h"
-//#include "nvvm.h"
+
 #include "llvm/InitializePasses.h"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/IR/LegacyPassManager.h"
-//#include "llvm/Bitcode/ReaderWriter.h"
+
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/raw_ostream.h"
@@ -14,7 +14,13 @@
 
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/PassRegistry.h"
+
+#ifdef QDP_LLVM8
+#include "llvm/CodeGen/CommandFlags.inc"
+#else
 #include "llvm/CodeGen/CommandFlags.def"
+#endif
+
 #include "llvm/Support/CommandLine.h"
 
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
@@ -1404,20 +1410,31 @@ namespace QDP {
     //PMTM.add(new llvm::DataLayoutPass(Mod));
 #endif
 
+
+#ifdef QDP_LLVM8
+    std::string str;
+    llvm::raw_string_ostream rss(str);
+    llvm::buffer_ostream bos(rss);
+    
+    // Ask the target to add backend passes as necessary.
+    if (target_machine->addPassesToEmitFile(PM, bos , nullptr ,  llvm::TargetMachine::CGFT_AssemblyFile )) {
+      llvm::errs() << ": target does not support generation of this"
+		   << " file type!\n";
+      exit(1);
+    }
+#else
     std::string str;
     llvm::raw_string_ostream rss(str);
     llvm::buffer_ostream bos(rss);
 
-
-
-    
     // Ask the target to add backend passes as necessary.
     if (target_machine->addPassesToEmitFile(PM, bos ,  llvm::TargetMachine::CGFT_AssemblyFile )) {
       llvm::errs() << ": target does not support generation of this"
 		   << " file type!\n";
       exit(1);
     }
-
+#endif
+    
 
     //Mod->dump();
     //QDPIO::cout << "(module right before PTX codegen)------\n";
@@ -1498,7 +1515,13 @@ namespace QDP {
 
     llvm::legacy::PassManager OurPM;
     OurPM.add( llvm::createInternalizePass( all_but_main ) );
+#ifdef QDP_LLVM8
+    unsigned int sm_gpu = DeviceParams::Instance().getMajor() * 10 + DeviceParams::Instance().getMinor();
+    OurPM.add( llvm::createNVVMReflectPass( sm_gpu ));
+#else
     OurPM.add( llvm::createNVVMReflectPass());
+#endif
+    
     OurPM.run( *Mod );
 
 

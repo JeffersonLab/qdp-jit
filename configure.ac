@@ -141,6 +141,22 @@ AC_ARG_ENABLE(filedb,
   [filedb_enabled="yes"]
 )
 
+
+AC_ARG_ENABLE(llvm8,
+  AC_HELP_STRING(
+    [--enable-llvm8],
+    [Enable changes to compile with LLVM 8.0 release]
+  ),
+  [LLVM8_ENABLED=$enableval],
+  [LLVM8_ENABLED="no"]
+)
+
+if test "X${LLVM8_ENABLED}X" = "XyesX"; then
+  AC_MSG_NOTICE([Enabling changes for LLVM 8.0 release ])
+  AC_DEFINE(QDP_LLVM8, [1], [ Compile for LLVM 8.0 release  ])
+fi
+
+
 dnl comm-split to find device id
 AC_ARG_ENABLE(comm-split-deviceinit,
   AC_HELP_STRING([--enable-comm-split-deviceinit],

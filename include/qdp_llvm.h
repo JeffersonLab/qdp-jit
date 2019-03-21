@@ -42,8 +42,11 @@
 #include "llvm/Support/FormattedStream.h"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/Support/SourceMgr.h"
-//#include "llvm/Assembly/Parser.h"
+
+#ifdef QDP_LLVM8
+#else
 #include "llvm/IR/TypeBuilder.h"
+#endif
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/StringSet.h"
@@ -57,17 +60,15 @@
 
 #include "llvm/Support/raw_os_ostream.h"
 
-//#include "llvm/Support/DataStream.h"
 #include "llvm/ADT/Statistic.h"
 #include "llvm/Support/Program.h"
-//#include "llvm/Support/system_error.h"
+
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/Host.h"
 
 #include <system_error>
 
-//#include "llvm/ExecutionEngine/ObjectBuffer.h"
 #include "llvm/IR/GlobalVariable.h"
 
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
@@ -75,8 +76,13 @@
 #include "llvm/IR/Verifier.h"
 #include "llvm/IR/AssemblyAnnotationWriter.h"
 
+
 namespace llvm {
-ModulePass *createNVVMReflectPass(void);
+#ifdef QDP_LLVM8
+  ModulePass *createNVVMReflectPass(unsigned int);
+#else
+  ModulePass *createNVVMReflectPass(void);
+#endif
 }
 
 
