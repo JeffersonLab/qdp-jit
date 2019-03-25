@@ -1078,8 +1078,10 @@ namespace QDP {
 
     if (llvm_debug::debug_loop_vectorizer) {
       if (Layout::primaryNode()) {
+#ifdef QDP_LLVM_DEBUG_BUILD	
 	llvm::DebugFlag = true;
 	llvm::setCurrentDebugType("loop-vectorize");
+#endif
       }
     }
 

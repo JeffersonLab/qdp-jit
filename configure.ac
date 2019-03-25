@@ -475,6 +475,23 @@ fi
 
 AM_CONDITIONAL(BUILD_QDPJIT_TBB_ALLOCATOR, [test "X${ac_enable_tbbpool}X" == "XyesX" ])
   
+
+AC_ARG_ENABLE(llvm-debug-build,
+  AC_HELP_STRING(
+    [--enable-llvm-debug-build],
+    [Enable changes to compile with LLVM debug build]
+  ),
+  [LLVM_DEBUG_BUILD_ENABLED=$enableval],
+  [LLVM_DEBUG_BUILD_ENABLED="no"]
+)
+
+if test "X${LLVM_DEBUG_BUILD_ENABLED}X" = "XyesX"; then
+  AC_MSG_NOTICE([Enabling changes for LLVM debug build ])
+  AC_DEFINE(QDP_LLVM_DEBUG_BUILD, [1], [ Compile for LLVM debug build ])
+fi
+
+
+
 dnl
 dnl
 dnl Now have all the options... Do some configuration 
