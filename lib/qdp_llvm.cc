@@ -1041,9 +1041,11 @@ namespace QDP {
 
     if (llvm_debug::debug_func_dump) {
       if (Layout::primaryNode()) {
+#ifdef QDP_LLVM_DEBUG_BUILD
 	QDPIO::cerr << "LLVM IR function (before passes)\n";
 	mainFunc->dump();
 	//module->dump();
+#endif
       }
     }
 
@@ -1089,9 +1091,11 @@ namespace QDP {
 
     if (llvm_debug::debug_func_dump) {
       if (Layout::primaryNode()) {
+#ifdef QDP_LLVM_DEBUG_BUILD
 	QDPIO::cerr << "LLVM IR function (after passes)\n";
 	mainFunc->dump();
 	//Mod->dump();
+#endif
       }
     }
 
@@ -1239,8 +1243,10 @@ namespace QDP {
 
     if (llvm_debug::debug_func_dump) {
       if (Layout::primaryNode()) {
+#ifdef QDP_LLVM_DEBUG_BUILD
 	QDPIO::cerr << "LLVM IR function (before passes)\n";
 	mainFunc_extern->dump();
+#endif
       }
     }
     
