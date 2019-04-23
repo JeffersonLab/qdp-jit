@@ -15,7 +15,7 @@ namespace QDP {
 
 
   //! Container for a multi-dimensional 1D array
-  template<>
+
   template<class T1> class multi1d< OScalar<T1> >
   {
   public:
@@ -330,7 +330,7 @@ namespace QDP {
 
   
 
-  template<>
+
   template<class T1> class multi2d< OScalar<T1> >
   {
   public:
@@ -503,7 +503,7 @@ namespace QDP {
 
 
 
-  template<>
+
   template<class T1> class multi3d< OScalar<T1> >
   {
   public:
@@ -699,7 +699,7 @@ namespace QDP {
 
 
 
-  template<>
+
   template<class T1> class multi4d< OScalar<T1> >
   {
   public:
