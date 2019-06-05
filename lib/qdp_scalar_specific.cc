@@ -114,42 +114,7 @@ namespace QDP {
     //! Broadcast a string from primary node to all other nodes
     void broadcast_str(std::string& result)
     {
-      assert(!"Shouldn't be here.");
     }
-
-    //! Is this a grid architecture
-    bool gridArch()
-    {
-      assert(!"Shouldn't be here.");
-      return false;
-    }
-
-    //! Send a clear-to-send
-    void clearToSend(void *buffer, int count, int node)
-    {
-      assert(!"Shouldn't be here.");
-    }
-
-    //! Route to another node (blocking)
-    void route(void *buffer, int srce_node, int dest_node, int count)
-    { 
-      assert(!"Shouldn't be here.");
-    }
-
-    //! Send to another node (wait)
-    void 
-    sendToWait(void *send_buf, int dest_node, int count)
-    {
-      assert(!"Shouldn't be here.");
-    }
-
-    //! Receive from another node (wait)
-    void 
-    recvFromWait(void *recv_buf, int srce_node, int count)
-    {
-      assert(!"Shouldn't be here.");
-    }
-
   }
 
 #if 0
@@ -783,99 +748,62 @@ namespace QDP {
    * \param cfg_in     binary writer object ( Modify )
    * \param u          gauge configuration ( Modify )
    */    
-
   void readArchiv(BinaryReader& cfg_in, multi1d<LatticeColorMatrix>& u, 
-		  n_uint32_t& checksum, int mat_size, int float_size)
+		  uint32_t& checksum, int mat_size, int float_size)
   {
-    size_t size = float_size;
-    size_t su3_size = size*mat_size;
-    size_t tot_size = su3_size*Nd;
-    const int nodeSites = Layout::sitesOnNode();
+    ColorMatrix  sitefield;
+    char *su3_buffer;
 
-    char  *input = new(nothrow) char[tot_size*nodeSites];  // keep another copy in input buffers
-    if( input == 0x0 ) { 
-      QDP_error_exit("Unable to allocate input\n");
-    }
-
-    char  *recv_buf = new(nothrow) char[tot_size];
-    if( recv_buf == 0x0 ) { 
-      QDP_error_exit("Unable to allocate recv_buf\n");
-    }
-
+    REAL su3[Nc][Nc][2];
     checksum = 0;
+
+    su3_buffer = new char[ Nc*Nc*2*float_size ];
+    if( su3_buffer == 0x0 ) { 
+      QDP_error_exit("Unable to allocate input buffer\n");
+    }
 
     // Find the location of each site and send to primary node
     for(int site=0; site < Layout::vol(); ++site)
       {
 	multi1d<int> coord = crtesn(site, Layout::lattSize());
-
-	int node   = Layout::nodeNumber(coord);
-	int linear = Layout::linearSiteIndex(coord);
-
-	// Only on primary node read the data
-	cfg_in.readArrayPrimaryNode(recv_buf, size, mat_size*Nd);
-
-	if (Layout::primaryNode()) 
-	  {
-	    // Compute checksum
-	    n_uint32_t* chk_ptr = (n_uint32_t*)recv_buf;
-	    for(unsigned int i=0; i < mat_size*Nd*size/sizeof(n_uint32_t); ++i)
-	      checksum += chk_ptr[i];
-	  }
-
-	// Send result to destination node. Avoid sending prim-node sending to itself
-	if (node != 0)
-	  {
-#if 1
-	    // All nodes participate
-	    QDPInternal::route((void *)recv_buf, 0, node, tot_size);
-#else
-	    if (Layout::primaryNode())
-	      QDPInternal::sendToWait((void *)recv_buf, node, tot_size);
-
-	    if (Layout::nodeNumber() == node)
-	      QDPInternal::recvFromWait((void *)recv_buf, 0, tot_size);
-#endif
-	  }
-
-	if (Layout::nodeNumber() == node)
-	  memcpy(input+linear*tot_size, recv_buf, tot_size);
-      }
-
-    delete[] recv_buf;
-
-    QDPInternal::broadcast(checksum);
-
-    // Reconstruct the gauge field
-    ColorMatrix  sitefield;
-    REAL su3[3][3][2];
-
-    for(int linear=0; linear < nodeSites; ++linear)
-      {
+  
 	for(int dd=0; dd<Nd; dd++)        /* dir */
 	  {
-	    // Transfer the data from input into SU3
-	    if (float_size == 4) 
-	      {
-		REAL* su3_p = (REAL *)su3;
-		REAL32* input_p = (REAL32 *)( input+su3_size*(dd+Nd*linear) );
-		for(int cp_index=0; cp_index < mat_size; cp_index++) {
-		  su3_p[cp_index] = (REAL)(input_p[cp_index]);
-		}
-	      }
-	    else if (float_size == 8) 
-	      {
-		// IEEE64BIT case
-		REAL *su3_p = (REAL *)su3;
-		REAL64 *input_p = (REAL64 *)( input+su3_size*(dd+Nd*linear) );
-		for(int cp_index=0; cp_index < mat_size; cp_index++) { 
-		  su3_p[cp_index] = (REAL)input_p[cp_index];
-		}
-	      }
-	    else { 
-	      QDPIO::cerr << __func__ << ": Unknown mat size" << endl;
-	      QDP_abort(1);
+	    /* Read an fe variable and write it to the BE */
+	    cfg_in.readArray(su3_buffer, float_size, mat_size);
+
+	    if (cfg_in.fail()) {
+	      QDP_error_exit("Error reading configuration");
 	    }
+
+
+	    // Compute checksum
+	    uint32_t* chk_ptr = (uint32_t*)su3_buffer;
+	    for(int i=0; i < mat_size*float_size/sizeof(uint32_t); ++i)
+	      checksum += chk_ptr[i];
+
+
+	    /* Transfer from input buffer to the actual su3 buffer, 
+	       downcasting it to float if necessary */
+	    if ( float_size == 4 ) 
+	      { 
+		REAL32 *su3_bufp = (REAL32 *)su3_buffer;
+		REAL *su3_p = (REAL *)su3;
+
+		for(int cp_index=0; cp_index < mat_size; cp_index++) { 
+		  su3_p[cp_index] = (REAL)su3_bufp[cp_index];
+		}
+	      }
+	    else if ( float_size == 8 ) 
+	      {
+		REAL64 *su3_bufp = (REAL64 *)su3_buffer;
+		REAL  *su3_p = (REAL *)su3;
+
+		for(int cp_index =0; cp_index < mat_size; cp_index++) { 
+	  
+		  su3_p[cp_index] = (REAL)su3_bufp[cp_index];
+		}
+	      }
 
 	    /* Reconstruct the third column  if necessary */
 	    if (mat_size == 12) 
@@ -901,17 +829,19 @@ namespace QDP {
 	      {
 		for(int ii=0; ii<Nc; ii++)    /* color */
 		  {
-		    Complex sitecomp = cmplx(Real(su3[ii][kk][0]), Real(su3[ii][kk][1]));
+		    Real re = su3[ii][kk][0];
+		    Real im = su3[ii][kk][1];
+		    Complex sitecomp = cmplx(re,im);
 		    pokeColor(sitefield,sitecomp,ii,kk);
 		  }
 	      }
-      
-	    u[dd].elem(linear) = sitefield.elem();
+
+	    pokeSite(u[dd], sitefield, coord);
 	  }
       }
-  
-    delete[] input;
+    delete [] su3_buffer;
   }
+
 
 
   //-----------------------------------------------------------------------
@@ -926,101 +856,47 @@ namespace QDP {
   void writeArchiv(BinaryWriter& cfg_out, const multi1d<LatticeColorMatrix>& u,
 		   int mat_size)
   {
-    size_t size = sizeof(REAL32);
-    size_t su3_size = size*mat_size;
-    size_t tot_size = su3_size*Nd;
-    char *recv_buf = new(nothrow) char[tot_size];
-    if( recv_buf == 0x0 ) { 
-      QDP_error_exit("Unable to allocate recv_buf\n");
-    }
-
-    const int nodeSites = Layout::sitesOnNode();
-
-    multi1d<multi1d<ColorMatrix> > sa(Nd);   // extract gauge fields
-
-    for(int dd=0; dd<Nd; dd++)        /* dir */
-      {
-	sa[dd].resize(nodeSites);
-	QDP_extract(sa[dd], u[dd], all);
-      }
+    ColorMatrix  sitefield;
+    float su3[3][3][2];
 
     // Find the location of each site and send to primary node
     for(int site=0; site < Layout::vol(); ++site)
       {
 	multi1d<int> coord = crtesn(site, Layout::lattSize());
 
-	int node   = Layout::nodeNumber(coord);
-	int linear = Layout::linearSiteIndex(coord);
-
-	// Copy to buffer: be really careful since max(linear) could vary among nodes
-	if (Layout::nodeNumber() == node)
+	for(int dd=0; dd<Nd; dd++)        /* dir */
 	  {
-	    char *recv_buf_tmp = recv_buf;
+	    sitefield = peekSite(u[dd], coord);
 
-	    for(int dd=0; dd<Nd; dd++)        /* dir */
+	    if ( mat_size == 12 ) 
 	      {
-		if ( mat_size == 12 ) 
-		  {
-		    REAL32 su3[2][3][2];
-
-		    for(int kk=0; kk<Nc; kk++)      /* color */
-		      for(int ii=0; ii<2; ii++)    /* color */
-			{
-			  Complex sitecomp = peekColor(sa[dd][linear],ii,kk);
-			  su3[ii][kk][0] = toFloat(Real(real(sitecomp)));
-			  su3[ii][kk][1] = toFloat(Real(imag(sitecomp)));
-			}
-
-		    memcpy(recv_buf_tmp, &(su3[0][0][0]), su3_size);
-		  }
-		else
-		  {
-		    REAL32 su3[3][3][2];
-
-		    for(int kk=0; kk<Nc; kk++)      /* color */
-		      for(int ii=0; ii<Nc; ii++)    /* color */
-			{
-			  Complex sitecomp = peekColor(sa[dd][linear],ii,kk);
-			  su3[ii][kk][0] = toFloat(Real(real(sitecomp)));
-			  su3[ii][kk][1] = toFloat(Real(imag(sitecomp)));
-			}
-
-		    memcpy(recv_buf_tmp, &(su3[0][0][0]), su3_size);
-		  }
-
-		recv_buf_tmp += su3_size;
+		for(int kk=0; kk < Nc; kk++)      /* color */
+		  for(int ii=0; ii < Nc-1; ii++)    /* color */
+		    {
+		      Complex sitecomp = peekColor(sitefield,ii,kk);
+		      su3[ii][kk][0] = toFloat(Real(real(sitecomp)));
+		      su3[ii][kk][1] = toFloat(Real(imag(sitecomp)));
+		    }
 	      }
+	    else
+	      {
+		for(int kk=0; kk < Nc; kk++)      /* color */
+		  for(int ii=0; ii < Nc; ii++)    /* color */
+		    {
+		      Complex sitecomp = peekColor(sitefield,ii,kk);
+		      su3[ii][kk][0] = toFloat(Real(real(sitecomp)));
+		      su3[ii][kk][1] = toFloat(Real(imag(sitecomp)));
+		    }
+	      }
+
+	    // Write a site variable
+	    cfg_out.writeArray((char *)&(su3[0][0][0]),sizeof(float), mat_size);
 	  }
-
-	// Send result to primary node. Avoid sending prim-node sending to itself
-	if (node != 0)
-	  {
-#if 1
-	    // All nodes participate
-	    QDPInternal::route((void *)recv_buf, node, 0, tot_size);
-#else
-	    if (Layout::primaryNode())
-	      QDPInternal::recvFromWait((void *)recv_buf, node, tot_size);
-
-	    if (Layout::nodeNumber() == node)
-	      QDPInternal::sendToWait((void *)recv_buf, 0, tot_size);
-#endif
-	  }
-
-	cfg_out.writeArrayPrimaryNode(recv_buf, size, mat_size*Nd);
       }
-
-    delete[] recv_buf;
 
     if (cfg_out.fail())
-      {
-	QDPIO::cerr << __func__ << ": error writing configuration" << endl;
-	QDP_abort(1);
-      }
+      QDP_error_exit("Error writing configuration");
   }
-
-
-
 
 
 

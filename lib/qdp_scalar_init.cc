@@ -10,6 +10,7 @@
 
 #include "qdp.h"
 
+
 #include "qdp_init.h"
 
 #if defined(QDP_USE_COMM_SPLIT_INIT)
@@ -23,7 +24,6 @@ namespace COUNT {
 }
 	
 
-
   //! Private flag for status
   static bool isInit = false;
   bool setPoolSize = false;
@@ -31,6 +31,7 @@ namespace COUNT {
   bool setIOGeomP = false;
   multi1d<int> logical_geom(Nd);   // apriori logical geometry of the machine
   multi1d<int> logical_iogeom(Nd); // apriori logical 	
+
 
 
 #if 1
@@ -88,23 +89,52 @@ namespace COUNT {
     QDP_info_primary("Trigger GPU evaluation");
     QDPuseGPU=true;
     
-    CudaCreateStreams();
-
     // Initialize the LLVM wrapper
     llvm_wrapper_init();
   }
-
 
   //! Set the GPU device
   int QDP_setGPU()
   {
     int deviceCount;
+    //int ret = 0;
     CudaGetDeviceCount(&deviceCount);
     if (deviceCount == 0) {
       QDP_error_exit("No CUDA devices found");
     }
 
+    // Try MVapich fist
+    char *rank = getenv( "MV2_COMM_WORLD_LOCAL_RANK"  );
+
+    // Try OpenMPI
+    if( ! rank ) {
+       rank = getenv( "OMPI_COMM_WORLD_LOCAL_RANK" );
+    } 
+
     int dev=0;
+    if (rank) {
+      int local_rank = atoi(rank);
+      dev = local_rank % deviceCount;
+    } else {
+      if ( DeviceParams::Instance().getDefaultGPU() == -1 )
+	{
+	  std::cerr << "Couldnt determine local rank. Selecting device 0. In a multi-GPU per node run this is not what one wants.\n";
+	  dev = 0;
+	}
+      else
+	{
+	  dev = DeviceParams::Instance().getDefaultGPU();
+	  std::cerr << "Couldnt determine local rank. Selecting device " << dev << " as per user request.\n";
+	}
+#if 0
+      // we don't have an initialized QMP at this point
+       std::cerr << "Couldnt determine local rank. Selecting device based on global rank \n";
+       std::cerr << "Please ensure that ranks increase fastest within the node for this to work \n";
+       int rank_QMP = QMP_get_node_number();
+       dev = rank_QMP % deviceCount;
+#endif
+    }
+
     std::cout << "Setting CUDA device to " << dev << "\n";
     CudaSetDevice( dev );
     return dev;
