@@ -268,6 +268,7 @@ namespace COUNT {
 	}
     }
 
+
     for (int i=1; i<*argc; i++) 
       {
 	if (strcmp((*argv)[i], "-sync")==0) 
@@ -333,6 +334,13 @@ namespace COUNT {
 	    char tmp[1024];
 	    sscanf((*argv)[++i], "%s", &tmp[0]);
 	    llvm_set_ptxdb(tmp);
+	  }
+	else if (strcmp((*argv)[i], "-defaultgpu")==0) 
+	  {
+	    int ngpu;
+	    sscanf((*argv)[++i], "%d", &ngpu);
+	    DeviceParams::Instance().setDefaultGPU(ngpu);
+	    std::cout << "Default GPU set to " << ngpu << "\n";
 	  }
 	else if (strcmp((*argv)[i], "-geom")==0) 
 	  {
