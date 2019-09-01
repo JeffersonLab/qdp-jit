@@ -210,6 +210,12 @@ namespace QDP
   }
 
 
+  Subset::Subset(const Subset& s)
+  {
+    make(s);
+  }
+
+
   //-----------------------------------------------------------------------------
   // = operator
   Set& Set::operator=(const Set& s)

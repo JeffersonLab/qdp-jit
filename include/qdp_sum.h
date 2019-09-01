@@ -59,11 +59,11 @@ namespace QDP {
       function = function_summulti_convert_ind_build<T1,T2,input_layout>();
 
     function_summulti_convert_ind_exec(function,
-				       size, threads, blocks, shared_mem_usage, 
-				       in_id, out_id,
-				       numsubsets ,
-				       sizes ,
-				       table_ids );
+    				       size, threads, blocks, shared_mem_usage, 
+    				       in_id, out_id,
+    				       numsubsets ,
+    				       sizes ,
+    				       table_ids );
   }
 
 
@@ -86,10 +86,10 @@ namespace QDP {
       function = function_summulti_build<T>();
 
     function_summulti_exec(function,
-			   size, threads, blocks, shared_mem_usage, 
-			   in_id, out_id,
-			   numsubsets ,
-			   sizes );
+    			   size, threads, blocks, shared_mem_usage, 
+    			   in_id, out_id,
+    			   numsubsets ,
+    			   sizes );
   }
 
 
@@ -265,6 +265,25 @@ namespace QDP {
 
 
 #if 1
+
+  namespace {
+    unsigned int nextPowerOf2(unsigned int n)  
+    {
+      unsigned count = 0;  
+      
+      if (n && !(n & (n - 1)))  
+        return n;  
+      
+      while( n != 0)  
+	{  
+	  n >>= 1;  
+	  count += 1;  
+	}  
+      
+      return 1 << count;  
+    }
+  }
+  
   //
   // sumMulti 
   //
@@ -315,9 +334,13 @@ namespace QDP {
 	break;
       
       //QDPIO::cout << "maxsize: " << maxsize << "\n";
+
+      int maxsizep2 = nextPowerOf2(maxsize);
+
+      //QDPIO::cout << "maxsize power2 : " << maxsizep2 << "\n";
       
       unsigned numThreads = DeviceParams::Instance().getMaxBlockX();
-      while ((numThreads*sizeof(T2) > DeviceParams::Instance().getMaxSMem()) || (numThreads > (unsigned)maxsize)) {
+      while ((numThreads*sizeof(T2) > DeviceParams::Instance().getMaxSMem()) || (numThreads > (unsigned)maxsizep2)) {
 	numThreads >>= 1;
       }
       unsigned numBlocks=(int)ceil(float(maxsize)/numThreads);
@@ -353,12 +376,12 @@ namespace QDP {
 	}
       } else {
 	if (first) {
-	      qdp_jit_summulti_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(maxsize, numThreads, numBlocks,
-										     shared_mem_usage,
-										     s1.getId(), out_id,
-										     numsubsets,
-										     sizes,
-										     table_ids);
+	  qdp_jit_summulti_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(maxsize, numThreads, numBlocks,
+										 shared_mem_usage,
+										 s1.getId(), out_id,
+										 numsubsets,
+										 sizes,
+										 table_ids);
 	}
 	else {
 	  qdp_jit_summulti<T2>(maxsize, numThreads, numBlocks,
