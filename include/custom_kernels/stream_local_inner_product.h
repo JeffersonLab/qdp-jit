@@ -66,6 +66,7 @@ namespace QDP
     llvm::BasicBlock * block_subset_loop_start = llvm_new_basic_block();
     llvm::BasicBlock * block_subset_loop_body  = llvm_new_basic_block();
     llvm::BasicBlock * block_subset_loop_body_cont1  = llvm_new_basic_block();
+    llvm::BasicBlock * block_subset_loop_body_cont2  = llvm_new_basic_block();
     llvm::BasicBlock * block_subset_loop_exit  = llvm_new_basic_block();
 
     llvm::BasicBlock * entry_block = llvm_get_insert_block();
@@ -104,7 +105,7 @@ namespace QDP
 
       llvm::BasicBlock * block_red_loop_end = llvm_new_basic_block();
       
-      llvm_cond_branch( llvm_ge( r_idx , r_size ) , block_red_loop_end , block_subset_loop_body_cont1 ); //block_subset_loop_inc , block_not_store_global
+      llvm_cond_branch( llvm_ge( r_idx , r_size ) , block_subset_loop_body_cont2 , block_subset_loop_body_cont1 ); //block_subset_loop_inc , block_not_store_global
       llvm_set_insert_point(block_subset_loop_body_cont1 );
       
       llvm::Value* r_sitetable = llvm_array_type_indirection( p_sitetables , r_subset );
@@ -123,6 +124,8 @@ namespace QDP
 
       sdata_jit = op_jit( reg_idata_elem , reg_vdata_elem ); // This should do the precision conversion (SP->DP)
 
+      llvm_branch( block_subset_loop_body_cont2 );
+      llvm_set_insert_point(block_subset_loop_body_cont2 );
       
       llvm_bar_sync();
 
@@ -141,7 +144,7 @@ namespace QDP
       llvm_set_insert_point(block_red_loop_start);
     
       llvm::PHINode * r_red_pow = llvm_phi( llvm_type<int>::value , 2 );    
-      r_red_pow->addIncoming( r_pow_shr1 , block_subset_loop_body_cont1 );  //block_power_loop_exit
+      r_red_pow->addIncoming( r_pow_shr1 , block_subset_loop_body_cont2 );  //block_power_loop_exit
       llvm_cond_branch( llvm_le( r_red_pow , llvm_create_value(0) ) , block_red_loop_end , block_red_loop_start_1 );
 
       llvm_set_insert_point(block_red_loop_start_1);
