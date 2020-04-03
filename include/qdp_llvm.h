@@ -10,7 +10,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/IR/LLVMContext.h"
-#include "llvm/Bitcode/BitstreamWriter.h"
+//#include "llvm/Bitcode/BitstreamWriter.h"
 #include "llvm/Bitcode/BitcodeReader.h"
 //#include "llvm/Bitcode/Writer.h"
 //#include "llvm/IR/PassManager.h"  // not ready yet in LLVM 3.8
@@ -43,7 +43,7 @@
 #include "llvm/IR/DataLayout.h"
 #include "llvm/Support/SourceMgr.h"
 
-#ifdef QDP_LLVM8
+#if defined (QDP_LLVM8) || (QDP_LLVM9)
 #else
 #include "llvm/IR/TypeBuilder.h"
 #endif
@@ -78,7 +78,7 @@
 
 
 namespace llvm {
-#ifdef QDP_LLVM8
+#if defined (QDP_LLVM8) || (QDP_LLVM9)
   ModulePass *createNVVMReflectPass(unsigned int);
 #else
   ModulePass *createNVVMReflectPass(void);

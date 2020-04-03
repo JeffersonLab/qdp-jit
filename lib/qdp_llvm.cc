@@ -15,7 +15,7 @@
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/PassRegistry.h"
 
-#ifdef QDP_LLVM8
+#if defined (QDP_LLVM8) || (QDP_LLVM9)
 #include "llvm/CodeGen/CommandFlags.inc"
 #else
 #include "llvm/CodeGen/CommandFlags.def"
@@ -1089,12 +1089,12 @@ namespace QDP {
     llvm::AttrBuilder ABuilder;
     ABuilder.addAttribute(llvm::Attribute::ReadNone);
 
-    llvm::Constant *Bar = Mod->getOrInsertFunction( "llvm.nvvm.barrier0" , 
-						    IntrinFnTy , 
-						    llvm::AttributeList::get(TheContext, 
-									    llvm::AttributeList::FunctionIndex, 
-									    ABuilder)
-						    );
+    auto Bar = Mod->getOrInsertFunction( "llvm.nvvm.barrier0" , 
+					 IntrinFnTy , 
+					 llvm::AttributeList::get(TheContext, 
+								  llvm::AttributeList::FunctionIndex, 
+								  ABuilder)
+					 );
 
     builder->CreateCall(Bar);
   }
@@ -1110,12 +1110,12 @@ namespace QDP {
     llvm::AttrBuilder ABuilder;
     ABuilder.addAttribute(llvm::Attribute::ReadNone);
 
-    llvm::Constant *ReadTidX = Mod->getOrInsertFunction( name , 
-							 IntrinFnTy , 
-							 llvm::AttributeList::get(TheContext, 
-										 llvm::AttributeList::FunctionIndex, 
-										 ABuilder)
-							 );
+    auto ReadTidX = Mod->getOrInsertFunction( name , 
+					      IntrinFnTy , 
+					      llvm::AttributeList::get(TheContext, 
+								       llvm::AttributeList::FunctionIndex, 
+								       ABuilder)
+					      );
 
     return builder->CreateCall(ReadTidX);
   }
@@ -1224,7 +1224,9 @@ namespace QDP {
     } else {
       Builder.Inliner = llvm::createAlwaysInlinerLegacyPass();
     }
+#ifndef QDP_LLVM9
     Builder.DisableUnitAtATime = !UnitAtATime;
+#endif
     Builder.DisableUnrollLoops = DisableLoopUnrolling;
 
     // This is final, unless there is a #pragma vectorize enable
@@ -1411,7 +1413,7 @@ namespace QDP {
 #endif
 
 
-#ifdef QDP_LLVM8
+#if defined (QDP_LLVM8) || (QDP_LLVM9)
     std::string str;
     llvm::raw_string_ostream rss(str);
     llvm::buffer_ostream bos(rss);
@@ -1515,7 +1517,7 @@ namespace QDP {
 
     llvm::legacy::PassManager OurPM;
     OurPM.add( llvm::createInternalizePass( all_but_main ) );
-#ifdef QDP_LLVM8
+#if defined (QDP_LLVM8) || (QDP_LLVM9)
     unsigned int sm_gpu = DeviceParams::Instance().getMajor() * 10 + DeviceParams::Instance().getMinor();
     OurPM.add( llvm::createNVVMReflectPass( sm_gpu ));
 #else

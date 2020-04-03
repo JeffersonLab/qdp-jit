@@ -157,6 +157,22 @@ if test "X${LLVM8_ENABLED}X" = "XyesX"; then
 fi
 
 
+AC_ARG_ENABLE(llvm9,
+  AC_HELP_STRING(
+    [--enable-llvm9],
+    [Enable changes to compile with LLVM 9.0 release]
+  ),
+  [LLVM9_ENABLED=$enableval],
+  [LLVM9_ENABLED="no"]
+)
+
+if test "X${LLVM9_ENABLED}X" = "XyesX"; then
+  AC_MSG_NOTICE([Enabling changes for LLVM 9.0 release ])
+  AC_DEFINE(QDP_LLVM9, [1], [ Compile for LLVM 9.0 release  ])
+fi
+
+
+
 dnl comm-split to find device id
 AC_ARG_ENABLE(comm-split-deviceinit,
   AC_HELP_STRING([--enable-comm-split-deviceinit],
