@@ -15,12 +15,12 @@ MEMORY_HDRS = qdp_allocator.h \
 	      qdp_default_allocator.h \
 	      qdp_qcdoc_allocator.h
 
-CUDA_HDRS = qdp_cuda.h \
+HIP_HDRS = qdp_hip.h \
             qdp_cache.h \
 	    qdp_quda.h \
 	    qdp_mapresource.h \
             qdp_pool_allocator.h \
-	    qdp_cuda_allocator.h \
+	    qdp_hip_allocator.h \
 	    qdp_deviceparams.h \
 	    qdp_llvm.h qdp_viewleaf.h \
 	    qdp_word.h qdp_wordjit.h qdp_wordreg.h \
@@ -39,7 +39,7 @@ CUDA_HDRS = qdp_cuda.h \
 
 
 if QDP_CUSTOM_KERNELS
-CUDA_HDRS += custom_kernels/custom_kernels.h \
+HIP_HDRS += custom_kernels/custom_kernels.h \
              custom_kernels/stream_local_inner_product.h
 endif
 
@@ -122,7 +122,7 @@ nobase_include_HEADERS = \
                 $(PETE_HDRS) \
                 $(JIT_HDRS) \
 		$(MEMORY_HDRS) \
-	        $(CUDA_HDRS)
+	        $(HIP_HDRS)
 
 nodist_include_HEADERS = qdp_config_internal.h
 

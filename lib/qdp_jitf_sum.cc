@@ -28,7 +28,11 @@ namespace QDP {
     std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
     kernel_geom_t now = getGeom( hi-lo , threads );
 
+    QDP_error_exit("fixme function_sum_convert_ind_exec");
+#if 0
+
     CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threads,1,1,    shared_mem_usage, 0, &args[0] , 0);
+#endif
   }
 
 
@@ -58,7 +62,11 @@ namespace QDP {
     std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
     kernel_geom_t now = getGeom( size , threads );
 
+    QDP_error_exit("fixme function_summulti_convert_ind_exec");
+#if 0
+
     CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threads,1,1,    shared_mem_usage, 0, &args[0] , 0);
+#endif
 
     QDP_get_global_cache().signoff(sizes_id);
   }
@@ -88,8 +96,10 @@ namespace QDP {
     std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
     kernel_geom_t now = getGeom( size , threads );
 
+    QDP_error_exit("fixme function_summulti_exec");
+#if 0
     CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threads,1,1,    shared_mem_usage, 0, &args[0] , 0);
-
+#endif
     QDP_get_global_cache().signoff(sizes_id);
   }
 
@@ -118,7 +128,11 @@ namespace QDP {
     std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
     kernel_geom_t now = getGeom( hi-lo , threads );
 
+    QDP_error_exit("fixme function_sum_convert_exec");
+#if 0
+
     CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threads,1,1,    shared_mem_usage, 0, &args[0] , 0);
+#endif
   }
 
 
@@ -146,7 +160,11 @@ namespace QDP {
     std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
     kernel_geom_t now = getGeom( hi-lo , threads );
 
+    QDP_error_exit("fixme function_sum_exec");
+#if 0
+
     CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threads,1,1,    shared_mem_usage, 0, &args[0] , 0);
+#endif
   }
 
 
@@ -173,7 +191,11 @@ namespace QDP {
     std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
     kernel_geom_t now = getGeom( hi-lo , threads );
 
+    QDP_error_exit("fixme function_global_max_exec");
+#if 0
+
     CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threads,1,1,    shared_mem_usage, 0, &args[0] , 0);
+#endif
   }
 
 
@@ -202,7 +224,11 @@ namespace QDP {
     std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
     kernel_geom_t now = getGeom( hi-lo , threads );
 
+    QDP_error_exit("fixme function_isfinite_convert_exec");
+#if 0
+
     CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threads,1,1,    shared_mem_usage, 0, &args[0] , 0);
+#endif
   }
 
 
@@ -229,8 +255,10 @@ namespace QDP {
  
     std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
     kernel_geom_t now = getGeom( hi-lo , threads );
-
+    QDP_error_exit("fixme function_bool_reduction_exec");
+#if 0
     CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threads,1,1,    shared_mem_usage, 0, &args[0] , 0);
+#endif
   }
 
   

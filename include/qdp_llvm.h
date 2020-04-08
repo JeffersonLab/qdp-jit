@@ -88,6 +88,8 @@ namespace llvm {
 
 namespace QDP {
 
+  typedef void* CUfunction;
+
 
   namespace llvm_debug {
     extern bool debug_func_build     ;

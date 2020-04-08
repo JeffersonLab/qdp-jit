@@ -12,19 +12,19 @@
 namespace QDP
 {
 
-  typedef QDPPoolAllocator<QDPCUDAAllocator> CUDAPOOL;
+  typedef QDPPoolAllocator<QDPHIPAllocator> HIPPOOL;
 
   namespace
   {
-    static CUDAPOOL* __cache_pool_allocator;
+    static HIPPOOL* __cache_pool_allocator;
 
     bool __cacheverbose = false;
     bool __launchverbose = false;
 
-    CUDAPOOL& get__cache_pool_allocator()
+    HIPPOOL& get__cache_pool_allocator()
     {
       if (!__cache_pool_allocator) {
-	__cache_pool_allocator = new CUDAPOOL();
+	__cache_pool_allocator = new HIPPOOL();
       }
       return *__cache_pool_allocator;
     }
@@ -491,7 +491,7 @@ namespace QDP
     assert( e.size % 4 == 0 );
     
     // Arrays always have legal dev/hst memory pointers and are never spilled
-    CudaMemset( e.devPtr , 0 , e.size/sizeof(unsigned) );
+    HipMemset( e.devPtr , 0 , e.size/sizeof(unsigned) );
     
     e.status_vec.clear();
     e.status_vec.resize( e.size / e.elem_size , Status::device );
@@ -662,7 +662,7 @@ namespace QDP
 	else
 	  QDPIO::cerr << "copy host <-- GPU " << e.size << " bytes\n";
       }
-    CudaMemcpyD2H( e.hstPtr , e.devPtr , e.size );
+    HipMemcpyD2H( e.hstPtr , e.devPtr , e.size );
     for( int i = 0 ; i < e.status_vec.size() ; ++i )
       e.status_vec[i] = Status::host;
   }
@@ -737,11 +737,11 @@ namespace QDP
 
 		  char * tmp = new char[e.size];
 		  e.fptr(true,tmp,e.hstPtr);
-		  CudaMemcpyH2D( e.devPtr , tmp , e.size );
+		  HipMemcpyH2D( e.devPtr , tmp , e.size );
 		  delete[] tmp;
 
 		} else {
-		  CudaMemcpyH2D( e.devPtr , e.hstPtr , e.size );
+		  HipMemcpyH2D( e.devPtr , e.hstPtr , e.size );
 		}
 
 	      }
@@ -781,7 +781,7 @@ namespace QDP
 	    QDPIO::cerr << "copy host --> GPU " << e.elem_size << " bytes\n";
 	  }
 
-	CudaMemcpyH2D( (void*)((size_t)e.devPtr + e.elem_size * elem) ,
+	HipMemcpyH2D( (void*)((size_t)e.devPtr + e.elem_size * elem) ,
 		       (void*)((size_t)e.hstPtr + e.elem_size * elem) , e.elem_size );
 	//std::cout << "copy to device\n";
       }
@@ -825,11 +825,11 @@ namespace QDP
 	    
 	    if (e.fptr) {
 	      char * tmp = new char[e.size];
-	      CudaMemcpyD2H( tmp , e.devPtr , e.size );
+	      HipMemcpyD2H( tmp , e.devPtr , e.size );
 	      e.fptr(false,e.hstPtr,tmp);
 	      delete[] tmp;
 	    } else {
-	      CudaMemcpyD2H( e.hstPtr , e.devPtr , e.size );
+	      HipMemcpyD2H( e.hstPtr , e.devPtr , e.size );
 	    }
 	  }
 
@@ -858,7 +858,7 @@ namespace QDP
 	    QDPIO::cerr << "copy host <-- GPU " << e.elem_size << " bytes\n";
 	  }
 
-	CudaMemcpyD2H( (void*)((size_t)e.hstPtr + e.elem_size * elem_num) ,
+	HipMemcpyD2H( (void*)((size_t)e.hstPtr + e.elem_size * elem_num) ,
 		       (void*)((size_t)e.devPtr + e.elem_size * elem_num) , e.elem_size );
       }
 
@@ -1017,7 +1017,7 @@ namespace QDP
 	      {
 		void* hst_ptr = (void*)QDP::Allocator::theQDPAllocator::Instance().allocate( e.size , QDP::Allocator::DEFAULT );
 
-		CudaMemcpyD2H( hst_ptr , e.devPtr , e.size );
+		HipMemcpyD2H( hst_ptr , e.devPtr , e.size );
 
 		if (e.flags & QDPCache::Flags::Array)
 		  {
@@ -1172,7 +1172,7 @@ namespace QDP
 		    QDPIO::cerr << "copy host --> GPU " << e.multi.size() * sizeof(void*) << " bytes (kernel args, multi)\n";
 		  }
 		
-		CudaMemcpyH2D( e.devPtr , dev_ptr.slice() , e.multi.size() * sizeof(void*) );
+		HipMemcpyH2D( e.devPtr , dev_ptr.slice() , e.multi.size() * sizeof(void*) );
 		//QDPIO::cout << "multi-ids: copied elements = " << e.multi.size() << "\n";
 	      }
 	  }

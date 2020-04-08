@@ -80,7 +80,7 @@ namespace QDP
       if (!bufferAllocated)
 	allocateInternalBuffer();
       //QDP_info_primary("Pool allocator: Registering memory pool with NVIDIA driver (%lu bytes)",(unsigned long)bytes_allocated);
-      CudaHostRegister(unaligned,bytes_allocated);
+      HipHostRegister(unaligned,bytes_allocated);
     }
 
 
@@ -90,7 +90,7 @@ namespace QDP
 	QDP_error_exit("pool unregisterMemory: not allocated");
       }
       QDP_info_primary("Pool allocator: Unregistering memory pool with NVIDIA driver");
-      CudaHostUnregister(unaligned);
+      HipHostUnregister(unaligned);
     }
 
 
@@ -223,7 +223,7 @@ namespace QDP
       {
 	assert(sizeof(unsigned) == 4);
 	std::cout << "Initializing device memory with value = " << setMemoryVal << "\n";
-	CudaMemset( poolPtr , setMemoryVal , poolSize/sizeof(unsigned) );
+	HipMemset( poolPtr , setMemoryVal , poolSize/sizeof(unsigned) );
       }
     
     bufferAllocated=true;
@@ -233,7 +233,7 @@ namespace QDP
 
   template<class Allocator>
   void QDPPoolAllocator<Allocator>::printPoolInfo() {
-    QDP_info("CUDA memory allocated: start pointer = %p, size = %lu" , (void*)unaligned , (unsigned long)bytes_allocated );
+    QDP_info("HIP memory allocated: start pointer = %p, size = %lu" , (void*)unaligned , (unsigned long)bytes_allocated );
   }
 
 

@@ -15,27 +15,16 @@ dnl defines...
 AC_CONFIG_HEADERS([include/qdp_config_internal.h])
 
 
-AC_ARG_WITH(cuda,
-  AC_HELP_STRING([--with-cuda=CUDADIR], [ Specify CUDA installation directory (default: /usr/local/cuda)]),
-  [ cuda_home="${withval}" ],
-  [ cuda_home="/usr/local/cuda" ]
+AC_ARG_WITH(rocm,
+  AC_HELP_STRING([--with-rocm=ROCMDIR], [ Specify ROCM installation directory (default: /opt/rocm)]),
+  [ rocm_home="${withval}" ],
+  [ rocm_home="/opt/rocm" ]
 )
 
-AC_ARG_ENABLE(cuda-managed-memory,
-   AC_HELP_STRING([--enable-cuda-managed-memory], [ Enable memory to be allocated with Cuda Managed Memory ] ),
-   [ cuda_managed_memory="${enableval}" ],
-   [ cuda_managed_memory="no" ]
-)
 
-AC_MSG_NOTICE([Configuring with CUDA installed in = ${cuda_home}])
-AC_DEFINE_UNQUOTED(CUDA_DIR,"${cuda_home}",[CUDA install path])
-AC_SUBST(SUBST_CUDA_DIR,"${cuda_home}")
-
-if test "X${cuda_managed_memory}X" == "XyesX";
-then
-  AC_MSG_NOTICE([Will Use CUDA Managed Memory for Allocations])
-  AC_DEFINE(QDP_USE_CUDA_MANAGED_MEMORY, [1], [ CUDA use managed memory ])
-fi
+AC_MSG_NOTICE([Configuring with ROCM installed in = ${rocm_home}])
+AC_DEFINE_UNQUOTED(ROCM_DIR,"${rocm_home}",[ROCM install path])
+AC_SUBST(SUBST_ROCM_DIR,"${rocm_home}")
 
 
 dnl
@@ -202,18 +191,13 @@ then
  AC_DEFINE([QDP_USE_COMM_SPLIT_INIT], [1],[Comm split for local ranks])
 fi
 
-dnl if test "X${gpu_enabled}X" == "XyesX"; 
-dnl then
-     ac_gcc="$CXX"     				      
-     AC_DEFINE_UNQUOTED([CUDA_GCC],"${ac_gcc}",[CUDA C/C++ Compiler])
-     AC_DEFINE_UNQUOTED(QDP_IS_QDPJIT, ${gpu_enabled}, [Enable GPU/JIT])
-     AC_DEFINE_UNQUOTED(QDPJIT_IS_QDPJITNVVM, ${gpu_enabled}, [Enable GPU/JIT])
-     AC_SUBST(CUDA_LIBS, [-lcuda])
-     AC_SUBST(CUDA_CXXFLAGS, [-I${cuda_home}/include])
-     AC_SUBST(CUDA_LDFLAGS, [-L${cuda_home}/lib64])
-dnl else
-dnl     AC_MSG_NOTICE([Not using GPUs ])
-dnl fi
+
+AC_DEFINE_UNQUOTED(QDP_IS_QDPJIT, ${gpu_enabled}, [Enable GPU/JIT])
+AC_DEFINE_UNQUOTED(QDPJIT_IS_QDPJITNVVM, ${gpu_enabled}, [Enable GPU/JIT])
+
+AC_SUBST(ROCM_LIBS, [-lhiptrc])
+AC_SUBST(ROCM_CXXFLAGS, [-I${rocm_home}/hip/include])
+AC_SUBST(ROCM_LDFLAGS, [-L${rocm_home}/hip/lib])
 
 
 

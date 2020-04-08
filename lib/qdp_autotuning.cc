@@ -26,6 +26,8 @@ namespace QDP {
 
   void jit_launch(CUfunction function,int th_count,std::vector<QDPCache::ArgKey>& ids)
   {
+    QDP_error_exit("fixme jit_launch");
+#if 0
      std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
 
      
@@ -131,6 +133,7 @@ namespace QDP {
 
       //QDP_info("time = %f,  cfg = %d,  best = %d,  best_time = %f ", time,tune.cfg,tune.best,tune.best_time );
     }
+#endif
   }
 
 

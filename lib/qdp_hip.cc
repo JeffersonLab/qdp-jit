@@ -8,7 +8,7 @@
 #include <iostream>
 #include <string>
 
-#include "cudaProfiler.h"
+//#include "cudaProfiler.h"
 
 #include <hip/hiprtc.h>
 #include <hip/hip_runtime.h>
@@ -33,8 +33,8 @@ namespace QDP {
   // CUdevice cuDevice;
   // CUcontext ;
 
-  hipDevice_t hipDevice;
-  hipCtx_t hipContext;
+  //hipDevice_t hipDevice;
+  //hipCtx_t hipContext;
 
 
   std::map<hipError_t,std::string> mapHipErrorString= {
@@ -68,9 +68,9 @@ namespace QDP {
   void HipLaunchKernel( CUfunction f, 
 			 unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
 			 unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
-			 unsigned int  sharedMemBytes, CUstream hStream, void** kernelParams, void** extra )
+			 unsigned int  sharedMemBytes, void** kernelParams, void** extra )
   {
-    QDP_abort("HipLaunchKernel, fixme\n");
+    QDP_error_exit("HipLaunchKernel, fixme\n");
 #if 0
     //if ( blockDimX * blockDimY * blockDimZ > 0  &&  gridDimX * gridDimY * gridDimZ > 0 ) {
     
@@ -108,7 +108,7 @@ namespace QDP {
 
   // std::vector<unsigned> get_backed_kernel_geom() { return __kernel_geom; }
   // CUfunction            get_backed_kernel_ptr() { 
-  //   QDP_abort("get_backed_kernel_ptr, fixme\n");
+  //   QDP_error_exit("get_backed_kernel_ptr, fixme\n");
   //   return __kernel_ptr; 
   // }
 
@@ -117,9 +117,9 @@ namespace QDP {
   hipError_t HipLaunchKernelNoSync( 
 				   unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
 				   unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
-				   unsigned int  sharedMemBytes, CUstream hStream, void** kernelParams, void** extra  )
+				   unsigned int  sharedMemBytes, void** kernelParams, void** extra  )
   {
-    QDP_abort("HipLaunchKernelNoSync, fixme\n");
+    QDP_error_exit("HipLaunchKernelNoSync, fixme\n");
 #if 0
      // QDP_info("HipLaunchKernelNoSync: grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
      // 	      gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes );
@@ -257,7 +257,10 @@ namespace QDP {
   {
     int data;
     hipError_t ret;
-    ret = hipDeviceGetAttribute( &data, what , cuDevice );
+
+    QDPIO::cout << "HipGetConfig using device 0 (hard-coded!!)\n";
+
+    ret = hipDeviceGetAttribute( &data, what , 0 );
     HipRes("cuDeviceGetAttribute",ret);
     return data;
   }
@@ -287,17 +290,24 @@ namespace QDP {
   {
     hipError_t ret;
 
-    QDP_info_primary("trying to get device %d",dev);
-    ret = hipCtxGetDevice(&hipDevice, dev);
-    HipRes("hipCtxGetDevice",ret);
+    QDPIO::cout << "Skipping trying to create a context as it is marked deprecated\n";
+    // QDP_info_primary("trying to create a context on device %d",dev);
+    // ret = hipCtxCreate( &hipContext , 0 , dev);
+    // HipRes("hipCtxCreate",ret);
+
+    QDPIO::cout << "Skipping trying to get the device as it is marked deprecated\n";
+
+    // QDP_info_primary("trying to get device with the current context");
+    // ret = hipCtxGetDevice(&hipDevice);
+    // HipRes("hipCtxGetDevice",ret);
 
     QDPIO::cout << "Skipping trying to get a context\n";
     // QDP_info_primary("trying to grab pre-existing context",dev);
     // ret = cuCtxGetCurrent(&cuContext);
     
-    QDPIO::cout << "trying to create a context. Using zero flags, was CU_CTX_MAP_HOST\n";
-    ret = hipCtxCreate( &hipContext, 0 , cuDevice);
-    HipRes("hipCtxCreate",ret);
+    // QDPIO::cout << "trying to create a context. Using zero flags, was CU_CTX_MAP_HOST\n";
+    // ret = hipCtxCreate( &hipContext, 0 , hipDevice);
+    // HipRes("hipCtxCreate",ret);
   }
 
 
@@ -366,7 +376,7 @@ namespace QDP {
 
   void HipGetDeviceCount(int * count)
   {
-    hitGetDeviceCount( count );
+    hipGetDeviceCount( count );
   }
 
 
@@ -392,8 +402,8 @@ namespace QDP {
   bool HipHostAlloc(void **mem , const size_t size, const int flags)
   {
     hipError_t ret;
-    ret = hipHostAlloc(mem,size,flags);
-    HipRes("hipHostAlloc",ret);
+    ret = hipHostMalloc(mem,size,flags);
+    HipRes("hipHostMalloc",ret);
     return ret == hipSuccess;
   }
 
@@ -412,14 +422,14 @@ namespace QDP {
   void HipMemcpyH2D( void * dest , const void * src , size_t size )
   {
     hipError_t ret;
-    ret = cuMemcpyHtoD((hipDeviceptr_t)const_cast<void*>(dest), src, size);
-    HipRes("cuMemcpyH2D",ret);
+    ret = hipMemcpyHtoD((hipDeviceptr_t)const_cast<void*>(dest), const_cast<void*>(src) , size);
+    HipRes("hipMemcpyH2D",ret);
   }
 
   void HipMemcpyD2H( void * dest , const void * src , size_t size )
   {
     hipError_t ret;
-    ret = cuMemcpyDtoH( dest, (hipDeviceptr_t)const_cast<void*>(src), size);
+    ret = hipMemcpyDtoH( dest, (hipDeviceptr_t)const_cast<void*>(src), size);
     HipRes("hipMemcpyD2H",ret);
   }
 

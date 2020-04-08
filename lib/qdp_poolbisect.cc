@@ -93,7 +93,7 @@ namespace QDP {
 		  // 	    << " bytes, to = " << (size_t)e.devPtr
 		  // 	    << "\n";
 
-		  CudaMemcpyH2D( e.devPtr , e.hstPtr , e.size );
+		  HipMemcpyH2D( e.devPtr , e.hstPtr , e.size );
 
 		  if (print_param)
 		    {
@@ -145,6 +145,9 @@ namespace QDP {
 
   void qdp_pool_bisect()
   {
+    QDP_error_exit("fixme qdp_pool_bisect");
+#if 0
+
     qdp_cache_set_pool_bisect(false);
 
     if (! CudaCtxSynchronize() )
@@ -253,7 +256,7 @@ namespace QDP {
       {
 	QDPIO::cout << "Memory pool bisection unsuccessful\n";
       }
-    
+#endif    
   }
 
   

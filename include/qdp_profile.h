@@ -69,6 +69,7 @@ struct QDPProfile_t
   QDPProfile_t* next;
   bool          first;
 
+#if 0
   // Start time
   void stime(QDPTime_t t) {
     if (first)
@@ -98,6 +99,7 @@ struct QDPProfile_t
       time += t;
     }
   }
+#endif
 
   void print();
 

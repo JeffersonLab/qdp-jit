@@ -7,22 +7,22 @@
 
 
 
-#ifndef QDP_CUDA_ALLOCATOR
-#define QDP_CUDA_ALLOCATOR
+#ifndef QDP_HIP_ALLOCATOR
+#define QDP_HIP_ALLOCATOR
 
 namespace QDP
 {
 
-  class QDPCUDAAllocator {
+  class QDPHIPAllocator {
   public:
     enum { ALIGNMENT_SIZE = 4096 };
 
     static bool allocate( void** ptr, const size_t n_bytes ) {
-      return CudaMalloc( ptr , n_bytes );
+      return HipMalloc( ptr , n_bytes );
     }
 
     static void free(const void *mem) {
-      CudaFree( mem );
+      HipFree( mem );
     }
   };
 

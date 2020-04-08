@@ -17,7 +17,7 @@ namespace QDP {
   /* std::vector<unsigned> get_backed_kernel_geom(); */
   /* CUfunction            get_backed_kernel_ptr(); */
 
-  void HipCheckResult(CUresult ret);
+  void HipCheckResult(hipError_t ret);
 
   void HipInit();
 
@@ -26,12 +26,12 @@ namespace QDP {
   void HipLaunchKernel( CUfunction f, 
 			 unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
 			 unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
-			 unsigned int  sharedMemBytes, CUstream hStream, void** kernelParams, void** extra );
+			 unsigned int  sharedMemBytes, void** kernelParams, void** extra );
 
-  CUresult HipLaunchKernelNoSync( CUfunction f, 
+  hipError_t HipLaunchKernelNoSync( CUfunction f, 
 				   unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
 				   unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
-				   unsigned int  sharedMemBytes, CUstream hStream, void** kernelParams, void** extra );
+				   unsigned int  sharedMemBytes, void** kernelParams, void** extra );
 
   int HipGetMaxLocalSize();
   int HipGetMaxLocalUsage();

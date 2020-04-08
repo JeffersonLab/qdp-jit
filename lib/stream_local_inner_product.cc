@@ -15,6 +15,9 @@ namespace QDP
 							  const multi1d<int>& sizes,
 							  const multi1d<QDPCache::ArgKey>& table_ids)
   {
+    QDP_error_exit("fixme function_multi_localInnerProduct_sum_convert_exec");
+#if 0
+
     assert( (threads & (threads - 1)) == 0 );
 
     int sizes_id = QDP_get_global_cache().add( sizes.size()*sizeof(int) , QDPCache::Flags::OwnHostMemory , QDPCache::Status::host , sizes.slice() , NULL , NULL );
@@ -37,5 +40,6 @@ namespace QDP
     CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threads,1,1,    shared_mem_usage, 0, &args[0] , 0);
 
     QDP_get_global_cache().signoff(sizes_id);
+#endif
   }
 }

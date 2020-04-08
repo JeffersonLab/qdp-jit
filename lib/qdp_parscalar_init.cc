@@ -174,7 +174,7 @@ namespace COUNT {
 
   void QDP_initialize(int *argc, char ***argv) 
   {
-    QDP_initialize_CUDA(argc, argv);
+    QDP_initialize_HIP(argc, argv);
 #ifndef QDP_USE_COMM_SPLIT_INIT
     QDP_setGPU();
 #endif
@@ -187,7 +187,7 @@ namespace COUNT {
   }
 	
   //! Turn on the machine
-  void QDP_initialize_CUDA(int *argc, char ***argv)
+  void QDP_initialize_HIP(int *argc, char ***argv)
   {
     if (sizeof(bool) != 1)
       {
@@ -238,7 +238,7 @@ namespace COUNT {
     //QDP_info_primary("Finished multiplying gamma matrices");
 #endif
 
-    CudaInit();
+    HipInit();
 
     // This defaults to mvapich2
 #if 0
@@ -414,7 +414,7 @@ namespace COUNT {
 	    }
 	    size_t val = (size_t)((double)(f) * mul);
 
-	    //CUDADevicePoolAllocator::Instance().setPoolSize(val);
+	    //HIPDevicePoolAllocator::Instance().setPoolSize(val);
 	    //QDP_get_global_cache().get_allocator().setPoolSize(val);
 	    QDP_get_global_cache().setPoolSize(val);
 	    
@@ -497,7 +497,7 @@ namespace COUNT {
 		
 
     if (!setPoolSize) {
-      // It'll be set later in CudaGetDeviceProps
+      // It'll be set later in HipGetDeviceProps
       //QDP_error_exit("Run-time argument -poolsize <size> missing. Please consult README.");
     }
 
@@ -617,8 +617,8 @@ namespace COUNT {
 
 		if (qdp_cache_get_pool_bisect())
 		  {
-		    QDPIO::cout << "Max. local memory size (bytes)         " << CudaGetMaxLocalSize() << "\n";
-		    QDPIO::cout << "Max. local memory usage (MB)           " << (float)CudaGetMaxLocalUsage()/1024./1024. << "\n";
+		    QDPIO::cout << "Max. local memory size (bytes)         " << HipGetMaxLocalSize() << "\n";
+		    QDPIO::cout << "Max. local memory usage (MB)           " << (float)HipGetMaxLocalUsage()/1024./1024. << "\n";
 
 		    QDPIO::cout << "Suspend global cache\n";
 		    QDP_get_global_cache().suspend();

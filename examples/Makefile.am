@@ -9,14 +9,14 @@ AM_CXXFLAGS = -I@top_srcdir@/include -I@top_builddir@/include \
               -I@top_srcdir@/other_libs/qio/other_libs/c-lime/include \
               -I@top_builddir@/other_libs/qio/other_libs/c-lime/include \
               -I@top_srcdir@/other_libs/xpath_reader/include \
-              @LIBXML2_CXXFLAGS@ @QMP_CFLAGS@ @CUDA_CXXFLAGS@ @LLVM_CXXFLAGS@
+              @LIBXML2_CXXFLAGS@ @QMP_CFLAGS@ @ROCM_CXXFLAGS@ @LLVM_CXXFLAGS@
 
 if BUILD_FILEDB
 AM_CXXFLAGS += -I@top_srcdir@/other_libs/filedb/src \
                -I@top_srcdir@/other_libs/filedb/filehash
 endif
 
-AM_LDFLAGS = -L@top_builddir@/lib @CUDA_LDFLAGS@ @CUDA_LDFLAGS@ @LLVM_LDFLAGS@
+AM_LDFLAGS = -L@top_builddir@/lib @ROCM_LDFLAGS@ @ROCM_LDFLAGS@ @LLVM_LDFLAGS@
 
 if QDP_USE_LIBXML2
 AM_LDFLAGS += -L@top_builddir@/other_libs/qio/lib \
@@ -35,7 +35,7 @@ LDADD = -lqdp
 if QDP_USE_LIBXML2
 LDADD += -lXPathReader -lxmlWriter -lqio -llime
 endif
-LDADD += @LIBXML2_LIBS@ @QMP_LIBS@ @LIBS@ @CUDA_LIBS@ @LLVM_LIBS@
+LDADD += @LIBXML2_LIBS@ @QMP_LIBS@ @LIBS@ @ROCM_LIBS@ @LLVM_LIBS@
 
 if BUILD_FILEDB
 LDADD += -lfiledb -lfilehash

@@ -3,6 +3,8 @@
 
 namespace QDP
 {
+  typedef void* CUfunction;
+
 
   enum class JitDeviceLayout { Coalesced , Scalar };
 

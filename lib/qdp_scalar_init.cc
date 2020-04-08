@@ -84,7 +84,7 @@ namespace COUNT {
   void QDP_startGPU()
   {
     QDP_info_primary("Getting GPU device properties");
-    CudaGetDeviceProps();
+    HipGetDeviceProps();
 
     QDP_info_primary("Trigger GPU evaluation");
     QDPuseGPU=true;
@@ -98,9 +98,9 @@ namespace COUNT {
   {
     int deviceCount;
     //int ret = 0;
-    CudaGetDeviceCount(&deviceCount);
+    HipGetDeviceCount(&deviceCount);
     if (deviceCount == 0) {
-      QDP_error_exit("No CUDA devices found");
+      QDP_error_exit("No HIP devices found");
     }
 
     // Try MVapich fist
@@ -135,22 +135,22 @@ namespace COUNT {
 #endif
     }
 
-    std::cout << "Setting CUDA device to " << dev << "\n";
-    CudaSetDevice( dev );
+    std::cout << "Setting HIP device to " << dev << "\n";
+    HipSetDevice( dev );
     return dev;
   }
 
 
   void QDP_initialize(int *argc, char ***argv) 
   {
-    QDP_initialize_CUDA(argc, argv);
+    QDP_initialize_HIP(argc, argv);
     QDP_setGPU();
     QDP_initialize_QMP(argc, argv);
     QDP_startGPU();
   }
 	
   //! Turn on the machine
-  void QDP_initialize_CUDA(int *argc, char ***argv)
+  void QDP_initialize_HIP(int *argc, char ***argv)
   {
     if (sizeof(bool) != 1)
       {
@@ -201,7 +201,7 @@ namespace COUNT {
     //QDP_info_primary("Finished multiplying gamma matrices");
 #endif
 
-    CudaInit();
+    HipInit();
 
     // This defaults to mvapich2
 #if 0
@@ -317,7 +317,7 @@ namespace COUNT {
 	    }
 	    size_t val = (size_t)((double)(f) * mul);
 
-	    //CUDADevicePoolAllocator::Instance().setPoolSize(val);
+	    //HIPDevicePoolAllocator::Instance().setPoolSize(val);
 	    //QDP_get_global_cache().get_allocator().setPoolSize(val);
 	    QDP_get_global_cache().setPoolSize(val);
 	    
@@ -400,7 +400,7 @@ namespace COUNT {
 		
 
     if (!setPoolSize) {
-      // It'll be set later in CudaGetDeviceProps
+      // It'll be set later in HipGetDeviceProps
       //QDP_error_exit("Run-time argument -poolsize <size> missing. Please consult README.");
     }
 

@@ -213,6 +213,9 @@ public:
   }
 
 
+  const multi1d< multi1d<int> >& get_goffsets() const { return goffsets; }
+  multi1d< multi1d<int> >& get_goffsets() { return goffsets; }
+
 
 private:
   //! Hide copy constructor
@@ -702,6 +705,7 @@ private:
 };
 
 
+#if 0
 // Add this code if you need CPU shifts
 template<class A, class CTag>
 struct ForEach<UnaryNode<FnMap, A>, EvalLeaf1, CTag>
@@ -714,11 +718,12 @@ struct ForEach<UnaryNode<FnMap, A>, EvalLeaf1, CTag>
     const Map& map = expr.operation().map;
     FnMap& fnmap = const_cast<FnMap&>(expr.operation());
     
-    EvalLeaf1 ff( map.goffsets[f.val1()] );
+    //EvalLeaf1 ff( map.goffsets[f.val1()] );
+    EvalLeaf1 ff( map.get_goffsets()[f.val1()] );
     return Combine1<TypeA_t, FnMap, CTag>::combine(ForEach<A, EvalLeaf1, CTag>::apply(expr.child(), ff, c),expr.operation(), c);
   }
 };
-
+#endif
 
 
 

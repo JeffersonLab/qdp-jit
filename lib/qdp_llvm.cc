@@ -32,6 +32,8 @@
 
 namespace QDP {
 
+  //typedef void* CUfunction;
+
   llvm::LLVMContext TheContext;
 
 
@@ -45,11 +47,11 @@ namespace QDP {
 
 
 
-  std::map<CUfunction,std::string> mapCUFuncPTX;
+  // std::map<CUfunction,std::string> mapCUFuncPTX;
 
-  std::string getPTXfromCUFunc(CUfunction f) {
-    return mapCUFuncPTX[f];
-  }
+  // std::string getPTXfromCUFunc(CUfunction f) {
+  //   return mapCUFuncPTX[f];
+  // }
 
   bool function_created;
 
@@ -86,7 +88,7 @@ namespace QDP {
 
   namespace llvm_opt {
     int opt_level   = 3;   // opt -O level
-    int nvptx_FTZ   = 0;   // NVPTX Flush subnormals to zero
+    //int nvptx_FTZ   = 0;   // NVPTX Flush subnormals to zero
     bool DisableInline = false;
     bool UnitAtATime = false;
     bool DisableLoopUnrolling = false;
@@ -94,37 +96,37 @@ namespace QDP {
     bool DisableSLPVectorization = false;
   }
 
-  namespace ptx_db {
-    bool db_enabled = false;
-    std::string dbname = "dummy.dat";
-    typedef std::map< std::string , std::string > DBType;
-    DBType db;
-  }
+  // namespace ptx_db {
+  //   bool db_enabled = false;
+  //   std::string dbname = "dummy.dat";
+  //   typedef std::map< std::string , std::string > DBType;
+  //   DBType db;
+  // }
 
 
-  std::string get_ptx_db_fname() {
-    return ptx_db::dbname;
-  }
-  bool get_ptx_db_enabled() {
-    return ptx_db::db_enabled;
-  }
-  int get_ptx_db_size() {
-    return ptx_db::db.size();
-  }
+  // std::string get_ptx_db_fname() {
+  //   return ptx_db::dbname;
+  // }
+  // bool get_ptx_db_enabled() {
+  //   return ptx_db::db_enabled;
+  // }
+  // int get_ptx_db_size() {
+  //   return ptx_db::db.size();
+  // }
 
-  std::string get_ptx_db_id( const std::string& pretty )
-  {
-    std::ostringstream oss;
+  // std::string get_ptx_db_id( const std::string& pretty )
+  // {
+  //   std::ostringstream oss;
     
-    oss << "sm_" <<  DeviceParams::Instance().getMajor() << DeviceParams::Instance().getMinor() << "_";
+  //   oss << "sm_" <<  DeviceParams::Instance().getMajor() << DeviceParams::Instance().getMinor() << "_";
 
-    for ( int i = 0 ; i < Nd ; ++i )
-      oss << Layout::subgridLattSize()[i] << "_";
+  //   for ( int i = 0 ; i < Nd ; ++i )
+  //     oss << Layout::subgridLattSize()[i] << "_";
 
-    oss << pretty;
+  //   oss << pretty;
 
-    return oss.str();
-  }
+  //   return oss.str();
+  // }
 
   
   
@@ -132,6 +134,10 @@ namespace QDP {
   CUfunction get_fptr_from_ptx( const char* fname , const std::string& kernel )
   {
     CUfunction func;
+
+    QDP_error_exit("ni get_fptr_from_ptx");
+
+#if 0
     CUresult ret;
     CUmodule cuModule;
 
@@ -187,35 +193,37 @@ namespace QDP {
     if (ret)
       QDP_error_exit("Error returned from cuModuleGetFunction. Abort.");
 
-    mapCUFuncPTX[func] = kernel;
+    QDPIO::cout << "ni mapCUFuncPTX[func] = kernel;\n";
+    //mapCUFuncPTX[func] = kernel;
+#endif
 
     return func;
   }
 
 
 
-  CUfunction llvm_ptx_db( const char * pretty )
-  {
-    std::string id = get_ptx_db_id( pretty );
+  // CUfunction llvm_ptx_db( const char * pretty )
+  // {
+  //   std::string id = get_ptx_db_id( pretty );
     
-    ptx_db::DBType::iterator it = ptx_db::db.find( id );
+  //   ptx_db::DBType::iterator it = ptx_db::db.find( id );
 
-    if ( it != ptx_db::db.end() )
-      {
-	return get_fptr_from_ptx( "generic.ptx" , it->second );
-      }
-    else
-      {
-	return NULL;
-      }
-  }
+  //   if ( it != ptx_db::db.end() )
+  //     {
+  // 	return get_fptr_from_ptx( "generic.ptx" , it->second );
+  //     }
+  //   else
+  //     {
+  // 	return NULL;
+  //     }
+  // }
 
 
 
-  void llvm_set_ptxdb( const char * c_str ) {
-    ptx_db::db_enabled = true;
-    ptx_db::dbname = std::string( c_str );
-  }
+  // void llvm_set_ptxdb( const char * c_str ) {
+  //   ptx_db::db_enabled = true;
+  //   ptx_db::dbname = std::string( c_str );
+  // }
   
 
   void llvm_set_opt( const char * c_str ) {
@@ -256,14 +264,14 @@ namespace QDP {
       llvm_opt::opt_level = 3;
       return;
     }
-    if (str.find("FTZ0") != string::npos) {
-      llvm_opt::nvptx_FTZ = 0;
-      return;
-    }
-    if (str.find("FTZ1") != string::npos) {
-      llvm_opt::nvptx_FTZ = 1;
-      return;
-    }
+    // if (str.find("FTZ0") != string::npos) {
+    //   llvm_opt::nvptx_FTZ = 0;
+    //   return;
+    // }
+    // if (str.find("FTZ1") != string::npos) {
+    //   llvm_opt::nvptx_FTZ = 1;
+    //   return;
+    // }
     QDP_error_exit("unknown llvm-opt argument: %s",c_str);
   }
 
@@ -481,8 +489,9 @@ namespace QDP {
     llvm_type<bool*>::value   = llvm::Type::getIntNPtrTy(TheContext,1);
 
     QDPIO::cout << "LLVM optimization level : " << llvm_opt::opt_level << "\n";
-    QDPIO::cout << "NVPTX Flush to zero     : " << llvm_opt::nvptx_FTZ << "\n";
+    //QDPIO::cout << "NVPTX Flush to zero     : " << llvm_opt::nvptx_FTZ << "\n";
 
+#if 0
     if (ptx_db::db_enabled) {
       // Load DB
       QDPIO::cout << "Checking for PTX DB " << ptx_db::dbname << "\n";
@@ -522,6 +531,7 @@ namespace QDP {
 	}
 
     } // ptx db
+#endif
 
     //
     // I initialize libdevice in math_setup
@@ -559,7 +569,8 @@ namespace QDP {
     vecArgument.clear();
     function_created = false;
 
-    llvm_setup_math_functions();
+    QDPIO::cout << "no math functions yet !!\n";
+    //llvm_setup_math_functions();
 
     // llvm::outs() << "------------------------- linked module\n";
     // llvm_print_module(Mod,"ir_linked.ll");
@@ -1084,6 +1095,8 @@ namespace QDP {
 
   void llvm_bar_sync()
   {
+    QDP_error_exit("ni llvm_bar_sync");
+
     llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getVoidTy(TheContext), false);
 
     llvm::AttrBuilder ABuilder;
@@ -1105,6 +1118,8 @@ namespace QDP {
 
   llvm::Value * llvm_special( const char * name )
   {
+    QDP_error_exit("ni llvm_bar_sync");
+
     llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getInt32Ty(TheContext), false);
 
     llvm::AttrBuilder ABuilder;
@@ -1122,11 +1137,11 @@ namespace QDP {
 
 
 
-  llvm::Value * llvm_call_special_tidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.tid.x"); }
-  llvm::Value * llvm_call_special_ntidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.ntid.x"); }
-  llvm::Value * llvm_call_special_ctaidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.x"); }
-  llvm::Value * llvm_call_special_nctaidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.nctaid.x"); }
-  llvm::Value * llvm_call_special_ctaidy() { return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.y"); }
+  llvm::Value * llvm_call_special_tidx() {    QDPIO::cout << "fixme llvm.nvvm.read.ptx.sreg.tid.x\n"; return llvm_special("llvm.nvvm.read.ptx.sreg.tid.x"); }
+  llvm::Value * llvm_call_special_ntidx() {   QDPIO::cout << "fixme llvm.nvvm.read.ptx.sreg.ntid.x\n"; return llvm_special("llvm.nvvm.read.ptx.sreg.ntid.x"); }
+  llvm::Value * llvm_call_special_ctaidx() {  QDPIO::cout << "fixme llvm.nvvm.read.ptx.sreg.ctaid.x\n"; return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.x"); }
+  llvm::Value * llvm_call_special_nctaidx() { QDPIO::cout << "fixme llvm.nvvm.read.ptx.sreg.nctaid.x\n"; return llvm_special("llvm.nvvm.read.ptx.sreg.nctaid.x"); }
+  llvm::Value * llvm_call_special_ctaidy() {  QDPIO::cout << "fixme llvm.nvvm.read.ptx.sreg.ctaid.y\n"; return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.y"); }
 
 
   llvm::Value * llvm_thread_idx() { 
@@ -1157,9 +1172,12 @@ namespace QDP {
     // Append metadata to nvvm.annotations
     MD->addOperand(llvm::MDNode::get(Ctx, MDVals));
 #else
+
     llvm::Module *M = F->getParent();
     llvm::LLVMContext &Ctx = M->getContext();
 
+    QDPIO::cout << "fixme nvvm.annotations / metadata\n";
+#if 0
     // Get "nvvm.annotations" metadata node
     llvm::NamedMDNode *MD = M->getOrInsertNamedMetadata("nvvm.annotations");
 
@@ -1171,6 +1189,7 @@ namespace QDP {
 
     // Append metadata to nvvm.annotations
     MD->addOperand(llvm::MDNode::get(Ctx, MDVals));
+#endif
 #endif
   }
 
@@ -1303,6 +1322,8 @@ namespace QDP {
   {
     //QDPIO::cout << "get PTX using NVPTC..\n";
 
+    QDP_error_exit("fixme target triple\n");
+#if 0
     llvm::Triple triple("nvptx64-nvidia-cuda");
       
     std::string Error;
@@ -1351,6 +1372,8 @@ namespace QDP {
 										       getRelocModel(),
 										       None,
 										       llvm::CodeGenOpt::Aggressive, true ));
+
+
 // pre llvm6
 #if 0
     std::unique_ptr<llvm::TargetMachine> target_machine(TheTarget->createTargetMachine(
@@ -1461,6 +1484,9 @@ namespace QDP {
     //QDPIO::cout << "PTX generated2: " << bos.str().str() << " (end)\n";
 
     return bos.str().str();
+#endif
+    std::string tmp;
+    return tmp;
   }
 
 
@@ -1518,6 +1544,8 @@ namespace QDP {
 
   std::string llvm_get_ptx_kernel(const char* fname)
   {
+    QDP_error_exit("fixme llvm_get_ptx_kernel");
+#if 0
     //QDPIO::cout << "get PTX..\n";
     //QDPIO::cout << "enter get_ptx_kernel------\n";
     //Mod->dump();
@@ -1578,7 +1606,8 @@ namespace QDP {
 #endif
 
     //llvm::outs() << str << "\n";
-
+#endif
+    std::string str;
     return str;
   }
 
@@ -1588,6 +1617,8 @@ namespace QDP {
 
   CUfunction llvm_get_cufunction(const char* fname, const char* pretty_cstr)
   {
+    QDP_error_exit("fixme llvm_get_cufunction");
+#if 0
     addKernelMetadata( mainFunc );
 
     std::string pretty( pretty_cstr );
@@ -1636,6 +1667,9 @@ namespace QDP {
     } // ptx db
 
     return func;
+#endif
+    CUfunction tmp;
+    return tmp;
   }
 
 
