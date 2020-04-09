@@ -195,7 +195,7 @@ fi
 AC_DEFINE_UNQUOTED(QDP_IS_QDPJIT, ${gpu_enabled}, [Enable GPU/JIT])
 AC_DEFINE_UNQUOTED(QDPJIT_IS_QDPJITNVVM, ${gpu_enabled}, [Enable GPU/JIT])
 
-AC_SUBST(ROCM_LIBS, [-lhiptrc])
+AC_SUBST(ROCM_LIBS, [-lhiprtc])
 AC_SUBST(ROCM_CXXFLAGS, [-I${rocm_home}/hip/include])
 AC_SUBST(ROCM_LDFLAGS, [-L${rocm_home}/hip/lib])
 

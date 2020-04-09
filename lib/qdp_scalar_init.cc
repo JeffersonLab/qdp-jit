@@ -271,21 +271,7 @@ namespace COUNT {
 
     for (int i=1; i<*argc; i++) 
       {
-	if (strcmp((*argv)[i], "-sync")==0) 
-	  {
-	    DeviceParams::Instance().setSyncDevice(true);
-	  }
-	else if (strcmp((*argv)[i], "-sm")==0) 
-	  {
-	    int sm;
-	    sscanf((*argv)[++i], "%d", &sm);
-	    DeviceParams::Instance().setSM(sm);
-	  }
-	else if (strcmp((*argv)[i], "-gpudirect")==0) 
-	  {
-	    DeviceParams::Instance().setGPUDirect(true);
-	  }
-	else if (strcmp((*argv)[i], "-envvar")==0) 
+	if (strcmp((*argv)[i], "-envvar")==0) 
 	  {
 	    char buffer[1024];
 	    sscanf((*argv)[++i],"%s",&buffer[0]);

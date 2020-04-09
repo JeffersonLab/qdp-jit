@@ -96,20 +96,20 @@ namespace QDP {
     bool DisableSLPVectorization = false;
   }
 
-  // namespace ptx_db {
-  //   bool db_enabled = false;
-  //   std::string dbname = "dummy.dat";
-  //   typedef std::map< std::string , std::string > DBType;
-  //   DBType db;
-  // }
+  namespace ptx_db {
+    bool db_enabled = false;
+    // std::string dbname = "dummy.dat";
+    // typedef std::map< std::string , std::string > DBType;
+    // DBType db;
+  }
 
 
   // std::string get_ptx_db_fname() {
   //   return ptx_db::dbname;
   // }
-  // bool get_ptx_db_enabled() {
-  //   return ptx_db::db_enabled;
-  // }
+  bool get_ptx_db_enabled() {
+    return ptx_db::db_enabled;
+  }
   // int get_ptx_db_size() {
   //   return ptx_db::db.size();
   // }
@@ -202,8 +202,10 @@ namespace QDP {
 
 
 
-  // CUfunction llvm_ptx_db( const char * pretty )
-  // {
+  CUfunction llvm_ptx_db( const char * pretty )
+  {
+    return NULL;
+  }
   //   std::string id = get_ptx_db_id( pretty );
     
   //   ptx_db::DBType::iterator it = ptx_db::db.find( id );
