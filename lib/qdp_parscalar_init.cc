@@ -174,7 +174,7 @@ namespace COUNT {
 
   void QDP_initialize(int *argc, char ***argv) 
   {
-    QDP_initialize_HIP(argc, argv);
+    QDP_initialize_CUDA(argc, argv);
 #ifndef QDP_USE_COMM_SPLIT_INIT
     QDP_setGPU();
 #endif
@@ -187,7 +187,7 @@ namespace COUNT {
   }
 	
   //! Turn on the machine
-  void QDP_initialize_HIP(int *argc, char ***argv)
+  void QDP_initialize_CUDA(int *argc, char ***argv)
   {
     if (sizeof(bool) != 1)
       {

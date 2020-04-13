@@ -98,21 +98,21 @@ namespace QDP {
 
   namespace ptx_db {
     bool db_enabled = false;
-    // std::string dbname = "dummy.dat";
-    // typedef std::map< std::string , std::string > DBType;
-    // DBType db;
+    std::string dbname = "dummy.dat";
+    typedef std::map< std::string , std::string > DBType;
+    DBType db;
   }
 
 
-  // std::string get_ptx_db_fname() {
-  //   return ptx_db::dbname;
-  // }
+  std::string get_ptx_db_fname() {
+    return ptx_db::dbname;
+  }
   bool get_ptx_db_enabled() {
     return ptx_db::db_enabled;
   }
-  // int get_ptx_db_size() {
-  //   return ptx_db::db.size();
-  // }
+  int get_ptx_db_size() {
+    return ptx_db::db.size();
+  }
 
   // std::string get_ptx_db_id( const std::string& pretty )
   // {
@@ -222,10 +222,10 @@ namespace QDP {
 
 
 
-  // void llvm_set_ptxdb( const char * c_str ) {
-  //   ptx_db::db_enabled = true;
-  //   ptx_db::dbname = std::string( c_str );
-  // }
+  void llvm_set_ptxdb( const char * c_str ) {
+    ptx_db::db_enabled = true;
+    ptx_db::dbname = std::string( c_str );
+  }
   
 
   void llvm_set_opt( const char * c_str ) {
@@ -1139,11 +1139,20 @@ namespace QDP {
 
 
 
-  llvm::Value * llvm_call_special_tidx() {    QDPIO::cout << "fixme llvm.nvvm.read.ptx.sreg.tid.x\n"; return llvm_special("llvm.nvvm.read.ptx.sreg.tid.x"); }
-  llvm::Value * llvm_call_special_ntidx() {   QDPIO::cout << "fixme llvm.nvvm.read.ptx.sreg.ntid.x\n"; return llvm_special("llvm.nvvm.read.ptx.sreg.ntid.x"); }
-  llvm::Value * llvm_call_special_ctaidx() {  QDPIO::cout << "fixme llvm.nvvm.read.ptx.sreg.ctaid.x\n"; return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.x"); }
-  llvm::Value * llvm_call_special_nctaidx() { QDPIO::cout << "fixme llvm.nvvm.read.ptx.sreg.nctaid.x\n"; return llvm_special("llvm.nvvm.read.ptx.sreg.nctaid.x"); }
-  llvm::Value * llvm_call_special_ctaidy() {  QDPIO::cout << "fixme llvm.nvvm.read.ptx.sreg.ctaid.y\n"; return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.y"); }
+  // llvm::Value * llvm_call_special_tidx() {     return llvm_special("llvm.nvvm.read.ptx.sreg.tid.x"); }
+  // llvm::Value * llvm_call_special_ntidx() {    return llvm_special("llvm.nvvm.read.ptx.sreg.ntid.x"); }
+  // llvm::Value * llvm_call_special_ctaidx() {   return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.x"); }
+  // llvm::Value * llvm_call_special_nctaidx() {  return llvm_special("llvm.nvvm.read.ptx.sreg.nctaid.x"); }
+  // llvm::Value * llvm_call_special_ctaidy() {   return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.y"); }
+
+  llvm::Value * llvm_call_special_workitem_x() {     return llvm_special("llvm.amdgcn.workitem.id.x"); }
+  llvm::Value * llvm_call_special_workitem_y() {     return llvm_special("llvm.amdgcn.workitem.id.y"); }
+  llvm::Value * llvm_call_special_workitem_z() {     return llvm_special("llvm.amdgcn.workitem.id.z"); }
+
+  llvm::Value * llvm_call_special_workgroup_x() {     return llvm_special("llvm.amdgcn.workgroup.id.x"); }
+  llvm::Value * llvm_call_special_workgroup_y() {     return llvm_special("llvm.amdgcn.workgroup.id.y"); }
+  llvm::Value * llvm_call_special_workgroup_z() {     return llvm_special("llvm.amdgcn.workgroup.id.z"); }
+
 
 
   llvm::Value * llvm_thread_idx() { 
