@@ -28,6 +28,52 @@
 
 #include "llvm/Transforms/Utils/Cloning.h"
 
+
+
+
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/Triple.h"
+#include "llvm/Analysis/TargetLibraryInfo.h"
+//#include "llvm/CodeGen/CommandFlags.inc"
+#include "llvm/CodeGen/LinkAllAsmWriterComponents.h"
+#include "llvm/CodeGen/LinkAllCodegenComponents.h"
+#include "llvm/CodeGen/MIRParser/MIRParser.h"
+#include "llvm/CodeGen/MachineFunctionPass.h"
+#include "llvm/CodeGen/MachineModuleInfo.h"
+#include "llvm/CodeGen/TargetPassConfig.h"
+#include "llvm/CodeGen/TargetSubtargetInfo.h"
+#include "llvm/IR/AutoUpgrade.h"
+#include "llvm/IR/DataLayout.h"
+#include "llvm/IR/DiagnosticInfo.h"
+#include "llvm/IR/DiagnosticPrinter.h"
+#include "llvm/IR/IRPrintingPasses.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/IR/Module.h"
+#include "llvm/IR/RemarkStreamer.h"
+#include "llvm/IR/Verifier.h"
+#include "llvm/IRReader/IRReader.h"
+#include "llvm/InitializePasses.h"
+#include "llvm/MC/SubtargetFeature.h"
+#include "llvm/Pass.h"
+#include "llvm/Support/CommandLine.h"
+#include "llvm/Support/Debug.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/FormattedStream.h"
+#include "llvm/Support/Host.h"
+#include "llvm/Support/InitLLVM.h"
+#include "llvm/Support/ManagedStatic.h"
+#include "llvm/Support/PluginLoader.h"
+#include "llvm/Support/SourceMgr.h"
+#include "llvm/Support/TargetRegistry.h"
+#include "llvm/Support/TargetSelect.h"
+#include "llvm/Support/ToolOutputFile.h"
+#include "llvm/Support/WithColor.h"
+#include "llvm/Target/TargetMachine.h"
+#include "llvm/Transforms/Utils/Cloning.h"
+
+
+
 #include <memory>
 
 namespace QDP {
@@ -134,6 +180,8 @@ namespace QDP {
   CUfunction get_fptr_from_ptx( const char* fname , const std::string& kernel )
   {
     CUfunction func;
+
+    Mod->dump();
 
     QDP_error_exit("ni get_fptr_from_ptx");
 
@@ -1120,8 +1168,6 @@ namespace QDP {
 
   llvm::Value * llvm_special( const char * name )
   {
-    QDP_error_exit("ni llvm_bar_sync");
-
     llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getInt32Ty(TheContext), false);
 
     llvm::AttrBuilder ABuilder;
@@ -1138,12 +1184,13 @@ namespace QDP {
   }
 
 
+  
+  llvm::Value * llvm_call_special_tidx() {  QDP_error_exit("ni tidx");   return llvm_special("llvm.nvvm.read.ptx.sreg.tid.x"); }
+  llvm::Value * llvm_call_special_ntidx() { QDP_error_exit("ni ntidx");   return llvm_special("llvm.nvvm.read.ptx.sreg.ntid.x"); }
+  llvm::Value * llvm_call_special_ctaidx() { QDP_error_exit("ni ctaidx");  return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.x"); }
+  llvm::Value * llvm_call_special_nctaidx() { QDP_error_exit("ni nctaidx"); return llvm_special("llvm.nvvm.read.ptx.sreg.nctaid.x"); }
+  llvm::Value * llvm_call_special_ctaidy() {  QDP_error_exit("ni ctaidy"); return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.y"); }
 
-  // llvm::Value * llvm_call_special_tidx() {     return llvm_special("llvm.nvvm.read.ptx.sreg.tid.x"); }
-  // llvm::Value * llvm_call_special_ntidx() {    return llvm_special("llvm.nvvm.read.ptx.sreg.ntid.x"); }
-  // llvm::Value * llvm_call_special_ctaidx() {   return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.x"); }
-  // llvm::Value * llvm_call_special_nctaidx() {  return llvm_special("llvm.nvvm.read.ptx.sreg.nctaid.x"); }
-  // llvm::Value * llvm_call_special_ctaidy() {   return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.y"); }
 
   llvm::Value * llvm_call_special_workitem_x() {     return llvm_special("llvm.amdgcn.workitem.id.x"); }
   llvm::Value * llvm_call_special_workitem_y() {     return llvm_special("llvm.amdgcn.workitem.id.y"); }
@@ -1156,12 +1203,15 @@ namespace QDP {
 
 
   llvm::Value * llvm_thread_idx() { 
-    llvm::Value * tidx = llvm_call_special_tidx();
-    llvm::Value * ntidx = llvm_call_special_ntidx();
-    llvm::Value * ctaidx = llvm_call_special_ctaidx();
-    llvm::Value * ctaidy = llvm_call_special_ctaidy();
-    llvm::Value * nctaidx = llvm_call_special_nctaidx();
-    return llvm_add( llvm_mul( llvm_add( llvm_mul( ctaidy , nctaidx ) , ctaidx ) , ntidx ) , tidx );
+    llvm::Value * tidx = llvm_call_special_workitem_x();
+    return tidx;
+
+    // llvm::Value * tidx = llvm_call_special_tidx();
+    // llvm::Value * ntidx = llvm_call_special_ntidx();
+    // llvm::Value * ctaidx = llvm_call_special_ctaidx();
+    // llvm::Value * ctaidy = llvm_call_special_ctaidy();
+    // llvm::Value * nctaidx = llvm_call_special_nctaidx();
+    // return llvm_add( llvm_mul( llvm_add( llvm_mul( ctaidy , nctaidx ) , ctaidx ) , ntidx ) , tidx );
   }
   
 
@@ -1628,57 +1678,119 @@ namespace QDP {
 
   CUfunction llvm_get_cufunction(const char* fname, const char* pretty_cstr)
   {
-    QDP_error_exit("fixme llvm_get_cufunction");
-#if 0
-    addKernelMetadata( mainFunc );
+    std::cout << "llvm_get_cufunction\n";
+    Mod->dump();
 
-    std::string pretty( pretty_cstr );
+    //addKernelMetadata( mainFunc );
+
+    llvm::Triple TheTriple;
+    TheTriple.setArch (llvm::Triple::ArchType::amdgcn);
+    TheTriple.setVendor (llvm::Triple::VendorType::AMD);
+    TheTriple.setOS (llvm::Triple::OSType::AMDHSA);
+
+    std::cout << "triple set\n";
+
+
+    std::string Error;
+    const llvm::Target *TheTarget = llvm::TargetRegistry::lookupTarget( TheTriple.str() , Error );
+    if (!TheTarget) {
+      std::cout << Error;
+      QDPIO::cerr << "Something went wrong setting the target\n";
+      QDP_abort(1);
+    }
+
+    QDPIO::cout << "got target: " << TheTarget->getName() << "\n";
+
+
+    llvm::CodeGenOpt::Level OLvl = llvm::CodeGenOpt::Default;
+    // switch (OptLevel) {
+    // default:
+    //   WithColor::error(errs(), argv[0]) << "invalid optimization level.\n";
+    //   return 1;
+    // case ' ': break;
+    // case '0': OLvl = CodeGenOpt::None; break;
+    // case '1': OLvl = CodeGenOpt::Less; break;
+    // case '2': OLvl = CodeGenOpt::Default; break;
+    // case '3': OLvl = CodeGenOpt::Aggressive; break;
+    // }
+
+
+
+    llvm::TargetOptions Options = InitTargetOptionsFromCodeGenFlags();
+    // Options.DisableIntegratedAS = llvm::NoIntegratedAssembler;
+    // Options.MCOptions.ShowMCEncoding = llvm::ShowMCEncoding;
+    // Options.MCOptions.MCUseDwarfDirectory = llvm::EnableDwarfDirectory;
+    // Options.MCOptions.AsmVerbose = llvm::AsmVerbose;
+    // Options.MCOptions.PreserveAsmComments = llvm::PreserveComments;
+    // Options.MCOptions.IASSearchPaths = llvm::IncludeDirs;
+    // Options.MCOptions.SplitDwarfFile = llvm::SplitDwarfFile;
+
+    std::string CPUStr("gfx906");
+    std::string FeaturesStr;
+
+    
+    std::unique_ptr<TargetMachine> TargetMachine(TheTarget->createTargetMachine(
+										TheTriple.getTriple(), 
+										CPUStr, 
+										FeaturesStr, 
+										Options, 
+										llvm::Optional< llvm::Reloc::Model >() ));
+
+    QDPIO::cout << "got target machine CPU: " << TargetMachine->getTargetCPU().str() << "\n";
+    QDPIO::cout << "got target machine triple: " << TargetMachine->getTargetTriple().str() << "\n";
+
+
+    
+    llvm::legacy::PassManager PM;
+
+    // Add an appropriate TargetLibraryInfo pass for the module's triple.
+    llvm::TargetLibraryInfoImpl TLII( TheTriple );
+
+    // The -disable-simplify-libcalls flag actually disables all builtin optzns.
+    // if (DisableSimplifyLibCalls)
+    //   TLII.disableAllFunctions();
+    PM.add(new TargetLibraryInfoWrapperPass(TLII));
+
+    // Add the target data from the target machine, if it exists, or the module.
+    Mod->setDataLayout(TargetMachine->createDataLayout());
+
+    // This needs to be done after setting datalayout since it calls verifier
+    // to check debug info whereas verifier relies on correct datalayout.
+    //UpgradeDebugInfo(*M);
+
+
+    // Override function attributes based on CPUStr, FeaturesStr, and command line
+    // flags.
+    //setFunctionAttributes(CPUStr, FeaturesStr, *M);
+
+
+    llvm::LLVMTargetMachine &LLVMTM = static_cast<llvm::LLVMTargetMachine &>(*TargetMachine);
+    llvm::MachineModuleInfoWrapperPass *MMIWP = new llvm::MachineModuleInfoWrapperPass(&LLVMTM);
+
+    PM.add(MMIWP);
+
+
+     ;
+    
+    std::string outStr;
+    llvm::raw_string_ostream stream(outStr);
+    llvm::buffer_ostream pstream(stream);
+
+    //, NoVerify, MMIWP)) 
+
+    if (TargetMachine->addPassesToEmitFile(PM, pstream,
+					   nullptr,
+					   llvm::CodeGenFileType::CGFT_ObjectFile ))
+      {
+	QDPIO::cerr << "target does not support generation of object file type!\n";
+	QDP_abort(1);
+      }
 
     // llvm::FunctionType *funcType = mainFunc->getFunctionType();
     // funcType->dump();
 
-    std::string ptx_kernel = llvm_get_ptx_kernel(fname);
 
-    CUfunction func = get_fptr_from_ptx( fname , ptx_kernel );
 
-    if ( ptx_db::db_enabled ) {
-
-      if (Layout::primaryNode())
-	{
-	  std::string id = get_ptx_db_id( pretty );
-
-	  // Add kernel
-	  //QDPIO::cout << "llvm_get_cufunction: add kernel for id = " << id << "\n";
-
-	  if ( ptx_db::db.find( id ) != ptx_db::db.end() ) {
-	    QDPIO::cout << "internal error: key already exists in DB but wasn't found before\n" << id << "\n";
-	    QDP_abort(1);
-	  }
-
-	  ptx_db::db[ id ] = ptx_kernel;
-
-	  // Store DB
-	  //QDPIO::cout << "storing PTX DB " << ptx_db::dbname << "\n";
-
-	  // Simple minded, but enough for writing out only from a single node
-	  std::ofstream db;
-	  db.open ( ptx_db::dbname , ios::out | ios::binary );
-	  for ( ptx_db::DBType::iterator it = ptx_db::db.begin() ; it != ptx_db::db.end() ; ++it ) 
-	    {
-	      int size1 = it->first.size();
-	      db << size1;
-	      db.write( it->first.c_str() , size1 );
-
-	      int size2 = it->second.size();
-	      db << size2;
-	      db.write( it->second.c_str() , size2 );
-	    }
-	  db.close();
-	}
-    } // ptx db
-
-    return func;
-#endif
     CUfunction tmp;
     return tmp;
   }

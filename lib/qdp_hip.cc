@@ -269,7 +269,7 @@ namespace QDP {
   void HipInit() {
     //QDP_info_primary("CUDA initialization");
     //cuInit(0);
-    QDPIO::cout << "Not doing any device init\n";
+    std::cout << "Not doing any device init\n";
 
     int deviceCount = 0;
     hipGetDeviceCount(&deviceCount);
@@ -290,18 +290,18 @@ namespace QDP {
   {
     hipError_t ret;
 
-    QDPIO::cout << "Skipping trying to create a context as it is marked deprecated\n";
+    std::cout << "Skipping trying to create a context as it is marked deprecated\n";
     // QDP_info_primary("trying to create a context on device %d",dev);
     // ret = hipCtxCreate( &hipContext , 0 , dev);
     // HipRes("hipCtxCreate",ret);
 
-    QDPIO::cout << "Skipping trying to get the device as it is marked deprecated\n";
+    std::cout << "Skipping trying to get the device as it is marked deprecated\n";
 
     // QDP_info_primary("trying to get device with the current context");
     // ret = hipCtxGetDevice(&hipDevice);
     // HipRes("hipCtxGetDevice",ret);
 
-    QDPIO::cout << "Skipping trying to get a context\n";
+    std::cout << "Skipping trying to get a context\n";
     // QDP_info_primary("trying to grab pre-existing context",dev);
     // ret = cuCtxGetCurrent(&cuContext);
     
