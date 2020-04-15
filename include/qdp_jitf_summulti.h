@@ -28,11 +28,11 @@ namespace QDP {
   CUfunction
   function_summulti_convert_ind_build()
   {
-    if (ptx_db::db_enabled) {
-      CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-      if (func)
-	return func;
-    }
+    /* if (ptx_db::db_enabled) { */
+    /*   CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
+    /*   if (func) */
+    /* 	return func; */
+    /* } */
 
     llvm_start_new_function();
 
@@ -212,11 +212,11 @@ namespace QDP {
   CUfunction
   function_summulti_build()
   {
-    if (ptx_db::db_enabled) {
-      CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-      if (func)
-	return func;
-    }
+    /* if (ptx_db::db_enabled) { */
+    /*   CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
+    /*   if (func) */
+    /* 	return func; */
+    /* } */
 
     llvm_start_new_function();
 

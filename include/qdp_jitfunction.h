@@ -49,11 +49,11 @@ namespace QDP {
     typedef typename QDPType<T1,C1>::Subtype_t    LT;
     typedef typename QDPSubType<T2,C2>::Subtype_t RT;
     
-    if (ptx_db::db_enabled) {
-      CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-      if (func)
-	return func;
-    }
+    /* if (ptx_db::db_enabled) { */
+    /*   CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
+    /*   if (func) */
+    /* 	return func; */
+    /* } */
 
     llvm_start_new_function();
 
@@ -97,11 +97,11 @@ namespace QDP {
     typedef typename QDPSubType<T1,C1>::Subtype_t LT;
     typedef typename QDPType<T2,C2>::Subtype_t    RT;
     
-    if (ptx_db::db_enabled) {
-      CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-      if (func)
-	return func;
-    }
+    /* if (ptx_db::db_enabled) { */
+    /*   CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
+    /*   if (func) */
+    /* 	return func; */
+    /* } */
 
     llvm_start_new_function();
 
@@ -145,11 +145,11 @@ template<class T, class T1, class Op, class RHS>
 CUfunction
 function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs)
 {
-  if (ptx_db::db_enabled) {
-    CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (func)
-      return func;
-  }
+  /* if (ptx_db::db_enabled) { */
+  /*   CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
+  /*   if (func) */
+  /*     return func; */
+  /* } */
 
   llvm_start_new_function();
 
@@ -255,11 +255,11 @@ template<class T, class C1, class Op, class RHS>
 CUfunction
 function_subtype_type_build(OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,C1 >& rhs)
 {
-  if (ptx_db::db_enabled) {
-    CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (func)
-      return func;
-  }
+  /* if (ptx_db::db_enabled) { */
+  /*   CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
+  /*   if (func) */
+  /*     return func; */
+  /* } */
 
   llvm_start_new_function();
 
@@ -293,11 +293,11 @@ operator_type_subtype_build(OLattice<T>& dest, const Op& op, const QDPSubType<T1
 {
   typedef typename QDPSubType<T1,OLattice<T1>>::Subtype_t RT;
       
-  if (ptx_db::db_enabled) {
-    CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (func)
-      return func;
-  }
+  /* if (ptx_db::db_enabled) { */
+  /*   CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
+  /*   if (func) */
+  /*     return func; */
+  /* } */
 
   llvm_start_new_function();
 
@@ -339,11 +339,11 @@ operator_subtype_subtype_build(OSubLattice<T>& dest, const Op& op, const QDPSubT
 {
   typedef typename QDPSubType<T1,OLattice<T1>>::Subtype_t RT;
       
-  if (ptx_db::db_enabled) {
-    CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (func)
-      return func;
-  }
+  /* if (ptx_db::db_enabled) { */
+  /*   CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
+  /*   if (func) */
+  /*     return func; */
+  /* } */
 
   llvm_start_new_function();
 
@@ -412,11 +412,11 @@ template<class T, class T1, class Op, class RHS>
 CUfunction
 function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
 {
-  if (ptx_db::db_enabled) {
-    CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (func)
-      return func;
-  }
+  /* if (ptx_db::db_enabled) { */
+  /*   CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
+  /*   if (func) */
+  /*     return func; */
+  /* } */
 
   std::vector<ParamRef> params = jit_function_preamble_param();
 
@@ -447,11 +447,11 @@ template<class T, class T1, class Op, class RHS>
 CUfunction
 function_lat_sca_subtype_build(OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
 {
-  if (ptx_db::db_enabled) {
-    CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (func)
-      return func;
-  }
+  /* if (ptx_db::db_enabled) { */
+  /*   CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
+  /*   if (func) */
+  /*     return func; */
+  /* } */
 
   llvm_start_new_function();
 
@@ -482,11 +482,11 @@ template<class T, class T1>
 CUfunction
 function_pokeSite_build( const OLattice<T>& dest , const OScalar<T1>& r  )
 {
-  if (ptx_db::db_enabled) {
-    CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (func)
-      return func;
-  }
+  /* if (ptx_db::db_enabled) { */
+  /*   CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
+  /*   if (func) */
+  /*     return func; */
+  /* } */
 
   llvm_start_new_function();
 
@@ -541,11 +541,11 @@ template<class T>
 CUfunction
 function_zero_rep_build(OLattice<T>& dest)
 {
-  if (ptx_db::db_enabled) {
-    CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (func)
-      return func;
-  }
+  /* if (ptx_db::db_enabled) { */
+  /*   CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
+  /*   if (func) */
+  /*     return func; */
+  /* } */
 
   std::vector<ParamRef> params = jit_function_preamble_param();
 
@@ -567,11 +567,11 @@ template<class T>
 CUfunction
 function_zero_rep_subtype_build(OSubLattice<T>& dest)
 {
-  if (ptx_db::db_enabled) {
-    CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (func)
-      return func;
-  }
+  /* if (ptx_db::db_enabled) { */
+  /*   CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
+  /*   if (func) */
+  /*     return func; */
+  /* } */
 
   llvm_start_new_function();
 
@@ -602,11 +602,11 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
 {
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
-  if (ptx_db::db_enabled) {
-    CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (func)
-      return func;
-  }
+  /* if (ptx_db::db_enabled) { */
+  /*   CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
+  /*   if (func) */
+  /*     return func; */
+  /* } */
 
   llvm_start_new_function();
 
@@ -687,11 +687,11 @@ CUfunction
 //function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs )
 function_gather_build( const QDPExpr<RHS,OLattice<T1> >& rhs )
 {
-  if (ptx_db::db_enabled) {
-    CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (func)
-      return func;
-  }
+  /* if (ptx_db::db_enabled) { */
+  /*   CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
+  /*   if (func) */
+  /*     return func; */
+  /* } */
 
   typedef typename WordType<T1>::Type_t WT;
 

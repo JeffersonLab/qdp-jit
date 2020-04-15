@@ -9,7 +9,7 @@ namespace QDP {
   {
     static CUfunction function;
 
-    if (function == NULL)
+    if (function.empty())
       function = function_sum_build<T2>();
 
     function_sum_exec(function, size, threads, blocks, shared_mem_usage, in_id, out_id );
@@ -29,7 +29,7 @@ namespace QDP {
   {
     static CUfunction function;
 
-    if (function == NULL)
+    if (function.empty())
       function = function_sum_convert_ind_build<T1,T2,input_layout>();
 
     function_sum_convert_ind_exec(function, size, threads, blocks, shared_mem_usage, 
@@ -55,7 +55,7 @@ namespace QDP {
     assert( sizes.size() == numsubsets );
     assert( table_ids.size() == numsubsets );
 
-    if (function == NULL)
+    if (function.empty())
       function = function_summulti_convert_ind_build<T1,T2,input_layout>();
 
     function_summulti_convert_ind_exec(function,
@@ -82,7 +82,7 @@ namespace QDP {
     assert( sizes.size() == numsubsets );
     static CUfunction function;
 
-    if (function == NULL)
+    if (function.empty())
       function = function_summulti_build<T>();
 
     function_summulti_exec(function,
@@ -106,7 +106,7 @@ namespace QDP {
   {
     static CUfunction function;
 
-    if (function == NULL)
+    if (function.empty())
       function = function_sum_convert_build<T1,T2,input_layout>();
 
     function_sum_convert_exec(function, size, threads, blocks, shared_mem_usage, 
@@ -143,7 +143,7 @@ namespace QDP {
   {
     static CUfunction function;
 
-    if (function == NULL)
+    if (function.empty())
       function = function_bool_reduction_build<T2,ReductionOp>();
 
     function_bool_reduction_exec(function, size, threads, blocks, shared_mem_usage, in_id, out_id );
@@ -162,7 +162,7 @@ namespace QDP {
   {
     static CUfunction function;
 
-    if (function == NULL)
+    if (function.empty())
       function = function_bool_reduction_convert_build< T1 , T2 , input_layout , ConvertOp , ReductionOp >();
 
     function_bool_reduction_exec(function, size, threads, blocks, shared_mem_usage, in_id, out_id );
@@ -256,7 +256,7 @@ namespace QDP {
 
     static CUfunction function;
 
-    if (function == NULL)
+    if (function.empty())
       function = function_global_max_build<T>();
 
     function_global_max_exec(function, size, threads, blocks, shared_mem_usage, in_id, out_id );

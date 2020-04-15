@@ -3,7 +3,16 @@
 
 namespace QDP
 {
-  typedef void* CUfunction;
+  //typedef std::string CUfunction;
+
+  class CUfunction
+  {
+    hipModule_t module;
+    bool isEmpty = true;
+  public:
+    bool empty() { return isEmpty; }
+    hipModule_t& getModule() { isEmpty = false; return module; }
+  };
 
 
   enum class JitDeviceLayout { Coalesced , Scalar };

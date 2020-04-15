@@ -8,11 +8,11 @@ template<class T>
 CUfunction
 function_gaussian_build(OLattice<T>& dest ,OLattice<T>& r1 ,OLattice<T>& r2 )
 {
-  if (ptx_db::db_enabled) {
-    CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (func)
-      return func;
-  }
+  /* if (ptx_db::db_enabled) { */
+  /*   CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
+  /*   if (func) */
+  /*     return func; */
+  /* } */
 
   std::vector<ParamRef> params = jit_function_preamble_param();
 

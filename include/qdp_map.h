@@ -457,7 +457,7 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
 
 	static CUfunction function;
 
-	if (function == NULL)
+	if (function.empty())
 	  {
 	    function = function_gather_build<InnerType_t>( subexpr );
 	  }

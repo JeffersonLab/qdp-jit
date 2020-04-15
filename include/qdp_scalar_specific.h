@@ -38,7 +38,7 @@ namespace QDP {
   {
     static CUfunction function;
 
-    if (function == NULL)
+    if (function.empty())
       function = function_pokeSite_build(l, r);
 
     function_pokeSite_exec(function, l, r, coord);

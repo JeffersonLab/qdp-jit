@@ -29,7 +29,7 @@ namespace QDP {
   {
     static CUfunction function;
 
-    if (function == NULL)
+    if (function.empty())
       function = function_sca_sca_build(dest, op, rhs);
 
     function_sca_sca_exec(function, dest, op, rhs);
@@ -47,7 +47,7 @@ namespace QDP {
 		const Subset& s)
   {
     static CUfunction function;
-    if (function == NULL)
+    if (function.empty())
       function = function_lat_sca_build(dest, op, rhs);
 
     function_lat_sca_exec(function, dest, op, rhs, s);
@@ -60,7 +60,7 @@ namespace QDP {
 		const Subset& s)
   {
     static CUfunction function;
-    if (function == NULL)
+    if (function.empty())
       function = function_build(dest, op, rhs);
 
     function_exec(function, dest, op, rhs, s);
@@ -75,7 +75,7 @@ namespace QDP {
   {
     static CUfunction function;
 
-    if (function == NULL)
+    if (function.empty())
       function = function_subtype_type_build(dest, op, rhs);
 
     function_subtype_type_exec(function, dest, op, rhs, s);
@@ -89,7 +89,7 @@ namespace QDP {
   {
     static CUfunction function;
 
-    if (function == NULL)
+    if (function.empty())
       function = operator_type_subtype_build(dest, op, rhs);
 
     operator_type_subtype_exec(function, dest, op, rhs, s);
@@ -103,7 +103,7 @@ namespace QDP {
   {
     static CUfunction function;
 
-    if (function == NULL)
+    if (function.empty())
       function = operator_subtype_subtype_build(dest, op, rhs);
 
     operator_subtype_subtype_exec(function, dest, op, rhs, s);
@@ -117,7 +117,7 @@ namespace QDP {
   {
     static CUfunction function;
 
-    if (function == NULL)
+    if (function.empty())
       function = function_lat_sca_subtype_build(dest, op, rhs);
 
     function_lat_sca_subtype_exec(function, dest, op, rhs, s);
@@ -134,7 +134,7 @@ namespace QDP {
   {
     static CUfunction function;
 
-    if (function == NULL)
+    if (function.empty())
       function = function_copymask_build( dest , mask , s1 );
 
     function_copymask_exec(function, dest , mask , s1 );
@@ -152,7 +152,7 @@ namespace QDP {
 
     Seed seed_tmp;
 
-    if (function == NULL)
+    if (function.empty())
       function = function_random_build( d , seed_tmp );
 
     function_random_exec(function, d, s , seed_tmp );
@@ -199,7 +199,7 @@ namespace QDP {
 
     static CUfunction function;
 
-    if (function == NULL)
+    if (function.empty())
       function = function_gaussian_build( d , r1 , r2 );
 
     function_gaussian_exec(function, d, r1, r2, s );
@@ -220,7 +220,7 @@ namespace QDP {
   {
     static CUfunction function;
 
-    if (function == NULL)
+    if (function.empty())
       function = function_zero_rep_build( dest );
 
     function_zero_rep_exec( function , dest , s );
@@ -232,7 +232,7 @@ namespace QDP {
   {
     static CUfunction function;
 
-    if (function == NULL)
+    if (function.empty())
       function = function_zero_rep_subtype_build( dest );
 
     function_zero_rep_subtype_exec( function , dest , s );

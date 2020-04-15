@@ -78,6 +78,10 @@
 
 namespace QDP {
 
+  namespace {
+    std::string __kernel_name("kernel");
+  }
+
   //typedef void* CUfunction;
 
   llvm::LLVMContext TheContext;
@@ -142,23 +146,23 @@ namespace QDP {
     bool DisableSLPVectorization = false;
   }
 
-  namespace ptx_db {
-    bool db_enabled = false;
-    std::string dbname = "dummy.dat";
-    typedef std::map< std::string , std::string > DBType;
-    DBType db;
-  }
+  // namespace ptx_db {
+  //   bool db_enabled = false;
+  //   std::string dbname = "dummy.dat";
+  //   typedef std::map< std::string , std::string > DBType;
+  //   DBType db;
+  // }
 
 
-  std::string get_ptx_db_fname() {
-    return ptx_db::dbname;
-  }
-  bool get_ptx_db_enabled() {
-    return ptx_db::db_enabled;
-  }
-  int get_ptx_db_size() {
-    return ptx_db::db.size();
-  }
+  // std::string get_ptx_db_fname() {
+  //   return ptx_db::dbname;
+  // }
+  // bool get_ptx_db_enabled() {
+  //   return ptx_db::db_enabled;
+  // }
+  // int get_ptx_db_size() {
+  //   return ptx_db::db.size();
+  // }
 
   // std::string get_ptx_db_id( const std::string& pretty )
   // {
@@ -237,7 +241,7 @@ namespace QDP {
       }
     }
 
-    ret = cuModuleGetFunction(&func, cuModule, "main");
+    ret = cuModuleGetFunction(&func, cuModule, __kernel_name);
     if (ret)
       QDP_error_exit("Error returned from cuModuleGetFunction. Abort.");
 
@@ -250,10 +254,10 @@ namespace QDP {
 
 
 
-  CUfunction llvm_ptx_db( const char * pretty )
-  {
-    return NULL;
-  }
+  // CUfunction llvm_ptx_db( const char * pretty )
+  // {
+  //   return NULL;
+  // }
   //   std::string id = get_ptx_db_id( pretty );
     
   //   ptx_db::DBType::iterator it = ptx_db::db.find( id );
@@ -270,10 +274,10 @@ namespace QDP {
 
 
 
-  void llvm_set_ptxdb( const char * c_str ) {
-    ptx_db::db_enabled = true;
-    ptx_db::dbname = std::string( c_str );
-  }
+  // void llvm_set_ptxdb( const char * c_str ) {
+  //   ptx_db::db_enabled = true;
+  //   ptx_db::dbname = std::string( c_str );
+  // }
   
 
   void llvm_set_opt( const char * c_str ) {
@@ -636,7 +640,7 @@ namespace QDP {
       llvm::FunctionType::get( builder->getVoidTy() , 
 			       llvm::ArrayRef<llvm::Type*>( vecParamType.data() , vecParamType.size() ) , 
 			       false); // no vararg
-    mainFunc = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, "main", Mod.get());
+    mainFunc = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, __kernel_name, Mod.get());
 
     unsigned Idx = 0;
     for (llvm::Function::arg_iterator AI = mainFunc->arg_begin(), AE = mainFunc->arg_end() ; AI != AE ; ++AI, ++Idx) {
@@ -1592,7 +1596,7 @@ namespace QDP {
   // LLVM 4.0
   bool all_but_main(const llvm::GlobalValue & gv)
   {
-    return gv.getName().str() == "main";
+    return gv.getName().str() == __kernel_name;
   }
 
 
@@ -1612,7 +1616,7 @@ namespace QDP {
     //Mod->dump();
     //QDP_info_primary("Internalizing module");
 
-    //const char *ExportList[] = { "main" };
+    //const char *ExportList[] = { __kernel_name };
 
     llvm::StringMap<int> Mapping;
     Mapping["__CUDA_FTZ"] = llvm_opt::nvptx_FTZ;
@@ -1765,27 +1769,53 @@ namespace QDP {
 
 
     llvm::LLVMTargetMachine &LLVMTM = static_cast<llvm::LLVMTargetMachine &>(*TargetMachine);
-    llvm::MachineModuleInfoWrapperPass *MMIWP = new llvm::MachineModuleInfoWrapperPass(&LLVMTM);
+    //llvm::MachineModuleInfoWrapperPass *MMIWP = new llvm::MachineModuleInfoWrapperPass(&LLVMTM);
 
-    PM.add(MMIWP);
+    //PM.add(MMIWP);
 
 
-     ;
-    
     std::string outStr;
-    llvm::raw_string_ostream stream(outStr);
-    llvm::buffer_ostream pstream(stream);
+    {
+      llvm::raw_string_ostream stream(outStr);
+      llvm::buffer_ostream pstream(stream);
 
-    //, NoVerify, MMIWP)) 
+      //, NoVerify, MMIWP)) 
 
-    if (TargetMachine->addPassesToEmitFile(PM, pstream,
-					   nullptr,
-					   llvm::CodeGenFileType::CGFT_ObjectFile ))
-      {
-	QDPIO::cerr << "target does not support generation of object file type!\n";
-	QDP_abort(1);
-      }
+      //CGFT_ObjectFile
+      //CGFT_AssemblyFile
 
+      if (TargetMachine->addPassesToEmitFile(PM, pstream,
+					     nullptr,
+					     llvm::CodeGenFileType::CGFT_ObjectFile ))
+	{
+	  QDPIO::cerr << "target does not support generation of object file type!\n";
+	  QDP_abort(1);
+	}
+
+      QDPIO::cout << "pass to emit file added\n";
+
+
+      QDPIO::cout << "running passes...\n";
+    
+      PM.run(*Mod);
+
+      QDPIO::cout << "done!\n";
+    }
+
+    QDPIO::cout << "output size: " << outStr.size() << "\n";
+    //QDPIO::cout << "output: " << outStr << "\n";
+    
+
+    hipModule_t module;
+    hipError_t ret;
+    ret = hipModuleLoadDataEx(&module, outStr.data() , 0 , NULL , NULL );
+    
+    HipCheckResult(ret);
+    
+
+    QDPIO::cout << "Output loaded!\n";
+      
+    
     // llvm::FunctionType *funcType = mainFunc->getFunctionType();
     // funcType->dump();
 

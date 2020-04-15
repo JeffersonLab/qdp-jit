@@ -8,11 +8,11 @@ namespace QDP {
   CUfunction
   function_copymask_build( OLattice<T>& dest , const OLattice<T1>& mask , const OLattice<T>& src )
   {
-    if (ptx_db::db_enabled) {
-      CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-      if (func)
-	return func;
-    }
+    /* if (ptx_db::db_enabled) { */
+    /*   CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
+    /*   if (func) */
+    /* 	return func; */
+    /* } */
 
     llvm_start_new_function();
 

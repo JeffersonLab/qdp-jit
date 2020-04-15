@@ -88,7 +88,10 @@ using std::ostream;
 // END OF YUKKINESS
 
 
-//#include "cuda.h"
+//#include <hip/hiprtc.h>
+//#include <hip/hip_runtime.h>
+#include <hip/hip_runtime_api.h>
+
 
 #include "qdp_dispatch.h"
 

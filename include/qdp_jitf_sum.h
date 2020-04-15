@@ -30,11 +30,11 @@ namespace QDP {
   CUfunction 
   function_sum_convert_ind_build()
   {
-    if (ptx_db::db_enabled) {
-      CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-      if (func)
-	return func;
-    }
+    /* if (ptx_db::db_enabled) { */
+    /*   CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
+    /*   if (func) */
+    /* 	return func; */
+    /* } */
 
     llvm_start_new_function();
 
@@ -165,11 +165,11 @@ namespace QDP {
   CUfunction 
   function_sum_convert_build()
   {
-    if (ptx_db::db_enabled) {
-      CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-      if (func)
-	return func;
-    }
+    /* if (ptx_db::db_enabled) { */
+    /*   CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
+    /*   if (func) */
+    /* 	return func; */
+    /* } */
 
     llvm_start_new_function();
 
@@ -297,11 +297,11 @@ namespace QDP {
   CUfunction 
   function_sum_build()
   {
-    if (ptx_db::db_enabled) {
-      CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-      if (func)
-	return func;
-    }
+    /* if (ptx_db::db_enabled) { */
+    /*   CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
+    /*   if (func) */
+    /* 	return func; */
+    /* } */
 
     llvm_start_new_function();
 
@@ -431,11 +431,11 @@ namespace QDP {
   CUfunction 
   function_bool_reduction_convert_build()
   {
-    if (ptx_db::db_enabled) {
-      CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-      if (func)
-	return func;
-    }
+    /* if (ptx_db::db_enabled) { */
+    /*   CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
+    /*   if (func) */
+    /* 	return func; */
+    /* } */
 
     llvm_start_new_function();
 
@@ -563,11 +563,11 @@ namespace QDP {
   CUfunction 
   function_bool_reduction_build()
   {
-    if (ptx_db::db_enabled) {
-      CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-      if (func)
-	return func;
-    }
+    /* if (ptx_db::db_enabled) { */
+    /*   CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
+    /*   if (func) */
+    /* 	return func; */
+    /* } */
 
     llvm_start_new_function();
 

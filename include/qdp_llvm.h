@@ -88,7 +88,7 @@ namespace llvm {
 
 namespace QDP {
 
-  typedef void* CUfunction;
+  //typedef void* CUfunction;
 
 
   namespace llvm_debug {

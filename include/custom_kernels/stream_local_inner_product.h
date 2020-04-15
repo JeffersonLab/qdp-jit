@@ -225,7 +225,7 @@ namespace QDP
   {
     static CUfunction function;
 
-    if (function == NULL)
+    if (function.empty())
       function = function_multi_localInnerProduct_sum_convert_build<T1,T2,T3,input_layout>();
 
     function_multi_localInnerProduct_sum_convert_exec(function, size, threads, blocks, shared_mem_usage, in_ids, out_id, v_id , N, sizes, table_ids );
