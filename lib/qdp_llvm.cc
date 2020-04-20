@@ -76,6 +76,9 @@
 
 #include <memory>
 
+
+
+
 namespace QDP {
 
   namespace {
@@ -1773,6 +1776,10 @@ namespace QDP {
 
     //PM.add(MMIWP);
 
+#if 1
+    std::error_code ec;
+    std::string isabin_path = "module.o";
+#endif
 
     std::string outStr;
     {
@@ -1784,9 +1791,20 @@ namespace QDP {
       //CGFT_ObjectFile
       //CGFT_AssemblyFile
 
-      if (TargetMachine->addPassesToEmitFile(PM, pstream,
+#if 1
+      std::unique_ptr<llvm::raw_fd_ostream> isabin_fs( new llvm::raw_fd_ostream(isabin_path, ec, llvm::sys::fs::F_Text));
+#endif
+
+
+      if (TargetMachine->addPassesToEmitFile(PM, 
+#if 0
+					     pstream,
+#else
+					     *isabin_fs,
+#endif
 					     nullptr,
 					     llvm::CodeGenFileType::CGFT_ObjectFile ))
+
 	{
 	  QDPIO::cerr << "target does not support generation of object file type!\n";
 	  QDP_abort(1);
@@ -1799,22 +1817,61 @@ namespace QDP {
     
       PM.run(*Mod);
 
+#if 1
+      isabin_fs->flush();
+#endif
+
       QDPIO::cout << "done!\n";
     }
 
     QDPIO::cout << "output size: " << outStr.size() << "\n";
     //QDPIO::cout << "output: " << outStr << "\n";
+
+
+
+    std::string lld_path = "/scratch/fwinter/llvm-project/build_lld/bin/ld.lld";
+    std::string shared_path = "module.so";
+
+    std::string command = lld_path + " -shared " + isabin_path + " -o " + shared_path; 
+
+    //const char* command_c = command.c_str();
+
+    std::cout << "System: " << command.c_str() << "\n";
+    
+
+    system( command.c_str() );
+
+
+    std::ifstream shared_file(shared_path, std::ios::binary | std::ios::ate);
+    std::ifstream::pos_type shared_file_size = shared_file.tellg();
+
+    std::vector<uint8_t> shared(shared_file_size);
+    shared_file.seekg(0, std::ios::beg);
+    shared_file.read(reinterpret_cast<char*>(&shared[0]), shared_file_size);
+
+    std::cout << "shared object file read\n";
     
 
     hipModule_t module;
     hipError_t ret;
-    ret = hipModuleLoadDataEx(&module, outStr.data() , 0 , NULL , NULL );
+    ret = hipModuleLoadDataEx(&module, shared.data() , 0 , NULL , NULL );
     
     HipCheckResult(ret);
     
 
     QDPIO::cout << "Output loaded!\n";
+
+    // QDPIO::cout << "module.size = " << module->size << "\n";
+    // QDPIO::cout << "module.funcTrack.size() = " << module->funcTrack.size() << "\n";
+
+
+    hipFunction_t kernel;
+
+    ret = hipModuleGetFunction(&kernel, module, __kernel_name.c_str() );
       
+    HipCheckResult(ret);
+
+    QDPIO::cout << "Got function!\n";
     
     // llvm::FunctionType *funcType = mainFunc->getFunctionType();
     // funcType->dump();
