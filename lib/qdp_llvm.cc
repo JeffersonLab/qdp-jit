@@ -76,10 +76,28 @@
 
 #include <memory>
 
+#include <dlfcn.h>
 
-
+#include <unordered_map>
 
 namespace QDP {
+
+
+  struct __ihipModule_t {
+    std::string fileName;
+    hsa_executable_t executable = {};
+    hsa_code_object_reader_t coReader = {};
+    std::string hash;
+    std::unordered_map<
+      std::string, std::vector<std::pair<std::size_t, std::size_t>>> kernargs;
+
+    // ~ihipModule_t() {
+    //   if (executable.handle) hsa_executable_destroy(executable);
+    //   if (coReader.handle) hsa_code_object_reader_destroy(coReader);
+    // }
+  };
+
+
 
   namespace {
     std::string __kernel_name("kernel");
@@ -183,77 +201,6 @@ namespace QDP {
 
   
   
-
-  CUfunction get_fptr_from_ptx( const char* fname , const std::string& kernel )
-  {
-    CUfunction func;
-
-    Mod->dump();
-
-    QDP_error_exit("ni get_fptr_from_ptx");
-
-#if 0
-    CUresult ret;
-    CUmodule cuModule;
-
-    CUresult ret_sync = cuCtxSynchronize();
-    if (ret_sync != CUDA_SUCCESS) {
-      QDPIO::cerr << "Error on sync before loading image.\n";
-
-      CudaCheckResult(ret_sync);
-
-      const char* pStr_name;
-      cuGetErrorName ( ret, &pStr_name );
-
-      QDPIO::cerr << "Error: " << pStr_name << "\n";
-	
-      const char* pStr_string;
-      cuGetErrorString ( ret, &pStr_string );
-
-      QDPIO::cerr << "String: " << pStr_string << "\n";
-
-      QDP_error_exit("Sync failed right before loading the PTX module.");
-    }
-
-    ret = cuModuleLoadData(&cuModule, (const void *)kernel.c_str());
-    //ret = cuModuleLoadDataEx( &cuModule , ptx_kernel.c_str() , 0 , 0 , 0 );
-
-    if (ret) {
-      if (Layout::primaryNode()) {
-
-	QDPIO::cerr << "Error loading external data.\n";
-	
-	const char* pStr_name;
-	cuGetErrorName ( ret, &pStr_name );
-
-	QDPIO::cerr << "Error: " << pStr_name << "\n";
-	
-	const char* pStr_string;
-	cuGetErrorString ( ret, &pStr_string );
-
-	QDPIO::cerr << "String: " << pStr_string << "\n";
-
-	QDPIO::cerr << "Dumping kernel to " << fname << "\n";
-#if 1
-	std::ofstream out(fname);
-	out << kernel;
-	out.close();
-	//Mod->dump();
-#endif
-	QDP_error_exit("Abort.");
-      }
-    }
-
-    ret = cuModuleGetFunction(&func, cuModule, __kernel_name);
-    if (ret)
-      QDP_error_exit("Error returned from cuModuleGetFunction. Abort.");
-
-    QDPIO::cout << "ni mapCUFuncPTX[func] = kernel;\n";
-    //mapCUFuncPTX[func] = kernel;
-#endif
-
-    return func;
-  }
 
 
 
@@ -644,6 +591,8 @@ namespace QDP {
 			       llvm::ArrayRef<llvm::Type*>( vecParamType.data() , vecParamType.size() ) , 
 			       false); // no vararg
     mainFunc = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, __kernel_name, Mod.get());
+
+    mainFunc->setCallingConv( llvm::CallingConv::AMDGPU_KERNEL );
 
     unsigned Idx = 0;
     for (llvm::Function::arg_iterator AI = mainFunc->arg_begin(), AE = mainFunc->arg_end() ; AI != AE ; ++AI, ++Idx) {
@@ -1681,12 +1630,16 @@ namespace QDP {
 
 
 
+  void dummy_kernel(float a)
+  {
+  }
+
 
 
   CUfunction llvm_get_cufunction(const char* fname, const char* pretty_cstr)
   {
     std::cout << "llvm_get_cufunction\n";
-    Mod->dump();
+    //Mod->dump();
 
     //addKernelMetadata( mainFunc );
 
@@ -1743,6 +1696,10 @@ namespace QDP {
 										Options, 
 										llvm::Optional< llvm::Reloc::Model >() ));
 
+    Mod->setDataLayout(TargetMachine->createDataLayout());
+    Mod->dump();
+
+
     QDPIO::cout << "got target machine CPU: " << TargetMachine->getTargetCPU().str() << "\n";
     QDPIO::cout << "got target machine triple: " << TargetMachine->getTargetTriple().str() << "\n";
 
@@ -1759,7 +1716,6 @@ namespace QDP {
     PM.add(new TargetLibraryInfoWrapperPass(TLII));
 
     // Add the target data from the target machine, if it exists, or the module.
-    Mod->setDataLayout(TargetMachine->createDataLayout());
 
     // This needs to be done after setting datalayout since it calls verifier
     // to check debug info whereas verifier relies on correct datalayout.
@@ -1842,6 +1798,7 @@ namespace QDP {
     system( command.c_str() );
 
 
+#if 1
     std::ifstream shared_file(shared_path, std::ios::binary | std::ios::ate);
     std::ifstream::pos_type shared_file_size = shared_file.tellg();
 
@@ -1849,30 +1806,189 @@ namespace QDP {
     shared_file.seekg(0, std::ios::beg);
     shared_file.read(reinterpret_cast<char*>(&shared[0]), shared_file_size);
 
-    std::cout << "shared object file read\n";
+    std::cout << "shared object file read back in\n";
     
 
     hipModule_t module;
     hipError_t ret;
-    ret = hipModuleLoadDataEx(&module, shared.data() , 0 , NULL , NULL );
+    //ret = hipModuleLoadDataEx(&module, shared.data() , 0 , NULL , NULL );
+    ret = hipModuleLoadData(&module, shared.data() );
     
     HipCheckResult(ret);
-    
 
-    QDPIO::cout << "Output loaded!\n";
+    QDPIO::cout << "shared object file loaded as hip module\n";
 
-    // QDPIO::cout << "module.size = " << module->size << "\n";
-    // QDPIO::cout << "module.funcTrack.size() = " << module->funcTrack.size() << "\n";
 
+    __ihipModule_t* ihip = (__ihipModule_t*)module;
+
+    QDPIO::cout << "ihip->fileName = " << ihip->fileName << "\n";
+    QDPIO::cout << "ihip->hash = " << ihip->hash << "\n";
+    QDPIO::cout << "ihip->kernargs.size() = " << ihip->kernargs.size() << "\n";
+    QDPIO::cout << "ihip->executable.handle = " << ihip->executable.handle << "\n";
+
+
+
+    //for (auto it = ihip->
 
     hipFunction_t kernel;
+
+    //std::string tmpname = "_" + __kernel_name;
+
+    QDPIO::cout << "looking for function with name " << __kernel_name.c_str() << "\n";
 
     ret = hipModuleGetFunction(&kernel, module, __kernel_name.c_str() );
       
     HipCheckResult(ret);
 
     QDPIO::cout << "Got function!\n";
+
+
+    dim3 numBlocks;
+    dim3 dimBlocks;
+    hipStream_t stream;
+
+
+    //define void @kernel(i1 %arg0, i32 %arg1, i32 %arg2, i32 %arg3, i1 %arg4, i32* %arg5, i1* %arg6, float* %arg7, float* %arg8, float* %arg9)
+
+
+    bool p_ordered = true;
+    int  p_th_count = 1;
+    int  p_start = 0;
+    int  p_end = 1;
+    bool p_do_site_perm = false;
+    int* p_site_table   = NULL;
+    bool* p_member_array = NULL;
+
+    size_t N = 10;
+
+    hipDeviceptr_t dev_ptr_dest;
+    hipDeviceptr_t dev_ptr_a;
+    hipDeviceptr_t dev_ptr_b;
+
+    float* ptr_dest = new float[N];
+    float* ptr_a = new float[N];
+    float* ptr_b = new float[N];
+
+    for (int i = 0 ; i < N ; ++i )
+      {
+	ptr_dest[i] = 0.0;
+	ptr_a[i] = 2.0;
+	ptr_b[i] = 3.0;
+      }
+
+    hipMalloc(&dev_ptr_dest, sizeof(float)*N);
+    hipMalloc(&dev_ptr_a, sizeof(float)*N);
+    hipMalloc(&dev_ptr_b, sizeof(float)*N);
+
+    hipMemcpyHtoD(dev_ptr_dest, ptr_dest, sizeof(float)*N );
+    hipMemcpyHtoD(dev_ptr_a, ptr_a, sizeof(float)*N );
+    hipMemcpyHtoD(dev_ptr_b, ptr_b, sizeof(float)*N );
+
+
+    struct { 
+      bool  p_ordered;
+      int   p_th_count;
+      int   p_start;
+      int   p_end;
+      bool  p_do_site_perm;
+      int*  p_site_table;
+      bool* p_member_array;
+      hipDeviceptr_t ptr_dest; 
+      hipDeviceptr_t ptr_a; 
+      hipDeviceptr_t ptr_b; 
+    } args{     
+      p_ordered,
+	p_th_count,
+	p_start,
+	p_end = 1,
+	p_do_site_perm,
+	p_site_table,
+	p_member_array,
+	dev_ptr_dest,
+	dev_ptr_a,
+	dev_ptr_b
+	};
+
+    auto size = sizeof(args);
+    void* config[] = {HIP_LAUNCH_PARAM_BUFFER_POINTER, &args,
+		      HIP_LAUNCH_PARAM_BUFFER_SIZE, &size,
+		      HIP_LAUNCH_PARAM_END};
+
+    QDPIO::cout << "Launching kernel..\n";
+
+    hipModuleLaunchKernel(kernel, 1, 1, 1, 1, 1, 1, 0, nullptr, nullptr,
+			  config);
+
+    QDPIO::cout << "..done!\n";
+
+    hipMemcpyDtoH(ptr_dest, dev_ptr_dest, sizeof(float)*N );
+
+    for (int i = 0 ; i < N ; ++i )
+      QDPIO::cout << ptr_dest[i] << " ";
+    QDPIO::cout << "\n";
+
+    delete[] ptr_dest;
+    delete[] ptr_a;
+    delete[] ptr_b;
+
+
+  //hipLaunchKernelGGL( &dummy_kernel , numBlocks, dimBlocks, 0 , stream , 1.2 );
+
+
+#else
+
+  QDPIO::cout << "Opening module.so...\n";
+  void* handle = dlopen("./module.so", RTLD_LAZY);
     
+  if (!handle) {
+    QDPIO::cout << "Cannot open library: " << dlerror() << '\n';
+    QDP_abort(1);
+  }
+    
+  // load the symbol
+  QDPIO::cout << "Loading symbol kernel...\n";
+  typedef void (*call_kernel_t)();
+
+  // reset errors
+  dlerror();
+  call_kernel_t call_kernel = (call_kernel_t) dlsym(handle, "kernel");
+  const char *dlsym_error = dlerror();
+  if (dlsym_error) {
+    QDPIO::cout << "Cannot load symbol 'kernel': " << dlsym_error << '\n';
+    dlclose(handle);
+    QDP_abort(1);
+  }
+    
+    
+  // close the library
+  QDPIO::cout << "Closing library...\n";
+  dlclose(handle);
+
+
+  //dim3 numBlocks;
+  //dim3 dimBlocks;
+  //hipStream_t stream;
+
+
+  //hipLaunchKernelGGL( &dummy_kernel , numBlocks, dimBlocks, 0 , stream , 1.2 );
+
+
+
+#endif
+
+    // QDPIO::cout << "module.size = " << module->size << "\n";
+    // QDPIO::cout << "module.funcTrack.size() = " << module->funcTrack.size() << "\n";
+
+
+    // void hipLaunchKernelGGL(F kernel, const dim3& numBlocks, const dim3& dimBlocks,
+    // 			    std::uint32_t sharedMemBytes, hipStream_t stream,
+    // 			    Args... args);
+
+
+    //void* fptr = &shared;
+
+
+
     // llvm::FunctionType *funcType = mainFunc->getFunctionType();
     // funcType->dump();
 
