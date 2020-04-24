@@ -65,84 +65,87 @@ namespace QDP {
 
 
 
-  void HipLaunchKernel( CUfunction f, 
+  void HipLaunchKernel( JitFunction f, 
 			 unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
 			 unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
-			 unsigned int  sharedMemBytes, void** kernelParams, void** extra )
+			 unsigned int  sharedMemBytes, void* kernelParams)
   {
-    QDP_error_exit("HipLaunchKernel, fixme\n");
-#if 0
     //if ( blockDimX * blockDimY * blockDimZ > 0  &&  gridDimX * gridDimY * gridDimZ > 0 ) {
     
-    hipError_t result = HipLaunchKernelNoSync(f, gridDimX, gridDimY, gridDimZ, 
+    JitResult result = HipLaunchKernelNoSync(f,
+					     gridDimX, gridDimY, gridDimZ, 
 					     blockDimX, blockDimY, blockDimZ, 
-					     sharedMemBytes, 0, kernelParams, extra);
-    if (result != hipSuccess) {
-      QDP_error_exit("CUDA launch error (HipLaunchKernel): grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
-		     gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes );
+					     sharedMemBytes, kernelParams);
 
-      hipError_t result = cuCtxSynchronize();
-      if (result != hipSuccess) {
-
-	if (mapHipErrorString.count(result)) 
-	  std::cout << " Error: " << mapHipErrorString.at(result) << "\n";
-	else
-	  std::cout << " Error: (not known)\n";
-      }      
-      QDP_error_exit("CUDA launch error (HipLaunchKernel, on sync): grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
+    if (result != JitResult::JitSuccess) {
+      QDP_error_exit("HIP launch error (HipLaunchKernel): grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
 		     gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes );
     }
 
-    if (DeviceParams::Instance().getSyncDevice()) {  
-      //HipDeviceSynchronize();
-    }
-#endif
+    // if (DeviceParams::Instance().getSyncDevice()) {  
+    //   //HipDeviceSynchronize();
+    // }
   }
 
 
   
   // namespace {
   //   std::vector<unsigned> __kernel_geom;
-  //   //CUfunction            __kernel_ptr;
+  //   //JitFunction            __kernel_ptr;
   // }
 
   // std::vector<unsigned> get_backed_kernel_geom() { return __kernel_geom; }
-  // CUfunction            get_backed_kernel_ptr() { 
+  // JitFunction            get_backed_kernel_ptr() { 
   //   QDP_error_exit("get_backed_kernel_ptr, fixme\n");
   //   return __kernel_ptr; 
   // }
 
 
 
-  hipError_t HipLaunchKernelNoSync( 
+  JitResult HipLaunchKernelNoSync( JitFunction f,
 				   unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
 				   unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
-				   unsigned int  sharedMemBytes, void** kernelParams, void** extra  )
+				   unsigned int  sharedMemBytes, void* kernelParams  )
   {
-    QDP_error_exit("HipLaunchKernelNoSync, fixme\n");
-#if 0
-     // QDP_info("HipLaunchKernelNoSync: grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
-     // 	      gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes );
-    // QDPIO::cout << "CUfunction = " << (size_t)(void*)f << "\n";
+    QDP_info("HipLaunchKernelNoSync: grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
+	     gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes );
+    // QDPIO::cout << "JitFunction = " << (size_t)(void*)f << "\n";
       
 
 
     //QDPIO::cout << "local mem (bytes) = " << num_threads << "\n";
     //
     
-    auto res = cuLaunchKernel(f, gridDimX, gridDimY, gridDimZ, 
-			      blockDimX, blockDimY, blockDimZ, 
-			      sharedMemBytes, 0, kernelParams, extra);
+    // auto res = cuLaunchKernel(f, gridDimX, gridDimY, gridDimZ, 
+    // 			      blockDimX, blockDimY, blockDimZ, 
+    // 			      sharedMemBytes, 0, kernelParams, extra);
+
+    std::vector<unsigned char>* vec_ptr = (std::vector<unsigned char>*)kernelParams;
+
+    auto size = vec_ptr->size();
+    std::cout << "HipLaunchKernelNoSync: kernel params size: " << size << "\n";
+    void* config[] = {HIP_LAUNCH_PARAM_BUFFER_POINTER, vec_ptr->data(),
+		      HIP_LAUNCH_PARAM_BUFFER_SIZE, &size,
+		      HIP_LAUNCH_PARAM_END};
+
+
+    hipError_t res = hipModuleLaunchKernel((hipFunction_t)f.getFunction(),  
+					   gridDimX, gridDimY, gridDimZ, 
+					   blockDimX, blockDimY, blockDimZ, 
+					   sharedMemBytes, nullptr, nullptr, config);
+
 
     if (res == hipSuccess)
       {
-	//QDPIO::cout << "hipSuccess\n";
+	QDPIO::cout << "hipSuccess\n";
+#if 0
 	if (qdp_cache_get_launch_verbose())
 	  {
 	    QDP_info("HipLaunchKernelNoSync: grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
 		     gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes );
 	  }
-	
+#endif
+#if 0	
         if (qdp_cache_get_pool_bisect())
 	  {
 	    int local = HipGetAttributesLocalSize( f );
@@ -167,14 +170,34 @@ namespace QDP {
 	    max_local_size = local > max_local_size ? local : max_local_size;
 	    max_local_usage = local_use > max_local_usage ? local_use : max_local_usage;
 	  }
+#endif
       }
     else
       {
-	//QDPIO::cout << "no hipSuccess " << mapHipErrorString[res] << "\n";
+	QDPIO::cout << "no hipSuccess " << mapHipErrorString[res] << "\n";
       }
-#endif
-    hipError_t res;
-    return res;
+
+    //HipDeviceSynchronize();
+
+
+
+    JitResult ret;
+
+    switch (res) {
+    case hipSuccess:
+      std::cout << "returning: JitResult::JitSuccess\n";
+      ret = JitResult::JitSuccess;
+      break;
+    case hipErrorLaunchOutOfResources:
+      std::cout << "returning: JitResult::JitResource\n";
+      ret = JitResult::JitResource;
+      break;
+    default:
+      std::cout << "returning: JitResult::JitError\n";
+      ret = JitResult::JitError;
+    }
+
+    return ret;
   }
 
 
@@ -200,7 +223,7 @@ namespace QDP {
 
 
 #if 0
-  int HipAttributeNumRegs( CUfunction f ) {
+  int HipAttributeNumRegs( JitFunction f ) {
     int pi;
     hipError_t res;
     res = cuFuncGetAttribute ( &pi, CU_FUNC_ATTRIBUTE_NUM_REGS , f );
@@ -208,7 +231,7 @@ namespace QDP {
     return pi;
   }
 
-  int HipAttributeLocalSize( CUfunction f ) {
+  int HipAttributeLocalSize( JitFunction f ) {
     int pi;
     hipError_t res;
     res = cuFuncGetAttribute ( &pi, CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES , f );
@@ -216,7 +239,7 @@ namespace QDP {
     return pi;
   }
 
-  int HipAttributeConstSize( CUfunction f ) {
+  int HipAttributeConstSize( JitFunction f ) {
     int pi;
     hipError_t res;
     res = cuFuncGetAttribute ( &pi, CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES , f );
@@ -423,6 +446,15 @@ namespace QDP {
   {
     hipError_t ret;
     ret = hipMemcpyHtoD((hipDeviceptr_t)const_cast<void*>(dest), const_cast<void*>(src) , size);
+
+    QDPIO::cout << "copy H -> D: ";
+    for ( int s = 0 ; s < Layout::sitesOnNode() ; s++ ) 
+      {
+	float* ptr = (float*)src;
+	QDPIO::cout << ptr[s] << " ";
+      }
+    QDPIO::cout << "\n";
+
     HipRes("hipMemcpyH2D",ret);
   }
 
@@ -430,6 +462,15 @@ namespace QDP {
   {
     hipError_t ret;
     ret = hipMemcpyDtoH( dest, (hipDeviceptr_t)const_cast<void*>(src), size);
+
+    QDPIO::cout << "copy D -> H: ";
+    for ( int s = 0 ; s < Layout::sitesOnNode() ; s++ ) 
+      {
+	float* ptr = (float*)dest;
+	QDPIO::cout << ptr[s] << " ";
+      }
+    QDPIO::cout << "\n";
+
     HipRes("hipMemcpyD2H",ret);
   }
 

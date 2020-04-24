@@ -6,7 +6,7 @@ namespace QDP {
 
 
   void
-  function_summulti_convert_ind_exec( CUfunction function, 
+  function_summulti_convert_ind_exec( JitFunction function, 
 				      int size, int threads, int blocks, int shared_mem_usage,
 				      int in_id, int out_id,
 				      int numsubsets,
@@ -14,7 +14,7 @@ namespace QDP {
 				      const multi1d<QDPCache::ArgKey>& table_ids );
 
   void
-  function_summulti_exec( CUfunction function, 
+  function_summulti_exec( JitFunction function, 
 			  int size, int threads, int blocks, int shared_mem_usage,
 			  int in_id, int out_id,
 			  int numsubsets,
@@ -25,11 +25,11 @@ namespace QDP {
   // T1 input
   // T2 output
   template< class T1 , class T2 , JitDeviceLayout input_layout >
-  CUfunction
+  JitFunction
   function_summulti_convert_ind_build()
   {
     /* if (ptx_db::db_enabled) { */
-    /*   CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
+    /*   JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
     /*   if (func) */
     /* 	return func; */
     /* } */
@@ -209,11 +209,11 @@ namespace QDP {
 
   // T input/output
   template< class T >
-  CUfunction
+  JitFunction
   function_summulti_build()
   {
     /* if (ptx_db::db_enabled) { */
-    /*   CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
+    /*   JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
     /*   if (func) */
     /* 	return func; */
     /* } */

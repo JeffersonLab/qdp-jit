@@ -7,7 +7,7 @@ namespace QDP {
   template <class T2>
   void qdp_jit_reduce(int size, int threads, int blocks, int shared_mem_usage, int in_id, int out_id )
   {
-    static CUfunction function;
+    static JitFunction function;
 
     if (function.empty())
       function = function_sum_build<T2>();
@@ -27,7 +27,7 @@ namespace QDP {
 					  int out_id, 
 					  int siteTableId)
   {
-    static CUfunction function;
+    static JitFunction function;
 
     if (function.empty())
       function = function_sum_convert_ind_build<T1,T2,input_layout>();
@@ -50,7 +50,7 @@ namespace QDP {
 					    const multi1d<int>& sizes,
 					    const multi1d<QDPCache::ArgKey>& table_ids)
   {
-    static CUfunction function;
+    static JitFunction function;
 
     assert( sizes.size() == numsubsets );
     assert( table_ids.size() == numsubsets );
@@ -80,7 +80,7 @@ namespace QDP {
 			const multi1d<int>& sizes)
   {
     assert( sizes.size() == numsubsets );
-    static CUfunction function;
+    static JitFunction function;
 
     if (function.empty())
       function = function_summulti_build<T>();
@@ -104,7 +104,7 @@ namespace QDP {
 			      int in_id, 
 			      int out_id)
   {
-    static CUfunction function;
+    static JitFunction function;
 
     if (function.empty())
       function = function_sum_convert_build<T1,T2,input_layout>();
@@ -141,7 +141,7 @@ namespace QDP {
   template <class T2, class ReductionOp >
   void qdp_jit_bool_reduction(int size, int threads, int blocks, int shared_mem_usage, int in_id, int out_id )
   {
-    static CUfunction function;
+    static JitFunction function;
 
     if (function.empty())
       function = function_bool_reduction_build<T2,ReductionOp>();
@@ -160,7 +160,7 @@ namespace QDP {
 				      int in_id, 
 				      int out_id)
   {
-    static CUfunction function;
+    static JitFunction function;
 
     if (function.empty())
       function = function_bool_reduction_convert_build< T1 , T2 , input_layout , ConvertOp , ReductionOp >();
@@ -254,7 +254,7 @@ namespace QDP {
   {
     int shared_mem_usage = threads * sizeof(T);
 
-    static CUfunction function;
+    static JitFunction function;
 
     if (function.empty())
       function = function_global_max_build<T>();

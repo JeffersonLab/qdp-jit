@@ -5,13 +5,15 @@ namespace QDP
 {
   //typedef std::string CUfunction;
 
-  class CUfunction
+  class JitFunction
   {
-    hipModule_t module;
-    bool isEmpty = true;
   public:
+    typedef void* Func_t;
     bool empty() { return isEmpty; }
-    hipModule_t& getModule() { isEmpty = false; return module; }
+    Func_t& getFunction() { isEmpty = false; return function; }
+  private:
+    Func_t function;
+    bool isEmpty = true;
   };
 
 
@@ -171,7 +173,7 @@ namespace QDP
 #endif
 
   template<class T, class T1, class RHS>
-  CUfunction
+  JitFunction
   function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs );
 
   namespace RNG 

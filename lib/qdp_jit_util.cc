@@ -203,13 +203,13 @@ namespace QDP {
   }
 
 
-  CUfunction jit_function_epilogue_get_cuf(const char * fname, const char* pretty )
+  JitFunction jit_function_epilogue_get_cuf(const char * fname, const char* pretty )
   {
     llvm_exit();
 
     //llvm_module_dump();
 
-    return llvm_get_cufunction( fname , pretty );
+    return llvm_get_jitfunction( fname , pretty );
   }
 
 

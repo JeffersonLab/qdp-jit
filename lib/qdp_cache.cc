@@ -1046,8 +1046,21 @@ namespace QDP
   }
 
 
+  namespace {
+    template<class T>
+    void insert_ret( std::vector<unsigned char>& ret, T t )
+    {
+      ret.resize( ret.size() + sizeof(T) );
+      *(T*)&ret[ ret.size() - sizeof(T) ] = t;
+      std::cout << "inserted (size " << sizeof(T) << ") " << t << "\n";
+    }
+  }
+
+
+
   
-  std::vector<void*> QDPCache::get_kernel_args(std::vector<ArgKey>& ids , bool for_kernel )
+  //std::vector<void*> QDPCache::get_kernel_args(std::vector<ArgKey>& ids , bool for_kernel )
+  std::vector<unsigned char> QDPCache::get_kernel_args(std::vector<ArgKey>& ids , bool for_kernel )
   {
     if (qdp_cache_get_pool_bisect())
       {
@@ -1179,8 +1192,98 @@ namespace QDP
       }
 
     
-    const bool print_param = false;
+    const bool print_param = true;
 
+
+#if 1
+    if (print_param)
+      QDPIO::cout << "Jit function param: ";
+    
+    std::vector<unsigned char> ret;
+
+    for ( auto i : ids )
+      {
+	if (i.id >= 0)
+	  {
+	    Entry& e = vecEntry[i.id];
+	    if (e.flags & QDPCache::Flags::JitParam)
+	      {
+		if (print_param)
+		  {
+		    switch(e.param_type) {
+		    case JitParamType::float_: QDPIO::cout << (float)e.param.float_ << ", "; break;
+		    case JitParamType::double_: QDPIO::cout << (double)e.param.double_ << ", "; break;
+		    case JitParamType::int_: QDPIO::cout << (int)e.param.int_ << ", "; break;
+		    case JitParamType::int64_: QDPIO::cout << (int64_t)e.param.int64_ << ", "; break;
+		    case JitParamType::bool_:
+		      if (e.param.bool_)
+			QDPIO::cout << "true, ";
+		      else
+			QDPIO::cout << "false, ";
+		      break;
+		    default:
+		      QDPIO::cout << "(unkown jit param type)\n"; break;
+		      assert(0);
+		    }
+		  }
+	  
+		assert(for_kernel);
+		
+		switch(e.param_type) {
+		case JitParamType::float_: insert_ret<float>(ret, e.param.float_ ); break;
+		case JitParamType::double_: insert_ret<double>(ret, e.param.double_ ); break;
+		case JitParamType::int_: insert_ret<int>(ret, e.param.int_ );break;
+		case JitParamType::int64_: insert_ret<int64_t>(ret, e.param.int64_ ); break;
+		case JitParamType::bool_: insert_ret<bool>(ret, e.param.bool_ ); ;break;
+		}
+	      }
+	    else
+	      {
+		if (print_param)
+		  {
+		    QDPIO::cout << (size_t)e.devPtr << ", ";
+		  }
+
+		if (e.flags & QDPCache::Flags::Array)
+		  {
+		    //assert(for_kernel);
+
+		    if ( i.elem == -1 )
+		      {
+			// This ArgKey comes from an multiXd<OScalar> access, like in sumMulti
+			//ret.push_back( for_kernel ? &e.devPtr : e.devPtr );
+			insert_ret<void*>( ret , for_kernel ? &e.devPtr : e.devPtr );
+		      }
+		    else
+		      {
+			// This ArgKey comes from an OScalar access through multiXd<OScalar> 
+			assert( e.karg_vec.size() > i.elem );
+			e.karg_vec[i.elem] = (void*)((size_t)e.devPtr + e.elem_size * i.elem);
+			insert_ret<void*>( ret , for_kernel ? &e.karg_vec[i.elem] : e.karg_vec[i.elem] );
+		      }
+		  }
+		else
+		  {
+		    insert_ret<void*>( ret , for_kernel ? &e.devPtr : e.devPtr );
+		  }
+	      }
+	  }
+	else
+	  {
+	
+	    if (print_param)
+	      {
+		QDPIO::cout << "NULL(id=" << i.id << "), ";
+	      }
+
+	    assert(for_kernel);
+	    insert_ret<void*>( ret , &jit_param_null_ptr );
+	
+	  }
+      }
+    if (print_param)
+      QDPIO::cout << "\n";
+#else
     if (print_param)
       QDPIO::cout << "Jit function param: ";
     
@@ -1260,6 +1363,7 @@ namespace QDP
       }
     if (print_param)
       QDPIO::cout << "\n";
+#endif
 
     return ret;
   }

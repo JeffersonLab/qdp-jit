@@ -5,20 +5,20 @@
 
 namespace QDP {
 
-  void function_sum_convert_ind_exec( CUfunction function, 
+  void function_sum_convert_ind_exec( JitFunction function, 
 				      int size, int threads, int blocks, int shared_mem_usage,
 				      int in_id, int out_id, int siteTableId );
 
-  void function_sum_convert_exec( CUfunction function, 
+  void function_sum_convert_exec( JitFunction function, 
 				  int size, int threads, int blocks, int shared_mem_usage,
 				  int in_id, int out_id);
 
-  void function_sum_exec( CUfunction function, 
+  void function_sum_exec( JitFunction function, 
 			  int size, int threads, int blocks, int shared_mem_usage,
 			  int in_id, int out_id);
 
 
-  void function_bool_reduction_exec( CUfunction function, 
+  void function_bool_reduction_exec( JitFunction function, 
 				     int size, int threads, int blocks, int shared_mem_usage,
 				     int in_id, int out_id);
 
@@ -27,11 +27,11 @@ namespace QDP {
   // T1 input
   // T2 output
   template< class T1 , class T2 , JitDeviceLayout input_layout >
-  CUfunction 
+  JitFunction 
   function_sum_convert_ind_build()
   {
     /* if (ptx_db::db_enabled) { */
-    /*   CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
+    /*   JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
     /*   if (func) */
     /* 	return func; */
     /* } */
@@ -162,11 +162,11 @@ namespace QDP {
   // T1 input
   // T2 output
   template< class T1 , class T2 , JitDeviceLayout input_layout >
-  CUfunction 
+  JitFunction 
   function_sum_convert_build()
   {
     /* if (ptx_db::db_enabled) { */
-    /*   CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
+    /*   JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
     /*   if (func) */
     /* 	return func; */
     /* } */
@@ -294,11 +294,11 @@ namespace QDP {
 
 
   template<class T1>
-  CUfunction 
+  JitFunction 
   function_sum_build()
   {
     /* if (ptx_db::db_enabled) { */
-    /*   CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
+    /*   JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
     /*   if (func) */
     /* 	return func; */
     /* } */
@@ -428,11 +428,11 @@ namespace QDP {
   // T1 input
   // T2 output
   template< class T1 , class T2 , JitDeviceLayout input_layout , class ConvertOp, class ReductionOp >
-  CUfunction 
+  JitFunction 
   function_bool_reduction_convert_build()
   {
     /* if (ptx_db::db_enabled) { */
-    /*   CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
+    /*   JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
     /*   if (func) */
     /* 	return func; */
     /* } */
@@ -560,11 +560,11 @@ namespace QDP {
 
 
   template<class T1, class ReductionOp>
-  CUfunction 
+  JitFunction 
   function_bool_reduction_build()
   {
     /* if (ptx_db::db_enabled) { */
-    /*   CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
+    /*   JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
     /*   if (func) */
     /* 	return func; */
     /* } */

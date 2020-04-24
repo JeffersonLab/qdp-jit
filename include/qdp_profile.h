@@ -88,7 +88,7 @@ struct QDPProfile_t
   }
 
   // End time
-  void etime(QDPTime_t t, CUfunction f) {
+  void etime(QDPTime_t t, JitFunction f) {
     if (first) {
       first_time += t;
       num_regs = CudaAttributeNumRegs(f);

@@ -88,7 +88,7 @@ namespace llvm {
 
 namespace QDP {
 
-  //typedef void* CUfunction;
+  //typedef void* JitFunction;
 
 
   namespace llvm_debug {
@@ -103,12 +103,12 @@ namespace QDP {
     extern int nvptx_FTZ;   // NVPTX Flush subnormals to zero
   }
 
-  namespace ptx_db {
-    extern bool db_enabled;
-    extern std::string dbname;
-  }
+  /* namespace ptx_db { */
+  /*   extern bool db_enabled; */
+  /*   extern std::string dbname; */
+  /* } */
 
-  CUfunction llvm_ptx_db( const char * pretty );
+  /* JitFunction llvm_ptx_db( const char * pretty ); */
 
   
   extern llvm::LLVMContext TheContext;
@@ -159,7 +159,7 @@ namespace QDP {
     // llvm::Value * r_rcvbuf;
   };
 
-  std::string getPTXfromCUFunc(CUfunction f);
+  //std::string getPTXfromCUFunc(JitFunction f);
   
   void llvm_append_mattr( const char * attr );
 
@@ -280,7 +280,7 @@ namespace QDP {
 
   void addKernelMetadata(llvm::Function *F);
 
-  CUfunction llvm_get_cufunction(const char* fname, const char* pretty);
+  JitFunction llvm_get_jitfunction(const char* fname, const char* pretty);
 
 
   llvm::Value* llvm_sin_f32( llvm::Value* lhs );

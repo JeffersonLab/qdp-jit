@@ -7,17 +7,17 @@
 namespace QDP {
 
 
-  void function_global_max_exec( CUfunction function, 
+  void function_global_max_exec( JitFunction function, 
 				 int size, int threads, int blocks, int shared_mem_usage,
 				 int in_id , int out_id);
 
 
   template<class T1>
-  CUfunction 
+  JitFunction 
   function_global_max_build()
   {
     /* if (ptx_db::db_enabled) { */
-    /*   CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
+    /*   JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
     /*   if (func) */
     /* 	return func; */
     /* } */

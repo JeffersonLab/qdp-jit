@@ -128,7 +128,7 @@ namespace QDP {
   jit_block_t jit_get_entry_block();
   jit_block_t jit_get_current_block();
   std::string jit_get_kernel_as_string();
-  CUfunction llvm_get_cufunction(const char* fname);
+  JitFunction llvm_get_jitfunction(const char* fname);
   
 
   // class jit_function_singleton

@@ -76,7 +76,7 @@ namespace QDP {
   inline OLattice<T1>&
   pokeSite(OLattice<T1>& l, const OScalar<T1>& r, const multi1d<int>& coord)
   {
-    static CUfunction function;
+    static JitFunction function;
 
     if (function.empty())
       function = function_pokeSite_build(l, r);

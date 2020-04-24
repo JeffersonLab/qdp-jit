@@ -27,7 +27,7 @@ namespace QDP {
   void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs,
 		const Subset& s)
   {
-    static CUfunction function;
+    static JitFunction function;
 
     if (function.empty())
       function = function_sca_sca_build(dest, op, rhs);
@@ -46,7 +46,7 @@ namespace QDP {
   void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs,
 		const Subset& s)
   {
-    static CUfunction function;
+    static JitFunction function;
     if (function.empty())
       function = function_lat_sca_build(dest, op, rhs);
 
@@ -59,7 +59,7 @@ namespace QDP {
   void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs,
 		const Subset& s)
   {
-    static CUfunction function;
+    static JitFunction function;
     if (function.empty())
       function = function_build(dest, op, rhs);
 
@@ -73,7 +73,7 @@ namespace QDP {
   void evaluate_subtype_type(OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,C1 >& rhs,
 			     const Subset& s)
   {
-    static CUfunction function;
+    static JitFunction function;
 
     if (function.empty())
       function = function_subtype_type_build(dest, op, rhs);
@@ -87,7 +87,7 @@ namespace QDP {
   template<class T, class T1, class Op>
   void operator_type_subtype(OLattice<T>& dest, const Op& op, const QDPSubType<T1,OLattice<T1> >& rhs, const Subset& s)
   {
-    static CUfunction function;
+    static JitFunction function;
 
     if (function.empty())
       function = operator_type_subtype_build(dest, op, rhs);
@@ -101,7 +101,7 @@ namespace QDP {
   template<class T, class T1, class Op>
   void operator_subtype_subtype(OSubLattice<T>& dest, const Op& op, const QDPSubType<T1,OLattice<T1> >& rhs, const Subset& s)
   {
-    static CUfunction function;
+    static JitFunction function;
 
     if (function.empty())
       function = operator_subtype_subtype_build(dest, op, rhs);
@@ -115,7 +115,7 @@ namespace QDP {
   template<class T, class T1, class Op, class RHS>
   void evaluate_subtype(OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs, const Subset& s)
   {
-    static CUfunction function;
+    static JitFunction function;
 
     if (function.empty())
       function = function_lat_sca_subtype_build(dest, op, rhs);
@@ -132,7 +132,7 @@ namespace QDP {
   template<class T1, class T2>
   void copymask(OLattice<T2>& dest, const OLattice<T1>& mask, const OLattice<T2>& s1)
   {
-    static CUfunction function;
+    static JitFunction function;
 
     if (function.empty())
       function = function_copymask_build( dest , mask , s1 );
@@ -148,7 +148,7 @@ namespace QDP {
   random(OLattice<T>& d, const Subset& s)
   {
 
-    static CUfunction function;
+    static JitFunction function;
 
     Seed seed_tmp;
 
@@ -197,7 +197,7 @@ namespace QDP {
     random(r1,s);
     random(r2,s);
 
-    static CUfunction function;
+    static JitFunction function;
 
     if (function.empty())
       function = function_gaussian_build( d , r1 , r2 );
@@ -218,7 +218,7 @@ namespace QDP {
   inline
   void zero_rep(OLattice<T>& dest, const Subset& s) 
   {
-    static CUfunction function;
+    static JitFunction function;
 
     if (function.empty())
       function = function_zero_rep_build( dest );
@@ -230,7 +230,7 @@ namespace QDP {
   template<class T> 
   void zero_rep_subtype(OSubLattice<T>& dest, const Subset& s) 
   {
-    static CUfunction function;
+    static JitFunction function;
 
     if (function.empty())
       function = function_zero_rep_subtype_build( dest );

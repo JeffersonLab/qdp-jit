@@ -12,10 +12,14 @@
 
 namespace QDP {
 
+
+  enum class JitResult { JitSuccess , JitError , JitResource };
+
+
   extern std::map<hipError_t,std::string> mapCuErrorString;
 
   /* std::vector<unsigned> get_backed_kernel_geom(); */
-  /* CUfunction            get_backed_kernel_ptr(); */
+  /* JitFunction            get_backed_kernel_ptr(); */
 
   void HipCheckResult(hipError_t ret);
 
@@ -23,23 +27,23 @@ namespace QDP {
 
   int HipGetConfig(hipDeviceAttribute_t what);
 
-  void HipLaunchKernel( CUfunction f, 
+  void HipLaunchKernel( JitFunction f, 
 			 unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
 			 unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
-			 unsigned int  sharedMemBytes, void** kernelParams, void** extra );
+			 unsigned int  sharedMemBytes, void* kernelParams);
 
-  hipError_t HipLaunchKernelNoSync( CUfunction f, 
+  JitResult HipLaunchKernelNoSync( JitFunction f, 
 				   unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
 				   unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
-				   unsigned int  sharedMemBytes, void** kernelParams, void** extra );
+				   unsigned int  sharedMemBytes, void* kernelParams);
 
   int HipGetMaxLocalSize();
   int HipGetMaxLocalUsage();
   size_t HipGetInitialFreeMemory();
   
-  int HipAttributeNumRegs( CUfunction f );
-  int HipAttributeLocalSize( CUfunction f );
-  int HipAttributeConstSize( CUfunction f );
+  int HipAttributeNumRegs( JitFunction f );
+  int HipAttributeLocalSize( JitFunction f );
+  int HipAttributeConstSize( JitFunction f );
 
   bool HipHostRegister(void * ptr , size_t size);
   void HipHostUnregister(void * ptr );

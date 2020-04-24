@@ -4,7 +4,7 @@
 namespace QDP {
 
   void
-  function_sum_convert_ind_exec( CUfunction function, 
+  function_sum_convert_ind_exec( JitFunction function, 
 				 int size, int threads, int blocks, int shared_mem_usage,
 				 int in_id, int out_id, int siteTableId )
   {
@@ -25,7 +25,7 @@ namespace QDP {
     ids.push_back( in_id );
     ids.push_back( out_id );
  
-    std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
+    auto args( QDP_get_global_cache().get_kernel_args(ids) );
     kernel_geom_t now = getGeom( hi-lo , threads );
 
     QDP_error_exit("fixme function_sum_convert_ind_exec");
@@ -37,7 +37,7 @@ namespace QDP {
 
 
   void
-  function_summulti_convert_ind_exec( CUfunction function, 
+  function_summulti_convert_ind_exec( JitFunction function, 
 				      int size, int threads, int blocks, int shared_mem_usage,
 				      int in_id, int out_id,
 				      int numsubsets,
@@ -59,7 +59,7 @@ namespace QDP {
     ids.push_back( in_id );
     ids.push_back( out_id );
  
-    std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
+    auto args = QDP_get_global_cache().get_kernel_args(ids);
     kernel_geom_t now = getGeom( size , threads );
 
     QDP_error_exit("fixme function_summulti_convert_ind_exec");
@@ -74,7 +74,7 @@ namespace QDP {
 
 
   void
-  function_summulti_exec( CUfunction function, 
+  function_summulti_exec( JitFunction function, 
 			  int size, int threads, int blocks, int shared_mem_usage,
 			  int in_id, int out_id,
 			  int numsubsets,
@@ -93,7 +93,7 @@ namespace QDP {
     ids.push_back( in_id );
     ids.push_back( out_id );
  
-    std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
+    auto args = QDP_get_global_cache().get_kernel_args(ids);
     kernel_geom_t now = getGeom( size , threads );
 
     QDP_error_exit("fixme function_summulti_exec");
@@ -106,7 +106,7 @@ namespace QDP {
 
 
   void
-  function_sum_convert_exec( CUfunction function, 
+  function_sum_convert_exec( JitFunction function, 
 			     int size, int threads, int blocks, int shared_mem_usage,
 			     int in_id, int out_id)
   {
@@ -125,7 +125,7 @@ namespace QDP {
     ids.push_back( in_id );
     ids.push_back( out_id );
  
-    std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
+    auto args = QDP_get_global_cache().get_kernel_args(ids);
     kernel_geom_t now = getGeom( hi-lo , threads );
 
     QDP_error_exit("fixme function_sum_convert_exec");
@@ -138,7 +138,7 @@ namespace QDP {
 
 
   void
-  function_sum_exec( CUfunction function, 
+  function_sum_exec( JitFunction function, 
 		     int size, int threads, int blocks, int shared_mem_usage,
 		     int in_id, int out_id)
   {
@@ -157,7 +157,7 @@ namespace QDP {
     ids.push_back( in_id );
     ids.push_back( out_id );
  
-    std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
+    auto args = QDP_get_global_cache().get_kernel_args(ids);
     kernel_geom_t now = getGeom( hi-lo , threads );
 
     QDP_error_exit("fixme function_sum_exec");
@@ -169,7 +169,7 @@ namespace QDP {
 
 
 
-  void function_global_max_exec( CUfunction function, 
+  void function_global_max_exec( JitFunction function, 
 				 int size, int threads, int blocks, int shared_mem_usage,
 				 int in_id, int out_id)
   {
@@ -188,7 +188,7 @@ namespace QDP {
     ids.push_back( in_id );
     ids.push_back( out_id );
  
-    std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
+    auto args = QDP_get_global_cache().get_kernel_args(ids);
     kernel_geom_t now = getGeom( hi-lo , threads );
 
     QDP_error_exit("fixme function_global_max_exec");
@@ -202,7 +202,7 @@ namespace QDP {
 
   
   void
-  function_isfinite_convert_exec( CUfunction function, 
+  function_isfinite_convert_exec( JitFunction function, 
 				  int size, int threads, int blocks, int shared_mem_usage,
 				  int in_id, int out_id)
   {
@@ -221,7 +221,7 @@ namespace QDP {
     ids.push_back( in_id );
     ids.push_back( out_id );
  
-    std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
+    auto args = QDP_get_global_cache().get_kernel_args(ids);
     kernel_geom_t now = getGeom( hi-lo , threads );
 
     QDP_error_exit("fixme function_isfinite_convert_exec");
@@ -234,7 +234,7 @@ namespace QDP {
 
 
   void
-  function_bool_reduction_exec( CUfunction function, 
+  function_bool_reduction_exec( JitFunction function, 
 				int size, int threads, int blocks, int shared_mem_usage,
 				int in_id, int out_id)
   {
@@ -253,7 +253,7 @@ namespace QDP {
     ids.push_back( in_id );
     ids.push_back( out_id );
  
-    std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
+    auto args = QDP_get_global_cache().get_kernel_args(ids);
     kernel_geom_t now = getGeom( hi-lo , threads );
     QDP_error_exit("fixme function_bool_reduction_exec");
 #if 0

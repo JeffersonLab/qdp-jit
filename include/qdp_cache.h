@@ -74,7 +74,8 @@ namespace QDP
     
     QDPCache();
 
-    std::vector<void*> get_kernel_args(std::vector<ArgKey>& ids , bool for_kernel = true );
+    //std::vector<void*> get_kernel_args(std::vector<ArgKey>& ids , bool for_kernel = true );
+    std::vector<unsigned char> get_kernel_args(std::vector<ArgKey>& ids , bool for_kernel = true );
     void backup_last_kernel_args();
     
     void printInfo(int id);

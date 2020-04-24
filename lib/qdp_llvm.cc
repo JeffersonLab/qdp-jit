@@ -1630,15 +1630,11 @@ namespace QDP {
 
 
 
-  void dummy_kernel(float a)
+
+
+  JitFunction llvm_get_jitfunction(const char* fname, const char* pretty_cstr)
   {
-  }
-
-
-
-  CUfunction llvm_get_cufunction(const char* fname, const char* pretty_cstr)
-  {
-    std::cout << "llvm_get_cufunction\n";
+    std::cout << "llvm_get_jitfunction\n";
     //Mod->dump();
 
     //addKernelMetadata( mainFunc );
@@ -1697,7 +1693,7 @@ namespace QDP {
 										llvm::Optional< llvm::Reloc::Model >() ));
 
     Mod->setDataLayout(TargetMachine->createDataLayout());
-    Mod->dump();
+    //Mod->dump();
 
 
     QDPIO::cout << "got target machine CPU: " << TargetMachine->getTargetCPU().str() << "\n";
@@ -1798,7 +1794,6 @@ namespace QDP {
     system( command.c_str() );
 
 
-#if 1
     std::ifstream shared_file(shared_path, std::ios::binary | std::ios::ate);
     std::ifstream::pos_type shared_file_size = shared_file.tellg();
 
@@ -1830,27 +1825,25 @@ namespace QDP {
 
     //for (auto it = ihip->
 
-    hipFunction_t kernel;
+    //hipFunction_t kernel;
 
     //std::string tmpname = "_" + __kernel_name;
 
     QDPIO::cout << "looking for function with name " << __kernel_name.c_str() << "\n";
 
-    ret = hipModuleGetFunction(&kernel, module, __kernel_name.c_str() );
+    JitFunction tmp;
+    // return tmp;
+
+
+    //ret = hipModuleGetFunction(&kernel, module, __kernel_name.c_str() );
+    ret = hipModuleGetFunction((hipFunction_t*)&tmp.getFunction(), module, __kernel_name.c_str() );
       
     HipCheckResult(ret);
 
     QDPIO::cout << "Got function!\n";
+    return tmp;
 
-
-    dim3 numBlocks;
-    dim3 dimBlocks;
-    hipStream_t stream;
-
-
-    //define void @kernel(i1 %arg0, i32 %arg1, i32 %arg2, i32 %arg3, i1 %arg4, i32* %arg5, i1* %arg6, float* %arg7, float* %arg8, float* %arg9)
-
-
+#if 0
     bool p_ordered = true;
     int  p_th_count = 1;
     int  p_start = 0;
@@ -1914,10 +1907,12 @@ namespace QDP {
 		      HIP_LAUNCH_PARAM_BUFFER_SIZE, &size,
 		      HIP_LAUNCH_PARAM_END};
 
-    QDPIO::cout << "Launching kernel..\n";
+    QDPIO::cout << "Launching kernel from copied JitFunction..\n";
 
-    hipModuleLaunchKernel(kernel, 1, 1, 1, 1, 1, 1, 0, nullptr, nullptr,
-			  config);
+    hipModuleLaunchKernel((hipFunction_t)tmp.getFunction(), 1, 1, 1, 1, 1, 1, 0, nullptr, nullptr,
+     			  config);
+    // hipModuleLaunchKernel(kernel, 1, 1, 1, 1, 1, 1, 0, nullptr, nullptr,
+    // 			  config);
 
     QDPIO::cout << "..done!\n";
 
@@ -1930,72 +1925,7 @@ namespace QDP {
     delete[] ptr_dest;
     delete[] ptr_a;
     delete[] ptr_b;
-
-
-  //hipLaunchKernelGGL( &dummy_kernel , numBlocks, dimBlocks, 0 , stream , 1.2 );
-
-
-#else
-
-  QDPIO::cout << "Opening module.so...\n";
-  void* handle = dlopen("./module.so", RTLD_LAZY);
-    
-  if (!handle) {
-    QDPIO::cout << "Cannot open library: " << dlerror() << '\n';
-    QDP_abort(1);
-  }
-    
-  // load the symbol
-  QDPIO::cout << "Loading symbol kernel...\n";
-  typedef void (*call_kernel_t)();
-
-  // reset errors
-  dlerror();
-  call_kernel_t call_kernel = (call_kernel_t) dlsym(handle, "kernel");
-  const char *dlsym_error = dlerror();
-  if (dlsym_error) {
-    QDPIO::cout << "Cannot load symbol 'kernel': " << dlsym_error << '\n';
-    dlclose(handle);
-    QDP_abort(1);
-  }
-    
-    
-  // close the library
-  QDPIO::cout << "Closing library...\n";
-  dlclose(handle);
-
-
-  //dim3 numBlocks;
-  //dim3 dimBlocks;
-  //hipStream_t stream;
-
-
-  //hipLaunchKernelGGL( &dummy_kernel , numBlocks, dimBlocks, 0 , stream , 1.2 );
-
-
-
 #endif
-
-    // QDPIO::cout << "module.size = " << module->size << "\n";
-    // QDPIO::cout << "module.funcTrack.size() = " << module->funcTrack.size() << "\n";
-
-
-    // void hipLaunchKernelGGL(F kernel, const dim3& numBlocks, const dim3& dimBlocks,
-    // 			    std::uint32_t sharedMemBytes, hipStream_t stream,
-    // 			    Args... args);
-
-
-    //void* fptr = &shared;
-
-
-
-    // llvm::FunctionType *funcType = mainFunc->getFunctionType();
-    // funcType->dump();
-
-
-
-    CUfunction tmp;
-    return tmp;
   }
 
 

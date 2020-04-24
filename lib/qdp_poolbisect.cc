@@ -185,7 +185,7 @@ namespace QDP {
       }
     
 
-    CUfunction f = get_backed_kernel_ptr();
+    JitFunction f = get_backed_kernel_ptr();
     auto geom = get_backed_kernel_geom();
 
     if (!geom.size())
