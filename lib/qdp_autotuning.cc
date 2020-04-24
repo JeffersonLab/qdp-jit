@@ -41,8 +41,8 @@ namespace QDP {
       return;
 
     if (mapTune.count(function.getFunction()) == 0) {
-      mapTune[function.getFunction()] = tune_t( DeviceParams::Instance().getMaxBlockX() , 0 , 0.0 );
-      //mapTune[function.getFunction()] = tune_t( 16 , 0 , 0.0 );
+      //mapTune[function.getFunction()] = tune_t( DeviceParams::Instance().getMaxBlockX() , 0 , 0.0 );
+      mapTune[function.getFunction()] = tune_t( 16 , 0 , 0.0 );
     }
 
 
@@ -55,7 +55,8 @@ namespace QDP {
       QDP_info("HIP launch (settled): grid=(%u,%u,%u), block=(%d,%u,%u) ",now.Nblock_x,now.Nblock_y,1,    tune.best,1,1 );
       
       //JitResult result = HipLaunchKernelNoSync(function,   now.Nblock_x,now.Nblock_y,1,    tune.best,1,1,    0, &args[0] );
-      JitResult result = HipLaunchKernelNoSync(function,   now.Nblock_x,now.Nblock_y,1,    tune.best,1,1,    0, &args );
+      //JitResult result = HipLaunchKernelNoSync(function,   now.Nblock_x,now.Nblock_y,1,    tune.best,1,1,    0, &args );
+      JitResult result = HipLaunchKernelNoSync(function,   now.Nblock_x,now.Nblock_y,1,    tune.best,1,1,    0, args );
 
       if (result != JitResult::JitSuccess) {
 	QDP_error_exit("HIP launch error (after successful tuning): grid=(%u,%u,%u), block=(%d,%u,%u) ", now.Nblock_x,now.Nblock_y,1,    tune.best,1,1 );
@@ -79,7 +80,8 @@ namespace QDP {
 	QDP_info("HIP launch (trying): grid=(%u,%u,%u), block=(%d,%u,%u) ",now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1 );
 
 	//result = HipLaunchKernelNoSync(function,   now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1,    0, &args[0] );
-	result = HipLaunchKernelNoSync(function,   now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1,    0, &args );
+	//result = HipLaunchKernelNoSync(function,   now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1,    0, &args );
+	result = HipLaunchKernelNoSync(function,   now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1,    0, args );
 
 	if (result != JitResult::JitSuccess && result != JitResult::JitResource) {
 	  QDP_error_exit("HIP launch error: grid=(%u,%u,%u), block=(%d,%u,%u) ", now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1 );

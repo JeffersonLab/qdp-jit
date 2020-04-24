@@ -14,6 +14,7 @@
 #include <hip/hip_runtime.h>
 #include <hip/hip_runtime_api.h>
 
+
 using namespace std;
 
 
@@ -64,7 +65,7 @@ namespace QDP {
   };
 
 
-
+#if 0
   void HipLaunchKernel( JitFunction f, 
 			 unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
 			 unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
@@ -86,7 +87,7 @@ namespace QDP {
     //   //HipDeviceSynchronize();
     // }
   }
-
+#endif
 
   
   // namespace {
@@ -105,7 +106,7 @@ namespace QDP {
   JitResult HipLaunchKernelNoSync( JitFunction f,
 				   unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
 				   unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
-				   unsigned int  sharedMemBytes, void* kernelParams  )
+				   unsigned int  sharedMemBytes, std::vector<unsigned char>& vec_ptr  )
   {
     QDP_info("HipLaunchKernelNoSync: grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
 	     gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes );
@@ -120,13 +121,152 @@ namespace QDP {
     // 			      blockDimX, blockDimY, blockDimZ, 
     // 			      sharedMemBytes, 0, kernelParams, extra);
 
-    std::vector<unsigned char>* vec_ptr = (std::vector<unsigned char>*)kernelParams;
 
-    auto size = vec_ptr->size();
+    //= (std::vector<unsigned char>*)kernelParams;
+#if 0
+    auto size = vec_ptr.size();
     std::cout << "HipLaunchKernelNoSync: kernel params size: " << size << "\n";
-    void* config[] = {HIP_LAUNCH_PARAM_BUFFER_POINTER, vec_ptr->data(),
+    void* config[] = {HIP_LAUNCH_PARAM_BUFFER_POINTER, vec_ptr.data(),
 		      HIP_LAUNCH_PARAM_BUFFER_SIZE, &size,
 		      HIP_LAUNCH_PARAM_END};
+#else
+    size_t N = 16;
+
+    bool p_ordered = true;
+    int  p_th_count = N;
+    int  p_start = 0;
+    int  p_end = 15;
+    bool p_do_site_perm = false;
+    int* p_site_table   = NULL;
+    bool* p_member_array = NULL;
+
+    hipDeviceptr_t dev_ptr_dest;
+    hipDeviceptr_t dev_ptr_a;
+    hipDeviceptr_t dev_ptr_b;
+
+    float* ptr_dest = new float[N];
+    float* ptr_a = new float[N];
+    float* ptr_b = new float[N];
+
+    for (int i = 0 ; i < N ; ++i )
+      {
+	ptr_dest[i] = 0.0;
+	ptr_a[i] = 2.0;
+	ptr_b[i] = 3.0;
+      }
+
+    hipMalloc(&dev_ptr_dest, sizeof(float)*N);
+    hipMalloc(&dev_ptr_a, sizeof(float)*N);
+    hipMalloc(&dev_ptr_b, sizeof(float)*N);
+
+    hipMemcpyHtoD(dev_ptr_dest, ptr_dest, sizeof(float)*N );
+    hipMemcpyHtoD(dev_ptr_a, ptr_a, sizeof(float)*N );
+    hipMemcpyHtoD(dev_ptr_b, ptr_b, sizeof(float)*N );
+
+
+    struct { 
+      bool  p_ordered;
+      int   p_th_count;
+      int   p_start;
+      int   p_end;
+      bool  p_do_site_perm;
+      int*  p_site_table;
+      bool* p_member_array;
+      hipDeviceptr_t ptr_dest; 
+      hipDeviceptr_t ptr_a; 
+      hipDeviceptr_t ptr_b; 
+    } args{     
+      p_ordered,
+	p_th_count,
+	p_start,
+	p_end,
+	p_do_site_perm,
+	p_site_table,
+	p_member_array,
+	dev_ptr_dest,
+	dev_ptr_a,
+	dev_ptr_b
+	};
+
+
+    std::cout << "size of args: " << sizeof(args) << "\n";
+    std::cout << "size of bool: " << sizeof(bool) << "\n";
+    std::cout << "size of int: " << sizeof(int) << "\n";
+    std::cout << "size of int*: " << sizeof(int*) << "\n";
+    std::cout << "size of bool*: " << sizeof(bool*) << "\n";
+    std::cout << "size of hipDeviceptr_t: " << sizeof(hipDeviceptr_t) << "\n";
+
+    std::cout << "was: " << "\n";
+    //args.ptr_dest = (hipDeviceptr_t)(*(void**)&(*vec_ptr)[30]);
+    //std::cout << "now: " << args.ptr_dest << "\n";
+
+    std::cout << "p_ordered: " << args.p_ordered << "\n";
+    std::cout << "p_th_count: " << args.p_th_count << "\n";
+    std::cout << "p_start: " << args.p_start << "\n";
+    std::cout << "p_end: " << args.p_end << "\n";
+    std::cout << "p_do_site_perm: " << args.p_do_site_perm << "\n";
+    std::cout << "p_site_table: " << args.p_site_table << "\n";
+    std::cout << "p_member_array: " << args.p_member_array << "\n";
+    std::cout << "ptr_dest: " << args.ptr_dest << "\n";
+    std::cout << "ptr_a: " << args.ptr_a << "\n";
+    std::cout << "ptr_b: " << args.ptr_b << "\n";
+
+    memcpy( &args.p_ordered , &vec_ptr[0] , vec_ptr.size() );
+
+    // for (int i = 0 ; i < 54 ; ++i)
+    //   ((unsigned int*)&args.p_ordered)[i] = vec_ptr[i];
+
+
+    // args.p_ordered=*(bool*)&vec_ptr.data()[0];
+    // args.p_th_count=*(int*)&vec_ptr.data()[1];
+    // args.p_start=*(int*)&vec_ptr.data()[5];
+    // args.p_end=*(int*)&vec_ptr.data()[9];
+    // args.p_do_site_perm=*(bool*)&vec_ptr.data()[13];
+    // args.p_site_table=*(int**)&vec_ptr.data()[14];
+    // args.p_member_array=*(bool**)&vec_ptr.data()[22];
+    // args.ptr_dest=*(void**)&vec_ptr.data()[30];
+    // args.ptr_a=*(void**)&vec_ptr.data()[38];
+    // args.ptr_b=*(void**)&vec_ptr.data()[46];
+
+
+
+    std::cout << "now: " << "\n";
+
+    std::cout << "p_ordered: " << args.p_ordered << "\n";
+    std::cout << "p_th_count: " << args.p_th_count << "\n";
+    std::cout << "p_start: " << args.p_start << "\n";
+    std::cout << "p_end: " << args.p_end << "\n";
+    std::cout << "p_do_site_perm: " << args.p_do_site_perm << "\n";
+    std::cout << "p_site_table: " << args.p_site_table << "\n";
+    std::cout << "p_member_array: " << args.p_member_array << "\n";
+    std::cout << "ptr_dest: " << args.ptr_dest << "\n";
+    std::cout << "ptr_a: " << args.ptr_a << "\n";
+    std::cout << "ptr_b: " << args.ptr_b << "\n";
+
+    auto size = sizeof(args);
+    void* config[] = {HIP_LAUNCH_PARAM_BUFFER_POINTER, &args,
+		      HIP_LAUNCH_PARAM_BUFFER_SIZE, &size,
+		      HIP_LAUNCH_PARAM_END};
+
+    // QDPIO::cout << "Launching kernel from copied JitFunction..\n";
+
+    // hipModuleLaunchKernel((hipFunction_t)tmp.getFunction(), 1, 1, 1, 1, 1, 1, 0, nullptr, nullptr,
+    //  			  config);
+#endif
+
+
+    // std::cout << "kernel args before launch:\n";
+    // std::cout << "p_ordered: " << (*(bool*)&vec_ptr.data()[0]) << "\n";
+    // std::cout << "p_th_count: " << (*(int*)&vec_ptr.data()[1]) << "\n";
+    // std::cout << "p_start: " << (*(int*)&vec_ptr.data()[5]) << "\n";
+    // std::cout << "p_end: " << (*(int*)&vec_ptr.data()[9]) << "\n";
+    // std::cout << "p_do_site_perm: " << (*(bool*)&vec_ptr.data()[13]) << "\n";
+    // std::cout << "p_site_table: " << (*(void**)&vec_ptr.data()[14]) << "\n";
+    // std::cout << "p_member_array: " << (*(void**)&vec_ptr.data()[22]) << "\n";
+    // std::cout << "ptr_dest: " << (*(void**)&vec_ptr.data()[30]) << "\n";
+    // std::cout << "ptr_a: " << (*(void**)&vec_ptr.data()[38]) << "\n";
+    // std::cout << "ptr_b: " << (*(void**)&vec_ptr.data()[46]) << "\n";
+
 
 
     hipError_t res = hipModuleLaunchKernel((hipFunction_t)f.getFunction(),  
@@ -134,6 +274,19 @@ namespace QDP {
 					   blockDimX, blockDimY, blockDimZ, 
 					   sharedMemBytes, nullptr, nullptr, config);
 
+#if 0
+    QDPIO::cout << "..done!\n";
+
+    hipMemcpyDtoH(ptr_dest, dev_ptr_dest, sizeof(float)*N );
+
+    for (int i = 0 ; i < N ; ++i )
+      QDPIO::cout << ptr_dest[i] << " ";
+    QDPIO::cout << "\n";
+
+    delete[] ptr_dest;
+    delete[] ptr_a;
+    delete[] ptr_b;
+#endif
 
     if (res == hipSuccess)
       {

@@ -325,6 +325,8 @@ namespace QDP
 	  listAllocOrder.push_front(candidate);
 	  *ptr = candidate->ptr;
 
+	  std::cout << "pool alloc: " << *ptr << "\n";
+
 	  return true;
 
 	} else {
@@ -346,6 +348,8 @@ namespace QDP
 	  iterNextNotAllocated++;
 
 	  *ptr = e.ptr;
+
+	  std::cout << "pool alloc: " << *ptr << "\n";
 
 	  return true;
 

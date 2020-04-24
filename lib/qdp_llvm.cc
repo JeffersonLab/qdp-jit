@@ -1693,7 +1693,7 @@ namespace QDP {
 										llvm::Optional< llvm::Reloc::Model >() ));
 
     Mod->setDataLayout(TargetMachine->createDataLayout());
-    //Mod->dump();
+    Mod->dump();
 
 
     QDPIO::cout << "got target machine CPU: " << TargetMachine->getTargetCPU().str() << "\n";
@@ -1814,25 +1814,9 @@ namespace QDP {
     QDPIO::cout << "shared object file loaded as hip module\n";
 
 
-    __ihipModule_t* ihip = (__ihipModule_t*)module;
-
-    QDPIO::cout << "ihip->fileName = " << ihip->fileName << "\n";
-    QDPIO::cout << "ihip->hash = " << ihip->hash << "\n";
-    QDPIO::cout << "ihip->kernargs.size() = " << ihip->kernargs.size() << "\n";
-    QDPIO::cout << "ihip->executable.handle = " << ihip->executable.handle << "\n";
-
-
-
-    //for (auto it = ihip->
-
-    //hipFunction_t kernel;
-
-    //std::string tmpname = "_" + __kernel_name;
-
     QDPIO::cout << "looking for function with name " << __kernel_name.c_str() << "\n";
 
     JitFunction tmp;
-    // return tmp;
 
 
     //ret = hipModuleGetFunction(&kernel, module, __kernel_name.c_str() );

@@ -7,6 +7,7 @@
 #include <iostream>
 #include <fstream>
 
+#include <type_traits>
 
 
 namespace QDP
@@ -1046,16 +1047,35 @@ namespace QDP
   }
 
 
-  namespace {
+  namespace 
+  {
     template<class T>
     void insert_ret( std::vector<unsigned char>& ret, T t )
     {
-      ret.resize( ret.size() + sizeof(T) );
-      *(T*)&ret[ ret.size() - sizeof(T) ] = t;
-      std::cout << "inserted (size " << sizeof(T) << ") " << t << "\n";
+      if (std::is_pointer<T>::value)
+	{
+	  std::cout << "size is " << ret.size() << " resizing by " << ret.size() % sizeof(T) << " to meet padding requirements\n";
+	  ret.resize( ret.size() + ret.size() % sizeof(T) );
+	  ret.resize( ret.size() + sizeof(T) );
+	  *(T*)&ret[ ret.size() - sizeof(T) ] = t;
+	  std::cout << "inserted pointer (size " << sizeof(T) << ") " << t << "\n";
+	}
+      else
+	{
+	  ret.resize( ret.size() + sizeof(T) );
+	  *(T*)&ret[ ret.size() - sizeof(T) ] = t;
+	  std::cout << "inserted (size " << sizeof(T) << ") " << t << "\n";
+	}
     }
-  }
+    template<>
+    void insert_ret<bool>( std::vector<unsigned char>& ret, bool t )
+    {
+      ret.resize( ret.size() + 4 );
+      *(bool*)&ret[ ret.size() - 4 ] = t;
+      std::cout << "inserted bool (as size 4) " << t << "\n";
+    }
 
+  } // namespace
 
 
   
@@ -1227,8 +1247,6 @@ namespace QDP
 		    }
 		  }
 	  
-		assert(for_kernel);
-		
 		switch(e.param_type) {
 		case JitParamType::float_: insert_ret<float>(ret, e.param.float_ ); break;
 		case JitParamType::double_: insert_ret<double>(ret, e.param.double_ ); break;
@@ -1252,19 +1270,19 @@ namespace QDP
 		      {
 			// This ArgKey comes from an multiXd<OScalar> access, like in sumMulti
 			//ret.push_back( for_kernel ? &e.devPtr : e.devPtr );
-			insert_ret<void*>( ret , for_kernel ? &e.devPtr : e.devPtr );
+			insert_ret<void*>( ret , e.devPtr );
 		      }
 		    else
 		      {
 			// This ArgKey comes from an OScalar access through multiXd<OScalar> 
 			assert( e.karg_vec.size() > i.elem );
 			e.karg_vec[i.elem] = (void*)((size_t)e.devPtr + e.elem_size * i.elem);
-			insert_ret<void*>( ret , for_kernel ? &e.karg_vec[i.elem] : e.karg_vec[i.elem] );
+			insert_ret<void*>( ret , e.karg_vec[i.elem] );
 		      }
 		  }
 		else
 		  {
-		    insert_ret<void*>( ret , for_kernel ? &e.devPtr : e.devPtr );
+		    insert_ret<void*>( ret , e.devPtr );
 		  }
 	      }
 	  }
@@ -1276,7 +1294,6 @@ namespace QDP
 		QDPIO::cout << "NULL(id=" << i.id << "), ";
 	      }
 
-	    assert(for_kernel);
 	    insert_ret<void*>( ret , &jit_param_null_ptr );
 	
 	  }
@@ -1364,6 +1381,22 @@ namespace QDP
     if (print_param)
       QDPIO::cout << "\n";
 #endif
+
+
+
+    // std::cout << "get kernel args:\n";
+    // std::cout << "p_ordered: " << (*(bool*)&ret[0]) << "\n";
+    // std::cout << "p_th_count: " << (*(int*)&ret[1]) << "\n";
+    // std::cout << "p_start: " << (*(int*)&ret[5]) << "\n";
+    // std::cout << "p_end: " << (*(int*)&ret[9]) << "\n";
+    // std::cout << "p_do_site_perm: " << (*(bool*)&ret[13]) << "\n";
+    // std::cout << "p_site_table: " << (*(void**)&ret[14]) << "\n";
+    // std::cout << "p_member_array: " << (*(void**)&ret[22]) << "\n";
+    // std::cout << "ptr_dest: " << (*(void**)&ret[30]) << "\n";
+    // std::cout << "ptr_a: " << (*(void**)&ret[38]) << "\n";
+    // std::cout << "ptr_b: " << (*(void**)&ret[46]) << "\n";
+
+
 
     return ret;
   }

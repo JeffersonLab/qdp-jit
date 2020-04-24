@@ -27,15 +27,18 @@ namespace QDP {
 
   int HipGetConfig(hipDeviceAttribute_t what);
 
-  void HipLaunchKernel( JitFunction f, 
-			 unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
-			 unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
-			 unsigned int  sharedMemBytes, void* kernelParams);
+  /* void HipLaunchKernel( JitFunction f,  */
+  /* 			 unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ,  */
+  /* 			 unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ,  */
+  /* 			 unsigned int  sharedMemBytes, void* kernelParams); */
 
   JitResult HipLaunchKernelNoSync( JitFunction f, 
 				   unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
 				   unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
-				   unsigned int  sharedMemBytes, void* kernelParams);
+				   unsigned int  sharedMemBytes, std::vector<unsigned char>& vec_ptr);
+  //unsigned int  sharedMemBytes, void* kernelParams);
+
+
 
   int HipGetMaxLocalSize();
   int HipGetMaxLocalUsage();

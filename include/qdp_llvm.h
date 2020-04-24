@@ -131,6 +131,8 @@ namespace QDP {
   bool        get_ptx_db_enabled();
   int         get_ptx_db_size();
     
+  void llvm_create_function();
+
   llvm::Value * llvm_create_value( double v );
   llvm::Value * llvm_create_value( int v );
   llvm::Value * llvm_create_value( int64_t v );
