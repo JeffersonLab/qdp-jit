@@ -145,35 +145,6 @@ template<class T, class T1, class Op, class RHS>
 JitFunction
 function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs)
 {
-#if 0
-  llvm_start_new_function();
-
-  ParamRef p_th_count     = llvm_add_param<int>();
-
-
-  ParamLeaf param_leaf;
-
-  typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
-  FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
-
-  auto op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
-
-  typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
-  View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
-
-  llvm::Value * r_th_count     = llvm_derefParam( p_th_count );
-
-  llvm::Value* r_idx = llvm_thread_idx();
-
-  llvm_cond_exit( llvm_ge( r_idx , r_th_count ) );
-
-  op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ), 
-	  forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , r_idx ), OpCombine()));
-
-
-  return jit_function_epilogue_get_cuf("jit_eval.ptx" , __PRETTY_FUNCTION__ );
-
-#else
   /* if (ptx_db::db_enabled) { */
   /*   JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ ); */
   /*   if (func) */
@@ -275,7 +246,6 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 
 
   return jit_function_epilogue_get_cuf("jit_eval.ptx" , __PRETTY_FUNCTION__ );
-#endif
 }
 
 
@@ -814,25 +784,6 @@ void
 function_exec(JitFunction function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
 {
   //QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
-#if 0
-  int th_count = s.hasOrderedRep() ? s.numSiteTable() : Layout::sitesOnNode();
-
-  AddressLeaf addr_leaf(s);
-  forEach(dest, addr_leaf, NullCombine());
-  AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
-  forEach(rhs, addr_leaf, NullCombine());
-
-  JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
-
-  std::vector<QDPCache::ArgKey> ids;
-  ids.push_back( jit_th_count.get_id() );
-  for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
-    ids.push_back( addr_leaf.ids[i] );
- 
-  jit_launch(function,16,ids);
-
-#else
-
   if (s.numSiteTable() < 1)
     return;
 
@@ -922,8 +873,6 @@ function_exec(JitFunction function, OLattice<T>& dest, const Op& op, const QDPEx
 
       
     }
-
-#endif
 }
 
 

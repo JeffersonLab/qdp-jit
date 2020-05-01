@@ -34,6 +34,8 @@ namespace QDP
     ids.push_back( out_id );
     ids.push_back( v_id );
 
+    JIT_AMD_add_workgroup_sizes( ids );
+
     std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
     kernel_geom_t now = getGeom( size , threads );
 

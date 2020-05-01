@@ -3,6 +3,31 @@
 
 namespace QDP {
 
+
+  namespace {
+    void function_sum_exec_helper( JitFunction function, int in_id, int out_id , int size , int threads , int shared_mem_usage )
+    {
+      JitParam jit_lo( QDP_get_global_cache().addJitParamInt( 0 ) );
+      JitParam jit_hi( QDP_get_global_cache().addJitParamInt( size ) );
+  
+      std::vector<QDPCache::ArgKey> ids;
+      ids.push_back( jit_lo.get_id() );
+      ids.push_back( jit_hi.get_id() );
+      ids.push_back( in_id );
+      ids.push_back( out_id );
+
+      JIT_AMD_add_workgroup_sizes( ids );
+ 
+      auto args = QDP_get_global_cache().get_kernel_args(ids);
+      kernel_geom_t now = getGeom( size , threads );
+      QDP_error_exit("fixme function_bool_reduction_exec");
+#if 0
+      CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threads,1,1,    shared_mem_usage, 0, &args[0] , 0);
+#endif  
+    }
+  }
+
+
   void
   function_sum_convert_ind_exec( JitFunction function, 
 				 int size, int threads, int blocks, int shared_mem_usage,
@@ -58,6 +83,8 @@ namespace QDP {
     ids.push_back( jit_tables.get_id() );
     ids.push_back( in_id );
     ids.push_back( out_id );
+
+    JIT_AMD_add_workgroup_sizes( ids );
  
     auto args = QDP_get_global_cache().get_kernel_args(ids);
     kernel_geom_t now = getGeom( size , threads );
@@ -92,6 +119,8 @@ namespace QDP {
     ids.push_back( sizes_id );
     ids.push_back( in_id );
     ids.push_back( out_id );
+
+    JIT_AMD_add_workgroup_sizes( ids );
  
     auto args = QDP_get_global_cache().get_kernel_args(ids);
     kernel_geom_t now = getGeom( size , threads );
@@ -113,6 +142,8 @@ namespace QDP {
     // Make sure 'threads' is a power of two (the jit kernel make this assumption)
     assert( (threads & (threads - 1)) == 0 );
 
+    function_sum_exec_helper( function , in_id , out_id , size , threads , shared_mem_usage );
+#if 0
     int lo = 0;
     int hi = size;
 
@@ -124,12 +155,13 @@ namespace QDP {
     ids.push_back( jit_hi.get_id() );
     ids.push_back( in_id );
     ids.push_back( out_id );
+
+    JIT_AMD_add_workgroup_sizes( ids );
  
     auto args = QDP_get_global_cache().get_kernel_args(ids);
     kernel_geom_t now = getGeom( hi-lo , threads );
 
     QDP_error_exit("fixme function_sum_convert_exec");
-#if 0
 
     CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threads,1,1,    shared_mem_usage, 0, &args[0] , 0);
 #endif
@@ -145,6 +177,8 @@ namespace QDP {
     // Make sure 'threads' is a power of two (the jit kernel make this assumption)
     assert( (threads & (threads - 1)) == 0 );
 
+    function_sum_exec_helper( function , in_id , out_id , size , threads , shared_mem_usage );
+#if 0
     int lo = 0;
     int hi = size;
 
@@ -156,12 +190,13 @@ namespace QDP {
     ids.push_back( jit_hi.get_id() );
     ids.push_back( in_id );
     ids.push_back( out_id );
+
+    JIT_AMD_add_workgroup_sizes( ids );
  
     auto args = QDP_get_global_cache().get_kernel_args(ids);
     kernel_geom_t now = getGeom( hi-lo , threads );
 
     QDP_error_exit("fixme function_sum_exec");
-#if 0
 
     CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threads,1,1,    shared_mem_usage, 0, &args[0] , 0);
 #endif
@@ -176,6 +211,8 @@ namespace QDP {
     // Make sure 'threads' is a power of two (the jit kernel make this assumption)
     assert( (threads & (threads - 1)) == 0 );
 
+    function_sum_exec_helper( function , in_id , out_id , size , threads , shared_mem_usage );
+#if 0
     int lo = 0;
     int hi = size;
 
@@ -187,12 +224,13 @@ namespace QDP {
     ids.push_back( jit_hi.get_id() );
     ids.push_back( in_id );
     ids.push_back( out_id );
+
+    JIT_AMD_add_workgroup_sizes( ids );
  
     auto args = QDP_get_global_cache().get_kernel_args(ids);
     kernel_geom_t now = getGeom( hi-lo , threads );
 
     QDP_error_exit("fixme function_global_max_exec");
-#if 0
 
     CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threads,1,1,    shared_mem_usage, 0, &args[0] , 0);
 #endif
@@ -209,6 +247,9 @@ namespace QDP {
     // Make sure 'threads' is a power of two (the jit kernel make this assumption)
     assert( (threads & (threads - 1)) == 0 );
 
+
+    function_sum_exec_helper( function , in_id , out_id ,  size , threads , shared_mem_usage );
+#if 0
     int lo = 0;
     int hi = size;
 
@@ -220,12 +261,13 @@ namespace QDP {
     ids.push_back( jit_hi.get_id() );
     ids.push_back( in_id );
     ids.push_back( out_id );
+
+    JIT_AMD_add_workgroup_sizes( ids );
  
     auto args = QDP_get_global_cache().get_kernel_args(ids);
     kernel_geom_t now = getGeom( hi-lo , threads );
 
     QDP_error_exit("fixme function_isfinite_convert_exec");
-#if 0
 
     CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threads,1,1,    shared_mem_usage, 0, &args[0] , 0);
 #endif
@@ -241,24 +283,7 @@ namespace QDP {
     // Make sure 'threads' is a power of two (the jit kernel make this assumption)
     assert( (threads & (threads - 1)) == 0 );
 
-    int lo = 0;
-    int hi = size;
 
-    JitParam jit_lo( QDP_get_global_cache().addJitParamInt( lo ) );
-    JitParam jit_hi( QDP_get_global_cache().addJitParamInt( hi ) );
-  
-    std::vector<QDPCache::ArgKey> ids;
-    ids.push_back( jit_lo.get_id() );
-    ids.push_back( jit_hi.get_id() );
-    ids.push_back( in_id );
-    ids.push_back( out_id );
- 
-    auto args = QDP_get_global_cache().get_kernel_args(ids);
-    kernel_geom_t now = getGeom( hi-lo , threads );
-    QDP_error_exit("fixme function_bool_reduction_exec");
-#if 0
-    CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threads,1,1,    shared_mem_usage, 0, &args[0] , 0);
-#endif
   }
 
   

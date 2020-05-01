@@ -29,6 +29,10 @@ namespace QDP {
 #if 1
     std::cout << "jit_launch\n";
 
+
+    JIT_AMD_add_workgroup_sizes( ids );
+
+
     //std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
     std::vector<unsigned char> args( QDP_get_global_cache().get_kernel_args(ids) );
 
@@ -41,8 +45,16 @@ namespace QDP {
       return;
 
     if (mapTune.count(function.getFunction()) == 0) {
-      //mapTune[function.getFunction()] = tune_t( DeviceParams::Instance().getMaxBlockX() , 0 , 0.0 );
-      mapTune[function.getFunction()] = tune_t( 16 , 0 , 0.0 );
+      mapTune[function.getFunction()] = tune_t( DeviceParams::Instance().getMaxBlockX() , 0 , 0.0 );
+#if 0
+      if (th_count > 16)
+	{
+	  QDPIO::cerr << "th_count > 16!!\n";
+	  QDP_abort(1);
+	}
+      QDPIO::cerr << "th_count = " << th_count << "\n";
+      mapTune[function.getFunction()] = tune_t( -1 , std::max( 16 , th_count ) , 0.0 );
+#endif
     }
 
 
@@ -97,6 +109,9 @@ namespace QDP {
 	w.stop();
 
 	time = w.getTimeInMicroseconds();
+
+	QDPIO::cout << "time = " << time << " micro secs\n";
+
 	if (result != JitResult::JitSuccess)
 	  tune.cfg >>= 1;
       }

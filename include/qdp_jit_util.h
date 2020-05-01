@@ -6,6 +6,8 @@ namespace QDP {
   llvm::Value *jit_function_preamble_get_idx( const std::vector<ParamRef>& vec );
   std::vector<ParamRef> jit_function_preamble_param();
 
+  void JIT_AMD_add_workgroup_sizes( std::vector<QDPCache::ArgKey>& );
+
   JitFunction jit_function_epilogue_get_cuf(const char *fname, const char* pretty);
 
   void jit_build_seedToFloat();

@@ -25,6 +25,19 @@ namespace QDP {
   long get_jit_stats_jitted()       { return JITSTATS::jitted; }
 
 
+  // For AMD the workgroup sizes are passed as kernel parameters
+  // For now as placeholder values
+  //
+  void JIT_AMD_add_workgroup_sizes( std::vector<QDPCache::ArgKey>& ids )
+  {
+    JitParam jit_ntidx( QDP_get_global_cache().addJitParamInt( -1 ) );
+    JitParam jit_nctaidx( QDP_get_global_cache().addJitParamInt( -1 ) );
+
+    ids.insert(ids.begin(), jit_nctaidx.get_id() );
+    ids.insert(ids.begin(), jit_ntidx.get_id() );
+  }
+
+
   // seedMultiply
   //
   // We build a function that takes 2 seeds (4 ints each)

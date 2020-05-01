@@ -103,6 +103,12 @@ namespace QDP {
     std::string __kernel_name("kernel");
   }
 
+
+  namespace AMDspecific {
+    ParamRef __threads_per_group;
+    ParamRef __grid_size_x;
+  }
+
   //typedef void* CUfunction;
 
   llvm::LLVMContext TheContext;
@@ -575,6 +581,11 @@ namespace QDP {
 
     QDPIO::cout << "no math functions yet !!\n";
     //llvm_setup_math_functions();
+
+
+    AMDspecific::__threads_per_group = llvm_add_param<int>();
+    AMDspecific::__grid_size_x       = llvm_add_param<int>();
+
 
     // llvm::outs() << "------------------------- linked module\n";
     // llvm_print_module(Mod,"ir_linked.ll");
@@ -1140,34 +1151,48 @@ namespace QDP {
   }
 
 
-  
-  llvm::Value * llvm_call_special_tidx() {  QDP_error_exit("ni tidx");   return llvm_special("llvm.nvvm.read.ptx.sreg.tid.x"); }
-  llvm::Value * llvm_call_special_ntidx() { QDP_error_exit("ni ntidx");   return llvm_special("llvm.nvvm.read.ptx.sreg.ntid.x"); }
-  llvm::Value * llvm_call_special_ctaidx() { QDP_error_exit("ni ctaidx");  return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.x"); }
-  llvm::Value * llvm_call_special_nctaidx() { QDP_error_exit("ni nctaidx"); return llvm_special("llvm.nvvm.read.ptx.sreg.nctaid.x"); }
-  llvm::Value * llvm_call_special_ctaidy() {  QDP_error_exit("ni ctaidy"); return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.y"); }
-
-
   llvm::Value * llvm_call_special_workitem_x() {     return llvm_special("llvm.amdgcn.workitem.id.x"); }
-  llvm::Value * llvm_call_special_workitem_y() {     return llvm_special("llvm.amdgcn.workitem.id.y"); }
-  llvm::Value * llvm_call_special_workitem_z() {     return llvm_special("llvm.amdgcn.workitem.id.z"); }
+  // llvm::Value * llvm_call_special_workitem_y() {     return llvm_special("llvm.amdgcn.workitem.id.y"); }
+  // llvm::Value * llvm_call_special_workitem_z() {     return llvm_special("llvm.amdgcn.workitem.id.z"); }
 
   llvm::Value * llvm_call_special_workgroup_x() {     return llvm_special("llvm.amdgcn.workgroup.id.x"); }
   llvm::Value * llvm_call_special_workgroup_y() {     return llvm_special("llvm.amdgcn.workgroup.id.y"); }
-  llvm::Value * llvm_call_special_workgroup_z() {     return llvm_special("llvm.amdgcn.workgroup.id.z"); }
+  // llvm::Value * llvm_call_special_workgroup_z() {     return llvm_special("llvm.amdgcn.workgroup.id.z"); }
+
+
+  
+  // llvm::Value * llvm_call_special_tidx() {  return llvm_special("llvm.nvvm.read.ptx.sreg.tid.x"); }
+  // llvm::Value * llvm_call_special_ntidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.ntid.x"); }
+  // llvm::Value * llvm_call_special_ctaidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.x"); }
+  // llvm::Value * llvm_call_special_nctaidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.nctaid.x"); }
+  // llvm::Value * llvm_call_special_ctaidy() {  return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.y"); }
+
+
+  llvm::Value * llvm_call_special_tidx() { return llvm_call_special_workitem_x(); }
+  llvm::Value * llvm_call_special_ntidx() { return llvm_derefParam( AMDspecific::__threads_per_group ); }
+  llvm::Value * llvm_call_special_ctaidx() { return llvm_call_special_workgroup_x(); }
+  llvm::Value * llvm_call_special_nctaidx() { return llvm_derefParam( AMDspecific::__grid_size_x ); }
+  llvm::Value * llvm_call_special_ctaidy() { return llvm_call_special_workgroup_y();  }
 
 
 
-  llvm::Value * llvm_thread_idx() { 
-    llvm::Value * tidx = llvm_call_special_workitem_x();
-    return tidx;
 
-    // llvm::Value * tidx = llvm_call_special_tidx();
-    // llvm::Value * ntidx = llvm_call_special_ntidx();
-    // llvm::Value * ctaidx = llvm_call_special_ctaidx();
-    // llvm::Value * ctaidy = llvm_call_special_ctaidy();
-    // llvm::Value * nctaidx = llvm_call_special_nctaidx();
-    // return llvm_add( llvm_mul( llvm_add( llvm_mul( ctaidy , nctaidx ) , ctaidx ) , ntidx ) , tidx );
+
+  llvm::Value * llvm_thread_idx() {
+
+    // llvm::Value * tidx    = llvm_call_special_workitem_x();
+    // llvm::Value * ntidx   = llvm_derefParam( AMDspecific::__threads_per_group );
+    // llvm::Value * ctaidx  = llvm_call_special_workgroup_x();
+    // llvm::Value * ctaidy  = llvm_call_special_workgroup_y();
+    // llvm::Value * nctaidx = llvm_derefParam( AMDspecific::__grid_size_x );
+
+    llvm::Value * tidx = llvm_call_special_tidx();
+    llvm::Value * ntidx = llvm_call_special_ntidx();
+    llvm::Value * ctaidx = llvm_call_special_ctaidx();
+    llvm::Value * ctaidy = llvm_call_special_ctaidy();
+    llvm::Value * nctaidx = llvm_call_special_nctaidx();
+
+    return llvm_add( llvm_mul( llvm_add( llvm_mul( ctaidy , nctaidx ) , ctaidx ) , ntidx ) , tidx );
   }
   
 
@@ -1693,7 +1718,7 @@ namespace QDP {
 										llvm::Optional< llvm::Reloc::Model >() ));
 
     Mod->setDataLayout(TargetMachine->createDataLayout());
-    Mod->dump();
+    //Mod->dump();
 
 
     QDPIO::cout << "got target machine CPU: " << TargetMachine->getTargetCPU().str() << "\n";

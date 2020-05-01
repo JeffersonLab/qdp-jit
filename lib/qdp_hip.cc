@@ -123,7 +123,15 @@ namespace QDP {
 
 
     //= (std::vector<unsigned char>*)kernelParams;
-#if 0
+#if 1
+    // For AMD:
+    // Now that they are known must copy in the actual values for the workgroup sizes
+    //
+    *(int*)&vec_ptr.data()[0] = (int)blockDimX;
+    *(int*)&vec_ptr.data()[4] = (int)gridDimX;
+
+    std::cout << "workgroup sizes copied in: " << *(int*)&vec_ptr.data()[0] << " and  " << *(int*)&vec_ptr.data()[4] << "\n";
+
     auto size = vec_ptr.size();
     std::cout << "HipLaunchKernelNoSync: kernel params size: " << size << "\n";
     void* config[] = {HIP_LAUNCH_PARAM_BUFFER_POINTER, vec_ptr.data(),
@@ -600,6 +608,7 @@ namespace QDP {
     hipError_t ret;
     ret = hipMemcpyHtoD((hipDeviceptr_t)const_cast<void*>(dest), const_cast<void*>(src) , size);
 
+#if 0
     QDPIO::cout << "copy H -> D: ";
     for ( int s = 0 ; s < Layout::sitesOnNode() ; s++ ) 
       {
@@ -607,6 +616,7 @@ namespace QDP {
 	QDPIO::cout << ptr[s] << " ";
       }
     QDPIO::cout << "\n";
+#endif
 
     HipRes("hipMemcpyH2D",ret);
   }
@@ -616,6 +626,7 @@ namespace QDP {
     hipError_t ret;
     ret = hipMemcpyDtoH( dest, (hipDeviceptr_t)const_cast<void*>(src), size);
 
+#if 0
     QDPIO::cout << "copy D -> H: ";
     for ( int s = 0 ; s < Layout::sitesOnNode() ; s++ ) 
       {
@@ -623,6 +634,7 @@ namespace QDP {
 	QDPIO::cout << ptr[s] << " ";
       }
     QDPIO::cout << "\n";
+#endif
 
     HipRes("hipMemcpyD2H",ret);
   }

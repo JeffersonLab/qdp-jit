@@ -1054,17 +1054,17 @@ namespace QDP
     {
       if (std::is_pointer<T>::value)
 	{
-	  std::cout << "size is " << ret.size() << " resizing by " << ret.size() % sizeof(T) << " to meet padding requirements\n";
+	  //std::cout << "size is " << ret.size() << " resizing by " << ret.size() % sizeof(T) << " to meet padding requirements\n";
 	  ret.resize( ret.size() + ret.size() % sizeof(T) );
 	  ret.resize( ret.size() + sizeof(T) );
 	  *(T*)&ret[ ret.size() - sizeof(T) ] = t;
-	  std::cout << "inserted pointer (size " << sizeof(T) << ") " << t << "\n";
+	  //std::cout << "inserted pointer (size " << sizeof(T) << ") " << t << "\n";
 	}
       else
 	{
 	  ret.resize( ret.size() + sizeof(T) );
 	  *(T*)&ret[ ret.size() - sizeof(T) ] = t;
-	  std::cout << "inserted (size " << sizeof(T) << ") " << t << "\n";
+	  //std::cout << "inserted (size " << sizeof(T) << ") " << t << "\n";
 	}
     }
     template<>
@@ -1072,7 +1072,7 @@ namespace QDP
     {
       ret.resize( ret.size() + 4 );
       *(bool*)&ret[ ret.size() - 4 ] = t;
-      std::cout << "inserted bool (as size 4) " << t << "\n";
+      //std::cout << "inserted bool (as size 4) " << t << "\n";
     }
 
   } // namespace
@@ -1082,6 +1082,21 @@ namespace QDP
   //std::vector<void*> QDPCache::get_kernel_args(std::vector<ArgKey>& ids , bool for_kernel )
   std::vector<unsigned char> QDPCache::get_kernel_args(std::vector<ArgKey>& ids , bool for_kernel )
   {
+    if ( for_kernel )
+      {
+	if ( ids.size() < 2 )
+	  QDP_error_exit("get_kernel_args: Size less than 2");
+	Entry& e0 = vecEntry[ ids[0].id ];
+	Entry& e1 = vecEntry[ ids[1].id ];
+
+	if ( ( e0.param_type != JitParamType::int_ ) ||
+	     ( e1.param_type != JitParamType::int_ ) )
+	  {
+	    std::cout << "get_kernel_args: For AMD expected for two parameters being integers\n";
+	    QDP_error_exit("done");
+	  }
+      }
+
     if (qdp_cache_get_pool_bisect())
       {
 	__ids_last = ids;
@@ -1212,7 +1227,7 @@ namespace QDP
       }
 
     
-    const bool print_param = true;
+    const bool print_param = false;
 
 
 #if 1
@@ -1381,21 +1396,6 @@ namespace QDP
     if (print_param)
       QDPIO::cout << "\n";
 #endif
-
-
-
-    // std::cout << "get kernel args:\n";
-    // std::cout << "p_ordered: " << (*(bool*)&ret[0]) << "\n";
-    // std::cout << "p_th_count: " << (*(int*)&ret[1]) << "\n";
-    // std::cout << "p_start: " << (*(int*)&ret[5]) << "\n";
-    // std::cout << "p_end: " << (*(int*)&ret[9]) << "\n";
-    // std::cout << "p_do_site_perm: " << (*(bool*)&ret[13]) << "\n";
-    // std::cout << "p_site_table: " << (*(void**)&ret[14]) << "\n";
-    // std::cout << "p_member_array: " << (*(void**)&ret[22]) << "\n";
-    // std::cout << "ptr_dest: " << (*(void**)&ret[30]) << "\n";
-    // std::cout << "ptr_a: " << (*(void**)&ret[38]) << "\n";
-    // std::cout << "ptr_b: " << (*(void**)&ret[46]) << "\n";
-
 
 
     return ret;

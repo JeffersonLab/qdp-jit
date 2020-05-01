@@ -173,7 +173,7 @@ namespace QDP
       initDefaultMaps();
 
       // Initialize RNG
-      QDPIO::cout << "Skipping RNG init !!!\n";
+      //QDPIO::cout << "Skipping RNG init !!!\n";
       //RNG::initDefaultRNG();
 
       // Set default profile level

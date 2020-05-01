@@ -325,7 +325,7 @@ namespace QDP
 	  listAllocOrder.push_front(candidate);
 	  *ptr = candidate->ptr;
 
-	  std::cout << "pool alloc: " << *ptr << "\n";
+	  //std::cout << "pool alloc: " << *ptr << "\n";
 
 	  return true;
 
@@ -349,7 +349,7 @@ namespace QDP
 
 	  *ptr = e.ptr;
 
-	  std::cout << "pool alloc: " << *ptr << "\n";
+	  //std::cout << "pool alloc: " << *ptr << "\n";
 
 	  return true;
 
