@@ -80,8 +80,19 @@
 
 #include <unordered_map>
 
+#include "amd_comgr.h"
+
+
 namespace QDP {
 
+
+  // typedef struct hsa_executable_s {
+  //   /**
+  //    * Opaque handle.
+  //    */
+  //   uint64_t handle;
+  // } hsa_executable_t;
+  
 
   struct __ihipModule_t {
     std::string fileName;
@@ -1655,6 +1666,162 @@ namespace QDP {
 
 
 
+  bool amd_comgr_check( std::string name , amd_comgr_status_t status)
+  {
+    if (status == AMD_COMGR_STATUS_SUCCESS)
+      {
+	return false;
+      }
+    else
+      {
+	const char *status_str;
+	status = amd_comgr_status_string(status, &status_str);
+	QDPIO::cerr << name << ": " << status_str;
+	return true;
+      }
+  }
+    // switch (status) {
+    // case AMD_COMGR_STATUS_SUCCESS:
+    //   return false;
+    //   break;
+    // case AMD_COMGR_STATUS_ERROR:
+    //   QDPIO::cerr << name << ": AMD_COMGR_STATUS_ERROR\n";
+    //   return true;
+    //   break;
+    // case AMD_COMGR_STATUS_ERROR_INVALID_ARGUMENT:
+    //   QDPIO::cerr << name << ": AMD_COMGR_STATUS_ERROR_INVALID_ARGUMENT\n";
+    //   return true;
+    //   break;
+    // case AMD_COMGR_STATUS_ERROR_OUT_OF_RESOURCES:
+    //   QDPIO::cerr << name << ": AMD_COMGR_STATUS_ERROR_OUT_OF_RESOURCES\n";
+    //   return true;
+    //   break;
+    // default:
+    //   QDPIO::cerr << name << ": amd_comgr_status_t unknown error\n";
+    //   return true;
+
+  namespace {
+    void print_metadata( amd_comgr_metadata_node_t md );
+    void print_metadata_string( amd_comgr_metadata_node_t md );
+
+    amd_comgr_status_t MD_callback( amd_comgr_metadata_node_t key, amd_comgr_metadata_node_t value, void *user_data)
+    {
+      amd_comgr_metadata_kind_t kind;
+      amd_comgr_status_t status;
+
+      // key
+
+      status = amd_comgr_get_metadata_kind( key , &kind );
+      if (amd_comgr_check( "amd_comgr_get_metadata_kind", status ))
+	{
+	  QDP_error_exit("X amd_comgr_get_metadata_kind error");
+	}
+      if (kind != AMD_COMGR_METADATA_KIND_STRING)
+	{
+	  QDP_error_exit("X key metadata is not a string");
+	}
+
+      std::cout << "key = ";
+      print_metadata_string( key );
+
+      std::cout << "val = ";
+
+      // value
+
+      print_metadata( value );
+
+
+      return AMD_COMGR_STATUS_SUCCESS;
+    }
+
+    void print_metadata_string( amd_comgr_metadata_node_t md )
+    {
+      amd_comgr_status_t status;
+      size_t size;
+      status = amd_comgr_get_metadata_string( md, &size, NULL );
+      std::string str_value(size, '\0');
+      status = amd_comgr_get_metadata_string( md, &size, &str_value[0] );
+      std::cout << str_value << "\n";
+    }
+
+    void print_metadata_map( amd_comgr_metadata_node_t md )
+    {
+      amd_comgr_status_t status;
+
+      std::cout << "begin map\n";
+
+      status = amd_comgr_iterate_map_metadata( md, MD_callback , NULL);
+      if (amd_comgr_check( "amd_comgr_iterate_map_metadata: ", status ))
+	{
+	  QDP_error_exit("amd_comgr_iterate_map_metadata");
+	}
+
+      std::cout << "end map\n";
+    }
+
+
+
+    void print_metadata_list( amd_comgr_metadata_node_t md )
+    {
+      amd_comgr_status_t status;
+      size_t list_size;
+      status = amd_comgr_get_metadata_list_size( md , &list_size );
+      if (amd_comgr_check( "amd_comgr_get_metadata_list_size: ", status ))
+	{
+	  QDP_error_exit("amd_comgr_get_metadata_list_size");
+	}
+
+      std::cout << "begin list of size = " << list_size << "\n";
+
+      for (int i = 0 ; i < list_size ; ++i )
+	{
+	  amd_comgr_metadata_node_t list_val;
+
+	  status = amd_comgr_index_list_metadata( md , i , &list_val);
+	  if (amd_comgr_check( "amd_comgr_index_list_metadata: ", status ))
+	    {
+	      QDP_error_exit("amd_comgr_index_list_metadata");
+	    }
+
+	  std::cout << "list item = " << i << "\n";
+
+	  print_metadata( list_val );
+	}
+
+      std::cout << "end of list\n";
+    }
+
+
+
+    void print_metadata( amd_comgr_metadata_node_t md )
+    {
+      amd_comgr_status_t status;
+      amd_comgr_metadata_kind_t kind;
+      status = amd_comgr_get_metadata_kind( md , &kind );
+      if (amd_comgr_check( "print_metadata: amd_comgr_get_metadata_kind", status ))
+	{
+	  QDP_error_exit("amd_comgr_get_metadata_kind error");
+	}
+      
+      switch (kind) 
+	{
+	case AMD_COMGR_METADATA_KIND_STRING:
+	  print_metadata_string( md );
+	  break;
+	case AMD_COMGR_METADATA_KIND_MAP:
+	  print_metadata_map( md );
+	  break;
+	case AMD_COMGR_METADATA_KIND_LIST:
+	  print_metadata_list( md );
+	  break;
+	case AMD_COMGR_METADATA_KIND_NULL:
+	  QDPIO::cout << "metadata NULL\n";
+	  break;
+	}
+
+    }
+
+  }
 
 
   JitFunction llvm_get_jitfunction(const char* fname, const char* pretty_cstr)
@@ -1718,7 +1885,7 @@ namespace QDP {
 										llvm::Optional< llvm::Reloc::Model >() ));
 
     Mod->setDataLayout(TargetMachine->createDataLayout());
-    //Mod->dump();
+    Mod->dump();
 
 
     QDPIO::cout << "got target machine CPU: " << TargetMachine->getTargetCPU().str() << "\n";
@@ -1826,8 +1993,41 @@ namespace QDP {
     shared_file.seekg(0, std::ios::beg);
     shared_file.read(reinterpret_cast<char*>(&shared[0]), shared_file_size);
 
-    std::cout << "shared object file read back in\n";
-    
+    std::cout << "shared object file read back in. size = " << shared.size() << "\n";
+
+    amd_comgr_data_t data;
+    amd_comgr_status_t status = amd_comgr_create_data( AMD_COMGR_DATA_KIND_RELOCATABLE , &data ); //AMD_COMGR_DATA_KIND_RELOCATABLE
+    if (amd_comgr_check( "amd_comgr_create_data", status ))
+      {
+	QDP_error_exit("amd_comgr_create_data error");
+      }
+
+	
+
+    status = amd_comgr_set_data( data , shared.size() , (const char*)&shared[0] );
+    if (amd_comgr_check( "amd_comgr_set_data", status ))
+      {
+	QDP_error_exit("amd_comgr_set_data error");
+      }
+
+
+    amd_comgr_metadata_node_t metadata;
+    status = amd_comgr_get_data_metadata( data , &metadata );
+    if (amd_comgr_check( "amd_comgr_get_data_metadata", status ))
+      {
+	QDP_error_exit("amd_comgr_get_data_metadata error");
+      }
+
+
+    print_metadata( metadata );
+
+    status = amd_comgr_destroy_metadata( metadata );
+    if (amd_comgr_check( "amd_comgr_destroy_metadata", status ))
+      {
+	QDP_error_exit("amd_comgr_destroy_metadata error");
+      }
+
+
 
     hipModule_t module;
     hipError_t ret;
@@ -1837,6 +2037,9 @@ namespace QDP {
     HipCheckResult(ret);
 
     QDPIO::cout << "shared object file loaded as hip module\n";
+
+
+    QDPIO::cout << "module.executable.handle = " << ((__ihipModule_t*)module)->executable.handle << "\n";
 
 
     QDPIO::cout << "looking for function with name " << __kernel_name.c_str() << "\n";

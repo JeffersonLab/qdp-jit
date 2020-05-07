@@ -45,7 +45,8 @@ namespace QDP {
       return;
 
     if (mapTune.count(function.getFunction()) == 0) {
-      mapTune[function.getFunction()] = tune_t( DeviceParams::Instance().getMaxBlockX() , 0 , 0.0 );
+      //mapTune[function.getFunction()] = tune_t( DeviceParams::Instance().getMaxBlockX() , 0 , 0.0 );
+      mapTune[function.getFunction()] = tune_t( 1024 , 0 , 0.0 );
 #if 0
       if (th_count > 16)
 	{
@@ -100,10 +101,11 @@ namespace QDP {
   	}
 
 	if (result == JitResult::JitSuccess) {
-
+	  printf("check..\n");
 	  if (!HipCtxSynchronize()) {
 	    QDP_error_exit("HIP launch error (during autotune, on sync): grid=(%u,%u,%u), block=(%d,%u,%u) ",  now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1 );
 	  }
+	  printf("..done\n");
 	}
 
 	w.stop();
