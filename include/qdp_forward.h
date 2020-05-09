@@ -11,9 +11,12 @@ namespace QDP
     typedef void* Func_t;
     bool empty() { return isEmpty; }
     Func_t& getFunction() { isEmpty = false; return function; }
+    void setMaxWG(int wg) { max_wg = wg; }
+    int  getMaxWG() { return max_wg; }
   private:
     Func_t function;
     bool isEmpty = true;
+    int max_wg;
   };
 
 

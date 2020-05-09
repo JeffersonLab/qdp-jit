@@ -1701,6 +1701,152 @@ namespace QDP {
     //   return true;
 
   namespace {
+
+    struct UserVal_t
+    {
+      std::string searchkey;
+      amd_comgr_metadata_node_t retval;
+    };
+
+
+    std::string get_metadata_string( amd_comgr_metadata_node_t md0 )
+    {
+      amd_comgr_status_t status;
+      amd_comgr_metadata_kind_t kind;
+      status = amd_comgr_get_metadata_kind( md0 , &kind );
+      if (amd_comgr_check( "amd_comgr_get_metadata_kind", status ))
+	{
+	  QDP_error_exit("X amd_comgr_get_metadata_kind error");
+	}
+      if (kind != AMD_COMGR_METADATA_KIND_STRING)
+	{
+	  QDP_error_exit("X key metadata is not a string");
+	}
+
+
+      size_t size;
+      status = amd_comgr_get_metadata_string( md0, &size, NULL );
+      std::string str_value(size-1, '\0');
+      status = amd_comgr_get_metadata_string( md0, &size, &str_value[0] );
+      return str_value;
+    }
+
+
+
+    class AMD_MD_parser
+    {
+
+    public:
+      AMD_MD_parser(amd_comgr_metadata_node_t md):md(md)
+      {
+      }
+
+
+      AMD_MD_parser operator[](std::string key) 
+      {
+	amd_comgr_status_t status;
+	amd_comgr_metadata_kind_t kind;
+	status = amd_comgr_get_metadata_kind( md , &kind );
+	if (amd_comgr_check( "op[string]: amd_comgr_get_metadata_kind", status ))
+	  {
+	    QDP_error_exit("amd_comgr_get_metadata_kind error");
+	  }
+	if (kind != AMD_COMGR_METADATA_KIND_MAP)
+	  {
+	    QDP_error_exit("MD is not a map");
+	  }
+
+	amd_comgr_metadata_node_t value;
+	status = amd_comgr_metadata_lookup( md , key.c_str() , &value);
+	if (amd_comgr_check( "op[string]: amd_comgr_metadata_lookup", status ))
+	  {
+	    QDP_error_exit("amd_comgr_metadata_lookup error");
+	  }
+
+	return AMD_MD_parser( value );
+      }
+
+
+      AMD_MD_parser operator[](int i) 
+      {
+	amd_comgr_status_t status;
+	amd_comgr_metadata_kind_t kind;
+	status = amd_comgr_get_metadata_kind( md , &kind );
+	if (amd_comgr_check( "op[int]: amd_comgr_get_metadata_kind", status ))
+	  {
+	    QDP_error_exit("amd_comgr_get_metadata_kind error");
+	  }
+	if (kind != AMD_COMGR_METADATA_KIND_LIST)
+	  {
+	    QDP_error_exit("MD is not a list");
+	  }
+
+	size_t list_size;
+	status = amd_comgr_get_metadata_list_size( md , &list_size );
+	if (amd_comgr_check( "amd_comgr_get_metadata_list_size: ", status ))
+	  {
+	    QDP_error_exit("amd_comgr_get_metadata_list_size");
+	  }
+
+	if (i >= list_size)
+	  {
+	    std::cout << "list size = " << list_size << ". " << i << " out of bounds\n";	  
+	    QDP_error_exit("exit");
+	  }
+
+
+	amd_comgr_metadata_node_t list_val;
+
+	status = amd_comgr_index_list_metadata( md , i , &list_val);
+	if (amd_comgr_check( "amd_comgr_index_list_metadata: ", status ))
+	  {
+	    QDP_error_exit("amd_comgr_index_list_metadata");
+	  }
+
+	return AMD_MD_parser(list_val);
+      }
+
+
+      std::string value()
+      {
+	return get_metadata_string(md);
+      }
+
+      std::string kind()
+      {
+	amd_comgr_status_t status;
+	amd_comgr_metadata_kind_t kind;
+	status = amd_comgr_get_metadata_kind( md , &kind );
+	if (amd_comgr_check( "print_metadata: amd_comgr_get_metadata_kind", status ))
+	  {
+	    QDP_error_exit("amd_comgr_get_metadata_kind error");
+	  }
+      
+	switch (kind) 
+	  {
+	  case AMD_COMGR_METADATA_KIND_STRING:
+	    return "string";
+	    break;
+	  case AMD_COMGR_METADATA_KIND_MAP:
+	    return "map";
+	    break;
+	  case AMD_COMGR_METADATA_KIND_LIST:
+	    return "list";
+	    break;
+	  case AMD_COMGR_METADATA_KIND_NULL:
+	    QDPIO::cout << "metadata NULL\n";
+	    return "NULL";
+	    break;
+	  }
+      }
+
+
+    private:
+
+      amd_comgr_metadata_node_t md;
+    };
+
+
     void print_metadata( amd_comgr_metadata_node_t md );
     void print_metadata_string( amd_comgr_metadata_node_t md );
 
@@ -2021,6 +2167,30 @@ namespace QDP {
 
     print_metadata( metadata );
 
+
+    AMD_MD_parser parser( metadata );
+	// UserVal_t userval;
+	// userval.searchkey=key;
+
+	// status = amd_comgr_iterate_map_metadata( md, parser_MD_callback , &userval );
+	// if (amd_comgr_check( "amd_comgr_iterate_map_metadata: ", status ))
+	//   {
+	//     QDP_error_exit("amd_comgr_iterate_map_metadata");
+	//   }
+
+    //std::cout << "parser output: " << parser["amdhsa.kernels"][0][".max_flat_workgroup_size"].value() << "\n";
+
+    int num_vgpr = std::stoi(parser["amdhsa.kernels"][0][".vgpr_count"].value());
+    std::cout << "number of VGPR: " << num_vgpr << "\n";
+
+
+
+    int wps = (int)256/num_vgpr; // wavefronts per CU
+    int max_wg = wps * 4 * 16;   // max. workgroup size. 4 SIMD x 16 lanes
+
+
+
+
     status = amd_comgr_destroy_metadata( metadata );
     if (amd_comgr_check( "amd_comgr_destroy_metadata", status ))
       {
@@ -2053,6 +2223,9 @@ namespace QDP {
     HipCheckResult(ret);
 
     QDPIO::cout << "Got function!\n";
+
+    tmp.setMaxWG( max_wg );
+
     return tmp;
 
 #if 0

@@ -8,6 +8,7 @@ namespace QDP {
     int    cfg;
     int    best;
     double best_time;
+    bool   first_launch = true;
   };
 
   std::map< JitFunction::Func_t , tune_t > mapTune;
@@ -23,6 +24,25 @@ namespace QDP {
     QDP_info("Device pool info:");
   }
 
+
+  namespace {
+    bool IsPowerOfTwo(int x)
+    {
+      return (x & (x - 1)) == 0;
+    }
+
+    int previousPowerOf2( int n )
+    {  
+      int p = 1;  
+      if (IsPowerOfTwo(n))
+	return n;  
+  
+      while (p < n)  
+	p <<= 1;  
+      
+      return p >> 1;
+    }
+  }
 
   void jit_launch(JitFunction function,int th_count,std::vector<QDPCache::ArgKey>& ids)
   {
@@ -46,18 +66,8 @@ namespace QDP {
 
     if (mapTune.count(function.getFunction()) == 0) {
       //mapTune[function.getFunction()] = tune_t( DeviceParams::Instance().getMaxBlockX() , 0 , 0.0 );
-      mapTune[function.getFunction()] = tune_t( 1024 , 0 , 0.0 );
-#if 0
-      if (th_count > 16)
-	{
-	  QDPIO::cerr << "th_count > 16!!\n";
-	  QDP_abort(1);
-	}
-      QDPIO::cerr << "th_count = " << th_count << "\n";
-      mapTune[function.getFunction()] = tune_t( -1 , std::max( 16 , th_count ) , 0.0 );
-#endif
+      mapTune[function.getFunction()] = tune_t( function.getMaxWG() , 0 , 0.0 );
     }
-
 
     tune_t& tune = mapTune[function.getFunction()];
 
@@ -114,25 +124,51 @@ namespace QDP {
 
 	QDPIO::cout << "time = " << time << " micro secs\n";
 
+	// Handle out of resource
 	if (result != JitResult::JitSuccess)
-	  tune.cfg >>= 1;
+	  {
+	  }
+
+
       }
 
       if (tune.cfg == 0) {
 	QDP_error_exit("Kernel launch failed even for block size 1. Giving up.");
       }
 
-      if (time < tune.best_time || tune.best_time == 0.0) {
-	tune.best_time = time;
-	tune.best = tune.cfg;
-      }
+      if (!tune.first_launch)
+	{
+	  if (time < tune.best_time || tune.best_time == 0.0) {
+	    tune.best_time = time;
+	    tune.best = tune.cfg;
+	  }
 
-      // If time is much greater than our best time
-      // we are in the rising part of the performance 
-      // profile and stop searching any further
-      tune.cfg = time > 1.33 * tune.best_time || tune.cfg == 1 ? -1 : tune.cfg >> 1;
+	  // If time is much greater than our best time
+	  // we are in the rising part of the performance 
+	  // profile and stop searching any further
+	  //tune.cfg = time > 1.33 * tune.best_time || tune.cfg == 1 ? -1 : tune.cfg >> 1;
 
-      //QDP_info("time = %f,  cfg = %d,  best = %d,  best_time = %f ", time,tune.cfg,tune.best,tune.best_time );
+	  if ( time > 1.33 * tune.best_time || tune.cfg == 1 )
+	    {
+	      tune.cfg = -1;
+	    }
+	  else
+	    {
+	      if (IsPowerOfTwo( tune.cfg ))
+		{
+		  tune.cfg >>= 1;
+		}
+	      else
+		{
+		  tune.cfg = previousPowerOf2( tune.cfg );
+		}
+	    }
+	  
+	  //QDP_info("time = %f,  cfg = %d,  best = %d,  best_time = %f ", time,tune.cfg,tune.best,tune.best_time );
+	}
+      else
+	tune.first_launch = false;
+
     }
 #endif
   }
