@@ -96,7 +96,6 @@ using std::ostream;
 #include "qdp_llvm.h"
 #include "qdp_datalayout.h"
 
-#include "qdp_jit_util.h"
 
 // Basic includes
 #define PETE_USER_DEFINED_EXPRESSION
@@ -114,6 +113,7 @@ namespace QDP {
 #include "qdp_stdio.h"
 #include "qdp_pool_allocator.h"
 
+#include "qdp_jit_util.h"
 
 //#include "qdp_multi.h"
 #include "qdp_cache.h"

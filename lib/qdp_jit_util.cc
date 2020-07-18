@@ -269,4 +269,77 @@ namespace QDP {
   }
 
 
+  JitForLoop::JitForLoop( int start , int end )
+  {
+    block_outer = llvm_get_insert_point();
+    block_loop_cond = llvm_new_basic_block();
+    block_loop_body = llvm_new_basic_block();
+    block_loop_exit = llvm_new_basic_block();
+
+    llvm::Value * i_start = llvm_create_value( start );
+    
+    llvm_branch( block_loop_cond );
+    llvm_set_insert_point(block_loop_cond);
+  
+    r_i = llvm_phi( llvm_type<int>::value , 2 );
+
+    r_i->addIncoming( i_start , block_outer );
+
+    llvm_cond_branch( llvm_lt( r_i , llvm_create_value( end ) ) , block_loop_body , block_loop_exit );
+
+    llvm_set_insert_point( block_loop_body );
+  }
+  llvm::Value * JitForLoop::index()
+  {
+    return r_i;
+  }
+  void JitForLoop::end()
+  {
+    llvm::Value * r_i_plus = llvm_add( r_i , llvm_create_value(1) );
+    r_i->addIncoming( r_i_plus , llvm_get_insert_point() );
+  
+    llvm_branch( block_loop_cond );
+
+    llvm_set_insert_point(block_loop_exit);
+  }
+
+
+
+
+  
+
+  llvm::Value* llvm_epsilon_1st( int p1 , llvm::Value* j )
+  {
+    return llvm_rem( llvm_add( j , llvm_create_value( p1 ) ) , llvm_create_value( 3 ) );
+
+  }
+  
+  llvm::Value* llvm_epsilon_2nd( int p2 , llvm::Value* i )
+  {
+    return llvm_rem( llvm_add( i , llvm_create_value( p2 ) ) , llvm_create_value( 3 ) );
+  }
+
+
+  void f1(int l,int r)
+  {
+    int i = (r + 1) % 3;
+    int j = (l + 1) % 3;
+    cout << "s1.elem(" << i << "," << j << ") * ";
+  }
+
+
+
+
+
+
+  
+  
+  
+    // llvm::BasicBlock * block_start = llvm_new_basic_block();
+  // llvm::BasicBlock * block_cont = llvm_new_basic_block();
+
+
+
+  
+
 } //namespace

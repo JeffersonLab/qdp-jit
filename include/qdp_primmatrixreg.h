@@ -33,6 +33,7 @@ namespace QDP {
   T F[N*N];
 public:
   typedef C<T,N>  CC;
+  typedef T  Sub_t;
 
 
   //! PMatrixREG = PScalarREG

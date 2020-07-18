@@ -37,6 +37,9 @@ namespace QDP
   fill_random(double* d, T1& seed, T2& skewed_seed, const T1& seed_mult);
 
 
+  template<class T> class JITType;
+  template<class T, int N > class BaseJIT;
+
   
   // Inner
   template<class T> class IScalar;
