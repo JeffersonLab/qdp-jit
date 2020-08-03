@@ -187,6 +187,21 @@ if test "X${LLVM10_ENABLED}X" = "XyesX"; then
 fi
 
 
+AC_ARG_ENABLE(llvm11,
+  AC_HELP_STRING(
+    [--enable-llvm11],
+    [Enable changes to compile with LLVM 11.0 release]
+  ),
+  [LLVM11_ENABLED=$enableval],
+  [LLVM11_ENABLED="no"]
+)
+
+if test "X${LLVM11_ENABLED}X" = "XyesX"; then
+  AC_MSG_NOTICE([Enabling changes for LLVM 11.0 release ])
+  AC_DEFINE(QDP_LLVM11, [1], [ Compile for LLVM 11.0 release  ])
+fi
+
+
 
 dnl comm-split to find device id
 AC_ARG_ENABLE(comm-split-deviceinit,

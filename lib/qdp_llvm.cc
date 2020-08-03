@@ -15,7 +15,11 @@
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/PassRegistry.h"
 
-#if defined (QDP_LLVM8) || (QDP_LLVM9) || (QDP_LLVM10)
+#if defined (QDP_LLVM11)
+#include "llvm/CodeGen/CommandFlags.h"
+using namespace llvm;
+using namespace llvm::codegen;
+#elif defined (QDP_LLVM8) || (QDP_LLVM9) || (QDP_LLVM10)
 #include "llvm/CodeGen/CommandFlags.inc"
 #else
 #include "llvm/CodeGen/CommandFlags.def"
@@ -1225,7 +1229,7 @@ namespace QDP {
       Builder.Inliner = llvm::createAlwaysInlinerLegacyPass();
     }
 
-#if defined (QDP_LLVM9) || (QDP_LLVM10)
+#if defined (QDP_LLVM9) || (QDP_LLVM10) || (QDP_LLVM11)
 #else
     Builder.DisableUnitAtATime = !UnitAtATime;
 #endif
@@ -1319,9 +1323,11 @@ namespace QDP {
     // relocModel = llvm::Reloc::PIC_;
 
 
-    //llvm::TargetOptions Options;
-
+#if defined (QDP_LLVM11)
+    llvm::TargetOptions Options;
+#else
     llvm::TargetOptions Options = InitTargetOptionsFromCodeGenFlags();
+#endif
     // Options.DisableIntegratedAS = llvm::NoIntegratedAssembler;
     // Options.MCOptions.ShowMCEncoding = llvm::ShowMCEncoding;
     // Options.MCOptions.MCUseDwarfDirectory = llvm::EnableDwarfDirectory;
@@ -1348,7 +1354,11 @@ namespace QDP {
 										       compute,
 										       "",
 										       llvm::TargetOptions(),
+#if defined (QDP_LLVM11)
+										       Reloc::PIC_,
+#else
 										       getRelocModel(),
+#endif
 										       None,
 										       llvm::CodeGenOpt::Aggressive, true ));
 // pre llvm6
@@ -1420,14 +1430,14 @@ namespace QDP {
 #endif
 
 
-#if defined (QDP_LLVM8) || (QDP_LLVM9) || (QDP_LLVM10)
+#if defined (QDP_LLVM8) || (QDP_LLVM9) || (QDP_LLVM10) || (QDP_LLVM11)
     std::string str;
     llvm::raw_string_ostream rss(str);
     llvm::buffer_ostream bos(rss);
     
     // Ask the target to add backend passes as necessary.
 
-#if defined (QDP_LLVM10)
+#if defined (QDP_LLVM10) || (QDP_LLVM11)
     if (target_machine->addPassesToEmitFile(PM, bos , nullptr ,  llvm::CGFT_AssemblyFile )) {
 #else
     if (target_machine->addPassesToEmitFile(PM, bos , nullptr ,  llvm::TargetMachine::CGFT_AssemblyFile )) {
@@ -1530,7 +1540,7 @@ namespace QDP {
 
     llvm::legacy::PassManager OurPM;
     OurPM.add( llvm::createInternalizePass( all_but_main ) );
-#if defined (QDP_LLVM8) || (QDP_LLVM9) || (QDP_LLVM10)
+#if defined (QDP_LLVM8) || (QDP_LLVM9) || (QDP_LLVM10) || (QDP_LLVM11)
     unsigned int sm_gpu = DeviceParams::Instance().getMajor() * 10 + DeviceParams::Instance().getMinor();
     OurPM.add( llvm::createNVVMReflectPass( sm_gpu ));
 #else

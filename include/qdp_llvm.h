@@ -43,7 +43,7 @@
 #include "llvm/IR/DataLayout.h"
 #include "llvm/Support/SourceMgr.h"
 
-#if defined (QDP_LLVM8) || (QDP_LLVM9) || (QDP_LLVM10)
+#if defined (QDP_LLVM8) || (QDP_LLVM9) || (QDP_LLVM10) || (QDP_LLVM11)
 #else
 #include "llvm/IR/TypeBuilder.h"
 #endif
@@ -78,7 +78,7 @@
 
 
 namespace llvm {
-#if defined (QDP_LLVM8) || (QDP_LLVM9) || (QDP_LLVM10)
+#if defined (QDP_LLVM8) || (QDP_LLVM9) || (QDP_LLVM10) || (QDP_LLVM11)
   ModulePass *createNVVMReflectPass(unsigned int);
 #else
   ModulePass *createNVVMReflectPass(void);
