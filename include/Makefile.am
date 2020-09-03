@@ -43,6 +43,11 @@ CUDA_HDRS += custom_kernels/custom_kernels.h \
              custom_kernels/stream_local_inner_product.h
 endif
 
+if QDP_CUDA_SPECIAL
+CUDA_HDRS += qdp_functions_special.h cuda_special.h
+endif
+
+
 
 # All the include files - avoid flattening of dirs by using nobase
 nobase_include_HEADERS = \

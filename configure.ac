@@ -116,6 +116,40 @@ AC_ARG_ENABLE(custom-kernels,
 )
 
 
+dnl --enable-custom-kernels
+AC_ARG_ENABLE(cuda-special,
+  AC_HELP_STRING([--enable-cuda-special],
+    [Build CUDA functions. Use --enable-cuda-sm and possibly --enable-cuda-nvcc]),
+  [ac_cuda_special="yes"],
+  [ac_cuda_special="no"]
+)
+
+
+AC_ARG_ENABLE(cuda-sm,
+  AC_HELP_STRING([--enable-cuda-sm=<arch>],
+    [Build special CUDA function for compute capability <sm_50/...>]),
+    [ac_cuda_sm=${enableval}],
+    [ac_cuda_sm="sm_50"]
+)
+
+AC_SUBST(CUDA_SM, "${ac_cuda_sm}")
+
+
+AC_ARG_ENABLE(cuda-nvcc,
+  AC_HELP_STRING([--enable-cuda-nvcc=<arch>],
+    [Path to CUDA NVCC]),
+    [ac_cuda_nvcc=${enableval}],
+    [ac_cuda_nvcc="nvcc"]
+)
+
+AC_SUBST(CUDA_NVCC, "${ac_cuda_nvcc}")
+
+
+
+
+
+
+
 dnl --enable-parallel-arch argument
 AC_ARG_ENABLE(parallel-arch,
   AC_HELP_STRING([--enable-parallel-arch=<arch>],
@@ -217,18 +251,13 @@ then
  AC_DEFINE([QDP_USE_COMM_SPLIT_INIT], [1],[Comm split for local ranks])
 fi
 
-dnl if test "X${gpu_enabled}X" == "XyesX"; 
-dnl then
-     ac_gcc="$CXX"     				      
-     AC_DEFINE_UNQUOTED([CUDA_GCC],"${ac_gcc}",[CUDA C/C++ Compiler])
-     AC_DEFINE_UNQUOTED(QDP_IS_QDPJIT, ${gpu_enabled}, [Enable GPU/JIT])
-     AC_DEFINE_UNQUOTED(QDPJIT_IS_QDPJITNVVM, ${gpu_enabled}, [Enable GPU/JIT])
-     AC_SUBST(CUDA_LIBS, [-lcuda])
-     AC_SUBST(CUDA_CXXFLAGS, [-I${cuda_home}/include])
-     AC_SUBST(CUDA_LDFLAGS, [-L${cuda_home}/lib64])
-dnl else
-dnl     AC_MSG_NOTICE([Not using GPUs ])
-dnl fi
+ac_gcc="$CXX"     				      
+AC_DEFINE_UNQUOTED([CUDA_GCC],"${ac_gcc}",[CUDA C/C++ Compiler])
+AC_DEFINE_UNQUOTED(QDP_IS_QDPJIT, ${gpu_enabled}, [Enable GPU/JIT])
+AC_DEFINE_UNQUOTED(QDPJIT_IS_QDPJITNVVM, ${gpu_enabled}, [Enable GPU/JIT])
+#AC_SUBST(CUDA_LIBS, [-lcuda])
+AC_SUBST(CUDA_CXXFLAGS, [-I${cuda_home}/include])
+AC_SUBST(CUDA_LDFLAGS, [-L${cuda_home}/lib64])
 
 
 
@@ -239,6 +268,18 @@ if test "X${ac_custom}X" = "XyesX"; then
    AC_DEFINE_UNQUOTED(QDP_CUSTOM_KERNELS, ${ac_custom}, [Include custom kernels])
    AC_MSG_NOTICE([Include custom kernels])
 fi
+
+
+dnl Include custom kernels
+if test "X${ac_cuda_special}X" = "XyesX"; then
+   AC_DEFINE_UNQUOTED(QDP_CUDA_SPECIAL, ${ac_cuda_special}, [Include CUDA special kernels])
+   AC_MSG_NOTICE([Include CUDA special kernels])
+   tmp_cuda_libs="-lcuda -lcudart"
+else
+   tmp_cuda_libs="-lcuda"
+fi
+
+AC_SUBST(CUDA_LIBS, "${tmp_cuda_libs}" )
 
 
 dnl Check if memory debugging is enabled
@@ -645,6 +686,9 @@ AM_CONDITIONAL(QDP_USE_LIBXML2, [test "x${with_libxml2}x" != "xnox" ])
 AM_CONDITIONAL(QDP_USE_HDF5, [test "x${ac_build_hdf5}x" = "xyesx" ])
 
 AM_CONDITIONAL(QDP_CUSTOM_KERNELS, [test "x${ac_custom}x" = "xyesx" ])
+
+AM_CONDITIONAL(QDP_CUDA_SPECIAL, [test "x${ac_cuda_special}x" = "xyesx" ])
+
 
 
 ##################################
