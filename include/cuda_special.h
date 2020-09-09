@@ -14,4 +14,6 @@ void evaluate_special_quarkContract14( int N, std::vector<void*> args );
 void evaluate_special_quarkContract23( int N, std::vector<void*> args );
 void evaluate_special_quarkContract24( int N, std::vector<void*> args );
 
+void jumper_jit_stats_special(int i);
+
 #endif

@@ -13,17 +13,32 @@ namespace QDP {
     long lattice2dev  = 0;   // changing lattice data layout to device format
     long lattice2host = 0;   // changing lattice data layout to host format
     long jitted       = 0;   // functions not in DB, thus jit-built
+#ifdef QDP_CUDA_SPECIAL
+    std::map<int,long> special;
+    std::map<int,std::string> special_names = {
+      {0,"quarkContract13"},
+      {1,"quarkContract14"},
+      {2,"quarkContract23"},
+      {3,"quarkContract24"}
+    };
+#endif
   }
 
 
   void jit_stats_lattice2dev()  { ++JITSTATS::lattice2dev; }
   void jit_stats_lattice2host() { ++JITSTATS::lattice2host; }
   void jit_stats_jitted()       { ++JITSTATS::jitted; }
-
+#ifdef QDP_CUDA_SPECIAL
+  void jit_stats_special(int i) { ++JITSTATS::special[i]; }
+#endif
+  
   long get_jit_stats_lattice2dev()  { return JITSTATS::lattice2dev; }
   long get_jit_stats_lattice2host() { return JITSTATS::lattice2host; }
   long get_jit_stats_jitted()       { return JITSTATS::jitted; }
-
+#ifdef QDP_CUDA_SPECIAL
+  long get_jit_stats_special(int i) { return JITSTATS::special[i]; }
+  std::map<int,std::string>& get_jit_stats_special_names() { return JITSTATS::special_names; }
+#endif
 
   // seedMultiply
   //

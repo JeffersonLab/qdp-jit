@@ -15,11 +15,14 @@ namespace QDP {
   void jit_stats_lattice2dev();
   void jit_stats_lattice2host();
   void jit_stats_jitted();
+  void jit_stats_special(int i);
 
   long get_jit_stats_lattice2dev();
   long get_jit_stats_lattice2host();
   long get_jit_stats_jitted();
-
+  long get_jit_stats_special(int i);
+  std::map<int,std::string>& get_jit_stats_special_names();
+  
   std::vector<llvm::Value *> llvm_seedMultiply( llvm::Value* a0 , llvm::Value* a1 , llvm::Value* a2 , llvm::Value* a3 , 
 						llvm::Value* a4 , llvm::Value* a5 , llvm::Value* a6 , llvm::Value* a7 );
 

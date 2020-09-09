@@ -4,6 +4,8 @@
 #include<algorithm>
 #include<map>
 
+#include "qdp.h"
+
 namespace {
 
   int64_t cuda_special_maxgridx = -1;
@@ -31,6 +33,10 @@ int64_t cuda_special_get_maxgridx()
   return cuda_special_maxgridx;
 }
 
+void jumper_jit_stats_special(int i)
+{
+  jit_stats_special(i);
+}
 
 std::map<int,int>& cuda_special_get_blocksize()
 {

@@ -261,6 +261,8 @@ void evaluate_special_quarkContract13( int N, std::vector<void*> args )
   //
   const int func_num = 0;
   const int default_blocksize = 128;
+
+  jumper_jit_stats_special(func_num);
   
   if (cuda_special_get_maxgridx() == -1)
     {

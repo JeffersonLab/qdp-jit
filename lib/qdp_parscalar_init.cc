@@ -614,6 +614,12 @@ namespace COUNT {
 		QDPIO::cout << "lattices changed to device layout:     " << get_jit_stats_lattice2dev() << "\n";
 		QDPIO::cout << "lattices changed to host layout:       " << get_jit_stats_lattice2host() << "\n";
 		QDPIO::cout << "functions jit-compiled:                " << get_jit_stats_jitted() << "\n";
+#ifdef QDP_CUDA_SPECIAL
+		for ( auto it = get_jit_stats_special_names().begin() ; it != get_jit_stats_special_names().end(); it++ )
+		  {
+		    QDPIO::cout << it->first << ": [" << it->second << "] = " << get_jit_stats_special( it->first ) << "\n";
+		  }
+#endif
 		if (get_ptx_db_enabled())
 		  {
 		    QDPIO::cout << "PTX DB, file:                          " << get_ptx_db_fname() << "\n";
