@@ -670,6 +670,7 @@ inline typename BinaryReturn<PColorMatrixREG<T1,3>, PColorMatrixREG<T2,3>, FnQua
 quarkContractXX(const PColorMatrixREG<T1,3>& s1, const PColorMatrixREG<T2,3>& s2)
 {
   typename BinaryReturn<PColorMatrixREG<T1,3>, PColorMatrixREG<T2,3>, FnQuarkContractXX>::Type_t  d;
+#if 1
 
   // Permutations: +(0,1,2)+(1,2,0)+(2,0,1)-(1,0,2)-(0,2,1)-(2,1,0)
 
@@ -744,7 +745,36 @@ quarkContractXX(const PColorMatrixREG<T1,3>& s1, const PColorMatrixREG<T2,3>& s2
               - s1.elem(0,1)*s2.elem(1,0)
               - s1.elem(1,0)*s2.elem(0,1)
               + s1.elem(1,1)*s2.elem(0,0);
+#else
+  
+  typedef typename BinaryReturn<PColorMatrixREG<T1,3>, PColorMatrixREG<T2,3>, FnQuarkContractXX>::Type_t::Sub_t  T_return;
 
+  JitStackMatrix< T1 , 3 > s1_a( s1 );
+  JitStackMatrix< T2 , 3 > s2_a( s2 );
+  JitStackMatrix< T_return , 3 > d_a;
+
+  JitForLoop loop_j(0,3);
+  JitForLoop loop_i(0,3);
+
+  d_a.elemJIT( loop_i.index() , loop_j.index() ) =
+				   s1_a.elemREG( llvm_epsilon_1st( 1 , loop_j.index() ) , llvm_epsilon_2nd( 1 , loop_i.index() ) ) *
+				   s2_a.elemREG( llvm_epsilon_1st( 2 , loop_j.index() ) , llvm_epsilon_2nd( 2 , loop_i.index() ) )
+				 - s1_a.elemREG( llvm_epsilon_1st( 1 , loop_j.index() ) , llvm_epsilon_2nd( 2 , loop_i.index() ) ) *
+				   s2_a.elemREG( llvm_epsilon_1st( 2 , loop_j.index() ) , llvm_epsilon_2nd( 1 , loop_i.index() ) )
+				 - s1_a.elemREG( llvm_epsilon_1st( 2 , loop_j.index() ) , llvm_epsilon_2nd( 1 , loop_i.index() ) ) *
+				   s2_a.elemREG( llvm_epsilon_1st( 1 , loop_j.index() ) , llvm_epsilon_2nd( 2 , loop_i.index() ) )
+				 + s1_a.elemREG( llvm_epsilon_1st( 2 , loop_j.index() ) , llvm_epsilon_2nd( 2 , loop_i.index() ) ) *
+      				   s2_a.elemREG( llvm_epsilon_1st( 1 , loop_j.index() ) , llvm_epsilon_2nd( 1 , loop_i.index() ) );
+				 
+  loop_i.end();
+  loop_j.end();
+
+  for(int i=0; i < 3; ++i)
+    for(int j=0; j < 3; ++j)
+      d.elem(i,j).setup( d_a.elemJIT(i,j) );
+
+
+#endif
   return d;
 }
 
