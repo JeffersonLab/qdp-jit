@@ -2,6 +2,7 @@
 
 namespace QDP {
 
+#if 0
   kernel_geom_t getGeom(int numSites , int threadsPerBlock)
   {
     kernel_geom_t geom_host;
@@ -12,6 +13,25 @@ namespace QDP {
 
     return geom_host;
   }
+#else
+  kernel_geom_t getGeom(int numSites , int threadsPerBlock)
+  {
+    kernel_geom_t geom_host;
+
+    int64_t num_sites = numSites;
+  
+    int64_t M = DeviceParams::Instance().getMaxGridX() * threadsPerBlock;
+    int64_t Nblock_y = (num_sites + M-1) / M;
+
+    int64_t P = threadsPerBlock;
+    int64_t Nblock_x = (num_sites + P-1) / P;
+
+    geom_host.threads_per_block = threadsPerBlock;
+    geom_host.Nblock_x = Nblock_x;
+    geom_host.Nblock_y = Nblock_y;
+    return geom_host;
+  }
+#endif
 
 
 
