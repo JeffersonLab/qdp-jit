@@ -10,12 +10,8 @@
 #include "llvm/IR/Module.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/IR/LLVMContext.h"
-//#include "llvm/Bitcode/BitstreamWriter.h"
 #include "llvm/Bitcode/BitcodeReader.h"
-//#include "llvm/Bitcode/Writer.h"
-//#include "llvm/IR/PassManager.h"  // not ready yet in LLVM 3.8
 #include "llvm/IR/LegacyPassManager.h"
-//#include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Analysis/BasicAliasAnalysis.h"
 #include "llvm/Pass.h"
 #include "llvm/Analysis/Passes.h"
@@ -30,23 +26,18 @@
 
 #include "llvm/CodeGen/TargetLowering.h"
 
-// pre llvm6
-#if 0
-#include "llvm/Target/TargetLowering.h"
-#endif
 
 #include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/Support/ToolOutputFile.h"
-//#include "llvm/ADT/OwningPtr.h"
 #include "llvm/Support/FormattedStream.h"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/Support/SourceMgr.h"
 
-#if defined (QDP_LLVM8) || (QDP_LLVM9) || (QDP_LLVM10) || (QDP_LLVM11)
-#else
-#include "llvm/IR/TypeBuilder.h"
-#endif
+//#if defined (QDP_LLVM12)
+//#else
+//#include "llvm/IR/TypeBuilder.h"
+//#endif
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/StringSet.h"
@@ -78,11 +69,11 @@
 
 
 namespace llvm {
-#if defined (QDP_LLVM8) || (QDP_LLVM9) || (QDP_LLVM10) || (QDP_LLVM11)
+  //#if defined (QDP_LLVM12)
   ModulePass *createNVVMReflectPass(unsigned int);
-#else
-  ModulePass *createNVVMReflectPass(void);
-#endif
+  //#else
+  //ModulePass *createNVVMReflectPass(void);
+  //#endif
 }
 
 
@@ -230,7 +221,6 @@ namespace QDP {
   template<> ParamRef llvm_add_param<float**>();
   template<> ParamRef llvm_add_param<double**>();
 
-  void llvm_module_dump();
   
   llvm::Value * llvm_derefParam( ParamRef r );
 

@@ -15,15 +15,11 @@
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/PassRegistry.h"
 
-#if defined (QDP_LLVM11)
+#include "llvm/IR/InstrTypes.h"
+
 #include "llvm/CodeGen/CommandFlags.h"
 using namespace llvm;
 using namespace llvm::codegen;
-#elif defined (QDP_LLVM8) || (QDP_LLVM9) || (QDP_LLVM10)
-#include "llvm/CodeGen/CommandFlags.inc"
-#else
-#include "llvm/CodeGen/CommandFlags.def"
-#endif
 
 #include "llvm/Support/CommandLine.h"
 
@@ -181,7 +177,7 @@ namespace QDP {
 	std::ofstream out(fname);
 	out << kernel;
 	out.close();
-	//Mod->dump();
+	//llvm_module_dump();
 #endif
 	QDP_error_exit("Abort.");
       }
@@ -546,15 +542,8 @@ namespace QDP {
     
     //QDPIO::cout << "Starting new LLVM function..\n";
 
-#if 0
-    // C++14 version
-    Mod = std::make_unique< llvm::Module >( "module", TheContext);
-    builder = std::make_unique< llvm::IRBuilder<> >( TheContext );
-#else
     Mod.reset( new llvm::Module( "module", TheContext) );
     builder.reset( new llvm::IRBuilder<>( TheContext ) );
-#endif
-
 
     jit_build_seedToFloat();
     jit_build_seedMultiply();
@@ -567,7 +556,7 @@ namespace QDP {
 
     // llvm::outs() << "------------------------- linked module\n";
     // llvm_print_module(Mod,"ir_linked.ll");
-    //Mod->dump();
+    //llvm_module_dump();
   }
 
 
@@ -669,8 +658,11 @@ namespace QDP {
       if ( dest_type->getArrayElementType() == src->getType() )
 	return src;
 
+#if defined (QDP_LLVM12)
+#else
     if (!llvm::CastInst::isCastable( src->getType() , dest_type ))
       QDP_error_exit("not castable");
+#endif
 
     //llvm::outs() << "cast instruction: dest type = " << dest_type << "   from " << src->getType() << "\n";
     
@@ -681,21 +673,6 @@ namespace QDP {
 
 
 
-#if 0
-  llvm::Type* llvm_normalize_values(llvm::Value*& lhs , llvm::Value*& rhs)
-  {
-    llvm::Type* args_type = promote( lhs->getType() , rhs->getType() );
-    if ( args_type != lhs->getType() ) {
-      //llvm::outs() << "lhs needs conversion\n";
-      lhs = llvm_cast( args_type , lhs );
-    }
-    if ( args_type != rhs->getType() ) {
-      //llvm::outs() << "rhs needs conversion\n";
-      rhs = llvm_cast( args_type , rhs );
-    }
-    return args_type;
-  }
-#endif
 
   std::pair<llvm::Value*,llvm::Value*> llvm_normalize_values(llvm::Value* lhs , llvm::Value* rhs)
   {
@@ -886,19 +863,7 @@ namespace QDP {
 
 
 
-
-  // std::string param_next()
-  // {
-  //   std::ostringstream oss;
-  //   oss << "arg" << llvm_counters::param_counter++;
-  //   llvm::outs() << "param_name = " << oss.str() << "\n";
-  //   return oss.str();
-  // }
-
-
   llvm::Value* llvm_get_shared_ptr( llvm::Type *ty ) {
-
-    //
 
     llvm::GlobalVariable *gv = new llvm::GlobalVariable ( *Mod , 
 							  llvm::ArrayType::get(ty,0) ,
@@ -911,8 +876,6 @@ namespace QDP {
 							  3, // unsigned AddressSpace=0, 
 							  false); //bool isExternallyInitialized=false)
     return builder->CreatePointerCast(gv, llvm::PointerType::get(ty,3) );
-    //return builder->CreatePointerCast(gv,llvm_type<double*>::value);
-    //return gv;
   }
 
 
@@ -1145,22 +1108,6 @@ namespace QDP {
 
 
   void addKernelMetadata(llvm::Function *F) {
-#if 0
-    llvm::Module *M = F->getParent();
-    llvm::LLVMContext &Ctx = M->getContext();
-
-    // Get "nvvm.annotations" metadata node
-    llvm::NamedMDNode *MD = M->getOrInsertNamedMetadata("nvvm.annotations");
-
-    // Create !{<func-ref>, metadata !"kernel", i32 1} node
-    llvm::SmallVector<llvm::Value *, 3> MDVals;
-    MDVals.push_back(F);
-    MDVals.push_back(llvm::MDString::get(Ctx, "kernel"));
-    MDVals.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), 1));
-
-    // Append metadata to nvvm.annotations
-    MD->addOperand(llvm::MDNode::get(Ctx, MDVals));
-#else
     llvm::Module *M = F->getParent();
     llvm::LLVMContext &Ctx = M->getContext();
 
@@ -1175,14 +1122,13 @@ namespace QDP {
 
     // Append metadata to nvvm.annotations
     MD->addOperand(llvm::MDNode::get(Ctx, MDVals));
-#endif
   }
 
 
   void llvm_print_module( llvm::Module* m , const char * fname ) {
     std::error_code EC;
     llvm::raw_fd_ostream outfd( fname , EC, llvm::sys::fs::OpenFlags::F_Text);
-    //ASSERT_FALSE(outfd.has_error());
+
     std::string banner;
     {
       llvm::outs() << "llvm_print_module ni\n";
@@ -1195,18 +1141,12 @@ namespace QDP {
   }
 
 
-  //  namespace {
-  
-  /// This routine adds optimization passes based on selected optimization level,
-  /// OptLevel.
-  ///
-  /// OptLevel - Optimization Level
+
   void AddOptimizationPasses(llvm::legacy::PassManagerBase &MPM,
   			     llvm::legacy::FunctionPassManager &FPM,
   			     llvm::TargetMachine *TM, unsigned OptLevel,
   			     unsigned SizeLevel)
   {
-#if 1
     //QDPIO::cout << " adding opt passes..\n";
 
     const bool DisableInline = llvm_opt::DisableInline;
@@ -1229,10 +1169,10 @@ namespace QDP {
       Builder.Inliner = llvm::createAlwaysInlinerLegacyPass();
     }
 
-#if defined (QDP_LLVM9) || (QDP_LLVM10) || (QDP_LLVM11)
-#else
-    Builder.DisableUnitAtATime = !UnitAtATime;
-#endif
+    //#if defined (QDP_LLVM9) || (QDP_LLVM10) || (QDP_LLVM11)
+    //#else
+    //Builder.DisableUnitAtATime = !UnitAtATime;
+    //#endif
     
     //#ifndef QDP_LLVM9
     //    Builder.DisableUnitAtATime = !UnitAtATime;
@@ -1250,20 +1190,10 @@ namespace QDP {
     Builder.SLPVectorize = DisableSLPVectorization ? false : OptLevel > 1 && SizeLevel < 2;
 
     // Add target-specific passes that need to run as early as possible.
-#if 0
-    if (TM)
-      Builder.addExtension(
-			   llvm::PassManagerBuilder::EP_EarlyAsPossible,
-			   [&](llvm::PassManagerBuilder &PMB, llvm::legacy::PassManagerBase &PM) {
-			     TM->adjustPassManager(PMB);
-			   });
-#else
    if( TM ) TM->adjustPassManager(Builder);
-#endif
 
-    Builder.populateFunctionPassManager(FPM);
-    Builder.populateModulePassManager(MPM);
-#endif
+   Builder.populateFunctionPassManager(FPM);
+   Builder.populateModulePassManager(MPM);
   }
 
     //  } // ann. namespace
@@ -1316,27 +1246,11 @@ namespace QDP {
       exit(1);
     }
 
-    //QDPIO::cout << "target name: " << TheTarget->getName() << "\n";
-
-    //llvm::Optional<llvm::Reloc::Model> relocModel;
-    // if (m_generatePIC) 
-    // relocModel = llvm::Reloc::PIC_;
-
-
-#if defined (QDP_LLVM11)
+    //#if defined (QDP_LLVM11)
     llvm::TargetOptions Options;
-#else
-    llvm::TargetOptions Options = InitTargetOptionsFromCodeGenFlags();
-#endif
-    // Options.DisableIntegratedAS = llvm::NoIntegratedAssembler;
-    // Options.MCOptions.ShowMCEncoding = llvm::ShowMCEncoding;
-    // Options.MCOptions.MCUseDwarfDirectory = llvm::EnableDwarfDirectory;
-    // Options.MCOptions.AsmVerbose = llvm::AsmVerbose;
-    // Options.MCOptions.PreserveAsmComments = llvm::PreserveComments;
-    // Options.MCOptions.IASSearchPaths = llvm::IncludeDirs;
-
-    
-    //std::unique_ptr<llvm::TargetMachine> target(TheTarget->createTargetMachine(TheTriple.getTriple(),"sm_50", "ptx50", Options , relocModel ));
+    //#else
+    //llvm::TargetOptions Options = InitTargetOptionsFromCodeGenFlags();
+    //#endif
 
     auto major = DeviceParams::Instance().getMajor();
     auto minor = DeviceParams::Instance().getMinor();
@@ -1346,54 +1260,27 @@ namespace QDP {
 
     std::string compute = oss.str();
 
-    //QDPIO::cout << "create target machine for compute capability " << compute << "\n";
-   
 
     std::unique_ptr<llvm::TargetMachine> target_machine(TheTarget->createTargetMachine(
 										       "nvptx64-nvidia-cuda",
 										       compute,
 										       "",
 										       llvm::TargetOptions(),
-#if defined (QDP_LLVM11)
+										       //#if defined (QDP_LLVM11)
 										       Reloc::PIC_,
-#else
-										       getRelocModel(),
-#endif
+										       //#else
+										       //getRelocModel(),
+										       //#endif
 										       None,
 										       llvm::CodeGenOpt::Aggressive, true ));
-// pre llvm6
-#if 0
-    std::unique_ptr<llvm::TargetMachine> target_machine(TheTarget->createTargetMachine(
-
-       "nvptx64-nvidia-cuda",
-
-       compute,
-
-       "",
-
-       llvm::TargetOptions(),
-
-       getRelocModel(),
-
-       llvm::CodeModel::Default,
-
-       llvm::CodeGenOpt::Aggressive));
-#endif
 
     assert(target_machine.get() && "Could not allocate target machine!");
 
     //QDPIO::cout << "target machine cpu:     " << target_machine->getTargetCPU().str() << "\n";
     //QDPIO::cout << "target machine feature: " << target_machine->getTargetFeatureString().str() << "\n";
  
-    //llvm::TargetMachine &Target = *target.get();
-
-
-    //std::string str;
-    //llvm::raw_string_ostream rss(str);
-    //llvm::formatted_raw_ostream FOS(rss);
 
     llvm::legacy::PassManager PM;
-    //FOS <<  "target datalayout = \"e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v32:32:32-v64:64:64-v128:128:128-n16:32:64\";\n";
     Mod->setTargetTriple( "nvptx64-nvidia-cuda" );
 
     llvm::TargetLibraryInfoImpl TLII(Triple(Mod->getTargetTriple()));
@@ -1401,74 +1288,28 @@ namespace QDP {
     //PM.add(new llvm::TargetLibraryInfoWrapperPass(llvm::Triple(Mod->getTargetTriple())));
 
     Mod->setDataLayout(target_machine->createDataLayout());
-    //Mod->setDataLayout("e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v32:32:32-v64:64:64-v128:128:128-n16:32:64");
 
-    //setFunctionAttributes("sm_30", "", *Mod);  // !!!!!
 
     //QDPIO::cout << "BEFORE OPT ---------------\n";
-    //Mod->dump();
+    //llvm_module_dump();
     
     optimize_module( target_machine );
 
     //QDPIO::cout << "AFTER OPT ---------------\n";
-    //Mod->dump();
+    //llvm_module_dump();
 
     
-#if 0
-    // Add the target data from the target machine, if it exists, or the module.
-    if (const DataLayout *TD = Target.getDataLayout()) {
-      QDP_info_primary( "Using targets's data layout" );
-      PMTM.add(new DataLayout(*TD));
-    }
-    else {
-      QDP_info_primary( "Using module's data layout" );
-      PMTM.add(new DataLayout(Mod));
-    }
-#else
-    //QDP_info_primary( "Using module's data layout" );
-    //PMTM.add(new llvm::DataLayoutPass(Mod));
-#endif
-
-
-#if defined (QDP_LLVM8) || (QDP_LLVM9) || (QDP_LLVM10) || (QDP_LLVM11)
     std::string str;
     llvm::raw_string_ostream rss(str);
     llvm::buffer_ostream bos(rss);
     
-    // Ask the target to add backend passes as necessary.
-
-#if defined (QDP_LLVM10) || (QDP_LLVM11)
     if (target_machine->addPassesToEmitFile(PM, bos , nullptr ,  llvm::CGFT_AssemblyFile )) {
-#else
-    if (target_machine->addPassesToEmitFile(PM, bos , nullptr ,  llvm::TargetMachine::CGFT_AssemblyFile )) {
-#endif
-      
       llvm::errs() << ": target does not support generation of this"
 		   << " file type!\n";
-      exit(1);
+      QDP_abort(1);
     }
-#else
-    std::string str;
-    llvm::raw_string_ostream rss(str);
-    llvm::buffer_ostream bos(rss);
-
-    // Ask the target to add backend passes as necessary.
-    if (target_machine->addPassesToEmitFile(PM, bos ,  llvm::TargetMachine::CGFT_AssemblyFile )) {
-      llvm::errs() << ": target does not support generation of this"
-		   << " file type!\n";
-      exit(1);
-    }
-#endif
     
-
-    //Mod->dump();
-    //QDPIO::cout << "(module right before PTX codegen)------\n";
-	
-    //QDPIO::cout << "PTX code generation\n";
     PM.run(*Mod);
-    //bos.flush();
-
-    //QDPIO::cout << "PTX generated2: " << bos.str().str() << " (end)\n";
 
     return bos.str().str();
   }
@@ -1512,45 +1353,37 @@ namespace QDP {
 
 
 
-  // LLVM 4.0
   bool all_but_main(const llvm::GlobalValue & gv)
   {
     return gv.getName().str() == "main";
   }
 
 
-  void llvm_module_dump()
-  {
-    QDPIO::cout << "Module dump...\n";
-    QDPIO::cout << "(disabled, as to be able to build LLVM in release mode)\n";
-    //Mod->dump();
+
+  namespace {
+    void llvm_module_dump()
+    {
+      QDPIO::cout << "--------------------------  Module dump...\n";
+      Mod->print(llvm::errs(), nullptr);
+      QDPIO::cout << "--------------------------\n";
+    }
   }
+
+
+  
 
   std::string llvm_get_ptx_kernel(const char* fname)
   {
-    //QDPIO::cout << "get PTX..\n";
-    //QDPIO::cout << "enter get_ptx_kernel------\n";
-    //Mod->dump();
-    //QDP_info_primary("Internalizing module");
-
-    //const char *ExportList[] = { "main" };
-
     llvm::StringMap<int> Mapping;
     Mapping["__CUDA_FTZ"] = llvm_opt::nvptx_FTZ;
 
     llvm::legacy::PassManager OurPM;
     OurPM.add( llvm::createInternalizePass( all_but_main ) );
-#if defined (QDP_LLVM8) || (QDP_LLVM9) || (QDP_LLVM10) || (QDP_LLVM11)
     unsigned int sm_gpu = DeviceParams::Instance().getMajor() * 10 + DeviceParams::Instance().getMinor();
     OurPM.add( llvm::createNVVMReflectPass( sm_gpu ));
-#else
-    OurPM.add( llvm::createNVVMReflectPass());
-#endif
+
     
     OurPM.run( *Mod );
-
-
-    //QDP_info_primary("Running optimization passes on module");
 
     llvm::legacy::PassManager PM;
     PM.add( llvm::createGlobalDCEPass() );
@@ -1558,15 +1391,9 @@ namespace QDP {
 
 
     //QDPIO::cout << "------------------------------------------------ new module\n";
-    //Mod->dump();
+    //llvm_module_dump();
     //QDPIO::cout << "--------------------------------------------------------------\n";
 
-    //Mod->dump();
-
-
-    //llvm_print_module(Mod,"ir_internalized_reflected_globalDCE.ll");
-
-    //std::string str = get_PTX_from_Module_using_nvvm( Mod );
     std::string str = get_PTX_from_Module_using_llvm();
 
 #if 0
@@ -1577,7 +1404,6 @@ namespace QDP {
     ptxfile.close();
 #endif
 
-
 #if 0
     // Read PTX string from file
     std::ifstream ptxfile(fname);
@@ -1587,7 +1413,6 @@ namespace QDP {
     str = buffer.str();
 #endif
 
-    //llvm::outs() << str << "\n";
 
     return str;
   }

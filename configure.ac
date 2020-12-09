@@ -176,63 +176,18 @@ AC_ARG_ENABLE(filedb,
 )
 
 
-AC_ARG_ENABLE(llvm8,
+AC_ARG_ENABLE(llvm12,
   AC_HELP_STRING(
-    [--enable-llvm8],
-    [Enable changes to compile with LLVM 8.0 release]
+    [--enable-llvm12],
+    [Enable changes to compile with LLVM 12.0 release]
   ),
-  [LLVM8_ENABLED=$enableval],
-  [LLVM8_ENABLED="no"]
+  [LLVM12_ENABLED=$enableval],
+  [LLVM12_ENABLED="no"]
 )
 
-if test "X${LLVM8_ENABLED}X" = "XyesX"; then
-  AC_MSG_NOTICE([Enabling changes for LLVM 8.0 release ])
-  AC_DEFINE(QDP_LLVM8, [1], [ Compile for LLVM 8.0 release  ])
-fi
-
-
-AC_ARG_ENABLE(llvm9,
-  AC_HELP_STRING(
-    [--enable-llvm9],
-    [Enable changes to compile with LLVM 9.0 release]
-  ),
-  [LLVM9_ENABLED=$enableval],
-  [LLVM9_ENABLED="no"]
-)
-
-if test "X${LLVM9_ENABLED}X" = "XyesX"; then
-  AC_MSG_NOTICE([Enabling changes for LLVM 9.0 release ])
-  AC_DEFINE(QDP_LLVM9, [1], [ Compile for LLVM 9.0 release  ])
-fi
-
-
-AC_ARG_ENABLE(llvm10,
-  AC_HELP_STRING(
-    [--enable-llvm10],
-    [Enable changes to compile with LLVM 10.0 release]
-  ),
-  [LLVM10_ENABLED=$enableval],
-  [LLVM10_ENABLED="no"]
-)
-
-if test "X${LLVM10_ENABLED}X" = "XyesX"; then
-  AC_MSG_NOTICE([Enabling changes for LLVM 10.0 release ])
-  AC_DEFINE(QDP_LLVM10, [1], [ Compile for LLVM 10.0 release  ])
-fi
-
-
-AC_ARG_ENABLE(llvm11,
-  AC_HELP_STRING(
-    [--enable-llvm11],
-    [Enable changes to compile with LLVM 11.0 release]
-  ),
-  [LLVM11_ENABLED=$enableval],
-  [LLVM11_ENABLED="no"]
-)
-
-if test "X${LLVM11_ENABLED}X" = "XyesX"; then
-  AC_MSG_NOTICE([Enabling changes for LLVM 11.0 release ])
-  AC_DEFINE(QDP_LLVM11, [1], [ Compile for LLVM 11.0 release  ])
+if test "X${LLVM12_ENABLED}X" = "XyesX"; then
+  AC_MSG_NOTICE([Enabling changes for LLVM 12.0 release ])
+  AC_DEFINE(QDP_LLVM12, [1], [ Compile for LLVM 12.0 release  ])
 fi
 
 
@@ -508,8 +463,8 @@ fi
 
 
 AC_MSG_NOTICE([Found LLVM configuration program ${LLVM_CONFIG}])
-#AC_SUBST(LLVM_CXXFLAGS, "`${LLVM_CONFIG} --cxxflags| sed -e 's/-fno-exceptions//'| sed -e 's/-fno-rtti//'| sed -e 's/-fvisibility-inlines-hidden//'| sed -e 's/-fPIC//'| sed -e 's/-Woverloaded-virtual//'| sed -e 's/-Wcast-qual//'   `")
-AC_SUBST(LLVM_CXXFLAGS, "`${LLVM_CONFIG} --cxxflags| sed -e 's/-fno-exceptions//'| sed -e 's/-std=c++11//'`")
+AC_SUBST(LLVM_CXXFLAGS, "`${LLVM_CONFIG} --cxxflags| sed -e 's/-fno-exceptions//'| sed -e 's/-fno-rtti//'| sed -e 's/-fvisibility-inlines-hidden//'| sed -e 's/-fPIC//'| sed -e 's/-Woverloaded-virtual//'| sed -e 's/-Wcast-qual//'   `")
+#AC_SUBST(LLVM_CXXFLAGS, "`${LLVM_CONFIG} --cxxflags| sed -e 's/-fno-exceptions//'| sed -e 's/-std=c++11//'`")
 AC_MSG_NOTICE([LLVM compile flags: ${LLVM_CXXFLAGS}])
 AC_SUBST(LLVM_LDFLAGS,  ["`${LLVM_CONFIG} --ldflags` -Wl,-rpath,`${LLVM_CONFIG} --libdir`"])
 AC_MSG_NOTICE([LLVM linking flags: ${LLVM_LDFLAGS}])
