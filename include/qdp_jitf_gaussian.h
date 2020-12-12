@@ -5,12 +5,12 @@
 namespace QDP {
 
 template<class T>
-CUfunction
+JitFunction
 function_gaussian_build(OLattice<T>& dest ,OLattice<T>& r1 ,OLattice<T>& r2 )
 {
   if (ptx_db::db_enabled) {
-    CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (func)
+    JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
+    if (!func.empty())
       return func;
   }
 
@@ -39,7 +39,7 @@ function_gaussian_build(OLattice<T>& dest ,OLattice<T>& r1 ,OLattice<T>& r2 )
 
 template<class T>
 void 
-function_gaussian_exec(CUfunction function, OLattice<T>& dest,OLattice<T>& r1,OLattice<T>& r2, const Subset& s )
+function_gaussian_exec(JitFunction function, OLattice<T>& dest,OLattice<T>& r1,OLattice<T>& r2, const Subset& s )
 {
   if (s.numSiteTable() < 1)
     return;

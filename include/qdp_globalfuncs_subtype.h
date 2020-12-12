@@ -36,9 +36,9 @@ namespace QDP
     typename QDPSubTypeTrait< typename BinaryReturn<C1,C2,FnLocalInnerProduct>::Type_t >::Type_t ret;
     ret.setSubset( l.subset() );
 
-    static CUfunction function;
+    static JitFunction function;
 
-    if (function == NULL)
+    if (function.empty())
       function = function_OP_subtype_type_build<FnLocalInnerProduct>(ret, l , r );
 
     function_OP_exec<FnLocalInnerProduct>(function, ret, l, r, l.subset() );
@@ -58,9 +58,9 @@ namespace QDP
     typename QDPSubTypeTrait< typename BinaryReturn<C1,C2,FnLocalInnerProduct>::Type_t >::Type_t ret;
     ret.setSubset( r.subset() );
 
-    static CUfunction function;
+    static JitFunction function;
 
-    if (function == NULL)
+    if (function.empty())
       function = function_OP_type_subtype_build<FnLocalInnerProduct>(ret, l , r );
 
     function_OP_exec<FnLocalInnerProduct>(function, ret, l, r, r.subset() );

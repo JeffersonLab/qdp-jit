@@ -3,7 +3,7 @@
 
 namespace QDP
 {
-  void function_multi_localInnerProduct_sum_convert_exec( CUfunction function,
+  void function_multi_localInnerProduct_sum_convert_exec( JitFunction function,
 							  int size, 
 							  int threads, 
 							  int blocks, 

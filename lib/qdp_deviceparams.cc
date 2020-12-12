@@ -1,4 +1,5 @@
 #include "qdp.h"
+#include "cuda.h"
 
 namespace QDP {
 

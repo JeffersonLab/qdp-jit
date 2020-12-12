@@ -88,7 +88,9 @@ using std::ostream;
 // END OF YUKKINESS
 
 
-#include "cuda.h"
+
+
+#include "gpu.h"
 
 #include "qdp_dispatch.h"
 
@@ -211,7 +213,6 @@ namespace QDP {
 #include "qdp_specializations.h"
 
 #include "qdp_random.h"
-#include "qdp_poolbisect.h"
 
 #if defined(ARCH_SCALAR)
 #include "qdp_scalar_internal.h"

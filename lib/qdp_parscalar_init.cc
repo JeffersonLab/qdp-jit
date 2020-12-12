@@ -343,10 +343,6 @@ namespace COUNT {
 	    //QDP_get_global_cache().get_allocator().enableMemset(val);
 	    QDP_get_global_cache().enableMemset(val);
 	  }
-	else if (strcmp((*argv)[i], "-poolbisect")==0) 
-	  {
-	    qdp_cache_set_pool_bisect(true);
-	  }
 	else if (strcmp((*argv)[i], "-cacheverbose")==0) 
 	  {
 	    qdp_cache_set_cache_verbose(true);
@@ -354,33 +350,6 @@ namespace COUNT {
 	else if (strcmp((*argv)[i], "-launchverbose")==0) 
 	  {
 	    qdp_cache_set_launch_verbose(true);
-	  }
-	else if (strcmp((*argv)[i], "-bisectmax")==0) 
-	  {
-	    float f;
-	    char c;
-	    sscanf((*argv)[++i],"%f%c",&f,&c);
-	    double mul;
-	    switch (tolower(c)) {
-	    case 'k': 
-	      mul=1024.; 
-	      break;
-	    case 'm': 
-	      mul=1024.*1024; 
-	      break;
-	    case 'g': 
-	      mul=1024.*1024*1024; 
-	      break;
-	    case 't':
-	      mul=1024.*1024*1024*1024;
-	      break;
-	    case '\0':
-	      break;
-	    default:
-	      QDP_error_exit("unknown multiplication factor");
-	    }
-	    size_t val = (size_t)((double)(f) * mul);
-	    qdp_cache_set_pool_bisect_max(val);
 	  }
 	else if (strcmp((*argv)[i], "-envvar")==0) 
 	  {
@@ -630,20 +599,6 @@ namespace COUNT {
 		    QDPIO::cout << "PTX DB: (not used)\n";
 		  }
 
-		if (qdp_cache_get_pool_bisect())
-		  {
-		    QDPIO::cout << "Max. local memory size (bytes)         " << CudaGetMaxLocalSize() << "\n";
-		    QDPIO::cout << "Max. local memory usage (MB)           " << (float)CudaGetMaxLocalUsage()/1024./1024. << "\n";
-
-		    QDPIO::cout << "Suspend global cache\n";
-		    QDP_get_global_cache().suspend();
-		    
-		    qdp_pool_bisect();
-
-		    QDPIO::cout << "Resume global cache\n";
-		    QDP_get_global_cache().resume();
-		  }
-		
 		FnMapRsrcMatrix::Instance().cleanup();
 
 #if defined(QDP_USE_HDF5)

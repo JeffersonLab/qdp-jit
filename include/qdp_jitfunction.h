@@ -9,7 +9,7 @@ namespace QDP {
 
   template<class OP,class T, class QT1, class QT2>
   void 
-  function_OP_exec(CUfunction function, OSubLattice<T>& ret,
+  function_OP_exec(JitFunction function, OSubLattice<T>& ret,
 		   const QT1& l,const QT2& r,
 		   const Subset& s)
   {
@@ -42,7 +42,7 @@ namespace QDP {
 
   
   template<class OP,class T, class T1, class T2, class C1, class C2>
-  CUfunction
+  JitFunction
   function_OP_type_subtype_build(OSubLattice<T>& ret,
 				 const QDPType<T1,C1> & l,const QDPSubType<T2,C2> & r)
   {
@@ -50,8 +50,8 @@ namespace QDP {
     typedef typename QDPSubType<T2,C2>::Subtype_t RT;
     
     if (ptx_db::db_enabled) {
-      CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-      if (func)
+      JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
+      if (!func.empty())
 	return func;
     }
 
@@ -90,7 +90,7 @@ namespace QDP {
 
   
   template<class OP, class T, class T1, class T2, class C1, class C2>
-  CUfunction
+  JitFunction
   function_OP_subtype_type_build(OSubLattice<T>& ret,
 				 const QDPSubType<T1,C1> & l,const QDPType<T2,C2> & r)
   {
@@ -98,8 +98,8 @@ namespace QDP {
     typedef typename QDPType<T2,C2>::Subtype_t    RT;
     
     if (ptx_db::db_enabled) {
-      CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-      if (func)
+      JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
+      if (!func.empty())
 	return func;
     }
 
@@ -142,12 +142,12 @@ namespace QDP {
 
   
 template<class T, class T1, class Op, class RHS>
-CUfunction
+JitFunction
 function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs)
 {
   if (ptx_db::db_enabled) {
-    CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (func)
+    JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
+    if (!func.empty())
       return func;
   }
 
@@ -252,12 +252,12 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 
 
 template<class T, class C1, class Op, class RHS>
-CUfunction
+JitFunction
 function_subtype_type_build(OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,C1 >& rhs)
 {
   if (ptx_db::db_enabled) {
-    CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (func)
+    JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
+    if (!func.empty())
       return func;
   }
 
@@ -288,14 +288,14 @@ function_subtype_type_build(OSubLattice<T>& dest, const Op& op, const QDPExpr<RH
 
   
 template<class T, class T1, class Op>
-CUfunction
+JitFunction
 operator_type_subtype_build(OLattice<T>& dest, const Op& op, const QDPSubType<T1,OLattice<T1> >& rhs)
 {
   typedef typename QDPSubType<T1,OLattice<T1>>::Subtype_t RT;
       
   if (ptx_db::db_enabled) {
-    CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (func)
+    JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
+    if (!func.empty())
       return func;
   }
 
@@ -334,14 +334,14 @@ operator_type_subtype_build(OLattice<T>& dest, const Op& op, const QDPSubType<T1
 
   
 template<class T, class T1, class Op>
-CUfunction
+JitFunction
 operator_subtype_subtype_build(OSubLattice<T>& dest, const Op& op, const QDPSubType<T1,OLattice<T1> >& rhs)
 {
   typedef typename QDPSubType<T1,OLattice<T1>>::Subtype_t RT;
       
   if (ptx_db::db_enabled) {
-    CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (func)
+    JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
+    if (!func.empty())
       return func;
   }
 
@@ -372,7 +372,7 @@ operator_subtype_subtype_build(OSubLattice<T>& dest, const Op& op, const QDPSubT
 
 template<class T, class T1, class Op, class RHS>
 void
-function_lat_sca_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs, const Subset& s)
+function_lat_sca_exec(JitFunction function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs, const Subset& s)
 {
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
   if (s.numSiteTable() < 1)
@@ -409,12 +409,12 @@ function_lat_sca_exec(CUfunction function, OLattice<T>& dest, const Op& op, cons
 
 
 template<class T, class T1, class Op, class RHS>
-CUfunction
+JitFunction
 function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
 {
   if (ptx_db::db_enabled) {
-    CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (func)
+    JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
+    if (!func.empty())
       return func;
   }
 
@@ -444,12 +444,12 @@ function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScala
 
 
 template<class T, class T1, class Op, class RHS>
-CUfunction
+JitFunction
 function_lat_sca_subtype_build(OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
 {
   if (ptx_db::db_enabled) {
-    CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (func)
+    JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
+    if (!func.empty())
       return func;
   }
 
@@ -479,12 +479,12 @@ function_lat_sca_subtype_build(OSubLattice<T>& dest, const Op& op, const QDPExpr
 
 
 template<class T, class T1>
-CUfunction
+JitFunction
 function_pokeSite_build( const OLattice<T>& dest , const OScalar<T1>& r  )
 {
   if (ptx_db::db_enabled) {
-    CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (func)
+    JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
+    if (!func.empty())
       return func;
   }
 
@@ -514,7 +514,7 @@ function_pokeSite_build( const OLattice<T>& dest , const OScalar<T1>& r  )
 
 template<class T, class T1>
 void 
-function_pokeSite_exec(CUfunction function, OLattice<T>& dest, const OScalar<T1>& rhs, const multi1d<int>& coord )
+function_pokeSite_exec(JitFunction function, OLattice<T>& dest, const OScalar<T1>& rhs, const multi1d<int>& coord )
 {
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
@@ -538,12 +538,12 @@ function_pokeSite_exec(CUfunction function, OLattice<T>& dest, const OScalar<T1>
 
 
 template<class T>
-CUfunction
+JitFunction
 function_zero_rep_build(OLattice<T>& dest)
 {
   if (ptx_db::db_enabled) {
-    CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (func)
+    JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
+    if (!func.empty())
       return func;
   }
 
@@ -564,12 +564,12 @@ function_zero_rep_build(OLattice<T>& dest)
 
 
 template<class T>
-CUfunction
+JitFunction
 function_zero_rep_subtype_build(OSubLattice<T>& dest)
 {
   if (ptx_db::db_enabled) {
-    CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (func)
+    JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
+    if (!func.empty())
       return func;
   }
 
@@ -597,14 +597,14 @@ function_zero_rep_subtype_build(OSubLattice<T>& dest)
 
 
 template<class T>
-CUfunction
+JitFunction
 function_random_build(OLattice<T>& dest , Seed& seed_tmp)
 {
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
   if (ptx_db::db_enabled) {
-    CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (func)
+    JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
+    if (!func.empty())
       return func;
   }
 
@@ -683,13 +683,13 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
 
 
 template<class T, class T1, class RHS>
-CUfunction
+JitFunction
 //function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs )
 function_gather_build( const QDPExpr<RHS,OLattice<T1> >& rhs )
 {
   if (ptx_db::db_enabled) {
-    CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (func)
+    JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
+    if (!func.empty())
       return func;
   }
 
@@ -730,7 +730,7 @@ function_gather_build( const QDPExpr<RHS,OLattice<T1> >& rhs )
 
 template<class T1, class RHS>
 void
-  function_gather_exec( CUfunction function, int send_buf_id , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs , const Subset& subset )
+  function_gather_exec( JitFunction function, int send_buf_id , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs , const Subset& subset )
 {
   if (subset.numSiteTable() < 1)
     return;
@@ -781,7 +781,7 @@ namespace COUNT {
 
 template<class T, class T1, class Op, class RHS>
 void 
-function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
+function_exec(JitFunction function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
 {
   //QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
 
@@ -884,7 +884,7 @@ function_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPExp
 
 template<class T, class C1, class Op, class RHS>
 void 
-function_subtype_type_exec(CUfunction function, OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,C1 >& rhs, const Subset& s)
+function_subtype_type_exec(JitFunction function, OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,C1 >& rhs, const Subset& s)
 {
   int th_count = s.numSiteTable();
 
@@ -913,7 +913,7 @@ function_subtype_type_exec(CUfunction function, OSubLattice<T>& dest, const Op& 
 
 template<class T, class T1, class Op>
 void 
-operator_type_subtype_exec(CUfunction function, OLattice<T>& dest, const Op& op, const QDPSubType<T1,OLattice<T1> >& rhs, const Subset& s)
+operator_type_subtype_exec(JitFunction function, OLattice<T>& dest, const Op& op, const QDPSubType<T1,OLattice<T1> >& rhs, const Subset& s)
 {
   int th_count = s.numSiteTable();
 
@@ -942,7 +942,7 @@ operator_type_subtype_exec(CUfunction function, OLattice<T>& dest, const Op& op,
 
 template<class T, class T1, class Op>
 void 
-operator_subtype_subtype_exec(CUfunction function, OSubLattice<T>& dest, const Op& op, const QDPSubType<T1,OLattice<T1> >& rhs, const Subset& s)
+operator_subtype_subtype_exec(JitFunction function, OSubLattice<T>& dest, const Op& op, const QDPSubType<T1,OLattice<T1> >& rhs, const Subset& s)
 {
   int th_count = s.numSiteTable();
 
@@ -973,7 +973,7 @@ operator_subtype_subtype_exec(CUfunction function, OSubLattice<T>& dest, const O
 
 template<class T, class T1, class Op, class RHS>
 void 
-function_lat_sca_subtype_exec(CUfunction function, OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs, const Subset& s)
+function_lat_sca_subtype_exec(JitFunction function, OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs, const Subset& s)
 {
   int th_count = s.numSiteTable();
 
@@ -1004,7 +1004,7 @@ function_lat_sca_subtype_exec(CUfunction function, OSubLattice<T>& dest, const O
 
 template<class T>
 void 
-function_zero_rep_exec(CUfunction function, OLattice<T>& dest, const Subset& s )
+function_zero_rep_exec(JitFunction function, OLattice<T>& dest, const Subset& s )
 {
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
   if (s.numSiteTable() < 1)
@@ -1035,7 +1035,7 @@ function_zero_rep_exec(CUfunction function, OLattice<T>& dest, const Subset& s )
 
 
 template<class T>
-void function_zero_rep_subtype_exec(CUfunction function, OSubLattice<T>& dest, const Subset& s )
+void function_zero_rep_subtype_exec(JitFunction function, OSubLattice<T>& dest, const Subset& s )
 {
   int th_count = s.numSiteTable();
 
@@ -1061,7 +1061,7 @@ void function_zero_rep_subtype_exec(CUfunction function, OSubLattice<T>& dest, c
 
 template<class T>
 void 
-function_random_exec(CUfunction function, OLattice<T>& dest, const Subset& s , Seed& seed_tmp)
+function_random_exec(JitFunction function, OLattice<T>& dest, const Subset& s , Seed& seed_tmp)
 {
   if (!s.hasOrderedRep())
     QDP_error_exit("random on subset with unordered representation not implemented");

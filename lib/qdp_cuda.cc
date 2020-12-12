@@ -8,6 +8,8 @@
 #include <iostream>
 #include <string>
 
+#include "cuda.h"
+
 #include "cudaProfiler.h"
 
 using namespace std;
@@ -21,6 +23,13 @@ namespace {
 
 
 namespace QDP {
+
+  std::map< JitFunction::Func_t , std::string > mapCUFuncPTX;
+
+  std::string getPTXfromCUFunc(JitFunction f) {
+    return mapCUFuncPTX[f.getFunction()];
+  }
+
 
   int CudaGetMaxLocalSize() { return max_local_size; }
   int CudaGetMaxLocalUsage() { return max_local_usage; }
@@ -82,17 +91,17 @@ namespace QDP {
 
 
 
-  void CudaLaunchKernel( CUfunction f, 
+  void CudaLaunchKernel( JitFunction f, 
 			 unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
 			 unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
-			 unsigned int  sharedMemBytes, CUstream hStream, void** kernelParams, void** extra )
+			 unsigned int  sharedMemBytes, int hStream, void** kernelParams, void** extra )
   {
     //if ( blockDimX * blockDimY * blockDimZ > 0  &&  gridDimX * gridDimY * gridDimZ > 0 ) {
     
-    CUresult result = CudaLaunchKernelNoSync(f, gridDimX, gridDimY, gridDimZ, 
+    JitResult result = CudaLaunchKernelNoSync(f, gridDimX, gridDimY, gridDimZ, 
 					     blockDimX, blockDimY, blockDimZ, 
 					     sharedMemBytes, 0, kernelParams, extra);
-    if (result != CUDA_SUCCESS) {
+    if (result != JitResult::JitSuccess) {
       QDP_error_exit("CUDA launch error (CudaLaunchKernel): grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
 		     gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes );
 
@@ -114,40 +123,40 @@ namespace QDP {
   }
 
   
-  int CudaGetAttributesLocalSize( CUfunction f )
+  int CudaGetAttributesLocalSize( JitFunction f )
   {
     int local_mem = 0;
-    cuFuncGetAttribute( &local_mem , CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES , f );
+    cuFuncGetAttribute( &local_mem , CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES , (CUfunction)f.getFunction() );
     return local_mem;
   }
 
 
   namespace {
     std::vector<unsigned> __kernel_geom;
-    CUfunction            __kernel_ptr;
+    JitFunction            __kernel_ptr;
   }
 
   std::vector<unsigned> get_backed_kernel_geom() { return __kernel_geom; }
-  CUfunction            get_backed_kernel_ptr() { return __kernel_ptr; }
+  JitFunction            get_backed_kernel_ptr() { return __kernel_ptr; }
 
 
-  CUresult CudaLaunchKernelNoSync( CUfunction f, 
-				   unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
-				   unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
-				   unsigned int  sharedMemBytes, CUstream hStream, void** kernelParams, void** extra  )
+  JitResult CudaLaunchKernelNoSync( JitFunction f, 
+				    unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
+				    unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
+				    unsigned int  sharedMemBytes, int hStream, void** kernelParams, void** extra  )
   {
      // QDP_info("CudaLaunchKernelNoSync: grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
      // 	      gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes );
-    // QDPIO::cout << "CUfunction = " << (size_t)(void*)f << "\n";
+    // QDPIO::cout << "JitFunction = " << (size_t)(void*)f << "\n";
       
 
 
     //QDPIO::cout << "local mem (bytes) = " << num_threads << "\n";
     //
     
-    auto res = cuLaunchKernel(f, gridDimX, gridDimY, gridDimZ, 
-			      blockDimX, blockDimY, blockDimZ, 
-			      sharedMemBytes, 0, kernelParams, extra);
+    CUresult res = cuLaunchKernel((CUfunction)f.getFunction(), gridDimX, gridDimY, gridDimZ, 
+				  blockDimX, blockDimY, blockDimZ, 
+				  sharedMemBytes, 0, kernelParams, extra);
 
     if (res == CUDA_SUCCESS)
       {
@@ -158,37 +167,26 @@ namespace QDP {
 		     gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes );
 	  }
 	
-        if (qdp_cache_get_pool_bisect())
-	  {
-	    int local = CudaGetAttributesLocalSize( f );
-
-	    // Total local memory for this kernel launch
-	    int local_use = local * DeviceParams::Instance().getSMcount() * blockDimZ * blockDimY * blockDimX;
-	    
-	    if (local_use > max_local_usage)
-	      {
-		QDP_get_global_cache().backup_last_kernel_args();
-		__kernel_geom.clear();
-		__kernel_geom.push_back(gridDimX);
-		__kernel_geom.push_back(gridDimY);
-		__kernel_geom.push_back(gridDimZ);
-		__kernel_geom.push_back(blockDimX);
-		__kernel_geom.push_back(blockDimY);
-		__kernel_geom.push_back(blockDimZ);
-		__kernel_geom.push_back(sharedMemBytes);
-		__kernel_ptr = f;
-	      }
-      
-	    max_local_size = local > max_local_size ? local : max_local_size;
-	    max_local_usage = local_use > max_local_usage ? local_use : max_local_usage;
-	  }
       }
     else
       {
 	//QDPIO::cout << "no CUDA_SUCCESS " << mapCuErrorString[res] << "\n";
       }
 
-    return res;
+    JitResult ret;
+
+    switch (res) {
+    case CUDA_SUCCESS:
+      ret = JitResult::JitSuccess;
+      break;
+    case CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES:
+      ret = JitResult::JitResource;
+      break;
+    default:
+      ret = JitResult::JitError;
+    }
+
+    return ret;
   }
 
 
@@ -213,26 +211,26 @@ namespace QDP {
 
 
 
-  int CudaAttributeNumRegs( CUfunction f ) {
+  int CudaAttributeNumRegs( JitFunction f ) {
     int pi;
     CUresult res;
-    res = cuFuncGetAttribute ( &pi, CU_FUNC_ATTRIBUTE_NUM_REGS , f );
+    res = cuFuncGetAttribute ( &pi, CU_FUNC_ATTRIBUTE_NUM_REGS , (CUfunction)f.getFunction() );
     CudaRes("CudaAttributeNumRegs",res);
     return pi;
   }
 
-  int CudaAttributeLocalSize( CUfunction f ) {
+  int CudaAttributeLocalSize( JitFunction f ) {
     int pi;
     CUresult res;
-    res = cuFuncGetAttribute ( &pi, CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES , f );
+    res = cuFuncGetAttribute ( &pi, CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES , (CUfunction)f.getFunction() );
     CudaRes("CudaAttributeLocalSize",res);
     return pi;
   }
 
-  int CudaAttributeConstSize( CUfunction f ) {
+  int CudaAttributeConstSize( JitFunction f ) {
     int pi;
     CUresult res;
-    res = cuFuncGetAttribute ( &pi, CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES , f );
+    res = cuFuncGetAttribute ( &pi, CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES , (CUfunction)f.getFunction() );
     CudaRes("CudaAttributeConstSize",res);
     return pi;
   }
@@ -511,6 +509,73 @@ namespace QDP {
     ret = cuMemsetD32((CUdeviceptr)const_cast<void*>(dest), val, N);
     CudaRes("cuMemsetD32",ret);
   }
+
+
+
+
+  JitFunction get_fptr_from_ptx( const char* fname , const std::string& kernel )
+  {
+    JitFunction func;
+    CUresult ret;
+    CUmodule cuModule;
+
+    CUresult ret_sync = cuCtxSynchronize();
+    if (ret_sync != CUDA_SUCCESS) {
+      QDPIO::cerr << "Error on sync before loading image.\n";
+
+      CudaCheckResult(ret_sync);
+
+      const char* pStr_name;
+      cuGetErrorName ( ret, &pStr_name );
+
+      QDPIO::cerr << "Error: " << pStr_name << "\n";
+	
+      const char* pStr_string;
+      cuGetErrorString ( ret, &pStr_string );
+
+      QDPIO::cerr << "String: " << pStr_string << "\n";
+
+      QDP_error_exit("Sync failed right before loading the PTX module.");
+    }
+
+    ret = cuModuleLoadData(&cuModule, (const void *)kernel.c_str());
+    //ret = cuModuleLoadDataEx( &cuModule , ptx_kernel.c_str() , 0 , 0 , 0 );
+
+    if (ret) {
+      if (Layout::primaryNode()) {
+
+	QDPIO::cerr << "Error loading external data.\n";
+	
+	const char* pStr_name;
+	cuGetErrorName ( ret, &pStr_name );
+
+	QDPIO::cerr << "Error: " << pStr_name << "\n";
+	
+	const char* pStr_string;
+	cuGetErrorString ( ret, &pStr_string );
+
+	QDPIO::cerr << "String: " << pStr_string << "\n";
+
+	QDPIO::cerr << "Dumping kernel to " << fname << "\n";
+#if 1
+	std::ofstream out(fname);
+	out << kernel;
+	out.close();
+	//llvm_module_dump();
+#endif
+	QDP_error_exit("Abort.");
+      }
+    }
+
+    ret = cuModuleGetFunction( (CUfunction*)&func.getFunction(), cuModule, "main");
+    if (ret)
+      QDP_error_exit("Error returned from cuModuleGetFunction. Abort.");
+
+    mapCUFuncPTX[func.getFunction()] = kernel;
+
+    return func;
+  }
+
 
   
 }

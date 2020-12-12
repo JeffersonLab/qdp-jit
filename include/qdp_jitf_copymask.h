@@ -5,12 +5,12 @@
 namespace QDP {
 
   template<class T,class T1>
-  CUfunction
+  JitFunction
   function_copymask_build( OLattice<T>& dest , const OLattice<T1>& mask , const OLattice<T>& src )
   {
     if (ptx_db::db_enabled) {
-      CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-      if (func)
+      JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
+      if (!func.empty())
 	return func;
     }
 
@@ -54,7 +54,7 @@ namespace QDP {
 
   template<class T,class T1>
   void 
-  function_copymask_exec(CUfunction function, OLattice<T>& dest, const OLattice<T1>& mask, const OLattice<T>& src )
+  function_copymask_exec(JitFunction function, OLattice<T>& dest, const OLattice<T1>& mask, const OLattice<T>& src )
   {
     AddressLeaf addr_leaf(all);
 

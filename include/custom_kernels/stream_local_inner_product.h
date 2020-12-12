@@ -5,7 +5,7 @@ namespace QDP
 {
 
 
-  void function_multi_localInnerProduct_sum_convert_exec( CUfunction function,
+  void function_multi_localInnerProduct_sum_convert_exec( JitFunction function,
 							  int size, 
 							  int threads, 
 							  int blocks, 
@@ -23,11 +23,11 @@ namespace QDP
   // T2 output
   // T3 QDPType for localInnerProduct = vector
   template< class T1 , class T2 , class T3 , JitDeviceLayout input_layout >
-  CUfunction 
+  JitFunction 
   function_multi_localInnerProduct_sum_convert_build()
   {
     if (ptx_db::db_enabled) {
-      CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
+      JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
       if (func)
 	return func;
     }
@@ -223,7 +223,7 @@ namespace QDP
 						      const multi1d<int>& sizes,
 						      const multi1d<QDPCache::ArgKey>& table_ids)
   {
-    static CUfunction function;
+    static JitFunction function;
 
     if (function == NULL)
       function = function_multi_localInnerProduct_sum_convert_build<T1,T2,T3,input_layout>();

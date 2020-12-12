@@ -45,11 +45,7 @@ namespace QDP {
 
 
 
-  std::map<CUfunction,std::string> mapCUFuncPTX;
 
-  std::string getPTXfromCUFunc(CUfunction f) {
-    return mapCUFuncPTX[f];
-  }
 
   bool function_created;
 
@@ -129,72 +125,10 @@ namespace QDP {
   
   
 
-  CUfunction get_fptr_from_ptx( const char* fname , const std::string& kernel )
-  {
-    CUfunction func;
-    CUresult ret;
-    CUmodule cuModule;
-
-    CUresult ret_sync = cuCtxSynchronize();
-    if (ret_sync != CUDA_SUCCESS) {
-      QDPIO::cerr << "Error on sync before loading image.\n";
-
-      CudaCheckResult(ret_sync);
-
-      const char* pStr_name;
-      cuGetErrorName ( ret, &pStr_name );
-
-      QDPIO::cerr << "Error: " << pStr_name << "\n";
-	
-      const char* pStr_string;
-      cuGetErrorString ( ret, &pStr_string );
-
-      QDPIO::cerr << "String: " << pStr_string << "\n";
-
-      QDP_error_exit("Sync failed right before loading the PTX module.");
-    }
-
-    ret = cuModuleLoadData(&cuModule, (const void *)kernel.c_str());
-    //ret = cuModuleLoadDataEx( &cuModule , ptx_kernel.c_str() , 0 , 0 , 0 );
-
-    if (ret) {
-      if (Layout::primaryNode()) {
-
-	QDPIO::cerr << "Error loading external data.\n";
-	
-	const char* pStr_name;
-	cuGetErrorName ( ret, &pStr_name );
-
-	QDPIO::cerr << "Error: " << pStr_name << "\n";
-	
-	const char* pStr_string;
-	cuGetErrorString ( ret, &pStr_string );
-
-	QDPIO::cerr << "String: " << pStr_string << "\n";
-
-	QDPIO::cerr << "Dumping kernel to " << fname << "\n";
-#if 1
-	std::ofstream out(fname);
-	out << kernel;
-	out.close();
-	//llvm_module_dump();
-#endif
-	QDP_error_exit("Abort.");
-      }
-    }
-
-    ret = cuModuleGetFunction(&func, cuModule, "main");
-    if (ret)
-      QDP_error_exit("Error returned from cuModuleGetFunction. Abort.");
-
-    mapCUFuncPTX[func] = kernel;
-
-    return func;
-  }
 
 
 
-  CUfunction llvm_ptx_db( const char * pretty )
+  JitFunction llvm_ptx_db( const char * pretty )
   {
     std::string id = get_ptx_db_id( pretty );
     
@@ -206,7 +140,7 @@ namespace QDP {
       }
     else
       {
-	return NULL;
+	return JitFunction();
       }
   }
 
@@ -1421,7 +1355,7 @@ namespace QDP {
 
 
 
-  CUfunction llvm_get_cufunction(const char* fname, const char* pretty_cstr)
+  JitFunction llvm_get_cufunction(const char* fname, const char* pretty_cstr)
   {
     addKernelMetadata( mainFunc );
 
@@ -1432,7 +1366,7 @@ namespace QDP {
 
     std::string ptx_kernel = llvm_get_ptx_kernel(fname);
 
-    CUfunction func = get_fptr_from_ptx( fname , ptx_kernel );
+    JitFunction func = get_fptr_from_ptx( fname , ptx_kernel );
 
     if ( ptx_db::db_enabled ) {
 

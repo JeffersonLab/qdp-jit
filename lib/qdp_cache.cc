@@ -1049,11 +1049,6 @@ namespace QDP
   
   std::vector<void*> QDPCache::get_kernel_args(std::vector<ArgKey>& ids , bool for_kernel )
   {
-    if (qdp_cache_get_pool_bisect())
-      {
-	__ids_last = ids;
-      }
-    
     // Here we do two cycles through the ids:
     // 1) cache all objects
     // 2) check all are cached

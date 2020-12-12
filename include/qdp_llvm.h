@@ -97,7 +97,7 @@ namespace QDP {
     extern std::string dbname;
   }
 
-  CUfunction llvm_ptx_db( const char * pretty );
+  JitFunction llvm_ptx_db( const char * pretty );
 
   
   extern llvm::LLVMContext TheContext;
@@ -148,7 +148,6 @@ namespace QDP {
     // llvm::Value * r_rcvbuf;
   };
 
-  std::string getPTXfromCUFunc(CUfunction f);
   
   void llvm_append_mattr( const char * attr );
 
@@ -268,7 +267,7 @@ namespace QDP {
 
   void addKernelMetadata(llvm::Function *F);
 
-  CUfunction llvm_get_cufunction(const char* fname, const char* pretty);
+  JitFunction llvm_get_cufunction(const char* fname, const char* pretty);
 
 
   llvm::Value* llvm_sin_f32( llvm::Value* lhs );

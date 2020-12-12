@@ -34,7 +34,8 @@ CUDA_HDRS = qdp_cuda.h \
             qdp_primvectorjit.h qdp_primspinvecjit.h qdp_primcolorvecjit.h \
             qdp_primvectorreg.h qdp_primspinvecreg.h qdp_primcolorvecreg.h \
             qdp_handle.h qdp_mastermap.h qdp_masterset.h qdp_autotuning.h qdp_sum.h qdp_datalayout.h \
-            qdp_jitf_copymask.h qdp_jitf_sum.h qdp_jitf_summulti.h qdp_jitf_globalmax.h qdp_jitf_gaussian.h qdp_internal.h qdp_newopsreg.h qdp_libdevice.h
+            qdp_jitf_copymask.h qdp_jitf_sum.h qdp_jitf_summulti.h qdp_jitf_globalmax.h qdp_jitf_gaussian.h qdp_internal.h qdp_newopsreg.h qdp_libdevice.h \
+            gpu.h
 
 
 
@@ -62,7 +63,6 @@ nobase_include_HEADERS = \
 		qdp_layout.h \
 		qdp_map.h \
 		qdp_multi.h \
-		qdp_poolbisect.h \
 		qdp_multi_outer.h \
 		qdp_arrays.h \
 		qdp_newops.h \
