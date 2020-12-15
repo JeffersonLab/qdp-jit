@@ -186,14 +186,14 @@ namespace QDP {
     bool allocated=false;
     while (actsize > 0) {
 
-      unsigned numThreads = DeviceParams::Instance().getMaxBlockX();
-      while ((numThreads*sizeof(T2) > DeviceParams::Instance().getMaxSMem()) || (numThreads > (unsigned)actsize)) {
+      unsigned numThreads = gpu_getMaxBlockX();
+      while ((numThreads*sizeof(T2) > gpu_getMaxSMem()) || (numThreads > (unsigned)actsize)) {
 	numThreads >>= 1;
       }
       unsigned numBlocks=(int)ceil(float(actsize)/numThreads);
 
-      if (numBlocks > DeviceParams::Instance().getMaxGridX()) {
-	QDP_error_exit( "sum(Lat,subset) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)DeviceParams::Instance().getMaxGridX());
+      if (numBlocks > gpu_getMaxGridX()) {
+	QDP_error_exit( "sum(Lat,subset) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)gpu_getMaxGridX());
       }
 
       int shared_mem_usage = numThreads*sizeof(T2);
@@ -339,14 +339,14 @@ namespace QDP {
 
       //QDPIO::cout << "maxsize power2 : " << maxsizep2 << "\n";
       
-      unsigned numThreads = DeviceParams::Instance().getMaxBlockX();
-      while ((numThreads*sizeof(T2) > DeviceParams::Instance().getMaxSMem()) || (numThreads > (unsigned)maxsizep2)) {
+      unsigned numThreads = gpu_getMaxBlockX();
+      while ((numThreads*sizeof(T2) > gpu_getMaxSMem()) || (numThreads > (unsigned)maxsizep2)) {
 	numThreads >>= 1;
       }
       unsigned numBlocks=(int)ceil(float(maxsize)/numThreads);
 
-      if (numBlocks > DeviceParams::Instance().getMaxGridX()) {
-	QDP_error_exit( "sumMulti(Lat,set) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)DeviceParams::Instance().getMaxGridX());
+      if (numBlocks > gpu_getMaxGridX()) {
+	QDP_error_exit( "sumMulti(Lat,set) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)gpu_getMaxGridX());
       }
 
       int shared_mem_usage = numThreads*sizeof(T2);
@@ -496,14 +496,14 @@ namespace QDP {
     bool first=true;
     while (1) {
 
-      int numThreads = DeviceParams::Instance().getMaxBlockX();
-      while ((numThreads*sizeof(T) > DeviceParams::Instance().getMaxSMem()) || (numThreads > (unsigned)actsize)) {
+      int numThreads = gpu_getMaxBlockX();
+      while ((numThreads*sizeof(T) > gpu_getMaxSMem()) || (numThreads > (unsigned)actsize)) {
 	numThreads >>= 1;
       }
       int numBlocks=(int)ceil(float(actsize)/numThreads);
 
-      if (numBlocks > DeviceParams::Instance().getMaxGridX()) {
-	QDP_error_exit( "globalMax(Lat) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)DeviceParams::Instance().getMaxGridX());
+      if (numBlocks > gpu_getMaxGridX()) {
+	QDP_error_exit( "globalMax(Lat) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)gpu_getMaxGridX());
       }
 
       if (first) {
@@ -561,14 +561,14 @@ namespace QDP {
     bool first=true;
     while (1) {
 
-      unsigned numThreads = DeviceParams::Instance().getMaxBlockX();
-      while ((numThreads*sizeof(T2) > DeviceParams::Instance().getMaxSMem()) || (numThreads > (unsigned)actsize)) {
+      unsigned numThreads = gpu_getMaxBlockX();
+      while ((numThreads*sizeof(T2) > gpu_getMaxSMem()) || (numThreads > (unsigned)actsize)) {
 	numThreads >>= 1;
       }
       unsigned numBlocks=(int)ceil(float(actsize)/numThreads);
 
-      if (numBlocks > DeviceParams::Instance().getMaxGridX()) {
-	QDP_error_exit( "isfinite(Lat) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)DeviceParams::Instance().getMaxGridX());
+      if (numBlocks > gpu_getMaxGridX()) {
+	QDP_error_exit( "isfinite(Lat) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)gpu_getMaxGridX());
       }
 
       int shared_mem_usage = numThreads*sizeof(T2);

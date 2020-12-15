@@ -107,7 +107,6 @@ namespace QDP {
 
 #include "qdp_init.h"
 
-#include "qdp_deviceparams.h"
 #include "qdp_cuda.h"
 #include "qdp_cuda_allocator.h"
 

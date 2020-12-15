@@ -290,14 +290,14 @@ namespace QDP
       //QDPIO::cout << "   ";
       //QDPIO::cout << "maxsize: " << maxsize << "\n";
 
-      unsigned numThreads = DeviceParams::Instance().getMaxBlockX();
-      while ((numThreads*sizeof(T2) > DeviceParams::Instance().getMaxSMem()) || (numThreads > (unsigned)maxsize)) {
+      unsigned numThreads = gpu_getMaxBlockX();
+      while ((numThreads*sizeof(T2) > gpu_getMaxSMem()) || (numThreads > (unsigned)maxsize)) {
 	numThreads >>= 1;
       }
       unsigned numBlocks=(int)ceil(float(maxsize)/numThreads);
 
-      if (numBlocks > DeviceParams::Instance().getMaxGridX()) {
-	QDP_error_exit( "sumMulti(Lat,set) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)DeviceParams::Instance().getMaxGridX());
+      if (numBlocks > gpu_getMaxGridX()) {
+	QDP_error_exit( "sumMulti(Lat,set) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)gpu_getMaxGridX());
       }
 
       int shared_mem_usage = numThreads*sizeof(T2);

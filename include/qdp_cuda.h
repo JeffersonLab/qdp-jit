@@ -69,6 +69,44 @@ namespace QDP {
   JitFunction get_fptr_from_ptx( const char* fname , const std::string& kernel );
   std::string getPTXfromCUFunc(JitFunction f);
 
+
+
+
+  struct kernel_geom_t {
+    int threads_per_block;
+    int Nblock_x;
+    int Nblock_y;
+  };
+
+  kernel_geom_t getGeom(int numSites , int threadsPerBlock);
+
+  void gpu_setSM(int sm);
+  void gpu_setDefaultGPU(int ngpu);
+  int  gpu_getDefaultGPU();
+  
+  size_t gpu_getMaxGridX();
+  size_t gpu_getMaxGridY();
+  size_t gpu_getMaxGridZ();
+
+  size_t gpu_getMaxBlockX();
+  size_t gpu_getMaxBlockY();
+  size_t gpu_getMaxBlockZ();
+  
+  size_t gpu_getMaxSMem();
+  size_t gpu_getDefaultSMem();
+
+  bool gpu_getSyncDevice();
+  bool gpu_getGPUDirect();
+  void gpu_setSyncDevice(bool sync);
+  void gpu_setGPUDirect(bool direct);
+  
+  unsigned gpu_getMajor();
+  unsigned gpu_getMinor();
+  
+  void gpu_autoDetect();
+
+
+  
 }
 
 #endif

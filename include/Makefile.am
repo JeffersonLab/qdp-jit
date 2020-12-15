@@ -21,7 +21,6 @@ CUDA_HDRS = qdp_cuda.h \
 	    qdp_mapresource.h \
             qdp_pool_allocator.h \
 	    qdp_cuda_allocator.h \
-	    qdp_deviceparams.h \
 	    qdp_llvm.h qdp_viewleaf.h \
 	    qdp_word.h qdp_wordjit.h qdp_wordreg.h \
 	    qdp_jitfunction.h qdp_jit_util.h qdp_pete_visitors.h qdp_qdptypejit.h qdp_qdpsubtypejit.h \

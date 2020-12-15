@@ -112,7 +112,7 @@ namespace QDP {
   {
     std::ostringstream oss;
     
-    oss << "sm_" <<  DeviceParams::Instance().getMajor() << DeviceParams::Instance().getMinor() << "_";
+    oss << "sm_" <<  gpu_getMajor() << gpu_getMinor() << "_";
 
     for ( int i = 0 ; i < Nd ; ++i )
       oss << Layout::subgridLattSize()[i] << "_";
@@ -1186,8 +1186,8 @@ namespace QDP {
     //llvm::TargetOptions Options = InitTargetOptionsFromCodeGenFlags();
     //#endif
 
-    auto major = DeviceParams::Instance().getMajor();
-    auto minor = DeviceParams::Instance().getMinor();
+    auto major = gpu_getMajor();
+    auto minor = gpu_getMinor();
 
     std::ostringstream oss;
     oss << "sm_" << major * 10 + minor;
@@ -1313,7 +1313,7 @@ namespace QDP {
 
     llvm::legacy::PassManager OurPM;
     OurPM.add( llvm::createInternalizePass( all_but_main ) );
-    unsigned int sm_gpu = DeviceParams::Instance().getMajor() * 10 + DeviceParams::Instance().getMinor();
+    unsigned int sm_gpu = gpu_getMajor() * 10 + gpu_getMinor();
     OurPM.add( llvm::createNVVMReflectPass( sm_gpu ));
 
     

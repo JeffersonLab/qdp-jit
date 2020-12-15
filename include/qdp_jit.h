@@ -671,43 +671,6 @@ namespace QDP {
     }
   };
 
-  // class JitUnaryOpFloor: public JitUnaryOp {
-  // public:
-  //   JitUnaryOpFloor( jit_llvm_type type_ ): JitUnaryOp(type_) {}
-  //   virtual std::ostream& writeToStream( std::ostream& stream ) const {
-  //     stream << "cvt.rmi "
-  // 	     << type
-  // 	     << " "
-  // 	     << type;
-  //     return stream;
-  //   }
-  // };
-
-  // class JitUnaryOpSqrt: public JitUnaryOp {
-  // public:
-  //   JitUnaryOpSqrt( jit_llvm_type type_ ): JitUnaryOp(type_) {}
-  //   virtual std::ostream& writeToStream( std::ostream& stream ) const {
-  //     stream << "sqrt ";
-  //     if ( DeviceParams::Instance().getMajor() >= 2 )
-  // 	stream << "rn ";
-  //     else
-  // 	stream << "approx ";
-  //     stream << type;
-  //     return stream;
-  //   }
-  // };
-
-  // class JitUnaryOpCeil: public JitUnaryOp {
-  // public:
-  //   JitUnaryOpCeil( jit_llvm_type type_ ): JitUnaryOp(type_) {}
-  //   virtual std::ostream& writeToStream( std::ostream& stream ) const {
-  //     stream << "cvt.rpi "
-  // 	     << type
-  // 	     << " "
-  // 	     << type;
-  //     return stream;
-  //   }
-  // };
 
 
 }

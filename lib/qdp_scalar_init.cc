@@ -116,14 +116,14 @@ namespace COUNT {
       int local_rank = atoi(rank);
       dev = local_rank % deviceCount;
     } else {
-      if ( DeviceParams::Instance().getDefaultGPU() == -1 )
+      if ( gpu_getDefaultGPU() == -1 )
 	{
 	  std::cerr << "Couldnt determine local rank. Selecting device 0. In a multi-GPU per node run this is not what one wants.\n";
 	  dev = 0;
 	}
       else
 	{
-	  dev = DeviceParams::Instance().getDefaultGPU();
+	  dev = gpu_getDefaultGPU();
 	  std::cerr << "Couldnt determine local rank. Selecting device " << dev << " as per user request.\n";
 	}
 #if 0
@@ -201,14 +201,11 @@ namespace COUNT {
     //QDP_info_primary("Finished multiplying gamma matrices");
 #endif
 
+    //
+    // CUDA init
+    //
     CudaInit();
 
-    // This defaults to mvapich2
-#if 0
-    // This is deprecated - direct envvars try several variables
-    DeviceParams::Instance().setENVVAR("MV2_COMM_WORLD_LOCAL_RANK");
-#endif 
-		
     //
     // Process command line
     //
@@ -273,23 +270,23 @@ namespace COUNT {
       {
 	if (strcmp((*argv)[i], "-sync")==0) 
 	  {
-	    DeviceParams::Instance().setSyncDevice(true);
+	    gpu_setSyncDevice(true);
 	  }
 	else if (strcmp((*argv)[i], "-sm")==0) 
 	  {
 	    int sm;
 	    sscanf((*argv)[++i], "%d", &sm);
-	    DeviceParams::Instance().setSM(sm);
+	    gpu_setSM(sm);
 	  }
 	else if (strcmp((*argv)[i], "-gpudirect")==0) 
 	  {
-	    DeviceParams::Instance().setGPUDirect(true);
+	    gpu_setGPUDirect(true);
 	  }
 	else if (strcmp((*argv)[i], "-envvar")==0) 
 	  {
 	    char buffer[1024];
 	    sscanf((*argv)[++i],"%s",&buffer[0]);
-	    DeviceParams::Instance().setENVVAR(buffer);
+	    gpu_setENVVAR(buffer);
 	  }
 	else if (strcmp((*argv)[i], "-poolsize")==0) 
 	  {
@@ -339,7 +336,7 @@ namespace COUNT {
 	  {
 	    int ngpu;
 	    sscanf((*argv)[++i], "%d", &ngpu);
-	    DeviceParams::Instance().setDefaultGPU(ngpu);
+	    gpu_setDefaultGPU(ngpu);
 	    std::cout << "Default GPU set to " << ngpu << "\n";
 	  }
 	else if (strcmp((*argv)[i], "-geom")==0) 

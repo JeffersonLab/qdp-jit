@@ -35,7 +35,7 @@ namespace QDP {
       return;
 
     if (mapTune.count(function.getFunction()) == 0) {
-      mapTune[function.getFunction()] = tune_t( DeviceParams::Instance().getMaxBlockX() , 0 , 0.0 );
+      mapTune[function.getFunction()] = tune_t( gpu_getMaxBlockX() , 0 , 0.0 );
     }
 
 

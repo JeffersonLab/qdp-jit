@@ -140,14 +140,14 @@ sum( const OSubLattice<T>& s1 )
   bool allocated=false;
   while (actsize > 0) {
 
-    unsigned numThreads = DeviceParams::Instance().getMaxBlockX();
-    while ((numThreads*sizeof(T2) > DeviceParams::Instance().getMaxSMem()) || (numThreads > (unsigned)actsize)) {
+    unsigned numThreads = gpu_getMaxBlockX();
+    while ((numThreads*sizeof(T2) > gpu_getMaxSMem()) || (numThreads > (unsigned)actsize)) {
       numThreads >>= 1;
     }
     unsigned numBlocks=(int)ceil(float(actsize)/numThreads);
     
-    if (numBlocks > DeviceParams::Instance().getMaxGridX()) {
-      QDP_error_exit( "sum(SubLat) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)DeviceParams::Instance().getMaxGridX());
+    if (numBlocks > gpu_getMaxGridX()) {
+      QDP_error_exit( "sum(SubLat) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)gpu_getMaxGridX());
     }
 
     int shared_mem_usage = numThreads*sizeof(T2);

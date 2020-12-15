@@ -22,7 +22,7 @@ namespace QDP {
     int srcnode = _srcNode;
     int dstnode = _destNode;
 
-    if (!DeviceParams::Instance().getGPUDirect()) {
+    if (!gpu_getGPUDirect()) {
       CudaHostAlloc(&send_buf,dstnum,0);
       CudaHostAlloc(&recv_buf,srcnum,0);
     }
@@ -33,7 +33,7 @@ namespace QDP {
     //QDPIO::cout << "Allocating send buffer on device: " << dstnum << " bytes\n";
     send_buf_id = QDP_get_global_cache().addDeviceStatic( &send_buf_dev , dstnum);
 
-    if (!DeviceParams::Instance().getGPUDirect()) {
+    if (!gpu_getGPUDirect()) {
       msg[0] = QMP_declare_msgmem( recv_buf , srcnum );
     } else {
       msg[0] = QMP_declare_msgmem( recv_buf_dev , srcnum );
@@ -43,7 +43,7 @@ namespace QDP {
       QDP_error_exit("QMP_declare_msgmem for msg[0] failed in Map::operator()\n");
     }
 
-    if (!DeviceParams::Instance().getGPUDirect()) {
+    if (!gpu_getGPUDirect()) {
       msg[1] = QMP_declare_msgmem( send_buf , dstnum );
     } else {
       msg[1] = QMP_declare_msgmem( send_buf_dev , dstnum );
@@ -95,7 +95,7 @@ namespace QDP {
     if ((err = QMP_wait(mh)) != QMP_SUCCESS)
       QDP_error_exit(QMP_error_string(err));
 
-    if (!DeviceParams::Instance().getGPUDirect()) {
+    if (!gpu_getGPUDirect()) {
       CudaMemcpyH2D( recv_buf_dev , recv_buf , srcnum );
     }
 
@@ -130,7 +130,7 @@ namespace QDP {
     QDP_info("D2H %d bytes receive buffer",dstnum);
 #endif
 
-    if (!DeviceParams::Instance().getGPUDirect()) {
+    if (!gpu_getGPUDirect()) {
       CudaMemcpyD2H( send_buf , send_buf_dev , dstnum );
     }
 
