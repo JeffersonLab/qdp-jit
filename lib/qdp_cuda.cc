@@ -104,11 +104,6 @@ namespace QDP {
     if (result != JitResult::JitSuccess) {
       QDP_error_exit("CUDA launch error (CudaLaunchKernel): grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
 		     gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes );
-
-      CudaCtxSynchronize(true);
-
-      QDP_error_exit("CUDA launch error (CudaLaunchKernel, on sync): grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
-		     gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes );
     }
 
   }
@@ -468,41 +463,7 @@ namespace QDP {
     CudaRes("cuMemFree",ret);
   }
 
-  void CudaThreadSynchronize()
-  {
-#ifdef GPU_DEBUG_DEEP
-    QDP_debug_deep( "cudaThreadSynchronize" );
-#endif
-    CudaCtxSynchronize();
-  }
 
-  void CudaDeviceSynchronize()
-  {
-#ifdef GPU_DEBUG_DEEP
-    QDP_debug_deep( "cudaDeviceSynchronize" );
-#endif
-    CudaCtxSynchronize(true);
-  }
-
-  bool CudaCtxSynchronize(bool print_error)
-  {
-#if 0
-    CUresult res = cuCtxSynchronize();
-
-    if (print_error) {
-      if (res != CUDA_SUCCESS) {
-	if (mapCuErrorString.count(res)) 
-	  std::cout << " Error: " << mapCuErrorString.at(res) << "\n";
-	else
-	  std::cout << " Error: (not known)\n";
-      }
-    }
-    
-    return res == CUDA_SUCCESS;
-#else
-    return true;
-#endif    
-  }
 
   void CudaMemset( void * dest , unsigned val , size_t N )
   {
@@ -519,11 +480,6 @@ namespace QDP {
     JitFunction func;
     CUresult ret;
     CUmodule cuModule;
-
-    if (!CudaCtxSynchronize(true)) {
-      QDPIO::cerr << "Sync failed right before loading the PTX module.\n";
-      QDP_abort(1);
-    }
 
     ret = cuModuleLoadData(&cuModule, (const void *)kernel.c_str());
     //ret = cuModuleLoadDataEx( &cuModule , ptx_kernel.c_str() , 0 , 0 , 0 );

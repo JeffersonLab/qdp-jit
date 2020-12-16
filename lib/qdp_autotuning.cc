@@ -57,16 +57,6 @@ namespace QDP {
 		       now.Nblock_x,now.Nblock_y,1,    tune.best,1,1 );
       }
 
-      //QDP_get_global_cache().releasePrevLockSet();
-      //QDP_get_global_cache().newLockSet();
-
-      if (!CudaCtxSynchronize()) {
-	//CudaCheckResult(result);
-	LaunchPrintArgs(args);
-	QDPIO::cout << getPTXfromCUFunc(function) << "\n";
-	QDP_error_exit("CUDA launch error (after successful autotune, on sync): grid=(%u,%u,%u), block=(%d,%u,%u) ",
-		       now.Nblock_x,now.Nblock_y,1,    tune.best,1,1 );
-      }
     } else {
 
       JitResult result = JitResult::JitResource;
@@ -90,20 +80,6 @@ namespace QDP {
 	  QDP_error_exit("CUDA launch error: grid=(%u,%u,%u), block=(%d,%u,%u) ",
 			 now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1 );
   	}
-
-	if (result == JitResult::JitSuccess) {
-
-	  //QDP_get_global_cache().releasePrevLockSet();
-	  //QDP_get_global_cache().newLockSet();
-
-	  if (!CudaCtxSynchronize()) {
-	    //CudaCheckResult(result_sync);
-	    LaunchPrintArgs(args);
-	    QDPIO::cout << getPTXfromCUFunc(function);
-	    QDP_error_exit("CUDA launch error (during autotune, on sync): grid=(%u,%u,%u), block=(%d,%u,%u) ",
-			   now.Nblock_x,now.Nblock_y,1,    tune.cfg,1,1 );
-	  }
-	}
 
 	w.stop();
 

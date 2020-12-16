@@ -55,11 +55,6 @@ namespace QDP {
   bool CudaMalloc( void **mem , const size_t size );
   void CudaFree( const void *mem );
 
-  void CudaThreadSynchronize();
-  void CudaDeviceSynchronize();
-
-  bool CudaCtxSynchronize(bool print_error = false);
-    
   void CudaProfilerInitialize();
   void CudaProfilerStart();
   void CudaProfilerStop();
