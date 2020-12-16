@@ -105,14 +105,8 @@ namespace QDP {
       QDP_error_exit("CUDA launch error (CudaLaunchKernel): grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
 		     gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes );
 
-      CUresult result = cuCtxSynchronize();
-      if (result != CUDA_SUCCESS) {
+      CudaCtxSynchronize(true);
 
-	if (mapCuErrorString.count(result)) 
-	  std::cout << " Error: " << mapCuErrorString.at(result) << "\n";
-	else
-	  std::cout << " Error: (not known)\n";
-      }      
       QDP_error_exit("CUDA launch error (CudaLaunchKernel, on sync): grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
 		     gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes );
     }
@@ -479,7 +473,7 @@ namespace QDP {
 #ifdef GPU_DEBUG_DEEP
     QDP_debug_deep( "cudaThreadSynchronize" );
 #endif
-    cuCtxSynchronize();
+    CudaCtxSynchronize();
   }
 
   void CudaDeviceSynchronize()
@@ -487,14 +481,27 @@ namespace QDP {
 #ifdef GPU_DEBUG_DEEP
     QDP_debug_deep( "cudaDeviceSynchronize" );
 #endif
-    CUresult ret = cuCtxSynchronize();
-    CudaRes("cuCtxSynchronize",ret);
+    CudaCtxSynchronize(true);
   }
 
-  bool CudaCtxSynchronize()
+  bool CudaCtxSynchronize(bool print_error)
   {
-    CUresult ret = cuCtxSynchronize();
-    return ret == CUDA_SUCCESS;
+#if 0
+    CUresult res = cuCtxSynchronize();
+
+    if (print_error) {
+      if (res != CUDA_SUCCESS) {
+	if (mapCuErrorString.count(res)) 
+	  std::cout << " Error: " << mapCuErrorString.at(res) << "\n";
+	else
+	  std::cout << " Error: (not known)\n";
+      }
+    }
+    
+    return res == CUDA_SUCCESS;
+#else
+    return true;
+#endif    
   }
 
   void CudaMemset( void * dest , unsigned val , size_t N )
@@ -513,23 +520,9 @@ namespace QDP {
     CUresult ret;
     CUmodule cuModule;
 
-    CUresult ret_sync = cuCtxSynchronize();
-    if (ret_sync != CUDA_SUCCESS) {
-      QDPIO::cerr << "Error on sync before loading image.\n";
-
-      CudaCheckResult(ret_sync);
-
-      const char* pStr_name;
-      cuGetErrorName ( ret, &pStr_name );
-
-      QDPIO::cerr << "Error: " << pStr_name << "\n";
-	
-      const char* pStr_string;
-      cuGetErrorString ( ret, &pStr_string );
-
-      QDPIO::cerr << "String: " << pStr_string << "\n";
-
-      QDP_error_exit("Sync failed right before loading the PTX module.");
+    if (!CudaCtxSynchronize(true)) {
+      QDPIO::cerr << "Sync failed right before loading the PTX module.\n";
+      QDP_abort(1);
     }
 
     ret = cuModuleLoadData(&cuModule, (const void *)kernel.c_str());

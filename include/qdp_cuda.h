@@ -58,8 +58,8 @@ namespace QDP {
   void CudaThreadSynchronize();
   void CudaDeviceSynchronize();
 
-  bool CudaCtxSynchronize();
-
+  bool CudaCtxSynchronize(bool print_error = false);
+    
   void CudaProfilerInitialize();
   void CudaProfilerStart();
   void CudaProfilerStop();
