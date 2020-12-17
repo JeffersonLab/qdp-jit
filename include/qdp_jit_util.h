@@ -44,6 +44,21 @@ namespace QDP {
   };
 
 
+  class JitForLoopPower
+  {
+  public:
+    JitForLoopPower( llvm::Value* start );
+    llvm::Value * index();
+    void end();
+  private:
+    llvm::BasicBlock * block_outer;
+    llvm::BasicBlock * block_loop_cond;
+    llvm::BasicBlock * block_loop_body;
+    llvm::BasicBlock * block_loop_exit;
+    llvm::PHINode * r_i;
+  };
+  
+
   
   class JitIf
   {

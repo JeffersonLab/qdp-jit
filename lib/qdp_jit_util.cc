@@ -321,6 +321,43 @@ namespace QDP {
 
 
 
+
+ 
+  JitForLoopPower::JitForLoopPower( llvm::Value* i_start  )
+  {
+    block_outer = llvm_get_insert_point();
+    block_loop_cond = llvm_new_basic_block();
+    block_loop_body = llvm_new_basic_block();
+    block_loop_exit = llvm_new_basic_block();
+
+    llvm_branch( block_loop_cond );
+    llvm_set_insert_point(block_loop_cond);
+  
+    r_i = llvm_phi( llvm_type<int>::value , 2 );
+
+    r_i->addIncoming( i_start , block_outer );
+
+    llvm_cond_branch( llvm_gt( r_i , llvm_create_value( 0 ) ) , block_loop_body , block_loop_exit );
+
+    llvm_set_insert_point( block_loop_body );
+  }
+  llvm::Value * JitForLoopPower::index()
+  {
+    return r_i;
+  }
+  void JitForLoopPower::end()
+  {
+    llvm::Value * r_i_plus = llvm_shr( r_i , llvm_create_value(1) );
+    r_i->addIncoming( r_i_plus , llvm_get_insert_point() );
+  
+    llvm_branch( block_loop_cond );
+
+    llvm_set_insert_point(block_loop_exit);
+  }
+ 
+
+
+
   
 
   llvm::Value* llvm_epsilon_1st( int p1 , llvm::Value* j )

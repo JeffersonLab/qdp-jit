@@ -89,58 +89,38 @@ namespace QDP {
     llvm::Value* r_pow_shr1 = llvm_shr( r_ntidx , llvm_create_value(1) );
 
     //
-    // Shared memory reduction loop
+    // Reduction loop
     //
-    llvm::BasicBlock * block_red_loop_start = llvm_new_basic_block();
-    llvm::BasicBlock * block_red_loop_start_1 = llvm_new_basic_block();
-    llvm::BasicBlock * block_red_loop_start_2 = llvm_new_basic_block();
-    llvm::BasicBlock * block_red_loop_add = llvm_new_basic_block();
-    llvm::BasicBlock * block_red_loop_sync = llvm_new_basic_block();
-    llvm::BasicBlock * block_red_loop_end = llvm_new_basic_block();
+    JitForLoopPower loop( r_pow_shr1 );
+    {
+      JitIf ifInRange( llvm_lt( r_tidx , loop.index() ) );
+      {
+	llvm::Value * v = llvm_add( loop.index() , r_tidx );
 
-    llvm_branch( block_red_loop_start );
-    llvm_set_insert_point(block_red_loop_start);
-    
-    llvm::PHINode * r_red_pow = llvm_phi( llvm_type<int>::value , 2 );    
-    r_red_pow->addIncoming( r_pow_shr1 , entry_block ); // block_power_loop_exit
-    llvm_cond_branch( llvm_le( r_red_pow , llvm_create_value(0) ) , block_red_loop_end , block_red_loop_start_1 );
+	JitIf ifInRange2( llvm_lt( v , r_ntidx ) );
+	{
+	  IndexDomainVector args_new;
+	  args_new.push_back( make_pair( Layout::sitesOnNode() , 
+					 llvm_add( r_tidx , loop.index() ) ) );  // sitesOnNode irrelevant since Scalar access later
 
-    llvm_set_insert_point(block_red_loop_start_1);
+	  typename JITType<T2>::Type_t sdata_jit_plus;
+	  sdata_jit_plus.setup( r_shared , JitDeviceLayout::Scalar , args_new );
 
-    llvm_cond_branch( llvm_ge( r_tidx , r_red_pow ) , block_red_loop_sync , block_red_loop_start_2 );
+	  typename REGType< typename JITType<T2>::Type_t >::Type_t sdata_reg_plus;
+	  sdata_reg_plus.setup( sdata_jit_plus );
 
-    llvm_set_insert_point(block_red_loop_start_2);
+	  sdata_jit += sdata_reg_plus;
+	}
+	ifInRange2.end();
+      }
+      ifInRange.end();
 
-    llvm::Value * v = llvm_add( r_red_pow , r_tidx );
-    llvm_cond_branch( llvm_ge( v , r_ntidx ) , block_red_loop_sync , block_red_loop_add );
-
-    llvm_set_insert_point(block_red_loop_add);
-
-
-    IndexDomainVector args_new;
-    args_new.push_back( make_pair( Layout::sitesOnNode() , 
-				   llvm_add( r_tidx , r_red_pow ) ) );  // sitesOnNode irrelevant since Scalar access later
-
-    typename JITType<T2>::Type_t sdata_jit_plus;
-    sdata_jit_plus.setup( r_shared , JitDeviceLayout::Scalar , args_new );
-
-    typename REGType< typename JITType<T2>::Type_t >::Type_t sdata_reg_plus;    // 
-    sdata_reg_plus.setup( sdata_jit_plus );
-
-    sdata_jit += sdata_reg_plus;
-
-
-    llvm_branch( block_red_loop_sync );
-
-    llvm_set_insert_point(block_red_loop_sync);
-    llvm_bar_sync();
-    llvm::Value* pow_1 = llvm_shr( r_red_pow , llvm_create_value(1) );
-    r_red_pow->addIncoming( pow_1 , block_red_loop_sync );
-
-    llvm_branch( block_red_loop_start );
-
-    llvm_set_insert_point(block_red_loop_end);
-
+      llvm_bar_sync();
+    }
+    loop.end();
+    //
+    // -------------------
+    //
 
     llvm::BasicBlock * block_store_global = llvm_new_basic_block();
     llvm::BasicBlock * block_not_store_global = llvm_new_basic_block();
