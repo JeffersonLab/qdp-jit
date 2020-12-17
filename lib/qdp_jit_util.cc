@@ -344,14 +344,91 @@ namespace QDP {
 
 
 
+#if 0
+  llvm::Value* jit_ternary( llvm::Value* cond , llvm::Value* val_true , llvm::Value* val_false )
+  {
+    llvm::BasicBlock * block_exit  = llvm_new_basic_block();
+    llvm::BasicBlock * block_true  = llvm_new_basic_block();
+    llvm::BasicBlock * block_false = llvm_new_basic_block();
+
+    llvm_cond_branch( cond , block_true , block_false );
+    {
+      llvm_set_insert_point(block_true);
+      llvm_branch( block_exit );
+    }
+    {
+      llvm_set_insert_point(block_false);
+      llvm_branch( block_exit );
+    }
+    llvm_set_insert_point(block_exit);
+
+    llvm::PHINode* r = llvm_phi( val_true->getType() , 2 );
+    
+    r->addIncoming( val_true , block_true );
+    r->addIncoming( val_false , block_false );
+
+    return r;
+  }
+#endif
 
 
+  
+  llvm::Value* jit_ternary( llvm::Value* cond , const JitDefer& def_true , const JitDefer& def_false )
+  {
+    llvm::BasicBlock * block_exit  = llvm_new_basic_block();
+    llvm::BasicBlock * block_true  = llvm_new_basic_block();
+    llvm::BasicBlock * block_false = llvm_new_basic_block();
+
+    llvm::Value* r_true;
+    llvm::Value* r_false;
+    
+    llvm_cond_branch( cond , block_true , block_false );
+    {
+      llvm_set_insert_point(block_true);
+      r_true = def_true.val();
+      llvm_branch( block_exit );
+    }
+    {
+      llvm_set_insert_point(block_false);
+      r_false = def_false.val();
+      llvm_branch( block_exit );
+    }
+    llvm_set_insert_point(block_exit);
+
+    llvm::PHINode* r = llvm_phi( r_true->getType() , 2 );
+    
+    r->addIncoming( r_true , block_true );
+    r->addIncoming( r_false , block_false );
+
+    return r;
+  }
+
+  
+  llvm::Value* jit_ternary( llvm::Value* cond , llvm::Value*    val_true , llvm::Value*    val_false )
+  {
+    return jit_ternary( cond , JitDeferValue(val_true) , JitDeferValue(val_false) );
+  }
+
+  
+  llvm::Value* jit_ternary( llvm::Value* cond , const JitDefer& val_true , llvm::Value*    val_false )
+  {
+    return jit_ternary( cond , val_true , JitDeferValue(val_false) );
+  }
+
+  
+  llvm::Value* jit_ternary( llvm::Value* cond , llvm::Value*    val_true , const JitDefer& val_false )
+  {
+    return jit_ternary( cond , JitDeferValue(val_true) , val_false );
+  }
 
   
   
   
     // llvm::BasicBlock * block_start = llvm_new_basic_block();
   // llvm::BasicBlock * block_cont = llvm_new_basic_block();
+
+
+
 
 
 

@@ -161,7 +161,6 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   ParamRef p_site_table   = llvm_add_param<int*>();
   ParamRef p_member_array = llvm_add_param<bool*>();
   
-
   ParamLeaf param_leaf;
 
   typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
@@ -172,74 +171,31 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
   typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
   View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
-
   llvm::Value * r_ordered      = llvm_derefParam( p_ordered );
   llvm::Value * r_th_count     = llvm_derefParam( p_th_count );
-   llvm::Value * r_start        = llvm_derefParam( p_start );
-   llvm::Value * r_end          = llvm_derefParam( p_end );
-   llvm::Value * r_do_site_perm = llvm_derefParam( p_do_site_perm );
+  llvm::Value * r_start        = llvm_derefParam( p_start );
+  llvm::Value * r_end          = llvm_derefParam( p_end );
+  llvm::Value * r_do_site_perm = llvm_derefParam( p_do_site_perm );
 
-  llvm::Value* r_no_site_perm = llvm_not( r_do_site_perm );  
-  //mainFunc->dump();
   llvm::Value* r_idx_thread = llvm_thread_idx();
-  //mainFunc->dump();
 
   llvm_cond_exit( llvm_ge( r_idx_thread , r_th_count ) );
 
-  llvm::BasicBlock * block_no_site_perm_exit = llvm_new_basic_block();
-  llvm::BasicBlock * block_no_site_perm = llvm_new_basic_block();
-  llvm::BasicBlock * block_site_perm = llvm_new_basic_block();
-  llvm::BasicBlock * block_add_start = llvm_new_basic_block();
-  llvm::BasicBlock * block_add_start_else = llvm_new_basic_block();
+  llvm::Value* r_idx = jit_ternary( r_do_site_perm ,
+				    JitDeferArrayTypeIndirection( p_site_table , r_idx_thread ),
+                                    jit_ternary( r_ordered,
+                                                 JitDeferAdd( r_idx_thread , r_start ),
+                                                 r_idx_thread
+						 )
+				    );
 
-  llvm::Value* r_idx_perm_phi0;
-  llvm::Value* r_idx_perm_phi1;
-
-  llvm_cond_branch( r_no_site_perm , block_no_site_perm , block_site_perm ); 
-  {
-    llvm_set_insert_point(block_site_perm);
-    r_idx_perm_phi0 = llvm_array_type_indirection( p_site_table , r_idx_thread ); // PHI 0   
-    llvm_branch( block_no_site_perm_exit );
-  }
-  {
-    llvm_set_insert_point(block_no_site_perm);
-    llvm_cond_branch( r_ordered , block_add_start , block_add_start_else );
-    {
-      llvm_set_insert_point(block_add_start);
-      r_idx_perm_phi1 = llvm_add( r_idx_thread , r_start ); // PHI 1  
-      llvm_branch( block_no_site_perm_exit );
-      llvm_set_insert_point(block_add_start_else);
-      llvm_branch( block_no_site_perm_exit );
-    }
-  }
-  llvm_set_insert_point(block_no_site_perm_exit);
-
-  llvm::PHINode* r_idx = llvm_phi( r_idx_perm_phi0->getType() , 3 );
-
-  r_idx->addIncoming( r_idx_perm_phi0 , block_site_perm );
-  r_idx->addIncoming( r_idx_perm_phi1 , block_add_start );
-  r_idx->addIncoming( r_idx_thread , block_add_start_else );
-
-  llvm::BasicBlock * block_ordered = llvm_new_basic_block();
-  llvm::BasicBlock * block_not_ordered = llvm_new_basic_block();
-  llvm::BasicBlock * block_ordered_exit = llvm_new_basic_block();
-  llvm_cond_branch( r_ordered , block_ordered , block_not_ordered );
-  {
-    llvm_set_insert_point(block_not_ordered);
-    llvm::Value* r_ismember     = llvm_array_type_indirection( p_member_array , r_idx );
-    llvm::Value* r_ismember_not = llvm_not( r_ismember );
-    llvm_cond_exit( r_ismember_not ); 
-    llvm_branch( block_ordered_exit );
-  }
-  {
-    llvm_set_insert_point(block_ordered);
-    llvm_cond_exit( llvm_gt( r_idx , r_end ) );
-    llvm_cond_exit( llvm_lt( r_idx , r_start ) );
-    llvm_branch( block_ordered_exit );
-  }
-  llvm_set_insert_point(block_ordered_exit);
-
-
+  JitIf ordered(r_ordered);
+  llvm_cond_exit( llvm_gt( r_idx , r_end ) );
+  llvm_cond_exit( llvm_lt( r_idx , r_start ) );
+  ordered.els();
+  llvm_cond_exit( llvm_not( llvm_array_type_indirection( p_member_array , r_idx ) ) ); 
+  ordered.end();
+  
 
   op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ), 
 	  forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , r_idx ), OpCombine()));

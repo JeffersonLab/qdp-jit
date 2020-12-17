@@ -44,6 +44,99 @@ namespace QDP {
   };
 
 
+  
+  class JitIf
+  {
+    llvm::BasicBlock * block_exit;
+    llvm::BasicBlock * block_true;
+    llvm::BasicBlock * block_false;
+
+  public:
+    JitIf( llvm::Value* cond )
+    {
+      //block_outer = llvm_get_insert_point();
+      block_exit  = llvm_new_basic_block();
+      block_true  = llvm_new_basic_block();
+      block_false = llvm_new_basic_block();
+
+      llvm_cond_branch( cond , block_true , block_false );
+
+      llvm_set_insert_point(block_true);
+    }
+
+    void els()
+    {
+      llvm_branch( block_exit );
+      llvm_set_insert_point(block_false);
+    }
+
+
+    void end()
+    {
+      llvm_branch( block_exit );
+      llvm_set_insert_point(block_exit);
+    }
+  };
+
+  
+
+
+  class JitDefer
+  {
+  public:
+    virtual llvm::Value* val() const = 0;
+  };
+
+
+  class JitDeferValue: public JitDefer
+  {
+    llvm::Value* r;
+  public:
+    JitDeferValue( llvm::Value* r ): r(r) {}
+    virtual llvm::Value* val() const
+    {
+      return r;
+    }
+  };
+
+
+  class JitDeferAdd: public JitDefer
+  {
+    llvm::Value* r;
+    llvm::Value* l;
+  public:
+    JitDeferAdd( llvm::Value* l , llvm::Value* r ): l(l), r(r) {}
+    virtual llvm::Value* val() const
+    {
+      return llvm_add( l , r );
+    }
+  };
+
+
+  class JitDeferArrayTypeIndirection: public JitDefer
+  {
+    const ParamRef& p;
+    llvm::Value* r;
+  public:
+    JitDeferArrayTypeIndirection( const ParamRef& p , llvm::Value* r ): p(p), r(r) {}
+    virtual llvm::Value* val() const
+    {
+      return llvm_array_type_indirection( p , r );
+    }
+  };
+
+
+
+
+  //llvm::Value* jit_ternary( llvm::Value* cond , llvm::Value* val_true , llvm::Value* val_false );
+
+  llvm::Value* jit_ternary( llvm::Value* cond , llvm::Value*    val_true , llvm::Value*    val_false );
+  llvm::Value* jit_ternary( llvm::Value* cond , const JitDefer& val_true , llvm::Value*    val_false );
+  llvm::Value* jit_ternary( llvm::Value* cond , llvm::Value*    val_true , const JitDefer& val_false );
+  llvm::Value* jit_ternary( llvm::Value* cond , const JitDefer& val_true , const JitDefer& val_false );
+
+
+
   template<class T, int N>
   class JitStackArray
   {

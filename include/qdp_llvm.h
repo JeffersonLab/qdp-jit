@@ -111,6 +111,9 @@ namespace QDP {
   //extern llvm::Module      *Mod;
 
 
+  void llvm_module_dump();
+
+
   void llvm_set_debug( const char * str );
   void llvm_set_opt( const char * c_str );
   void llvm_set_ptxdb( const char * c_str );

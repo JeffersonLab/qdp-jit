@@ -1294,13 +1294,11 @@ namespace QDP {
 
 
 
-  namespace {
-    void llvm_module_dump()
-    {
-      QDPIO::cout << "--------------------------  Module dump...\n";
-      Mod->print(llvm::errs(), nullptr);
-      QDPIO::cout << "--------------------------\n";
-    }
+  void llvm_module_dump()
+  {
+    QDPIO::cout << "--------------------------  Module dump...\n";
+    Mod->print(llvm::errs(), nullptr);
+    QDPIO::cout << "--------------------------\n";
   }
 
 
