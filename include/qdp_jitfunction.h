@@ -615,21 +615,10 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
 
   llvm::Value * r_save = llvm_eq( r_idx_thread , llvm_create_value(0) );
 
-  llvm::BasicBlock * block_save = llvm_new_basic_block();
-  llvm::BasicBlock * block_not_save = llvm_new_basic_block();
-  llvm::BasicBlock * block_save_exit = llvm_new_basic_block();
-  llvm_cond_branch( r_save , block_save , block_not_save );
-  {
-    llvm_set_insert_point(block_save);
-    seed_tmp_jit.elem() = seed_reg;
-    llvm_branch( block_save_exit );
-  }
-  {
-    llvm_set_insert_point(block_not_save);
-    llvm_branch( block_save_exit );
-  }
-  llvm_set_insert_point(block_save_exit);
-
+  JitIf save(r_save);
+  seed_tmp_jit.elem() = seed_reg;
+  save.end();
+  
   return jit_function_epilogue_get_cuf("jit_random.ptx" , __PRETTY_FUNCTION__ );
 }
 

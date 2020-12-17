@@ -50,7 +50,7 @@ namespace QDP {
     llvm::BasicBlock * block_exit;
     llvm::BasicBlock * block_true;
     llvm::BasicBlock * block_false;
-
+    bool else_called = false;
   public:
     JitIf( llvm::Value* cond )
     {
@@ -66,6 +66,7 @@ namespace QDP {
 
     void els()
     {
+      else_called=true;
       llvm_branch( block_exit );
       llvm_set_insert_point(block_false);
     }
@@ -73,6 +74,8 @@ namespace QDP {
 
     void end()
     {
+      if (!else_called)
+	els();
       llvm_branch( block_exit );
       llvm_set_insert_point(block_exit);
     }
