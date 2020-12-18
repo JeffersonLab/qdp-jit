@@ -283,24 +283,38 @@ namespace QDP {
     return r_idx;
   }
 
-
+#if 0
   JitForLoop::JitForLoop( int start , int end )
+  {
+    JitForLoop( llvm_create_value(start) , llvm_create_value(end) );
+  }
+
+  JitForLoop::JitForLoop( int start , llvm::Value* end )
+  {
+    JitForLoop( llvm_create_value(start) , end );
+  }
+
+  JitForLoop::JitForLoop( llvm::Value* start , int end )
+  {
+    JitForLoop( start , llvm_create_value(end) );
+  }
+#endif
+
+  JitForLoop::JitForLoop( llvm::Value* start , llvm::Value* end )
   {
     block_outer = llvm_get_insert_point();
     block_loop_cond = llvm_new_basic_block();
     block_loop_body = llvm_new_basic_block();
     block_loop_exit = llvm_new_basic_block();
 
-    llvm::Value * i_start = llvm_create_value( start );
-    
     llvm_branch( block_loop_cond );
     llvm_set_insert_point(block_loop_cond);
   
     r_i = llvm_phi( llvm_type<int>::value , 2 );
 
-    r_i->addIncoming( i_start , block_outer );
+    r_i->addIncoming( start , block_outer );
 
-    llvm_cond_branch( llvm_lt( r_i , llvm_create_value( end ) ) , block_loop_body , block_loop_exit );
+    llvm_cond_branch( llvm_lt( r_i , end ) , block_loop_body , block_loop_exit );
 
     llvm_set_insert_point( block_loop_body );
   }

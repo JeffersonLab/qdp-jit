@@ -29,10 +29,14 @@ namespace QDP {
   llvm::Value * llvm_seedToFloat( llvm::Value* a0,llvm::Value* a1,llvm::Value* a2,llvm::Value* a3);
 
 
+
   class JitForLoop
   {
   public:
-    JitForLoop( int start , int end );
+    JitForLoop( int start          , int end ):           JitForLoop( llvm_create_value(start) , llvm_create_value(end) ) {}
+    JitForLoop( int start          , llvm::Value*  end ): JitForLoop( llvm_create_value(start) , end ) {}
+    JitForLoop( llvm::Value* start , int  end ):          JitForLoop( start , llvm_create_value(end) ) {}
+    JitForLoop( llvm::Value* start , llvm::Value*  end );
     llvm::Value * index();
     void end();
   private:
