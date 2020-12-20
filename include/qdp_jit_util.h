@@ -30,6 +30,20 @@ namespace QDP {
 
 
 
+  template<class T>
+  typename JITType<T>::Type_t stack_alloc()
+  {
+    int type_size = JITType<T>::Type_t::Size_t;
+    llvm::Value * ptr = llvm_alloca( llvm_type< typename WordType< T >::Type_t >::value , type_size );
+      
+    typename JITType<T>::Type_t t_jit_stack;
+    t_jit_stack.setup( ptr , JitDeviceLayout::Scalar );
+
+    return t_jit_stack;
+  }
+
+
+
   class JitForLoop
   {
   public:
