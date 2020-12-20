@@ -17,6 +17,39 @@ namespace QDP {
     JitDeviceLayout   layout;
 
   public:
+    
+    //Default constructor
+    BaseJIT(): setup_m(false) {}
+
+    
+    //Copy constructor
+    BaseJIT(const BaseJIT& rhs): partial_offset(rhs.partial_offset)
+    {
+      setup_m = rhs.setup_m;
+      m_base  = rhs.m_base;
+      layout  = rhs.layout;
+      for ( int i = 0 ; i < N ; ++i )
+	F[i] = rhs.F[i];
+    }
+
+    //Copy assignment
+    BaseJIT& operator=(const BaseJIT& rhs)
+    {
+      if(&rhs == this)
+	return *this;
+      
+      for ( int i = 0 ; i < N ; ++i )
+	F[i] = rhs.F[i];
+      partial_offset = rhs.partial_offset;
+      setup_m = rhs.setup_m;
+      m_base  = rhs.m_base;
+      layout  = rhs.layout;
+      return *this;
+    }
+
+
+    
+#if 0
     BaseJIT(): 
       setup_m(false)
       // full(jit_ptx_type::s32),
@@ -25,7 +58,8 @@ namespace QDP {
     {}
 
     ~BaseJIT() {}
-
+#endif
+    
     enum { ThisSize = N };                 // Size in T's
     enum { Size_t = ThisSize * T::Size_t}; // Size in registers
 
@@ -71,7 +105,11 @@ namespace QDP {
 
 
     T getJitElem( llvm::Value * index ) {
-      assert(setup_m);
+      if (!setup_m)
+	{
+	  QDPIO::cerr << "qdp-jit internal error: BaseJIT::getJitElem elem not set up.\n";
+	  QDP_abort(1);
+	}
       T ret;
       IndexDomainVector args = partial_offset;
       args.push_back( make_pair( N , index ) );
@@ -88,6 +126,11 @@ namespace QDP {
 
 
     typename REGType<T>::Type_t getRegElem( llvm::Value * index ) {
+      if (!setup_m)
+	{
+	  QDPIO::cerr << "qdp-jit internal error: BaseJIT::getJitElem elem not set up.\n";
+	  QDP_abort(1);
+	}
       T jit;
       IndexDomainVector args = partial_offset;
       args.push_back( make_pair( N , index ) );
@@ -110,10 +153,24 @@ namespace QDP {
 #endif
     }
 
-
-
   };
 
+  
+
+  template<class T>
+  typename JITType<T>::Type_t stack_alloc()
+  {
+    int type_size = JITType<T>::Type_t::Size_t;
+    llvm::Value * ptr = llvm_alloca( llvm_type< typename WordType< T >::Type_t >::value , type_size );
+      
+    typename JITType<T>::Type_t t_jit_stack;
+    t_jit_stack.setup( ptr , JitDeviceLayout::Scalar );
+
+    return t_jit_stack;
+  }
+
+
+  
 }
 
 #endif

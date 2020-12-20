@@ -19,10 +19,10 @@ template<class T>
 class RScalarJIT : public BaseJIT<T,1>
 {
 private:
-  template<class T1>
-  RScalarJIT& operator=( const RScalarJIT<T1>& rhs);
-  RScalarJIT& operator=( const RScalarJIT& rhs);
-  RScalarJIT( const RScalarJIT& rhs);
+  // template<class T1>
+  // RScalarJIT& operator=( const RScalarJIT<T1>& rhs);
+  // RScalarJIT& operator=( const RScalarJIT& rhs);
+  // RScalarJIT( const RScalarJIT& rhs);
 
 public:
 

@@ -23,19 +23,25 @@ namespace QDP {
 /*! Placeholder for no primitive structure */
   template<class T> class PScalarJIT : public BaseJIT<T,1>
   {
+#if 0
   private:
     template<class T1>
     PScalarJIT& operator=( const PScalarJIT<T1>& rhs);
     PScalarJIT& operator=( const PScalarJIT& rhs);
     //PScalarJIT( const PScalarJIT& rhs);
-
+#endif
+    
   public:
 
     // Default constructing should be possible
-    // then there is no need for MPL index when
-    // construction a PMatrix<T,N>
     PScalarJIT() {}
-    ~PScalarJIT() {}
+
+    // Copy constructor
+    PScalarJIT(const PScalarJIT& rhs): BaseJIT<T,1>(rhs)
+    {}
+    
+
+    //~PScalarJIT() {}
 
     template<class T1>
     PScalarJIT& operator=( const PScalarREG<T1>& rhs) {

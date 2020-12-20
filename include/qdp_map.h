@@ -320,7 +320,6 @@ struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
 
 
 
-
 template<class A>
 struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
   {
@@ -330,22 +329,19 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
     static Type_t apply(const UnaryNode<FnMapJIT, A>& expr, const ViewLeaf &v, const OpCombine &o)
     {
       Type_t ret;
-      Type_t ret_phi0;
-      Type_t ret_phi1;
 
+      //
+      // Setup an object (of return type) on the stack
+      //
+      auto ret_stack = stack_alloc<Type_t>();
+      
       IndexRet index = expr.operation().index;
 
       llvm::Value * r_multi_index = llvm_array_type_indirection( index.p_multi_index , v.getIndex() );
-      
-      llvm::BasicBlock * block_in_buffer = llvm_new_basic_block();
-      llvm::BasicBlock * block_not_in_buffer = llvm_new_basic_block();
-      llvm::BasicBlock * block_in_buffer_exit = llvm_new_basic_block();
-      llvm_cond_branch( llvm_lt( r_multi_index , 
-				 llvm_create_value(0) ) , 
-			block_in_buffer , 
-			block_not_in_buffer );
+
+
+      JitIf inRecvBuffer( llvm_lt( r_multi_index , llvm_create_value(0) ) );
       {
-	llvm_set_insert_point(block_in_buffer);
 	llvm::Value *idx_buf = llvm_sub ( llvm_neg ( r_multi_index ) , llvm_create_value(1) );
 
 	IndexDomainVector args;
@@ -357,32 +353,32 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
 			  JitDeviceLayout::Scalar ,
 			  args );
 
-	ret_phi0.setup( t_jit_recv );
-	
-	llvm_branch( block_in_buffer_exit );
+	Type_t tmp;
+	tmp.setup( t_jit_recv );
+
+	ret_stack = tmp;
       }
+      inRecvBuffer.els();
       {
-	llvm_set_insert_point(block_not_in_buffer);
-
 	ViewLeaf vv( JitDeviceLayout::Coalesced , r_multi_index );
-	ret_phi1 = Combine1<TypeA_t, 
-			    FnMapJIT , 
-			    OpCombine>::combine(ForEach<A, ViewLeaf, OpCombine>::apply(expr.child(), vv, o) , 
-						expr.operation(), o);
+	Type_t tmp = Combine1<TypeA_t, 
+			      FnMapJIT , 
+			      OpCombine>::combine(ForEach<A, ViewLeaf, OpCombine>::apply(expr.child(), vv, o) , 
+						  expr.operation(), o);
 
-	llvm_branch( block_in_buffer_exit );
+
+	ret_stack = tmp;
       }
-      llvm_set_insert_point(block_in_buffer_exit);
+      inRecvBuffer.end();
 
-      qdpPHI( ret , 
-	      ret_phi0 , block_in_buffer ,
-	      ret_phi1 , block_not_in_buffer );
-
+      //
+      // Now read the object from the stack into a REG container
+      //
+      ret.setup( ret_stack );
+      
       return ret;
     }
   };
-
-
 
 
 

@@ -189,9 +189,9 @@ namespace QDP {
     // llvm::Value * getLevel() const { assert(setup_m); return offset_level; }
 
   private:
-    template<class T1>
-    void operator=(const WordJIT<T1>& s1);
-    void operator=(const WordJIT& s1);
+    //template<class T1>
+    //void operator=(const WordJIT<T1>& s1);
+    //void operator=(const WordJIT& s1);
 
     llvm::Value *     r_base;
     llvm::Value *     offset;
