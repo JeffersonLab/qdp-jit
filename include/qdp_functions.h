@@ -355,8 +355,6 @@ namespace QDP {
   multi2d<typename UnaryReturn<OLattice<T>, FnSum>::Type_t>
   sumMulti(const multi1d< OLattice<T> >& s1, const Set& ss)
   {
-    QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
-
     multi2d<typename UnaryReturn<OLattice<T>, FnSum>::Type_t> dest(s1.size(), ss.numSubsets());
 
     // Initialize result with zero
@@ -389,8 +387,6 @@ namespace QDP {
   inline typename UnaryReturn<OScalar<T>, FnNorm2>::Type_t
   norm2(const multi1d< OScalar<T> >& s1)
   {
-    QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
-
     typename UnaryReturn<OScalar<T>, FnNorm2>::Type_t  d;
 
     // Possibly loop entered
@@ -426,8 +422,6 @@ namespace QDP {
   inline typename UnaryReturn<OLattice<T>, FnNorm2>::Type_t
   norm2(const multi1d< OLattice<T> >& s1, const Subset& s)
   {
-    QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
-
     typename UnaryReturn<OLattice<T>, FnNorm2>::Type_t  d;
 
     // Possibly loop entered
@@ -479,8 +473,6 @@ namespace QDP {
   inline typename BinaryReturn<OScalar<T1>, OScalar<T2>, FnInnerProduct>::Type_t
   innerProduct(const multi1d< OScalar<T1> >& s1, const multi1d< OScalar<T2> >& s2)
   {
-    QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
-
     typename BinaryReturn<OScalar<T1>, OScalar<T2>, FnInnerProduct>::Type_t  d;
 
     // Possibly loop entered
@@ -520,8 +512,6 @@ namespace QDP {
   innerProduct(const multi1d< OLattice<T1> >& s1, const multi1d< OLattice<T2> >& s2,
 	       const Subset& s)
   {
-    QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
-
     typename BinaryReturn<OLattice<T1>, OLattice<T2>, FnInnerProduct>::Type_t  d;
 
     // Possibly loop entered
@@ -574,8 +564,6 @@ namespace QDP {
   inline typename BinaryReturn<OScalar<T1>, OScalar<T2>, FnInnerProductReal>::Type_t
   innerProductReal(const multi1d< OScalar<T1> >& s1, const multi1d< OScalar<T2> >& s2)
   {
-    QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
-
     typename BinaryReturn<OScalar<T1>, OScalar<T2>, FnInnerProductReal>::Type_t  d;
 
     // Possibly loop entered
@@ -615,8 +603,6 @@ namespace QDP {
   innerProductReal(const multi1d< OLattice<T1> >& s1, const multi1d< OLattice<T2> >& s2,
 		   const Subset& s)
   {
-    QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
-
     typename BinaryReturn<OLattice<T1>, OLattice<T2>, FnInnerProductReal>::Type_t  d;
 
     // Possibly loop entered
@@ -670,8 +656,6 @@ namespace QDP {
   typename UnaryReturn<OScalar<T>, FnGlobalMax>::Type_t
   globalMax(const QDPExpr<RHS,OScalar<T> >& s1)
   {
-    QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
-
     typename UnaryReturn<OScalar<T>, FnGlobalMax>::Type_t  d;
 
     evaluate(d,OpAssign(),s1,all);   // since OScalar, no global max needed
@@ -701,8 +685,6 @@ namespace QDP {
   typename UnaryReturn<OScalar<T>, FnGlobalMin>::Type_t
   globalMin(const QDPExpr<RHS,OScalar<T> >& s1)
   {
-    QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
-
     typename UnaryReturn<OScalar<T>, FnGlobalMin>::Type_t  d;
 
     evaluate(d,OpAssign(),s1,all);   // since OScalar, no global min needed
@@ -719,8 +701,6 @@ namespace QDP {
   typename UnaryReturn<OLattice<T>, FnGlobalMin>::Type_t
   globalMin(const QDPExpr<RHS,OLattice<T> >& s1)
   {
-    QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
-
     typename UnaryReturn<OLattice<T>, FnGlobalMin>::Type_t  d;
 
     // Loop always entered so unroll
