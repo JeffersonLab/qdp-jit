@@ -650,18 +650,6 @@ localInnerProductReal(const WordREG<T1>& s1, const WordREG<T2>& s2)
   }
 
 
-  template<class T>
-  inline void 
-  qdpPHI(WordREG<T>& d, 
-	 const WordREG<T>& phi0, llvm::BasicBlock* bb0 ,
-	 const WordREG<T>& phi1, llvm::BasicBlock* bb1 )
-  {
-    d.setup( llvm_phi( llvm_type<T>::value , 2 ) );
-    static_cast<llvm::PHINode*>(d.get_val())->addIncoming( phi0.get_val() , bb0 );
-    static_cast<llvm::PHINode*>(d.get_val())->addIncoming( phi1.get_val() , bb1 );
-    //d.get_val()->addIncoming( phi1 , bb1 );
-  }
-
 
 
 

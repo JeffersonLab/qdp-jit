@@ -97,6 +97,7 @@ namespace QDP {
       llvm_set_insert_point(block_true);
     }
 
+    
     void els()
     {
       else_called=true;
@@ -164,7 +165,6 @@ namespace QDP {
 
 
 
-  //llvm::Value* jit_ternary( llvm::Value* cond , llvm::Value* val_true , llvm::Value* val_false );
 
   llvm::Value* jit_ternary( llvm::Value* cond , llvm::Value*    val_true , llvm::Value*    val_false );
   llvm::Value* jit_ternary( llvm::Value* cond , const JitDefer& val_true , llvm::Value*    val_false );
