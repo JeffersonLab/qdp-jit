@@ -78,17 +78,12 @@ namespace COUNT {
   }
 #endif
 
-  //! Public flag for using the GPU or not
-  bool QDPuseGPU = false;
 
   void QDP_startGPU()
   {
-    QDP_info_primary("Getting GPU device properties");
+    // Getting GPU device properties
     CudaGetDeviceProps();
 
-    QDP_info_primary("Trigger GPU evaluation");
-    QDPuseGPU=true;
-    
     // Initialize the LLVM wrapper
     llvm_wrapper_init();
   }

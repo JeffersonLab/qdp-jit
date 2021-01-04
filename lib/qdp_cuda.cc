@@ -96,8 +96,6 @@ namespace QDP {
 			 unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
 			 unsigned int  sharedMemBytes, int hStream, void** kernelParams, void** extra )
   {
-    //if ( blockDimX * blockDimY * blockDimZ > 0  &&  gridDimX * gridDimY * gridDimZ > 0 ) {
-    
     JitResult result = CudaLaunchKernelNoSync(f, gridDimX, gridDimY, gridDimZ, 
 					     blockDimX, blockDimY, blockDimZ, 
 					     sharedMemBytes, 0, kernelParams, extra);
@@ -131,22 +129,12 @@ namespace QDP {
 				    unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
 				    unsigned int  sharedMemBytes, int hStream, void** kernelParams, void** extra  )
   {
-     // QDP_info("CudaLaunchKernelNoSync: grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
-     // 	      gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes );
-    // QDPIO::cout << "JitFunction = " << (size_t)(void*)f << "\n";
-      
-
-
-    //QDPIO::cout << "local mem (bytes) = " << num_threads << "\n";
-    //
-    
     CUresult res = cuLaunchKernel((CUfunction)f.getFunction(), gridDimX, gridDimY, gridDimZ, 
 				  blockDimX, blockDimY, blockDimZ, 
 				  sharedMemBytes, 0, kernelParams, extra);
 
     if (res == CUDA_SUCCESS)
       {
-	//QDPIO::cout << "CUDA_SUCCESS\n";
 	if (qdp_cache_get_launch_verbose())
 	  {
 	    QDP_info("CudaLaunchKernelNoSync: grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
@@ -156,7 +144,7 @@ namespace QDP {
       }
     else
       {
-	//QDPIO::cout << "no CUDA_SUCCESS " << mapCuErrorString[res] << "\n";
+	//
       }
 
     JitResult ret;
@@ -246,8 +234,6 @@ namespace QDP {
 
 
 
-
-  //int CudaGetConfig(CUdevice_attribute what)
   int CudaGetConfig(int what)
   {
     int data;
@@ -266,7 +252,6 @@ namespace QDP {
   }
 
   void CudaInit() {
-    //QDP_info_primary("CUDA initialization");
     cuInit(0);
 
     int deviceCount = 0;
@@ -321,9 +306,8 @@ namespace QDP {
     CudaRes("cuMemGetInfo",ret);
     total_free = free;
 
-    QDP_info_primary("GPU memory: free = %lld (%f MB),  total = %lld (%f MB)",
-		     (unsigned long long)free , (float)free/1024./1024.,
-		     (unsigned long long)total, (float)total/1024./1024. );
+    QDPIO::cout << "  GPU memory (free,total)             : " << free/1024/1024 << "/" << total/1024/1024 << " MB\n";
+
     if (!setPoolSize) {
 
       size_t val = (size_t)((double)(0.90) * (double)free);
@@ -344,15 +328,17 @@ namespace QDP {
 	QDP_info("Global minimum %f of available GPU memory smaller than local value %d. Using global minimum.",val_min,val_in_MiB);
       }
       int val_min_int = (int)val_min;
-      QDP_info_primary("Using device memory pool size: %d MB",(int)val_min_int);
 
+      QDPIO::cout << "  GPU memory pool set to (autodetect) : " << (int)val_min_int << " MB\n";
+      
       //CUDADevicePoolAllocator::Instance().setPoolSize( ((size_t)val_min_int) * 1024 * 1024 );
       QDP_get_global_cache().setPoolSize( ((size_t)val_min_int) * 1024 * 1024 );
 
       setPoolSize = true;
     } else {
       //QDP_info_primary("Using device pool size: %d MiB",(int)(CUDADevicePoolAllocator::Instance().getPoolSize()/1024/1024));
-      QDP_info_primary("Using device pool size: %d MiB",(int)(QDP_get_global_cache().getPoolSize()/1024/1024));
+      //QDP_info_primary("Using device pool size: %d MiB",(int)(QDP_get_global_cache().getPoolSize()/1024/1024));
+      QDPIO::cout << "  GPU memory pool set to (per user request) : " << (int)(QDP_get_global_cache().getPoolSize()/1024/1024) << " MB\n";
     }
 
 
@@ -560,12 +546,9 @@ namespace QDP {
     std::string envvar;
     bool GPUDirect;
     bool syncDevice;
-    bool asyncTransfers;
-    bool unifiedAddressing;
     unsigned maxKernelArg;
 
     unsigned smem;
-    int      sm_count;
     
     unsigned max_gridx;
     unsigned max_gridy;
@@ -584,9 +567,6 @@ namespace QDP {
 
 
   void gpu_autoDetect() {
-    unifiedAddressing = CudaGetConfig(CU_DEVICE_ATTRIBUTE_UNIFIED_ADDRESSING) == 1;
-    asyncTransfers = CudaGetConfig(CU_DEVICE_ATTRIBUTE_GPU_OVERLAP) == 1;
-    sm_count = CudaGetConfig( CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT );
     smem = CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_SHARED_MEMORY_PER_BLOCK );
     max_gridx = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_X ) );
     max_gridy = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_Y ) );
@@ -605,19 +585,12 @@ namespace QDP {
     
     major = ma;
     minor = mi;
-
-    QDP_info_primary("Compute capability (major)              = %d",major);
-    QDP_info_primary("Compute capability (minor)              = %d",minor);
-    QDP_info_primary("unified addr                            = %d",unifiedAddressing ? 1 : 0);
-    QDP_info_primary("asyncTransfers                          = %d",asyncTransfers ? 1 : 0);
-    QDP_info_primary("smem                                    = %d",smem);
-    QDP_info_primary("max_gridx                               = %d",max_gridx);
-    QDP_info_primary("max_gridy                               = %d",max_gridy);
-    QDP_info_primary("max_gridz                               = %d",max_gridz);
-    QDP_info_primary("max_blockx                              = %d",max_blockx);
-    QDP_info_primary("max_blocky                              = %d",max_blocky);
-    QDP_info_primary("max_blockz                              = %d",max_blockz);
-    QDP_info_primary("SM count                                = %d",sm_count);
+    
+    QDPIO::cout << "GPU autodetect\n";
+    QDPIO::cout << "  Compute capability (major,minor)    : " << major << "," << minor << "\n";
+    QDPIO::cout << "  Shared memory (bytes)               : " << smem  << "\n";
+    QDPIO::cout << "  Max grid  (x,y,z)                   : (" << max_gridx << "," << max_gridy << "," << max_gridz << ")\n";
+    QDPIO::cout << "  Max block (x,y,z)                   : (" << max_blockx << "," << max_blocky << "," << max_blockz << ")\n";
   }
 
 
