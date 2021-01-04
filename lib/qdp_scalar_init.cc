@@ -272,12 +272,6 @@ namespace COUNT {
 	  {
 	    gpu_setSyncDevice(true);
 	  }
-	else if (strcmp((*argv)[i], "-sm")==0) 
-	  {
-	    int sm;
-	    sscanf((*argv)[++i], "%d", &sm);
-	    gpu_setSM(sm);
-	  }
 	else if (strcmp((*argv)[i], "-gpudirect")==0) 
 	  {
 	    gpu_setGPUDirect(true);

@@ -75,7 +75,6 @@ namespace QDP {
 
   kernel_geom_t getGeom(int numSites , int threadsPerBlock);
 
-  void gpu_setSM(int sm);
   void gpu_setDefaultGPU(int ngpu);
   int  gpu_getDefaultGPU();
   

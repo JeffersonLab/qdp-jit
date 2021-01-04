@@ -556,7 +556,6 @@ namespace QDP {
       return s;
     }
 
-        bool boolNoReadSM;
     unsigned device;
     std::string envvar;
     bool GPUDirect;
@@ -605,8 +604,8 @@ namespace QDP {
 #endif
     
     int ma,mi;
-    if (!boolNoReadSM)
-      CudaGetSM(&ma,&mi);
+    CudaGetSM(&ma,&mi);
+    
     major = ma;
     minor = mi;
     divRnd = major >= 2;
@@ -627,12 +626,6 @@ namespace QDP {
     QDP_info_primary("SM count                                = %d",sm_count);
   }
 
-  void gpu_setSM(int sm) {
-    QDP_info_primary("Compiling LLVM IR to PTX for compute capability sm_%d (instead of autodetect)",sm);
-    major = sm / 10;
-    minor = sm % 10;
-    boolNoReadSM = true;
-  }
 
   void gpu_setDefaultGPU(int ngpu) {
     defaultGPU = ngpu;
