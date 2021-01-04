@@ -12,6 +12,13 @@
 
 namespace QDP {
 
+  namespace {
+    bool gpu_getGPUDirect()
+    {
+      return false;
+    }
+  }
+
   void FnMapRsrc::setup(int _destNode,int _srcNode,int _sendMsgSize,int _rcvMsgSize) {
 
     bSet=true;

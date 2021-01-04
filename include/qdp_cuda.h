@@ -88,9 +88,6 @@ namespace QDP {
   
   size_t gpu_getMaxSMem();
 
-  bool gpu_getGPUDirect();
-  void gpu_setGPUDirect(bool direct);
-  
   unsigned gpu_getMajor();
   unsigned gpu_getMinor();
   

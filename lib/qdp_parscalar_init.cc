@@ -319,10 +319,6 @@ namespace COUNT {
 	    setProgramProfileLevel(lev);
 	  }
 #endif
-	else if (strcmp((*argv)[i], "-gpudirect")==0) 
-	  {
-	    gpu_setGPUDirect(true);
-	  }
 	else if (strcmp((*argv)[i], "-poolmemset")==0) 
 	  {
 	    unsigned val;

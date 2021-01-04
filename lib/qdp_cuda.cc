@@ -638,12 +638,6 @@ namespace QDP {
   
   size_t gpu_getMaxSMem()  {return smem;}
 
-  bool gpu_getGPUDirect() { return GPUDirect; }
-  void gpu_setGPUDirect(bool direct) {
-    QDP_info_primary("Setting GPU Direct = %d",(int)direct);
-    GPUDirect = direct;
-  };
-  
   unsigned gpu_getMajor() { return major; }
   unsigned gpu_getMinor() { return minor; }
   
