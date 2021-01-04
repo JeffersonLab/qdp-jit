@@ -268,10 +268,6 @@ namespace COUNT {
 
     for (int i=1; i<*argc; i++) 
       {
-	if (strcmp((*argv)[i], "-sync")==0) 
-	  {
-	    gpu_setSyncDevice(true);
-	  }
 	else if (strcmp((*argv)[i], "-gpudirect")==0) 
 	  {
 	    gpu_setGPUDirect(true);

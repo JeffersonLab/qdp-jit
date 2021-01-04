@@ -638,12 +638,7 @@ namespace QDP {
   
   size_t gpu_getMaxSMem()  {return smem;}
 
-  bool gpu_getSyncDevice() { return syncDevice; }
   bool gpu_getGPUDirect() { return GPUDirect; }
-  void gpu_setSyncDevice(bool sync) { 
-    QDP_info_primary("Setting device sync = %d",(int)sync);
-    syncDevice = sync;
-  };
   void gpu_setGPUDirect(bool direct) {
     QDP_info_primary("Setting GPU Direct = %d",(int)direct);
     GPUDirect = direct;

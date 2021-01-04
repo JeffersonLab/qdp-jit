@@ -88,9 +88,7 @@ namespace QDP {
   
   size_t gpu_getMaxSMem();
 
-  bool gpu_getSyncDevice();
   bool gpu_getGPUDirect();
-  void gpu_setSyncDevice(bool sync);
   void gpu_setGPUDirect(bool direct);
   
   unsigned gpu_getMajor();
