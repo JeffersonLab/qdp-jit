@@ -562,11 +562,9 @@ namespace QDP {
     bool syncDevice;
     bool asyncTransfers;
     bool unifiedAddressing;
-    bool divRnd;
     unsigned maxKernelArg;
 
     unsigned smem;
-    unsigned smem_default;
     int      sm_count;
     
     unsigned max_gridx;
@@ -590,7 +588,6 @@ namespace QDP {
     asyncTransfers = CudaGetConfig(CU_DEVICE_ATTRIBUTE_GPU_OVERLAP) == 1;
     sm_count = CudaGetConfig( CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT );
     smem = CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_SHARED_MEMORY_PER_BLOCK );
-    smem_default = 0;
     max_gridx = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_X ) );
     max_gridy = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_Y ) );
     max_gridz = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_Z ) );
@@ -608,12 +605,9 @@ namespace QDP {
     
     major = ma;
     minor = mi;
-    divRnd = major >= 2;
 
     QDP_info_primary("Compute capability (major)              = %d",major);
     QDP_info_primary("Compute capability (minor)              = %d",minor);
-    QDP_info_primary("Divide with IEEE 754 compliant rounding = %d",divRnd);
-    QDP_info_primary("Sqrt with IEEE 754 compliant rounding   = %d",divRnd);
     QDP_info_primary("unified addr                            = %d",unifiedAddressing ? 1 : 0);
     QDP_info_primary("asyncTransfers                          = %d",asyncTransfers ? 1 : 0);
     QDP_info_primary("smem                                    = %d",smem);
@@ -643,7 +637,6 @@ namespace QDP {
   size_t gpu_getMaxBlockZ()  {return max_blockz;}
   
   size_t gpu_getMaxSMem()  {return smem;}
-  size_t gpu_getDefaultSMem()  {return smem_default;}
 
   bool gpu_getSyncDevice() { return syncDevice; }
   bool gpu_getGPUDirect() { return GPUDirect; }
