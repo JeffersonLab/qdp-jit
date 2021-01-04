@@ -254,20 +254,11 @@ namespace QDP {
   inline
   void copymask(WordJIT<T>& d, const WordREG<T1>& mask, const WordREG<T2>& s1)
   {
-    llvm::BasicBlock * block_copy      = llvm_new_basic_block();
-    llvm::BasicBlock * block_not_copy  = llvm_new_basic_block();
-    llvm::BasicBlock * block_copy_exit = llvm_new_basic_block();
-    llvm_cond_branch( mask.get_val() , block_copy , block_not_copy );
+    JitIf ifCopy( mask.get_val() );
     {
-      llvm_set_insert_point(block_not_copy);
-      llvm_branch( block_copy_exit );
-    }
-    {
-      llvm_set_insert_point(block_copy);
       d = s1;
-      llvm_branch( block_copy_exit );
     }
-    llvm_set_insert_point(block_copy_exit);
+    ifCopy.end();
   }
 
 

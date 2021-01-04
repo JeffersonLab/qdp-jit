@@ -84,7 +84,6 @@ namespace QDP {
 
     llvm_bar_sync();
 
-    llvm::BasicBlock * entry_block = llvm_get_insert_block();
     
     llvm::Value* r_pow_shr1 = llvm_shr( r_ntidx , llvm_create_value(1) );
 
@@ -122,17 +121,13 @@ namespace QDP {
     // -------------------
     //
 
-    llvm::BasicBlock * block_store_global = llvm_new_basic_block();
-    llvm::BasicBlock * block_not_store_global = llvm_new_basic_block();
-    llvm_cond_branch( llvm_eq( r_tidx , llvm_create_value(0) ) , 
-		      block_store_global , 
-		      block_not_store_global );
-    llvm_set_insert_point(block_store_global);
-    typename REGType< typename JITType<T2>::Type_t >::Type_t sdata_reg;   
-    sdata_reg.setup( sdata_jit );
-    odata.elem( JitDeviceLayout::Scalar , r_block_idx ) = sdata_reg;
-    llvm_branch( block_not_store_global );
-    llvm_set_insert_point(block_not_store_global);
+    JitIf ifStore( llvm_eq( r_tidx , llvm_create_value(0) ) );
+    {
+      typename REGType< typename JITType<T2>::Type_t >::Type_t sdata_reg;   
+      sdata_reg.setup( sdata_jit );
+      odata.elem( JitDeviceLayout::Scalar , r_block_idx ) = sdata_reg;
+    }
+    ifStore.end();
 
     return jit_function_epilogue_get_cuf("jit_sum_ind.ptx" , __PRETTY_FUNCTION__ );
   }
@@ -197,7 +192,6 @@ namespace QDP {
 
     llvm_bar_sync();
 
-    llvm::BasicBlock * entry_block = llvm_get_insert_block();
     
     llvm::Value* r_pow_shr1 = llvm_shr( r_ntidx , llvm_create_value(1) );
 
@@ -235,17 +229,13 @@ namespace QDP {
     // -------------------
     //
 
-    llvm::BasicBlock * block_store_global = llvm_new_basic_block();
-    llvm::BasicBlock * block_not_store_global = llvm_new_basic_block();
-    llvm_cond_branch( llvm_eq( r_tidx , llvm_create_value(0) ) , 
-		      block_store_global , 
-		      block_not_store_global );
-    llvm_set_insert_point(block_store_global);
-    typename REGType< typename JITType<T2>::Type_t >::Type_t sdata_reg;   
-    sdata_reg.setup( sdata_jit );
-    odata.elem( JitDeviceLayout::Scalar , r_block_idx ) = sdata_reg;
-    llvm_branch( block_not_store_global );
-    llvm_set_insert_point(block_not_store_global);
+    JitIf ifStore( llvm_eq( r_tidx , llvm_create_value(0) ) );
+    {
+      typename REGType< typename JITType<T2>::Type_t >::Type_t sdata_reg;   
+      sdata_reg.setup( sdata_jit );
+      odata.elem( JitDeviceLayout::Scalar , r_block_idx ) = sdata_reg;
+    }
+    ifStore.end();
 
     return jit_function_epilogue_get_cuf("jit_sum_ind.ptx" , __PRETTY_FUNCTION__ );
   }
@@ -310,8 +300,6 @@ namespace QDP {
 
     llvm_bar_sync();
 
-    llvm::BasicBlock * entry_block = llvm_get_insert_block();
-
     llvm::Value* r_pow_shr1 = llvm_shr( r_ntidx , llvm_create_value(1) );
 
     //
@@ -348,18 +336,13 @@ namespace QDP {
     // -------------------
     //
 
-    
-    llvm::BasicBlock * block_store_global = llvm_new_basic_block();
-    llvm::BasicBlock * block_not_store_global = llvm_new_basic_block();
-    llvm_cond_branch( llvm_eq( r_tidx , llvm_create_value(0) ) , 
-		      block_store_global , 
-		      block_not_store_global );
-    llvm_set_insert_point(block_store_global);
-    typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_reg;   
-    sdata_reg.setup( sdata_jit );
-    odata.elem( JitDeviceLayout::Scalar , r_block_idx ) = sdata_reg;
-    llvm_branch( block_not_store_global );
-    llvm_set_insert_point(block_not_store_global);
+    JitIf ifStore( llvm_eq( r_tidx , llvm_create_value(0) ) );
+    {
+      typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_reg;   
+      sdata_reg.setup( sdata_jit );
+      odata.elem( JitDeviceLayout::Scalar , r_block_idx ) = sdata_reg;
+    }
+    ifStore.end();
 
     return jit_function_epilogue_get_cuf("jit_sum.ptx" , __PRETTY_FUNCTION__ );
   }
@@ -426,8 +409,7 @@ namespace QDP {
 
     llvm_bar_sync();
 
-    llvm::BasicBlock * entry_block = llvm_get_insert_block();
-    
+
     llvm::Value* r_pow_shr1 = llvm_shr( r_ntidx , llvm_create_value(1) );
 
     //
@@ -464,17 +446,13 @@ namespace QDP {
     // -------------------
     //
 
-    llvm::BasicBlock * block_store_global = llvm_new_basic_block();
-    llvm::BasicBlock * block_not_store_global = llvm_new_basic_block();
-    llvm_cond_branch( llvm_eq( r_tidx , llvm_create_value(0) ) , 
-		      block_store_global , 
-		      block_not_store_global );
-    llvm_set_insert_point(block_store_global);
-    typename REGType< typename JITType<T2>::Type_t >::Type_t sdata_reg;   
-    sdata_reg.setup( sdata_jit );
-    odata.elem( JitDeviceLayout::Scalar , r_block_idx ) = sdata_reg;
-    llvm_branch( block_not_store_global );
-    llvm_set_insert_point(block_not_store_global);
+    JitIf ifStore( llvm_eq( r_tidx , llvm_create_value(0) ) );
+    {
+      typename REGType< typename JITType<T2>::Type_t >::Type_t sdata_reg;   
+      sdata_reg.setup( sdata_jit );
+      odata.elem( JitDeviceLayout::Scalar , r_block_idx ) = sdata_reg;
+    }
+    ifStore.end();
 
     return jit_function_epilogue_get_cuf("jit_sum_ind.ptx" , __PRETTY_FUNCTION__ );
   }
@@ -539,10 +517,7 @@ namespace QDP {
 
     llvm_bar_sync();
 
-    llvm::BasicBlock * entry_block = llvm_get_insert_block();
-
     llvm::Value* r_pow_shr1 = llvm_shr( r_ntidx , llvm_create_value(1) );
-
 
     //
     // Reduction loop
@@ -578,18 +553,13 @@ namespace QDP {
     // -------------------
     //
 
-    
-    llvm::BasicBlock * block_store_global = llvm_new_basic_block();
-    llvm::BasicBlock * block_not_store_global = llvm_new_basic_block();
-    llvm_cond_branch( llvm_eq( r_tidx , llvm_create_value(0) ) , 
-		      block_store_global , 
-		      block_not_store_global );
-    llvm_set_insert_point(block_store_global);
-    typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_reg;   
-    sdata_reg.setup( sdata_jit );
-    odata.elem( JitDeviceLayout::Scalar , r_block_idx ) = sdata_reg;
-    llvm_branch( block_not_store_global );
-    llvm_set_insert_point(block_not_store_global);
+    JitIf ifStore( llvm_eq( r_tidx , llvm_create_value(0) ) );
+    {
+      typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_reg;   
+      sdata_reg.setup( sdata_jit );
+      odata.elem( JitDeviceLayout::Scalar , r_block_idx ) = sdata_reg;
+    }
+    ifStore.end();
 
     return jit_function_epilogue_get_cuf("jit_sum.ptx" , __PRETTY_FUNCTION__ );
   }

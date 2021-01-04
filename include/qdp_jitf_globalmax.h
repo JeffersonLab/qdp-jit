@@ -35,17 +35,13 @@ namespace QDP {
     OLatticeJIT<typename JITType<T1>::Type_t> idata(  p_idata );   // want coal   access later
     OLatticeJIT<typename JITType<T1>::Type_t> odata(  p_odata );   // want scalar access later
 
-    //llvm::Value* r_lo     = llvm_derefParam( p_lo );
     llvm_derefParam( p_lo );
     llvm::Value* r_hi     = llvm_derefParam( p_hi );
 
     llvm::Value* r_idx = llvm_thread_idx();   
-    // llvm_cond_exit( llvm_ge( r_idx , r_hi ) );  // We can't exit, because we have to initialize shared data
 
     llvm_derefParam( p_idata );  // Input  array
     llvm_derefParam( p_odata );  // output array
-    /* llvm::Value* r_idata      = llvm_derefParam( p_idata );  // Input  array */
-    /* llvm::Value* r_odata      = llvm_derefParam( p_odata );  // output array */
 
     llvm::Value* r_shared = llvm_get_shared_ptr( llvm_type<WT>::value );
 
@@ -55,111 +51,81 @@ namespace QDP {
 
     llvm::Value* r_block_idx  = llvm_call_special_ctaidx();
     llvm::Value* r_tidx       = llvm_call_special_tidx();
-    llvm::Value* r_ntidx       = llvm_call_special_ntidx(); // needed later
+    llvm::Value* r_ntidx       = llvm_call_special_ntidx();
 
     typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_elem;
-    reg_idata_elem.setup( idata.elem( JitDeviceLayout::Scalar , r_idx ) ); // GlobalMax only on scalar types
+    reg_idata_elem.setup( idata.elem( JitDeviceLayout::Scalar , r_idx ) );
 
-    // We use the 1st element of the input array
-    // to fill out the shared memory at the index
-    // positions that reach out
     typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_1st_elem;
     reg_idata_1st_elem.setup( idata.elem( JitDeviceLayout::Scalar , llvm_create_value(0) ) ); 
 
     IndexDomainVector args;
-    args.push_back( make_pair( Layout::sitesOnNode() , r_tidx ) );  // sitesOnNode irrelevant since Scalar access later
+    args.push_back( make_pair( Layout::sitesOnNode() , r_tidx ) );
 
     T1JIT sdata_jit;
     sdata_jit.setup( r_shared , JitDeviceLayout::Scalar , args );
 
-    llvm::BasicBlock * block_zero = llvm_new_basic_block();
-    llvm::BasicBlock * block_not_zero = llvm_new_basic_block();
-    llvm::BasicBlock * block_zero_exit = llvm_new_basic_block();
-    llvm_cond_branch( llvm_ge( r_idx , r_hi ) , block_zero , block_not_zero );
+    
+
+    JitIf ifInitFirst( llvm_ge( r_idx , r_hi ) );
     {
-      llvm_set_insert_point(block_zero);
       sdata_jit = reg_idata_1st_elem;
-      llvm_branch( block_zero_exit );
     }
+    ifInitFirst.els();
     {
-      llvm_set_insert_point(block_not_zero);
       sdata_jit = reg_idata_elem;
-      llvm_branch( block_zero_exit );
     }
-    llvm_set_insert_point(block_zero_exit);
+    ifInitFirst.end();
 
     llvm_bar_sync();
 
     llvm::Value* r_pow_shr1 = llvm_shr( r_ntidx , llvm_create_value(1) );
 
     //
-    // Shared memory maximizing loop
+    // Reduction loop
     //
-    llvm::BasicBlock * block_red_loop_start = llvm_new_basic_block();
-    llvm::BasicBlock * block_red_loop_start_1 = llvm_new_basic_block();
-    llvm::BasicBlock * block_red_loop_start_2 = llvm_new_basic_block();
-    llvm::BasicBlock * block_red_loop_add = llvm_new_basic_block();
-    llvm::BasicBlock * block_red_loop_sync = llvm_new_basic_block();
-    llvm::BasicBlock * block_red_loop_end = llvm_new_basic_block();
+    JitForLoopPower loop( r_pow_shr1 );
+    {
+      JitIf ifInRange( llvm_lt( r_tidx , loop.index() ) );
+      {
+	llvm::Value * v = llvm_add( loop.index() , r_tidx );
 
-    llvm_branch( block_red_loop_start );
-    llvm_set_insert_point(block_red_loop_start);
-    
-    llvm::PHINode * r_red_pow = llvm_phi( llvm_type<int>::value , 2 );    
-    r_red_pow->addIncoming( r_pow_shr1 , block_zero_exit );
-    llvm_cond_branch( llvm_le( r_red_pow , llvm_create_value(0) ) , block_red_loop_end , block_red_loop_start_1 );
+	JitIf ifInRange2( llvm_lt( v , r_ntidx ) );
+	{
+	  IndexDomainVector args_new;
+	  args_new.push_back( make_pair( Layout::sitesOnNode() , 
+					 llvm_add( r_tidx , loop.index() ) ) );  // sitesOnNode irrelevant since Scalar access later
 
-    llvm_set_insert_point(block_red_loop_start_1);
+	  typename JITType<T1>::Type_t sdata_jit_plus;
+	  sdata_jit_plus.setup( r_shared , JitDeviceLayout::Scalar , args_new );
 
-    llvm_cond_branch( llvm_ge( r_tidx , r_red_pow ) , block_red_loop_sync , block_red_loop_start_2 );
+	  typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_reg_plus;
+	  sdata_reg_plus.setup( sdata_jit_plus );
 
-    llvm_set_insert_point(block_red_loop_start_2);
+	  typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_reg;   
+	  sdata_reg.setup( sdata_jit );
 
-    llvm::Value * v = llvm_add( r_red_pow , r_tidx ); // target index to compare index r_tidx with
-    llvm_cond_branch( llvm_ge( v , r_ntidx ) , block_red_loop_sync , block_red_loop_add );
+	  sdata_jit = where( sdata_reg > sdata_reg_plus , sdata_reg , sdata_reg_plus );
+	}
+	ifInRange2.end();
+      }
+      ifInRange.end();
 
-    llvm_set_insert_point(block_red_loop_add);
+      llvm_bar_sync();
+    }
+    loop.end();
+    //
+    // -------------------
+    //
 
+    JitIf ifStore( llvm_eq( r_tidx , llvm_create_value(0) ) );
+    {
+      typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_reg;   
+      sdata_reg.setup( sdata_jit );
 
-    IndexDomainVector args_new;
-    args_new.push_back( make_pair( Layout::sitesOnNode(),v ) );  // sitesOnNode irrelevant since Scalar access later
-
-    typename JITType<T1>::Type_t sdata_jit_plus;
-    sdata_jit_plus.setup( r_shared , JitDeviceLayout::Scalar , args_new );
-
-    typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_reg_plus;    
-    sdata_reg_plus.setup( sdata_jit_plus );
-
-    typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_reg;   
-    sdata_reg.setup( sdata_jit );
-
-    sdata_jit = where( sdata_reg > sdata_reg_plus , sdata_reg , sdata_reg_plus );
-
-    //sdata_jit += sdata_reg_plus;
-
-
-    llvm_branch( block_red_loop_sync );
-
-    llvm_set_insert_point(block_red_loop_sync);
-    llvm_bar_sync();
-    llvm::Value* pow_1 = llvm_shr( r_red_pow , llvm_create_value(1) );
-    r_red_pow->addIncoming( pow_1 , block_red_loop_sync );
-
-    llvm_branch( block_red_loop_start );
-
-    llvm_set_insert_point(block_red_loop_end);
-
-    llvm::BasicBlock * block_store_global = llvm_new_basic_block();
-    llvm::BasicBlock * block_not_store_global = llvm_new_basic_block();
-    llvm_cond_branch( llvm_eq( r_tidx , llvm_create_value(0) ) , 
-		      block_store_global , 
-		      block_not_store_global );
-    llvm_set_insert_point(block_store_global);
-
-    sdata_reg.setup( sdata_jit );
-    odata.elem( JitDeviceLayout::Scalar , r_block_idx ) = sdata_reg;
-    llvm_branch( block_not_store_global );
-    llvm_set_insert_point(block_not_store_global);
+      odata.elem( JitDeviceLayout::Scalar , r_block_idx ) = sdata_reg;
+    }
+    ifStore.end();
 
     return jit_function_epilogue_get_cuf("jit_max.ptx" , __PRETTY_FUNCTION__ );
   }
