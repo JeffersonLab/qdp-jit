@@ -45,9 +45,7 @@ namespace QDP {
 
     copymask( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ) , mask_reg , src_reg );
 
-    llvm_exit();
-
-    return llvm_get_cufunction("jit_copymask.ptx", __PRETTY_FUNCTION__ );
+    return jit_function_epilogue_get_cuf("jit_copymask.ptx", __PRETTY_FUNCTION__ );
   }
 
 
