@@ -9,13 +9,8 @@ namespace QDP {
 
   enum class JitResult { JitSuccess , JitError , JitResource };
 
-  std::vector<unsigned> get_backed_kernel_geom();
-  JitFunction            get_backed_kernel_ptr();
-
-  //void CudaCheckResult(CUresult ret);
 
   void CudaInit();
-  //int CudaGetConfig(CUdevice_attribute what);
   int CudaGetConfig(int what);
   void CudaGetSM(int* maj,int* min);
 
@@ -37,8 +32,6 @@ namespace QDP {
   int CudaAttributeLocalSize( JitFunction f );
   int CudaAttributeConstSize( JitFunction f );
 
-  bool CudaHostRegister(void * ptr , size_t size);
-  void CudaHostUnregister(void * ptr );
   void CudaMemGetInfo(size_t *free,size_t *total);
 
   bool CudaHostAlloc(void **mem , const size_t size, const int flags);

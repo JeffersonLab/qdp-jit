@@ -79,8 +79,6 @@ namespace QDP
   void QDPPoolAllocator<Allocator>::registerMemory() {
       if (!bufferAllocated)
 	allocateInternalBuffer();
-      //QDP_info_primary("Pool allocator: Registering memory pool with NVIDIA driver (%lu bytes)",(unsigned long)bytes_allocated);
-      CudaHostRegister(unaligned,bytes_allocated);
     }
 
 
@@ -89,8 +87,6 @@ namespace QDP
       if (!bufferAllocated) {
 	QDP_error_exit("pool unregisterMemory: not allocated");
       }
-      QDP_info_primary("Pool allocator: Unregistering memory pool with NVIDIA driver");
-      CudaHostUnregister(unaligned);
     }
 
 

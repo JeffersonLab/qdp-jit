@@ -115,14 +115,6 @@ namespace QDP {
   }
 
 
-  namespace {
-    std::vector<unsigned> __kernel_geom;
-    JitFunction            __kernel_ptr;
-  }
-
-  std::vector<unsigned> get_backed_kernel_geom() { return __kernel_geom; }
-  JitFunction            get_backed_kernel_ptr() { return __kernel_ptr; }
-
 
   JitResult CudaLaunchKernelNoSync( JitFunction f, 
 				    unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
@@ -308,6 +300,8 @@ namespace QDP {
 
     QDPIO::cout << "  GPU memory (free,total)             : " << free/1024/1024 << "/" << total/1024/1024 << " MB\n";
 
+    QDPIO::cout << "GPU memory pool \n";
+    
     if (!setPoolSize) {
 
       size_t val = (size_t)((double)(0.90) * (double)free);
@@ -329,7 +323,7 @@ namespace QDP {
       }
       int val_min_int = (int)val_min;
 
-      QDPIO::cout << "  GPU memory pool set to (autodetect) : " << (int)val_min_int << " MB\n";
+      QDPIO::cout << "  size (using 90% rule)               : " << (int)val_min_int << " MB\n";
       
       //CUDADevicePoolAllocator::Instance().setPoolSize( ((size_t)val_min_int) * 1024 * 1024 );
       QDP_get_global_cache().setPoolSize( ((size_t)val_min_int) * 1024 * 1024 );
@@ -338,7 +332,7 @@ namespace QDP {
     } else {
       //QDP_info_primary("Using device pool size: %d MiB",(int)(CUDADevicePoolAllocator::Instance().getPoolSize()/1024/1024));
       //QDP_info_primary("Using device pool size: %d MiB",(int)(QDP_get_global_cache().getPoolSize()/1024/1024));
-      QDPIO::cout << "  GPU memory pool set to (per user request) : " << (int)(QDP_get_global_cache().getPoolSize()/1024/1024) << " MB\n";
+      QDPIO::cout << "  size (user request)                 : " << (int)(QDP_get_global_cache().getPoolSize()/1024/1024) << " MB\n";
     }
 
 
@@ -354,24 +348,6 @@ namespace QDP {
   }
 
 
-  bool CudaHostRegister(void * ptr , size_t size)
-  {
-    CUresult ret;
-    int flags = 0;
-    QDP_info_primary("CUDA host register ptr=%p (%u) size=%lu (%u)",ptr,(unsigned)((size_t)ptr%4096) ,(unsigned long)size,(unsigned)((size_t)size%4096));
-    ret = cuMemHostRegister(ptr, size, flags);
-    CudaRes("cuMemHostRegister",ret);
-    return true;
-  }
-
-  
-  void CudaHostUnregister(void * ptr )
-  {
-    CUresult ret;
-    ret = cuMemHostUnregister(ptr);
-    CudaRes("cuMemHostUnregister",ret);
-  }
-  
 
   bool CudaHostAlloc(void **mem , const size_t size, const int flags)
   {
@@ -588,7 +564,7 @@ namespace QDP {
     
     QDPIO::cout << "GPU autodetect\n";
     QDPIO::cout << "  Compute capability (major,minor)    : " << major << "," << minor << "\n";
-    QDPIO::cout << "  Shared memory (bytes)               : " << smem  << "\n";
+    QDPIO::cout << "  Shared memory                       : " << smem/1024  << " KB\n";
     QDPIO::cout << "  Max grid  (x,y,z)                   : (" << max_gridx << "," << max_gridy << "," << max_gridz << ")\n";
     QDPIO::cout << "  Max block (x,y,z)                   : (" << max_blockx << "," << max_blocky << "," << max_blockz << ")\n";
   }
