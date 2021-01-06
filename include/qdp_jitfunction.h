@@ -190,10 +190,14 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 				    );
 
   JitIf ordered(r_ordered);
-  llvm_cond_exit( llvm_gt( r_idx , r_end ) );
-  llvm_cond_exit( llvm_lt( r_idx , r_start ) );
+  {
+    llvm_cond_exit( llvm_gt( r_idx , r_end ) );
+    llvm_cond_exit( llvm_lt( r_idx , r_start ) );
+  }
   ordered.els();
-  llvm_cond_exit( llvm_not( llvm_array_type_indirection( p_member_array , r_idx ) ) ); 
+  {
+    llvm_cond_exit( llvm_not( llvm_array_type_indirection( p_member_array , r_idx ) ) );
+  }
   ordered.end();
   
 
@@ -616,7 +620,9 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
   llvm::Value * r_save = llvm_eq( r_idx_thread , llvm_create_value(0) );
 
   JitIf save(r_save);
-  seed_tmp_jit.elem() = seed_reg;
+  {
+    seed_tmp_jit.elem() = seed_reg;
+  }
   save.end();
   
   return jit_function_epilogue_get_cuf("jit_random.ptx" , __PRETTY_FUNCTION__ );

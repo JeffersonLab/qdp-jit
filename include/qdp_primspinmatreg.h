@@ -1788,19 +1788,21 @@ quarkContract13(const PSpinMatrixREG<T1,4>& s1, const PSpinMatrixREG<T2,4>& s2)
   JitStackMatrix< T_return , 4 > d_a;
   
   JitForLoop loop_j(0,4);
-
-  JitForLoop loop_i(0,4);
-
-  d_a.elemJIT( loop_i.index() , loop_j.index() ) = quarkContractXX( s1_a.elemREG( llvm_create_value(0) , loop_i.index() ) ,
-								    s2_a.elemREG( llvm_create_value(0) , loop_j.index() ) );
-
-  JitForLoop loop_k(1,4);
-
-  d_a.elemJIT( loop_i.index() , loop_j.index() ) += quarkContractXX( s1_a.elemREG( loop_k.index() , loop_i.index() ) ,
-  								     s2_a.elemREG( loop_k.index() , loop_j.index() ) );
-
-  loop_k.end();
-  loop_i.end();
+  {
+    JitForLoop loop_i(0,4);
+    {
+      d_a.elemJIT( loop_i.index() , loop_j.index() ) = quarkContractXX( s1_a.elemREG( llvm_create_value(0) , loop_i.index() ) ,
+									s2_a.elemREG( llvm_create_value(0) , loop_j.index() ) );
+      
+      JitForLoop loop_k(1,4);
+      {
+	d_a.elemJIT( loop_i.index() , loop_j.index() ) += quarkContractXX( s1_a.elemREG( loop_k.index() , loop_i.index() ) ,
+									   s2_a.elemREG( loop_k.index() , loop_j.index() ) );
+      }
+      loop_k.end();
+    }
+    loop_i.end();
+  }
   loop_j.end();
   
   for(int i=0; i < 4; ++i)

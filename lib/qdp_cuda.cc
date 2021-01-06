@@ -436,7 +436,7 @@ namespace QDP {
 
 
 
-
+#if 0
   JitFunction get_fptr_from_ptx( const char* fname , const std::string& kernel )
   {
     JitFunction func;
@@ -476,6 +476,33 @@ namespace QDP {
     if (ret)
       QDP_error_exit("Error returned from cuModuleGetFunction. Abort.");
 
+    mapCUFuncPTX[func.getFunction()] = kernel;
+
+    return func;
+  }
+#endif
+
+
+
+  JitFunction get_jitf( const std::string& kernel , const std::string& func_name )
+  {
+    JitFunction func;
+    CUresult ret;
+    CUmodule cuModule;
+
+    ret = cuModuleLoadData(&cuModule, (const void *)kernel.c_str());
+
+    if (ret != CUDA_SUCCESS) {
+      QDPIO::cerr << "Error loading external data.\n";
+      QDP_abort(1);
+    }
+
+    ret = cuModuleGetFunction( (CUfunction*)&func.getFunction(), cuModule, func_name.c_str() );
+    if (ret != CUDA_SUCCESS) {
+      QDPIO::cerr << "Error getting function.";
+      QDP_abort(1);
+    }
+    
     mapCUFuncPTX[func.getFunction()] = kernel;
 
     return func;

@@ -54,7 +54,9 @@ namespace QDP {
 
   void CudaMemset( void * dest , unsigned val , size_t N );
 
-  JitFunction get_fptr_from_ptx( const char* fname , const std::string& kernel );
+  //JitFunction get_fptr_from_ptx( const char* fname , const std::string& kernel );
+  JitFunction get_jitf( const std::string& kernel , const std::string& func_name );
+
   std::string getPTXfromCUFunc(JitFunction f);
 
 

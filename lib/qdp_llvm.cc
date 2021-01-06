@@ -136,7 +136,8 @@ namespace QDP {
 
     if ( it != ptx_db::db.end() )
       {
-	return get_fptr_from_ptx( "generic.ptx" , it->second );
+	//return get_fptr_from_ptx( "generic.ptx" , it->second );
+	return get_jitf( it->second , "main" );
       }
     else
       {
@@ -1042,20 +1043,16 @@ namespace QDP {
 
 
   void addKernelMetadata(llvm::Function *F) {
-    llvm::Module *M = F->getParent();
-    llvm::LLVMContext &Ctx = M->getContext();
+    auto i32_t = llvm::Type::getInt32Ty(TheContext);
+    
+    llvm::Metadata *md_args[] = {
+      llvm::ValueAsMetadata::get(F),
+      MDString::get(TheContext, "kernel"),
+      llvm::ValueAsMetadata::get(ConstantInt::get(i32_t, 1))};
 
-    // Get "nvvm.annotations" metadata node
-    llvm::NamedMDNode *MD = M->getOrInsertNamedMetadata("nvvm.annotations");
+    MDNode *md_node = MDNode::get(TheContext, md_args);
 
-    // Create !{<func-ref>, metadata !"kernel", i32 1} node
-    llvm::SmallVector<llvm::Metadata *, 3> MDVals;
-    MDVals.push_back(llvm::ValueAsMetadata::get(F));
-    MDVals.push_back(llvm::MDString::get(Ctx, "kernel"));
-    MDVals.push_back(llvm::ValueAsMetadata::get(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), 1)));    //ConstantAsMetadata::get
-
-    // Append metadata to nvvm.annotations
-    MD->addOperand(llvm::MDNode::get(Ctx, MDVals));
+    Mod->getOrInsertNamedMetadata("nvvm.annotations")->addOperand(md_node);
   }
 
 
@@ -1132,103 +1129,70 @@ namespace QDP {
 
     //  } // ann. namespace
 
-  void optimize_module( std::unique_ptr< llvm::TargetMachine >& TM )
-  {
-    //QDPIO::cout << "optimize module...\n";
-    
-    llvm::legacy::PassManager Passes;
 
-    llvm::Triple ModuleTriple(Mod->getTargetTriple());
-
-    llvm::TargetLibraryInfoImpl TLII(ModuleTriple);
-
-    Passes.add(new llvm::TargetLibraryInfoWrapperPass(TLII));
-
-    Passes.add(createTargetTransformInfoWrapperPass( TM->getTargetIRAnalysis() ) );
-
-    std::unique_ptr<llvm::legacy::FunctionPassManager> FPasses;
-
-    FPasses.reset(new llvm::legacy::FunctionPassManager(Mod.get()));
-    FPasses->add(createTargetTransformInfoWrapperPass( TM->getTargetIRAnalysis() ) );
-
-    //QDPIO::cout << "no optimization passes!!\n";
-    AddOptimizationPasses(Passes, *FPasses, TM.get(), llvm_opt::opt_level , 0);
-
-    if (FPasses) {
-      FPasses->doInitialization();
-      for (llvm::Function &F : *Mod)
-	FPasses->run(F);
-      FPasses->doFinalization();
+  namespace {
+    bool all_but_main(const llvm::GlobalValue & gv)
+    {
+      return gv.getName().str() == "main";
     }
-
-    Passes.add(llvm::createVerifierPass());
-
-    Passes.run(*Mod);
   }
-  
 
-  std::string get_PTX_from_Module_using_llvm()
+
+
+  std::string get_ptx()
   {
-    //QDPIO::cout << "get PTX using NVPTC..\n";
+    std::string str_triple("nvptx64-nvidia-cuda");
 
-    llvm::Triple triple("nvptx64-nvidia-cuda");
+    
+    llvm::Triple triple(str_triple);
       
     std::string Error;
+    
     const llvm::Target *TheTarget = llvm::TargetRegistry::lookupTarget( "", triple, Error);
     if (!TheTarget) {
       llvm::errs() << "Error looking up target: " << Error;
       exit(1);
     }
 
-    //#if defined (QDP_LLVM11)
-    llvm::TargetOptions Options;
-    //#else
-    //llvm::TargetOptions Options = InitTargetOptionsFromCodeGenFlags();
-    //#endif
+
+    llvm::TargetOptions options;
 
     auto major = gpu_getMajor();
     auto minor = gpu_getMinor();
 
-    std::ostringstream oss;
-    oss << "sm_" << major * 10 + minor;
-
-    std::string compute = oss.str();
+    std::string str_compute( "sm_" + std::to_string( major * 10 + minor ) );
 
 
     std::unique_ptr<llvm::TargetMachine> target_machine(TheTarget->createTargetMachine(
-										       "nvptx64-nvidia-cuda",
-										       compute,
+										       triple.str(),
+										       str_compute,
 										       "",
-										       llvm::TargetOptions(),
-										       //#if defined (QDP_LLVM11)
+										       options,
 										       Reloc::PIC_,
-										       //#else
-										       //getRelocModel(),
-										       //#endif
 										       None,
 										       llvm::CodeGenOpt::Aggressive, true ));
 
-    assert(target_machine.get() && "Could not allocate target machine!");
+    if (!target_machine)
+      {
+	QDPIO::cerr << "Could not create LLVM target machine\n";
+	QDP_abort(1);
+      }
 
-    //QDPIO::cout << "target machine cpu:     " << target_machine->getTargetCPU().str() << "\n";
-    //QDPIO::cout << "target machine feature: " << target_machine->getTargetFeatureString().str() << "\n";
- 
-
-    llvm::legacy::PassManager PM;
-    Mod->setTargetTriple( "nvptx64-nvidia-cuda" );
-
-    llvm::TargetLibraryInfoImpl TLII(Triple(Mod->getTargetTriple()));
-    PM.add(new TargetLibraryInfoWrapperPass(TLII));
-    //PM.add(new llvm::TargetLibraryInfoWrapperPass(llvm::Triple(Mod->getTargetTriple())));
-
+    
+    Mod->setTargetTriple( triple.str() );
     Mod->setDataLayout(target_machine->createDataLayout());
 
-
-    //QDPIO::cout << "BEFORE OPT ---------------\n";
-    //llvm_module_dump();
     
-    optimize_module( target_machine );
+    llvm::legacy::PassManager PM;
+    PM.add( llvm::createInternalizePass( all_but_main ) );
+    unsigned int sm_gpu = gpu_getMajor() * 10 + gpu_getMinor();
+    PM.add( llvm::createNVVMReflectPass( sm_gpu ));
 
+    PM.add( llvm::createGlobalDCEPass() );
+    
+    PM.run(*Mod);
+
+    
     //QDPIO::cout << "AFTER OPT ---------------\n";
     //llvm_module_dump();
 
@@ -1245,7 +1209,75 @@ namespace QDP {
     
     PM.run(*Mod);
 
-    return bos.str().str();
+    std::string ptx = bos.str().str();
+
+#if 0
+    {
+      std::string ptxpath = "kernel.ptx";
+      std::string sasspath = "kernel.sass";
+      
+      std::ofstream f(ptxpath);
+      f << ptx;
+      //f.write(buffer.data(), buffer.size());
+      f.close();
+
+      FILE *fp;
+      char buf[1024];
+
+      string cmd = "ptxas -v --gpu-name " + str_compute + " " + ptxpath + " -o " + sasspath + " 2>&1";
+      
+      fp = popen( cmd.c_str() , "r" );
+      
+      if (fp == NULL) {
+	QDPIO::cerr << "Failed to run command via popen\n";
+	QDP_abort(1);
+      }
+
+      std::ostringstream output;
+      while (fgets(buf, sizeof(buf), fp) != NULL) {
+	output << buf;
+      }
+      
+      pclose(fp);
+
+      std::istringstream iss(output.str());
+
+      std::vector<std::string> words;
+      std::copy(istream_iterator<string>(iss),
+		istream_iterator<string>(),
+		std::back_inserter(words));
+
+      if ( words.size() < 32 )
+	{
+	  QDPIO::cerr << "Couldn't read all tokens (output of ptxas as changed?)\n";
+	  QDP_abort(1);
+	}
+
+      int kernel_stack = std::atoi( words[22].c_str() );
+      int kernel_spill_store = std::atoi( words[26].c_str() );
+      int kernel_spill_loads = std::atoi( words[30].c_str() );
+      int kernel_regs = std::atoi( words[38].c_str() );
+      int kernel_cmem = std::atoi( words[40].c_str() );
+
+      QDPIO::cout << "----- Kernel stats ------\n";
+      QDPIO::cout << "kernel_stack       = "<< kernel_stack << "\n";
+      QDPIO::cout << "kernel_spill_store = "<< kernel_spill_store << "\n";
+      QDPIO::cout << "kernel_spill_loads = "<< kernel_spill_loads << "\n";
+      QDPIO::cout << "kernel_regs        = "<< kernel_regs << "\n";
+      QDPIO::cout << "kernel_cmem        = "<< kernel_cmem << "\n";
+      
+#if 0      
+      string cmd = "ptxas --gpu-name " + compute + " " + ptxpath + " -o " + sasspath;
+      if (system(cmd.c_str()) == 0) {
+	cmd = "nvdisasm " + sasspath;
+	int ret = system(cmd.c_str());
+	(void)ret;  // Don't care if it fails
+      }
+#endif
+    }
+#endif
+    
+    return ptx;
   }
 
 
@@ -1287,11 +1319,6 @@ namespace QDP {
 
 
 
-  bool all_but_main(const llvm::GlobalValue & gv)
-  {
-    return gv.getName().str() == "main";
-  }
-
 
 
   void llvm_module_dump()
@@ -1304,54 +1331,6 @@ namespace QDP {
 
   
 
-  std::string llvm_get_ptx_kernel(const char* fname)
-  {
-    llvm::StringMap<int> Mapping;
-    Mapping["__CUDA_FTZ"] = llvm_opt::nvptx_FTZ;
-
-    llvm::legacy::PassManager OurPM;
-    OurPM.add( llvm::createInternalizePass( all_but_main ) );
-    unsigned int sm_gpu = gpu_getMajor() * 10 + gpu_getMinor();
-    OurPM.add( llvm::createNVVMReflectPass( sm_gpu ));
-
-    
-    OurPM.run( *Mod );
-
-    llvm::legacy::PassManager PM;
-    PM.add( llvm::createGlobalDCEPass() );
-    PM.run( *Mod );
-
-
-    //QDPIO::cout << "------------------------------------------------ new module\n";
-    //llvm_module_dump();
-    //QDPIO::cout << "--------------------------------------------------------------\n";
-
-    std::string str = get_PTX_from_Module_using_llvm();
-
-#if 0
-    // Write PTX string to file
-    std::ofstream ptxfile;
-    ptxfile.open ( fname );
-    ptxfile << str << "\n";
-    ptxfile.close();
-#endif
-
-#if 0
-    // Read PTX string from file
-    std::ifstream ptxfile(fname);
-    std::stringstream buffer;
-    buffer << ptxfile.rdbuf();
-    ptxfile.close();
-    str = buffer.str();
-#endif
-
-
-    return str;
-  }
-
-
-
-
 
   JitFunction llvm_get_cufunction(const char* fname, const char* pretty_cstr)
   {
@@ -1359,21 +1338,17 @@ namespace QDP {
 
     std::string pretty( pretty_cstr );
 
-    // llvm::FunctionType *funcType = mainFunc->getFunctionType();
-    // funcType->dump();
 
-    std::string ptx_kernel = llvm_get_ptx_kernel(fname);
+    std::string ptx_kernel = get_ptx();
 
-    JitFunction func = get_fptr_from_ptx( fname , ptx_kernel );
+    //JitFunction func = get_fptr_from_ptx( fname , ptx_kernel );
+    JitFunction func = get_jitf( ptx_kernel , "main" );
 
     if ( ptx_db::db_enabled ) {
 
       if (Layout::primaryNode())
 	{
 	  std::string id = get_ptx_db_id( pretty );
-
-	  // Add kernel
-	  //QDPIO::cout << "llvm_get_cufunction: add kernel for id = " << id << "\n";
 
 	  if ( ptx_db::db.find( id ) != ptx_db::db.end() ) {
 	    QDPIO::cout << "internal error: key already exists in DB but wasn't found before\n" << id << "\n";
@@ -1382,10 +1357,6 @@ namespace QDP {
 
 	  ptx_db::db[ id ] = ptx_kernel;
 
-	  // Store DB
-	  //QDPIO::cout << "storing PTX DB " << ptx_db::dbname << "\n";
-
-	  // Simple minded, but enough for writing out only from a single node
 	  std::ofstream db;
 	  db.open ( ptx_db::dbname , ios::out | ios::binary );
 	  for ( ptx_db::DBType::iterator it = ptx_db::db.begin() ; it != ptx_db::db.end() ; ++it ) 
