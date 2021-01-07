@@ -14,7 +14,7 @@ function_gaussian_build(OLattice<T>& dest ,OLattice<T>& r1 ,OLattice<T>& r2 )
       return func;
   }
 
-  std::vector<ParamRef> params = jit_function_preamble_param();
+  std::vector<ParamRef> params = jit_function_preamble_param("gaussian",__PRETTY_FUNCTION__);
 
   ParamLeaf param_leaf;
 
@@ -33,7 +33,7 @@ function_gaussian_build(OLattice<T>& dest ,OLattice<T>& r1 ,OLattice<T>& r2 )
 
   fill_gaussian( dest_jit.elem(JitDeviceLayout::Coalesced , r_idx ) , r1_reg , r2_reg );
 
-  return jit_function_epilogue_get_cuf("jit_gaussian.ptx" , __PRETTY_FUNCTION__ );
+  return jit_get_function();
 }
 
 

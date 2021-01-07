@@ -34,7 +34,7 @@ namespace QDP {
 	return func;
     }
 
-    llvm_start_new_function();
+    llvm_start_new_function("summulti_convert_ind",__PRETTY_FUNCTION__ );
 
     typedef typename WordType<T1>::Type_t T1WT;
     typedef typename WordType<T2>::Type_t T2WT;
@@ -53,7 +53,7 @@ namespace QDP {
     llvm_derefParam( p_idata );  // Input  array
     llvm_derefParam( p_odata );  // output array
 
-    llvm::Value* r_shared = llvm_get_shared_ptr( llvm_type<T2WT>::value );
+    llvm::Value* r_shared = llvm_get_shared_ptr( llvm_get_type<T2WT>() );
 
     typedef typename JITType<T2>::Type_t T2JIT;
 
@@ -146,8 +146,7 @@ namespace QDP {
     }
     loop_subset.end();
 
-    
-    return jit_function_epilogue_get_cuf("jit_summulti_ind.ptx" , __PRETTY_FUNCTION__ );
+    return jit_get_function();
   }
 
 
@@ -164,7 +163,7 @@ namespace QDP {
 	return func;
     }
 
-    llvm_start_new_function();
+    llvm_start_new_function("summulti",__PRETTY_FUNCTION__ );
 
     typedef typename WordType<T>::Type_t TWT;
 
@@ -181,7 +180,7 @@ namespace QDP {
     llvm_derefParam( p_idata );  // Input  array
     llvm_derefParam( p_odata );  // output array
 
-    llvm::Value* r_shared = llvm_get_shared_ptr( llvm_type<TWT>::value );
+    llvm::Value* r_shared = llvm_get_shared_ptr( llvm_get_type<TWT>() );
 
     typedef typename JITType<T>::Type_t TJIT;
 
@@ -274,7 +273,7 @@ namespace QDP {
     loop_subset.end();
 
     
-    return jit_function_epilogue_get_cuf("jit_summulti_ind.ptx" , __PRETTY_FUNCTION__ );
+    return jit_get_function();
   }
 
 

@@ -22,7 +22,7 @@ namespace QDP {
 	return func;
     }
 
-    llvm_start_new_function();
+    llvm_start_new_function("global_max",__PRETTY_FUNCTION__ );
 
     ParamRef p_lo     = llvm_add_param<int>();
     ParamRef p_hi     = llvm_add_param<int>();
@@ -43,7 +43,7 @@ namespace QDP {
     llvm_derefParam( p_idata );  // Input  array
     llvm_derefParam( p_odata );  // output array
 
-    llvm::Value* r_shared = llvm_get_shared_ptr( llvm_type<WT>::value );
+    llvm::Value* r_shared = llvm_get_shared_ptr( llvm_get_type<WT>() );
 
 
     typedef typename JITType<T1>::Type_t T1JIT;
@@ -127,7 +127,7 @@ namespace QDP {
     }
     ifStore.end();
 
-    return jit_function_epilogue_get_cuf("jit_max.ptx" , __PRETTY_FUNCTION__ );
+    return jit_get_function();
   }
 
 

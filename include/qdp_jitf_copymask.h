@@ -14,7 +14,7 @@ namespace QDP {
 	return func;
     }
 
-    llvm_start_new_function();
+    llvm_start_new_function("copymask",__PRETTY_FUNCTION__ );
 
     llvm_add_param<int>();   // we don't need p_lo, since copymask on sublattices is not jitted
     ParamRef p_hi          = llvm_add_param<int>();
@@ -45,7 +45,7 @@ namespace QDP {
 
     copymask( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ) , mask_reg , src_reg );
 
-    return jit_function_epilogue_get_cuf("jit_copymask.ptx", __PRETTY_FUNCTION__ );
+    return jit_get_function();
   }
 
 

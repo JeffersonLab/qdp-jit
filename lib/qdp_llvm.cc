@@ -32,40 +32,34 @@ using namespace llvm::codegen;
 
 namespace QDP {
 
-  llvm::LLVMContext TheContext;
 
+  namespace
+  {
+    llvm::LLVMContext TheContext;
 
-  llvm::BasicBlock  *entry;
-  llvm::Function    *mainFunc;
+    llvm::BasicBlock  *entry;
+    llvm::Function    *mainFunc;
 
+    std::unique_ptr< llvm::Module >      Mod;
+    std::unique_ptr< llvm::Module >      module_libdevice;
+    std::unique_ptr< llvm::IRBuilder<> > builder;
 
-  std::unique_ptr< llvm::Module >      Mod;
-  std::unique_ptr< llvm::Module >      module_libdevice;
-  std::unique_ptr< llvm::IRBuilder<> > builder;
+    bool function_created;
 
+    std::string str_func_type;
+    std::string str_pretty;
+    std::map<std::string,int> map_func_counter;
+    std::string str_kernel_name;
+    
+    std::vector< llvm::Type* > vecParamType;
+    std::vector< llvm::Value* > vecArgument;
 
-
-
-
-  bool function_created;
-
-  std::vector< llvm::Type* > vecParamType;
-  std::vector< llvm::Value* > vecArgument;
-
-  llvm::Value *r_arg_lo;
-  llvm::Value *r_arg_hi;
-  llvm::Value *r_arg_myId;
-  llvm::Value *r_arg_ordered;
-  llvm::Value *r_arg_start;
-
-  llvm::Type* llvm_type<float>::value;
-  llvm::Type* llvm_type<double>::value;
-  llvm::Type* llvm_type<int>::value;
-  llvm::Type* llvm_type<bool>::value;
-  llvm::Type* llvm_type<float*>::value;
-  llvm::Type* llvm_type<double*>::value;
-  llvm::Type* llvm_type<int*>::value;
-  llvm::Type* llvm_type<bool*>::value;
+    llvm::Value *r_arg_lo;
+    llvm::Value *r_arg_hi;
+    llvm::Value *r_arg_myId;
+    llvm::Value *r_arg_ordered;
+    llvm::Value *r_arg_start;
+  }
 
   namespace llvm_counters {
     int label_counter;
@@ -98,6 +92,35 @@ namespace QDP {
   }
 
 
+
+  llvm::LLVMContext& llvm_get_context()
+  {
+    return TheContext;
+  }
+
+  
+  llvm::IRBuilder<>* llvm_get_builder()
+  {
+    return builder.get();
+  }
+
+  llvm::Module* llvm_get_module()
+  {
+    return Mod.get();
+  }
+
+
+  template<> llvm::Type* llvm_get_type<float>()  { return llvm::Type::getFloatTy(TheContext); }
+  template<> llvm::Type* llvm_get_type<double>() { return llvm::Type::getDoubleTy(TheContext); }
+  template<> llvm::Type* llvm_get_type<int>()    { return llvm::Type::getIntNTy(TheContext,32); }
+  template<> llvm::Type* llvm_get_type<bool>()   { return llvm::Type::getIntNTy(TheContext,1); }
+  template<> llvm::Type* llvm_get_type<float*>()  { return llvm::Type::getFloatPtrTy(TheContext); }
+  template<> llvm::Type* llvm_get_type<double*>() { return llvm::Type::getDoublePtrTy(TheContext); }
+  template<> llvm::Type* llvm_get_type<int*>()    { return llvm::Type::getIntNPtrTy(TheContext,32); }
+  template<> llvm::Type* llvm_get_type<bool*>()   { return llvm::Type::getIntNPtrTy(TheContext,1); }
+
+
+  
   std::string get_ptx_db_fname() {
     return ptx_db::dbname;
   }
@@ -406,14 +429,6 @@ namespace QDP {
     llvm::initializeUnreachableBlockElimLegacyPassPass(*Registry);
     llvm::initializeConstantHoistingLegacyPassPass(*Registry);
 
-    llvm_type<float>::value  = llvm::Type::getFloatTy(TheContext);
-    llvm_type<double>::value = llvm::Type::getDoubleTy(TheContext);
-    llvm_type<int>::value    = llvm::Type::getIntNTy(TheContext,32);
-    llvm_type<bool>::value   = llvm::Type::getIntNTy(TheContext,1);
-    llvm_type<float*>::value  = llvm::Type::getFloatPtrTy(TheContext);
-    llvm_type<double*>::value = llvm::Type::getDoublePtrTy(TheContext);
-    llvm_type<int*>::value    = llvm::Type::getIntNPtrTy(TheContext,32);
-    llvm_type<bool*>::value   = llvm::Type::getIntNPtrTy(TheContext,1);
 
     QDPIO::cout << "LLVM optimization level : " << llvm_opt::opt_level << "\n";
     QDPIO::cout << "NVPTX Flush to zero     : " << llvm_opt::nvptx_FTZ << "\n";
@@ -470,8 +485,12 @@ namespace QDP {
   }
 
 
-  void llvm_start_new_function() {
-
+  void llvm_start_new_function( const char* ftype , const char* pretty )
+  {
+    str_func_type = ftype;
+    str_pretty = pretty;
+    str_kernel_name = str_func_type + std::to_string( map_func_counter[str_func_type]++ );
+    
     // Count it
     jit_stats_jitted();
     
@@ -503,7 +522,7 @@ namespace QDP {
       llvm::FunctionType::get( builder->getVoidTy() , 
 			       llvm::ArrayRef<llvm::Type*>( vecParamType.data() , vecParamType.size() ) , 
 			       false); // no vararg
-    mainFunc = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, "main", Mod.get());
+    mainFunc = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, str_kernel_name , Mod.get());
 
     unsigned Idx = 0;
     for (llvm::Function::arg_iterator AI = mainFunc->arg_begin(), AE = mainFunc->arg_end() ; AI != AE ; ++AI, ++Idx) {
@@ -888,7 +907,7 @@ namespace QDP {
 
   void llvm_cond_branch(llvm::Value * cond, llvm::BasicBlock * thenBB, llvm::BasicBlock * elseBB)
   {
-    cond = llvm_cast( llvm_type<bool>::value , cond );
+    cond = llvm_cast( llvm_get_type<bool>() , cond );
     builder->CreateCondBr( cond , thenBB, elseBB);
   }
 
@@ -1131,9 +1150,9 @@ namespace QDP {
 
 
   namespace {
-    bool all_but_main(const llvm::GlobalValue & gv)
+    bool all_but_kernel_name(const llvm::GlobalValue & gv)
     {
-      return gv.getName().str() == "main";
+      return gv.getName().str() == str_kernel_name;
     }
   }
 
@@ -1184,7 +1203,7 @@ namespace QDP {
 
     
     llvm::legacy::PassManager PM;
-    PM.add( llvm::createInternalizePass( all_but_main ) );
+    PM.add( llvm::createInternalizePass( all_but_kernel_name ) );
     unsigned int sm_gpu = gpu_getMajor() * 10 + gpu_getMinor();
     PM.add( llvm::createNVVMReflectPass( sm_gpu ));
 
@@ -1332,23 +1351,20 @@ namespace QDP {
   
 
 
-  JitFunction llvm_get_cufunction(const char* fname, const char* pretty_cstr)
+  JitFunction llvm_build_function()
   {
     addKernelMetadata( mainFunc );
-
-    std::string pretty( pretty_cstr );
-
 
     std::string ptx_kernel = get_ptx();
 
     //JitFunction func = get_fptr_from_ptx( fname , ptx_kernel );
-    JitFunction func = get_jitf( ptx_kernel , "main" );
+    JitFunction func = get_jitf( ptx_kernel , str_kernel_name );
 
     if ( ptx_db::db_enabled ) {
 
       if (Layout::primaryNode())
 	{
-	  std::string id = get_ptx_db_id( pretty );
+	  std::string id = get_ptx_db_id( str_pretty );
 
 	  if ( ptx_db::db.find( id ) != ptx_db::db.end() ) {
 	    QDPIO::cout << "internal error: key already exists in DB but wasn't found before\n" << id << "\n";
@@ -1381,27 +1397,27 @@ namespace QDP {
 
   llvm::Value* llvm_call_f32( llvm::Function* func , llvm::Value* lhs )
   {
-    llvm::Value* lhs_f32 = llvm_cast( llvm_type<float>::value , lhs );
+    llvm::Value* lhs_f32 = llvm_cast( llvm_get_type<float>() , lhs );
     return builder->CreateCall(func,lhs_f32);
   }
 
   llvm::Value* llvm_call_f32( llvm::Function* func , llvm::Value* lhs , llvm::Value* rhs )
   {
-    llvm::Value* lhs_f32 = llvm_cast( llvm_type<float>::value , lhs );
-    llvm::Value* rhs_f32 = llvm_cast( llvm_type<float>::value , rhs );
+    llvm::Value* lhs_f32 = llvm_cast( llvm_get_type<float>() , lhs );
+    llvm::Value* rhs_f32 = llvm_cast( llvm_get_type<float>() , rhs );
     return builder->CreateCall(func,{lhs_f32,rhs_f32});
   }
 
   llvm::Value* llvm_call_f64( llvm::Function* func , llvm::Value* lhs )
   {
-    llvm::Value* lhs_f64 = llvm_cast( llvm_type<double>::value , lhs );
+    llvm::Value* lhs_f64 = llvm_cast( llvm_get_type<double>() , lhs );
     return builder->CreateCall(func,lhs_f64);
   }
 
   llvm::Value* llvm_call_f64( llvm::Function* func , llvm::Value* lhs , llvm::Value* rhs )
   {
-    llvm::Value* lhs_f64 = llvm_cast( llvm_type<double>::value , lhs );
-    llvm::Value* rhs_f64 = llvm_cast( llvm_type<double>::value , rhs );
+    llvm::Value* lhs_f64 = llvm_cast( llvm_get_type<double>() , lhs );
+    llvm::Value* rhs_f64 = llvm_cast( llvm_get_type<double>() , rhs );
     return builder->CreateCall(func,{lhs_f64,rhs_f64});
   }
 

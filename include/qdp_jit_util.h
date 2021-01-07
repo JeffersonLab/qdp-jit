@@ -4,9 +4,9 @@
 namespace QDP {
 
   llvm::Value *jit_function_preamble_get_idx( const std::vector<ParamRef>& vec );
-  std::vector<ParamRef> jit_function_preamble_param();
+  std::vector<ParamRef> jit_function_preamble_param( const char* ftype , const char* pretty );
 
-  JitFunction jit_function_epilogue_get_cuf(const char *fname, const char* pretty);
+  JitFunction jit_get_function();
 
   void jit_build_seedToFloat();
   void jit_build_seedMultiply();
@@ -34,7 +34,7 @@ namespace QDP {
   typename JITType<T>::Type_t stack_alloc()
   {
     int type_size = JITType<T>::Type_t::Size_t;
-    llvm::Value * ptr = llvm_alloca( llvm_type< typename WordType< T >::Type_t >::value , type_size );
+    llvm::Value * ptr = llvm_alloca( llvm_get_type< typename WordType< T >::Type_t >() , type_size );
       
     typename JITType<T>::Type_t t_jit_stack;
     t_jit_stack.setup( ptr , JitDeviceLayout::Scalar );
@@ -188,7 +188,7 @@ namespace QDP {
       // QDPIO::cout << "Size = " << T_jit::Size_t << "\n";
       // QDPIO::cout << "N    = " << N << "\n";
 
-      ptr = llvm_alloca( llvm_type<W>::value , N * T_jit::Size_t );
+      ptr = llvm_alloca( llvm_get_type<W>() , N * T_jit::Size_t );
 
       array.setup( ptr , JitDeviceLayout::Scalar );
 
@@ -202,7 +202,7 @@ namespace QDP {
       // QDPIO::cout << "Size = " << T_jit::Size_t << "\n";
       // QDPIO::cout << "N    = " << N << "\n";
 
-      ptr = llvm_alloca( llvm_type<W>::value , N * T_jit::Size_t );
+      ptr = llvm_alloca( llvm_get_type<W>() , N * T_jit::Size_t );
 
       array.setup( ptr , JitDeviceLayout::Scalar );
     }
@@ -246,7 +246,7 @@ namespace QDP {
       // QDPIO::cout << "Size = " << T_jit::Size_t << "\n";
       // QDPIO::cout << "N    = " << N << "\n";
 
-      ptr = llvm_alloca( llvm_type<W>::value , N * N * T_jit::Size_t );
+      ptr = llvm_alloca( llvm_get_type<W>() , N * N * T_jit::Size_t );
 
       array.setup( ptr , JitDeviceLayout::Scalar );
 
@@ -261,7 +261,7 @@ namespace QDP {
       // QDPIO::cout << "Size = " << T_jit::Size_t << "\n";
       // QDPIO::cout << "N    = " << N << "\n";
 
-      ptr = llvm_alloca( llvm_type<W>::value , N * N * T_jit::Size_t );
+      ptr = llvm_alloca( llvm_get_type<W>() , N * N * T_jit::Size_t );
 
       array.setup( ptr , JitDeviceLayout::Scalar );
     }
@@ -301,10 +301,8 @@ namespace QDP {
       // QDPIO::cout << "Size = " << T_jit::Size_t << "\n";
       // QDPIO::cout << "N    = " << N << "\n";
 
-      //ptr = llvm_alloca( llvm_type<W>::value , N * T_jit::Size_t );
-
 #if 1
-      llvm::Value * ptr_base = llvm_get_shared_ptr( llvm_type<W>::value );
+      llvm::Value * ptr_base = llvm_get_shared_ptr( llvm_get_type<W>() );
       llvm::Value * ptr_adv = llvm_createGEP( ptr_base ,
 					      llvm_mul( llvm_call_special_tidx() ,
 							llvm_create_value( N * T_jit::Size_t )
@@ -312,7 +310,7 @@ namespace QDP {
 					      );
       array.setup( ptr_adv , JitDeviceLayout::Scalar );
 #else
-      llvm::Value * ptr_base = llvm_get_shared_ptr( llvm_type<W>::value );
+      llvm::Value * ptr_base = llvm_get_shared_ptr( llvm_get_type<W>() );
       IndexDomainVector args;
       args.push_back( make_pair( 256 , llvm_call_special_tidx() ) );  // sitesOnNode irrelevant since Scalar access later
       array.setup( ptr_base , JitDeviceLayout::Scalar , args );
@@ -329,7 +327,7 @@ namespace QDP {
       // QDPIO::cout << "N    = " << N << "\n";
 
 #if 1
-      llvm::Value * ptr_base = llvm_get_shared_ptr( llvm_type<W>::value );
+      llvm::Value * ptr_base = llvm_get_shared_ptr( llvm_get_type<W>() );
       llvm::Value * ptr_adv = llvm_createGEP( ptr_base ,
 					      llvm_mul( llvm_call_special_tidx() ,
 							llvm_create_value( N * T_jit::Size_t )
@@ -337,7 +335,7 @@ namespace QDP {
 					      );
       array.setup( ptr_adv , JitDeviceLayout::Scalar );
 #else
-      llvm::Value * ptr_base = llvm_get_shared_ptr( llvm_type<W>::value );
+      llvm::Value * ptr_base = llvm_get_shared_ptr( llvm_get_type<W>() );
       IndexDomainVector args;
       args.push_back( make_pair( 256 , llvm_call_special_tidx() ) );  // sitesOnNode irrelevant since Scalar access later
       array.setup( ptr_base , JitDeviceLayout::Scalar , args );
@@ -378,7 +376,7 @@ namespace QDP {
       // QDPIO::cout << "Size = " << T_jit::Size_t << "\n";
       // QDPIO::cout << "N    = " << N << "\n";
 
-      llvm::Value * ptr_base = llvm_get_shared_ptr( llvm_type<W>::value );
+      llvm::Value * ptr_base = llvm_get_shared_ptr( llvm_get_type<W>() );
 
       llvm::Value * ptr_adv = llvm_createGEP( ptr_base ,
 					      llvm_mul( llvm_call_special_tidx() ,
@@ -399,8 +397,8 @@ namespace QDP {
       // QDPIO::cout << "Size = " << T_jit::Size_t << "\n";
       // QDPIO::cout << "N    = " << N << "\n";
 
-      llvm::Value * ptr_base = llvm_get_shared_ptr( llvm_type<W>::value );
-
+      llvm::Value * ptr_base = llvm_get_shared_ptr( llvm_get_type<W>() );
+      
       llvm::Value * ptr_adv = llvm_createGEP( ptr_base ,
 					      llvm_mul( llvm_call_special_tidx() ,
 							llvm_create_value( N * N * T_jit::Size_t )

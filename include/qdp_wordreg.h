@@ -37,7 +37,7 @@ namespace QDP {
 
     void setup(llvm::Value * v) {
       //std::cout << __PRETTY_FUNCTION__ << "\n";
-      val = llvm_cast( llvm_type<T>::value , v );
+      val = llvm_cast( llvm_get_type<T>() , v );
       //setup_m=true;
     }
 

@@ -100,15 +100,7 @@ namespace QDP {
   JitFunction llvm_ptx_db( const char * pretty );
 
   
-  extern llvm::LLVMContext TheContext;
-
   typedef int ParamRef;
-
-  // llvm::IRBuilder<> *builder;
-  // llvm::BasicBlock  *entry;
-  extern llvm::Function    *mainFunc;
-  extern llvm::Function    *mainFunc_extern;
-  //extern llvm::Module      *Mod;
 
 
   void llvm_module_dump();
@@ -129,27 +121,17 @@ namespace QDP {
   llvm::Value * llvm_create_value( size_t v );
   llvm::Value * llvm_create_value( bool v );
 
+  
+  template<class T> llvm::Type* llvm_get_type();
 
-  template<class T> struct llvm_type;
-
-  template<> struct llvm_type<float> { static llvm::Type* value; };
-  template<> struct llvm_type<double> { static llvm::Type* value; };
-  template<> struct llvm_type<int> { static llvm::Type* value; };
-  template<> struct llvm_type<bool> { static llvm::Type* value; };
-  template<> struct llvm_type<float*> { static llvm::Type* value; };
-  template<> struct llvm_type<double*> { static llvm::Type* value; };
-  template<> struct llvm_type<int*> { static llvm::Type* value; };
-  template<> struct llvm_type<bool*> { static llvm::Type* value; };
 
   struct IndexRet {
     IndexRet(){}
     ParamRef p_multi_index;  // if neg. -> recv. buffer, otherwise it's the local index
     ParamRef p_recv_buf;
-    // llvm::Value * r_newidx_local;
-    // llvm::Value * r_newidx_buffer;
-    // llvm::Value * r_pred_in_buf;
-    // llvm::Value * r_rcvbuf;
   };
+
+
 
   
   void llvm_append_mattr( const char * attr );
@@ -160,7 +142,13 @@ namespace QDP {
   llvm::Value *llvm_get_arg_ordered();
   llvm::Value *llvm_get_arg_start();
 
-  void llvm_start_new_function();
+  void llvm_start_new_function( const char* ftype , const char* pretty );
+
+  llvm::IRBuilder<>* llvm_get_builder();
+  llvm::Module* llvm_get_module();
+  llvm::LLVMContext& llvm_get_context();
+
+
   void llvm_wrapper_init();
   llvm::PHINode * llvm_phi( llvm::Type* type, unsigned num = 0 );
   llvm::Type* promote( llvm::Type* t0 , llvm::Type* t1 );
@@ -270,7 +258,7 @@ namespace QDP {
 
   void addKernelMetadata(llvm::Function *F);
 
-  JitFunction llvm_get_cufunction(const char* fname, const char* pretty);
+  JitFunction llvm_build_function();
 
 
   llvm::Value* llvm_sin_f32( llvm::Value* lhs );

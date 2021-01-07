@@ -2,9 +2,6 @@
 
 namespace QDP {
 
-  extern llvm::IRBuilder<>  *builder;
-  extern llvm::Module       *Mod;
-
 
   llvm::Function    *func_seed2float;
   llvm::Function    *func_seedMultiply;
@@ -46,34 +43,31 @@ namespace QDP {
   // and returns 1 seed (as a literal aggregate)
   //
   void jit_build_seedMultiply() {
-    assert(builder && "no builder");
-    assert(Mod && "no module");
-
     std::vector< llvm::Type* > vecArgTypes;
 
-    vecArgTypes.push_back( builder->getInt32Ty() );
-    vecArgTypes.push_back( builder->getInt32Ty() );
-    vecArgTypes.push_back( builder->getInt32Ty() );
-    vecArgTypes.push_back( builder->getInt32Ty() );
+    vecArgTypes.push_back( llvm_get_builder()->getInt32Ty() );
+    vecArgTypes.push_back( llvm_get_builder()->getInt32Ty() );
+    vecArgTypes.push_back( llvm_get_builder()->getInt32Ty() );
+    vecArgTypes.push_back( llvm_get_builder()->getInt32Ty() );
 
-    vecArgTypes.push_back( builder->getInt32Ty() );
-    vecArgTypes.push_back( builder->getInt32Ty() );
-    vecArgTypes.push_back( builder->getInt32Ty() );
-    vecArgTypes.push_back( builder->getInt32Ty() );
+    vecArgTypes.push_back( llvm_get_builder()->getInt32Ty() );
+    vecArgTypes.push_back( llvm_get_builder()->getInt32Ty() );
+    vecArgTypes.push_back( llvm_get_builder()->getInt32Ty() );
+    vecArgTypes.push_back( llvm_get_builder()->getInt32Ty() );
 
-    llvm::Type* ret_types[] = { builder->getInt32Ty(),
-				builder->getInt32Ty(),
-				builder->getInt32Ty(),
-				builder->getInt32Ty() };
+    llvm::Type* ret_types[] = { llvm_get_builder()->getInt32Ty(),
+				llvm_get_builder()->getInt32Ty(),
+				llvm_get_builder()->getInt32Ty(),
+				llvm_get_builder()->getInt32Ty() };
     
-    llvm::StructType* ret_type = llvm::StructType::get(TheContext, 
+    llvm::StructType* ret_type = llvm::StructType::get(llvm_get_context(), 
 						       llvm::ArrayRef< llvm::Type * >( ret_types , 4 ) );
 
     llvm::FunctionType *funcType = llvm::FunctionType::get( ret_type , 
 							    llvm::ArrayRef<llvm::Type*>( vecArgTypes.data() , 
 											 vecArgTypes.size() ) ,
 							    false );
-    llvm::Function* F = llvm::Function::Create(funcType, llvm::Function::InternalLinkage, "seedMultiply", Mod);
+    llvm::Function* F = llvm::Function::Create(funcType, llvm::Function::InternalLinkage, "seedMultiply", llvm_get_module());
 
     std::vector< llvm::Value* > args;
     unsigned Idx = 0;
@@ -84,8 +78,8 @@ namespace QDP {
       args.push_back(&*AI);
     }
 
-    llvm::BasicBlock* entry = llvm::BasicBlock::Create(TheContext, "entrypoint", F);
-    builder->SetInsertPoint(entry);
+    llvm::BasicBlock* entry = llvm::BasicBlock::Create(llvm_get_context(), "entrypoint", F);
+    llvm_get_builder()->SetInsertPoint(entry);
 
     typedef RScalar<WordREG<int> >  T;
     PSeedREG<T> s1,s2;
@@ -107,7 +101,7 @@ namespace QDP {
 			       s1.elem(2).elem().get_val() ,
 			       s1.elem(3).elem().get_val() };
 
-    builder->CreateAggregateRet( ret_val , 4 );
+    llvm_get_builder()->CreateAggregateRet( ret_val , 4 );
 
     func_seedMultiply = F;
   }
@@ -128,13 +122,13 @@ namespace QDP {
 
     llvm::Value* pack[] = { a0,a1,a2,a3,a4,a5,a6,a7 };
 
-    llvm::Value* ret_val = builder->CreateCall( func_seedMultiply , llvm::ArrayRef< llvm::Value *>( pack ,  8 ) );
+    llvm::Value* ret_val = llvm_get_builder()->CreateCall( func_seedMultiply , llvm::ArrayRef< llvm::Value *>( pack ,  8 ) );
 
     std::vector<llvm::Value *> ret;
-    ret.push_back( builder->CreateExtractValue( ret_val , 0 ) );
-    ret.push_back( builder->CreateExtractValue( ret_val , 1 ) );
-    ret.push_back( builder->CreateExtractValue( ret_val , 2 ) );
-    ret.push_back( builder->CreateExtractValue( ret_val , 3 ) );
+    ret.push_back( llvm_get_builder()->CreateExtractValue( ret_val , 0 ) );
+    ret.push_back( llvm_get_builder()->CreateExtractValue( ret_val , 1 ) );
+    ret.push_back( llvm_get_builder()->CreateExtractValue( ret_val , 2 ) );
+    ret.push_back( llvm_get_builder()->CreateExtractValue( ret_val , 3 ) );
 
     return ret;
   }
@@ -142,20 +136,18 @@ namespace QDP {
 
 
   void jit_build_seedToFloat() {
-    assert(builder && "no builder");
-    assert(Mod && "no module");
 
     std::vector< llvm::Type* > vecArgTypes;
-    vecArgTypes.push_back( builder->getInt32Ty() );
-    vecArgTypes.push_back( builder->getInt32Ty() );
-    vecArgTypes.push_back( builder->getInt32Ty() );
-    vecArgTypes.push_back( builder->getInt32Ty() );
+    vecArgTypes.push_back( llvm_get_builder()->getInt32Ty() );
+    vecArgTypes.push_back( llvm_get_builder()->getInt32Ty() );
+    vecArgTypes.push_back( llvm_get_builder()->getInt32Ty() );
+    vecArgTypes.push_back( llvm_get_builder()->getInt32Ty() );
 
-    llvm::FunctionType *funcType = llvm::FunctionType::get( builder->getFloatTy(), 
+    llvm::FunctionType *funcType = llvm::FunctionType::get( llvm_get_builder()->getFloatTy(), 
 							    llvm::ArrayRef<llvm::Type*>( vecArgTypes.data() , 
 											 vecArgTypes.size() ) ,
 							    false );
-    llvm::Function* F = llvm::Function::Create(funcType, llvm::Function::InternalLinkage, "seedToFloat", Mod);
+    llvm::Function* F = llvm::Function::Create(funcType, llvm::Function::InternalLinkage, "seedToFloat", llvm_get_module());
 
     std::vector< llvm::Value* > args;
     unsigned Idx = 0;
@@ -166,8 +158,8 @@ namespace QDP {
       args.push_back(&*AI);
     }
 
-    llvm::BasicBlock* entry = llvm::BasicBlock::Create(TheContext, "entrypoint", F);
-    builder->SetInsertPoint(entry);
+    llvm::BasicBlock* entry = llvm::BasicBlock::Create(llvm_get_context(), "entrypoint", F);
+    llvm_get_builder()->SetInsertPoint(entry);
 
     typedef RScalar<WordREG<int> >  T;
     PSeedREG<T> s1;
@@ -202,7 +194,7 @@ namespace QDP {
     fs2 = fs1 + d.elem();
     d.elem() = twom11 * fs2;
 
-    builder->CreateRet( d.elem().elem().get_val() );
+    llvm_get_builder()->CreateRet( d.elem().elem().get_val() );
 
     func_seed2float = F;
   }
@@ -214,23 +206,24 @@ namespace QDP {
     assert(a2 && "llvm_seedToFloat a2");
     assert(a3 && "llvm_seedToFloat a3");
     assert(func_seed2float && "llvm_seedToFloat func_seed2float");
-    return builder->CreateCall( func_seed2float , {a0,a1,a2,a3} );
+    return llvm_get_builder()->CreateCall( func_seed2float , {a0,a1,a2,a3} );
   }
 
 
-  JitFunction jit_function_epilogue_get_cuf(const char * fname, const char* pretty )
+  JitFunction jit_get_function()
   {
     llvm_exit();
 
-    //llvm_module_dump();
-
-    return llvm_get_cufunction( fname , pretty );
+    return llvm_build_function();
   }
 
 
-  std::vector<ParamRef> jit_function_preamble_param()
+
+  
+
+  std::vector<ParamRef> jit_function_preamble_param( const char* ftype , const char* pretty )
   {
-    llvm_start_new_function();
+    llvm_start_new_function( ftype , pretty );
 
     ParamRef p_ordered      = llvm_add_param<bool>();
     ParamRef p_th_count     = llvm_add_param<int>();
@@ -310,7 +303,7 @@ namespace QDP {
     llvm_branch( block_loop_cond );
     llvm_set_insert_point(block_loop_cond);
   
-    r_i = llvm_phi( llvm_type<int>::value , 2 );
+    r_i = llvm_phi( llvm_get_type<int>() , 2 );
 
     r_i->addIncoming( start , block_outer );
 
@@ -347,7 +340,7 @@ namespace QDP {
     llvm_branch( block_loop_cond );
     llvm_set_insert_point(block_loop_cond);
   
-    r_i = llvm_phi( llvm_type<int>::value , 2 );
+    r_i = llvm_phi( llvm_get_type<int>() , 2 );
 
     r_i->addIncoming( i_start , block_outer );
 

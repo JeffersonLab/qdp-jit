@@ -32,7 +32,7 @@ namespace QDP
 	return func;
     }
 
-    llvm_start_new_function();
+    llvm_start_new_function("multi_localInnerProduct_sum_convert",__PRETTY_FUNCTION__ );
 
     typedef typename WordType<T1>::Type_t T1WT;
     typedef typename WordType<T2>::Type_t T2WT;
@@ -51,7 +51,7 @@ namespace QDP
 
     llvm::Value* r_subsetnum = llvm_derefParam( p_numsubset );
 
-    llvm::Value* r_shared = llvm_get_shared_ptr( llvm_type<T2WT>::value );
+    llvm::Value* r_shared = llvm_get_shared_ptr( llvm_get_type<T2WT>() );
 
     typedef typename JITType<T2>::Type_t T2JIT;
 
@@ -75,7 +75,7 @@ namespace QDP
 
     llvm_set_insert_point( block_subset_loop_start );
 
-    llvm::PHINode * r_subset = llvm_phi( llvm_type<int>::value , 2 );
+    llvm::PHINode * r_subset = llvm_phi( llvm_get_type<int>() , 2 );
     r_subset->addIncoming( llvm_create_value(0) , entry_block );
 
     llvm_cond_branch( llvm_ge( r_subset , r_subsetnum ) , block_subset_loop_exit , block_subset_loop_body );
@@ -143,7 +143,7 @@ namespace QDP
       llvm_branch( block_red_loop_start );
       llvm_set_insert_point(block_red_loop_start);
     
-      llvm::PHINode * r_red_pow = llvm_phi( llvm_type<int>::value , 2 );    
+      llvm::PHINode * r_red_pow = llvm_phi( llvm_get_type<int>() , 2 );    
       r_red_pow->addIncoming( r_pow_shr1 , block_subset_loop_body_cont2 );  //block_power_loop_exit
       llvm_cond_branch( llvm_le( r_red_pow , llvm_create_value(0) ) , block_red_loop_end , block_red_loop_start_1 );
 
@@ -204,8 +204,7 @@ namespace QDP
 
     llvm_set_insert_point(block_subset_loop_exit);
 
-    
-    return jit_function_epilogue_get_cuf("jit_multi_innerproduct.ptx" , __PRETTY_FUNCTION__ );
+    return jit_get_function();
   }
 
 

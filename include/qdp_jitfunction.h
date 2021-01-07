@@ -55,7 +55,7 @@ namespace QDP {
 	return func;
     }
 
-    llvm_start_new_function();
+    llvm_start_new_function("localInnerProduct_type_subtype",__PRETTY_FUNCTION__ );
 
     ParamRef p_th_count     = llvm_add_param<int>();
     ParamRef p_site_table   = llvm_add_param<int*>();      // subset sitetable
@@ -85,7 +85,7 @@ namespace QDP {
 
     ret_jit.elem( JitDeviceLayout::Scalar , r_idx_thread ) = op_jit( l_reg , r_reg );
     
-    return jit_function_epilogue_get_cuf("jit_localInnerProduct_type_subtype.ptx" , __PRETTY_FUNCTION__ );
+    return jit_get_function();
   }
 
   
@@ -103,8 +103,9 @@ namespace QDP {
 	return func;
     }
 
-    llvm_start_new_function();
+    llvm_start_new_function("localInnerProduct_subtype_type",__PRETTY_FUNCTION__ );
 
+    
     ParamRef p_th_count     = llvm_add_param<int>();
     ParamRef p_site_table   = llvm_add_param<int*>();      // subset sitetable
 
@@ -133,7 +134,7 @@ namespace QDP {
 
     ret_jit.elem( JitDeviceLayout::Scalar , r_idx_thread ) = op_jit( l_reg , r_reg );   // ok: Scalar
     
-    return jit_function_epilogue_get_cuf("jit_localInnerProduct_type_subtype.ptx" , __PRETTY_FUNCTION__ );
+    return jit_get_function();
   }
 
 
@@ -151,7 +152,7 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
       return func;
   }
 
-  llvm_start_new_function();
+  llvm_start_new_function("eval",__PRETTY_FUNCTION__ );
 
   ParamRef p_ordered      = llvm_add_param<bool>();
   ParamRef p_th_count     = llvm_add_param<int>();
@@ -205,7 +206,7 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 	  forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , r_idx ), OpCombine()));
 
 
-  return jit_function_epilogue_get_cuf("jit_eval.ptx" , __PRETTY_FUNCTION__ );
+  return jit_get_function();
 }
 
 
@@ -221,7 +222,7 @@ function_subtype_type_build(OSubLattice<T>& dest, const Op& op, const QDPExpr<RH
       return func;
   }
 
-  llvm_start_new_function();
+  llvm_start_new_function("eval_subtype_type",__PRETTY_FUNCTION__ );
 
   ParamRef p_th_count     = llvm_add_param<int>();
   ParamRef p_site_table   = llvm_add_param<int*>();      // subset sitetable
@@ -242,7 +243,7 @@ function_subtype_type_build(OSubLattice<T>& dest, const Op& op, const QDPExpr<RH
   op_jit( dest_jit.elem( JitDeviceLayout::Scalar , r_idx_thread ), // Coalesced
 	  forEach(rhs_jit, ViewLeaf( JitDeviceLayout::Coalesced , r_idx_perm ), OpCombine()));
 
-  return jit_function_epilogue_get_cuf("jit_eval_subtype_expr.ptx" , __PRETTY_FUNCTION__ );
+  return jit_get_function();
 }
 
 
@@ -259,7 +260,7 @@ operator_type_subtype_build(OLattice<T>& dest, const Op& op, const QDPSubType<T1
       return func;
   }
 
-  llvm_start_new_function();
+  llvm_start_new_function("eval_type_subtype",__PRETTY_FUNCTION__ );
 
   ParamRef p_th_count     = llvm_add_param<int>();
   ParamRef p_site_table   = llvm_add_param<int*>();      // subset sitetable
@@ -288,7 +289,7 @@ operator_type_subtype_build(OLattice<T>& dest, const Op& op, const QDPSubType<T1
 
   op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx_perm ), rhs_reg );
 
-  return jit_function_epilogue_get_cuf("jit_eval_subtype_expr.ptx" , __PRETTY_FUNCTION__ );
+  return jit_get_function();
 }
 
 
@@ -305,7 +306,7 @@ operator_subtype_subtype_build(OSubLattice<T>& dest, const Op& op, const QDPSubT
       return func;
   }
 
-  llvm_start_new_function();
+  llvm_start_new_function("eval_subtype_subtype",__PRETTY_FUNCTION__ );
 
   ParamRef p_th_count     = llvm_add_param<int>();
   ParamLeaf param_leaf;
@@ -324,7 +325,7 @@ operator_subtype_subtype_build(OSubLattice<T>& dest, const Op& op, const QDPSubT
   
   op_jit( dest_jit.elem( JitDeviceLayout::Scalar , r_idx_thread ), rhs_reg );
 
-  return jit_function_epilogue_get_cuf("jit_eval_subtype_expr.ptx" , __PRETTY_FUNCTION__ );
+  return jit_get_function();
 }
 
 
@@ -378,7 +379,7 @@ function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScala
       return func;
   }
 
-  std::vector<ParamRef> params = jit_function_preamble_param();
+  std::vector<ParamRef> params = jit_function_preamble_param("eval_lat_sca",__PRETTY_FUNCTION__);
 
   ParamLeaf param_leaf;
 
@@ -395,7 +396,7 @@ function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScala
   op_jit(dest_jit.elem( JitDeviceLayout::Coalesced , r_idx), 
 	 forEach(rhs_view, ViewLeaf( JitDeviceLayout::Scalar , r_idx ), OpCombine()));
 
-  return jit_function_epilogue_get_cuf("jit_lat_sca.ptx" , __PRETTY_FUNCTION__ );
+  return jit_get_function();
 }
 
 
@@ -413,7 +414,7 @@ function_lat_sca_subtype_build(OSubLattice<T>& dest, const Op& op, const QDPExpr
       return func;
   }
 
-  llvm_start_new_function();
+  llvm_start_new_function("eval_lat_sca_subtype",__PRETTY_FUNCTION__);
 
   ParamRef p_th_count     = llvm_add_param<int>();
       
@@ -431,7 +432,7 @@ function_lat_sca_subtype_build(OSubLattice<T>& dest, const Op& op, const QDPExpr
   op_jit(dest_jit.elem( JitDeviceLayout::Scalar , r_idx_thread ), // Coalesced
 	 forEach(rhs_view, ViewLeaf( JitDeviceLayout::Scalar , r_idx_thread ), OpCombine()));
 
-  return jit_function_epilogue_get_cuf("jit_lat_sca.ptx" , __PRETTY_FUNCTION__ );
+  return jit_get_function();
 }
 
   
@@ -448,7 +449,7 @@ function_pokeSite_build( const OLattice<T>& dest , const OScalar<T1>& r  )
       return func;
   }
 
-  llvm_start_new_function();
+  llvm_start_new_function("eval_pokeSite",__PRETTY_FUNCTION__);
 
   ParamRef p_siteindex    = llvm_add_param<int>();
 
@@ -468,7 +469,7 @@ function_pokeSite_build( const OLattice<T>& dest , const OScalar<T1>& r  )
   op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , r_siteindex ), 
 	  LeafFunctor< FuncRet_t1 , ViewLeaf >::apply( r_jit , ViewLeaf( JitDeviceLayout::Scalar , r_zero ) ) );
 
-  return jit_function_epilogue_get_cuf("jit_pokesite.ptx" , __PRETTY_FUNCTION__ );
+  return jit_get_function();
 }
 
 
@@ -507,7 +508,7 @@ function_zero_rep_build(OLattice<T>& dest)
       return func;
   }
 
-  std::vector<ParamRef> params = jit_function_preamble_param();
+  std::vector<ParamRef> params = jit_function_preamble_param("zero_rep",__PRETTY_FUNCTION__);
 
   ParamLeaf param_leaf;
 
@@ -518,7 +519,7 @@ function_zero_rep_build(OLattice<T>& dest)
 
   zero_rep( dest_jit.elem(JitDeviceLayout::Coalesced,r_idx) );
 
-  return jit_function_epilogue_get_cuf("jit_zero.ptx" , __PRETTY_FUNCTION__ );
+  return jit_get_function();
 }
 
 
@@ -533,7 +534,7 @@ function_zero_rep_subtype_build(OSubLattice<T>& dest)
       return func;
   }
 
-  llvm_start_new_function();
+  llvm_start_new_function("zero_rep_subtype",__PRETTY_FUNCTION__);
 
   ParamRef p_th_count     = llvm_add_param<int>();
 
@@ -547,7 +548,7 @@ function_zero_rep_subtype_build(OSubLattice<T>& dest)
 
   zero_rep( dest_jit.elem(JitDeviceLayout::Coalesced,r_idx_thread) );
 
-  return jit_function_epilogue_get_cuf("jit_zero_rep_subtype.ptx" , __PRETTY_FUNCTION__ );
+  return jit_get_function();
 }
   
 
@@ -568,7 +569,7 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
       return func;
   }
 
-  llvm_start_new_function();
+  llvm_start_new_function("random",__PRETTY_FUNCTION__);
 
   // No member possible here.
   // If thread exits due to non-member
@@ -625,7 +626,7 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
   }
   save.end();
   
-  return jit_function_epilogue_get_cuf("jit_random.ptx" , __PRETTY_FUNCTION__ );
+  return jit_get_function();
 }
 
 
@@ -646,7 +647,7 @@ function_gather_build( const QDPExpr<RHS,OLattice<T1> >& rhs )
 
   typedef typename WordType<T1>::Type_t WT;
 
-  llvm_start_new_function();
+  llvm_start_new_function("gather",__PRETTY_FUNCTION__);
 
   ParamRef p_lo      = llvm_add_param<int>();
   ParamRef p_hi      = llvm_add_param<int>();
@@ -672,7 +673,7 @@ function_gather_build( const QDPExpr<RHS,OLattice<T1> >& rhs )
   OpAssign()( dest_jit.elem( JitDeviceLayout::Scalar , r_idx ) , 
 	      forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , r_idx_site ) , OpCombine() ) );
 
-  return jit_function_epilogue_get_cuf("jit_gather.ll" , __PRETTY_FUNCTION__ );
+  return jit_get_function();
 }
 
 
