@@ -4,7 +4,7 @@
 namespace QDP {
 
   void
-  function_sum_convert_ind_exec( JitFunction function, 
+  function_sum_convert_ind_exec( JitFunction& function, 
 				 int size, int threads, int blocks, int shared_mem_usage,
 				 int in_id, int out_id, int siteTableId )
   {
@@ -33,7 +33,7 @@ namespace QDP {
 
 
   void
-  function_summulti_convert_ind_exec( JitFunction function, 
+  function_summulti_convert_ind_exec( JitFunction& function, 
 				      int size, int threads, int blocks, int shared_mem_usage,
 				      int in_id, int out_id,
 				      int numsubsets,
@@ -66,7 +66,7 @@ namespace QDP {
 
 
   void
-  function_summulti_exec( JitFunction function, 
+  function_summulti_exec( JitFunction& function, 
 			  int size, int threads, int blocks, int shared_mem_usage,
 			  int in_id, int out_id,
 			  int numsubsets,
@@ -96,7 +96,7 @@ namespace QDP {
 
 
   void
-  function_sum_convert_exec( JitFunction function, 
+  function_sum_convert_exec( JitFunction& function, 
 			     int size, int threads, int blocks, int shared_mem_usage,
 			     int in_id, int out_id)
   {
@@ -124,7 +124,7 @@ namespace QDP {
 
 
   void
-  function_sum_exec( JitFunction function, 
+  function_sum_exec( JitFunction& function, 
 		     int size, int threads, int blocks, int shared_mem_usage,
 		     int in_id, int out_id)
   {
@@ -151,7 +151,7 @@ namespace QDP {
 
 
 
-  void function_global_max_exec( JitFunction function, 
+  void function_global_max_exec( JitFunction& function, 
 				 int size, int threads, int blocks, int shared_mem_usage,
 				 int in_id, int out_id)
   {
@@ -180,7 +180,7 @@ namespace QDP {
 
   
   void
-  function_isfinite_convert_exec( JitFunction function, 
+  function_isfinite_convert_exec( JitFunction& function, 
 				  int size, int threads, int blocks, int shared_mem_usage,
 				  int in_id, int out_id)
   {
@@ -208,7 +208,7 @@ namespace QDP {
 
 
   void
-  function_bool_reduction_exec( JitFunction function, 
+  function_bool_reduction_exec( JitFunction& function, 
 				int size, int threads, int blocks, int shared_mem_usage,
 				int in_id, int out_id)
   {

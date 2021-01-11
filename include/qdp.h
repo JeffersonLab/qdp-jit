@@ -90,7 +90,7 @@ using std::ostream;
 
 
 
-#include "gpu.h"
+#include "qdp_jit_function.h"
 
 #include "qdp_dispatch.h"
 

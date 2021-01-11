@@ -7,20 +7,21 @@
 namespace QDP {
 
 
-  void function_global_max_exec( JitFunction function, 
+  void function_global_max_exec( JitFunction& function, 
 				 int size, int threads, int blocks, int shared_mem_usage,
 				 int in_id , int out_id);
 
 
   template<class T1>
-  JitFunction 
-  function_global_max_build()
+  void 
+  function_global_max_build( JitFunction& function )
   {
-    if (ptx_db::db_enabled) {
-      JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-      if (!func.empty())
-	return func;
-    }
+    if (ptx_db::db_enabled)
+      {
+	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
+	if (!function.empty())
+	  return;
+      }
 
     llvm_start_new_function("global_max",__PRETTY_FUNCTION__ );
 
@@ -127,7 +128,7 @@ namespace QDP {
     }
     ifStore.end();
 
-    return jit_get_function();
+    jit_get_function(function);
   }
 
 

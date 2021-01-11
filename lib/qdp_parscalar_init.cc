@@ -329,6 +329,10 @@ namespace COUNT {
 	  {
 	    qdp_cache_set_launch_verbose(true);
 	  }
+	else if (strcmp((*argv)[i], "-stats")==0) 
+	  {
+	    gpu_set_record_stats();
+	  }
 #ifdef QDP_CUDA_SPECIAL
 	else if (strcmp((*argv)[i], "-cudaspecial")==0)
 	  {
@@ -571,6 +575,31 @@ namespace COUNT {
 		    QDPIO::cout << "PTX DB: (not used)\n";
 		  }
 
+		if ( gpu_get_record_stats() )
+		  {
+		    QDPIO::cout << "#" << "\t";
+		    QDPIO::cout << "calls" << "\t";
+		    QDPIO::cout << "stack" << "\t";
+		    QDPIO::cout << "sspill" << "\t";
+		    QDPIO::cout << "lspill" << "\t";
+		    QDPIO::cout << "regs" << "\t";
+		    QDPIO::cout << "cmem" << "\t";
+		    QDPIO::cout << "name" << "\n";
+		    
+		    std::vector<JitFunction*>& all = gpu_get_functions();
+		    for ( int i = 0 ; i < all.size() ; ++i )
+		      {
+			QDPIO::cout << i << "\t";
+			QDPIO::cout << all.at(i)->get_call_counter() << "\t";
+			QDPIO::cout << all.at(i)->get_stack() << "\t";
+			QDPIO::cout << all.at(i)->get_spill_store() << "\t";
+			QDPIO::cout << all.at(i)->get_spill_loads() << "\t";
+			QDPIO::cout << all.at(i)->get_regs() << "\t";
+			QDPIO::cout << all.at(i)->get_cmem() << "\t";
+			QDPIO::cout << all.at(i)->get_kernel_name() << "\n";
+		      }
+		  }
+		
 		FnMapRsrcMatrix::Instance().cleanup();
 
 #if defined(QDP_USE_HDF5)

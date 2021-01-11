@@ -5,14 +5,15 @@
 namespace QDP {
 
 template<class T>
-JitFunction
-function_gaussian_build(OLattice<T>& dest ,OLattice<T>& r1 ,OLattice<T>& r2 )
+void
+function_gaussian_build( JitFunction& function, OLattice<T>& dest ,OLattice<T>& r1 ,OLattice<T>& r2 )
 {
-  if (ptx_db::db_enabled) {
-    JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (!func.empty())
-      return func;
-  }
+  if (ptx_db::db_enabled)
+    {
+      llvm_ptx_db( function , __PRETTY_FUNCTION__ );
+      if (!function.empty())
+	return;
+    }
 
   std::vector<ParamRef> params = jit_function_preamble_param("gaussian",__PRETTY_FUNCTION__);
 
@@ -33,13 +34,13 @@ function_gaussian_build(OLattice<T>& dest ,OLattice<T>& r1 ,OLattice<T>& r2 )
 
   fill_gaussian( dest_jit.elem(JitDeviceLayout::Coalesced , r_idx ) , r1_reg , r2_reg );
 
-  return jit_get_function();
+  jit_get_function(function);
 }
 
 
 template<class T>
 void 
-function_gaussian_exec(JitFunction function, OLattice<T>& dest,OLattice<T>& r1,OLattice<T>& r2, const Subset& s )
+function_gaussian_exec(JitFunction& function, OLattice<T>& dest,OLattice<T>& r1,OLattice<T>& r2, const Subset& s )
 {
   if (s.numSiteTable() < 1)
     return;

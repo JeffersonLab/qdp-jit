@@ -39,7 +39,7 @@ namespace QDP
     static JitFunction function;
 
     if (function.empty())
-      function = function_OP_subtype_type_build<FnLocalInnerProduct>(ret, l , r );
+      function_OP_subtype_type_build<FnLocalInnerProduct>(function, ret, l , r );
 
     function_OP_exec<FnLocalInnerProduct>(function, ret, l, r, l.subset() );
     
@@ -61,7 +61,7 @@ namespace QDP
     static JitFunction function;
 
     if (function.empty())
-      function = function_OP_type_subtype_build<FnLocalInnerProduct>(ret, l , r );
+      function_OP_type_subtype_build<FnLocalInnerProduct>(function, ret, l , r );
 
     function_OP_exec<FnLocalInnerProduct>(function, ret, l, r, r.subset() );
     

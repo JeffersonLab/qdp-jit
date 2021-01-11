@@ -39,7 +39,7 @@ namespace QDP {
     static JitFunction function;
 
     if (function.empty())
-      function = function_pokeSite_build(l, r);
+      function_pokeSite_build( function , l , r );
 
     function_pokeSite_exec(function, l, r, coord);
 

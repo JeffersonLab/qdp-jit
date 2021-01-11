@@ -24,9 +24,9 @@ namespace QDP {
   }
 
 
-  void jit_launch(JitFunction function,int th_count,std::vector<QDPCache::ArgKey>& ids)
+  void jit_launch(JitFunction& function,int th_count,std::vector<QDPCache::ArgKey>& ids)
   {
-     std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
+    std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
 
      
     // Check for thread count equals zero
@@ -34,12 +34,15 @@ namespace QDP {
     if ( th_count == 0 )
       return;
 
-    if (mapTune.count(function.getFunction()) == 0) {
-      mapTune[function.getFunction()] = tune_t( gpu_getMaxBlockX() , 0 , 0.0 );
+    // Increment the call counter
+    function.inc_call_counter();
+    
+    if (mapTune.count(function.get_function()) == 0) {
+      mapTune[function.get_function()] = tune_t( gpu_getMaxBlockX() , 0 , 0.0 );
     }
 
 
-    tune_t& tune = mapTune[function.getFunction()];
+    tune_t& tune = mapTune[function.get_function()];
 
 
     if (tune.cfg == -1) {

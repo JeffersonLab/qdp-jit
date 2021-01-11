@@ -210,11 +210,11 @@ namespace QDP {
   }
 
 
-  JitFunction jit_get_function()
+  void jit_get_function(JitFunction& f)
   {
     llvm_exit();
 
-    return llvm_build_function();
+    llvm_build_function(f);
   }
 
 

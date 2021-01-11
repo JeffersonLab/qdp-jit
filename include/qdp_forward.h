@@ -143,24 +143,6 @@ namespace QDP
   class Set;
   class Subset;
 
-#if 0
-  template<class T> void *function_layout_to_jit_build( const OLattice<T>& dest );
-  template<class T> void  function_layout_to_jit_exec(void * function, T *dest, T *src );
-
-  template<class T> void *function_layout_to_native_build( const OLattice<T>& dest );
-  template<class T> void  function_layout_to_native_exec(void * function, T *dest, T *src );
-
-  typedef std::pair< int , llvm::Value * > IndexDomain;
-  typedef std::vector< IndexDomain >     IndexDomainVector;
-
-  llvm::Value * datalayout( JitDeviceLayout::LayoutEnum  lay , IndexDomainVector a );
-
-  llvm::Value      *get_index_from_index_vector( const IndexDomainVector& idx );
-  IndexDomainVector get_index_vector_from_index( llvm::Value *index );
-  IndexDomainVector get_scalar_index_vector_from_index( llvm::Value *index );
-  void setDataLayoutInnerSize( int64_t i );
-  int64_t getDataLayoutInnerSize();
-#endif
 
   template<class T, class T1, class RHS>
   JitFunction

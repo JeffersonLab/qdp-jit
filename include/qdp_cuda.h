@@ -14,12 +14,12 @@ namespace QDP {
   int CudaGetConfig(int what);
   void CudaGetSM(int* maj,int* min);
 
-  void CudaLaunchKernel( JitFunction f, 
+  void CudaLaunchKernel( JitFunction& f, 
 			 unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
 			 unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
 			 unsigned int  sharedMemBytes, int hStream, void** kernelParams, void** extra );
 
-  JitResult CudaLaunchKernelNoSync( JitFunction f, 
+  JitResult CudaLaunchKernelNoSync( JitFunction& f, 
 				    unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
 				    unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
 				    unsigned int  sharedMemBytes, int hStream, void** kernelParams, void** extra );
@@ -28,9 +28,9 @@ namespace QDP {
   int CudaGetMaxLocalUsage();
   size_t CudaGetInitialFreeMemory();
   
-  int CudaAttributeNumRegs( JitFunction f );
-  int CudaAttributeLocalSize( JitFunction f );
-  int CudaAttributeConstSize( JitFunction f );
+  int CudaAttributeNumRegs( JitFunction& f );
+  int CudaAttributeLocalSize( JitFunction& f );
+  int CudaAttributeConstSize( JitFunction& f );
 
   void CudaMemGetInfo(size_t *free,size_t *total);
 
@@ -55,9 +55,9 @@ namespace QDP {
   void CudaMemset( void * dest , unsigned val , size_t N );
 
   //JitFunction get_fptr_from_ptx( const char* fname , const std::string& kernel );
-  JitFunction get_jitf( const std::string& kernel , const std::string& func_name );
+  void get_jitf( JitFunction& func, const std::string& kernel , const std::string& func_name , const std::string& pretty , const std::string& compute );
 
-  std::string getPTXfromCUFunc(JitFunction f);
+  std::string getPTXfromCUFunc(JitFunction& f);
 
 
 

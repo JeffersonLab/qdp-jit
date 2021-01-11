@@ -9,7 +9,7 @@ namespace QDP {
 
   template<class OP,class T, class QT1, class QT2>
   void 
-  function_OP_exec(JitFunction function, OSubLattice<T>& ret,
+  function_OP_exec(JitFunction& function, OSubLattice<T>& ret,
 		   const QT1& l,const QT2& r,
 		   const Subset& s)
   {
@@ -42,19 +42,20 @@ namespace QDP {
 
   
   template<class OP,class T, class T1, class T2, class C1, class C2>
-  JitFunction
-  function_OP_type_subtype_build(OSubLattice<T>& ret,
+  void
+  function_OP_type_subtype_build(JitFunction& function, OSubLattice<T>& ret,
 				 const QDPType<T1,C1> & l,const QDPSubType<T2,C2> & r)
   {
     typedef typename QDPType<T1,C1>::Subtype_t    LT;
     typedef typename QDPSubType<T2,C2>::Subtype_t RT;
     
-    if (ptx_db::db_enabled) {
-      JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-      if (!func.empty())
-	return func;
-    }
-
+    if (ptx_db::db_enabled)
+      {
+	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
+	if (!function.empty())
+	  return;
+      }
+    
     llvm_start_new_function("localInnerProduct_type_subtype",__PRETTY_FUNCTION__ );
 
     ParamRef p_th_count     = llvm_add_param<int>();
@@ -85,23 +86,25 @@ namespace QDP {
 
     ret_jit.elem( JitDeviceLayout::Scalar , r_idx_thread ) = op_jit( l_reg , r_reg );
     
-    return jit_get_function();
+    jit_get_function(function);
   }
 
   
   template<class OP, class T, class T1, class T2, class C1, class C2>
-  JitFunction
-  function_OP_subtype_type_build(OSubLattice<T>& ret,
+  void
+  function_OP_subtype_type_build(JitFunction& function, OSubLattice<T>& ret,
 				 const QDPSubType<T1,C1> & l,const QDPType<T2,C2> & r)
   {
     typedef typename QDPSubType<T1,C1>::Subtype_t LT;
     typedef typename QDPType<T2,C2>::Subtype_t    RT;
     
-    if (ptx_db::db_enabled) {
-      JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-      if (!func.empty())
-	return func;
-    }
+    if (ptx_db::db_enabled)
+      {
+	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
+	if (!function.empty())
+	  return;
+      }
+
 
     llvm_start_new_function("localInnerProduct_subtype_type",__PRETTY_FUNCTION__ );
 
@@ -134,7 +137,7 @@ namespace QDP {
 
     ret_jit.elem( JitDeviceLayout::Scalar , r_idx_thread ) = op_jit( l_reg , r_reg );   // ok: Scalar
     
-    return jit_get_function();
+    jit_get_function( function );
   }
 
 
@@ -143,14 +146,16 @@ namespace QDP {
 
   
 template<class T, class T1, class Op, class RHS>
-JitFunction
-function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs)
+void
+function_build(JitFunction& function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs)
 {
-  if (ptx_db::db_enabled) {
-    JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (!func.empty())
-      return func;
-  }
+  if (ptx_db::db_enabled)
+    {
+      llvm_ptx_db( function , __PRETTY_FUNCTION__ );
+      if (!function.empty())
+	return;
+    }
+
 
   llvm_start_new_function("eval",__PRETTY_FUNCTION__ );
 
@@ -206,21 +211,23 @@ function_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >
 	  forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , r_idx ), OpCombine()));
 
 
-  return jit_get_function();
+  jit_get_function( function );
 }
 
 
 
 
 template<class T, class C1, class Op, class RHS>
-JitFunction
-function_subtype_type_build(OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,C1 >& rhs)
+void
+function_subtype_type_build(JitFunction& function, OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,C1 >& rhs)
 {
-  if (ptx_db::db_enabled) {
-    JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (!func.empty())
-      return func;
-  }
+  if (ptx_db::db_enabled)
+    {
+      llvm_ptx_db( function , __PRETTY_FUNCTION__ );
+      if (!function.empty())
+	return;
+    }
+
 
   llvm_start_new_function("eval_subtype_type",__PRETTY_FUNCTION__ );
 
@@ -243,22 +250,24 @@ function_subtype_type_build(OSubLattice<T>& dest, const Op& op, const QDPExpr<RH
   op_jit( dest_jit.elem( JitDeviceLayout::Scalar , r_idx_thread ), // Coalesced
 	  forEach(rhs_jit, ViewLeaf( JitDeviceLayout::Coalesced , r_idx_perm ), OpCombine()));
 
-  return jit_get_function();
+  jit_get_function( function );
 }
 
 
   
 template<class T, class T1, class Op>
-JitFunction
-operator_type_subtype_build(OLattice<T>& dest, const Op& op, const QDPSubType<T1,OLattice<T1> >& rhs)
+void
+operator_type_subtype_build(JitFunction& function, OLattice<T>& dest, const Op& op, const QDPSubType<T1,OLattice<T1> >& rhs)
 {
   typedef typename QDPSubType<T1,OLattice<T1>>::Subtype_t RT;
       
-  if (ptx_db::db_enabled) {
-    JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (!func.empty())
-      return func;
-  }
+  if (ptx_db::db_enabled)
+    {
+      llvm_ptx_db( function , __PRETTY_FUNCTION__ );
+      if (!function.empty())
+	return;
+    }
+
 
   llvm_start_new_function("eval_type_subtype",__PRETTY_FUNCTION__ );
 
@@ -289,22 +298,24 @@ operator_type_subtype_build(OLattice<T>& dest, const Op& op, const QDPSubType<T1
 
   op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx_perm ), rhs_reg );
 
-  return jit_get_function();
+  jit_get_function( function );
 }
 
 
   
 template<class T, class T1, class Op>
-JitFunction
-operator_subtype_subtype_build(OSubLattice<T>& dest, const Op& op, const QDPSubType<T1,OLattice<T1> >& rhs)
+void
+operator_subtype_subtype_build(JitFunction& function, OSubLattice<T>& dest, const Op& op, const QDPSubType<T1,OLattice<T1> >& rhs)
 {
   typedef typename QDPSubType<T1,OLattice<T1>>::Subtype_t RT;
       
-  if (ptx_db::db_enabled) {
-    JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (!func.empty())
-      return func;
-  }
+  if (ptx_db::db_enabled)
+    {
+      llvm_ptx_db( function , __PRETTY_FUNCTION__ );
+      if (!function.empty())
+	return;
+    }
+
 
   llvm_start_new_function("eval_subtype_subtype",__PRETTY_FUNCTION__ );
 
@@ -325,7 +336,7 @@ operator_subtype_subtype_build(OSubLattice<T>& dest, const Op& op, const QDPSubT
   
   op_jit( dest_jit.elem( JitDeviceLayout::Scalar , r_idx_thread ), rhs_reg );
 
-  return jit_get_function();
+  jit_get_function( function );
 }
 
 
@@ -333,7 +344,7 @@ operator_subtype_subtype_build(OSubLattice<T>& dest, const Op& op, const QDPSubT
 
 template<class T, class T1, class Op, class RHS>
 void
-function_lat_sca_exec(JitFunction function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs, const Subset& s)
+function_lat_sca_exec(JitFunction& function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs, const Subset& s)
 {
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
   if (s.numSiteTable() < 1)
@@ -370,14 +381,16 @@ function_lat_sca_exec(JitFunction function, OLattice<T>& dest, const Op& op, con
 
 
 template<class T, class T1, class Op, class RHS>
-JitFunction
-function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
+void
+function_lat_sca_build(JitFunction& function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
 {
-  if (ptx_db::db_enabled) {
-    JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (!func.empty())
-      return func;
-  }
+  if (ptx_db::db_enabled)
+    {
+      llvm_ptx_db( function , __PRETTY_FUNCTION__ );
+      if (!function.empty())
+	return;
+    }
+
 
   std::vector<ParamRef> params = jit_function_preamble_param("eval_lat_sca",__PRETTY_FUNCTION__);
 
@@ -396,7 +409,7 @@ function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScala
   op_jit(dest_jit.elem( JitDeviceLayout::Coalesced , r_idx), 
 	 forEach(rhs_view, ViewLeaf( JitDeviceLayout::Scalar , r_idx ), OpCombine()));
 
-  return jit_get_function();
+  jit_get_function( function );
 }
 
 
@@ -405,14 +418,16 @@ function_lat_sca_build(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScala
 
 
 template<class T, class T1, class Op, class RHS>
-JitFunction
-function_lat_sca_subtype_build(OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
+void
+function_lat_sca_subtype_build(JitFunction& function, OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
 {
-  if (ptx_db::db_enabled) {
-    JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (!func.empty())
-      return func;
-  }
+  if (ptx_db::db_enabled)
+    {
+      llvm_ptx_db( function , __PRETTY_FUNCTION__ );
+      if (!function.empty())
+	return;
+    }
+
 
   llvm_start_new_function("eval_lat_sca_subtype",__PRETTY_FUNCTION__);
 
@@ -432,7 +447,7 @@ function_lat_sca_subtype_build(OSubLattice<T>& dest, const Op& op, const QDPExpr
   op_jit(dest_jit.elem( JitDeviceLayout::Scalar , r_idx_thread ), // Coalesced
 	 forEach(rhs_view, ViewLeaf( JitDeviceLayout::Scalar , r_idx_thread ), OpCombine()));
 
-  return jit_get_function();
+  jit_get_function( function );
 }
 
   
@@ -440,14 +455,16 @@ function_lat_sca_subtype_build(OSubLattice<T>& dest, const Op& op, const QDPExpr
 
 
 template<class T, class T1>
-JitFunction
-function_pokeSite_build( const OLattice<T>& dest , const OScalar<T1>& r  )
+void
+function_pokeSite_build( JitFunction& function, const OLattice<T>& dest , const OScalar<T1>& r  )
 {
-  if (ptx_db::db_enabled) {
-    JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (!func.empty())
-      return func;
-  }
+  if (ptx_db::db_enabled)
+    {
+      llvm_ptx_db( function , __PRETTY_FUNCTION__ );
+      if (!function.empty())
+	return;
+    }
+
 
   llvm_start_new_function("eval_pokeSite",__PRETTY_FUNCTION__);
 
@@ -469,13 +486,13 @@ function_pokeSite_build( const OLattice<T>& dest , const OScalar<T1>& r  )
   op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , r_siteindex ), 
 	  LeafFunctor< FuncRet_t1 , ViewLeaf >::apply( r_jit , ViewLeaf( JitDeviceLayout::Scalar , r_zero ) ) );
 
-  return jit_get_function();
+  jit_get_function( function );
 }
 
 
 template<class T, class T1>
 void 
-function_pokeSite_exec(JitFunction function, OLattice<T>& dest, const OScalar<T1>& rhs, const multi1d<int>& coord )
+function_pokeSite_exec(JitFunction& function, OLattice<T>& dest, const OScalar<T1>& rhs, const multi1d<int>& coord )
 {
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
@@ -499,14 +516,16 @@ function_pokeSite_exec(JitFunction function, OLattice<T>& dest, const OScalar<T1
 
 
 template<class T>
-JitFunction
-function_zero_rep_build(OLattice<T>& dest)
+void
+function_zero_rep_build( JitFunction& function, OLattice<T>& dest)
 {
-  if (ptx_db::db_enabled) {
-    JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (!func.empty())
-      return func;
-  }
+  if (ptx_db::db_enabled)
+    {
+      llvm_ptx_db( function , __PRETTY_FUNCTION__ );
+      if (!function.empty())
+	return;
+    }
+
 
   std::vector<ParamRef> params = jit_function_preamble_param("zero_rep",__PRETTY_FUNCTION__);
 
@@ -519,20 +538,22 @@ function_zero_rep_build(OLattice<T>& dest)
 
   zero_rep( dest_jit.elem(JitDeviceLayout::Coalesced,r_idx) );
 
-  return jit_get_function();
+  jit_get_function( function );
 }
 
 
 
 template<class T>
-JitFunction
-function_zero_rep_subtype_build(OSubLattice<T>& dest)
+void
+function_zero_rep_subtype_build( JitFunction& function, OSubLattice<T>& dest)
 {
-  if (ptx_db::db_enabled) {
-    JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (!func.empty())
-      return func;
-  }
+  if (ptx_db::db_enabled)
+    {
+      llvm_ptx_db( function , __PRETTY_FUNCTION__ );
+      if (!function.empty())
+	return;
+    }
+
 
   llvm_start_new_function("zero_rep_subtype",__PRETTY_FUNCTION__);
 
@@ -548,7 +569,7 @@ function_zero_rep_subtype_build(OSubLattice<T>& dest)
 
   zero_rep( dest_jit.elem(JitDeviceLayout::Coalesced,r_idx_thread) );
 
-  return jit_get_function();
+  jit_get_function( function );
 }
   
 
@@ -558,16 +579,16 @@ function_zero_rep_subtype_build(OSubLattice<T>& dest)
 
 
 template<class T>
-JitFunction
-function_random_build(OLattice<T>& dest , Seed& seed_tmp)
+void
+function_random_build( JitFunction& function, OLattice<T>& dest , Seed& seed_tmp)
 {
-  //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  if (ptx_db::db_enabled)
+    {
+      llvm_ptx_db( function , __PRETTY_FUNCTION__ );
+      if (!function.empty())
+	return;
+    }
 
-  if (ptx_db::db_enabled) {
-    JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (!func.empty())
-      return func;
-  }
 
   llvm_start_new_function("random",__PRETTY_FUNCTION__);
 
@@ -626,7 +647,7 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
   }
   save.end();
   
-  return jit_get_function();
+  jit_get_function( function );
 }
 
 
@@ -635,15 +656,16 @@ function_random_build(OLattice<T>& dest , Seed& seed_tmp)
 
 
 template<class T, class T1, class RHS>
-JitFunction
-//function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs )
-function_gather_build( const QDPExpr<RHS,OLattice<T1> >& rhs )
+void
+function_gather_build( JitFunction& function, const QDPExpr<RHS,OLattice<T1> >& rhs )
 {
-  if (ptx_db::db_enabled) {
-    JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-    if (!func.empty())
-      return func;
-  }
+  if (ptx_db::db_enabled)
+    {
+      llvm_ptx_db( function , __PRETTY_FUNCTION__ );
+      if (!function.empty())
+	return;
+    }
+
 
   typedef typename WordType<T1>::Type_t WT;
 
@@ -673,7 +695,7 @@ function_gather_build( const QDPExpr<RHS,OLattice<T1> >& rhs )
   OpAssign()( dest_jit.elem( JitDeviceLayout::Scalar , r_idx ) , 
 	      forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , r_idx_site ) , OpCombine() ) );
 
-  return jit_get_function();
+  jit_get_function( function );
 }
 
 
@@ -682,7 +704,7 @@ function_gather_build( const QDPExpr<RHS,OLattice<T1> >& rhs )
 
 template<class T1, class RHS>
 void
-  function_gather_exec( JitFunction function, int send_buf_id , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs , const Subset& subset )
+  function_gather_exec( JitFunction& function, int send_buf_id , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs , const Subset& subset )
 {
   if (subset.numSiteTable() < 1)
     return;
@@ -733,7 +755,7 @@ namespace COUNT {
 
 template<class T, class T1, class Op, class RHS>
 void 
-function_exec(JitFunction function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
+function_exec(JitFunction& function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
 {
   //QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
 
@@ -836,7 +858,7 @@ function_exec(JitFunction function, OLattice<T>& dest, const Op& op, const QDPEx
 
 template<class T, class C1, class Op, class RHS>
 void 
-function_subtype_type_exec(JitFunction function, OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,C1 >& rhs, const Subset& s)
+function_subtype_type_exec(JitFunction& function, OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,C1 >& rhs, const Subset& s)
 {
   int th_count = s.numSiteTable();
 
@@ -865,7 +887,7 @@ function_subtype_type_exec(JitFunction function, OSubLattice<T>& dest, const Op&
 
 template<class T, class T1, class Op>
 void 
-operator_type_subtype_exec(JitFunction function, OLattice<T>& dest, const Op& op, const QDPSubType<T1,OLattice<T1> >& rhs, const Subset& s)
+operator_type_subtype_exec(JitFunction& function, OLattice<T>& dest, const Op& op, const QDPSubType<T1,OLattice<T1> >& rhs, const Subset& s)
 {
   int th_count = s.numSiteTable();
 
@@ -894,7 +916,7 @@ operator_type_subtype_exec(JitFunction function, OLattice<T>& dest, const Op& op
 
 template<class T, class T1, class Op>
 void 
-operator_subtype_subtype_exec(JitFunction function, OSubLattice<T>& dest, const Op& op, const QDPSubType<T1,OLattice<T1> >& rhs, const Subset& s)
+operator_subtype_subtype_exec(JitFunction& function, OSubLattice<T>& dest, const Op& op, const QDPSubType<T1,OLattice<T1> >& rhs, const Subset& s)
 {
   int th_count = s.numSiteTable();
 
@@ -925,7 +947,7 @@ operator_subtype_subtype_exec(JitFunction function, OSubLattice<T>& dest, const 
 
 template<class T, class T1, class Op, class RHS>
 void 
-function_lat_sca_subtype_exec(JitFunction function, OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs, const Subset& s)
+function_lat_sca_subtype_exec(JitFunction& function, OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs, const Subset& s)
 {
   int th_count = s.numSiteTable();
 
@@ -956,7 +978,7 @@ function_lat_sca_subtype_exec(JitFunction function, OSubLattice<T>& dest, const 
 
 template<class T>
 void 
-function_zero_rep_exec(JitFunction function, OLattice<T>& dest, const Subset& s )
+function_zero_rep_exec(JitFunction& function, OLattice<T>& dest, const Subset& s )
 {
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
   if (s.numSiteTable() < 1)
@@ -987,7 +1009,7 @@ function_zero_rep_exec(JitFunction function, OLattice<T>& dest, const Subset& s 
 
 
 template<class T>
-void function_zero_rep_subtype_exec(JitFunction function, OSubLattice<T>& dest, const Subset& s )
+void function_zero_rep_subtype_exec(JitFunction& function, OSubLattice<T>& dest, const Subset& s )
 {
   int th_count = s.numSiteTable();
 
@@ -1013,7 +1035,7 @@ void function_zero_rep_subtype_exec(JitFunction function, OSubLattice<T>& dest, 
 
 template<class T>
 void 
-function_random_exec(JitFunction function, OLattice<T>& dest, const Subset& s , Seed& seed_tmp)
+function_random_exec(JitFunction& function, OLattice<T>& dest, const Subset& s , Seed& seed_tmp)
 {
   if (!s.hasOrderedRep())
     QDP_error_exit("random on subset with unordered representation not implemented");

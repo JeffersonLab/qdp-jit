@@ -452,7 +452,7 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
 
 	if (function.empty())
 	  {
-	    function = function_gather_build<InnerType_t>( subexpr );
+	    function_gather_build<InnerType_t>( function , subexpr );
 	  }
 
 	function_gather_exec(function, rRSrc.getSendBufId() , map , subexpr , f.subset );

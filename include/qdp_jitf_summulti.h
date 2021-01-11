@@ -6,7 +6,7 @@ namespace QDP {
 
 
   void
-  function_summulti_convert_ind_exec( JitFunction function, 
+  function_summulti_convert_ind_exec( JitFunction& function, 
 				      int size, int threads, int blocks, int shared_mem_usage,
 				      int in_id, int out_id,
 				      int numsubsets,
@@ -14,7 +14,7 @@ namespace QDP {
 				      const multi1d<QDPCache::ArgKey>& table_ids );
 
   void
-  function_summulti_exec( JitFunction function, 
+  function_summulti_exec( JitFunction& function, 
 			  int size, int threads, int blocks, int shared_mem_usage,
 			  int in_id, int out_id,
 			  int numsubsets,
@@ -25,14 +25,15 @@ namespace QDP {
   // T1 input
   // T2 output
   template< class T1 , class T2 , JitDeviceLayout input_layout >
-  JitFunction
-  function_summulti_convert_ind_build()
+  void
+  function_summulti_convert_ind_build(JitFunction& function)
   {
-    if (ptx_db::db_enabled) {
-      JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-      if (!func.empty())
-	return func;
-    }
+    if (ptx_db::db_enabled)
+      {
+	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
+	if (!function.empty())
+	  return;
+      }
 
     llvm_start_new_function("summulti_convert_ind",__PRETTY_FUNCTION__ );
 
@@ -146,7 +147,7 @@ namespace QDP {
     }
     loop_subset.end();
 
-    return jit_get_function();
+    jit_get_function(function);
   }
 
 
@@ -154,14 +155,16 @@ namespace QDP {
 
   // T input/output
   template< class T >
-  JitFunction
-  function_summulti_build()
+  void
+  function_summulti_build(JitFunction& function)
   {
-    if (ptx_db::db_enabled) {
-      JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-      if (!func.empty())
-	return func;
-    }
+    if (ptx_db::db_enabled)
+      {
+	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
+	if (!function.empty())
+	  return;
+      }
+
 
     llvm_start_new_function("summulti",__PRETTY_FUNCTION__ );
 
@@ -273,7 +276,7 @@ namespace QDP {
     loop_subset.end();
 
     
-    return jit_get_function();
+    jit_get_function(function);
   }
 
 

@@ -3,7 +3,7 @@
 
 namespace QDP {
 
-  void jit_launch(JitFunction function,int th_count,std::vector<QDPCache::ArgKey>& ids);
+  void jit_launch(JitFunction& function,int th_count,std::vector<QDPCache::ArgKey>& ids);
 
   //int jit_autotuning(JitFunction function,int lo,int hi,void ** param);
 

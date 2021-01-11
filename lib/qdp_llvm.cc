@@ -50,6 +50,7 @@ namespace QDP {
     std::string str_pretty;
     std::map<std::string,int> map_func_counter;
     std::string str_kernel_name;
+    std::string str_compute;
     
     std::vector< llvm::Type* > vecParamType;
     std::vector< llvm::Value* > vecArgument;
@@ -151,7 +152,7 @@ namespace QDP {
 
 
 
-  JitFunction llvm_ptx_db( const char * pretty )
+  void llvm_ptx_db( JitFunction& f , const char * pretty )
   {
     std::string id = get_ptx_db_id( pretty );
     
@@ -160,11 +161,7 @@ namespace QDP {
     if ( it != ptx_db::db.end() )
       {
 	//return get_fptr_from_ptx( "generic.ptx" , it->second );
-	return get_jitf( it->second , "main" );
-      }
-    else
-      {
-	return JitFunction();
+	get_jitf( f , it->second , str_kernel_name , str_pretty , str_compute );
       }
   }
 
@@ -428,6 +425,12 @@ namespace QDP {
 //    llvm::initializeCountingFunctionInserterPass(*Registry);
     llvm::initializeUnreachableBlockElimLegacyPassPass(*Registry);
     llvm::initializeConstantHoistingLegacyPassPass(*Registry);
+
+
+    auto major = gpu_getMajor();
+    auto minor = gpu_getMinor();
+
+    str_compute = "sm_" + std::to_string( major * 10 + minor );
 
 
     QDPIO::cout << "LLVM optimization level : " << llvm_opt::opt_level << "\n";
@@ -1176,10 +1179,6 @@ namespace QDP {
 
     llvm::TargetOptions options;
 
-    auto major = gpu_getMajor();
-    auto minor = gpu_getMinor();
-
-    std::string str_compute( "sm_" + std::to_string( major * 10 + minor ) );
 
 
     std::unique_ptr<llvm::TargetMachine> target_machine(TheTarget->createTargetMachine(
@@ -1230,72 +1229,6 @@ namespace QDP {
 
     std::string ptx = bos.str().str();
 
-#if 0
-    {
-      std::string ptxpath = "kernel.ptx";
-      std::string sasspath = "kernel.sass";
-      
-      std::ofstream f(ptxpath);
-      f << ptx;
-      //f.write(buffer.data(), buffer.size());
-      f.close();
-
-      FILE *fp;
-      char buf[1024];
-
-      string cmd = "ptxas -v --gpu-name " + str_compute + " " + ptxpath + " -o " + sasspath + " 2>&1";
-      
-      fp = popen( cmd.c_str() , "r" );
-      
-      if (fp == NULL) {
-	QDPIO::cerr << "Failed to run command via popen\n";
-	QDP_abort(1);
-      }
-
-      std::ostringstream output;
-      while (fgets(buf, sizeof(buf), fp) != NULL) {
-	output << buf;
-      }
-      
-      pclose(fp);
-
-      std::istringstream iss(output.str());
-
-      std::vector<std::string> words;
-      std::copy(istream_iterator<string>(iss),
-		istream_iterator<string>(),
-		std::back_inserter(words));
-
-      if ( words.size() < 32 )
-	{
-	  QDPIO::cerr << "Couldn't read all tokens (output of ptxas as changed?)\n";
-	  QDP_abort(1);
-	}
-
-      int kernel_stack = std::atoi( words[22].c_str() );
-      int kernel_spill_store = std::atoi( words[26].c_str() );
-      int kernel_spill_loads = std::atoi( words[30].c_str() );
-      int kernel_regs = std::atoi( words[38].c_str() );
-      int kernel_cmem = std::atoi( words[40].c_str() );
-
-      QDPIO::cout << "----- Kernel stats ------\n";
-      QDPIO::cout << "kernel_stack       = "<< kernel_stack << "\n";
-      QDPIO::cout << "kernel_spill_store = "<< kernel_spill_store << "\n";
-      QDPIO::cout << "kernel_spill_loads = "<< kernel_spill_loads << "\n";
-      QDPIO::cout << "kernel_regs        = "<< kernel_regs << "\n";
-      QDPIO::cout << "kernel_cmem        = "<< kernel_cmem << "\n";
-      
-#if 0      
-      string cmd = "ptxas --gpu-name " + compute + " " + ptxpath + " -o " + sasspath;
-      if (system(cmd.c_str()) == 0) {
-	cmd = "nvdisasm " + sasspath;
-	int ret = system(cmd.c_str());
-	(void)ret;  // Don't care if it fails
-      }
-#endif
-    }
-#endif
-    
     return ptx;
   }
 
@@ -1351,14 +1284,14 @@ namespace QDP {
   
 
 
-  JitFunction llvm_build_function()
+  void llvm_build_function(JitFunction& func)
   {
     addKernelMetadata( mainFunc );
 
     std::string ptx_kernel = get_ptx();
 
     //JitFunction func = get_fptr_from_ptx( fname , ptx_kernel );
-    JitFunction func = get_jitf( ptx_kernel , str_kernel_name );
+    get_jitf( func , ptx_kernel , str_kernel_name , str_pretty , str_compute );
 
     if ( ptx_db::db_enabled ) {
 
@@ -1388,8 +1321,6 @@ namespace QDP {
 	  db.close();
 	}
     } // ptx db
-
-    return func;
   }
 
 

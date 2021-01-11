@@ -97,7 +97,7 @@ namespace QDP {
     extern std::string dbname;
   }
 
-  JitFunction llvm_ptx_db( const char * pretty );
+  void llvm_ptx_db( JitFunction& f, const char * pretty );
 
   
   typedef int ParamRef;
@@ -258,7 +258,7 @@ namespace QDP {
 
   void addKernelMetadata(llvm::Function *F);
 
-  JitFunction llvm_build_function();
+  void llvm_build_function(JitFunction&);
 
 
   llvm::Value* llvm_sin_f32( llvm::Value* lhs );

@@ -26,8 +26,8 @@ namespace QDP {
 
   std::map< JitFunction::Func_t , std::string > mapCUFuncPTX;
 
-  std::string getPTXfromCUFunc(JitFunction f) {
-    return mapCUFuncPTX[f.getFunction()];
+  std::string getPTXfromCUFunc(JitFunction& f) {
+    return mapCUFuncPTX[f.get_function()];
   }
 
 
@@ -91,7 +91,7 @@ namespace QDP {
 
 
 
-  void CudaLaunchKernel( JitFunction f, 
+  void CudaLaunchKernel( JitFunction& f, 
 			 unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
 			 unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
 			 unsigned int  sharedMemBytes, int hStream, void** kernelParams, void** extra )
@@ -107,21 +107,21 @@ namespace QDP {
   }
 
   
-  int CudaGetAttributesLocalSize( JitFunction f )
+  int CudaGetAttributesLocalSize( JitFunction& f )
   {
     int local_mem = 0;
-    cuFuncGetAttribute( &local_mem , CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES , (CUfunction)f.getFunction() );
+    cuFuncGetAttribute( &local_mem , CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES , (CUfunction)f.get_function() );
     return local_mem;
   }
 
 
 
-  JitResult CudaLaunchKernelNoSync( JitFunction f, 
+  JitResult CudaLaunchKernelNoSync( JitFunction& f, 
 				    unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
 				    unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
 				    unsigned int  sharedMemBytes, int hStream, void** kernelParams, void** extra  )
   {
-    CUresult res = cuLaunchKernel((CUfunction)f.getFunction(), gridDimX, gridDimY, gridDimZ, 
+    CUresult res = cuLaunchKernel((CUfunction)f.get_function(), gridDimX, gridDimY, gridDimZ, 
 				  blockDimX, blockDimY, blockDimZ, 
 				  sharedMemBytes, 0, kernelParams, extra);
 
@@ -177,26 +177,26 @@ namespace QDP {
 
 
 
-  int CudaAttributeNumRegs( JitFunction f ) {
+  int CudaAttributeNumRegs( JitFunction& f ) {
     int pi;
     CUresult res;
-    res = cuFuncGetAttribute ( &pi, CU_FUNC_ATTRIBUTE_NUM_REGS , (CUfunction)f.getFunction() );
+    res = cuFuncGetAttribute ( &pi, CU_FUNC_ATTRIBUTE_NUM_REGS , (CUfunction)f.get_function() );
     CudaRes("CudaAttributeNumRegs",res);
     return pi;
   }
 
-  int CudaAttributeLocalSize( JitFunction f ) {
+  int CudaAttributeLocalSize( JitFunction& f ) {
     int pi;
     CUresult res;
-    res = cuFuncGetAttribute ( &pi, CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES , (CUfunction)f.getFunction() );
+    res = cuFuncGetAttribute ( &pi, CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES , (CUfunction)f.get_function() );
     CudaRes("CudaAttributeLocalSize",res);
     return pi;
   }
 
-  int CudaAttributeConstSize( JitFunction f ) {
+  int CudaAttributeConstSize( JitFunction& f ) {
     int pi;
     CUresult res;
-    res = cuFuncGetAttribute ( &pi, CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES , (CUfunction)f.getFunction() );
+    res = cuFuncGetAttribute ( &pi, CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES , (CUfunction)f.get_function() );
     CudaRes("CudaAttributeConstSize",res);
     return pi;
   }
@@ -436,76 +436,97 @@ namespace QDP {
 
 
 
-#if 0
-  JitFunction get_fptr_from_ptx( const char* fname , const std::string& kernel )
+
+
+  void get_jitf( JitFunction& func, const std::string& kernel_ptx , const std::string& kernel_name , const std::string& pretty , const std::string& str_compute )
   {
-    JitFunction func;
     CUresult ret;
     CUmodule cuModule;
 
-    ret = cuModuleLoadData(&cuModule, (const void *)kernel.c_str());
-    //ret = cuModuleLoadDataEx( &cuModule , ptx_kernel.c_str() , 0 , 0 , 0 );
-
-    if (ret) {
-      if (Layout::primaryNode()) {
-
-	QDPIO::cerr << "Error loading external data.\n";
-	
-	const char* pStr_name;
-	cuGetErrorName ( ret, &pStr_name );
-
-	QDPIO::cerr << "Error: " << pStr_name << "\n";
-	
-	const char* pStr_string;
-	cuGetErrorString ( ret, &pStr_string );
-
-	QDPIO::cerr << "String: " << pStr_string << "\n";
-
-	QDPIO::cerr << "Dumping kernel to " << fname << "\n";
-#if 1
-	std::ofstream out(fname);
-	out << kernel;
-	out.close();
-	//llvm_module_dump();
-#endif
-	QDP_error_exit("Abort.");
-      }
-    }
-
-    ret = cuModuleGetFunction( (CUfunction*)&func.getFunction(), cuModule, "main");
-    if (ret)
-      QDP_error_exit("Error returned from cuModuleGetFunction. Abort.");
-
-    mapCUFuncPTX[func.getFunction()] = kernel;
-
-    return func;
-  }
-#endif
-
-
-
-  JitFunction get_jitf( const std::string& kernel , const std::string& func_name )
-  {
-    JitFunction func;
-    CUresult ret;
-    CUmodule cuModule;
-
-    ret = cuModuleLoadData(&cuModule, (const void *)kernel.c_str());
+    func.set_kernel_name( kernel_name );
+    func.set_pretty( pretty );
+    
+    ret = cuModuleLoadData(&cuModule, (const void *)kernel_ptx.c_str());
 
     if (ret != CUDA_SUCCESS) {
       QDPIO::cerr << "Error loading external data.\n";
       QDP_abort(1);
     }
 
-    ret = cuModuleGetFunction( (CUfunction*)&func.getFunction(), cuModule, func_name.c_str() );
+    CUfunction cuf;
+    ret = cuModuleGetFunction( &cuf , cuModule , kernel_name.c_str() );
     if (ret != CUDA_SUCCESS) {
       QDPIO::cerr << "Error getting function.";
       QDP_abort(1);
     }
-    
-    mapCUFuncPTX[func.getFunction()] = kernel;
 
-    return func;
+    func.set_function( cuf );
+    
+    mapCUFuncPTX[func.get_function()] = kernel_ptx;
+
+    if ( gpu_get_record_stats() )
+      {
+	std::string ptxpath = "kernel.ptx";
+	std::string sasspath = "kernel.sass";
+      
+	std::ofstream f(ptxpath);
+	f << kernel_ptx;
+	f.close();
+
+	FILE *fp;
+	char buf[1024];
+
+	string cmd = "ptxas -v --gpu-name " + str_compute + " " + ptxpath + " -o " + sasspath + " 2>&1";
+      
+	fp = popen( cmd.c_str() , "r" );
+      
+	if (fp == NULL) {
+	  QDPIO::cerr << "Failed to run command via popen\n";
+	  QDP_abort(1);
+	}
+
+	std::ostringstream output;
+	while (fgets(buf, sizeof(buf), fp) != NULL) {
+	  output << buf;
+	}
+      
+	pclose(fp);
+
+	std::istringstream iss(output.str());
+
+	std::vector<std::string> words;
+	std::copy(istream_iterator<string>(iss),
+		  istream_iterator<string>(),
+		  std::back_inserter(words));
+
+	if ( words.size() < 32 )
+	  {
+	    QDPIO::cerr << "Couldn't read all tokens (output of ptxas has changed?)\n";
+	    QDP_abort(1);
+	  }
+
+	func.set_stack( std::atoi( words[22].c_str() ) );
+	func.set_spill_store( std::atoi( words[26].c_str() ) );
+	func.set_spill_loads( std::atoi( words[30].c_str() ) );
+	func.set_regs( std::atoi( words[38].c_str() ) );
+	func.set_cmem( std::atoi( words[40].c_str() ) );
+
+	// QDPIO::cout << "----- Kernel stats ------\n";
+	// QDPIO::cout << "kernel_stack       = "<< kernel_stack << "\n";
+	// QDPIO::cout << "kernel_spill_store = "<< kernel_spill_store << "\n";
+	// QDPIO::cout << "kernel_spill_loads = "<< kernel_spill_loads << "\n";
+	// QDPIO::cout << "kernel_regs        = "<< kernel_regs << "\n";
+	// QDPIO::cout << "kernel_cmem        = "<< kernel_cmem << "\n";
+      
+#if 0      
+	string cmd = "ptxas --gpu-name " + compute + " " + ptxpath + " -o " + sasspath;
+	if (system(cmd.c_str()) == 0) {
+	  cmd = "nvdisasm " + sasspath;
+	  int ret = system(cmd.c_str());
+	  (void)ret;  // Don't care if it fails
+	}
+#endif
+      }
   }
 
 

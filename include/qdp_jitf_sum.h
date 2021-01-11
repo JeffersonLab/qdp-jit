@@ -5,20 +5,20 @@
 
 namespace QDP {
 
-  void function_sum_convert_ind_exec( JitFunction function, 
+  void function_sum_convert_ind_exec( JitFunction& function, 
 				      int size, int threads, int blocks, int shared_mem_usage,
 				      int in_id, int out_id, int siteTableId );
 
-  void function_sum_convert_exec( JitFunction function, 
+  void function_sum_convert_exec( JitFunction& function, 
 				  int size, int threads, int blocks, int shared_mem_usage,
 				  int in_id, int out_id);
 
-  void function_sum_exec( JitFunction function, 
+  void function_sum_exec( JitFunction& function, 
 			  int size, int threads, int blocks, int shared_mem_usage,
 			  int in_id, int out_id);
 
 
-  void function_bool_reduction_exec( JitFunction function, 
+  void function_bool_reduction_exec( JitFunction& function, 
 				     int size, int threads, int blocks, int shared_mem_usage,
 				     int in_id, int out_id);
 
@@ -27,14 +27,15 @@ namespace QDP {
   // T1 input
   // T2 output
   template< class T1 , class T2 , JitDeviceLayout input_layout >
-  JitFunction 
-  function_sum_convert_ind_build()
+  void
+  function_sum_convert_ind_build(JitFunction& function)
   {
-    if (ptx_db::db_enabled) {
-      JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-      if (!func.empty())
-	return func;
-    }
+    if (ptx_db::db_enabled)
+      {
+	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
+	if (!function.empty())
+	  return;
+      }
 
     llvm_start_new_function("sum_convert_ind",__PRETTY_FUNCTION__ );
 
@@ -129,7 +130,7 @@ namespace QDP {
     }
     ifStore.end();
 
-    return jit_get_function();
+    jit_get_function(function);
   }
 
 
@@ -137,14 +138,15 @@ namespace QDP {
   // T1 input
   // T2 output
   template< class T1 , class T2 , JitDeviceLayout input_layout >
-  JitFunction 
-  function_sum_convert_build()
+  void
+  function_sum_convert_build(JitFunction& function)
   {
-    if (ptx_db::db_enabled) {
-      JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-      if (!func.empty())
-	return func;
-    }
+    if (ptx_db::db_enabled)
+      {
+	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
+	if (!function.empty())
+	  return;
+      }
 
     llvm_start_new_function("sum_convert",__PRETTY_FUNCTION__ );
 
@@ -237,21 +239,22 @@ namespace QDP {
     }
     ifStore.end();
 
-    return jit_get_function();
+    jit_get_function(function);
   }
 
 
 
 
   template<class T1>
-  JitFunction 
-  function_sum_build()
+  void
+  function_sum_build(JitFunction& function)
   {
-    if (ptx_db::db_enabled) {
-      JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-      if (!func.empty())
-	return func;
-    }
+    if (ptx_db::db_enabled)
+      {
+	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
+	if (!function.empty())
+	  return;
+      }
 
     llvm_start_new_function("sum",__PRETTY_FUNCTION__ );
 
@@ -344,7 +347,7 @@ namespace QDP {
     }
     ifStore.end();
 
-    return jit_get_function();
+    jit_get_function(function);
   }
 
 
@@ -353,14 +356,15 @@ namespace QDP {
   // T1 input
   // T2 output
   template< class T1 , class T2 , JitDeviceLayout input_layout , class ConvertOp, class ReductionOp >
-  JitFunction 
-  function_bool_reduction_convert_build()
+  void
+  function_bool_reduction_convert_build(JitFunction& function)
   {
-    if (ptx_db::db_enabled) {
-      JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-      if (!func.empty())
-	return func;
-    }
+    if (ptx_db::db_enabled)
+      {
+	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
+	if (!function.empty())
+	  return;
+      }
 
     llvm_start_new_function("bool_reduction_convert",__PRETTY_FUNCTION__ );
 
@@ -454,21 +458,22 @@ namespace QDP {
     }
     ifStore.end();
 
-    return jit_get_function();
+    jit_get_function(function);
   }
 
   
 
 
   template<class T1, class ReductionOp>
-  JitFunction 
-  function_bool_reduction_build()
+  void 
+  function_bool_reduction_build(JitFunction& function)
   {
-    if (ptx_db::db_enabled) {
-      JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-      if (!func.empty())
-	return func;
-    }
+    if (ptx_db::db_enabled)
+      {
+	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
+	if (!function.empty())
+	  return;
+      }
 
     llvm_start_new_function("bool_reduction",__PRETTY_FUNCTION__ );
 
@@ -561,7 +566,7 @@ namespace QDP {
     }
     ifStore.end();
 
-    return jit_get_function();
+    jit_get_function(function);
   }
 
 
