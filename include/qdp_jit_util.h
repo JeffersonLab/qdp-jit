@@ -29,6 +29,8 @@ namespace QDP {
   llvm::Value * llvm_seedToFloat( llvm::Value* a0,llvm::Value* a1,llvm::Value* a2,llvm::Value* a3);
 
 
+  void jit_launch(JitFunction& function,int th_count,std::vector<QDPCache::ArgKey>& ids);
+
 
   template<class T>
   typename JITType<T>::Type_t stack_alloc()

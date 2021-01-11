@@ -10,6 +10,14 @@ namespace QDP {
   enum class JitResult { JitSuccess , JitError , JitResource };
 
 
+  void gpu_create_events();
+  void gpu_record_start();
+  void gpu_record_stop();
+  void gpu_event_sync();
+  float gpu_get_time();
+
+  
+
   void CudaInit();
   int CudaGetConfig(int what);
   void CudaGetSM(int* maj,int* min);

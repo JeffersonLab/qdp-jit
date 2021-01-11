@@ -150,27 +150,11 @@ namespace QDP
 
   namespace RNG 
   {
-//  float sranf(Seed&, Seed&, const Seed&);
-
-  template<class T>
-  void sranf(WordJIT<T>& dest,
-	     PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > & seed, 
-	     PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > >& skewed_seed, 
-	     const OScalarJIT<PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > >& seed_mult);
-
-#if 0
-  template<class T>
-  void sranf(WordJIT<T>& dest,
-	     OLatticeJIT<PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > >& seed, 
-	     OLatticeJIT<PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > >& skewed_seed, 
-	     const OLatticeJIT<PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > >& seed_mult);
-#endif
-#if 0
-  template<class T>
-  WordJIT<T> sranf(OScalarJIT<PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > >& seed, 
-		   OScalarJIT<PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > >& skewed_seed, 
-		   const OScalarJIT<PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > >& seed_mult);
-#endif
+    template<class T>
+    void sranf(WordJIT<T>& dest,
+	       PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > & seed, 
+	       PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > >& skewed_seed, 
+	       const OScalarJIT<PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > >& seed_mult);
   }
 
 

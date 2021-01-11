@@ -473,6 +473,29 @@ namespace QDP {
 
 
 
+  void jit_launch(JitFunction& function,int th_count,std::vector<QDPCache::ArgKey>& ids)
+  {
+    std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
+
+    // Check for no-op
+    if ( th_count == 0 )
+      return;
+
+    // Increment the call counter
+    function.inc_call_counter();
+
+    const int threads_per_block = 128;
+    
+    kernel_geom_t geom = getGeom( th_count , threads_per_block );
+
+    JitResult result = CudaLaunchKernelNoSync(function,   geom.Nblock_x,geom.Nblock_y,1,    threads_per_block,1,1,    0, 0, &args[0] , 0);
+
+    if (result != JitResult::JitSuccess) {
+      QDPIO::cerr << "jit launch error, grid=(" << geom.Nblock_x << "," << geom.Nblock_y << "1), block=(" << threads_per_block << "1,1)\n";
+      QDP_abort(1);
+    }
+  }
+
 
 
 

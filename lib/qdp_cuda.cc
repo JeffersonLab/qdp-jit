@@ -24,6 +24,75 @@ namespace {
 
 namespace QDP {
 
+  namespace {
+    CUevent evStart;
+    CUevent evStop;
+  }
+
+  void gpu_create_events()
+  {
+    CUresult res = cuEventCreate ( &evStart, 0 );
+    if (res != CUDA_SUCCESS)
+      {
+	QDPIO::cout << "error event creation start\n";
+	QDP_abort(1);
+      }
+    res = cuEventCreate ( &evStop, 0 );
+    if (res != CUDA_SUCCESS)
+      {
+	QDPIO::cout << "error event creation stop\n";
+	QDP_abort(1);
+      }
+  }
+
+  void gpu_record_start()
+  {
+    CUresult res = cuEventRecord ( evStart, 0 );
+    if (res != CUDA_SUCCESS)
+      {
+	QDPIO::cout << "error event record start\n";
+	QDP_abort(1);
+      }
+  }
+
+  void gpu_record_stop()
+  {
+    CUresult res = cuEventRecord ( evStop, 0 );
+    if (res != CUDA_SUCCESS)
+      {
+	QDPIO::cout << "error event record stop\n";
+	QDP_abort(1);
+      }
+  }
+
+  void gpu_event_sync()
+  {
+    CUresult res = cuEventSynchronize ( evStop );
+    if (res != CUDA_SUCCESS)
+      {
+	QDPIO::cout << "error event sync stop\n";
+	QDP_abort(1);
+      }
+  }
+
+
+  float gpu_get_time()
+  {
+    float pMilliseconds;
+    CUresult res = cuEventElapsedTime( &pMilliseconds, evStart, evStop );
+    if (res != CUDA_SUCCESS)
+      {
+	QDPIO::cout << "error event get time\n";
+	QDP_abort(1);
+      }
+    return pMilliseconds;
+  }
+
+
+
+
+  
+  
   std::map< JitFunction::Func_t , std::string > mapCUFuncPTX;
 
   std::string getPTXfromCUFunc(JitFunction& f) {
@@ -278,6 +347,8 @@ namespace QDP {
     }
     CudaRes(__func__,ret);
 
+    std::cout << "creating CUDA events\n";
+    gpu_create_events();
   }
 
   void CudaMemGetInfo(size_t *free,size_t *total)

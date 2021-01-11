@@ -114,12 +114,9 @@ namespace QDP {
 #include "qdp_stdio.h"
 #include "qdp_pool_allocator.h"
 
+#include "qdp_cache.h"
 #include "qdp_jit_util.h"
 
-//#include "qdp_multi.h"
-#include "qdp_cache.h"
-
-//
 
 #include "qdp_arrays.h"
 
@@ -185,7 +182,7 @@ namespace QDP {
 #include "qdp_mapresource.h"
 #include "qdp_handle.h"
 #include "qdp_map.h"
-#include "qdp_autotuning.h"
+//#include "qdp_autotuning.h"
 
 #include "qdp_multi_outer.h"
 
