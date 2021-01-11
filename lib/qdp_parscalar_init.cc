@@ -321,6 +321,12 @@ namespace COUNT {
 	    //QDP_get_global_cache().get_allocator().enableMemset(val);
 	    QDP_get_global_cache().enableMemset(val);
 	  }
+	else if (strcmp((*argv)[i], "-blocksize")==0)
+	  {
+	    unsigned val;
+	    sscanf((*argv)[++i],"%u",&val);
+	    jit_util_set_threads_per_block( val );
+	  }
 	else if (strcmp((*argv)[i], "-cacheverbose")==0) 
 	  {
 	    qdp_cache_set_cache_verbose(true);

@@ -371,7 +371,7 @@ namespace QDP {
 
     QDPIO::cout << "  GPU memory (free,total)             : " << free/1024/1024 << "/" << total/1024/1024 << " MB\n";
 
-    QDPIO::cout << "GPU memory pool \n";
+    QDPIO::cout << "qdp-jit parameters\n";
     
     if (!setPoolSize) {
 
@@ -380,32 +380,38 @@ namespace QDP {
       int val_in_MiB = val/1024/1024;
 
       if (val_in_MiB < 1)
-	QDP_error_exit("Less than 1 MiB device memory available. Giving up.");
-
+	{
+	  QDPIO::cerr << "Less than 1 MiB device memory available. Giving up.\n";
+	  QDP_abort(1);
+	}
+      
       float val_min = (float)val_in_MiB;
 
       QDPInternal::globalMinValue( &val_min );
 
       if ( val_min > (float)val_in_MiB )
-	QDP_error_exit("Inconsistency: Global minimum %f larger than local value %d.",val_min,val_in_MiB);
+	{
+	  QDPIO::cerr << "Inconsistency: Global minimum " << val_min << " larger than local value " << val_in_MiB << "\n";
+	  QDP_abort(1);
+	}
 
-      if ( val_min < (float)val_in_MiB ) {
-	QDP_info("Global minimum %f of available GPU memory smaller than local value %d. Using global minimum.",val_min,val_in_MiB);
-      }
+      if ( val_min < (float)val_in_MiB )
+	{
+	  QDPIO::cout << "Global minimum " << val_min << " of available GPU memory smaller than local value " << val_in_MiB << ". Using global minimum.";
+      	  QDP_abort(1);
+	}
       int val_min_int = (int)val_min;
 
-      QDPIO::cout << "  size (using 90% rule)               : " << (int)val_min_int << " MB\n";
+      QDPIO::cout << "  memory pool size (default)          : " << (int)val_min_int << " MB\n";
       
-      //CUDADevicePoolAllocator::Instance().setPoolSize( ((size_t)val_min_int) * 1024 * 1024 );
       QDP_get_global_cache().setPoolSize( ((size_t)val_min_int) * 1024 * 1024 );
 
       setPoolSize = true;
     } else {
-      //QDP_info_primary("Using device pool size: %d MiB",(int)(CUDADevicePoolAllocator::Instance().getPoolSize()/1024/1024));
-      //QDP_info_primary("Using device pool size: %d MiB",(int)(QDP_get_global_cache().getPoolSize()/1024/1024));
-      QDPIO::cout << "  size (user request)                 : " << (int)(QDP_get_global_cache().getPoolSize()/1024/1024) << " MB\n";
+      QDPIO::cout << "  memory pool size (user request)     : " << (int)(QDP_get_global_cache().getPoolSize()/1024/1024) << " MB\n";
     }
 
+    QDPIO::cout << "  threads per block                   : " << jit_util_get_threads_per_block() << "\n";
 
     ret = cuCtxSetCacheConfig(CU_FUNC_CACHE_PREFER_L1);
     CudaRes("cuCtxSetCacheConfig",ret);

@@ -21,6 +21,20 @@ namespace QDP {
 #endif
   }
 
+  namespace {
+    int threads_per_block = 128;
+  }
+
+  void jit_util_set_threads_per_block( int t )
+  {
+    threads_per_block = t;
+  }
+
+  int jit_util_get_threads_per_block()
+  {
+    return threads_per_block;
+  }
+
 
   void jit_stats_lattice2dev()  { ++JITSTATS::lattice2dev; }
   void jit_stats_lattice2host() { ++JITSTATS::lattice2host; }
@@ -484,14 +498,14 @@ namespace QDP {
     // Increment the call counter
     function.inc_call_counter();
 
-    const int threads_per_block = 128;
+    const int threads_per_block = jit_util_get_threads_per_block();
     
     kernel_geom_t geom = getGeom( th_count , threads_per_block );
 
     JitResult result = CudaLaunchKernelNoSync(function,   geom.Nblock_x,geom.Nblock_y,1,    threads_per_block,1,1,    0, 0, &args[0] , 0);
 
     if (result != JitResult::JitSuccess) {
-      QDPIO::cerr << "jit launch error, grid=(" << geom.Nblock_x << "," << geom.Nblock_y << "1), block=(" << threads_per_block << "1,1)\n";
+      QDPIO::cerr << "jit launch error, grid=(" << geom.Nblock_x << "," << geom.Nblock_y << "1), block=(" << threads_per_block << ",1,1)\n";
       QDP_abort(1);
     }
   }

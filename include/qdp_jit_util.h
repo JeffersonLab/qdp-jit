@@ -31,6 +31,9 @@ namespace QDP {
 
   void jit_launch(JitFunction& function,int th_count,std::vector<QDPCache::ArgKey>& ids);
 
+  void jit_util_set_threads_per_block( int t );
+  int  jit_util_get_threads_per_block();
+
 
   template<class T>
   typename JITType<T>::Type_t stack_alloc()
