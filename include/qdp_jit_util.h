@@ -30,6 +30,7 @@ namespace QDP {
 
 
   void jit_launch(JitFunction& function,int th_count,std::vector<QDPCache::ArgKey>& ids);
+  void jit_launch_explicit_geom( JitFunction& function , std::vector<QDPCache::ArgKey>& ids , const kernel_geom_t& geom , unsigned int shared );
 
   void jit_util_set_threads_per_block( int t );
   int  jit_util_get_threads_per_block();

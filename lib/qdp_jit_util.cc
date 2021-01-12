@@ -502,10 +502,33 @@ namespace QDP {
     
     kernel_geom_t geom = getGeom( th_count , threads_per_block );
 
-    JitResult result = CudaLaunchKernelNoSync(function,   geom.Nblock_x,geom.Nblock_y,1,    threads_per_block,1,1,    0, 0, &args[0] , 0);
+    JitResult result = CudaLaunchKernelNoSync( function,
+					       geom.Nblock_x,geom.Nblock_y,1,
+					       geom.threads_per_block,1,1,
+					       0, 0, &args[0] , 0);
 
     if (result != JitResult::JitSuccess) {
       QDPIO::cerr << "jit launch error, grid=(" << geom.Nblock_x << "," << geom.Nblock_y << "1), block=(" << threads_per_block << ",1,1)\n";
+      QDP_abort(1);
+    }
+  }
+
+
+  void jit_launch_explicit_geom( JitFunction& function , std::vector<QDPCache::ArgKey>& ids , const kernel_geom_t& geom , unsigned int shared )
+  {
+    std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
+
+    // Increment the call counter
+    function.inc_call_counter();
+
+    JitResult result = CudaLaunchKernelNoSync( function,
+					       geom.Nblock_x,geom.Nblock_y,1,
+					       geom.threads_per_block,1,1,
+					       shared,
+					       0, &args[0] , 0);
+
+    if (result != JitResult::JitSuccess) {
+      QDPIO::cerr << "jit launch explicit geom error, grid=(" << geom.Nblock_x << "," << geom.Nblock_y << "1), block=(" << geom.threads_per_block << ",1,1)\n";
       QDP_abort(1);
     }
   }

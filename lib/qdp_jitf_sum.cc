@@ -9,7 +9,11 @@ namespace QDP {
 				 int in_id, int out_id, int siteTableId )
   {
     // Make sure 'threads' is a power of two (the jit kernel make this assumption)
-    assert( (threads & (threads - 1)) == 0 );
+    if ( (threads & (threads - 1)) != 0 )
+      {
+	QDPIO::cerr << "internal error: function_sum_convert_ind_exec not power of 2\n";
+	QDP_abort(1);
+      }
     
     int lo = 0;
     int hi = size;
@@ -24,11 +28,8 @@ namespace QDP {
     ids.push_back( siteTableId );
     ids.push_back( in_id );
     ids.push_back( out_id );
- 
-    std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
-    kernel_geom_t now = getGeom( hi-lo , threads );
 
-    CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threads,1,1,    shared_mem_usage, 0, &args[0] , 0);
+    jit_launch_explicit_geom( function , ids , getGeom( hi-lo , threads ) , shared_mem_usage );
   }
 
 
@@ -41,7 +42,11 @@ namespace QDP {
 				      const multi1d<QDPCache::ArgKey>& table_ids )
   {
     // Make sure 'threads' is a power of two (the jit kernel make this assumption)
-    assert( (threads & (threads - 1)) == 0 );
+    if ( (threads & (threads - 1)) != 0 )
+      {
+	QDPIO::cerr << "internal error: function_summulti_convert_ind_exec not power of 2\n";
+	QDP_abort(1);
+      }
 
     int sizes_id = QDP_get_global_cache().add( sizes.size()*sizeof(int) , QDPCache::Flags::OwnHostMemory , QDPCache::Status::host , sizes.slice() , NULL , NULL );
 
@@ -54,11 +59,8 @@ namespace QDP {
     ids.push_back( jit_tables.get_id() );
     ids.push_back( in_id );
     ids.push_back( out_id );
- 
-    std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
-    kernel_geom_t now = getGeom( size , threads );
 
-    CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threads,1,1,    shared_mem_usage, 0, &args[0] , 0);
+    jit_launch_explicit_geom( function , ids , getGeom( size , threads ) , shared_mem_usage );
 
     QDP_get_global_cache().signoff(sizes_id);
   }
@@ -73,7 +75,11 @@ namespace QDP {
 			  const multi1d<int>& sizes )
   {
     // Make sure 'threads' is a power of two (the jit kernel make this assumption)
-    assert( (threads & (threads - 1)) == 0 );
+    if ( (threads & (threads - 1)) != 0 )
+      {
+	QDPIO::cerr << "internal error: function_summulti_exec not power of 2\n";
+	QDP_abort(1);
+      }
 
     int sizes_id = QDP_get_global_cache().add( sizes.size()*sizeof(int) , QDPCache::Flags::OwnHostMemory , QDPCache::Status::host , sizes.slice() , NULL , NULL );
 
@@ -84,11 +90,8 @@ namespace QDP {
     ids.push_back( sizes_id );
     ids.push_back( in_id );
     ids.push_back( out_id );
- 
-    std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
-    kernel_geom_t now = getGeom( size , threads );
 
-    CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threads,1,1,    shared_mem_usage, 0, &args[0] , 0);
+    jit_launch_explicit_geom( function , ids , getGeom( size , threads ) , shared_mem_usage );
 
     QDP_get_global_cache().signoff(sizes_id);
   }
@@ -101,7 +104,11 @@ namespace QDP {
 			     int in_id, int out_id)
   {
     // Make sure 'threads' is a power of two (the jit kernel make this assumption)
-    assert( (threads & (threads - 1)) == 0 );
+    if ( (threads & (threads - 1)) != 0 )
+      {
+	QDPIO::cerr << "internal error: function_sum_convert_exec not power of 2\n";
+	QDP_abort(1);
+      }
 
     int lo = 0;
     int hi = size;
@@ -114,11 +121,8 @@ namespace QDP {
     ids.push_back( jit_hi.get_id() );
     ids.push_back( in_id );
     ids.push_back( out_id );
- 
-    std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
-    kernel_geom_t now = getGeom( hi-lo , threads );
 
-    CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threads,1,1,    shared_mem_usage, 0, &args[0] , 0);
+    jit_launch_explicit_geom( function , ids , getGeom( size , threads ) , shared_mem_usage );
   }
 
 
@@ -129,7 +133,11 @@ namespace QDP {
 		     int in_id, int out_id)
   {
     // Make sure 'threads' is a power of two (the jit kernel make this assumption)
-    assert( (threads & (threads - 1)) == 0 );
+    if ( (threads & (threads - 1)) != 0 )
+      {
+	QDPIO::cerr << "internal error: function_sum_exec not power of 2\n";
+	QDP_abort(1);
+      }
 
     int lo = 0;
     int hi = size;
@@ -142,11 +150,8 @@ namespace QDP {
     ids.push_back( jit_hi.get_id() );
     ids.push_back( in_id );
     ids.push_back( out_id );
- 
-    std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
-    kernel_geom_t now = getGeom( hi-lo , threads );
 
-    CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threads,1,1,    shared_mem_usage, 0, &args[0] , 0);
+    jit_launch_explicit_geom( function , ids , getGeom( size , threads ) , shared_mem_usage );
   }
 
 
@@ -156,7 +161,11 @@ namespace QDP {
 				 int in_id, int out_id)
   {
     // Make sure 'threads' is a power of two (the jit kernel make this assumption)
-    assert( (threads & (threads - 1)) == 0 );
+    if ( (threads & (threads - 1)) != 0 )
+      {
+	QDPIO::cerr << "internal error: function_global_max_exec not power of 2\n";
+	QDP_abort(1);
+      }
 
     int lo = 0;
     int hi = size;
@@ -169,11 +178,8 @@ namespace QDP {
     ids.push_back( jit_hi.get_id() );
     ids.push_back( in_id );
     ids.push_back( out_id );
- 
-    std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
-    kernel_geom_t now = getGeom( hi-lo , threads );
 
-    CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threads,1,1,    shared_mem_usage, 0, &args[0] , 0);
+    jit_launch_explicit_geom( function , ids , getGeom( size , threads ) , shared_mem_usage );
   }
 
 
@@ -185,7 +191,11 @@ namespace QDP {
 				  int in_id, int out_id)
   {
     // Make sure 'threads' is a power of two (the jit kernel make this assumption)
-    assert( (threads & (threads - 1)) == 0 );
+    if ( (threads & (threads - 1)) != 0 )
+      {
+	QDPIO::cerr << "internal error: function_isfinite_convert_exec not power of 2\n";
+	QDP_abort(1);
+      }
 
     int lo = 0;
     int hi = size;
@@ -199,10 +209,7 @@ namespace QDP {
     ids.push_back( in_id );
     ids.push_back( out_id );
  
-    std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
-    kernel_geom_t now = getGeom( hi-lo , threads );
-
-    CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threads,1,1,    shared_mem_usage, 0, &args[0] , 0);
+    jit_launch_explicit_geom( function , ids , getGeom( size , threads ) , shared_mem_usage );
   }
 
 
@@ -213,7 +220,11 @@ namespace QDP {
 				int in_id, int out_id)
   {
     // Make sure 'threads' is a power of two (the jit kernel make this assumption)
-    assert( (threads & (threads - 1)) == 0 );
+    if ( (threads & (threads - 1)) != 0 )
+      {
+	QDPIO::cerr << "internal error: function_bool_reduction_exec not power of 2\n";
+	QDP_abort(1);
+      }
 
     int lo = 0;
     int hi = size;
@@ -226,11 +237,8 @@ namespace QDP {
     ids.push_back( jit_hi.get_id() );
     ids.push_back( in_id );
     ids.push_back( out_id );
- 
-    std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
-    kernel_geom_t now = getGeom( hi-lo , threads );
 
-    CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threads,1,1,    shared_mem_usage, 0, &args[0] , 0);
+    jit_launch_explicit_geom( function , ids , getGeom( size , threads ) , shared_mem_usage );
   }
 
   
