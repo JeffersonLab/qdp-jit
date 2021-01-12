@@ -10,6 +10,9 @@
 
 #include "cuda.h"
 
+#include <unistd.h>
+
+
 #include "cudaProfiler.h"
 
 using namespace std;
@@ -175,7 +178,7 @@ namespace QDP {
 				    unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
 				    unsigned int  sharedMemBytes, int hStream, void** kernelParams, void** extra  )
   {
-    if (gpu_get_record_stats())
+    if (gpu_get_record_stats() && Layout::primaryNode())
       {
 	gpu_record_start();
       }
@@ -184,7 +187,7 @@ namespace QDP {
 				  blockDimX, blockDimY, blockDimZ, 
 				  sharedMemBytes, 0, kernelParams, extra);
     
-    if (gpu_get_record_stats())
+    if (gpu_get_record_stats() && Layout::primaryNode())
       {
 	gpu_record_stop();
 	gpu_event_sync();
@@ -525,10 +528,10 @@ namespace QDP {
     
     mapCUFuncPTX[func.get_function()] = kernel_ptx;
 
-    if ( gpu_get_record_stats() )
+    if ( gpu_get_record_stats() && Layout::primaryNode() )
       {
-	std::string ptxpath = "kernel.ptx";
-	std::string sasspath = "kernel.sass";
+	std::string ptxpath  = "kernel_n" + std::to_string( Layout::nodeNumber() ) + "_p" + std::to_string( ::getpid() ) + ".ptx";
+	std::string sasspath = "kernel_n" + std::to_string( Layout::nodeNumber() ) + "_p" + std::to_string( ::getpid() ) + ".sass";
       
 	std::ofstream f(ptxpath);
 	f << kernel_ptx;
@@ -541,10 +544,11 @@ namespace QDP {
       
 	fp = popen( cmd.c_str() , "r" );
       
-	if (fp == NULL) {
-	  QDPIO::cerr << "Failed to run command via popen\n";
-	  QDP_abort(1);
-	}
+	if (fp == NULL)
+	  {
+	    QDPIO::cerr << "Stats error: Failed to run command via popen\n";
+	    return;
+	  }
 
 	std::ostringstream output;
 	while (fgets(buf, sizeof(buf), fp) != NULL) {
@@ -562,10 +566,13 @@ namespace QDP {
 
 	if ( words.size() < 32 )
 	  {
-	    QDPIO::cerr << "Couldn't read all tokens (output of ptxas has changed?)\n";
-	    QDP_abort(1);
+	    std::cerr << "Couldn't read all tokens (output of ptxas has changed?)\n";
+	    std::cerr << "----- Output -------\n";
+	    std::cerr << output.str() << "\n";
+	    std::cerr << "--------------------\n";
+	    return;
 	  }
-	
+
 	//
 	// Usually the output of ptxas -v looks like
 	//
@@ -602,9 +609,9 @@ namespace QDP {
 	// Zero encountered ??
 	if (func.get_regs() == 0)
 	  {
-	    QDPIO::cout << "----- zero regs encountered -----\n";
-	    QDPIO::cout << output.str() << "\n";
-	    QDPIO::cout << "----------------------------\n";
+	    std::cerr << "----- zero regs encountered -----\n";
+	    std::cerr << output.str() << "\n";
+	    std::cerr << "----------------------------\n";
 	  }
 #endif
 	
