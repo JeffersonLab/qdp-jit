@@ -15,7 +15,11 @@ namespace QDP
 							  const multi1d<int>& sizes,
 							  const multi1d<QDPCache::ArgKey>& table_ids)
   {
-    assert( (threads & (threads - 1)) == 0 );
+    if ( (threads & (threads - 1)) != 0 )
+      {
+	QDPIO::cerr << "internal error: function_multi_localInnerProduct_sum_convert_exec not power of 2\n";
+	QDP_abort(1);
+      }
 
     int sizes_id = QDP_get_global_cache().add( sizes.size()*sizeof(int) , QDPCache::Flags::OwnHostMemory , QDPCache::Status::host , sizes.slice() , NULL , NULL );
 
@@ -31,10 +35,7 @@ namespace QDP
     ids.push_back( out_id );
     ids.push_back( v_id );
 
-    std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
-    kernel_geom_t now = getGeom( size , threads );
-
-    CudaLaunchKernel(function,   now.Nblock_x,now.Nblock_y,1,    threads,1,1,    shared_mem_usage, 0, &args[0] , 0);
+    jit_launch_explicit_geom( function , ids , getGeom( size , threads ) , shared_mem_usage );
 
     QDP_get_global_cache().signoff(sizes_id);
   }

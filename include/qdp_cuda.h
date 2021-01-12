@@ -22,11 +22,6 @@ namespace QDP {
   int CudaGetConfig(int what);
   void CudaGetSM(int* maj,int* min);
 
-  void CudaLaunchKernel( JitFunction& f, 
-			 unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
-			 unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
-			 unsigned int  sharedMemBytes, int hStream, void** kernelParams, void** extra );
-
   JitResult CudaLaunchKernelNoSync( JitFunction& f, 
 				    unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
 				    unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 

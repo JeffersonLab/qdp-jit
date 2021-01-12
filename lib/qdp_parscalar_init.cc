@@ -7,6 +7,7 @@
 
 #include <stdlib.h>
 #include <unistd.h>
+//#include <iomanip>
 
 #include "qdp.h"
 #include "qmp.h"
@@ -327,14 +328,6 @@ namespace COUNT {
 	    sscanf((*argv)[++i],"%u",&val);
 	    jit_util_set_threads_per_block( val );
 	  }
-	else if (strcmp((*argv)[i], "-cacheverbose")==0) 
-	  {
-	    qdp_cache_set_cache_verbose(true);
-	  }
-	else if (strcmp((*argv)[i], "-launchverbose")==0) 
-	  {
-	    qdp_cache_set_launch_verbose(true);
-	  }
 	else if (strcmp((*argv)[i], "-stats")==0) 
 	  {
 	    gpu_set_record_stats();
@@ -590,9 +583,29 @@ namespace COUNT {
 		    QDPIO::cout << "lspill" << "\t";
 		    QDPIO::cout << "regs" << "\t";
 		    QDPIO::cout << "cmem" << "\t";
+		    QDPIO::cout << "sum(ms)" << "\t\t";
+		    QDPIO::cout << "mean" << "\t\t";
+		    QDPIO::cout << "stddev" << "\t\t";
 		    QDPIO::cout << "name" << "\n";
 		    
 		    std::vector<JitFunction*>& all = gpu_get_functions();
+
+#if 1
+		    struct compare_t
+		    {
+		      inline bool operator() ( JitFunction*& lhs,  JitFunction*& rhs)
+		      {
+			double sum_lhs = std::accumulate( lhs->get_timings().begin(), lhs->get_timings().end(), 0.0);
+			double sum_rhs = std::accumulate( rhs->get_timings().begin(), rhs->get_timings().end(), 0.0);
+			return (sum_lhs > sum_rhs);
+		      }
+		    };
+
+		    std::sort(all.begin(), all.end(), compare_t());
+#endif
+
+		    TextFileWriter f_stats("qdp_jit_stats.txt");
+
 		    for ( int i = 0 ; i < all.size() ; ++i )
 		      {
 			QDPIO::cout << i << "\t";
@@ -602,8 +615,50 @@ namespace COUNT {
 			QDPIO::cout << all.at(i)->get_spill_loads() << "\t";
 			QDPIO::cout << all.at(i)->get_regs() << "\t";
 			QDPIO::cout << all.at(i)->get_cmem() << "\t";
+
+			auto timings = all.at(i)->get_timings();
+
+			double sum = std::accumulate(timings.begin(), timings.end(), 0.0);
+			double mean = sum / timings.size();
+			
+			double sq_sum = std::inner_product( timings.begin() , timings.end() , timings.begin() , 0.0 );
+			double stdev = 0.;
+			if (timings.size() > 1)
+			  stdev = std::sqrt( sq_sum / timings.size() - mean * mean );
+
+			if (Layout::primaryNode())
+			  printf("%f\t%f\t%f\t",(float)sum,(float)mean,(float)stdev);
+			
 			QDPIO::cout << all.at(i)->get_kernel_name() << "\n";
+
+#if 1
+			//f_stats << std::fixed << std::setw( 11 );
+			f_stats << i << "\t";
+			f_stats << all.at(i)->get_call_counter() << "\t";
+			f_stats << all.at(i)->get_stack() << "\t";
+			f_stats << all.at(i)->get_spill_store() << "\t";
+			f_stats << all.at(i)->get_spill_loads() << "\t";
+			f_stats << all.at(i)->get_regs() << "\t";
+			f_stats << all.at(i)->get_cmem() << "\t";
+			f_stats << (float)sum << "\t" << (float)mean << "\t" << (float)stdev << "\t";
+			f_stats << all.at(i)->get_kernel_name() << "\n";
+#endif
 		      }
+
+#if 1
+		    f_stats << "\n\n";
+		    for ( int i = 0 ; i < all.size() ; ++i )
+		      {
+			f_stats << all.at(i)->get_kernel_name() << "\t";
+			f_stats << all.at(i)->get_pretty() << "\n\n";
+		      }
+		    
+		    // Close file
+		    f_stats.flush();
+		    f_stats.close();
+#endif
+		    
+
 		  }
 		
 		FnMapRsrcMatrix::Instance().cleanup();

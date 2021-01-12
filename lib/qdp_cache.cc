@@ -19,7 +19,6 @@ namespace QDP
     static CUDAPOOL* __cache_pool_allocator;
 
     bool __cacheverbose = false;
-    bool __launchverbose = false;
 
     CUDAPOOL& get__cache_pool_allocator()
     {
@@ -42,11 +41,7 @@ namespace QDP
     __cacheverbose = b;
   }
 
-  bool qdp_cache_get_launch_verbose() { return __launchverbose; }
-  void qdp_cache_set_launch_verbose(bool b) {
-    std::cout << "Set launch to verbose\n";
-    __launchverbose = b;
-  }
+
 
 
   void QDPCache::enableMemset(unsigned val)

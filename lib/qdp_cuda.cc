@@ -160,21 +160,6 @@ namespace QDP {
 
 
 
-  void CudaLaunchKernel( JitFunction& f, 
-			 unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
-			 unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
-			 unsigned int  sharedMemBytes, int hStream, void** kernelParams, void** extra )
-  {
-    JitResult result = CudaLaunchKernelNoSync(f, gridDimX, gridDimY, gridDimZ, 
-					     blockDimX, blockDimY, blockDimZ, 
-					     sharedMemBytes, 0, kernelParams, extra);
-    if (result != JitResult::JitSuccess) {
-      QDP_error_exit("CUDA launch error (CudaLaunchKernel): grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
-		     gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes );
-    }
-
-  }
-
   
   int CudaGetAttributesLocalSize( JitFunction& f )
   {
@@ -190,24 +175,23 @@ namespace QDP {
 				    unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
 				    unsigned int  sharedMemBytes, int hStream, void** kernelParams, void** extra  )
   {
+    if (gpu_get_record_stats())
+      {
+	gpu_record_start();
+      }
+    
     CUresult res = cuLaunchKernel((CUfunction)f.get_function(), gridDimX, gridDimY, gridDimZ, 
 				  blockDimX, blockDimY, blockDimZ, 
 				  sharedMemBytes, 0, kernelParams, extra);
-
-    if (res == CUDA_SUCCESS)
+    
+    if (gpu_get_record_stats())
       {
-	if (qdp_cache_get_launch_verbose())
-	  {
-	    QDP_info("CudaLaunchKernelNoSync: grid=(%u,%u,%u), block=(%u,%u,%u), shmem=%u",
-		     gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes );
-	  }
-	
+	gpu_record_stop();
+	gpu_event_sync();
+	float time = gpu_get_time();
+	f.add_timing( time );
       }
-    else
-      {
-	//
-      }
-
+  
     JitResult ret;
 
     switch (res) {
@@ -581,13 +565,49 @@ namespace QDP {
 	    QDPIO::cerr << "Couldn't read all tokens (output of ptxas has changed?)\n";
 	    QDP_abort(1);
 	  }
+	
+	//
+	// Usually the output of ptxas -v looks like
+	//
+	// ptxas info    : 0 bytes gmem
+	// ptxas info    : Compiling entry function 'sum0' for 'sm_50'
+	// ptxas info    : Function properties for sum0
+	//     0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+	// ptxas info    : Used 12 registers, 344 bytes cmem[0]
+	//
+	// But for functions that use calls to other functions like
+	// into the libdevice the first line might like more like
+	//
+	// ptxas info    : 0 bytes gmem, 24 bytes cmem[3]
 
-	func.set_stack( std::atoi( words[22].c_str() ) );
-	func.set_spill_store( std::atoi( words[26].c_str() ) );
-	func.set_spill_loads( std::atoi( words[30].c_str() ) );
-	func.set_regs( std::atoi( words[38].c_str() ) );
-	func.set_cmem( std::atoi( words[40].c_str() ) );
+	int pos_add = 0;
+	if (words[5] == "gmem,")
+	  {
+	    pos_add = 3;
+	  }
+	
+	const int pos_stack = 22 + pos_add;
+	const int pos_store = 26 + pos_add;
+	const int pos_loads = 30 + pos_add;
+	const int pos_regs = 38 + pos_add;
+	const int pos_cmem = 40 + pos_add;
 
+	func.set_stack( std::atoi( words[ pos_stack ].c_str() ) );
+	func.set_spill_store( std::atoi( words[ pos_store ].c_str() ) );
+	func.set_spill_loads( std::atoi( words[ pos_loads ].c_str() ) );
+	func.set_regs( std::atoi( words[ pos_regs ].c_str() ) );
+	func.set_cmem( std::atoi( words[ pos_cmem ].c_str() ) );
+
+#if 1
+	// Zero encountered ??
+	if (func.get_regs() == 0)
+	  {
+	    QDPIO::cout << "----- zero regs encountered -----\n";
+	    QDPIO::cout << output.str() << "\n";
+	    QDPIO::cout << "----------------------------\n";
+	  }
+#endif
+	
 	// QDPIO::cout << "----- Kernel stats ------\n";
 	// QDPIO::cout << "kernel_stack       = "<< kernel_stack << "\n";
 	// QDPIO::cout << "kernel_spill_store = "<< kernel_spill_store << "\n";

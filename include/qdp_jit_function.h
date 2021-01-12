@@ -41,6 +41,7 @@ namespace QDP {
     void set_cmem( int s ) { cmem = s; }
     void set_kernel_name( const std::string& s ) { kernel_name = s; }
     void set_pretty( const std::string& s ) { pretty = s; }
+    void add_timing( float t ) { timings.push_back(t); }
     
     int get_stack() { return stack; }
     int get_spill_store() { return spill_store; }
@@ -49,7 +50,7 @@ namespace QDP {
     int get_cmem() { return cmem; }
     std::string get_kernel_name() { return kernel_name; }
     std::string get_pretty() { return pretty; }
-
+    const std::vector<float>& get_timings() const { return timings; }
     
   private:
     void check_empty();
@@ -67,6 +68,8 @@ namespace QDP {
     
     std::string kernel_name;
     std::string pretty;
+
+    std::vector<float> timings;
   };
 
 
