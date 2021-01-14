@@ -88,7 +88,7 @@ namespace QDP {
   namespace ptx_db {
     bool db_enabled = false;
     std::string dbname = "dummy.dat";
-    typedef std::map< std::string , std::string > DBType;
+    typedef std::map< std::string , std::pair< std::string , std::string > > DBType; // pretty+other stuff --> function name , PTX string
     DBType db;
   }
 
@@ -161,7 +161,7 @@ namespace QDP {
     if ( it != ptx_db::db.end() )
       {
 	//return get_fptr_from_ptx( "generic.ptx" , it->second );
-	get_jitf( f , it->second , str_kernel_name , str_pretty , str_compute );
+	get_jitf( f , it->second.second , it->second.first , str_pretty , str_compute );
       }
   }
 
@@ -463,14 +463,28 @@ namespace QDP {
 	      if (f.eof())
 		break;
 
-	      QDPIO::cout << "ptx_db: read key_size=" << size1 << " ptx_size=" << size2 << "\n";
+	      int size3;
+	      f >> size3;
+	      if (f.eof())
+		break;
+	      char* buf3 = new char[size3];
+	      f.read( buf3 , size3 );
+	      if (f.eof())
+		break;
+
+	      QDPIO::cout << "ptx_db: read "
+			  << " key_size=" << size1
+			  << " name_size=" << size2
+			  << " ptx_size=" << size3 << "\n";
 
 	      std::string key(buf1,size1);
-	      std::string val(buf2,size2);
-	      ptx_db::db.insert( std::make_pair( key , val ) );
+	      std::string name(buf2,size2);
+	      std::string ptx(buf3,size3);
+	      ptx_db::db.insert( std::make_pair( key , std::make_pair( name , ptx ) ) );
 
 	      delete[] buf1;
 	      delete[] buf2;
+	      delete[] buf3;
 	    }
 	}
 
@@ -1300,11 +1314,11 @@ namespace QDP {
 	  std::string id = get_ptx_db_id( str_pretty );
 
 	  if ( ptx_db::db.find( id ) != ptx_db::db.end() ) {
-	    QDPIO::cout << "internal error: key already exists in DB but wasn't found before\n" << id << "\n";
+	    QDPIO::cout << "internal error: key already exists in DB but wasn't found earlier\n" << id << "\n";
 	    QDP_abort(1);
 	  }
 
-	  ptx_db::db[ id ] = ptx_kernel;
+	  ptx_db::db[ id ] = std::make_pair( str_kernel_name , ptx_kernel );
 
 	  std::ofstream db;
 	  db.open ( ptx_db::dbname , ios::out | ios::binary );
@@ -1314,9 +1328,13 @@ namespace QDP {
 	      db << size1;
 	      db.write( it->first.c_str() , size1 );
 
-	      int size2 = it->second.size();
+	      int size2 = it->second.first.size();
 	      db << size2;
-	      db.write( it->second.c_str() , size2 );
+	      db.write( it->second.first.c_str() , size2 );
+
+	      int size3 = it->second.second.size();
+	      db << size3;
+	      db.write( it->second.second.c_str() , size3 );
 	    }
 	  db.close();
 	}
