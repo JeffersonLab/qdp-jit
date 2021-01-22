@@ -64,6 +64,12 @@ namespace QDP {
     llvm::Value *r_arg_start;
   }
 
+  namespace AMDspecific {
+    ParamRef __threads_per_group;
+    ParamRef __grid_size_x;
+  }
+
+
   namespace llvm_counters {
     int label_counter;
   }
@@ -532,6 +538,11 @@ namespace QDP {
 
     llvm_setup_math_functions();
 
+#ifdef QDP_BACKEND_ROCM
+    AMDspecific::__threads_per_group = llvm_add_param<int>();
+    AMDspecific::__grid_size_x       = llvm_add_param<int>();
+#endif
+    
     // llvm::outs() << "------------------------- linked module\n";
     // llvm_print_module(Mod,"ir_linked.ll");
     //llvm_module_dump();
@@ -548,6 +559,10 @@ namespace QDP {
 			       false); // no vararg
     mainFunc = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, str_kernel_name , Mod.get());
 
+#ifdef QDP_BACKEND_ROCM
+    mainFunc->setCallingConv( llvm::CallingConv::AMDGPU_KERNEL );
+#endif
+    
     unsigned Idx = 0;
     for (llvm::Function::arg_iterator AI = mainFunc->arg_begin(), AE = mainFunc->arg_end() ; AI != AE ; ++AI, ++Idx) {
       AI->setName( std::string("arg")+std::to_string(Idx) );
@@ -1031,15 +1046,21 @@ namespace QDP {
   {
     llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getVoidTy(TheContext), false);
 
+    QDPIO::cout << "bar sync maybe leave readnone out!\n";
     llvm::AttrBuilder ABuilder;
     ABuilder.addAttribute(llvm::Attribute::ReadNone);
 
-    auto Bar = Mod->getOrInsertFunction( "llvm.nvvm.barrier0" , 
+#ifdef QDP_BACKEND_ROCM
+    std::string bar_name("llvm.amdgcn.s.barrier");
+#else
+    std::string bar_name("llvm.nvvm.barrier0");
+#endif
+    
+    auto Bar = Mod->getOrInsertFunction( bar_name.c_str() , 
 					 IntrinFnTy , 
 					 llvm::AttributeList::get(TheContext, 
 								  llvm::AttributeList::FunctionIndex, 
-								  ABuilder)
-					 );
+								  ABuilder) );
 
     builder->CreateCall(Bar);
   }
@@ -1066,13 +1087,27 @@ namespace QDP {
   }
 
 
+  
+#ifdef QDP_BACKEND_ROCM
+  llvm::Value * llvm_call_special_workitem_x() {     return llvm_special("llvm.amdgcn.workitem.id.x"); }
+  llvm::Value * llvm_call_special_workgroup_x() {     return llvm_special("llvm.amdgcn.workgroup.id.x"); }
+  llvm::Value * llvm_call_special_workgroup_y() {     return llvm_special("llvm.amdgcn.workgroup.id.y"); }
 
+  llvm::Value * llvm_call_special_tidx() { return llvm_call_special_workitem_x(); }
+  llvm::Value * llvm_call_special_ntidx() { return llvm_derefParam( AMDspecific::__threads_per_group ); }
+  llvm::Value * llvm_call_special_ctaidx() { return llvm_call_special_workgroup_x(); }
+  llvm::Value * llvm_call_special_nctaidx() { return llvm_derefParam( AMDspecific::__grid_size_x ); }
+  llvm::Value * llvm_call_special_ctaidy() { return llvm_call_special_workgroup_y();  }
+#else
   llvm::Value * llvm_call_special_tidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.tid.x"); }
   llvm::Value * llvm_call_special_ntidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.ntid.x"); }
   llvm::Value * llvm_call_special_ctaidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.x"); }
   llvm::Value * llvm_call_special_nctaidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.nctaid.x"); }
   llvm::Value * llvm_call_special_ctaidy() { return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.y"); }
+#endif
 
+  
+  
 
   llvm::Value * llvm_thread_idx() { 
     llvm::Value * tidx = llvm_call_special_tidx();
@@ -1305,8 +1340,8 @@ namespace QDP {
 
   
 
-
-  void llvm_build_function(JitFunction& func)
+  
+  void llvm_build_function_cuda(JitFunction& func)
   {
     addKernelMetadata( mainFunc );
 
@@ -1351,6 +1386,124 @@ namespace QDP {
 
 
 
+  
+  void llvm_build_function_rocm(JitFunction& func)
+  {
+    llvm::Triple TheTriple;
+    TheTriple.setArch (llvm::Triple::ArchType::amdgcn);
+    TheTriple.setVendor (llvm::Triple::VendorType::AMD);
+    TheTriple.setOS (llvm::Triple::OSType::AMDHSA);
+
+    std::cout << "triple set\n";
+
+    std::string Error;
+    const llvm::Target *TheTarget = llvm::TargetRegistry::lookupTarget( TheTriple.str() , Error );
+    if (!TheTarget) {
+      std::cout << Error;
+      QDPIO::cerr << "Something went wrong setting the target\n";
+      QDP_abort(1);
+    }
+
+    QDPIO::cout << "got target: " << TheTarget->getName() << "\n";
+    QDPIO::cout << "using arch: " << str_arch << "\n";
+
+    llvm::CodeGenOpt::Level OLvl = llvm::CodeGenOpt::Default;
+
+    llvm::TargetOptions Options;
+
+    std::string FeaturesStr;
+
+
+    
+    std::unique_ptr<llvm::TargetMachine> TargetMachine(TheTarget->createTargetMachine(
+										      TheTriple.getTriple(), 
+										      str_arch,
+										      FeaturesStr, 
+										      Options,
+										      llvm::Reloc::PIC_
+										      )
+						       );
+
+    Mod->setDataLayout(TargetMachine->createDataLayout());
+
+
+    //llvm_module_dump();
+
+    QDPIO::cout << "got target machine CPU: " << TargetMachine->getTargetCPU().str() << "\n";
+    QDPIO::cout << "got target machine triple: " << TargetMachine->getTargetTriple().str() << "\n";
+
+    llvm::legacy::PassManager PM;
+
+    llvm::TargetLibraryInfoImpl TLII( TheTriple );
+    PM.add(new llvm::TargetLibraryInfoWrapperPass(TLII));
+
+    llvm::LLVMTargetMachine &LLVMTM = static_cast<llvm::LLVMTargetMachine &>(*TargetMachine);
+
+    std::error_code ec;
+    std::string isabin_path = "module.o";
+
+    std::string outStr;
+    {
+      llvm::raw_string_ostream stream(outStr);
+      llvm::buffer_ostream pstream(stream);
+
+      std::unique_ptr<llvm::raw_fd_ostream> isabin_fs( new llvm::raw_fd_ostream(isabin_path, ec, llvm::sys::fs::F_Text));
+
+      if (TargetMachine->addPassesToEmitFile(PM, 
+					     *isabin_fs,
+					     nullptr,
+					     llvm::CodeGenFileType::CGFT_ObjectFile ))
+
+	{
+	  QDPIO::cerr << "target does not support generation of object file type!\n";
+	  QDP_abort(1);
+	}
+
+      QDPIO::cout << "pass to emit file added\n";
+
+      QDPIO::cout << "running passes...\n";
+    
+      PM.run(*Mod);
+
+      isabin_fs->flush();
+
+      QDPIO::cout << "done!\n";
+    }
+
+    QDPIO::cout << "output size: " << outStr.size() << "\n";
+
+
+    std::string lld_path = "/opt/rocm/llvm/bin/ld.lld";
+    std::string shared_path = "module.so";
+    std::string command = lld_path + " -shared " + isabin_path + " -o " + shared_path; 
+
+    std::cout << "System: " << command.c_str() << "\n";
+
+    system( command.c_str() );
+
+    QDPIO::cout << "Using the power of strings!\n";
+    std::ostringstream sstream;
+    std::ifstream fin(shared_path, ios::binary);
+    sstream << fin.rdbuf();
+    std::string shared(sstream.str());
+
+    std::cout << "shared object file read back in. size = " << shared.size() << "\n";
+    
+    get_jitf( func , shared , str_kernel_name , str_pretty , str_arch );
+  }
+
+
+  void llvm_build_function(JitFunction& func)
+  {
+#ifdef QDP_BACKEND_ROCM
+    llvm_build_function_rocm(func);
+#else
+    llvm_build_function_cuda(func);
+#endif
+  }
+
+
+  
 
   llvm::Value* llvm_call_f32( llvm::Function* func , llvm::Value* lhs )
   {

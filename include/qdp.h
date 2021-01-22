@@ -107,6 +107,7 @@ namespace QDP {
 
 #include "qdp_init.h"
 
+#include "qdp_cache.h"
 #include "qdp_gpu.h"
 #include "qdp_cuda_allocator.h"
 
@@ -114,7 +115,6 @@ namespace QDP {
 #include "qdp_stdio.h"
 #include "qdp_pool_allocator.h"
 
-#include "qdp_cache.h"
 #include "qdp_jit_util.h"
 
 

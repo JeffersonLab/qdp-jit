@@ -29,6 +29,13 @@ namespace QDP
     enum class JitParamType { float_, int_ , int64_, double_, bool_ };
     typedef void (* LayoutFptr)(bool toDev,void * outPtr,void * inPtr);
 
+#ifdef QDP_BACKEND_ROCM
+    typedef std::vector<unsigned char> KernelArgs_t;
+#else
+    typedef std::vector<void*> KernelArgs_t;
+#endif
+
+    
     struct ArgKey {
       // The default constructor is needed in the custom streaming kernel where multi1d<ArgKey> is used -- don't see a simple way around it
       ArgKey(): id(-1), elem(-1) {}
@@ -68,7 +75,9 @@ namespace QDP
     
     QDPCache();
 
-    std::vector<void*> get_kernel_args(std::vector<ArgKey>& ids , bool for_kernel = true );
+    KernelArgs_t get_kernel_args(std::vector<ArgKey>& ids , bool for_kernel = true );
+    
+    std::vector<void*> get_dev_ptrs(std::vector<ArgKey>& ids );
     void backup_last_kernel_args();
     
     void printInfo(int id);

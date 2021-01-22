@@ -47,7 +47,7 @@ namespace QDP {
   JitResult gpu_launch_kernel( JitFunction& f, 
 			       unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
 			       unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
-			       unsigned int  sharedMemBytes, int hStream, void** kernelParams, void** extra );
+			       unsigned int  sharedMemBytes, QDPCache::KernelArgs_t kernelArgs );
 
 #if 0
   int CudaAttributeNumRegs( JitFunction& f );

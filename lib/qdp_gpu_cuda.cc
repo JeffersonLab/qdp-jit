@@ -209,7 +209,7 @@ namespace QDP {
   JitResult gpu_launch_kernel( JitFunction& f, 
 			       unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
 			       unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
-			       unsigned int  sharedMemBytes, int hStream, void** kernelParams, void** extra  )
+			       unsigned int  sharedMemBytes, QDPCache::KernelArgs_t kernelArgs )
   {
     if (gpu_get_record_stats() && Layout::primaryNode())
       {
@@ -218,7 +218,7 @@ namespace QDP {
     
     CUresult res = cuLaunchKernel((CUfunction)f.get_function(), gridDimX, gridDimY, gridDimZ, 
 				  blockDimX, blockDimY, blockDimZ, 
-				  sharedMemBytes, 0, kernelParams, extra);
+				  sharedMemBytes, 0, (void**)&kernelArgs[0], 0 );
     
     if (gpu_get_record_stats() && Layout::primaryNode())
       {

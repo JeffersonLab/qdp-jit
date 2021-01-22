@@ -185,18 +185,35 @@ namespace QDP {
   JitResult gpu_launch_kernel( JitFunction& f, 
 			       unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
 			       unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
-			       unsigned int  sharedMemBytes, int hStream, void** kernelParams, void** extra  )
+			       unsigned int  sharedMemBytes, QDPCache::KernelArgs_t kernelArgs )
   {
+    // For AMD:
+    // Now that they are known must copy in the actual values for the workgroup sizes
+    //
+    ((int*)kernelArgs.data())[0] = (int)blockDimX;
+    ((int*)kernelArgs.data())[1] = (int)gridDimX;
+
+    std::cout << "workgroup sizes copied in: " << ((int*)kernelArgs.data())[0] << " and  " << ((int*)kernelArgs.data())[1] << "\n";
+    
+    auto size = kernelArgs.size();
+    std::cout << "HipLaunchKernelNoSync: kernel params size: " << size << "\n";
+    void* config[] = {HIP_LAUNCH_PARAM_BUFFER_POINTER, kernelArgs.data(),
+		      HIP_LAUNCH_PARAM_BUFFER_SIZE, &size,
+		      HIP_LAUNCH_PARAM_END};
+    
 #if 0
     if (gpu_get_record_stats() && Layout::primaryNode())
       {
 	gpu_record_start();
       }
-    
-    hipError_t res = cuLaunchKernel((CUfunction)f.get_function(), gridDimX, gridDimY, gridDimZ, 
-				  blockDimX, blockDimY, blockDimZ, 
-				  sharedMemBytes, 0, kernelParams, extra);
-    
+#endif
+
+    hipError_t res = hipModuleLaunchKernel((hipFunction_t)f.get_function(),  
+					   gridDimX, gridDimY, gridDimZ, 
+					   blockDimX, blockDimY, blockDimZ, 
+					   sharedMemBytes, nullptr, nullptr, config);
+
+#if 0
     if (gpu_get_record_stats() && Layout::primaryNode())
       {
 	gpu_record_stop();
@@ -204,21 +221,18 @@ namespace QDP {
 	float time = gpu_get_time();
 	f.add_timing( time );
       }
-  
+#endif
+    
     JitResult ret;
 
     switch (res) {
     case hipSuccess:
       ret = JitResult::JitSuccess;
       break;
-    case CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES:
-      ret = JitResult::JitResource;
-      break;
     default:
       ret = JitResult::JitError;
     }
-#endif
-    JitResult ret;
+
     return ret;
   }
 
@@ -473,137 +487,27 @@ namespace QDP {
 
 
 
-  void get_jitf( JitFunction& func, const std::string& kernel_ptx , const std::string& kernel_name , const std::string& pretty , const std::string& str_compute )
+  void get_jitf( JitFunction& func, const std::string& shared , const std::string& kernel_name , const std::string& pretty , const std::string& str_compute )
   {
-#if 0
+    hipModule_t module;
     hipError_t ret;
-    CUmodule cuModule;
 
     func.set_kernel_name( kernel_name );
     func.set_pretty( pretty );
+
+    ret = hipModuleLoadData(&module, shared.data() );
+    CheckError( "hipModuleLoadData" , ret );
+
+    QDPIO::cout << "shared object file loaded as hip module\n";
+    QDPIO::cout << "looking for a function with name " << kernel_name << "\n";
+
+    hipFunction_t f;
+    ret = hipModuleGetFunction( &f , module , kernel_name.c_str() );
+    CheckError( "hipModuleGetFunction" , ret );
+
+    func.set_function( f );
     
-    ret = cuModuleLoadData(&cuModule, (const void *)kernel_ptx.c_str());
-
-    if (ret != hipSuccess) {
-      QDPIO::cerr << "Error loading external data.\n";
-      QDP_abort(1);
-    }
-
-    CUfunction cuf;
-    ret = cuModuleGetFunction( &cuf , cuModule , kernel_name.c_str() );
-    if (ret != hipSuccess) {
-      QDPIO::cerr << "Error getting function.";
-      QDP_abort(1);
-    }
-
-    func.set_function( cuf );
-    
-    mapCUFuncPTX[func.get_function()] = kernel_ptx;
-
-    if ( gpu_get_record_stats() && Layout::primaryNode() )
-      {
-	std::string ptxpath  = "kernel_n" + std::to_string( Layout::nodeNumber() ) + "_p" + std::to_string( ::getpid() ) + ".ptx";
-	std::string sasspath = "kernel_n" + std::to_string( Layout::nodeNumber() ) + "_p" + std::to_string( ::getpid() ) + ".sass";
-      
-	std::ofstream f(ptxpath);
-	f << kernel_ptx;
-	f.close();
-
-	FILE *fp;
-	char buf[1024];
-
-	string cmd = "ptxas -v --gpu-name " + str_compute + " " + ptxpath + " -o " + sasspath + " 2>&1";
-      
-	fp = popen( cmd.c_str() , "r" );
-      
-	if (fp == NULL)
-	  {
-	    QDPIO::cerr << "Stats error: Failed to run command via popen\n";
-	    return;
-	  }
-
-	std::ostringstream output;
-	while (fgets(buf, sizeof(buf), fp) != NULL) {
-	  output << buf;
-	}
-      
-	pclose(fp);
-
-	std::istringstream iss(output.str());
-
-	std::vector<std::string> words;
-	std::copy(istream_iterator<string>(iss),
-		  istream_iterator<string>(),
-		  std::back_inserter(words));
-
-	if ( words.size() < 32 )
-	  {
-	    std::cerr << "Couldn't read all tokens (output of ptxas has changed?)\n";
-	    std::cerr << "----- Output -------\n";
-	    std::cerr << output.str() << "\n";
-	    std::cerr << "--------------------\n";
-	    return;
-	  }
-
-	//
-	// Usually the output of ptxas -v looks like
-	//
-	// ptxas info    : 0 bytes gmem
-	// ptxas info    : Compiling entry function 'sum0' for 'sm_50'
-	// ptxas info    : Function properties for sum0
-	//     0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
-	// ptxas info    : Used 12 registers, 344 bytes cmem[0]
-	//
-	// But for functions that use calls to other functions like
-	// into the libdevice the first line might like more like
-	//
-	// ptxas info    : 0 bytes gmem, 24 bytes cmem[3]
-
-	int pos_add = 0;
-	if (words[5] == "gmem,")
-	  {
-	    pos_add = 3;
-	  }
-	
-	const int pos_stack = 22 + pos_add;
-	const int pos_store = 26 + pos_add;
-	const int pos_loads = 30 + pos_add;
-	const int pos_regs = 38 + pos_add;
-	const int pos_cmem = 40 + pos_add;
-
-	func.set_stack( std::atoi( words[ pos_stack ].c_str() ) );
-	func.set_spill_store( std::atoi( words[ pos_store ].c_str() ) );
-	func.set_spill_loads( std::atoi( words[ pos_loads ].c_str() ) );
-	func.set_regs( std::atoi( words[ pos_regs ].c_str() ) );
-	func.set_cmem( std::atoi( words[ pos_cmem ].c_str() ) );
-
-#if 1
-	// Zero encountered ??
-	if (func.get_regs() == 0)
-	  {
-	    std::cerr << "----- zero regs encountered -----\n";
-	    std::cerr << output.str() << "\n";
-	    std::cerr << "----------------------------\n";
-	  }
-#endif
-	
-	// QDPIO::cout << "----- Kernel stats ------\n";
-	// QDPIO::cout << "kernel_stack       = "<< kernel_stack << "\n";
-	// QDPIO::cout << "kernel_spill_store = "<< kernel_spill_store << "\n";
-	// QDPIO::cout << "kernel_spill_loads = "<< kernel_spill_loads << "\n";
-	// QDPIO::cout << "kernel_regs        = "<< kernel_regs << "\n";
-	// QDPIO::cout << "kernel_cmem        = "<< kernel_cmem << "\n";
-      
-#if 0      
-	string cmd = "ptxas --gpu-name " + compute + " " + ptxpath + " -o " + sasspath;
-	if (system(cmd.c_str()) == 0) {
-	  cmd = "nvdisasm " + sasspath;
-	  int ret = system(cmd.c_str());
-	  (void)ret;  // Don't care if it fails
-	}
-#endif
-      }
-#endif
+    QDPIO::cout << "Got function!\n";
   }
 
 

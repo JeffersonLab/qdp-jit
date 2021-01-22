@@ -1041,9 +1041,62 @@ namespace QDP
   }
 
 
-  
-  std::vector<void*> QDPCache::get_kernel_args(std::vector<ArgKey>& ids , bool for_kernel )
+#ifdef QDP_BACKEND_ROCM
+  namespace 
   {
+    template<class T>
+    void insert_ret( std::vector<unsigned char>& ret, T t )
+    {
+      if (std::is_pointer<T>::value)
+	{
+	  //std::cout << "size is " << ret.size() << " resizing by " << ret.size() % sizeof(T) << " to meet padding requirements\n";
+	  ret.resize( ret.size() + ret.size() % sizeof(T) );
+	  ret.resize( ret.size() + sizeof(T) );
+	  *(T*)&ret[ ret.size() - sizeof(T) ] = t;
+	  //std::cout << "inserted pointer (size " << sizeof(T) << ") " << t << "\n";
+	}
+      else
+	{
+	  ret.resize( ret.size() + sizeof(T) );
+	  *(T*)&ret[ ret.size() - sizeof(T) ] = t;
+	  //std::cout << "inserted (size " << sizeof(T) << ") " << t << "\n";
+	}
+    }
+    template<>
+    void insert_ret<bool>( std::vector<unsigned char>& ret, bool t )
+    {
+      ret.resize( ret.size() + 4 );
+      *(bool*)&ret[ ret.size() - 4 ] = t;
+      //std::cout << "inserted bool (as size 4) " << t << "\n";
+    }
+
+  } // namespace
+#endif
+
+
+
+QDPCache::KernelArgs_t QDPCache::get_kernel_args(std::vector<ArgKey>& ids , bool for_kernel )
+  {
+#ifdef QDP_BACKEND_ROCM
+    if ( for_kernel )
+      {
+	if ( ids.size() < 2 )
+	  {
+	    QDPIO::cerr << "get_kernel_args: Size less than 2\n";
+	    QDP_abort(1);
+	  }
+	Entry& e0 = vecEntry[ ids[0].id ];
+	Entry& e1 = vecEntry[ ids[1].id ];
+
+	if ( ( e0.param_type != JitParamType::int_ ) ||
+	     ( e1.param_type != JitParamType::int_ ) )
+	  {
+	    QDPIO::cerr << "get_kernel_args: For AMD expected for two parameters being integers\n";
+	    QDP_abort(1);
+	  }
+      }
+#endif
+    
     // Here we do two cycles through the ids:
     // 1) cache all objects
     // 2) check all are cached
@@ -1173,8 +1226,10 @@ namespace QDP
 
     if (print_param)
       QDPIO::cout << "Jit function param: ";
+
     
-    std::vector<void*> ret;
+    QDPCache::KernelArgs_t ret;
+
     for ( auto i : ids )
       {
 	if (i.id >= 0)
@@ -1202,8 +1257,18 @@ namespace QDP
 		  }
 	  
 		assert(for_kernel);
+#ifdef QDP_BACKEND_ROCM
+		switch(e.param_type)
+		  {
+		  case JitParamType::float_: insert_ret<float>(ret, e.param.float_ ); break;
+		  case JitParamType::double_: insert_ret<double>(ret, e.param.double_ ); break;
+		  case JitParamType::int_: insert_ret<int>(ret, e.param.int_ );break;
+		  case JitParamType::int64_: insert_ret<int64_t>(ret, e.param.int64_ ); break;
+		  case JitParamType::bool_: insert_ret<bool>(ret, e.param.bool_ ); ;break;
+		  }
+#else
 		ret.push_back( &e.param );
-	  
+#endif
 	      }
 	    else
 	      {
@@ -1219,19 +1284,31 @@ namespace QDP
 		    if ( i.elem == -1 )
 		      {
 			// This ArgKey comes from an multiXd<OScalar> access, like in sumMulti
+#ifdef QDP_BACKEND_ROCM
+			insert_ret<void*>( ret , e.devPtr );
+#else
 			ret.push_back( for_kernel ? &e.devPtr : e.devPtr );
+#endif
 		      }
 		    else
 		      {
 			// This ArgKey comes from an OScalar access through multiXd<OScalar> 
 			assert( e.karg_vec.size() > i.elem );
 			e.karg_vec[i.elem] = (void*)((size_t)e.devPtr + e.elem_size * i.elem);
+#ifdef QDP_BACKEND_ROCM
+			insert_ret<void*>( ret , e.karg_vec[i.elem] );
+#else
 			ret.push_back( for_kernel ? &e.karg_vec[i.elem] : e.karg_vec[i.elem] );
+#endif
 		      }
 		  }
 		else
 		  {
+#ifdef QDP_BACKEND_ROCM
+		    insert_ret<void*>( ret , e.devPtr );
+#else
 		    ret.push_back( for_kernel ? &e.devPtr : e.devPtr );
+#endif
 		  }
 	      }
 	  }
@@ -1244,7 +1321,11 @@ namespace QDP
 	      }
 
 	    assert(for_kernel);
+#ifdef QDP_BACKEND_ROCM
+	    insert_ret<void*>( ret , &jit_param_null_ptr );
+#else
 	    ret.push_back( &jit_param_null_ptr );
+#endif
 	
 	  }
       }
@@ -1254,6 +1335,156 @@ namespace QDP
     return ret;
   }
 
+
+  std::vector<void*> QDPCache::get_dev_ptrs( std::vector<ArgKey>& ids )
+  {
+    // Here we do two cycles through the ids:
+    // 1) cache all objects
+    // 2) check all are cached
+    // This should replace the old 'lock set'
+
+    //QDPIO::cout << "ids: ";
+    std::vector<ArgKey> allids;
+    for ( auto i : ids )
+      {
+	allids.push_back(i);
+	if (i.id >= 0)
+	  {
+	    //QDPIO::cout << i << " ";
+	    assert( vecEntry.size() > i.id );
+	    Entry& e = vecEntry[i.id];
+	    if (e.flags & QDPCache::Flags::Multi)
+	      {
+		for ( auto ak : e.multi )
+		  {
+		    allids.push_back( ak );
+		  }
+	      }
+	  }
+      }
+    //QDPIO::cout << "\n";
+
+    //QDPIO::cout << "assureDevice:\n";
+    for ( auto i : allids ) {
+      //QDPIO::cout << "id = " << i.id << ", elem = " << i.elem << "\n";
+      if (i.elem < 0)
+	assureDevice(i.id);
+      else
+	assureDevice(i.id,i.elem);
+    }
+    //QDPIO::cout << "done\n";
+    
+    bool all = true;
+    for ( auto i : allids )
+      if (i.elem < 0)
+	all = all && isOnDevice(i.id);
+      else
+	all = all && isOnDevice(i.id,i.elem);
+
+    
+    if (!all) {
+      QDPIO::cerr << "It was not possible to load all objects required by the kernel into device memory\n";
+      QDP_abort(1);
+    }
+
+
+    // Handle multi-ids
+    for ( auto i : ids )
+      {
+	if (i.id >= 0)
+	  {
+	    Entry& e = vecEntry[i.id];
+	    if (e.flags & QDPCache::Flags::Multi)
+	      {
+		assert( isOnDevice(i.id) );
+		multi1d<void*> dev_ptr(e.multi.size());
+
+		int count=0;
+		for( auto ak : e.multi )  // q == id
+		  {
+		    if ( ak.id >= 0 )
+		      {
+			assert( vecEntry.size() > ak.id );
+			Entry& qe = vecEntry[ ak.id ];
+			assert( ! (qe.flags & QDPCache::Flags::Multi) );
+			assert( isOnDevice( ak.id ) );
+			if (ak.elem == -1)
+			  {
+			    dev_ptr[count++] = qe.devPtr;
+			  }
+			else
+			  {
+			    dev_ptr[count++] = (void*)((size_t)qe.devPtr + qe.elem_size * ak.elem);
+			  }
+		      }
+		    else
+		      {
+			dev_ptr[count++] = NULL;
+		      }
+		  }
+		
+		if (qdp_cache_get_cache_verbose())
+		  {
+		    QDPIO::cerr << "copy host --> GPU " << e.multi.size() * sizeof(void*) << " bytes (kernel args, multi)\n";
+		  }
+		
+		gpu_memcpy_h2d( e.devPtr , dev_ptr.slice() , e.multi.size() * sizeof(void*) );
+		//QDPIO::cout << "multi-ids: copied elements = " << e.multi.size() << "\n";
+	      }
+	  }
+      }
+
+    std::vector<void*> ret;
+    for ( auto i : ids )
+      {
+	if (i.id >= 0)
+	  {
+	    Entry& e = vecEntry[i.id];
+	    if (e.flags & QDPCache::Flags::JitParam)
+	      {
+		QDPIO::cerr << __func__ << ": shouldnt be here\n";
+		QDP_abort(1);
+	      }
+	    else
+	      {
+		if (e.flags & QDPCache::Flags::Array)
+		  {
+		    if ( i.elem == -1 )
+		      {
+			// This ArgKey comes from an multiXd<OScalar> access, like in sumMulti
+			ret.push_back( e.devPtr );
+		      }
+		    else
+		      {
+			// This ArgKey comes from an OScalar access through multiXd<OScalar> 
+			if ( e.karg_vec.size() <= i.elem )
+			  {
+			    QDPIO::cerr << __func__ << ": shouldnt be here, code 3\n";
+			    QDP_abort(1);
+			  }
+			e.karg_vec[i.elem] = (void*)((size_t)e.devPtr + e.elem_size * i.elem);
+			ret.push_back( e.karg_vec[i.elem] );
+		      }
+		  }
+		else
+		  {
+		    ret.push_back( e.devPtr );
+		  }
+	      }
+	  }
+	else
+	  {
+	    QDPIO::cerr << __func__ << ": shouldnt be here neither\n";
+	    QDP_abort(1);
+	  }
+      }
+
+    return ret;
+  }
+
+
+
+  
   namespace {
     static QDPCache* __global_cache;
   }

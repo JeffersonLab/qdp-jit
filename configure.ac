@@ -230,6 +230,7 @@ ac_gcc="$CXX"
 if test "X${backend_use}X" == "XCUDAX";
 then
   AC_DEFINE_UNQUOTED([CUDA_GCC],"${ac_gcc}",[CUDA C/C++ Compiler])
+  AC_DEFINE([QDP_BACKEND_CUDA], [1] , [CUDA] )
   #AC_SUBST(CUDA_LIBS, [-lcuda])
   AC_SUBST(GPU_CXXFLAGS, [-I${cuda_home}/include])
   AC_SUBST(GPU_LDFLAGS, [-L${cuda_home}/lib64])
@@ -244,6 +245,7 @@ else
   #AC_SUBST(CUDA_LIBS, [-lcuda])
   AC_SUBST(GPU_CXXFLAGS, [-I${rocm_home}/include])
   AC_SUBST(GPU_LDFLAGS, [-L${rocm_home}/lib])
+  AC_DEFINE([QDP_BACKEND_ROCM], [1] , [ROCM] )	
   tmp_gpu_libs="-lamdhip64"
 fi
 

@@ -25,6 +25,20 @@ namespace QDP {
     int threads_per_block = 128;
   }
 
+
+  // For AMD the workgroup sizes are passed as kernel parameters
+  // For now as placeholder values
+  //
+  void JIT_AMD_add_workgroup_sizes( std::vector<QDPCache::ArgKey>& ids )
+  {
+    JitParam jit_ntidx( QDP_get_global_cache().addJitParamInt( -1 ) );
+    JitParam jit_nctaidx( QDP_get_global_cache().addJitParamInt( -1 ) );
+
+    ids.insert(ids.begin(), jit_nctaidx.get_id() );
+    ids.insert(ids.begin(), jit_ntidx.get_id() );
+  }
+
+
   void jit_util_set_threads_per_block( int t )
   {
     threads_per_block = t;
@@ -489,7 +503,13 @@ namespace QDP {
 
   void jit_launch(JitFunction& function,int th_count,std::vector<QDPCache::ArgKey>& ids)
   {
-    std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
+    // For ROCm we add the __threads_per_group and 
+    // __grid_size_x as parameters to the kernel.
+#ifdef QDP_BACKEND_ROCM
+    JIT_AMD_add_workgroup_sizes( ids );
+#endif
+    
+    QDPCache::KernelArgs_t args( QDP_get_global_cache().get_kernel_args(ids) );
 
     // Check for no-op
     if ( th_count == 0 )
@@ -505,7 +525,8 @@ namespace QDP {
     JitResult result = gpu_launch_kernel( function,
 					  geom.Nblock_x,geom.Nblock_y,1,
 					  geom.threads_per_block,1,1,
-					  0, 0, &args[0] , 0);
+					  0, // shared mem
+					  args );
 
     if (result != JitResult::JitSuccess) {
       QDPIO::cerr << "jit launch error, grid=(" << geom.Nblock_x << "," << geom.Nblock_y << "1), block=(" << threads_per_block << ",1,1)\n";
@@ -516,7 +537,13 @@ namespace QDP {
 
   void jit_launch_explicit_geom( JitFunction& function , std::vector<QDPCache::ArgKey>& ids , const kernel_geom_t& geom , unsigned int shared )
   {
-    std::vector<void*> args( QDP_get_global_cache().get_kernel_args(ids) );
+    // For ROCm we add the __threads_per_group and 
+    // __grid_size_x as parameters to the kernel.
+#ifdef QDP_BACKEND_ROCM
+    JIT_AMD_add_workgroup_sizes( ids );
+#endif
+
+    QDPCache::KernelArgs_t args( QDP_get_global_cache().get_kernel_args(ids) );
 
     // Increment the call counter
     function.inc_call_counter();
@@ -525,7 +552,7 @@ namespace QDP {
 					  geom.Nblock_x,geom.Nblock_y,1,
 					  geom.threads_per_block,1,1,
 					  shared,
-					  0, &args[0] , 0);
+					  args );
 
     if (result != JitResult::JitSuccess) {
       QDPIO::cerr << "jit launch explicit geom error, grid=(" << geom.Nblock_x << "," << geom.Nblock_y << "1), block=(" << geom.threads_per_block << ",1,1)\n";
