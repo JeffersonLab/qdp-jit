@@ -763,13 +763,14 @@ struct LeafFunctor<GammaType<N>, ElemLeaf>
     {return a;}
 };
 
-template<int N>
-struct LeafFunctor<GammaType<N>, EvalLeaf1>
-{
-  typedef GammaType<N> Type_t;
-  inline static Type_t apply(const GammaType<N> &a, const EvalLeaf1 &f)
-    {return a;}
-};
+
+// template<int N>
+// struct LeafFunctor<GammaType<N>, EvalLeaf1>
+// {
+//   typedef GammaType<N> Type_t;
+//   inline static Type_t apply(const GammaType<N> &a, const EvalLeaf1 &f)
+//     {return a;}
+// };
 
 
 template<int N, int m>
@@ -790,13 +791,13 @@ struct LeafFunctor<GammaConst<N,m>, ElemLeaf>
     {return a;}
 };
 
-template<int N, int m>
-struct LeafFunctor<GammaConst<N,m>, EvalLeaf1>
-{
-  typedef GammaConst<N,m> Type_t;
-  inline static Type_t apply(const GammaConst<N,m> &a, const EvalLeaf1 &f)
-    {return a;}
-};
+// template<int N, int m>
+// struct LeafFunctor<GammaConst<N,m>, EvalLeaf1>
+// {
+//   typedef GammaConst<N,m> Type_t;
+//   inline static Type_t apply(const GammaConst<N,m> &a, const EvalLeaf1 &f)
+//     {return a;}
+// };
 
 
 
@@ -823,13 +824,14 @@ struct LeafFunctor<GammaTypeDP<N>, ElemLeaf>
     {return a;}
 };
 
-template<int N>
-struct LeafFunctor<GammaTypeDP<N>, EvalLeaf1>
-{
-  typedef GammaTypeDP<N> Type_t;
-  inline static Type_t apply(const GammaTypeDP<N> &a, const EvalLeaf1 &f)
-    {return a;}
-};
+
+// template<int N>
+// struct LeafFunctor<GammaTypeDP<N>, EvalLeaf1>
+// {
+//   typedef GammaTypeDP<N> Type_t;
+//   inline static Type_t apply(const GammaTypeDP<N> &a, const EvalLeaf1 &f)
+//     {return a;}
+// };
 
 
 template<int N, int m>
@@ -850,13 +852,13 @@ struct LeafFunctor<GammaConstDP<N,m>, ElemLeaf>
     {return a;}
 };
 
-template<int N, int m>
-struct LeafFunctor<GammaConstDP<N,m>, EvalLeaf1>
-{
-  typedef GammaConstDP<N,m> Type_t;
-  inline static Type_t apply(const GammaConstDP<N,m> &a, const EvalLeaf1 &f)
-    {return a;}
-};
+// template<int N, int m>
+// struct LeafFunctor<GammaConstDP<N,m>, EvalLeaf1>
+// {
+//   typedef GammaConstDP<N,m> Type_t;
+//   inline static Type_t apply(const GammaConstDP<N,m> &a, const EvalLeaf1 &f)
+//     {return a;}
+// };
 
 
 

@@ -30,8 +30,8 @@ namespace QDP {
     int dstnode = _destNode;
 
     if (!gpu_getGPUDirect()) {
-      CudaHostAlloc(&send_buf,dstnum,0);
-      CudaHostAlloc(&recv_buf,srcnum,0);
+      gpu_host_alloc(&send_buf,dstnum);
+      gpu_host_alloc(&recv_buf,srcnum);
     }
 
     //QDPIO::cout << "Allocating receive buffer on device: " << srcnum << " bytes\n";
@@ -91,8 +91,8 @@ namespace QDP {
 #endif
       QDP_get_global_cache().signoff( send_buf_id );
       QDP_get_global_cache().signoff( recv_buf_id );
-      CudaHostFree(send_buf);
-      CudaHostFree(recv_buf);
+      gpu_host_free(send_buf);
+      gpu_host_free(recv_buf);
     }
   }
 
@@ -103,7 +103,7 @@ namespace QDP {
       QDP_error_exit(QMP_error_string(err));
 
     if (!gpu_getGPUDirect()) {
-      CudaMemcpyH2D( recv_buf_dev , recv_buf , srcnum );
+      gpu_memcpy_h2d( recv_buf_dev , recv_buf , srcnum );
     }
 
 #if QDP_DEBUG >= 3
@@ -138,7 +138,7 @@ namespace QDP {
 #endif
 
     if (!gpu_getGPUDirect()) {
-      CudaMemcpyD2H( send_buf , send_buf_dev , dstnum );
+      gpu_memcpy_d2h( send_buf , send_buf_dev , dstnum );
     }
 
     // Launch the faces

@@ -24,10 +24,14 @@ namespace COUNT {
   int count = 0;
 }
 
+  namespace {
+    bool setPoolSize = false;
+  }
+
+
 
   //! Private flag for status
   static bool isInit = false;
-  bool setPoolSize = false;
   bool setGeomP = false;
   bool setIOGeomP = false;
   multi1d<int> logical_geom(Nd);   // apriori logical geometry of the machine
@@ -80,10 +84,62 @@ namespace COUNT {
 #endif
 
 
+  void qdp_jit_cache_set_poolsize()
+  {
+    if (!setPoolSize)
+      {
+	std::cout << "qdp-jit parameters\n";
+
+	size_t val = (size_t)((double)(0.90) * (double)gpu_mem_free());
+
+	int val_in_MiB = val/1024/1024;
+
+	if (val_in_MiB < 1)
+	  {
+	    std::cerr << "Less than 1 MiB device memory available. Giving up.\n";
+	    QDP_abort(1);
+	  }
+      
+	float val_min = (float)val_in_MiB;
+
+	QDPInternal::globalMinValue( &val_min );
+
+	if ( val_min > (float)val_in_MiB )
+	  {
+	    QDPIO::cerr << "Inconsistency: Global minimum " << val_min << " larger than local value " << val_in_MiB << "\n";
+	    QDP_abort(1);
+	  }
+
+	if ( val_min < (float)val_in_MiB )
+	  {
+	    QDPIO::cout << "Global minimum " << val_min << " of available GPU memory smaller than local value " << val_in_MiB << ". Using global minimum.";
+	    QDP_abort(1);
+	  }
+	int val_min_int = (int)val_min;
+
+	QDPIO::cout << "  memory pool size (default)          : " << (int)val_min_int << " MB\n";
+      
+	QDP_get_global_cache().setPoolSize( ((size_t)val_min_int) * 1024 * 1024 );
+
+      }
+    else
+      {
+	std::cout << "  memory pool size (user request)     : " << (int)(QDP_get_global_cache().getPoolSize()/1024/1024) << " MB\n";
+      }
+
+  }
+
+  
+
+  
+
   void QDP_startGPU()
   {
     // Getting GPU device properties
-    CudaGetDeviceProps();
+    gpu_auto_detect();
+
+    // Now set the pool size
+    qdp_jit_cache_set_poolsize();
 
     // Initialize the LLVM wrapper
     llvm_wrapper_init();
@@ -93,12 +149,7 @@ namespace COUNT {
   //! Set the GPU device
   int QDP_setGPU()
   {
-    int deviceCount;
-    //int ret = 0;
-    CudaGetDeviceCount(&deviceCount);
-    if (deviceCount == 0) {
-      QDP_error_exit("No CUDA devices found");
-    }
+    int deviceCount = gpu_get_device_count();
 
     // Try MVapich fist
     char *rank = getenv( "MV2_COMM_WORLD_LOCAL_RANK"  );
@@ -113,14 +164,14 @@ namespace COUNT {
       int local_rank = atoi(rank);
       dev = local_rank % deviceCount;
     } else {
-      if ( gpu_getDefaultGPU() == -1 )
+      if ( gpu_get_default_GPU() == -1 )
 	{
 	  std::cerr << "Couldnt determine local rank. Selecting device 0. In a multi-GPU per node run this is not what one wants.\n";
 	  dev = 0;
 	}
       else
 	{
-	  dev = gpu_getDefaultGPU();
+	  dev = gpu_get_default_GPU();
 	  std::cerr << "Couldnt determine local rank. Selecting device " << dev << " as per user request.\n";
 	}
 #if 0
@@ -132,8 +183,9 @@ namespace COUNT {
 #endif
     }
 
-    std::cout << "Setting CUDA device to " << dev << "\n";
-    CudaSetDevice( dev );
+    std::cout << "Setting GPU device to " << dev << "\n";
+    gpu_set_device( dev );
+
     return dev;
   }
 
@@ -193,7 +245,7 @@ namespace COUNT {
 
     if (isInit)
       {
-	QDPIO::cerr << "QDP already inited" << endl;
+	std::cerr << "QDP already inited" << endl;
 	QDP_abort(1);
       }
 
@@ -237,7 +289,7 @@ namespace COUNT {
     //
     // Init CUDA
     //
-    CudaInit();
+    gpu_init();
 
     //
     // Process command line
@@ -389,7 +441,7 @@ namespace COUNT {
 	  {
 	    int ngpu;
 	    sscanf((*argv)[++i], "%d", &ngpu);
-	    gpu_setDefaultGPU(ngpu);
+	    gpu_set_default_GPU(ngpu);
 	    std::cout << "Default GPU set to " << ngpu << "\n";
 	  }
 	else if (strcmp((*argv)[i], "-geom")==0) 
@@ -443,18 +495,13 @@ namespace COUNT {
 			
 	if (i >= *argc) 
 	  {
-	    QDPIO::cerr << __func__ << ": missing argument at the end" << endl;
+	    std::cerr << __func__ << ": missing argument at the end" << endl;
 	    QDP_abort(1);
 	  }
       }
 		
 
-    if (!setPoolSize) {
-      // It'll be set later in CudaGetDeviceProps
-      //QDP_error_exit("Run-time argument -poolsize <size> missing. Please consult README.");
-    }
-
-		
+    //QDPIO::cout << "Not setting QMP verbosity level\n";
     QMP_verbose (QMP_verboseP);
 		
 #if QDP_DEBUG >= 1
@@ -462,8 +509,8 @@ namespace COUNT {
     for (int i=0; i<*argc; i++) 
       QDP_info("QDP_init: arg[%d] = XX%sXX",i,(*argv)[i]);
 #endif
-		
-  }
+    
+  } // QDP_initCUDA
 
 
 
@@ -536,6 +583,7 @@ namespace COUNT {
 	  initProfile(__FILE__, __func__, __LINE__);
 		
 	  QDPIO::cout << "Initialize done" << std::endl;
+
 	}
 
 

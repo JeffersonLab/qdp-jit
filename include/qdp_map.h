@@ -698,22 +698,22 @@ private:
 };
 
 
-// Add this code if you need CPU shifts
-template<class A, class CTag>
-struct ForEach<UnaryNode<FnMap, A>, EvalLeaf1, CTag>
-{
-  typedef typename ForEach<A, EvalLeaf1, CTag>::Type_t TypeA_t;
-  typedef typename Combine1<TypeA_t, FnMap, CTag>::Type_t Type_t;
-  inline static
-  Type_t apply(const UnaryNode<FnMap, A> &expr, const EvalLeaf1 &f, const CTag &c)
-  {
-    const Map& map = expr.operation().map;
-    FnMap& fnmap = const_cast<FnMap&>(expr.operation());
+// // Add this code if you need CPU shifts
+// template<class A, class CTag>
+// struct ForEach<UnaryNode<FnMap, A>, EvalLeaf1, CTag>
+// {
+//   typedef typename ForEach<A, EvalLeaf1, CTag>::Type_t TypeA_t;
+//   typedef typename Combine1<TypeA_t, FnMap, CTag>::Type_t Type_t;
+//   inline static
+//   Type_t apply(const UnaryNode<FnMap, A> &expr, const EvalLeaf1 &f, const CTag &c)
+//   {
+//     const Map& map = expr.operation().map;
+//     FnMap& fnmap = const_cast<FnMap&>(expr.operation());
     
-    EvalLeaf1 ff( map.goffsets[f.val1()] );
-    return Combine1<TypeA_t, FnMap, CTag>::combine(ForEach<A, EvalLeaf1, CTag>::apply(expr.child(), ff, c),expr.operation(), c);
-  }
-};
+//     EvalLeaf1 ff( map.goffsets[f.val1()] );
+//     return Combine1<TypeA_t, FnMap, CTag>::combine(ForEach<A, EvalLeaf1, CTag>::apply(expr.child(), ff, c),expr.operation(), c);
+//   }
+// };
 
 
 

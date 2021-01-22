@@ -219,7 +219,7 @@ namespace QDP
       {
 	assert(sizeof(unsigned) == 4);
 	std::cout << "Initializing device memory with value = " << setMemoryVal << "\n";
-	CudaMemset( poolPtr , setMemoryVal , poolSize/sizeof(unsigned) );
+	gpu_memset( poolPtr , setMemoryVal , poolSize/sizeof(unsigned) );
       }
     
     bufferAllocated=true;

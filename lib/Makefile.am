@@ -14,7 +14,7 @@ endif
 # need the HDF5 cxx flags with and without /include
 #
 #AM_CXXFLAGS = $(INCFLAGS) @HDF5_CXXFLAGS@/include @HDF5_CXXFLAGS@ @LIBXML2_CXXFLAGS@ @QMP_CFLAGS@ @LLVM_CXXFLAGS@ @CUDA_CXXFLAGS@
-AM_CXXFLAGS = $(INCFLAGS) @HDF5_CXXFLAGS@ @LIBXML2_CXXFLAGS@ @QMP_CFLAGS@ @LLVM_CXXFLAGS@ @CUDA_CXXFLAGS@
+AM_CXXFLAGS = $(INCFLAGS) @HDF5_CXXFLAGS@ @LIBXML2_CXXFLAGS@ @QMP_CFLAGS@ @LLVM_CXXFLAGS@ @GPU_CXXFLAGS@
 
 lib_LIBRARIES = libqdp.a
 
@@ -28,8 +28,15 @@ libqdp_a_SOURCES = qdp_map.cc qdp_subset.cc qdp_random.cc qdp.cc \
         qdp_rannyu.cc \
 	qdp_mapresource.cc \
 	qdp_llvm.cc qdp_cache.cc qdp_mastermap.cc qdp_masterset.cc \
-        qdp_jitf_sum.cc qdp_wordreg.cc qdp_datalayout.cc qdp_jit_util.cc qdp_libdevice.cc \
-	qdp_cuda.cc
+        qdp_jitf_sum.cc qdp_wordreg.cc qdp_datalayout.cc qdp_jit_util.cc
+
+#qdp_libdevice.cc
+
+if QDP_BACKEND_CUDA
+  libqdp_a_SOURCES += qdp_gpu_cuda.cc
+else
+  libqdp_a_SOURCES += qdp_gpu_rocm.cc
+endif
 
 
 if QDP_CUDA_SPECIAL

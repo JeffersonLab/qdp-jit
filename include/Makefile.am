@@ -15,7 +15,7 @@ MEMORY_HDRS = qdp_allocator.h \
 	      qdp_default_allocator.h \
 	      qdp_qcdoc_allocator.h
 
-CUDA_HDRS = qdp_cuda.h \
+CUDA_HDRS = qdp_gpu.h \
             qdp_cache.h \
 	    qdp_quda.h \
 	    qdp_mapresource.h \
@@ -33,10 +33,10 @@ CUDA_HDRS = qdp_cuda.h \
             qdp_primvectorjit.h qdp_primspinvecjit.h qdp_primcolorvecjit.h \
             qdp_primvectorreg.h qdp_primspinvecreg.h qdp_primcolorvecreg.h \
             qdp_handle.h qdp_mastermap.h qdp_masterset.h qdp_sum.h qdp_datalayout.h \
-            qdp_jitf_copymask.h qdp_jitf_sum.h qdp_jitf_summulti.h qdp_jitf_globalmax.h qdp_jitf_gaussian.h qdp_internal.h qdp_newopsreg.h qdp_libdevice.h \
+            qdp_jitf_copymask.h qdp_jitf_sum.h qdp_jitf_summulti.h qdp_jitf_globalmax.h qdp_jitf_gaussian.h qdp_internal.h qdp_newopsreg.h \
             qdp_jit_function.h
 
-
+#qdp_libdevice.h
 
 if QDP_CUSTOM_KERNELS
 CUDA_HDRS += custom_kernels/custom_kernels.h \

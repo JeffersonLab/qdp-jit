@@ -14,12 +14,25 @@ AM_INIT_AUTOMAKE
 dnl defines...
 AC_CONFIG_HEADERS([include/qdp_config_internal.h])
 
+AC_ARG_WITH(backend,
+  AC_HELP_STRING([--with-backend=(CUDA/ROCM)], [ Specify backend to use (default: CUDA)]),
+  [ backend_use="${withval}" ],
+  [ backend_use="CUDA" ]
+)
+
 
 AC_ARG_WITH(cuda,
   AC_HELP_STRING([--with-cuda=CUDADIR], [ Specify CUDA installation directory (default: /usr/local/cuda)]),
   [ cuda_home="${withval}" ],
   [ cuda_home="/usr/local/cuda" ]
 )
+
+AC_ARG_WITH(rocm,
+  AC_HELP_STRING([--with-rocm=ROCMDIR], [ Specify ROCM installation directory (default: /opt/rocm)]),
+  [ rocm_home="${withval}" ]
+  [ rocm_home="/opt/rocm" ]
+)
+
 
 AC_ARG_ENABLE(cuda-managed-memory,
    AC_HELP_STRING([--enable-cuda-managed-memory], [ Enable memory to be allocated with Cuda Managed Memory ] ),
@@ -30,6 +43,12 @@ AC_ARG_ENABLE(cuda-managed-memory,
 AC_MSG_NOTICE([Configuring with CUDA installed in = ${cuda_home}])
 AC_DEFINE_UNQUOTED(CUDA_DIR,"${cuda_home}",[CUDA install path])
 AC_SUBST(SUBST_CUDA_DIR,"${cuda_home}")
+
+
+AC_MSG_NOTICE([Configuring with ROCM installed in = ${rocm_home}])
+AC_DEFINE_UNQUOTED(ROCM_DIR,"${rocm_home}",[ROCM install path])
+AC_SUBST(SUBST_ROCM_DIR,"${rocm_home}")
+
 
 if test "X${cuda_managed_memory}X" == "XyesX";
 then
@@ -206,15 +225,30 @@ then
  AC_DEFINE([QDP_USE_COMM_SPLIT_INIT], [1],[Comm split for local ranks])
 fi
 
-ac_gcc="$CXX"     				      
-AC_DEFINE_UNQUOTED([CUDA_GCC],"${ac_gcc}",[CUDA C/C++ Compiler])
-AC_DEFINE_UNQUOTED(QDP_IS_QDPJIT, ${gpu_enabled}, [Enable GPU/JIT])
-AC_DEFINE_UNQUOTED(QDPJIT_IS_QDPJITNVVM, ${gpu_enabled}, [Enable GPU/JIT])
-#AC_SUBST(CUDA_LIBS, [-lcuda])
-AC_SUBST(CUDA_CXXFLAGS, [-I${cuda_home}/include])
-AC_SUBST(CUDA_LDFLAGS, [-L${cuda_home}/lib64])
+ac_gcc="$CXX"
 
+if test "X${backend_use}X" == "XCUDAX";
+then
+  AC_DEFINE_UNQUOTED([CUDA_GCC],"${ac_gcc}",[CUDA C/C++ Compiler])
+  #AC_SUBST(CUDA_LIBS, [-lcuda])
+  AC_SUBST(GPU_CXXFLAGS, [-I${cuda_home}/include])
+  AC_SUBST(GPU_LDFLAGS, [-L${cuda_home}/lib64])
+  if test "X${ac_cuda_special}X" = "XyesX"; then
+    AC_DEFINE_UNQUOTED(QDP_CUDA_SPECIAL, ${ac_cuda_special}, [Include CUDA special kernels])
+    AC_MSG_NOTICE([Include CUDA special kernels])
+    tmp_gpu_libs="-lcuda -lcudart"
+  else
+    tmp_gpu_libs="-lcuda"
+  fi
+else
+  #AC_SUBST(CUDA_LIBS, [-lcuda])
+  AC_SUBST(GPU_CXXFLAGS, [-I${rocm_home}/include])
+  AC_SUBST(GPU_LDFLAGS, [-L${rocm_home}/lib])
+  tmp_gpu_libs="-lamdhip64"
+fi
 
+AC_DEFINE_UNQUOTED(QDP_IS_QDPJIT, "1", [Enable GPU/JIT])
+AC_DEFINE_UNQUOTED(QDPJIT_IS_QDPJITNVVM, "1", [Enable GPU/JIT])
 
 
 
@@ -226,15 +260,8 @@ fi
 
 
 dnl Include custom kernels
-if test "X${ac_cuda_special}X" = "XyesX"; then
-   AC_DEFINE_UNQUOTED(QDP_CUDA_SPECIAL, ${ac_cuda_special}, [Include CUDA special kernels])
-   AC_MSG_NOTICE([Include CUDA special kernels])
-   tmp_cuda_libs="-lcuda -lcudart"
-else
-   tmp_cuda_libs="-lcuda"
-fi
 
-AC_SUBST(CUDA_LIBS, "${tmp_cuda_libs}" )
+AC_SUBST(GPU_LIBS, "${tmp_gpu_libs}" )
 
 
 dnl Check if memory debugging is enabled
@@ -643,6 +670,10 @@ AM_CONDITIONAL(QDP_USE_HDF5, [test "x${ac_build_hdf5}x" = "xyesx" ])
 AM_CONDITIONAL(QDP_CUSTOM_KERNELS, [test "x${ac_custom}x" = "xyesx" ])
 
 AM_CONDITIONAL(QDP_CUDA_SPECIAL, [test "x${ac_cuda_special}x" = "xyesx" ])
+
+AM_CONDITIONAL(QDP_BACKEND_CUDA, [test "x${backend_use}x" = "xCUDAx" ])
+
+AM_CONDITIONAL(QDP_BACKEND_ROCM, [test "x${backend_use}x" = "xROCMx" ])
 
 
 

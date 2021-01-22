@@ -15,22 +15,53 @@
 
 #include "cudaProfiler.h"
 
-using namespace std;
-
-
-namespace {
-  int max_local_size = 0;
-  int max_local_usage = 0;
-  size_t total_free = 0;
-}
 
 
 namespace QDP {
 
   namespace {
+    CUdevice cuDevice;
+    CUcontext cuContext;
+
     CUevent evStart;
     CUevent evStop;
+
+    int deviceCount;
+
+
+    unsigned device;
+    std::string envvar;
+    bool GPUDirect;
+    bool syncDevice;
+    unsigned maxKernelArg;
+
+    unsigned smem;
+    
+    unsigned max_gridx;
+    unsigned max_gridy;
+    unsigned max_gridz;
+
+    unsigned max_blockx;
+    unsigned max_blocky;
+    unsigned max_blockz;
+
+    unsigned major;
+    unsigned minor;
+
+    int defaultGPU = -1;
+
+    size_t mem_free, mem_total;
+
+    
+    size_t roundDown2pow(size_t x)
+    {
+      size_t s=1;
+      while (s<=x) s <<= 1;
+      s >>= 1;
+      return s;
+    }
   }
+  
 
   void gpu_create_events()
   {
@@ -94,6 +125,15 @@ namespace QDP {
 
 
 
+  size_t gpu_mem_free()
+  {
+    return mem_free;
+  }
+  
+  size_t gpu_mem_total()
+  {
+    return mem_total;
+  }
   
   
   std::map< JitFunction::Func_t , std::string > mapCUFuncPTX;
@@ -103,14 +143,7 @@ namespace QDP {
   }
 
 
-  int CudaGetMaxLocalSize() { return max_local_size; }
-  int CudaGetMaxLocalUsage() { return max_local_usage; }
-  size_t CudaGetInitialFreeMemory() { return total_free; }
 
-  CUevent * QDPevCopied;
-
-  CUdevice cuDevice;
-  CUcontext cuContext;
 
   std::map<CUresult,std::string> mapCuErrorString= {
     {CUDA_SUCCESS,"CUDA_SUCCESS"},
@@ -173,10 +206,10 @@ namespace QDP {
 
 
 
-  JitResult CudaLaunchKernelNoSync( JitFunction& f, 
-				    unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
-				    unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
-				    unsigned int  sharedMemBytes, int hStream, void** kernelParams, void** extra  )
+  JitResult gpu_launch_kernel( JitFunction& f, 
+			       unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
+			       unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
+			       unsigned int  sharedMemBytes, int hStream, void** kernelParams, void** extra  )
   {
     if (gpu_get_record_stats() && Layout::primaryNode())
       {
@@ -232,7 +265,7 @@ namespace QDP {
   }
 
 
-
+#if 0
   int CudaAttributeNumRegs( JitFunction& f ) {
     int pi;
     CUresult res;
@@ -257,7 +290,6 @@ namespace QDP {
     return pi;
   }
 
-
   void CudaProfilerInitialize()
   {
     CUresult res;
@@ -279,7 +311,7 @@ namespace QDP {
     res = cuProfilerStop();
     CudaRes("cuProfilerStop",res);
   }
-
+#endif
 
 
   int CudaGetConfig(int what)
@@ -299,10 +331,9 @@ namespace QDP {
     CudaRes("cuDeviceGetAttribute(CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR)",ret);
   }
 
-  void CudaInit() {
+  void gpu_init() {
     cuInit(0);
 
-    int deviceCount = 0;
     cuDeviceGetCount(&deviceCount);
     if (deviceCount == 0) { 
       std::cout << "There is no device supporting CUDA.\n"; 
@@ -310,18 +341,25 @@ namespace QDP {
     }
   }
 
+  std::string gpu_get_arch()
+  {
+    int major = gpu_getMajor();
+    int minor = gpu_getMinor();
+
+    std::string str_compute = "sm_" + std::to_string( major * 10 + minor );
+
+    return str_compute;
+  }
 
 
 
 
 
-
-
-  void CudaSetDevice(int dev)
+  void gpu_set_device(int dev)
   {
     CUresult ret;
 
-    QDP_info_primary("trying to get device %d",dev);
+    QDPIO::cout << "trying to get device " << dev "\n";
     ret = cuDeviceGet(&cuDevice, dev);
     CudaRes(__func__,ret);
 
@@ -334,69 +372,21 @@ namespace QDP {
     }
     CudaRes(__func__,ret);
 
-    std::cout << "creating CUDA events\n";
+    QDPIO::cout << "creating CUDA events\n";
     gpu_create_events();
   }
 
-  void CudaMemGetInfo(size_t *free,size_t *total)
-  {
-    CUresult ret = cuMemGetInfo(free, total);
-    CudaRes("cuMemGetInfo",ret);
-  }
-
-
-  void CudaGetDeviceProps()
+  void gpu_auto_detect()
   {
     CUresult ret;
 
     gpu_autoDetect();
 
-    size_t free, total;
-    ret = cuMemGetInfo(&free, &total);
-    CudaRes("cuMemGetInfo",ret);
-    total_free = free;
-
-    QDPIO::cout << "  GPU memory (free,total)             : " << free/1024/1024 << "/" << total/1024/1024 << " MB\n";
-
-    QDPIO::cout << "qdp-jit parameters\n";
     
-    if (!setPoolSize) {
+    ret = cuMemGetInfo(*mem_free, &mem_total);
+    CudaRes("cuMemGetInfo",ret);
 
-      size_t val = (size_t)((double)(0.90) * (double)free);
-
-      int val_in_MiB = val/1024/1024;
-
-      if (val_in_MiB < 1)
-	{
-	  QDPIO::cerr << "Less than 1 MiB device memory available. Giving up.\n";
-	  QDP_abort(1);
-	}
-      
-      float val_min = (float)val_in_MiB;
-
-      QDPInternal::globalMinValue( &val_min );
-
-      if ( val_min > (float)val_in_MiB )
-	{
-	  QDPIO::cerr << "Inconsistency: Global minimum " << val_min << " larger than local value " << val_in_MiB << "\n";
-	  QDP_abort(1);
-	}
-
-      if ( val_min < (float)val_in_MiB )
-	{
-	  QDPIO::cout << "Global minimum " << val_min << " of available GPU memory smaller than local value " << val_in_MiB << ". Using global minimum.";
-      	  QDP_abort(1);
-	}
-      int val_min_int = (int)val_min;
-
-      QDPIO::cout << "  memory pool size (default)          : " << (int)val_min_int << " MB\n";
-      
-      QDP_get_global_cache().setPoolSize( ((size_t)val_min_int) * 1024 * 1024 );
-
-      setPoolSize = true;
-    } else {
-      QDPIO::cout << "  memory pool size (user request)     : " << (int)(QDP_get_global_cache().getPoolSize()/1024/1024) << " MB\n";
-    }
+    QDPIO::cout << "  GPU memory (free,total)             : " << mem_free/1024/1024 << "/" << mem_total/1024/1024 << " MB\n";
 
     QDPIO::cout << "  threads per block                   : " << jit_util_get_threads_per_block() << "\n";
 
@@ -405,24 +395,22 @@ namespace QDP {
   }
 
 
-
-  void CudaGetDeviceCount(int * count)
+  int gpu_get_device_count()
   {
-    cuDeviceGetCount( count );
+    return deviceCount;
   }
 
 
 
-  bool CudaHostAlloc(void **mem , const size_t size, const int flags)
+  void gpu_host_alloc(void **mem , const size_t size)
   {
     CUresult ret;
-    ret = cuMemHostAlloc(mem,size,flags);
+    ret = cuMemHostAlloc(mem,size,0);
     CudaRes("cudaHostAlloc",ret);
-    return ret == CUDA_SUCCESS;
   }
 
 
-  void CudaHostFree(void *mem)
+  void gpu_host_free(void *mem)
   {
     CUresult ret;
     ret = cuMemFreeHost(mem);
@@ -433,7 +421,7 @@ namespace QDP {
 
 
 
-  void CudaMemcpyH2D( void * dest , const void * src , size_t size )
+  void gpu_memcpy_h2d( void * dest , const void * src , size_t size )
   {
     CUresult ret;
 #ifdef GPU_DEBUG_DEEP
@@ -443,7 +431,7 @@ namespace QDP {
     CudaRes("cuMemcpyH2D",ret);
   }
 
-  void CudaMemcpyD2H( void * dest , const void * src , size_t size )
+  void gpu_memcpy_d2h( void * dest , const void * src , size_t size )
   {
     CUresult ret;
 #ifdef GPU_DEBUG_DEEP
@@ -454,7 +442,7 @@ namespace QDP {
   }
 
 
-  bool CudaMalloc(void **mem , size_t size )
+  bool gpu_malloc(void **mem , size_t size )
   {
     CUresult ret;
 #ifndef QDP_USE_CUDA_MANAGED_MEMORY
@@ -479,7 +467,7 @@ namespace QDP {
 
 
   
-  void CudaFree(const void *mem )
+  void gpu_free(const void *mem )
   {
 #ifdef GPU_DEBUG_DEEP
     QDP_debug_deep( "CudaFree %p", mem );
@@ -491,7 +479,7 @@ namespace QDP {
 
 
 
-  void CudaMemset( void * dest , unsigned val , size_t N )
+  void gpu_memset( void * dest , unsigned val , size_t N )
   {
     CUresult ret;
     ret = cuMemsetD32((CUdeviceptr)const_cast<void*>(dest), val, N);
@@ -661,37 +649,6 @@ namespace QDP {
 
 
   
-  namespace
-  {
-    size_t roundDown2pow(size_t x) {
-      size_t s=1;
-      while (s<=x) s <<= 1;
-      s >>= 1;
-      return s;
-    }
-
-    unsigned device;
-    std::string envvar;
-    bool GPUDirect;
-    bool syncDevice;
-    unsigned maxKernelArg;
-
-    unsigned smem;
-    
-    unsigned max_gridx;
-    unsigned max_gridy;
-    unsigned max_gridz;
-
-    unsigned max_blockx;
-    unsigned max_blocky;
-    unsigned max_blockz;
-
-    unsigned major;
-    unsigned minor;
-
-    int defaultGPU = -1;
-
-  }
 
 
   void gpu_autoDetect() {
@@ -722,12 +679,12 @@ namespace QDP {
   }
 
 
-  void gpu_setDefaultGPU(int ngpu) {
+  void gpu_set_default_GPU(int ngpu) {
     defaultGPU = ngpu;
   }
 
 
-  int  gpu_getDefaultGPU() { return defaultGPU; }
+  int  gpu_get_default_GPU() { return defaultGPU; }
   
   size_t gpu_getMaxGridX()  {return max_gridx;}
   size_t gpu_getMaxGridY()  {return max_gridy;}

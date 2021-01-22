@@ -82,7 +82,7 @@ namespace COUNT {
   void QDP_startGPU()
   {
     // Getting GPU device properties
-    CudaGetDeviceProps();
+    gpu_auto_detect();
 
     // Initialize the LLVM wrapper
     llvm_wrapper_init();
@@ -199,7 +199,7 @@ namespace COUNT {
     //
     // CUDA init
     //
-    CudaInit();
+    gpu_init();
 
     //
     // Process command line

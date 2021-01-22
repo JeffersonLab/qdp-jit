@@ -90,9 +90,11 @@ struct QDPProfile_t
   void etime(QDPTime_t t, JitFunction f) {
     if (first) {
       first_time += t;
+#if 0
       num_regs = CudaAttributeNumRegs(f);
       local_size = CudaAttributeLocalSize(f);
       const_size = CudaAttributeConstSize(f);
+#endif
       first=false;
     } else {
       time += t;

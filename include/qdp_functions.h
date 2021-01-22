@@ -702,6 +702,9 @@ namespace QDP {
   globalMin(const QDPExpr<RHS,OLattice<T> >& s1)
   {
     typename UnaryReturn<OLattice<T>, FnGlobalMin>::Type_t  d;
+    QDPIO::cerr << "globalMin not implemented\n";
+    QDP_abort(1);
+#if 0
 
     // Loop always entered so unroll
     d.elem() = forEach(s1, EvalLeaf1(0), OpCombine());   // SINGLE NODE VERSION FOR NOW
@@ -718,7 +721,7 @@ namespace QDP {
 
     // Do a global min on the result
     QDPInternal::globalMin(d); 
-
+#endif
     return d;
   }
 

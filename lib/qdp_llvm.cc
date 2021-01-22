@@ -1,7 +1,9 @@
 #include "qdp.h"
 #include "qdp_config.h"
 
+#if 0
 #include "qdp_libdevice.h"
+#endif
 
 #include "llvm/InitializePasses.h"
 #include "llvm/IR/DataLayout.h"
@@ -50,7 +52,7 @@ namespace QDP {
     std::string str_pretty;
     std::map<std::string,int> map_func_counter;
     std::string str_kernel_name;
-    std::string str_compute;
+    std::string str_arch;
     
     std::vector< llvm::Type* > vecParamType;
     std::vector< llvm::Value* > vecArgument;
@@ -161,7 +163,7 @@ namespace QDP {
     if ( it != ptx_db::db.end() )
       {
 	//return get_fptr_from_ptx( "generic.ptx" , it->second );
-	get_jitf( f , it->second.second , it->second.first , str_pretty , str_compute );
+	get_jitf( f , it->second.second , it->second.first , str_pretty , str_arch );
       }
   }
 
@@ -301,6 +303,7 @@ namespace QDP {
 
   void llvm_init_libdevice()
   {
+#if 0
     std::string ErrorMessage;
 
     llvm::StringRef libdevice_bc( (const char *) QDP::LIBDEVICE::libdevice_bc, 
@@ -334,11 +337,13 @@ namespace QDP {
 	llvm::errs() << "libdevice bitcode didn't read correctly.\n";
       QDP_abort( 1 );
     }
+#endif
   }
 
 
   void llvm_setup_math_functions() 
   {
+#if 0
     //QDPIO::cout << "Setup math functions..\n";
 
     // Cloning a module takes more time than creating the module from scratch
@@ -352,7 +357,8 @@ namespace QDP {
       QDP_error_exit("Linking libdevice failed: %s",ErrorMsg.c_str());
     }
 #else
-    llvm_init_libdevice();
+    QDPIO::cout << "*** skip libdevice\n";
+    //llvm_init_libdevice();
 
     std::string ErrorMsg;
     if (llvm::Linker::linkModules( *Mod , std::move( module_libdevice ) )) {  // llvm::Linker::PreserveSource
@@ -406,6 +412,7 @@ namespace QDP {
     
     func_pow_f64 = llvm_get_func( "__nv_pow" );
     func_atan2_f64 = llvm_get_func( "__nv_atan2" );
+#endif
   }
 
 
@@ -427,10 +434,10 @@ namespace QDP {
     llvm::initializeConstantHoistingLegacyPassPass(*Registry);
 
 
-    auto major = gpu_getMajor();
-    auto minor = gpu_getMinor();
-
-    str_compute = "sm_" + std::to_string( major * 10 + minor );
+    // Get the GPU arch, e.g.
+    // sm_50 (CUDA)
+    // gfx908 (ROCM)
+    str_arch = gpu_get_arch();
 
 
     QDPIO::cout << "LLVM optimization level : " << llvm_opt::opt_level << "\n";
@@ -1197,7 +1204,7 @@ namespace QDP {
 
     std::unique_ptr<llvm::TargetMachine> target_machine(TheTarget->createTargetMachine(
 										       triple.str(),
-										       str_compute,
+										       str_arch,
 										       "",
 										       options,
 										       Reloc::PIC_,
@@ -1217,9 +1224,10 @@ namespace QDP {
     
     llvm::legacy::PassManager PM;
     PM.add( llvm::createInternalizePass( all_but_kernel_name ) );
+#if 0
     unsigned int sm_gpu = gpu_getMajor() * 10 + gpu_getMinor();
     PM.add( llvm::createNVVMReflectPass( sm_gpu ));
-
+#endif
     PM.add( llvm::createGlobalDCEPass() );
     
     PM.run(*Mod);
@@ -1305,7 +1313,7 @@ namespace QDP {
     std::string ptx_kernel = get_ptx();
 
     //JitFunction func = get_fptr_from_ptx( fname , ptx_kernel );
-    get_jitf( func , ptx_kernel , str_kernel_name , str_pretty , str_compute );
+    get_jitf( func , ptx_kernel , str_kernel_name , str_pretty , str_arch );
 
     if ( ptx_db::db_enabled ) {
 

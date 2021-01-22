@@ -18,11 +18,11 @@ namespace QDP
     enum { ALIGNMENT_SIZE = 4096 };
 
     static bool allocate( void** ptr, const size_t n_bytes ) {
-      return CudaMalloc( ptr , n_bytes );
+      return gpu_malloc( ptr , n_bytes );
     }
 
     static void free(const void *mem) {
-      CudaFree( mem );
+      gpu_free( mem );
     }
   };
 
