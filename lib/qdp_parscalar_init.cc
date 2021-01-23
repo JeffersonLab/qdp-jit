@@ -86,9 +86,11 @@ namespace COUNT {
 
   void qdp_jit_cache_set_poolsize()
   {
+    QDPIO::cout << "qdp-jit parameters\n";
+    QDPIO::cout << "  threads per block                   : " << jit_util_get_threads_per_block() << "\n";
+    
     if (!setPoolSize)
       {
-	std::cout << "qdp-jit parameters\n";
 
 	size_t val = (size_t)((double)(0.90) * (double)gpu_mem_free());
 
@@ -124,7 +126,7 @@ namespace COUNT {
       }
     else
       {
-	std::cout << "  memory pool size (user request)     : " << (int)(QDP_get_global_cache().getPoolSize()/1024/1024) << " MB\n";
+	QDPIO::cout << "  memory pool size (user request)     : " << (int)(QDP_get_global_cache().getPoolSize()/1024/1024) << " MB\n";
       }
 
   }

@@ -36,7 +36,9 @@ CUDA_HDRS = qdp_gpu.h \
             qdp_jitf_copymask.h qdp_jitf_sum.h qdp_jitf_summulti.h qdp_jitf_globalmax.h qdp_jitf_gaussian.h qdp_internal.h qdp_newopsreg.h \
             qdp_jit_function.h
 
-#qdp_libdevice.h
+if QDP_BACKEND_CUDA
+CUDA_HDRS += qdp_libdevice.h
+endif
 
 if QDP_CUSTOM_KERNELS
 CUDA_HDRS += custom_kernels/custom_kernels.h \

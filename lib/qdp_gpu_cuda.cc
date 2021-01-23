@@ -359,36 +359,66 @@ namespace QDP {
   {
     CUresult ret;
 
-    QDPIO::cout << "trying to get device " << dev "\n";
+    std::cout << "trying to get device " << dev << "\n";
     ret = cuDeviceGet(&cuDevice, dev);
     CudaRes(__func__,ret);
 
-    QDP_info_primary("trying to grab pre-existing context",dev);
+    std::cout << "trying to grab pre-existing context\n";
     ret = cuCtxGetCurrent(&cuContext);
     
     if (ret != CUDA_SUCCESS || cuContext == NULL) {
-      QDP_info_primary("trying to create a context");
+      std::cout << "trying to create a context";
       ret = cuCtxCreate(&cuContext, CU_CTX_MAP_HOST, cuDevice);
     }
     CudaRes(__func__,ret);
 
-    QDPIO::cout << "creating CUDA events\n";
+    std::cout << "creating CUDA events\n";
     gpu_create_events();
   }
 
+
+  void gpu_get_device_props() {
+    smem = CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_SHARED_MEMORY_PER_BLOCK );
+    max_gridx = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_X ) );
+    max_gridy = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_Y ) );
+    max_gridz = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_Z ) );
+    max_blockx = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X ) );
+    max_blocky = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y ) );
+    max_blockz = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Z ) );
+
+#ifdef QDP_CUDA_SPECIAL
+    QDPIO::cout << "Setting max gridx for CUDA special functions\n";
+    cuda_special_set_maxgridx( max_gridx );
+#endif
+    
+    int ma,mi;
+    CudaGetSM(&ma,&mi);
+    
+    major = ma;
+    minor = mi;
+    
+    QDPIO::cout << "  Compute capability (major,minor)    : " << major << "," << minor << "\n";
+    QDPIO::cout << "  Shared memory                       : " << smem/1024  << " KB\n";
+    QDPIO::cout << "  Max grid  (x,y,z)                   : (" << max_gridx << "," << max_gridy << "," << max_gridz << ")\n";
+    QDPIO::cout << "  Max block (x,y,z)                   : (" << max_blockx << "," << max_blocky << "," << max_blockz << ")\n";
+  }
+
+
+  
   void gpu_auto_detect()
   {
     CUresult ret;
 
-    gpu_autoDetect();
+    QDPIO::cout << "GPU properties\n";
 
+    // Get the device properties
+    gpu_get_device_props();
     
-    ret = cuMemGetInfo(*mem_free, &mem_total);
+    ret = cuMemGetInfo( &mem_free , &mem_total );
     CudaRes("cuMemGetInfo",ret);
 
     QDPIO::cout << "  GPU memory (free,total)             : " << mem_free/1024/1024 << "/" << mem_total/1024/1024 << " MB\n";
 
-    QDPIO::cout << "  threads per block                   : " << jit_util_get_threads_per_block() << "\n";
 
     ret = cuCtxSetCacheConfig(CU_FUNC_CACHE_PREFER_L1);
     CudaRes("cuCtxSetCacheConfig",ret);
@@ -651,32 +681,6 @@ namespace QDP {
   
 
 
-  void gpu_autoDetect() {
-    smem = CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_SHARED_MEMORY_PER_BLOCK );
-    max_gridx = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_X ) );
-    max_gridy = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_Y ) );
-    max_gridz = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_Z ) );
-    max_blockx = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X ) );
-    max_blocky = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y ) );
-    max_blockz = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Z ) );
-
-#ifdef QDP_CUDA_SPECIAL
-    QDPIO::cout << "Setting max gridx for CUDA special functions\n";
-    cuda_special_set_maxgridx( max_gridx );
-#endif
-    
-    int ma,mi;
-    CudaGetSM(&ma,&mi);
-    
-    major = ma;
-    minor = mi;
-    
-    QDPIO::cout << "GPU autodetect\n";
-    QDPIO::cout << "  Compute capability (major,minor)    : " << major << "," << minor << "\n";
-    QDPIO::cout << "  Shared memory                       : " << smem/1024  << " KB\n";
-    QDPIO::cout << "  Max grid  (x,y,z)                   : (" << max_gridx << "," << max_gridy << "," << max_gridz << ")\n";
-    QDPIO::cout << "  Max block (x,y,z)                   : (" << max_blockx << "," << max_blocky << "," << max_blockz << ")\n";
-  }
 
 
   void gpu_set_default_GPU(int ngpu) {

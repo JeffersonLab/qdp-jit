@@ -1,7 +1,7 @@
 #include "qdp.h"
 #include "qdp_config.h"
 
-#if 0
+#ifdef QDP_BACKEND_CUDA
 #include "qdp_libdevice.h"
 #endif
 
@@ -309,7 +309,7 @@ namespace QDP {
 
   void llvm_init_libdevice()
   {
-#if 0
+#ifdef QDP_BACKEND_CUDA
     std::string ErrorMessage;
 
     llvm::StringRef libdevice_bc( (const char *) QDP::LIBDEVICE::libdevice_bc, 
@@ -349,7 +349,7 @@ namespace QDP {
 
   void llvm_setup_math_functions() 
   {
-#if 0
+#ifdef QDP_BACKEND_CUDA
     //QDPIO::cout << "Setup math functions..\n";
 
     // Cloning a module takes more time than creating the module from scratch
@@ -363,8 +363,7 @@ namespace QDP {
       QDP_error_exit("Linking libdevice failed: %s",ErrorMsg.c_str());
     }
 #else
-    QDPIO::cout << "*** skip libdevice\n";
-    //llvm_init_libdevice();
+    llvm_init_libdevice();
 
     std::string ErrorMsg;
     if (llvm::Linker::linkModules( *Mod , std::move( module_libdevice ) )) {  // llvm::Linker::PreserveSource
@@ -504,7 +503,7 @@ namespace QDP {
     } // ptx db
 
     //
-    // I initialize libdevice in math_setup
+    // libdevice is initialized in math_setup
     //
     // llvm_init_libdevice();
   }  
@@ -1046,7 +1045,6 @@ namespace QDP {
   {
     llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getVoidTy(TheContext), false);
 
-    QDPIO::cout << "bar sync maybe leave readnone out!\n";
     llvm::AttrBuilder ABuilder;
     ABuilder.addAttribute(llvm::Attribute::ReadNone);
 

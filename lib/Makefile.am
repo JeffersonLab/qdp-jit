@@ -30,10 +30,11 @@ libqdp_a_SOURCES = qdp_map.cc qdp_subset.cc qdp_random.cc qdp.cc \
 	qdp_llvm.cc qdp_cache.cc qdp_mastermap.cc qdp_masterset.cc \
         qdp_jitf_sum.cc qdp_wordreg.cc qdp_datalayout.cc qdp_jit_util.cc
 
-#qdp_libdevice.cc
+#
 
 if QDP_BACKEND_CUDA
-  libqdp_a_SOURCES += qdp_gpu_cuda.cc
+  libqdp_a_SOURCES += qdp_gpu_cuda.cc \
+		      qdp_libdevice.cc
 else
   libqdp_a_SOURCES += qdp_gpu_rocm.cc
 endif
