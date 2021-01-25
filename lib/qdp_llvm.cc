@@ -424,6 +424,8 @@ namespace QDP {
   }
 
 
+  
+
   void llvm_backend_init_rocm() {
     function_created = false;
 
@@ -525,6 +527,38 @@ namespace QDP {
     QDPIO::cout << "NVPTX Flush to zero     : " << llvm_opt::nvptx_FTZ << "\n";
 
 
+    std::string str_triple("nvptx64-nvidia-cuda");
+
+    TheTriple.setTriple(str_triple);
+      
+    std::string Error;
+    
+    const llvm::Target *TheTarget = llvm::TargetRegistry::lookupTarget( "", TheTriple, Error);
+    if (!TheTarget) {
+      llvm::errs() << "Error looking up target: " << Error;
+      exit(1);
+    }
+
+
+    llvm::TargetOptions options;
+
+    TargetMachine.reset ( TheTarget->createTargetMachine(
+							 TheTriple.str(),
+							 str_arch,
+							 "",
+							 options,
+							 Reloc::PIC_,
+							 None,
+							 llvm::CodeGenOpt::Aggressive, true ));
+    
+    if (!TargetMachine)
+      {
+	QDPIO::cerr << "Could not create LLVM target machine\n";
+	QDP_abort(1);
+      }
+
+    
+
     if (ptx_db::db_enabled) {
       // Load DB
       QDPIO::cout << "Checking for PTX DB " << ptx_db::dbname << "\n";
@@ -616,8 +650,6 @@ namespace QDP {
 
     Mod.reset( new llvm::Module( "module", TheContext) );
 
-    Mod->setDataLayout(TargetMachine->createDataLayout());
-
     //llvm_module_dump();
     
     builder.reset( new llvm::IRBuilder<>( TheContext ) );
@@ -630,6 +662,12 @@ namespace QDP {
     function_created = false;
 
     llvm_setup_math_functions();
+
+    // Set the data layout for the builder's module AFTER linking in
+    // the math functions as the math function module's data layout is
+    // not set yet. Would yield a linker warning otherwise.
+    Mod->setDataLayout(TargetMachine->createDataLayout());
+
 
 #ifdef QDP_BACKEND_ROCM
     AMDspecific::__threads_per_group = llvm_add_param<int>();
@@ -1314,44 +1352,6 @@ namespace QDP {
 
   std::string get_ptx()
   {
-    std::string str_triple("nvptx64-nvidia-cuda");
-
-    
-    llvm::Triple triple(str_triple);
-      
-    std::string Error;
-    
-    const llvm::Target *TheTarget = llvm::TargetRegistry::lookupTarget( "", triple, Error);
-    if (!TheTarget) {
-      llvm::errs() << "Error looking up target: " << Error;
-      exit(1);
-    }
-
-
-    llvm::TargetOptions options;
-
-
-
-    std::unique_ptr<llvm::TargetMachine> target_machine(TheTarget->createTargetMachine(
-										       triple.str(),
-										       str_arch,
-										       "",
-										       options,
-										       Reloc::PIC_,
-										       None,
-										       llvm::CodeGenOpt::Aggressive, true ));
-
-    if (!target_machine)
-      {
-	QDPIO::cerr << "Could not create LLVM target machine\n";
-	QDP_abort(1);
-      }
-
-    
-    Mod->setTargetTriple( triple.str() );
-    Mod->setDataLayout(target_machine->createDataLayout());
-
-    
     llvm::legacy::PassManager PM;
     PM.add( llvm::createInternalizePass( all_but_kernel_name ) );
 #if 0
@@ -1371,7 +1371,7 @@ namespace QDP {
     llvm::raw_string_ostream rss(str);
     llvm::buffer_ostream bos(rss);
     
-    if (target_machine->addPassesToEmitFile(PM, bos , nullptr ,  llvm::CGFT_AssemblyFile )) {
+    if (TargetMachine->addPassesToEmitFile(PM, bos , nullptr ,  llvm::CGFT_AssemblyFile )) {
       llvm::errs() << ": target does not support generation of this"
 		   << " file type!\n";
       QDP_abort(1);
