@@ -149,7 +149,7 @@ namespace QDP {
   llvm::LLVMContext& llvm_get_context();
 
 
-  void llvm_wrapper_init();
+  void llvm_backend_init();
   llvm::PHINode * llvm_phi( llvm::Type* type, unsigned num = 0 );
   llvm::Type* promote( llvm::Type* t0 , llvm::Type* t1 );
   llvm::Value* llvm_cast( llvm::Type *dest_type , llvm::Value *src );

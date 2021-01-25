@@ -39,6 +39,9 @@ namespace QDP {
   {
     llvm::LLVMContext TheContext;
 
+    llvm::Triple TheTriple;
+    std::unique_ptr<llvm::TargetMachine> TargetMachine;
+    
     llvm::BasicBlock  *entry;
     llvm::Function    *mainFunc;
 
@@ -421,7 +424,7 @@ namespace QDP {
   }
 
 
-  void llvm_wrapper_init() {
+  void llvm_backend_init_rocm() {
     function_created = false;
 
     llvm::InitializeAllTargets();
@@ -447,6 +450,80 @@ namespace QDP {
 
     QDPIO::cout << "LLVM optimization level : " << llvm_opt::opt_level << "\n";
     QDPIO::cout << "NVPTX Flush to zero     : " << llvm_opt::nvptx_FTZ << "\n";
+
+    
+    TheTriple.setArch (llvm::Triple::ArchType::amdgcn);
+    TheTriple.setVendor (llvm::Triple::VendorType::AMD);
+    TheTriple.setOS (llvm::Triple::OSType::AMDHSA);
+
+    std::cout << "triple set\n";
+
+    std::string Error;
+    const llvm::Target *TheTarget = llvm::TargetRegistry::lookupTarget( TheTriple.str() , Error );
+    if (!TheTarget) {
+      std::cout << Error;
+      QDPIO::cerr << "Something went wrong setting the target\n";
+      QDP_abort(1);
+    }
+
+    QDPIO::cout << "got target: " << TheTarget->getName() << "\n";
+    QDPIO::cout << "using arch: " << str_arch << "\n";
+
+    llvm::CodeGenOpt::Level OLvl = llvm::CodeGenOpt::Default;
+
+    llvm::TargetOptions Options;
+
+    std::string FeaturesStr;
+    
+    TargetMachine.reset(TheTarget->createTargetMachine(
+						       TheTriple.getTriple(), 
+						       str_arch,
+						       FeaturesStr, 
+						       Options,
+						       llvm::Reloc::PIC_
+						       )
+			);
+
+
+    QDPIO::cout << "got target machine CPU: " << TargetMachine->getTargetCPU().str() << "\n";
+    QDPIO::cout << "got target machine triple: " << TargetMachine->getTargetTriple().str() << "\n";
+
+
+    //
+    // libdevice is initialized in math_setup
+    //
+    // llvm_init_libdevice();
+  }  
+
+
+
+  void llvm_backend_init_cuda() {
+    function_created = false;
+
+    llvm::InitializeAllTargets();
+    llvm::InitializeAllTargetMCs();
+    llvm::InitializeAllAsmPrinters();
+    llvm::InitializeAllAsmParsers();
+
+    llvm::PassRegistry *Registry = llvm::PassRegistry::getPassRegistry();
+    llvm::initializeCore(*Registry);
+    llvm::initializeCodeGen(*Registry);
+    llvm::initializeLoopStrengthReducePass(*Registry);
+    llvm::initializeLowerIntrinsicsPass(*Registry);
+//    llvm::initializeCountingFunctionInserterPass(*Registry);
+    llvm::initializeUnreachableBlockElimLegacyPassPass(*Registry);
+    llvm::initializeConstantHoistingLegacyPassPass(*Registry);
+
+
+    // Get the GPU arch, e.g.
+    // sm_50 (CUDA)
+    // gfx908 (ROCM)
+    str_arch = gpu_get_arch();
+
+
+    QDPIO::cout << "LLVM optimization level : " << llvm_opt::opt_level << "\n";
+    QDPIO::cout << "NVPTX Flush to zero     : " << llvm_opt::nvptx_FTZ << "\n";
+
 
     if (ptx_db::db_enabled) {
       // Load DB
@@ -509,6 +586,18 @@ namespace QDP {
   }  
 
 
+
+  void llvm_backend_init()
+  {
+#ifdef QDP_BACKEND_ROCM
+    llvm_backend_init_rocm();
+#else
+    llvm_backend_init_cuda();
+#endif
+  }
+
+
+  
   llvm::BasicBlock * llvm_get_insert_block() {
     return builder->GetInsertBlock();
   }
@@ -526,6 +615,11 @@ namespace QDP {
     //QDPIO::cout << "Starting new LLVM function..\n";
 
     Mod.reset( new llvm::Module( "module", TheContext) );
+
+    Mod->setDataLayout(TargetMachine->createDataLayout());
+
+    //llvm_module_dump();
+    
     builder.reset( new llvm::IRBuilder<>( TheContext ) );
 
     jit_build_seedToFloat();
@@ -874,7 +968,10 @@ namespace QDP {
 
   llvm::Value * llvm_alloca( llvm::Type* type , int elements )
   {
-    return builder->CreateAlloca( type , llvm_create_value(elements) );    // This can be a llvm::Value*
+    auto DL = Mod->getDataLayout();
+    unsigned AddrSpace = DL.getAllocaAddrSpace();
+
+    return builder->CreateAlloca( type , AddrSpace , llvm_create_value(elements) );    // This can be a llvm::Value*
   }
 
 
@@ -1387,49 +1484,8 @@ namespace QDP {
   
   void llvm_build_function_rocm(JitFunction& func)
   {
-    llvm::Triple TheTriple;
-    TheTriple.setArch (llvm::Triple::ArchType::amdgcn);
-    TheTriple.setVendor (llvm::Triple::VendorType::AMD);
-    TheTriple.setOS (llvm::Triple::OSType::AMDHSA);
-
-    std::cout << "triple set\n";
-
-    std::string Error;
-    const llvm::Target *TheTarget = llvm::TargetRegistry::lookupTarget( TheTriple.str() , Error );
-    if (!TheTarget) {
-      std::cout << Error;
-      QDPIO::cerr << "Something went wrong setting the target\n";
-      QDP_abort(1);
-    }
-
-    QDPIO::cout << "got target: " << TheTarget->getName() << "\n";
-    QDPIO::cout << "using arch: " << str_arch << "\n";
-
-    llvm::CodeGenOpt::Level OLvl = llvm::CodeGenOpt::Default;
-
-    llvm::TargetOptions Options;
-
-    std::string FeaturesStr;
-
-
-    
-    std::unique_ptr<llvm::TargetMachine> TargetMachine(TheTarget->createTargetMachine(
-										      TheTriple.getTriple(), 
-										      str_arch,
-										      FeaturesStr, 
-										      Options,
-										      llvm::Reloc::PIC_
-										      )
-						       );
-
-    Mod->setDataLayout(TargetMachine->createDataLayout());
-
-
     //llvm_module_dump();
-
-    QDPIO::cout << "got target machine CPU: " << TargetMachine->getTargetCPU().str() << "\n";
-    QDPIO::cout << "got target machine triple: " << TargetMachine->getTargetTriple().str() << "\n";
-
+    
     llvm::legacy::PassManager PM;
 
     llvm::TargetLibraryInfoImpl TLII( TheTriple );

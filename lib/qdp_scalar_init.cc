@@ -85,7 +85,7 @@ namespace COUNT {
     gpu_auto_detect();
 
     // Initialize the LLVM wrapper
-    llvm_wrapper_init();
+    llvm_backend_init();
   }
 
   //! Set the GPU device

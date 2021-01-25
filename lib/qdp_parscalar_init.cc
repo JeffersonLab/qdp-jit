@@ -144,7 +144,7 @@ namespace COUNT {
     qdp_jit_cache_set_poolsize();
 
     // Initialize the LLVM wrapper
-    llvm_wrapper_init();
+    llvm_backend_init();
   }
 
 

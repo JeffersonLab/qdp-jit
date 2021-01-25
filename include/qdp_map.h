@@ -339,7 +339,6 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
 
       llvm::Value * r_multi_index = llvm_array_type_indirection( index.p_multi_index , v.getIndex() );
 
-
       JitIf inRecvBuffer( llvm_lt( r_multi_index , llvm_create_value(0) ) );
       {
 	llvm::Value *idx_buf = llvm_sub ( llvm_neg ( r_multi_index ) , llvm_create_value(1) );
@@ -370,7 +369,7 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
 	ret_stack = tmp;
       }
       inRecvBuffer.end();
-
+      
       //
       // Now read the object from the stack into a REG container
       //

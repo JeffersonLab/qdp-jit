@@ -198,7 +198,7 @@ function_build(JitFunction& function, OLattice<T>& dest, const Op& op, const QDP
   JitIf ordered(r_ordered);
   {
     llvm_cond_exit( llvm_gt( r_idx , r_end ) );
-    llvm_cond_exit( llvm_lt( r_idx , r_start ) );
+    llvm_cond_exit( llvm_lt( r_idx , r_start ) ); // This can be removed, as r_idx >= 0
   }
   ordered.els();
   {
