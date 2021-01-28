@@ -37,6 +37,13 @@ namespace QDP {
 
   namespace
   {
+#ifdef QDP_BACKEND_ROCM
+    std::string str_libdevice_path = "/opt/rocm/llvm/lib/libdevice";
+#else
+    std::string str_libdevice_path = "/usr/local/cuda/nvvm/libdevice";
+#endif
+    std::string str_libdevice_name;
+    
     llvm::LLVMContext TheContext;
 
     llvm::Triple TheTriple;
@@ -103,6 +110,16 @@ namespace QDP {
     DBType db;
   }
 
+
+  void llvm_set_libdevice_path(const char* path)
+  {
+    str_libdevice_path = std::string(path);
+  }
+
+  void llvm_set_libdevice_name(const char* name)
+  {
+    str_libdevice_name = std::string(name);
+  }
 
 
   llvm::LLVMContext& llvm_get_context()
@@ -312,6 +329,54 @@ namespace QDP {
 
   void llvm_init_libdevice()
   {
+    std::string fname;
+    if (str_libdevice_name.length() > 0)
+      {
+	fname = str_libdevice_name;
+      }
+    else
+      {
+#ifdef QDP_BACKEND_CUDA
+	fname = "libdevice.10.bc";
+#else
+	fname = "libm-amdgcn-" + str_arch + ".bc";
+#endif
+      }
+
+    std::string FileName = str_libdevice_path + "/" + fname;
+
+    QDPIO::cout << "libdevice: " << FileName << "\n";
+
+    {
+      std::ifstream ftmp(FileName.c_str());
+      if (!ftmp.good())
+	{
+	  QDPIO::cout << "libdevice not found!\n";
+	  QDP_abort(1);
+	}
+    }
+    
+    ErrorOr<std::unique_ptr<MemoryBuffer>> mb = MemoryBuffer::getFile(FileName);
+    if (std::error_code ec = mb.getError()) {
+      errs() << ec.message();
+      QDP_abort(1);
+    }
+  
+    llvm::Expected<std::unique_ptr<llvm::Module>> m = llvm::parseBitcodeFile(mb->get()->getMemBufferRef(), TheContext);
+    if (std::error_code ec = errorToErrorCode(m.takeError()))
+      {
+	errs() << "Error reading bitcode: " << ec.message() << "\n";
+	QDP_abort(1);
+      }
+
+    module_libdevice.reset( m.get().release() );
+
+    if (!module_libdevice) {
+      QDPIO::cerr << "libdevice bitcode didn't read correctly.\n";
+      QDP_abort(1);
+    }
+
+    
 #ifdef QDP_BACKEND_CUDA
     std::string ErrorMessage;
 
@@ -352,24 +417,40 @@ namespace QDP {
 
   void llvm_setup_math_functions() 
   {
+    QDPIO::cout << "Setup math functions..\n";
+    
+    //
+    // Read libdevice into module_libdevice
+    //
+    llvm_init_libdevice();
+
+#ifdef QDP_BACKEND_ROCM
+    QDPIO::cout << "setting module data layout\n";
+    Mod->setDataLayout(TargetMachine->createDataLayout());
+#endif
+    
+    std::string ErrorMsg;
+    if (llvm::Linker::linkModules( *Mod , std::move( module_libdevice ) )) {  // llvm::Linker::PreserveSource
+      QDPIO::cerr << "Linking libdevice failed: " << ErrorMsg.c_str() << "\n";
+      QDP_abort(1);
+    }
+
 #ifdef QDP_BACKEND_CUDA
-    //QDPIO::cout << "Setup math functions..\n";
+    QDPIO::cout << "setting module data layout\n";
+    Mod->setDataLayout(TargetMachine->createDataLayout());
+#endif
+
+#ifdef QDP_BACKEND_CUDA
+#if 0
+    //
 
     // Cloning a module takes more time than creating the module from scratch
     // So, I am creating the libdevice module from the embedded bitcode.
     //
-#if 0
     std::unique_ptr<llvm::Module> libdevice_clone( CloneModule( module_libdevice.get() ) );
 
     std::string ErrorMsg;
     if (llvm::Linker::linkModules( *Mod , std::move( libdevice_clone ) )) {  // llvm::Linker::PreserveSource
-      QDP_error_exit("Linking libdevice failed: %s",ErrorMsg.c_str());
-    }
-#else
-    llvm_init_libdevice();
-
-    std::string ErrorMsg;
-    if (llvm::Linker::linkModules( *Mod , std::move( module_libdevice ) )) {  // llvm::Linker::PreserveSource
       QDP_error_exit("Linking libdevice failed: %s",ErrorMsg.c_str());
     }
 #endif    
@@ -420,6 +501,56 @@ namespace QDP {
     
     func_pow_f64 = llvm_get_func( "__nv_pow" );
     func_atan2_f64 = llvm_get_func( "__nv_atan2" );
+#else
+    // ROCM
+
+    func_sin_f32 = llvm_get_func( "sinf" );
+    func_acos_f32 = llvm_get_func( "acosf" );
+    func_asin_f32 = llvm_get_func( "asinf" );
+    func_atan_f32 = llvm_get_func( "atanf" );
+    func_ceil_f32 = llvm_get_func( "ceilf" );
+    func_floor_f32 = llvm_get_func( "floorf" );
+    func_cos_f32 = llvm_get_func( "cosf" );
+    func_cosh_f32 = llvm_get_func( "coshf" );
+    func_exp_f32 = llvm_get_func( "expf" );
+    func_log_f32 = llvm_get_func( "logf" );
+    func_log10_f32 = llvm_get_func( "log10f" );
+    func_sinh_f32 = llvm_get_func( "sinhf" );
+    func_tan_f32 = llvm_get_func( "tanf" );
+    func_tanh_f32 = llvm_get_func( "tanhf" );
+    func_fabs_f32 = llvm_get_func( "fabsf" );
+    func_sqrt_f32 = llvm_get_func( "sqrtf" );
+    func_isfinite_f32 = llvm_get_func( "__finitef" );
+    // func_isinf_f32 = llvm_get_func( "isinff" );
+    // func_isnan_f32 = llvm_get_func( "isnanf" );
+
+    func_pow_f32 = llvm_get_func( "powf" );
+    func_atan2_f32 = llvm_get_func( "atan2f" );
+
+
+    func_sin_f64 = llvm_get_func( "sin" );
+    func_acos_f64 = llvm_get_func( "acos" );
+    func_asin_f64 = llvm_get_func( "asin" );
+    func_atan_f64 = llvm_get_func( "atan" );
+    func_ceil_f64 = llvm_get_func( "ceil" );
+    func_floor_f64 = llvm_get_func( "floor" );
+    func_cos_f64 = llvm_get_func( "cos" );
+    func_cosh_f64 = llvm_get_func( "cosh" );
+    func_exp_f64 = llvm_get_func( "exp" );
+    func_log_f64 = llvm_get_func( "log" );
+    func_log10_f64 = llvm_get_func( "log10" );
+    func_sinh_f64 = llvm_get_func( "sinh" );
+    func_tan_f64 = llvm_get_func( "tan" );
+    func_tanh_f64 = llvm_get_func( "tanh" );
+    func_fabs_f64 = llvm_get_func( "fabs" );
+    func_sqrt_f64 = llvm_get_func( "sqrt" );
+    func_isfinite_f64 = llvm_get_func( "__finite" );
+    // func_isinf_f64 = llvm_get_func( "isinfd" );
+    // func_isnan_f64 = llvm_get_func( "isnand" );
+    
+    func_pow_f64 = llvm_get_func( "pow" );
+    func_atan2_f64 = llvm_get_func( "atan2" );
+
 #endif
   }
 
@@ -494,7 +625,7 @@ namespace QDP {
     //
     // libdevice is initialized in math_setup
     //
-    // llvm_init_libdevice();
+    //llvm_init_libdevice();
   }  
 
 
@@ -661,13 +792,17 @@ namespace QDP {
     vecArgument.clear();
     function_created = false;
 
+    // Setup math functions
+    // This also sets the datalayout for the module about to build
+    //
     llvm_setup_math_functions();
 
+#if 0
     // Set the data layout for the builder's module AFTER linking in
     // the math functions as the math function module's data layout is
     // not set yet. Would yield a linker warning otherwise.
     Mod->setDataLayout(TargetMachine->createDataLayout());
-
+#endif
 
 #ifdef QDP_BACKEND_ROCM
     AMDspecific::__threads_per_group = llvm_add_param<int>();

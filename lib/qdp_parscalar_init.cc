@@ -433,6 +433,18 @@ namespace COUNT {
 	    sscanf((*argv)[++i], "%s", &tmp[0]);
 	    llvm_set_opt(tmp);
 	  }
+	else if (strcmp((*argv)[i], "-libdevice-path")==0) 
+	  {
+	    char tmp[1024];
+	    sscanf((*argv)[++i], "%s", &tmp[0]);
+	    llvm_set_libdevice_path(tmp);
+	  }
+	else if (strcmp((*argv)[i], "-libdevice-name")==0) 
+	  {
+	    char tmp[1024];
+	    sscanf((*argv)[++i], "%s", &tmp[0]);
+	    llvm_set_libdevice_name(tmp);
+	  }
 	else if (strcmp((*argv)[i], "-ptxdb")==0) 
 	  {
 	    char tmp[1024];

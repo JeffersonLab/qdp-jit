@@ -405,8 +405,6 @@ namespace QDP {
 
     QDPIO::cout << "  GPU memory (free,total)             : " << mem_free/1024/1024 << "/" << mem_total/1024/1024 << " MB\n";
 
-    QDPIO::cout << "  threads per block                   : " << jit_util_get_threads_per_block() << "\n";
-
 #if 0
     ret = cuCtxSetCacheConfig(CU_FUNC_CACHE_PREFER_L1);
     CheckError("cuCtxSetCacheConfig",ret);

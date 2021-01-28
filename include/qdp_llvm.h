@@ -106,6 +106,10 @@ namespace QDP {
   void llvm_module_dump();
 
 
+  void llvm_set_libdevice_path(const char* path);
+  void llvm_set_libdevice_name(const char* name);
+
+
   void llvm_set_debug( const char * str );
   void llvm_set_opt( const char * c_str );
   void llvm_set_ptxdb( const char * c_str );
