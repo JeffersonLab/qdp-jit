@@ -49,7 +49,11 @@ namespace QDP {
     llvm::Triple TheTriple;
     std::unique_ptr<llvm::TargetMachine> TargetMachine;
     
-    llvm::BasicBlock  *entry;
+    llvm::BasicBlock  *bb_stack;
+    llvm::BasicBlock  *bb_afterstack;
+
+    BasicBlock::iterator it_stack;
+    
     llvm::Function    *mainFunc;
 
     std::unique_ptr< llvm::Module >      Mod;
@@ -415,7 +419,7 @@ namespace QDP {
   }
 
 
-  void llvm_setup_math_functions() 
+  void llvm_setup_math_functions()
   {
     QDPIO::cout << "Setup math functions..\n";
     
@@ -795,9 +799,9 @@ namespace QDP {
     // Setup math functions
     // This also sets the datalayout for the module about to build
     //
-    llvm_setup_math_functions();
+    //llvm_setup_math_functions();
 
-#if 0
+#if 1
     // Set the data layout for the builder's module AFTER linking in
     // the math functions as the math function module's data layout is
     // not set yet. Would yield a linker warning otherwise.
@@ -835,8 +839,14 @@ namespace QDP {
       vecArgument.push_back( &*AI );
     }
 
-    llvm::BasicBlock* entry = llvm::BasicBlock::Create(TheContext, "entrypoint", mainFunc);
-    builder->SetInsertPoint(entry);
+    bb_stack = llvm::BasicBlock::Create(TheContext, "stack", mainFunc);
+    builder->SetInsertPoint(bb_stack);
+    it_stack = builder->GetInsertPoint(); // probly bb_stack.begin()
+    
+    bb_afterstack = llvm::BasicBlock::Create(TheContext, "afterstack" );
+    mainFunc->getBasicBlockList().push_back(bb_afterstack);
+    
+    builder->SetInsertPoint(bb_afterstack);
 
     llvm_counters::label_counter = 0;
     function_created = true;
@@ -1141,10 +1151,23 @@ namespace QDP {
 
   llvm::Value * llvm_alloca( llvm::Type* type , int elements )
   {
+    auto it_save = builder->GetInsertPoint();
+    auto bb_save = builder->GetInsertBlock();
+    
+    builder->SetInsertPoint(bb_stack, it_stack);
+
     auto DL = Mod->getDataLayout();
     unsigned AddrSpace = DL.getAllocaAddrSpace();
 
-    return builder->CreateAlloca( type , AddrSpace , llvm_create_value(elements) );    // This can be a llvm::Value*
+    QDPIO::cout << "using address space : " << AddrSpace << "\n";
+    
+    llvm::Value* ret = builder->CreateAlloca( type , AddrSpace , llvm_create_value(elements) );    // This can be a llvm::Value*
+
+    it_stack = builder->GetInsertPoint();
+    
+    builder->SetInsertPoint(bb_save,it_save);
+
+    return ret;
   }
 
 
@@ -1684,6 +1707,9 @@ namespace QDP {
 
   void llvm_build_function(JitFunction& func)
   {
+    builder->SetInsertPoint(bb_stack,it_stack);
+    builder->CreateBr( bb_afterstack );
+    
 #ifdef QDP_BACKEND_ROCM
     llvm_build_function_rocm(func);
 #else
