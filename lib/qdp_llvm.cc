@@ -18,6 +18,7 @@
 #include "llvm/PassRegistry.h"
 
 #include "llvm/IR/InstrTypes.h"
+#include "llvm/Bitcode/BitcodeWriter.h"
 
 #include "llvm/CodeGen/CommandFlags.h"
 using namespace llvm;
@@ -29,6 +30,8 @@ using namespace llvm::codegen;
 #include "llvm/Transforms/IPO/AlwaysInliner.h"
 
 #include "llvm/Transforms/Utils/Cloning.h"
+
+#include "llvm/Target/TargetMachine.h"
 
 #include <memory>
 
@@ -1643,25 +1646,76 @@ namespace QDP {
   void llvm_build_function_rocm(JitFunction& func)
   {
     //llvm_module_dump();
+    QDPIO::cout << str_pretty << "\n";
+
+    llvm::legacy::PassManager PM2;
+    
+    PM2.add( llvm::createInternalizePass( all_but_kernel_name ) );
+    PM2.add( llvm::createGlobalDCEPass() );
+    
+    QDPIO::cout << "internalize and remove dead code ...\n";
+    PM2.run(*Mod);
+    
+    //llvm_module_dump();
+
+#if 0
+    {
+      QDPIO::cout << "write code to module.bc ...\n";
+      std::error_code EC;
+      llvm::raw_fd_ostream OS("module.bc", EC, llvm::sys::fs::F_None);
+      llvm::WriteBitcodeToFile(*Mod, OS);
+      OS.flush();
+    }
+#endif
+
+    //legacy::FunctionPassManager PerFunctionPasses(Mod.get());
+    //PerFunctionPasses.add( createTargetTransformInfoWrapperPass( TargetMachine->getTargetIRAnalysis() ) );
     
     llvm::legacy::PassManager PM;
 
     llvm::TargetLibraryInfoImpl TLII( TheTriple );
+    //TLII.addVectorizableFunctionsFromVecLib(TargetLibraryInfoImpl::Accelerate);
+    //TLII.addVectorizableFunctionsFromVecLib(TargetLibraryInfoImpl::SVML);
+    //TLII.addVectorizableFunctionsFromVecLib(TargetLibraryInfoImpl::MASSV);
     PM.add(new llvm::TargetLibraryInfoWrapperPass(TLII));
 
+    //
+    //
+    // This PMBuilder.populateModulePassManager is essential
+    PassManagerBuilder PMBuilder;
+
+    //PMBuilder.populateFunctionPassManager(PerFunctionPasses);
+    PMBuilder.populateModulePassManager(PM);
+
+#if 0
+    QDPIO::cout << "Running function passes..\n";
+    PerFunctionPasses.doInitialization();
+    for (Function &F : *Mod)
+      if (!F.isDeclaration())
+        PerFunctionPasses.run(F);
+    PerFunctionPasses.doFinalization();
+    QDPIO::cout << "..done\n";
+#endif
+
+
+    QDPIO::cout << "running module passes ...\n";
+    PM.run(*Mod);
+
+
+
+    // ------------------- CODE GEN ----------------------
+    
+    llvm::legacy::PassManager CodeGenPasses;
+    
     llvm::LLVMTargetMachine &LLVMTM = static_cast<llvm::LLVMTargetMachine &>(*TargetMachine);
 
     std::error_code ec;
     std::string isabin_path = "module.o";
 
-    std::string outStr;
     {
-      llvm::raw_string_ostream stream(outStr);
-      llvm::buffer_ostream pstream(stream);
-
       std::unique_ptr<llvm::raw_fd_ostream> isabin_fs( new llvm::raw_fd_ostream(isabin_path, ec, llvm::sys::fs::F_Text));
 
-      if (TargetMachine->addPassesToEmitFile(PM, 
+      if (TargetMachine->addPassesToEmitFile(CodeGenPasses, 
 					     *isabin_fs,
 					     nullptr,
 					     llvm::CodeGenFileType::CGFT_ObjectFile ))
@@ -1671,19 +1725,12 @@ namespace QDP {
 	  QDP_abort(1);
 	}
 
-      QDPIO::cout << "pass to emit file added\n";
-
-      QDPIO::cout << "running passes...\n";
+      QDPIO::cout << "running code gen ...\n";
     
-      PM.run(*Mod);
+      CodeGenPasses.run(*Mod);
 
       isabin_fs->flush();
-
-      QDPIO::cout << "done!\n";
     }
-
-    QDPIO::cout << "output size: " << outStr.size() << "\n";
-
 
     std::string lld_path = "/opt/rocm/llvm/bin/ld.lld";
     std::string shared_path = "module.so";
