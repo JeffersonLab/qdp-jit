@@ -352,7 +352,7 @@ namespace QDP {
 
     std::string FileName = str_libdevice_path + "/" + fname;
 
-    QDPIO::cout << "libdevice: " << FileName << "\n";
+    //QDPIO::cout << "libdevice: " << FileName << "\n";
 
     {
       std::ifstream ftmp(FileName.c_str());
@@ -424,7 +424,7 @@ namespace QDP {
 
   void llvm_setup_math_functions()
   {
-    QDPIO::cout << "Setup math functions..\n";
+    //QDPIO::cout << "Setup math functions..\n";
     
     //
     // Read libdevice into module_libdevice
@@ -443,7 +443,7 @@ namespace QDP {
     }
 
 #ifdef QDP_BACKEND_CUDA
-    QDPIO::cout << "setting module data layout\n";
+    //QDPIO::cout << "setting module data layout\n";
     Mod->setDataLayout(TargetMachine->createDataLayout());
 #endif
 
@@ -802,9 +802,9 @@ namespace QDP {
     // Setup math functions
     // This also sets the datalayout for the module about to build
     //
-    //llvm_setup_math_functions();
+    llvm_setup_math_functions();
 
-#if 1
+#if 0
     // Set the data layout for the builder's module AFTER linking in
     // the math functions as the math function module's data layout is
     // not set yet. Would yield a linker warning otherwise.
