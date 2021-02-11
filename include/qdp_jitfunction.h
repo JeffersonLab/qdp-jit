@@ -149,6 +149,9 @@ template<class T, class T1, class Op, class RHS>
 void
 function_build(JitFunction& function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs)
 {
+  std::ostringstream expr;
+  printExprTree( expr , dest, op, rhs);
+
   if (ptx_db::db_enabled)
     {
       llvm_ptx_db( function , __PRETTY_FUNCTION__ );
@@ -157,7 +160,7 @@ function_build(JitFunction& function, OLattice<T>& dest, const Op& op, const QDP
     }
 
 
-  llvm_start_new_function("eval",__PRETTY_FUNCTION__ );
+  llvm_start_new_function("eval",expr.str().c_str() );
 
   ParamRef p_ordered      = llvm_add_param<bool>();
   ParamRef p_th_count     = llvm_add_param<int>();

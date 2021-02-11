@@ -169,6 +169,7 @@ namespace QDP {
 #include "qdp_optops.h"
 #include "qdp_mastermap.h"
 
+#include "qdp_expr_writer.h"
 #include "qdp_profile.h"
 
 #if defined(ARCH_SCALAR)
