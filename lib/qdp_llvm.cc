@@ -40,12 +40,24 @@ namespace QDP {
 
   namespace
   {
+    std::string user_libdevice_path;
+    std::string user_libdevice_name;
+
+    //
+    // Default search locations for libdevice
+    // "ARCH"      gets replaced by "gfx908" (ROCm) or "70" (CUDA)
+    // "CUDAPATH"  gets replaced by the envvar CUDAPATH or CUDA_PATH
+    //
 #ifdef QDP_BACKEND_ROCM
-    std::string str_libdevice_path = "/opt/rocm/llvm/lib/libdevice";
+    std::vector<std::string> vec_str_libdevice_path = { "/opt/rocm/" };
+    std::vector<std::string> vec_str_libdevice_path_append = { "llvm/lib/libdevice/" };
+    std::vector<std::string> vec_str_libdevice_name = { "libm-amdgcn-ARCH.bc" };
 #else
-    std::string str_libdevice_path = "/usr/local/cuda/nvvm/libdevice";
+    std::vector<std::string> vec_str_libdevice_path = { "CUDAPATH" , "/usr/local/cuda/" , "/usr/lib/nvidia-cuda-toolkit/" };
+    std::vector<std::string> vec_str_libdevice_path_append = { "nvvm/libdevice/" , "libdevice/" };
+    std::vector<std::string> vec_str_libdevice_name = { "libdevice.10.bc" , "libdevice.compute_ARCH.10.bc" };
 #endif
-    std::string str_libdevice_name;
+    
     
     llvm::LLVMContext TheContext;
 
@@ -120,12 +132,14 @@ namespace QDP {
 
   void llvm_set_libdevice_path(const char* path)
   {
-    str_libdevice_path = std::string(path);
+    user_libdevice_path = std::string(path);
+    if (user_libdevice_path.back() != '/')
+      user_libdevice_path.append("/");
   }
 
   void llvm_set_libdevice_name(const char* name)
   {
-    str_libdevice_name = std::string(name);
+    user_libdevice_name = std::string(name);
   }
 
 
@@ -336,32 +350,97 @@ namespace QDP {
 
   void llvm_init_libdevice()
   {
-    std::string fname;
-    if (str_libdevice_name.length() > 0)
+    static std::string FileName;
+
+    if (FileName.empty())
       {
-	fname = str_libdevice_name;
+	// std::vector<std::string> vec_str_cuda_path = { "/usr/local/cuda" , "/usr/lib/nvidia-cuda-toolkit" };
+	// std::vector<std::string> vec_str_cuda_path_append = { "/nvvm/libdevice" , "/libdevice" };
+	// std::vector<std::string> vec_str_libdevice_name = { "libdevice.10.bc" };
+
+	std::vector<std::string> all;
+
+	if (!user_libdevice_path.empty())
+	  {
+	    vec_str_libdevice_path.resize(0);
+	    vec_str_libdevice_path.push_back( user_libdevice_path );
+	    vec_str_libdevice_path_append.resize(0);
+	    vec_str_libdevice_path_append.push_back( "" );
+	  }
+	
+	if (!user_libdevice_name.empty())
+	  {
+	    vec_str_libdevice_name.resize(0);
+	    vec_str_libdevice_name.push_back( user_libdevice_name );
+	  }
+
+	//
+	// Replace ARCH with architecture string
+	//
+	for( auto name = vec_str_libdevice_name.begin() ; name != vec_str_libdevice_name.end() ; ++name )
+	  {
+	    std::string arch = str_arch;
+	    auto index = arch.find("sm_", 0);
+	    if (index != std::string::npos)
+	      {
+		arch.replace(index, 3, "" ); // Remove 
+	      }
+	    
+	    index = name->find("ARCH", 0);
+	    if (index == std::string::npos) continue;
+
+	    name->replace(index, 4, arch );
+	  }
+
+	//
+	// Replace CUDAPATH with endvar
+	//
+	for( auto path = vec_str_libdevice_path.begin() ; path != vec_str_libdevice_path.end() ; ++path )
+	  {
+	    char *env = getenv( "CUDAPATH" );
+	    if (!env)
+	      env = getenv( "CUDA_PATH" );
+	    if (env)
+	      {
+		std::string ENV(env);
+		if (ENV.back() != '/')
+		  ENV.append("/");
+
+		auto index = path->find("CUDAPATH", 0);
+		if (index != std::string::npos)
+		  {
+		    path->replace(index, 8, ENV );
+		  }
+	      }
+	  }
+
+	
+	for( auto path = vec_str_libdevice_path.begin() ; path != vec_str_libdevice_path.end() ; ++path )
+	  for( auto append = vec_str_libdevice_path_append.begin() ; append != vec_str_libdevice_path_append.end() ; ++append )
+	    for( auto name = vec_str_libdevice_name.begin() ; name != vec_str_libdevice_name.end() ; ++name )
+	      all.push_back( *path + *append + *name );
+
+	for( auto fname = all.begin() ; fname != all.end() ; ++fname )
+	  {
+	    QDPIO::cout << "trying: " << *fname << std::endl;
+
+	    std::ifstream ftmp(fname->c_str());
+	    if (ftmp.good())
+	      {
+		QDPIO::cout << "libdevice found.\n";
+		FileName = *fname;
+		break;
+	      }
+	  }
       }
-    else
+
+    std::ifstream ftmp(FileName.c_str());
+    if (!ftmp.good())
       {
-#ifdef QDP_BACKEND_CUDA
-	fname = "libdevice.10.bc";
-#else
-	fname = "libm-amdgcn-" + str_arch + ".bc";
-#endif
+	QDPIO::cerr << "libdevice not found:" << FileName << "\n";
+	QDP_abort(1);
       }
 
-    std::string FileName = str_libdevice_path + "/" + fname;
-
-    //QDPIO::cout << "libdevice: " << FileName << "\n";
-
-    {
-      std::ifstream ftmp(FileName.c_str());
-      if (!ftmp.good())
-	{
-	  QDPIO::cout << "libdevice not found!\n";
-	  QDP_abort(1);
-	}
-    }
     
     ErrorOr<std::unique_ptr<MemoryBuffer>> mb = MemoryBuffer::getFile(FileName);
     if (std::error_code ec = mb.getError()) {
@@ -1162,7 +1241,7 @@ namespace QDP {
     auto DL = Mod->getDataLayout();
     unsigned AddrSpace = DL.getAllocaAddrSpace();
 
-    QDPIO::cout << "using address space : " << AddrSpace << "\n";
+    //QDPIO::cout << "using address space : " << AddrSpace << "\n";
     
     llvm::Value* ret = builder->CreateAlloca( type , AddrSpace , llvm_create_value(elements) );    // This can be a llvm::Value*
 
