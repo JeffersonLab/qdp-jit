@@ -34,6 +34,13 @@ AC_ARG_WITH(rocm,
 )
 
 
+AC_ARG_ENABLE(rocm-stats,
+   AC_HELP_STRING([--enable-rocm-stats], [ Enable JIT statistics for ROCm ] ),
+   [ rocm_stats="${enableval}" ],
+   [ rocm_stats="no" ]
+)
+
+
 AC_ARG_ENABLE(cuda-managed-memory,
    AC_HELP_STRING([--enable-cuda-managed-memory], [ Enable memory to be allocated with Cuda Managed Memory ] ),
    [ cuda_managed_memory="${enableval}" ],
@@ -55,6 +62,8 @@ then
   AC_MSG_NOTICE([Will Use CUDA Managed Memory for Allocations])
   AC_DEFINE(QDP_USE_CUDA_MANAGED_MEMORY, [1], [ CUDA use managed memory ])
 fi
+
+
 
 
 dnl
@@ -245,9 +254,18 @@ else
   #AC_SUBST(CUDA_LIBS, [-lcuda])
   AC_SUBST(GPU_CXXFLAGS, [-I${rocm_home}/include])
   AC_SUBST(GPU_LDFLAGS, [-L${rocm_home}/lib])
-  AC_DEFINE([QDP_BACKEND_ROCM], [1] , [ROCM] )	
+  AC_DEFINE([QDP_BACKEND_ROCM], [1] , [ROCM] )
   tmp_gpu_libs="-lamdhip64"
 fi
+
+
+if test "X${rocm_stats}X" == "XyesX";
+then
+  AC_MSG_NOTICE([Will Use ROCm statistics])
+  AC_DEFINE(QDP_USE_ROCM_STATS, [1], [ ROCM stats ])
+  tmp_gpu_libs+=" -lamd_comgr"
+fi
+
 
 AC_DEFINE_UNQUOTED(QDP_IS_QDPJIT, "1", [Enable GPU/JIT])
 AC_DEFINE_UNQUOTED(QDPJIT_IS_QDPJITNVVM, "1", [Enable GPU/JIT])

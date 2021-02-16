@@ -567,7 +567,7 @@ namespace QDP {
 	    QDPIO::cerr << "Stats error: Failed to run command via popen\n";
 	    return;
 	  }
-
+	
 	std::ostringstream output;
 	while (fgets(buf, sizeof(buf), fp) != NULL) {
 	  output << buf;

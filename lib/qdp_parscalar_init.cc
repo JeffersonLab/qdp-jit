@@ -640,11 +640,20 @@ namespace COUNT {
 		  {
 		    QDPIO::cout << "#" << "\t";
 		    QDPIO::cout << "calls" << "\t";
+#ifdef QDP_USE_ROCM_STATS
+		    QDPIO::cout << "sgpr" << "\t";
+		    QDPIO::cout << "vgpr" << "\t";
+		    QDPIO::cout << "sgpr_sp" << "\t";
+		    QDPIO::cout << "vgpr_sp" << "\t";
+		    QDPIO::cout << "privseg" << "\t";
+		    QDPIO::cout << "grpseg" << "\t";
+#else
 		    QDPIO::cout << "stack" << "\t";
 		    QDPIO::cout << "sspill" << "\t";
 		    QDPIO::cout << "lspill" << "\t";
 		    QDPIO::cout << "regs" << "\t";
 		    QDPIO::cout << "cmem" << "\t";
+#endif
 		    QDPIO::cout << "sum(ms)" << "\t\t";
 		    QDPIO::cout << "mean" << "\t\t";
 		    QDPIO::cout << "stddev" << "\t\t";
@@ -672,12 +681,21 @@ namespace COUNT {
 		      {
 			QDPIO::cout << i << "\t";
 			QDPIO::cout << all.at(i)->get_call_counter() << "\t";
+#ifdef QDP_USE_ROCM_STATS
+			QDPIO::cout << all.at(i)->get_regs() << "\t";
+			QDPIO::cout << all.at(i)->get_vregs() << "\t";
+			QDPIO::cout << all.at(i)->get_spill_store() << "\t";
+			QDPIO::cout << all.at(i)->get_vspill_store() << "\t";
+			QDPIO::cout << all.at(i)->get_private_segment() << "\t";
+			QDPIO::cout << all.at(i)->get_group_segment() << "\t";
+#else
 			QDPIO::cout << all.at(i)->get_stack() << "\t";
 			QDPIO::cout << all.at(i)->get_spill_store() << "\t";
 			QDPIO::cout << all.at(i)->get_spill_loads() << "\t";
 			QDPIO::cout << all.at(i)->get_regs() << "\t";
 			QDPIO::cout << all.at(i)->get_cmem() << "\t";
-
+#endif
+			
 			auto timings = all.at(i)->get_timings();
 
 			double sum = std::accumulate(timings.begin(), timings.end(), 0.0);
@@ -697,11 +715,21 @@ namespace COUNT {
 			//f_stats << std::fixed << std::setw( 11 );
 			f_stats << i << "\t";
 			f_stats << all.at(i)->get_call_counter() << "\t";
+#ifdef QDP_USE_ROCM_STATS
 			f_stats << all.at(i)->get_stack() << "\t";
 			f_stats << all.at(i)->get_spill_store() << "\t";
 			f_stats << all.at(i)->get_spill_loads() << "\t";
 			f_stats << all.at(i)->get_regs() << "\t";
 			f_stats << all.at(i)->get_cmem() << "\t";
+#else
+			f_stats << all.at(i)->get_regs() << "\t";
+			f_stats << all.at(i)->get_vregs() << "\t";
+			f_stats << all.at(i)->get_spill_store() << "\t";
+			f_stats << all.at(i)->get_vspill_store() << "\t";
+			f_stats << all.at(i)->get_private_segment() << "\t";
+			f_stats << all.at(i)->get_group_segment() << "\t";
+#endif
+			
 			f_stats << (float)sum << "\t" << (float)mean << "\t" << (float)stdev << "\t";
 			f_stats << all.at(i)->get_kernel_name() << "\n";
 #endif
