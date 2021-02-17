@@ -25,7 +25,7 @@ parallel_arch="@CONFIG_PARALLEL_ARCH@"
 qmp_home="@QMP_HOME@"
 qdp_cxx="@CXX@"
 qdp_cxxflags="@CXXFLAGS@ -I@includedir@ @HDF5_CXXFLAGS@ @LIBXML2_CXXFLAGS@ @QMP_CFLAGS@ @LLVM_CXXFLAGS@ @GPU_CXXFLAGS@"
-qdp_ldflags="@LDFLAGS@ -L@libdir@ @HDF5_LDFLAGS@ @QMP_LDFLAGS@ @GPU_LDFLAGS@ @LLVM_LDFLAGS@"
+qdp_ldflags="@LDFLAGS@ -L@libdir@ @HDF5_LDFLAGS@ @QMP_LDFLAGS@ @LLVM_LDFLAGS@ @GPU_LDFLAGS@"
 qdp_libs="-lqdp -lXPathReader -lxmlWriter -lqio -llime @HDF5_LIBS@ @LIBXML2_LIBS@ @QMP_LIBS@ @LIBS@ @LLVM_LIBS@ @GPU_LIBS@"
 
 filedb_dir=@FILEDB_DIR@

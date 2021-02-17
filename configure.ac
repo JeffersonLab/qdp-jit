@@ -241,8 +241,8 @@ then
   AC_DEFINE_UNQUOTED([CUDA_GCC],"${ac_gcc}",[CUDA C/C++ Compiler])
   AC_DEFINE([QDP_BACKEND_CUDA], [1] , [CUDA] )
   #AC_SUBST(CUDA_LIBS, [-lcuda])
-  AC_SUBST(GPU_CXXFLAGS, [-I${cuda_home}/include])
-  AC_SUBST(GPU_LDFLAGS, [-L${cuda_home}/lib64])
+  AC_SUBST(GPU_CXXFLAGS, ["-I${cuda_home}/include"])
+  AC_SUBST(GPU_LDFLAGS, ["-L${cuda_home}/lib64"])
   if test "X${ac_cuda_special}X" = "XyesX"; then
     AC_DEFINE_UNQUOTED(QDP_CUDA_SPECIAL, ${ac_cuda_special}, [Include CUDA special kernels])
     AC_MSG_NOTICE([Include CUDA special kernels])
@@ -252,12 +252,11 @@ then
   fi
 else
   #AC_SUBST(CUDA_LIBS, [-lcuda])
-  AC_SUBST(GPU_CXXFLAGS, [-I${rocm_home}/include])
-  AC_SUBST(GPU_LDFLAGS, [-L${rocm_home}/lib])
   AC_DEFINE([QDP_BACKEND_ROCM], [1] , [ROCM] )
+  AC_SUBST(GPU_CXXFLAGS, ["-I${rocm_home}/include"])
+  AC_SUBST(GPU_LDFLAGS, ["-L${rocm_home}/lib -L${rocm_home}/lib64"])
   tmp_gpu_libs="-lamdhip64"
 fi
-
 
 if test "X${rocm_stats}X" == "XyesX";
 then

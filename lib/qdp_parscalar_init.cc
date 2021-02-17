@@ -716,18 +716,18 @@ namespace COUNT {
 			f_stats << i << "\t";
 			f_stats << all.at(i)->get_call_counter() << "\t";
 #ifdef QDP_USE_ROCM_STATS
-			f_stats << all.at(i)->get_stack() << "\t";
-			f_stats << all.at(i)->get_spill_store() << "\t";
-			f_stats << all.at(i)->get_spill_loads() << "\t";
-			f_stats << all.at(i)->get_regs() << "\t";
-			f_stats << all.at(i)->get_cmem() << "\t";
-#else
 			f_stats << all.at(i)->get_regs() << "\t";
 			f_stats << all.at(i)->get_vregs() << "\t";
 			f_stats << all.at(i)->get_spill_store() << "\t";
 			f_stats << all.at(i)->get_vspill_store() << "\t";
 			f_stats << all.at(i)->get_private_segment() << "\t";
 			f_stats << all.at(i)->get_group_segment() << "\t";
+#else
+			f_stats << all.at(i)->get_stack() << "\t";
+			f_stats << all.at(i)->get_spill_store() << "\t";
+			f_stats << all.at(i)->get_spill_loads() << "\t";
+			f_stats << all.at(i)->get_regs() << "\t";
+			f_stats << all.at(i)->get_cmem() << "\t";
 #endif
 			
 			f_stats << (float)sum << "\t" << (float)mean << "\t" << (float)stdev << "\t";
