@@ -308,7 +308,7 @@ struct LeafFunctor<OScalar<T>, PrintTag>
   static int apply(const OScalar<T> &s, const PrintTag &f)
     { 
       f.os_m << "OScal<";
-      LeafFunctor<T,PrintTag>::apply(s.elem(),f);
+      LeafFunctor<T,PrintTag>::apply(T(),f);
       f.os_m << ">"; 
       return 0;
     }
@@ -321,7 +321,7 @@ struct LeafFunctor<OLattice<T>, PrintTag>
   static int apply(const OLattice<T> &s, const PrintTag &f)
     { 
       f.os_m << "OLat<";
-      LeafFunctor<T,PrintTag>::apply(s.elem(0),f);
+      LeafFunctor<T,PrintTag>::apply(T(),f);
       f.os_m << ">"; 
       return 0;
     }
