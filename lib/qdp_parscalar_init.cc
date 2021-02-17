@@ -445,6 +445,10 @@ namespace COUNT {
 	    sscanf((*argv)[++i], "%s", &tmp[0]);
 	    llvm_set_libdevice_name(tmp);
 	  }
+	else if (strcmp((*argv)[i], "-cacheverbose")==0) 
+	  {
+	    qdp_cache_set_cache_verbose(true);
+	  }
 	else if (strcmp((*argv)[i], "-ptxdb")==0) 
 	  {
 	    char tmp[1024];
