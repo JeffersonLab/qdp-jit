@@ -1,10 +1,6 @@
 #include "qdp.h"
 #include "qdp_config.h"
 
-#ifdef QDP_BACKEND_CUDA
-#include "qdp_libdevice.h"
-#endif
-
 #include "llvm/InitializePasses.h"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/IR/LegacyPassManager.h"
@@ -474,42 +470,6 @@ namespace QDP {
       QDP_abort(1);
     }
 
-    
-#ifdef QDP_BACKEND_CUDA
-    std::string ErrorMessage;
-
-    llvm::StringRef libdevice_bc( (const char *) QDP::LIBDEVICE::libdevice_bc, 
-				  (size_t) QDP::LIBDEVICE::libdevice_bc_len );
-
-    {
-      llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer> > BufferOrErr =
-	llvm::MemoryBuffer::getMemBufferCopy(libdevice_bc );
-      
-      if (std::error_code ec = BufferOrErr.getError())
-	ErrorMessage = ec.message();
-      else {
-	std::unique_ptr<llvm::MemoryBuffer> &BufferPtr = BufferOrErr.get();
-	
-	llvm::Expected<std::unique_ptr<llvm::Module> > ModuleOrErr = llvm::parseBitcodeFile(BufferPtr.get()->getMemBufferRef(), TheContext);
-	
-	if (llvm::Error Err = ModuleOrErr.takeError()) {
-	  ErrorMessage = llvm::toString(std::move(Err));
-	}
-	else
-	  {
-	    module_libdevice.reset( ModuleOrErr.get().release() );
-	  }
-      }
-    }
-
-    if (!module_libdevice) {
-      if (ErrorMessage.size())
-	llvm::errs() << ErrorMessage << "\n";
-      else
-	llvm::errs() << "libdevice bitcode didn't read correctly.\n";
-      QDP_abort( 1 );
-    }
-#endif
   }
 
 
