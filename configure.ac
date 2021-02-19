@@ -29,7 +29,7 @@ AC_ARG_WITH(cuda,
 
 AC_ARG_WITH(rocm,
   AC_HELP_STRING([--with-rocm=ROCMDIR], [ Specify ROCM installation directory (default: /opt/rocm)]),
-  [ rocm_home="${withval}" ]
+  [ rocm_home="${withval}" ],
   [ rocm_home="/opt/rocm" ]
 )
 
@@ -47,12 +47,11 @@ AC_ARG_ENABLE(cuda-managed-memory,
    [ cuda_managed_memory="no" ]
 )
 
-AC_MSG_NOTICE([Configuring with CUDA installed in = ${cuda_home}])
+
 AC_DEFINE_UNQUOTED(CUDA_DIR,"${cuda_home}",[CUDA install path])
 AC_SUBST(SUBST_CUDA_DIR,"${cuda_home}")
 
 
-AC_MSG_NOTICE([Configuring with ROCM installed in = ${rocm_home}])
 AC_DEFINE_UNQUOTED(ROCM_DIR,"${rocm_home}",[ROCM install path])
 AC_SUBST(SUBST_ROCM_DIR,"${rocm_home}")
 
@@ -238,6 +237,7 @@ ac_gcc="$CXX"
 
 if test "X${backend_use}X" == "XCUDAX";
 then
+  AC_MSG_NOTICE([Configuring with CUDA installed in = ${cuda_home}])
   AC_DEFINE_UNQUOTED([CUDA_GCC],"${ac_gcc}",[CUDA C/C++ Compiler])
   AC_DEFINE([QDP_BACKEND_CUDA], [1] , [CUDA] )
   #AC_SUBST(CUDA_LIBS, [-lcuda])
@@ -251,6 +251,7 @@ then
     tmp_gpu_libs="-lcuda"
   fi
 else
+  AC_MSG_NOTICE([Configuring with ROCM installed in = ${rocm_home}])
   #AC_SUBST(CUDA_LIBS, [-lcuda])
   AC_DEFINE([QDP_BACKEND_ROCM], [1] , [ROCM] )
   AC_SUBST(GPU_CXXFLAGS, ["-I${rocm_home}/include"])

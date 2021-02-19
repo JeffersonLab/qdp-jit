@@ -48,7 +48,7 @@ namespace QDP {
     // "CUDAPATH"  gets replaced by the envvar CUDAPATH or CUDA_PATH
     //
 #ifdef QDP_BACKEND_ROCM
-    std::vector<std::string> vec_str_libdevice_path = { "/opt/rocm/" };
+    std::vector<std::string> vec_str_libdevice_path = { ROCM_DIR };
     std::vector<std::string> vec_str_libdevice_path_append = { "llvm/lib/libdevice/" };
     std::vector<std::string> vec_str_libdevice_name = { "libm-amdgcn-ARCH.bc" };
 #else
@@ -355,6 +355,14 @@ namespace QDP {
     return func;
   }
 
+  namespace {
+    std::string append_slash(std::string tmp)
+    {
+      if (tmp.back() != '/')
+	tmp.append("/");
+      return tmp;
+    }
+  }
 
   void llvm_init_libdevice()
   {
@@ -426,7 +434,10 @@ namespace QDP {
 	for( auto path = vec_str_libdevice_path.begin() ; path != vec_str_libdevice_path.end() ; ++path )
 	  for( auto append = vec_str_libdevice_path_append.begin() ; append != vec_str_libdevice_path_append.end() ; ++append )
 	    for( auto name = vec_str_libdevice_name.begin() ; name != vec_str_libdevice_name.end() ; ++name )
-	      all.push_back( *path + *append + *name );
+	      {
+		std::string norm_path = append_slash( *path );
+		all.push_back( norm_path + *append + *name );
+	      }
 
 	for( auto fname = all.begin() ; fname != all.end() ; ++fname )
 	  {
@@ -1734,8 +1745,8 @@ namespace QDP {
     std::string isabin_path = "module.o";
 
     if (clang_codegen)
-      {
-	std::string clang_path = "/opt/rocm/llvm/bin/clang";
+      {	
+	std::string clang_path = std::string(ROCM_DIR) + "/llvm/bin/clang";
 	std::string command = clang_path + " -c " + clang_opt + " -target amdgcn-amd-amdhsa -mcpu=" + str_arch + " " + clang_name + " -o " + isabin_path;
 	
 	std::cout << "System: " << command.c_str() << "\n";
@@ -1821,7 +1832,7 @@ namespace QDP {
 
 
     
-    std::string lld_path = "/opt/rocm/llvm/bin/ld.lld";
+    std::string lld_path = std::string(ROCM_DIR) + "/llvm/bin/ld.lld";
     std::string shared_path = "module.so";
     std::string command = lld_path + " -shared " + isabin_path + " -o " + shared_path; 
 
