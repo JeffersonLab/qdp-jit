@@ -386,6 +386,16 @@ namespace COUNT {
 	  {
 	    gpu_set_record_stats();
 	  }
+	else if (strcmp((*argv)[i], "-clang-codegen")==0) 
+	  {
+	    llvm_set_clang_codegen();
+	  }
+	else if (strcmp((*argv)[i], "-clang-opt")==0)
+	  {
+	    char tmp[1024];
+	    sscanf((*argv)[++i], "%s", &tmp[0]);
+	    llvm_set_clang_opt(tmp);
+	  }
 #ifdef QDP_CUDA_SPECIAL
 	else if (strcmp((*argv)[i], "-cudaspecial")==0)
 	  {

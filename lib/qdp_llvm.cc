@@ -43,6 +43,9 @@ namespace QDP {
     std::string user_libdevice_path;
     std::string user_libdevice_name;
 
+    bool clang_codegen = false;
+    std::string clang_opt;
+    
     //
     // Default search locations for libdevice
     // "ARCH"      gets replaced by "gfx908" (ROCm) or "70" (CUDA)
@@ -129,7 +132,16 @@ namespace QDP {
     DBType db;
   }
 
+  void llvm_set_clang_codegen()
+  {
+    clang_codegen = true;
+  }
 
+  void llvm_set_clang_opt(const char* opt)
+  {
+    clang_opt = opt;
+  }
+      
   void llvm_set_libdevice_path(const char* path)
   {
     user_libdevice_path = std::string(path);
@@ -1747,70 +1759,108 @@ namespace QDP {
     }
 #endif
 
-    //legacy::FunctionPassManager PerFunctionPasses(Mod.get());
-    //PerFunctionPasses.add( createTargetTransformInfoWrapperPass( TargetMachine->getTargetIRAnalysis() ) );
+    std::string clang_name;
+    if (clang_codegen)
+      {
+	clang_name = "module_" + str_kernel_name + ".bc";
+	QDPIO::cout << "write code to " << clang_name << "\n";
+	std::error_code EC;
+	llvm::raw_fd_ostream OS(clang_name, EC, llvm::sys::fs::F_None);
+	llvm::WriteBitcodeToFile(*Mod, OS);
+	OS.flush();
+      }
+
+
+    std::string isabin_path = "module.o";
+
+    if (clang_codegen)
+      {
+	std::string clang_path = "/opt/rocm/llvm/bin/clang";
+	std::string command = clang_path + " -c " + clang_opt + " -target amdgcn-amd-amdhsa -mcpu=" + str_arch + " " + clang_name + " -o " + isabin_path;
+	
+	std::cout << "System: " << command.c_str() << "\n";
     
-    llvm::legacy::PassManager PM;
+	system( command.c_str() );
+      }
+    else
+      {
+	//legacy::FunctionPassManager PerFunctionPasses(Mod.get());
+	//PerFunctionPasses.add( createTargetTransformInfoWrapperPass( TargetMachine->getTargetIRAnalysis() ) );
+    
+	llvm::legacy::PassManager PM;
 
-    llvm::TargetLibraryInfoImpl TLII( TheTriple );
-    //TLII.addVectorizableFunctionsFromVecLib(TargetLibraryInfoImpl::Accelerate);
-    //TLII.addVectorizableFunctionsFromVecLib(TargetLibraryInfoImpl::SVML);
-    //TLII.addVectorizableFunctionsFromVecLib(TargetLibraryInfoImpl::MASSV);
-    PM.add(new llvm::TargetLibraryInfoWrapperPass(TLII));
+	llvm::TargetLibraryInfoImpl TLII( TheTriple );
+	//TLII.addVectorizableFunctionsFromVecLib(TargetLibraryInfoImpl::Accelerate);
+	//TLII.addVectorizableFunctionsFromVecLib(TargetLibraryInfoImpl::SVML);
+	//TLII.addVectorizableFunctionsFromVecLib(TargetLibraryInfoImpl::MASSV);
+	PM.add(new llvm::TargetLibraryInfoWrapperPass(TLII));
 
-    //
-    //
-    // This PMBuilder.populateModulePassManager is essential
-    PassManagerBuilder PMBuilder;
+	//
+	//
+	// This PMBuilder.populateModulePassManager is essential
+	PassManagerBuilder PMBuilder;
 
-    //PMBuilder.populateFunctionPassManager(PerFunctionPasses);
-    PMBuilder.populateModulePassManager(PM);
+	//PMBuilder.populateFunctionPassManager(PerFunctionPasses);
+	PMBuilder.populateModulePassManager(PM);
 
 #if 0
-    QDPIO::cout << "Running function passes..\n";
-    PerFunctionPasses.doInitialization();
-    for (Function &F : *Mod)
-      if (!F.isDeclaration())
-        PerFunctionPasses.run(F);
-    PerFunctionPasses.doFinalization();
-    QDPIO::cout << "..done\n";
+	QDPIO::cout << "Running function passes..\n";
+	PerFunctionPasses.doInitialization();
+	for (Function &F : *Mod)
+	  if (!F.isDeclaration())
+	    PerFunctionPasses.run(F);
+	PerFunctionPasses.doFinalization();
+	QDPIO::cout << "..done\n";
 #endif
 
 
-    QDPIO::cout << "running module passes ...\n";
-    PM.run(*Mod);
+	QDPIO::cout << "running module passes ...\n";
+	PM.run(*Mod);
+
+
+#if 1
+	{
+	  QDPIO::cout << "write code to module.bc ...\n";
+	  std::error_code EC;
+	  llvm::raw_fd_ostream OS("module.bc", EC, llvm::sys::fs::F_None);
+	  llvm::WriteBitcodeToFile(*Mod, OS);
+	  OS.flush();
+	}
+#endif
 
 
 
-    // ------------------- CODE GEN ----------------------
+	// ------------------- CODE GEN ----------------------
     
-    llvm::legacy::PassManager CodeGenPasses;
+	llvm::legacy::PassManager CodeGenPasses;
     
-    llvm::LLVMTargetMachine &LLVMTM = static_cast<llvm::LLVMTargetMachine &>(*TargetMachine);
+	llvm::LLVMTargetMachine &LLVMTM = static_cast<llvm::LLVMTargetMachine &>(*TargetMachine);
 
-    std::error_code ec;
-    std::string isabin_path = "module.o";
-
-    {
-      std::unique_ptr<llvm::raw_fd_ostream> isabin_fs( new llvm::raw_fd_ostream(isabin_path, ec, llvm::sys::fs::F_Text));
-
-      if (TargetMachine->addPassesToEmitFile(CodeGenPasses, 
-					     *isabin_fs,
-					     nullptr,
-					     llvm::CodeGenFileType::CGFT_ObjectFile ))
+	std::error_code ec;
 
 	{
-	  QDPIO::cerr << "target does not support generation of object file type!\n";
-	  QDP_abort(1);
-	}
+	  std::unique_ptr<llvm::raw_fd_ostream> isabin_fs( new llvm::raw_fd_ostream(isabin_path, ec, llvm::sys::fs::F_Text));
 
-      QDPIO::cout << "running code gen ...\n";
+	  if (TargetMachine->addPassesToEmitFile(CodeGenPasses, 
+						 *isabin_fs,
+						 nullptr,
+						 llvm::CodeGenFileType::CGFT_ObjectFile ))
+
+	    {
+	      QDPIO::cerr << "target does not support generation of object file type!\n";
+	      QDP_abort(1);
+	    }
+
+	  QDPIO::cout << "running code gen ...\n";
     
-      CodeGenPasses.run(*Mod);
+	  CodeGenPasses.run(*Mod);
 
-      isabin_fs->flush();
-    }
+	  isabin_fs->flush();
+	}
+      }
 
+
+    
     std::string lld_path = "/opt/rocm/llvm/bin/ld.lld";
     std::string shared_path = "module.so";
     std::string command = lld_path + " -shared " + isabin_path + " -o " + shared_path; 
