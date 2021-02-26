@@ -396,6 +396,12 @@ namespace COUNT {
 	    sscanf((*argv)[++i], "%s", &tmp[0]);
 	    llvm_set_clang_opt(tmp);
 	  }
+	else if (strcmp((*argv)[i], "-optlevel")==0)
+	  {
+	    unsigned val;
+	    sscanf((*argv)[++i],"%u",&val);
+	    llvm_set_codegen_optlevel( val );
+	  }
 #ifdef QDP_CUDA_SPECIAL
 	else if (strcmp((*argv)[i], "-cudaspecial")==0)
 	  {

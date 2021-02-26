@@ -107,7 +107,8 @@ namespace QDP {
 
   void llvm_set_clang_codegen();
   void llvm_set_clang_opt(const char* opt);
-
+  void llvm_set_codegen_optlevel( int i );
+  
   void llvm_set_libdevice_path(const char* path);
   void llvm_set_libdevice_name(const char* name);
 

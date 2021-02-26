@@ -41,6 +41,7 @@ namespace QDP {
 
     bool clang_codegen = false;
     std::string clang_opt;
+    int  codegen_optlevel = 1;
     
     //
     // Default search locations for libdevice
@@ -128,6 +129,12 @@ namespace QDP {
     DBType db;
   }
 
+  void llvm_set_codegen_optlevel( int i )
+  {
+    codegen_optlevel = i;
+  }
+
+  
   void llvm_set_clang_codegen()
   {
     clang_codegen = true;
@@ -1770,10 +1777,15 @@ namespace QDP {
 	//
 	// This PMBuilder.populateModulePassManager is essential
 	PassManagerBuilder PMBuilder;
+	PMBuilder.OptLevel = codegen_optlevel;
 
 	//PMBuilder.populateFunctionPassManager(PerFunctionPasses);
 	PMBuilder.populateModulePassManager(PM);
 
+	// New stuff
+	//PMBuilder.Inliner = createAlwaysInlinerLegacyPass(true);
+	//
+	
 #if 0
 	QDPIO::cout << "Running function passes..\n";
 	PerFunctionPasses.doInitialization();
