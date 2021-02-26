@@ -209,6 +209,8 @@ namespace QDP {
   template<> ParamRef llvm_add_param<int64_t>();
   template<> ParamRef llvm_add_param<int>();
   template<> ParamRef llvm_add_param<int*>();
+  template<> ParamRef llvm_add_param<jit_half_t>();
+  template<> ParamRef llvm_add_param<jit_half_t*>();
   template<> ParamRef llvm_add_param<float>();
   template<> ParamRef llvm_add_param<float*>();
   template<> ParamRef llvm_add_param<double>();

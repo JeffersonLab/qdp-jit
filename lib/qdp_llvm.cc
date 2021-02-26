@@ -175,10 +175,13 @@ namespace QDP {
   }
 
 
+  template<> llvm::Type* llvm_get_type<jit_half_t>()  { return llvm::Type::getHalfTy(TheContext); }
   template<> llvm::Type* llvm_get_type<float>()  { return llvm::Type::getFloatTy(TheContext); }
   template<> llvm::Type* llvm_get_type<double>() { return llvm::Type::getDoubleTy(TheContext); }
   template<> llvm::Type* llvm_get_type<int>()    { return llvm::Type::getIntNTy(TheContext,32); }
   template<> llvm::Type* llvm_get_type<bool>()   { return llvm::Type::getIntNTy(TheContext,1); }
+
+  template<> llvm::Type* llvm_get_type<jit_half_t*>()  { return llvm::Type::getHalfPtrTy(TheContext); }
   template<> llvm::Type* llvm_get_type<float*>()  { return llvm::Type::getFloatPtrTy(TheContext); }
   template<> llvm::Type* llvm_get_type<double*>() { return llvm::Type::getDoublePtrTy(TheContext); }
   template<> llvm::Type* llvm_get_type<int*>()    { return llvm::Type::getIntNPtrTy(TheContext,32); }
@@ -1265,8 +1268,16 @@ namespace QDP {
     vecParamType.push_back( llvm::Type::getInt32PtrTy(TheContext) );
     return vecParamType.size()-1;
   }
+  template<> ParamRef llvm_add_param<jit_half_t>() { 
+    vecParamType.push_back( llvm::Type::getHalfTy(TheContext) );
+    return vecParamType.size()-1;
+  }
   template<> ParamRef llvm_add_param<float>() { 
     vecParamType.push_back( llvm::Type::getFloatTy(TheContext) );
+    return vecParamType.size()-1;
+  }
+  template<> ParamRef llvm_add_param<jit_half_t*>() { 
+    vecParamType.push_back( llvm::Type::getHalfPtrTy(TheContext) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<float*>() { 

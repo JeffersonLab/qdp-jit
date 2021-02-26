@@ -86,6 +86,18 @@ struct LeafFunctor<QDPType<T,C>, PrintTag>
 //
 
 template<>
+struct LeafFunctor<jit_half_t, PrintTag>
+{
+  typedef int Type_t;
+  static int apply(const jit_half_t &s, const PrintTag &f)
+    { 
+      f.os_m << "half"; 
+      return 0;
+    }
+};
+
+  
+template<>
 struct LeafFunctor<float, PrintTag>
 {
   typedef int Type_t;

@@ -613,6 +613,13 @@ localInnerProductReal(const WordREG<T1>& s1, const WordREG<T2>& s2)
   }
 
   inline void 
+  zero_rep(WordREG<jit_half_t>& dest) 
+  {
+    //llvm_mov( dest.get_val() , llvm_create_value(0.0) );
+    dest.setup(llvm_create_value(0.0));
+  }
+
+inline void 
   zero_rep(WordREG<float>& dest) 
   {
     //llvm_mov( dest.get_val() , llvm_create_value(0.0) );

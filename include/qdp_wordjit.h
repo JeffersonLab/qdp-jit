@@ -270,6 +270,12 @@ namespace QDP {
   }
 
   inline void 
+  zero_rep(WordJIT<jit_half_t>& dest)
+  {
+    llvm_store_ptr_idx( llvm_create_value( 0.0 ) , dest.getBaseReg() , dest.getOffset() );
+  }
+
+  inline void 
   zero_rep(WordJIT<float>& dest)
   {
     llvm_store_ptr_idx( llvm_create_value( 0.0 ) , dest.getBaseReg() , dest.getOffset() );
