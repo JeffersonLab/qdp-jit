@@ -107,7 +107,8 @@ namespace QDP {
 
   void llvm_set_clang_codegen();
   void llvm_set_clang_opt(const char* opt);
-
+  void llvm_set_codegen_optlevel( int i );
+  
   void llvm_set_libdevice_path(const char* path);
   void llvm_set_libdevice_name(const char* name);
 
@@ -208,6 +209,8 @@ namespace QDP {
   template<> ParamRef llvm_add_param<int64_t>();
   template<> ParamRef llvm_add_param<int>();
   template<> ParamRef llvm_add_param<int*>();
+  template<> ParamRef llvm_add_param<jit_half_t>();
+  template<> ParamRef llvm_add_param<jit_half_t*>();
   template<> ParamRef llvm_add_param<float>();
   template<> ParamRef llvm_add_param<float*>();
   template<> ParamRef llvm_add_param<double>();

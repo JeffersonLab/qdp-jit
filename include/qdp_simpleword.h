@@ -520,6 +520,12 @@ struct TrinaryReturn<bool, int, int, FnWhere> {
 
 
 template<>
+struct UnaryReturn<jit_half_t, FnSum> {
+  typedef DOUBLE_TYPE  Type_t;
+};
+
+
+template<>
 struct UnaryReturn<float, FnSum> {
   typedef DOUBLE_TYPE  Type_t;
 };
@@ -536,6 +542,11 @@ struct UnaryReturn<float, FnGlobalMin> {
 
 template<>
 struct UnaryReturn<float, FnSumMulti> {
+  typedef DOUBLE_TYPE  Type_t;
+};
+
+template<>
+struct UnaryReturn<jit_half_t, FnNorm2> {
   typedef DOUBLE_TYPE  Type_t;
 };
 

@@ -396,6 +396,12 @@ namespace COUNT {
 	    sscanf((*argv)[++i], "%s", &tmp[0]);
 	    llvm_set_clang_opt(tmp);
 	  }
+	else if (strcmp((*argv)[i], "-optlevel")==0)
+	  {
+	    unsigned val;
+	    sscanf((*argv)[++i],"%u",&val);
+	    llvm_set_codegen_optlevel( val );
+	  }
 #ifdef QDP_CUDA_SPECIAL
 	else if (strcmp((*argv)[i], "-cudaspecial")==0)
 	  {
@@ -491,6 +497,17 @@ namespace COUNT {
 		sscanf((*argv)[++i], "%d", &uu);
 		logical_iogeom[j] = uu;
 	      }
+	  }
+	else if (strcmp((*argv)[i], "-lat")==0) 
+	  {
+	    multi1d<int> nrow(Nd);
+	    for(int j=0; j < Nd; j++) 
+	      {
+		int uu;
+		sscanf((*argv)[++i], "%d", &uu);
+		nrow[j] = uu;
+	      }
+	    Layout::setLattSize(nrow);
 	  }
 #ifdef USE_REMOTE_QIO
 	else if (strcmp((*argv)[i], "-cd")==0) 
