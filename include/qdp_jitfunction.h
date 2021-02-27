@@ -159,8 +159,8 @@ function_build(JitFunction& function, OLattice<T>& dest, const Op& op, const QDP
 	return;
     }
 
-
-  llvm_start_new_function("eval",expr.str().c_str() );
+  //llvm_start_new_function("eval",expr.str().c_str() );
+  llvm_start_new_function("eval", __PRETTY_FUNCTION__ );
 
   ParamRef p_ordered      = llvm_add_param<bool>();
   ParamRef p_th_count     = llvm_add_param<int>();
