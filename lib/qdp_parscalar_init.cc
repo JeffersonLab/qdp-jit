@@ -88,7 +88,7 @@ namespace COUNT {
   {
     QDPIO::cout << "qdp-jit parameters\n";
     QDPIO::cout << "  threads per block                   : " << jit_util_get_threads_per_block() << "\n";
-    
+
     if (!setPoolSize)
       {
 
@@ -128,7 +128,6 @@ namespace COUNT {
       {
 	QDPIO::cout << "  memory pool size (user request)     : " << (int)(QDP_get_global_cache().getPoolSize()/1024/1024) << " MB\n";
       }
-
   }
 
   
@@ -651,6 +650,7 @@ namespace COUNT {
 		QDPIO::cout << "lattices changed to device layout:     " << get_jit_stats_lattice2dev() << "\n";
 		QDPIO::cout << "lattices changed to host layout:       " << get_jit_stats_lattice2host() << "\n";
 		QDPIO::cout << "functions jit-compiled:                " << get_jit_stats_jitted() << "\n";
+		//QDPIO::cout << "memory pool defragmentation count      " << QDP_get_global_cache().getPoolDefrags() << "\n";
 #ifdef QDP_CUDA_SPECIAL
 		for ( auto it = get_jit_stats_special_names().begin() ; it != get_jit_stats_special_names().end(); it++ )
 		  {

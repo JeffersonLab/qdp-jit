@@ -115,10 +115,11 @@ namespace QDP
     
     size_t getSize(int id);
     void printLockSet();
-    
-    void suspend();
-    void resume();
 
+    void updateDevPtr(int id, void* ptr);
+    
+    int  getPoolDefrags();
+    
     void   setPoolSize(size_t s);
     size_t getPoolSize();
     void   enableMemset(unsigned val);
@@ -166,6 +167,7 @@ namespace QDP
 
   QDPCache& QDP_get_global_cache();
 
+  void qdp_jit_cache_set_poolsize();
 
   class JitParam
   {

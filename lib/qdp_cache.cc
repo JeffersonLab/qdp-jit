@@ -42,6 +42,10 @@ namespace QDP
   }
 
 
+  int QDPCache::getPoolDefrags()
+  {
+    return get__cache_pool_allocator().defrag_occurrences();
+  }
 
 
   void QDPCache::enableMemset(unsigned val)
@@ -59,17 +63,6 @@ namespace QDP
     return get__cache_pool_allocator().getPoolSize();
   }
 
-
-  void QDPCache::suspend()
-  {
-    get__cache_pool_allocator().suspend();
-  }
-
-
-  void QDPCache::resume()
-  {
-    get__cache_pool_allocator().resume();
-  }
 
   
   std::string QDPCache::stringStatus( Status s )
@@ -353,7 +346,7 @@ namespace QDP
     int Id = getNewId();
     Entry& e = vecEntry[ Id ];
 
-    while (!get__cache_pool_allocator().allocate( ptr , n_bytes )) {
+    while (!get__cache_pool_allocator().allocate( ptr , n_bytes , Id )) {
       if (!spill_lru()) {
 	QDP_error_exit("cache allocate_device_static: can't spill LRU object");
       }
@@ -431,7 +424,7 @@ namespace QDP
     void* dev_ptr;
     void* hst_ptr;
     
-    while (!get__cache_pool_allocator().allocate( &dev_ptr , size )) {
+    while (!get__cache_pool_allocator().allocate( &dev_ptr , size , Id )) {
       if (!spill_lru()) {
 	QDP_error_exit("cache allocate_device_static: can't spill LRU object");
       }
@@ -616,10 +609,10 @@ namespace QDP
     if (e.devPtr)
       return;
 
-    while (!get__cache_pool_allocator().allocate( &e.devPtr , e.size )) {
+    while (!get__cache_pool_allocator().allocate( &e.devPtr , e.size , e.Id )) {
       if (!spill_lru()) {
 	QDP_info("Device pool:");
-	get__cache_pool_allocator().printListPool();
+	//get__cache_pool_allocator().printListPool();
 	//printLockSets();
 	QDP_error_exit("cache assureDevice: can't spill LRU object. Out of GPU memory!");
       }
@@ -964,6 +957,16 @@ namespace QDP
     
     return ( e.status_vec[elem] == QDPCache::Status::device );
   }
+
+
+  void QDPCache::updateDevPtr(int id, void* ptr)
+  {
+    assert( vecEntry.size() > id );
+    Entry& e = vecEntry[id];
+
+    e.devPtr = ptr;
+  }
+
 
   
   namespace {
@@ -1364,23 +1367,39 @@ QDPCache::KernelArgs_t QDPCache::get_kernel_args(std::vector<ArgKey>& ids , bool
       }
     //QDPIO::cout << "\n";
 
-    //QDPIO::cout << "assureDevice:\n";
-    for ( auto i : allids ) {
-      //QDPIO::cout << "id = " << i.id << ", elem = " << i.elem << "\n";
-      if (i.elem < 0)
-	assureDevice(i.id);
-      else
-	assureDevice(i.id,i.elem);
-    }
-    //QDPIO::cout << "done\n";
+    int run = 0;
+    bool all;
+      
+    do
+      {
+	// This never happens
+	// Can't defrag from pool's side as recv buffers are
+	// allocated as device static.
+	if (run == 1)
+	  {
+	    get__cache_pool_allocator().defrag();
+	  }
+	
+	//QDPIO::cout << "assureDevice:\n";
+	for ( auto i : allids ) {
+	  //QDPIO::cout << "id = " << i.id << ", elem = " << i.elem << "\n";
+	  if (i.elem < 0)
+	    assureDevice(i.id);
+	  else
+	    assureDevice(i.id,i.elem);
+	}
+	//QDPIO::cout << "done\n";
     
-    bool all = true;
-    for ( auto i : allids )
-      if (i.elem < 0)
-	all = all && isOnDevice(i.id);
-      else
-	all = all && isOnDevice(i.id,i.elem);
+	all = true;
+	for ( auto i : allids )
+	  if (i.elem < 0)
+	    all = all && isOnDevice(i.id);
+	  else
+	    all = all && isOnDevice(i.id,i.elem);
 
+	run++;
+      }
+    while ( (run < 1) && (!all) );
     
     if (!all) {
       QDPIO::cerr << "It was not possible to load all objects required by the kernel into device memory\n";
@@ -1481,6 +1500,12 @@ QDPCache::KernelArgs_t QDPCache::get_kernel_args(std::vector<ArgKey>& ids , bool
 
     return ret;
   }
+
+
+
+
+
+
 
 
 
