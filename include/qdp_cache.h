@@ -167,7 +167,6 @@ namespace QDP
 
   QDPCache& QDP_get_global_cache();
 
-  void qdp_jit_cache_set_poolsize();
 
   class JitParam
   {

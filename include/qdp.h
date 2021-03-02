@@ -88,7 +88,7 @@ using std::ostream;
 // END OF YUKKINESS
 
 
-
+#include "qdp_jit_config.h"
 
 #include "qdp_jit_function.h"
 

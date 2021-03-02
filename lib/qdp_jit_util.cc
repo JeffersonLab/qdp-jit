@@ -21,10 +21,6 @@ namespace QDP {
 #endif
   }
 
-  namespace {
-    int threads_per_block = 128;
-  }
-
 
   // For AMD the workgroup sizes are passed as kernel parameters
   // For now as placeholder values
@@ -38,16 +34,6 @@ namespace QDP {
     ids.insert(ids.begin(), jit_ntidx.get_id() );
   }
 
-
-  void jit_util_set_threads_per_block( int t )
-  {
-    threads_per_block = t;
-  }
-
-  int jit_util_get_threads_per_block()
-  {
-    return threads_per_block;
-  }
 
 
   void jit_stats_lattice2dev()  { ++JITSTATS::lattice2dev; }
@@ -518,7 +504,7 @@ namespace QDP {
     // Increment the call counter
     function.inc_call_counter();
 
-    const int threads_per_block = jit_util_get_threads_per_block();
+    const int threads_per_block = jit_config_get_threads_per_block();
     
     kernel_geom_t geom = getGeom( th_count , threads_per_block );
 

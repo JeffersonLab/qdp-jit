@@ -84,51 +84,6 @@ namespace COUNT {
 #endif
 
 
-  void qdp_jit_cache_set_poolsize()
-  {
-    QDPIO::cout << "qdp-jit parameters\n";
-    QDPIO::cout << "  threads per block                   : " << jit_util_get_threads_per_block() << "\n";
-
-    if (!setPoolSize)
-      {
-
-	size_t val = (size_t)((double)(0.90) * (double)gpu_mem_free());
-
-	int val_in_MiB = val/1024/1024;
-
-	if (val_in_MiB < 1)
-	  {
-	    std::cerr << "Less than 1 MiB device memory available. Giving up.\n";
-	    QDP_abort(1);
-	  }
-      
-	float val_min = (float)val_in_MiB;
-
-	QDPInternal::globalMinValue( &val_min );
-
-	if ( val_min > (float)val_in_MiB )
-	  {
-	    QDPIO::cerr << "Inconsistency: Global minimum " << val_min << " larger than local value " << val_in_MiB << "\n";
-	    QDP_abort(1);
-	  }
-
-	if ( val_min < (float)val_in_MiB )
-	  {
-	    QDPIO::cout << "Global minimum " << val_min << " of available GPU memory smaller than local value " << val_in_MiB << ". Using global minimum.";
-	    QDP_abort(1);
-	  }
-	int val_min_int = (int)val_min;
-
-	QDPIO::cout << "  memory pool size (default)          : " << (int)val_min_int << " MB\n";
-      
-	QDP_get_global_cache().setPoolSize( ((size_t)val_min_int) * 1024 * 1024 );
-
-      }
-    else
-      {
-	QDPIO::cout << "  memory pool size (user request)     : " << (int)(QDP_get_global_cache().getPoolSize()/1024/1024) << " MB\n";
-      }
-  }
 
   
 
@@ -138,9 +93,6 @@ namespace COUNT {
   {
     // Getting GPU device properties
     gpu_auto_detect();
-
-    // Now set the pool size
-    qdp_jit_cache_set_poolsize();
 
     // Initialize the LLVM wrapper
     llvm_backend_init();
@@ -379,7 +331,7 @@ namespace COUNT {
 	  {
 	    unsigned val;
 	    sscanf((*argv)[++i],"%u",&val);
-	    jit_util_set_threads_per_block( val );
+	    jit_config_set_threads_per_block( val );
 	  }
 	else if (strcmp((*argv)[i], "-stats")==0) 
 	  {
@@ -435,12 +387,13 @@ namespace COUNT {
 	      QDP_error_exit("unknown multiplication factor");
 	    }
 	    size_t val = (size_t)((double)(f) * mul);
-
-	    //CUDADevicePoolAllocator::Instance().setPoolSize(val);
-	    //QDP_get_global_cache().get_allocator().setPoolSize(val);
-	    QDP_get_global_cache().setPoolSize(val);
-	    
-	    setPoolSize = true;
+	    jit_config_set_pool_size(val);
+	  }
+	else if (strcmp((*argv)[i], "-threadstack")==0)
+	  {
+	    int stack;
+	    sscanf((*argv)[++i], "%d", &stack);
+	    jit_config_set_thread_stack(stack);
 	  }
 	else if (strcmp((*argv)[i], "-llvm-opt")==0) 
 	  {
