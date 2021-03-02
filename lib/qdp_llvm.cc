@@ -33,6 +33,7 @@ using namespace llvm::codegen;
 
 namespace QDP {
 
+  enum jitprec { f32 , f64 };
 
   namespace
   {
@@ -73,8 +74,11 @@ namespace QDP {
 
     std::unique_ptr< llvm::Module >      Mod;
     std::unique_ptr< llvm::Module >      module_libdevice;
-    std::unique_ptr< llvm::IRBuilder<> > builder;
+#ifdef QDP_BACKEND_ROCM
+    std::vector<std::unique_ptr< llvm::Module > >     module_ocml;
+#endif
 
+    std::unique_ptr< llvm::IRBuilder<> > builder;
     bool function_created;
 
     std::string str_func_type;
@@ -91,6 +95,10 @@ namespace QDP {
     llvm::Value *r_arg_myId;
     llvm::Value *r_arg_ordered;
     llvm::Value *r_arg_start;
+
+    std::map< std::string , std::string > mapMath;
+
+    std::map< jitprec , std::map< std::string , int > > math_declarations;
   }
 
   namespace AMDspecific {
@@ -311,6 +319,7 @@ namespace QDP {
     QDP_error_exit("unknown debug argument: %s",c_str);
   }
 
+#if 0
   llvm::Function *func_sin_f32;
   llvm::Function *func_acos_f32;
   llvm::Function *func_asin_f32;
@@ -355,8 +364,10 @@ namespace QDP {
   //Imported PTX Binary operations double precision
   llvm::Function *func_pow_f64;
   llvm::Function *func_atan2_f64;
+#endif
 
 
+#if 0
   llvm::Function *llvm_get_func( const char * name )
   {
     llvm::Function *func = Mod->getFunction(name);
@@ -364,6 +375,41 @@ namespace QDP {
       QDP_error_exit("Function %s not found.\n",name);
     return func;
   }
+#else
+  llvm::Function *llvm_get_func( std::string name , jitprec p , int num_args )
+  {
+    if (math_declarations[p][name] == 1)
+      {
+	QDPIO::cout << "math function declaration " << name << " found.\n";
+	llvm::Function *func = Mod->getFunction(name.c_str());
+	if (!func)
+	  {
+	    QDPIO::cerr << "Function " << name << " not found.\n";
+	    QDP_abort(1);
+	  }
+	return func;
+      }
+    else
+      {
+	math_declarations[p][name] = 1;
+	
+	llvm::Type* type;
+	switch(p)
+	  {
+	  case jitprec::f32:
+	    type = llvm::Type::getFloatTy(TheContext);
+	    break;
+	  case jitprec::f64:
+	    type = llvm::Type::getDoubleTy(TheContext);
+	    break;
+	  }
+
+	std::vector< llvm::Type* > Args( num_args , type );
+	llvm::FunctionType *funcType = llvm::FunctionType::get( type , Args , false); // no vararg
+	return llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, name.c_str() , Mod.get());
+      }
+  }
+#endif  
 
   namespace {
     std::string append_slash(std::string tmp)
@@ -374,6 +420,49 @@ namespace QDP {
     }
   }
 
+
+#ifdef QDP_BACKEND_ROCM
+  void llvm_init_ocml()
+  {
+    std::vector<std::string> libs;
+    libs.push_back("/amdgcn/bitcode/ocml.bc");
+    libs.push_back("/amdgcn/bitcode/oclc_finite_only_on.bc");
+
+    module_ocml.clear();
+    
+    for( int i = 0 ; i < libs.size() ; ++i )
+      {
+	std::string FileName = std::string(ROCM_DIR) + libs[i];
+
+	QDPIO::cout << "Reading bitcode from " << FileName << "\n";
+	
+	std::ifstream ftmp(FileName.c_str());
+	if (!ftmp.good())
+	  {
+	    QDPIO::cerr << "file not found:" << FileName << "\n";
+	    QDP_abort(1);
+	  }
+    
+	ErrorOr<std::unique_ptr<MemoryBuffer>> mb = MemoryBuffer::getFile(FileName);
+	if (std::error_code ec = mb.getError()) {
+	  errs() << ec.message();
+	  QDP_abort(1);
+	}
+  
+	llvm::Expected<std::unique_ptr<llvm::Module>> m = llvm::parseBitcodeFile(mb->get()->getMemBufferRef(), TheContext);
+	if (std::error_code ec = errorToErrorCode(m.takeError()))
+	  {
+	    errs() << "Error reading bitcode from " << FileName << ": " << ec.message() << "\n";
+	    QDP_abort(1);
+	  }
+
+	module_ocml.push_back( std::move( m.get() ) );
+      }
+  }
+#endif
+
+
+  
   void llvm_init_libdevice()
   {
     static std::string FileName;
@@ -501,8 +590,12 @@ namespace QDP {
     //
     // Read libdevice into module_libdevice
     //
+#if 0
     llvm_init_libdevice();
-
+#ifdef QDP_BACKEND_ROCM
+    llvm_init_ocml();
+#endif
+    
 #ifdef QDP_BACKEND_ROCM
     QDPIO::cout << "setting module data layout\n";
     Mod->setDataLayout(TargetMachine->createDataLayout());
@@ -514,26 +607,20 @@ namespace QDP {
       QDP_abort(1);
     }
 
+#ifdef QDP_BACKEND_ROCM
+    if (llvm::Linker::linkModules( *Mod , std::move( module_ocml ) )) {  // llvm::Linker::PreserveSource
+      QDPIO::cerr << "Linking ocml failed: " << ErrorMsg.c_str() << "\n";
+      QDP_abort(1);
+    }
+#endif
+#endif
+    
 #ifdef QDP_BACKEND_CUDA
     //QDPIO::cout << "setting module data layout\n";
     Mod->setDataLayout(TargetMachine->createDataLayout());
 #endif
 
 #ifdef QDP_BACKEND_CUDA
-#if 0
-    //
-
-    // Cloning a module takes more time than creating the module from scratch
-    // So, I am creating the libdevice module from the embedded bitcode.
-    //
-    std::unique_ptr<llvm::Module> libdevice_clone( CloneModule( module_libdevice.get() ) );
-
-    std::string ErrorMsg;
-    if (llvm::Linker::linkModules( *Mod , std::move( libdevice_clone ) )) {  // llvm::Linker::PreserveSource
-      QDP_error_exit("Linking libdevice failed: %s",ErrorMsg.c_str());
-    }
-#endif    
-
     func_sin_f32 = llvm_get_func( "__nv_sinf" );
     func_acos_f32 = llvm_get_func( "__nv_acosf" );
     func_asin_f32 = llvm_get_func( "__nv_asinf" );
@@ -582,54 +669,13 @@ namespace QDP {
     func_atan2_f64 = llvm_get_func( "__nv_atan2" );
 #else
     // ROCM
-
-    func_sin_f32 = llvm_get_func( "sinf" );
-    func_acos_f32 = llvm_get_func( "acosf" );
-    func_asin_f32 = llvm_get_func( "asinf" );
-    func_atan_f32 = llvm_get_func( "atanf" );
-    func_ceil_f32 = llvm_get_func( "ceilf" );
-    func_floor_f32 = llvm_get_func( "floorf" );
-    func_cos_f32 = llvm_get_func( "cosf" );
-    func_cosh_f32 = llvm_get_func( "coshf" );
-    func_exp_f32 = llvm_get_func( "expf" );
-    func_log_f32 = llvm_get_func( "logf" );
-    func_log10_f32 = llvm_get_func( "log10f" );
-    func_sinh_f32 = llvm_get_func( "sinhf" );
-    func_tan_f32 = llvm_get_func( "tanf" );
-    func_tanh_f32 = llvm_get_func( "tanhf" );
-    func_fabs_f32 = llvm_get_func( "fabsf" );
-    func_sqrt_f32 = llvm_get_func( "sqrtf" );
-    func_isfinite_f32 = llvm_get_func( "__finitef" );
-    // func_isinf_f32 = llvm_get_func( "isinff" );
-    // func_isnan_f32 = llvm_get_func( "isnanf" );
-
-    func_pow_f32 = llvm_get_func( "powf" );
-    func_atan2_f32 = llvm_get_func( "atan2f" );
+#if 0
 
 
-    func_sin_f64 = llvm_get_func( "sin" );
-    func_acos_f64 = llvm_get_func( "acos" );
-    func_asin_f64 = llvm_get_func( "asin" );
-    func_atan_f64 = llvm_get_func( "atan" );
-    func_ceil_f64 = llvm_get_func( "ceil" );
-    func_floor_f64 = llvm_get_func( "floor" );
-    func_cos_f64 = llvm_get_func( "cos" );
-    func_cosh_f64 = llvm_get_func( "cosh" );
-    func_exp_f64 = llvm_get_func( "exp" );
-    func_log_f64 = llvm_get_func( "log" );
-    func_log10_f64 = llvm_get_func( "log10" );
-    func_sinh_f64 = llvm_get_func( "sinh" );
-    func_tan_f64 = llvm_get_func( "tan" );
-    func_tanh_f64 = llvm_get_func( "tanh" );
-    func_fabs_f64 = llvm_get_func( "fabs" );
-    func_sqrt_f64 = llvm_get_func( "sqrt" );
-    func_isfinite_f64 = llvm_get_func( "__finite" );
-    // func_isinf_f64 = llvm_get_func( "isinfd" );
-    // func_isnan_f64 = llvm_get_func( "isnand" );
     
-    func_pow_f64 = llvm_get_func( "pow" );
-    func_atan2_f64 = llvm_get_func( "atan2" );
 
+
+#endif
 #endif
   }
 
@@ -701,6 +747,55 @@ namespace QDP {
     QDPIO::cout << "got target machine triple: " << TargetMachine->getTargetTriple().str() << "\n";
 
 
+    mapMath["sin_f32"]="sinf";
+    mapMath["acos_f32"]="acosf";
+    mapMath["asin_f32"]="asinf";
+    mapMath["atan_f32"]="atanf";
+    mapMath["ceil_f32"]="ceilf";
+    mapMath["floor_f32"]="floorf";
+    mapMath["cos_f32"]="cosf";
+    mapMath["cosh_f32"]="coshf";
+    mapMath["exp_f32"]="expf";
+    mapMath["log_f32"]="logf";
+    mapMath["log10_f32"]="log10f";
+    mapMath["sinh_f32"]="sinhf";
+    mapMath["tan_f32"]="tanf";
+    mapMath["tanh_f32"]="tanhf";
+    mapMath["fabs_f32"]="fabsf";
+    mapMath["sqrt_f32"]="sqrtf";
+    mapMath["isfinite_f32"]="__finitef";
+    // mapMath["isinf_f32"]="isinfdf";
+    // mapMath["isnan_f32"]="isnandf";
+    
+    mapMath["pow_f32"]="powf";
+    mapMath["atan2_f32"]="atan2f";
+
+    
+    
+    mapMath["sin_f64"]="sin";
+    mapMath["acos_f64"]="acos";
+    mapMath["asin_f64"]="asin";
+    mapMath["atan_f64"]="atan";
+    mapMath["ceil_f64"]="ceil";
+    mapMath["floor_f64"]="floor";
+    mapMath["cos_f64"]="cos";
+    mapMath["cosh_f64"]="cosh";
+    mapMath["exp_f64"]="exp";
+    mapMath["log_f64"]="log";
+    mapMath["log10_f64"]="log10";
+    mapMath["sinh_f64"]="sinh";
+    mapMath["tan_f64"]="tan";
+    mapMath["tanh_f64"]="tanh";
+    mapMath["fabs_f64"]="fabs";
+    mapMath["sqrt_f64"]="sqrt";
+    mapMath["isfinite_f64"]="__finite";
+    // mapMath["isinf_f64"]="isinfd";
+    // mapMath["isnan_f64"]="isnand";
+    
+    mapMath["pow_f64"]="pow";
+    mapMath["atan2_f64"]="atan2";
+
+    
     //
     // libdevice is initialized in math_setup
     //
@@ -1728,6 +1823,61 @@ namespace QDP {
     //llvm_module_dump();
     QDPIO::cout << str_pretty << "\n";
 
+#if 0
+    {
+      QDPIO::cout << "write code to module.bc ...\n";
+      std::error_code EC;
+      llvm::raw_fd_ostream OS("module.bc", EC, llvm::sys::fs::F_None);
+      llvm::WriteBitcodeToFile(*Mod, OS);
+      OS.flush();
+    }
+#endif
+
+    
+#ifdef QDP_BACKEND_ROCM
+    QDPIO::cout << "setting module data layout\n";
+    Mod->setDataLayout(TargetMachine->createDataLayout());
+#endif
+    
+
+    if (math_declarations.size() > 0)
+      {
+	llvm_init_libdevice();
+
+#ifdef QDP_BACKEND_ROCM
+	llvm_init_ocml();
+#endif
+    
+	std::string ErrorMsg;
+	if (llvm::Linker::linkModules( *Mod , std::move( module_libdevice ) )) {  // llvm::Linker::PreserveSource
+	  QDPIO::cerr << "Linking libdevice failed: " << ErrorMsg.c_str() << "\n";
+	  QDP_abort(1);
+	}
+
+#ifdef QDP_BACKEND_ROCM
+	for ( int i = 0 ; i < module_ocml.size() ; ++i )
+	  {
+	    QDPIO::cout << "linking in additional library " << i << "\n";
+	    if (llvm::Linker::linkModules( *Mod , std::move( module_ocml[i] ) )) {  // llvm::Linker::PreserveSource
+	      QDPIO::cerr << "Linking additional library failed: " << ErrorMsg.c_str() << "\n";
+	      QDP_abort(1);
+	    }
+	  }
+#endif
+      }
+
+
+#if 0
+    {
+      QDPIO::cout << "write code to module_linked.bc ...\n";
+      std::error_code EC;
+      llvm::raw_fd_ostream OS("module_linked.bc", EC, llvm::sys::fs::F_None);
+      llvm::WriteBitcodeToFile(*Mod, OS);
+      OS.flush();
+    }
+#endif
+    
+    
     llvm::legacy::PassManager PM2;
     
     PM2.add( llvm::createInternalizePass( all_but_kernel_name ) );
@@ -1740,9 +1890,9 @@ namespace QDP {
 
 #if 0
     {
-      QDPIO::cout << "write code to module.bc ...\n";
+      QDPIO::cout << "write code to module_internal_dce.bc ...\n";
       std::error_code EC;
-      llvm::raw_fd_ostream OS("module.bc", EC, llvm::sys::fs::F_None);
+      llvm::raw_fd_ostream OS("module_internal_dce.bc", EC, llvm::sys::fs::F_None);
       llvm::WriteBitcodeToFile(*Mod, OS);
       OS.flush();
     }
@@ -1812,7 +1962,7 @@ namespace QDP {
 	PM.run(*Mod);
 
 
-#if 1
+#if 0
 	{
 	  QDPIO::cout << "write code to module.bc ...\n";
 	  std::error_code EC;
@@ -1916,6 +2066,8 @@ namespace QDP {
     return builder->CreateCall(func,{lhs_f64,rhs_f64});
   }
 
+
+#if 0
   llvm::Value* llvm_sin_f32( llvm::Value* lhs ) { return llvm_call_f32( func_sin_f32 , lhs ); }
   llvm::Value* llvm_acos_f32( llvm::Value* lhs ) { return llvm_call_f32( func_acos_f32 , lhs ); }
   llvm::Value* llvm_asin_f32( llvm::Value* lhs ) { return llvm_call_f32( func_asin_f32 , lhs ); }
@@ -1957,8 +2109,51 @@ namespace QDP {
 
   llvm::Value* llvm_pow_f64( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f64( func_pow_f64 , lhs , rhs ); }
   llvm::Value* llvm_atan2_f64( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f64( func_atan2_f64 , lhs , rhs ); }
+#endif
 
+  llvm::Value* llvm_sin_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("sin_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_acos_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("acos_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_asin_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("asin_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_atan_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("atan_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_ceil_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("ceil_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_floor_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("floor_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_cos_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("cos_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_cosh_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("cosh_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_exp_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("exp_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_log_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("log_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_log10_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("log10_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_sinh_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("sinh_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_tan_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("tan_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_tanh_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("tanh_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_fabs_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("fabs_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_sqrt_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("sqrt_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_isfinite_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("isfinite_f32") , jitprec::f32 , 1 )  , lhs ); }
 
+  llvm::Value* llvm_pow_f32( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("pow_f32") , jitprec::f32 , 2 )  , lhs , rhs ); }
+  llvm::Value* llvm_atan2_f32( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("atan2_f32") , jitprec::f32 , 2 )  , lhs , rhs ); }
 
+  
+  llvm::Value* llvm_sin_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("sin_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_acos_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("acos_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_asin_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("asin_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_atan_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("atan_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_ceil_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("ceil_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_floor_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("floor_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_cos_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("cos_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_cosh_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("cosh_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_exp_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("exp_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_log_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("log_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_log10_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("log10_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_sinh_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("sinh_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_tan_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("tan_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_tanh_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("tanh_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_fabs_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("fabs_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_sqrt_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("sqrt_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_isfinite_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("isfinite_f64") , jitprec::f64 , 1 )  , lhs ); }
+
+  llvm::Value* llvm_pow_f64( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("pow_f64") , jitprec::f64 , 2 )  , lhs , rhs ); }
+  llvm::Value* llvm_atan2_f64( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("atan2_f64") , jitprec::f64 , 2 )  , lhs , rhs ); }
+
+  
 } // namespace QDP
 

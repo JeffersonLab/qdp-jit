@@ -34,6 +34,11 @@ namespace QDP
   }
 
 
+
+
+
+  
+
 //-----------------------------------------------------------------------------
   namespace Layout
   {
@@ -211,6 +216,9 @@ namespace QDP
     //! Initializer for all the layout defaults
     void initDefaults()
     {
+      jit_config_print();
+      QDP_get_global_cache().setPoolSize( jit_config_get_pool_size() );
+      
 #if QDP_DEBUG >= 2
       QDP_info("Create default subsets");
 #endif

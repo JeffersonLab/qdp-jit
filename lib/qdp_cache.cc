@@ -1504,11 +1504,6 @@ QDPCache::KernelArgs_t QDPCache::get_kernel_args(std::vector<ArgKey>& ids , bool
 
 
 
-
-
-
-
-
   
   namespace {
     static QDPCache* __global_cache;
