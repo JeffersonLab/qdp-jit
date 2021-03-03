@@ -944,6 +944,8 @@ namespace QDP {
 
   void llvm_start_new_function( const char* ftype , const char* pretty )
   {
+    math_declarations.clear();
+    
     str_func_type = ftype;
     str_pretty = pretty;
     str_kernel_name = str_func_type + std::to_string( map_func_counter[str_func_type]++ );
@@ -969,7 +971,7 @@ namespace QDP {
     // Setup math functions
     // This also sets the datalayout for the module about to build
     //
-    llvm_setup_math_functions();
+    //llvm_setup_math_functions();
 
 #if 0
     // Set the data layout for the builder's module AFTER linking in
