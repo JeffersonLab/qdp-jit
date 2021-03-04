@@ -61,7 +61,7 @@ namespace QDP {
   
 
   //JitFunction get_fptr_from_ptx( const char* fname , const std::string& kernel );
-  void get_jitf( JitFunction& func, const std::string& kernel , const std::string& func_name , const std::string& pretty , const std::string& compute );
+  bool get_jitf( JitFunction& func, const std::string& kernel , const std::string& func_name , const std::string& pretty , const std::string& compute );
 
   std::string getPTXfromCUFunc(JitFunction& f);
 

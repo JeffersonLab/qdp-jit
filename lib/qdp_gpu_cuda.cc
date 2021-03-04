@@ -520,7 +520,7 @@ namespace QDP {
 
 
 
-  void get_jitf( JitFunction& func, const std::string& kernel_ptx , const std::string& kernel_name , const std::string& pretty , const std::string& str_compute )
+  bool get_jitf( JitFunction& func, const std::string& kernel_ptx , const std::string& kernel_name , const std::string& pretty , const std::string& str_compute )
   {
     CUresult ret;
     CUmodule cuModule;
@@ -649,6 +649,7 @@ namespace QDP {
 	}
 #endif
       }
+    return true;
   }
 
 

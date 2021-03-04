@@ -30,6 +30,7 @@ using namespace llvm::codegen;
 #include "llvm/Target/TargetMachine.h"
 
 #include <memory>
+#include <unistd.h>
 
 namespace QDP {
 
@@ -424,9 +425,19 @@ namespace QDP {
 #ifdef QDP_BACKEND_ROCM
   void llvm_init_ocml()
   {
+    std::string arch = str_arch;
+    auto index = arch.find("gfx", 0);
+    if (index != std::string::npos)
+      {
+	arch.replace(index, 3, "" ); // Remove 
+      }
+
     std::vector<std::string> libs;
     libs.push_back("/amdgcn/bitcode/ocml.bc");
     libs.push_back("/amdgcn/bitcode/oclc_finite_only_on.bc");
+    libs.push_back("/amdgcn/bitcode/oclc_isa_version_" + arch + ".bc");
+    libs.push_back("/amdgcn/bitcode/oclc_unsafe_math_on.bc");
+    libs.push_back("/amdgcn/bitcode/oclc_daz_opt_on.bc");
 
     module_ocml.clear();
     
@@ -2023,7 +2034,22 @@ namespace QDP {
 
     std::cout << "shared object file read back in. size = " << shared.size() << "\n";
     
-    get_jitf( func , shared , str_kernel_name , str_pretty , str_arch );
+    if (!get_jitf( func , shared , str_kernel_name , str_pretty , str_arch ))
+      {
+	// Something went wrong loading the module or finding the kernel
+	// Print some diagnostics about the module
+	QDPIO::cout << "Module declarations:" << std::endl;
+	auto F = Mod->begin();
+	while ( F != Mod->end() )
+	  {
+	    if (F->isDeclaration())
+	      {
+		QDPIO::cout << F->getName().str() << std::endl;
+	      }
+	    F++;
+	  }
+	sleep(1);
+      }
   }
 
 

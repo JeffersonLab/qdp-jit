@@ -509,32 +509,7 @@ namespace QDP {
 
 
 
-  std::map<hipError_t,std::string> mapCuErrorString= {
-    {hipSuccess 	,"Successful completion."},
-    {hipErrorInvalidContext 	,"Produced when input context is invalid."},
-    {hipErrorInvalidKernelFile 	,"In CUDA DRV, it is CUDA_ERROR_INVALID_PTX."},
-    {hipErrorMemoryAllocation 	,"Memory allocation error."},
-    {hipErrorInitializationError 	,"TODO comment from hipErrorInitializationError."},
-    {hipErrorLaunchFailure 	,"An exception occurred on the device while executing a kernel."},
-    {hipErrorLaunchOutOfResources 	,"Out of resources error."},
-    {hipErrorInvalidDevice 	,"DeviceID must be in range 0...#compute-devices."},
-    {hipErrorInvalidValue 	,"One or more of the parameters passed to the API call is NULL or not in an acceptable range."},
-    {hipErrorInvalidDevicePointer 	,"Invalid Device Pointer."},
-    {hipErrorInvalidMemcpyDirection 	,"Invalid memory copy direction."},
-    {hipErrorUnknown 	,"Unknown error."},
-    {hipErrorInvalidResourceHandle 	,"Resource handle (hipEvent_t or hipStream_t) invalid."},
-    {hipErrorNotReady 	,"Indicates that asynchronous operations enqueued earlier are not ready. This is not actually an error, but is used to distinguish from hipSuccess (which indicates completion). APIs that return this error include hipEventQuery and hipStreamQuery."},
-    {hipErrorNoDevice 	,"Call to hipGetDeviceCount returned 0 devices."},
-    {hipErrorPeerAccessAlreadyEnabled 	,"Peer access was already enabled from the current device."},
-    {hipErrorPeerAccessNotEnabled 	,"Peer access was never enabled from the current device."},
-    {hipErrorRuntimeMemory 	,"HSA runtime memory call returned error. Typically not seen in production systems."},
-    {hipErrorRuntimeOther 	,"HSA runtime call other than memory returned error. Typically not seen in production systems."},
-    {hipErrorHostMemoryAlreadyRegistered 	,"Produced when trying to lock a page-locked memory."},
-    {hipErrorHostMemoryNotRegistered 	,"Produced when trying to unlock a non-page-locked memory."},
-    {hipErrorMapBufferObjectFailed 	,"Produced when the IPC memory attach failed from ROCr."},
-    {hipErrorTbd 	,"Marker that more error codes are needed. "} };
-
-  
+   
   int CudaGetAttributesLocalSize( JitFunction& f )
   {
 #if 0
@@ -604,22 +579,22 @@ namespace QDP {
 
     
 
-  void CudaCheckResult(hipError_t result) {
-    if (result != hipSuccess) {
-      QDP_info("CUDA error %d (%s)", (int)result , mapCuErrorString[result].c_str());
-    }
-  }
 
 
   void CheckError(const std::string& s,hipError_t ret) {
     if (ret != hipSuccess) {
-      if (mapCuErrorString.count(ret)) 
-	std::cout << s << " Error: " << mapCuErrorString.at(ret) << "\n";
-      else
-	std::cout << s << " Error: (not known)\n";
+      std::cout << s << ", hip Error code: " << (int)ret << "\n";
       exit(1);
     }
   }
+
+
+  void CheckErrorWeak(const std::string& s,hipError_t ret) {
+    if (ret != hipSuccess) {
+      std::cout << s << ", hip Error code: " << (int)ret << "\n";
+    }
+  }
+
 
 
 #if 0
@@ -850,7 +825,7 @@ namespace QDP {
 
 
 
-  void get_jitf( JitFunction& func, const std::string& shared , const std::string& kernel_name , const std::string& pretty , const std::string& str_compute )
+  bool get_jitf( JitFunction& func, const std::string& shared , const std::string& kernel_name , const std::string& pretty , const std::string& str_compute )
   {
     hipModule_t module;
     hipError_t ret;
@@ -866,7 +841,11 @@ namespace QDP {
     func.set_pretty( pretty );
 
     ret = hipModuleLoadData(&module, shared.data() );
-    CheckError( "hipModuleLoadData" , ret );
+    if (ret != hipSuccess)
+      {
+	CheckErrorWeak( "hipModuleLoadData" , ret );
+	return false;
+      }
 
     QDPIO::cout << "shared object file loaded as hip module\n";
     QDPIO::cout << "looking for a function with name " << kernel_name << "\n";
@@ -878,6 +857,7 @@ namespace QDP {
     func.set_function( f );
     
     QDPIO::cout << "Got function!\n";
+    return true;
   }
 
 
