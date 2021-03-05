@@ -12,6 +12,9 @@ namespace QDP
 
     // Kernel Launch
     int threads_per_block = 128;
+
+    // In case memory allocation fails, decrease Pool size by this amount for next try.
+    size_t pool_size_decrement = 10 * 1024*1024;   // 10MB
   }
 
   void jit_config_print()
@@ -29,6 +32,12 @@ namespace QDP
   }
 
 
+  size_t qdp_jit_config_pool_size_decrement()
+  {
+    return pool_size_decrement;
+  }
+  
+  
   void jit_config_set_threads_per_block( int t )
   {
     threads_per_block = t;
