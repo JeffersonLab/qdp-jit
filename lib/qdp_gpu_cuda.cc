@@ -14,7 +14,7 @@
 
 
 #include "cudaProfiler.h"
-
+//#include <signal.h>
 
 
 namespace QDP {
@@ -532,6 +532,7 @@ namespace QDP {
 
     if (ret != CUDA_SUCCESS) {
       QDPIO::cerr << "Error loading external data.\n";
+      //raise(SIGSEGV);
       QDP_abort(1);
     }
 
@@ -565,7 +566,7 @@ namespace QDP {
 	if (fp == NULL)
 	  {
 	    QDPIO::cerr << "Stats error: Failed to run command via popen\n";
-	    return;
+	    return false;
 	  }
 	
 	std::ostringstream output;
@@ -588,7 +589,7 @@ namespace QDP {
 	    std::cerr << "----- Output -------\n";
 	    std::cerr << output.str() << "\n";
 	    std::cerr << "--------------------\n";
-	    return;
+	    return false;
 	  }
 
 	//
