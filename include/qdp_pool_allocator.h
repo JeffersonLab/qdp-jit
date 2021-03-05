@@ -188,14 +188,31 @@ namespace QDP
 	QDP_abort(1);
       }
 
-    bytes_allocated = poolSize + 2 * QDP_ALIGNMENT_SIZE;
+    bool pool_allocated = false;
+    size_t orig_size = poolSize;
+    
+    while ( !pool_allocated && poolSize > (orig_size >> 1) )
+      {
+	bytes_allocated = poolSize + 2 * QDP_ALIGNMENT_SIZE;
 
-    if (!Allocator::allocate( (void**)&unaligned , bytes_allocated ))
+	if (Allocator::allocate( (void**)&unaligned , bytes_allocated ))
+	  {
+	    pool_allocated = true;
+	  }
+	else
+	  {
+	    poolSize -= qdp_jit_config_pool_size_decrement();
+	    QDPIO::cout << "Pool allocation of " << bytes_allocated << " bytes failed." << std::endl;
+	    QDPIO::cout << "Retry with reduced pool size by " << qdp_jit_config_pool_size_decrement() << " bytes." << std::endl;
+	  }
+      }
+
+    if (!pool_allocated)
       {
 	QDPIO::cerr << "Pool allocater could not allocate " << bytes_allocated << "\n";
 	return false;
       }
-
+    
     poolPtr = (unsigned char *)( ( (unsigned long)unaligned + (QDP_ALIGNMENT_SIZE-1) ) & ~(QDP_ALIGNMENT_SIZE - 1));
 
     entry_t e;

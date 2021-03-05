@@ -10,7 +10,8 @@ namespace QDP
   void jit_config_set_threads_per_block( int t );
   int  jit_config_get_threads_per_block();
 
-
+  size_t qdp_jit_config_pool_size_decrement();
+  
   void jit_config_print();
 
   
