@@ -83,6 +83,10 @@ namespace QDP
     
     void printInfo(int id);
 
+    size_t free_mem();
+    void print_pool();
+    void defrag();
+
     int addJitParamFloat(float i);
     int addJitParamDouble(double i);
     int addJitParamInt(int i);

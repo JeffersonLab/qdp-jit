@@ -23,6 +23,7 @@ namespace QDP
       int    id;
       void * host_ptr;
       bool allocated;
+      bool fixed;
     };
     typedef          std::list< entry_t >           listEntry_t;
     typedef typename std::list< entry_t >::iterator iterEntry_t;
@@ -41,7 +42,8 @@ namespace QDP
 
     size_t getPoolSize();
 
-    bool allocate( void** ptr , size_t n_bytes , int id );
+    bool allocate      ( void** ptr , size_t n_bytes , int id );
+    bool allocate_fixed( void** ptr , size_t n_bytes , int id );
 
     void free(const void *mem);
     void setPoolSize(size_t s);
@@ -70,6 +72,25 @@ namespace QDP
 
       return free;
     }
+
+
+    void print_pool()
+    {
+      for ( auto i = listEntry.begin() ; i != listEntry.end() ; ++i )
+	{
+	  QDPIO::cout << i->size << "\t";
+	  if ( i->allocated )
+	    {
+	      if ( i->fixed )
+		QDPIO::cout << "F" << std::endl;
+	      else
+		QDPIO::cout << "A" << std::endl;
+	    }
+	  else
+	    QDPIO::cout << std::endl;
+	}
+    }
+
     
     
   private:
@@ -102,24 +123,26 @@ namespace QDP
       }
     };
 
-    
-    bool findNextNotAllocated( iterEntry_t& start , size_t size )
-    {
-      iterEntry_t save = start;
 
-      start = std::find_if( start , listEntry.end(), std::bind2nd( SizeNotAllocated(), size ) );
+    template<class T>
+    bool findNextNotAllocated( T& start , const T& end , size_t size )
+    {
+      start = std::find_if( start , end , std::bind2nd( SizeNotAllocated(), size ) );
       
-      if ( start == listEntry.end())
+      if ( start == end)
 	{
-	  start = std::find_if( listEntry.begin() , save , std::bind2nd( SizeNotAllocated(), size ) );
-	  if ( start == save)
-	    {
-	      return false;
-	    }
+	  return false;
 	}
+      
       return true;
     }
 
+
+
+
+
+
+    
     struct MemMatch: public std::binary_function< entry_t , const void * , bool >
     {
       bool operator () ( const entry_t& ent , const void* mem ) const
@@ -243,20 +266,43 @@ namespace QDP
 
 
 
+  namespace
+  {
+    template<class T>
+    bool findFixed( const T& a )
+    {
+      return a.allocated && a.fixed;
+    }
+  }
+
+  
+
   template<class Allocator>
   void QDPPoolAllocator<Allocator>::defrag()
   {
     QDPIO::cout << "Defragmentation of pool memory." << "\n";
 
+    auto firstFixed = std::find_if( listEntry.begin() , listEntry.end() , findFixed<entry_t> );
+
+    QDPIO::cout << "first fixed: " << firstFixed->size << std::endl;
+    
     defrags++;
     size_t free = 0;
     
-    QDPIO::cout << "Copy fields to host" << "\n";
+    QDPIO::cout << "Copying fields to host .." << std::endl;
     iterEntry_t i = listEntry.begin();
-    while (i != listEntry.end())
+    while (i != firstFixed)
       {
+	//QDPIO::cout << "visiting: " << i->size << std::endl;
+
 	if ( i->allocated )
 	  {
+	    if ( i->fixed )
+	      {
+		QDPIO::cout << "defrag: should not be here." << std::endl;
+		QDP_abort(1);
+	      }
+
 	    if ( !( i->host_ptr = malloc( i->size ) ) )
 	      {
 		QDPIO::cerr << "out of host memory during pool memory defragmentation." << std::endl;
@@ -275,11 +321,11 @@ namespace QDP
 	  }
       }
 
-    QDPIO::cout << "Copy fields back to device" << "\n";
+    QDPIO::cout << "Copying fields back to device .." << std::endl;
     void* ptr_cur = poolPtr;
     
     i = listEntry.begin();
-    while (i != listEntry.end())
+    while ( i != firstFixed )
       {
 	i->ptr = ptr_cur;
 
@@ -301,7 +347,7 @@ namespace QDP
     e.id = -1;
     e.allocated = false;
 
-    listEntry.push_back( e );
+    listEntry.insert( firstFixed , e );
   }
 
 
@@ -319,25 +365,27 @@ namespace QDP
 
     size_t size = (n_bytes + (alignment) - 1) & ~((alignment) - 1);
 
-#ifdef GPU_DEBUG_DEEP
-    QDP_debug_deep("Pool allocator: allocate=%lu (resized=%lu)", n_bytes , size );
-#endif
+    if (size==0)
+      {
+	QDPIO::cout << "pool allocator requested size 0." << std::endl;
+	QDP_abort(1);
+      }
+      
+
+    //QDPIO::cout << "pool allocate fixed: size = " << n_bytes << ", after alignment requirements = " << size << std::endl;
+
 
     if (size > poolSize)
       {
-	QDP_info("Pool allocator: trying to allocate %lu (poolsize=%lu) " , size , poolSize );
+	QDPIO::cout << "Pool allocator: requested size = " << size << ", poolsize = " << poolSize << std::endl;
 	return false;
       }
 
-#ifdef GPU_DEBUG_DEEP
-    if (size==0)
-      QDP_error_exit("QDPPoolAllocator<Allocator>::allocate ( size == 0 )");
-#endif
-
+    
 
     iterEntry_t candidate = listEntry.begin();
     
-    if ( !findNextNotAllocated( candidate , size ) )
+    if ( !findNextNotAllocated( candidate , listEntry.end() , size ) )
       {
 	return false;
 #if 0	
@@ -384,6 +432,7 @@ namespace QDP
 	e.size = size;
 	e.id = id;
 	e.allocated = true;
+	e.fixed = false;
 	
 	candidate->ptr = (void*)( (size_t)(candidate->ptr) + size );
 	candidate->id = -1;
@@ -403,6 +452,83 @@ namespace QDP
     return true;
   }
 
+
+
+  template<class Allocator>
+  bool QDPPoolAllocator<Allocator>::allocate_fixed( void ** ptr , size_t n_bytes , int id )
+  {
+    if (!bufferAllocated)
+      {
+	if ( !allocateInternalBuffer() )
+	  return false;
+      }
+
+    //size_t alignment = QDP_ALIGNMENT_SIZE;
+    size_t alignment = Allocator::ALIGNMENT_SIZE;
+
+    size_t size = (n_bytes + (alignment) - 1) & ~((alignment) - 1);
+
+    if ( size == 0 )
+      {
+	QDPIO::cout << "pool allocator fixed requested size 0." << std::endl;
+	QDP_abort(1);
+      }
+      
+    //QDPIO::cout << "pool allocate fixed: size = " << n_bytes << ", after alignment requirements = " << size << std::endl;
+
+    if (size > poolSize)
+      {
+	QDPIO::cout << "Pool allocator fixed: requested size = " << size << ", poolsize = " << poolSize << std::endl;
+	return false;
+      }
+
+
+
+    auto candidate = listEntry.rbegin();
+    
+    if ( !findNextNotAllocated( candidate , listEntry.rend() , size ) )
+      {
+	return false;
+      }
+
+
+    if (candidate->size == size)
+      {
+	candidate->allocated = true;
+	candidate->id = id;
+	candidate->fixed = true;
+	
+	*ptr = candidate->ptr;
+      }
+    else
+      {
+	entry_t e;
+	e.ptr = candidate->ptr;
+	e.size = candidate->size - size;
+	e.id = -1;
+	e.allocated = false;
+
+	candidate->ptr = (void*)( (size_t)(candidate->ptr) + size );
+	candidate->id = id;
+	candidate->size = size;
+	candidate->fixed = true;
+	candidate->allocated = true;
+
+	if ( e.size == 0 )
+	  {
+	    QDPIO::cerr << "pool fixed: some bizzare error. " << std::endl;
+	    QDP_abort(1);
+	  }
+
+	listEntry.insert( --candidate.base() , e );
+
+	*ptr = candidate->ptr;
+      }
+
+    return true;
+  }
+
+  
 
 
 

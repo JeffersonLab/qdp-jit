@@ -9,6 +9,7 @@ namespace QDP
     int thread_stack = 64 * sizeof(REAL);  //1024;
     bool use_total_pool_size = false;
     size_t pool_size = 0;
+    bool use_defrag = false;
 
     // Kernel Launch
     int threads_per_block = 128;
@@ -31,6 +32,17 @@ namespace QDP
       }
   }
 
+  bool qdp_jit_config_defrag()
+  {
+    return use_defrag;
+  }
+
+  void qdp_jit_set_defrag()
+  {
+    use_defrag = true;
+  }
+
+  
 
   size_t qdp_jit_config_pool_size_decrement()
   {

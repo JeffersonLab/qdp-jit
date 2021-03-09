@@ -335,6 +335,22 @@ namespace QDP
   }
 
 
+  size_t QDPCache::free_mem()
+  {
+    return get__cache_pool_allocator().free_mem();
+  }
+
+  void QDPCache::print_pool()
+  {
+    get__cache_pool_allocator().print_pool();
+  }
+
+  void QDPCache::defrag()
+  {
+    get__cache_pool_allocator().defrag();
+  }
+
+  
   int QDPCache::addDeviceStatic( size_t n_bytes )
   {
     void* dummy;
@@ -346,11 +362,41 @@ namespace QDP
     int Id = getNewId();
     Entry& e = vecEntry[ Id ];
 
-    while (!get__cache_pool_allocator().allocate( ptr , n_bytes , Id )) {
-      if (!spill_lru()) {
-	QDP_error_exit("cache allocate_device_static: can't spill LRU object");
+    if ( qdp_jit_config_defrag() )
+      {
+	bool allocated = get__cache_pool_allocator().allocate_fixed( ptr , n_bytes , Id );
+	
+	while (!allocated)
+	  {
+	    bool defrag = false;
+	    
+	    if (!spill_lru())
+	      {
+		get__cache_pool_allocator().defrag();
+
+		defrag = true;
+	      }
+
+	    allocated = get__cache_pool_allocator().allocate_fixed( ptr , n_bytes , Id );
+	    
+	    if ( !allocated && defrag )
+	      {
+		QDPIO::cout << "Can't allocate static memory even after pool defragmentation." << std::endl;
+		QDP_abort(1);
+	      }
+	  }
       }
-    }
+    else
+      {
+	while (!get__cache_pool_allocator().allocate( ptr , n_bytes , Id ))
+	  {
+	    if (!spill_lru())
+	      {
+		QDP_error_exit("cache allocate_device_static: can't spill LRU object");
+	      }
+	  }
+      }
+    
 
     e.Id        = Id;
     e.size      = n_bytes;
