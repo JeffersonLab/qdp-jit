@@ -350,6 +350,11 @@ namespace QDP
     get__cache_pool_allocator().defrag();
   }
 
+  size_t QDPCache::get_max_allocated()
+  {
+    return get__cache_pool_allocator().get_max_allocated();
+  }
+  
   
   int QDPCache::addDeviceStatic( size_t n_bytes )
   {
