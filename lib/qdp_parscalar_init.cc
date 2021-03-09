@@ -601,29 +601,40 @@ namespace COUNT {
 			QDP_abort(1);
 		}
 		
-		QDPIO::cout << "------------------\n";
-		QDPIO::cout << "-- JIT statistics:\n";
-		QDPIO::cout << "------------------\n";
-		QDPIO::cout << "lattices changed to device layout:     " << get_jit_stats_lattice2dev() << "\n";
-		QDPIO::cout << "lattices changed to host layout:       " << get_jit_stats_lattice2host() << "\n";
-		QDPIO::cout << "functions jit-compiled:                " << get_jit_stats_jitted() << "\n";
-		//QDPIO::cout << "memory pool defragmentation count      " << QDP_get_global_cache().getPoolDefrags() << "\n";
+		QDPIO::cout << "\n";
+		QDPIO::cout << "        ------------------------\n";
+		QDPIO::cout << "        -- qdp-jit statistics --\n";
+		QDPIO::cout << "        ------------------------\n";
+		QDPIO::cout << "\n";
+		QDPIO::cout << "Memory cache \n";
+		QDPIO::cout << "  lattice objects copied to host memory:   " << get_jit_stats_lattice2dev() << "\n";
+		QDPIO::cout << "  lattice objects copied to device memory: " << get_jit_stats_lattice2host() << "\n";
+		QDPIO::cout << "\n";
+		QDPIO::cout << "Pool allocator \n";
+		QDPIO::cout << "  max. allocated:                          " << QDP_get_global_cache().get_max_allocated() << "\n";
+		if ( qdp_jit_config_defrag() )
+		  {
+		QDPIO::cout << "  memory pool defragmentation count:       " << QDP_get_global_cache().getPoolDefrags() << "\n";
+		  }
+		QDPIO::cout << "\n";
+		QDPIO::cout << "Code generator \n";
+		QDPIO::cout << "  functions jit-compiled:                  " << get_jit_stats_jitted() << "\n";
+		if (get_ptx_db_enabled())
+		  {
+		QDPIO::cout << "  ptx db file:                             " << get_ptx_db_fname() << "\n";
+		QDPIO::cout << "  ptx db size (number of functions):       " << get_ptx_db_size() << "\n";
+		  }
+		else
+		  {
+		QDPIO::cout << "  ptx db: (not used)\n";
+		  }
+		
 #ifdef QDP_CUDA_SPECIAL
 		for ( auto it = get_jit_stats_special_names().begin() ; it != get_jit_stats_special_names().end(); it++ )
 		  {
 		    QDPIO::cout << it->first << ": [" << it->second << "] = " << get_jit_stats_special( it->first ) << "\n";
 		  }
 #endif
-		if (get_ptx_db_enabled())
-		  {
-		    QDPIO::cout << "PTX DB, file:                          " << get_ptx_db_fname() << "\n";
-		    QDPIO::cout << "PTX DB, size (number of functions):    " << get_ptx_db_size() << "\n";
-		  }
-		else
-		  {
-		    QDPIO::cout << "PTX DB: (not used)\n";
-		  }
-
 		if ( gpu_get_record_stats() )
 		  {
 		    QDPIO::cout << "#" << "\t";

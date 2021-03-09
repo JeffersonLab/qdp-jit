@@ -57,7 +57,11 @@ namespace QDP
 
     bool allocateInternalBuffer();
 
-
+    size_t get_max_allocated()
+    {
+      return max_allocated;
+    }
+    
     size_t free_mem()
     {
       size_t free = 0;
@@ -108,7 +112,9 @@ namespace QDP
     size_t             bytes_allocated;
     listEntry_t        listEntry;
     int                defrags = 0;
-
+    size_t             max_allocated = 0;
+    size_t             total_allocated = 0;
+    
     bool setMemory = false;
     unsigned setMemoryVal;
 
@@ -284,8 +290,6 @@ namespace QDP
 
     auto firstFixed = std::find_if( listEntry.begin() , listEntry.end() , findFixed<entry_t> );
 
-    QDPIO::cout << "first fixed: " << firstFixed->size << std::endl;
-    
     defrags++;
     size_t free = 0;
     
@@ -388,33 +392,6 @@ namespace QDP
     if ( !findNextNotAllocated( candidate , listEntry.end() , size ) )
       {
 	return false;
-#if 0	
-	QDPIO::cout << "Could not allocate " << size << " bytes." << std::endl;
-
-	size_t free = free_mem();
-	
-	QDPIO::cout << "Total free (in chunks): " << free << " bytes." << std::endl;
-
-	if ( size <= free )
-	  {
-	    defrag();
-
-	    candidate = listEntry.begin();
-    
-	    if ( !findNextNotAllocated( candidate , size ) )
-	      {
-		QDPIO::cout << "After defrag: could not allocate " << size << " bytes." << std::endl;
-		QDP_abort(1);
-		return false;
-	      }
-	  }
-	else
-	  {
-	    QDPIO::cout << "could not allocate " << size << " bytes." << std::endl;
-	    QDP_abort(1);
-	    return false;
-	  }
-#endif
       }
 
 
@@ -449,6 +426,14 @@ namespace QDP
 	*ptr = e.ptr;
       }
 
+    
+    total_allocated += size;
+    
+    if ( total_allocated > max_allocated )
+      {
+	max_allocated = total_allocated;
+      }
+    
     return true;
   }
 
@@ -525,6 +510,13 @@ namespace QDP
 	*ptr = candidate->ptr;
       }
 
+    total_allocated += size;
+    
+    if ( total_allocated > max_allocated )
+      {
+	max_allocated = total_allocated;
+      }
+
     return true;
   }
 
@@ -544,6 +536,15 @@ namespace QDP
       }
 
     p->allocated = false;
+
+    if ( total_allocated < p->size )
+      {
+	QDPIO::cout << "pool internal error. total_allocated < p->size." << std::endl;
+	QDP_abort(1);
+      }
+
+    total_allocated -= p->size;
+    
 
     if ( p != listEntry.begin() )
       {

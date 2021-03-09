@@ -86,6 +86,8 @@ namespace QDP
     size_t free_mem();
     void print_pool();
     void defrag();
+    size_t get_max_allocated();
+
 
     int addJitParamFloat(float i);
     int addJitParamDouble(double i);
