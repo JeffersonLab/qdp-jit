@@ -7,6 +7,9 @@ namespace QDP
   void jit_config_set_thread_stack( int stack );
   size_t jit_config_get_pool_size();
 
+  bool qdp_jit_config_defrag();
+  void qdp_jit_set_defrag();
+
   void jit_config_set_threads_per_block( int t );
   int  jit_config_get_threads_per_block();
 

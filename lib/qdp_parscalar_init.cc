@@ -337,6 +337,10 @@ namespace COUNT {
 	  {
 	    gpu_set_record_stats();
 	  }
+	else if (strcmp((*argv)[i], "-defrag")==0)
+	  {
+	    qdp_jit_set_defrag();
+	  }
 	else if (strcmp((*argv)[i], "-clang-codegen")==0) 
 	  {
 	    llvm_set_clang_codegen();
