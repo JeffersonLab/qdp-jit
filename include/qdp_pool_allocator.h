@@ -80,6 +80,7 @@ namespace QDP
 
     void print_pool()
     {
+      QDPIO::cout << "-------------pool-----------\n";
       for ( auto i = listEntry.begin() ; i != listEntry.end() ; ++i )
 	{
 	  QDPIO::cout << i->size << "\t";
@@ -93,6 +94,7 @@ namespace QDP
 	  else
 	    QDPIO::cout << std::endl;
 	}
+      QDPIO::cout << "----------------------------\n";
     }
 
     
@@ -493,7 +495,7 @@ namespace QDP
 	e.id = -1;
 	e.allocated = false;
 
-	candidate->ptr = (void*)( (size_t)(candidate->ptr) + size );
+	candidate->ptr = (void*)( (size_t)(candidate->ptr) + candidate->size - size );
 	candidate->id = id;
 	candidate->size = size;
 	candidate->fixed = true;
