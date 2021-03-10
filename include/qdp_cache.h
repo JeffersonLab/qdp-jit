@@ -88,6 +88,7 @@ namespace QDP
     void defrag();
     size_t get_max_allocated();
 
+    std::map<size_t,size_t>& get_alloc_count();
 
     int addJitParamFloat(float i);
     int addJitParamDouble(double i);

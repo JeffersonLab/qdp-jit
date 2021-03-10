@@ -116,12 +116,18 @@ namespace QDP
     int                defrags = 0;
     size_t             max_allocated = 0;
     size_t             total_allocated = 0;
+
+    std::map<size_t,size_t> count;
     
     bool setMemory = false;
     unsigned setMemoryVal;
 
 
-
+    std::map<size_t,size_t>& get_count()
+    {
+      return count;
+    }
+    
 
     struct SizeNotAllocated: public std::binary_function< entry_t , size_t , bool >
     {
@@ -376,10 +382,8 @@ namespace QDP
 	QDPIO::cout << "pool allocator requested size 0." << std::endl;
 	QDP_abort(1);
       }
-      
 
     //QDPIO::cout << "pool allocate fixed: size = " << n_bytes << ", after alignment requirements = " << size << std::endl;
-
 
     if (size > poolSize)
       {
@@ -428,6 +432,7 @@ namespace QDP
 	*ptr = e.ptr;
       }
 
+    count[n_bytes]++;
     
     total_allocated += size;
     

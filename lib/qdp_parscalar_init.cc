@@ -611,10 +611,16 @@ namespace COUNT {
 		QDPIO::cout << "  lattice objects copied to device memory: " << get_jit_stats_lattice2host() << "\n";
 		QDPIO::cout << "\n";
 		QDPIO::cout << "Pool allocator \n";
-		QDPIO::cout << "  max. allocated:                          " << QDP_get_global_cache().get_max_allocated() << "\n";
+		QDPIO::cout << "  peak memory usage:                       " << QDP_get_global_cache().get_max_allocated() << "\n";
 		if ( qdp_jit_config_defrag() )
 		  {
 		QDPIO::cout << "  memory pool defragmentation count:       " << QDP_get_global_cache().getPoolDefrags() << "\n";
+		  }
+		QDPIO::cout << "  memory allocation count: \n";
+		auto& count = QDP_get_global_cache().get_alloc_count();
+		for ( auto i = count.begin() ; i != count.end() ; ++i )
+		  {
+		    QDPIO::cout << "  " << i->first << " bytes \t\t" << i->second << std::endl;
 		  }
 		QDPIO::cout << "\n";
 		QDPIO::cout << "Code generator \n";

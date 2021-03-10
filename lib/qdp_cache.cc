@@ -41,6 +41,11 @@ namespace QDP
     __cacheverbose = b;
   }
 
+  std::map<size_t,size_t>& QDPCache::get_alloc_count()
+  {
+    return get__cache_pool_allocator().get_count();
+  }
+
 
   int QDPCache::getPoolDefrags()
   {
