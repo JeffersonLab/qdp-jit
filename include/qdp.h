@@ -88,6 +88,14 @@ using std::ostream;
 // END OF YUKKINESS
 
 
+template<class T>
+void print_type(const T& t)
+{
+  std::cout << __PRETTY_FUNCTION__ << std::endl;
+}
+
+
+
 #include "qdp_jit_config.h"
 
 #include "qdp_jit_function.h"

@@ -29,6 +29,8 @@ namespace QDP {
  * @{
  */
 
+
+
   
   
 //! Outer grid Scalar class */
@@ -252,6 +254,29 @@ namespace QDP {
   };
 
 
+
+  template<class T>
+  class OLiteral: public OScalar<T>
+  {
+  };
+
+#if 1
+  template<>
+  class OLiteral<PScalar< PScalar < RScalar < Word <float> > > > >: public OScalar< PScalar< PScalar < RScalar < Word <float> > > > >
+  {
+    mutable PScalar< PScalar < RScalar < Word <float> > > > F;
+  public:
+    typedef PScalar< PScalar < RScalar < Word <float> > > > SubType_t;
+
+    OLiteral( const PScalar< PScalar < RScalar < Word <float> > > >& a ): OScalar< PScalar< PScalar < RScalar < Word <float> > > > >(), F(a) {}
+
+    float get_val() const { return F.elem().elem().elem().elem() ; }
+  };
+#endif
+  
+
+
+
 //! Ascii input
 /*! Treat all istreams here like all nodes can read. To use specialized ones
  *  that can broadcast, use TextReader */
@@ -366,6 +391,10 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
   op(dest.elem(), forEach(rhs, ElemLeaf(), OpCombine()));
 }
 #endif
+
+
+
+
 
 
 //-------------------------------------------------------------------------------------
@@ -614,6 +643,16 @@ struct LeafFunctor<OScalar<T>, ShiftPhase1>
 };
 
 template<class T>
+struct LeafFunctor<OLiteral<T>, ShiftPhase1>
+{
+  typedef int Type_t;
+  inline static Type_t apply(const OLiteral<T> &a, const ShiftPhase1 &f) {
+    return 0;
+  }
+};
+
+
+template<class T>
 struct LeafFunctor<OLattice<T>, ShiftPhase1>
 {
   typedef int Type_t;
@@ -631,6 +670,16 @@ struct LeafFunctor<OScalar<T>, ShiftPhase2>
     return 0;
   }
 };
+
+template<class T>
+struct LeafFunctor<OLiteral<T>, ShiftPhase2>
+{
+  typedef int Type_t;
+  inline static Type_t apply(const OLiteral<T> &a, const ShiftPhase2 &f) {
+    return 0;
+  }
+};
+
 
 template<class T>
 struct LeafFunctor<OLattice<T>, ShiftPhase2>
@@ -656,6 +705,14 @@ struct JITType<OScalar<T> >
 {
   typedef OScalarJIT<typename JITType<T>::Type_t>  Type_t;
 };
+
+
+template<class T> 
+struct JITType<OLiteral<T> >
+{
+  typedef OLiteralJIT<typename JITType<T>::Type_t>  Type_t;
+};
+
 
 
 /*! @} */  // end of group olattice
@@ -689,6 +746,36 @@ struct LeafFunctor<OScalar<T>, ParamLeaf>
 
 
 template<class T>
+struct LeafFunctor<OLiteral<T>, ParamLeaf>
+{
+  typedef typename JITType< OLiteral<T> >::Type_t  TypeA_t;
+  typedef TypeA_t  Type_t;
+  inline static
+  Type_t apply(const OLiteral<T>& do_not_use, const ParamLeaf& p) 
+  {
+    return Type_t( llvm_add_param< typename WordType<T>::Type_t >() );
+  }
+};
+
+
+#if 0
+template<>
+struct LeafFunctor< OScalar< PScalar< PScalar< RScalar< Word<float> > > > > , ParamLeaf >
+{
+  typedef typename JITType< OScalar< PScalar< PScalar< RScalar< Word<float> > > > > >::Type_t  TypeA_t;
+  typedef TypeA_t  Type_t;
+  inline static
+  Type_t apply(const OScalar< PScalar< PScalar< RScalar< Word<float> > > > >& do_not_use, const ParamLeaf& p) 
+  {
+    std::cout << "special: " << __PRETTY_FUNCTION__ << std::endl;
+    ParamRef val = llvm_add_param< typename WordType< PScalar< PScalar< RScalar< Word<float> > > > >::Type_t >();
+    return Type_t( val );
+  }
+};
+#endif
+
+
+template<class T>
 struct LeafFunctor<OLattice<T>, AddressLeaf>
 {
   typedef int Type_t;
@@ -713,6 +800,21 @@ struct LeafFunctor<OScalar<T>, AddressLeaf>
 };
 
 
+
+template<>
+struct LeafFunctor<OLiteral< PScalar< PScalar < RScalar < Word <float> > > > >, AddressLeaf>
+{
+  typedef int Type_t;
+  inline static
+  Type_t apply(const OLiteral< PScalar< PScalar < RScalar < Word <float> > > > >& s, const AddressLeaf& p)
+  {
+    p.setLit( s.get_val() );
+    return 0;
+  }
+};
+
+
+
 //-----------------------------------------------------------------------------
 // We need to specialize CreateLeaf<T> for our class, so that operators
 // know what to stick in the leaves of the expression tree.
@@ -726,6 +828,15 @@ struct CreateLeaf<OScalar<T> >
   inline static
   Leaf_t make(const OScalar<T> &a) { return Leaf_t(a); }
 };
+
+template<class T>
+struct CreateLeaf<OLiteral<T> >
+{
+  typedef OLiteral<T> Leaf_t;
+  inline static
+  Leaf_t make(const OLiteral<T> &a) { return Leaf_t(a); }
+};
+
 
 template<class T>
 struct CreateLeaf<OLattice<T> >
@@ -780,6 +891,13 @@ struct WordType<OScalar<T> >
 {
   typedef typename WordType<T>::Type_t  Type_t;
 };
+
+template<class T>
+struct WordType<OLiteral<T> > 
+{
+  typedef typename WordType<T>::Type_t  Type_t;
+};
+
 
 template<class T>
 struct WordType<OLattice<T> > 
@@ -907,6 +1025,35 @@ template<class T1, class T2, class Op>
 struct BinaryReturn<OLattice<T1>, OScalar<T2>, Op> {
   typedef OLattice<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
 };
+
+
+
+// Default binary(OLiteral,OLattice) -> OLattice
+template<class T1, class T2, class Op>
+struct BinaryReturn<OLiteral<T1>, OLattice<T2>, Op> {
+  typedef OLattice<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
+};
+
+// Default binary(OLattice,OLiteral) -> OLattice
+template<class T1, class T2, class Op>
+struct BinaryReturn<OLattice<T1>, OLiteral<T2>, Op> {
+  typedef OLattice<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
+};
+
+// Default binary(OLiteral,OScalar) -> OScalar
+template<class T1, class T2, class Op>
+struct BinaryReturn<OLiteral<T1>, OScalar<T2>, Op> {
+  typedef OScalar<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
+};
+
+// Default binary(OScalar,OLiteral) -> OScalar
+template<class T1, class T2, class Op>
+struct BinaryReturn<OScalar<T1>, OLiteral<T2>, Op> {
+  typedef OScalar<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
+};
+
+
+
 
 
 // Default trinary(OLattice,OLattice,OLattice) -> OLattice

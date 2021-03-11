@@ -31,9 +31,12 @@ namespace QDP {
       //      setup_m=true;
     }
 
-    // WordREG(const llvm::Value *& rhs): val(jit_type<T>::value) {
-    //   setup(rhs);
-    // }
+
+    explicit WordREG(llvm::Value * rhs)
+    {
+      setup(rhs);
+    }
+
 
     void setup(llvm::Value * v) {
       //std::cout << __PRETTY_FUNCTION__ << "\n";

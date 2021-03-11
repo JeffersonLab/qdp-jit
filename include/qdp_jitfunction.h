@@ -142,8 +142,6 @@ namespace QDP {
 
 
 
-
-
   
 template<class T, class T1, class Op, class RHS>
 void
@@ -180,6 +178,8 @@ function_build(JitFunction& function, OLattice<T>& dest, const Op& op, const QDP
   typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
   View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
+  print_type(rhs_view);
+  
   llvm::Value * r_ordered      = llvm_derefParam( p_ordered );
   llvm::Value * r_th_count     = llvm_derefParam( p_th_count );
   llvm::Value * r_start        = llvm_derefParam( p_start );

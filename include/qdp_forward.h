@@ -96,6 +96,7 @@ namespace QDP
 
   // Outer
   template<class T> class OScalar;
+  template<class T> class OLiteral;
   template<class T> class OLattice;
   template<class T> class OScalarJIT;
   template<class T> class OLatticeJIT;

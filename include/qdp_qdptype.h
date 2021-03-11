@@ -48,10 +48,10 @@ public:
   // Operators
 
   inline
-  C& assign(const typename WordType<C>::Type_t& rhs)
+  C& assign(const typename WordType<T>::Type_t& rhs)
     {
       C* me = static_cast<C*>(this);
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+      typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
       evaluate(*me,OpAssign(),PETE_identity(Scalar_t(rhs)),all);
       return *me;
     }
@@ -106,10 +106,10 @@ public:
 
 
   inline
-  C& operator+=(const typename WordType<C>::Type_t& rhs)
+  C& operator+=(const typename WordType<T>::Type_t& rhs)
     {
       C* me = static_cast<C*>(this);
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+      typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
       evaluate(*me,OpAddAssign(),PETE_identity(Scalar_t(rhs)),all);
       return *me;
     }
@@ -134,10 +134,10 @@ public:
 
 
   inline
-  C& operator-=(const typename WordType<C>::Type_t& rhs)
+  C& operator-=(const typename WordType<T>::Type_t& rhs)
     {
       C* me = static_cast<C*>(this);
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+      typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
       evaluate(*me,OpSubtractAssign(),PETE_identity(Scalar_t(rhs)),all);
       return *me;
     }
@@ -162,10 +162,10 @@ public:
 
 
   inline
-  C& operator*=(const typename WordType<C>::Type_t& rhs)
+  C& operator*=(const typename WordType<T>::Type_t& rhs)
     {
       C* me = static_cast<C*>(this);
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+      typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
       evaluate(*me,OpMultiplyAssign(),PETE_identity(Scalar_t(rhs)),all);
       return *me;
     }
@@ -190,10 +190,10 @@ public:
 
 
   inline
-  C& operator/=(const typename WordType<C>::Type_t& rhs)
+  C& operator/=(const typename WordType<T>::Type_t& rhs)
     {
       C* me = static_cast<C*>(this);
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+      typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
       evaluate(*me,OpDivideAssign(),PETE_identity(Scalar_t(rhs)),all);
       return *me;
     }
@@ -218,10 +218,10 @@ public:
 
 
   inline
-  C& operator%=(const typename WordType<C>::Type_t& rhs)
+  C& operator%=(const typename WordType<T>::Type_t& rhs)
     {
       C* me = static_cast<C*>(this);
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+      typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
       evaluate(*me,OpModAssign(),PETE_identity(Scalar_t(rhs)),all);
       return *me;
     }
@@ -246,10 +246,10 @@ public:
 
 
   inline
-  C& operator|=(const typename WordType<C>::Type_t& rhs)
+  C& operator|=(const typename WordType<T>::Type_t& rhs)
     {
       C* me = static_cast<C*>(this);
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+      typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
       evaluate(*me,OpBitwiseOrAssign(),PETE_identity(Scalar_t(rhs)),all);
       return *me;
     }
@@ -274,10 +274,10 @@ public:
 
 
   inline
-  C& operator&=(const typename WordType<C>::Type_t& rhs)
+  C& operator&=(const typename WordType<T>::Type_t& rhs)
     {
       C* me = static_cast<C*>(this);
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+      typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
       evaluate(*me,OpBitwiseAndAssign(),PETE_identity(Scalar_t(rhs)),all);
       return *me;
     }
@@ -302,10 +302,10 @@ public:
 
 
   inline
-  C& operator^=(const typename WordType<C>::Type_t& rhs)
+  C& operator^=(const typename WordType<T>::Type_t& rhs)
     {
       C* me = static_cast<C*>(this);
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+      typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
       evaluate(*me,OpBitwiseXorAssign(),PETE_identity(Scalar_t(rhs)),all);
       return *me;
     }
@@ -330,10 +330,10 @@ public:
 
 
   inline
-  C& operator<<=(const typename WordType<C>::Type_t& rhs)
+  C& operator<<=(const typename WordType<T>::Type_t& rhs)
     {
       C* me = static_cast<C*>(this);
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+      typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
       evaluate(*me,OpLeftShiftAssign(),PETE_identity(Scalar_t(rhs)),all);
       return *me;
     }
@@ -358,10 +358,10 @@ public:
 
 
   inline
-  C& operator>>=(const typename WordType<C>::Type_t& rhs)
+  C& operator>>=(const typename WordType<T>::Type_t& rhs)
     {
       C* me = static_cast<C*>(this);
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+      typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
       evaluate(*me,OpRightShiftAssign(),PETE_identity(Scalar_t(rhs)),all);
       return *me;
     }

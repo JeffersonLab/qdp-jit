@@ -327,6 +327,20 @@ struct LeafFunctor<OScalar<T>, PrintTag>
 };
 
 template<class T>
+struct LeafFunctor<OLiteral<T>, PrintTag>
+{
+  typedef int Type_t;
+  static int apply(const OLiteral<T> &s, const PrintTag &f)
+    { 
+      f.os_m << "OLiteral<";
+      LeafFunctor<T,PrintTag>::apply(T(),f);
+      f.os_m << ">"; 
+      return 0;
+    }
+};
+
+
+template<class T>
 struct LeafFunctor<OLattice<T>, PrintTag>
 {
   typedef int Type_t;

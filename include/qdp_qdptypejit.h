@@ -113,7 +113,6 @@ namespace QDP {
       return F;
     }
 
-
   private:
     ParamRef    base_m;
     

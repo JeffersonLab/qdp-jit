@@ -33,6 +33,27 @@ namespace QDP {
 
 
 
+  
+  template<class T>
+  class OLiteralJIT//: public QDPTypeJIT<T, OLiteralJIT<T> >
+  {
+    ParamRef param;
+  public:
+    OLiteralJIT( ParamRef p ) : param(p) {}
+
+    OLiteralJIT(const OLiteralJIT& rhs) : param(rhs.param) {}
+
+    llvm::Value* get_val() const
+    {
+      return llvm_derefParam(param);
+    }
+    
+  private:
+    void operator=(const OLiteralJIT& a) {}
+  };
+
+  
+
 
   template<class T>
   struct WordType<OLatticeJIT<T> >
@@ -42,6 +63,12 @@ namespace QDP {
   
   template<class T>
   struct WordType<OScalarJIT<T> >
+  {
+    typedef typename WordType<T>::Type_t  Type_t;
+  };
+
+  template<class T>
+  struct WordType<OLiteralJIT<T> >
   {
     typedef typename WordType<T>::Type_t  Type_t;
   };
