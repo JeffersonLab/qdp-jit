@@ -35,7 +35,7 @@ namespace QDP
       QDPDefaultAllocator() {init();}
       ~QDPDefaultAllocator() {}
 
-      friend struct QDP::CreateUsingNew<QDP::Allocator::QDPDefaultAllocator>;
+      friend struct QDP::SingletonHolder<QDP::Allocator::QDPDefaultAllocator>;
     public:
 
       // Pusher
@@ -62,18 +62,8 @@ namespace QDP
       void init();
     };
 
-    // Turn into a Singleton. Create with CreateUsingNew
-    // Has NoDestroy lifetime, as it may be needed for 
-    // the destruction policy is No Destroy, so the 
-    // Singleton is not cleaned up on exit. This is so 
-    // that static objects can refer to it with confidence
-    // in their own destruction, not having to worry that
-    // atexit() may have destroyed the allocator before
-    // the static objects need to feed memory. 
-    typedef SingletonHolder<QDP::Allocator::QDPDefaultAllocator,
-			    QDP::CreateUsingNew,
-			    QDP::NoDestroy,
-			    QDP::SingleThreaded> theQDPAllocator;
+    // Turn into a Singleton.
+    typedef SingletonHolder<QDP::Allocator::QDPDefaultAllocator> theQDPAllocator;
 
   } // namespace Allocator
 } // namespace QDP

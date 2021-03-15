@@ -455,6 +455,9 @@ namespace COUNT {
                 H5close();
 #endif
 
+		// Finalize pool allocator
+		Allocator::theQDPAllocator::DestroySingleton();
+
 		printProfile();
 		
 		isInit = false;

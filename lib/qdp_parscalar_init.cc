@@ -828,6 +828,9 @@ namespace QDP {
                 H5close();
 #endif
 
+		// Finalize pool allocator
+		Allocator::theQDPAllocator::DestroySingleton();
+
 		printProfile();
 		
 		QMP_finalize_msg_passing();
