@@ -42,18 +42,18 @@ namespace FILEDB
     /**
      * Get the serial id of this class
      */
-    virtual const unsigned short serialID (void) const = 0;
+    virtual unsigned short serialID (void) const = 0;
 
     /**
      * Return this object into a binary form
      */
-    virtual void writeObject (std::string& output) const throw (SerializeException) = 0;
+    virtual void writeObject (std::string& output) const = 0;
 
 
     /**
      * Convert input object retrieved from database or network into an object
      */
-    virtual void readObject (const std::string& input) throw (SerializeException) = 0;
+    virtual void readObject (const std::string& input) = 0;
 
 
   protected:
@@ -355,6 +355,28 @@ o     *
 	QDP_abort(1);
       }
   };
+
+  //--------------------------------------------------------------------------------
+  //!  Local DB Base class
+  /*!
+    This class is used for writing of user data (most usefully measurements)
+    into a DB file with a key/value semantics.
+    NOTE: NOT COLLECTIVE, all operations done on the scope of the current process.
+          Use BinaryStoreDB for a collective behaviour.
+  */
+  template <typename K, typename D>
+  class LocalBinaryStoreDB : public BinaryStoreDB<K, D>
+  {
+    /**
+     * Constructor
+     *
+     * @param do_init: whether to set cache
+     */
+    LocalBinaryStoreDB(bool = false)
+    {
+    }
+  };
+
 }  // namespace QDP
 
 #endif
