@@ -61,9 +61,7 @@ namespace COUNT {
 	{{0,0}, {0,0}, {1,0},{0,0}},
 	{{0,0}, {0,0}, {0,0},{1,0}} } };
 
-
-
-  SpinMatrix QDP_Gamma_values[Ns*Ns];
+  SpinMatrix* QDP_Gamma_values = nullptr;
 
   extern SpinMatrix& Gamma(int i) {
     if (i<0 || i>15)
@@ -180,6 +178,7 @@ namespace COUNT {
     //QDP_info_primary("Finished setting gamma matrices");
     //QDP_info_primary("Multiplying gamma matrices");
 
+    QDP_Gamma_values = new SpinMatrix[Ns*Ns];
     QDP_Gamma_values[0]=dgr[4]; // Unity
     for (int i=1;i<16;i++) {
       zero_rep(QDP_Gamma_values[i]);
@@ -450,6 +449,9 @@ namespace COUNT {
 			QDPIO::cerr << "QDP is not inited" << std::endl;
 			QDP_abort(1);
 		}
+		
+		// Deallocate gammas
+		delete [] QDP_Gamma_values;
 		
 		QDPIO::cout << "------------------\n";
 		QDPIO::cout << "-- JIT statistics:\n";
