@@ -88,14 +88,6 @@ using std::ostream;
 // END OF YUKKINESS
 
 
-template<class T>
-void print_type(const T& t)
-{
-  std::cout << __PRETTY_FUNCTION__ << std::endl;
-}
-
-
-
 #include "qdp_jit_config.h"
 
 #include "qdp_jit_function.h"
@@ -157,7 +149,6 @@ namespace QDP {
 
 #include "qdp_traits.h"
 #include "qdp_qdpexpr.h"
-#include "qdp_qdptypejit.h"
 #include "qdp_qdptype.h"
 #include "qdp_qdpsubtypejit.h"
 #include "qdp_qdpsubtype.h"

@@ -152,6 +152,19 @@ AC_ARG_ENABLE(cuda-special,
 )
 
 
+AC_ARG_ENABLE(deep-log,
+  AC_HELP_STRING([--enable-deep-log],
+    [Deep log facility.]),
+  [ac_deep_log="yes"],
+  [ac_deep_log="no"]
+)
+
+if test "X${ac_deep_log}X" = "XyesX"; then
+  AC_MSG_NOTICE([Enabling deep log facility])
+  AC_DEFINE(QDP_DEEP_LOG, [1], [ Deep log facility ])
+fi
+
+
 AC_ARG_ENABLE(cuda-sm,
   AC_HELP_STRING([--enable-cuda-sm=<arch>],
     [Build special CUDA function for compute capability <sm_50/...>]),
@@ -690,6 +703,8 @@ AM_CONDITIONAL(QDP_USE_HDF5, [test "x${ac_build_hdf5}x" = "xyesx" ])
 AM_CONDITIONAL(QDP_CUSTOM_KERNELS, [test "x${ac_custom}x" = "xyesx" ])
 
 AM_CONDITIONAL(QDP_CUDA_SPECIAL, [test "x${ac_cuda_special}x" = "xyesx" ])
+
+AM_CONDITIONAL(QDP_DEEP_LOG, [test "x${ac_deep_log}x" = "xyesx" ])
 
 AM_CONDITIONAL(QDP_BACKEND_CUDA, [test "x${backend_use}x" = "xCUDAx" ])
 

@@ -21,21 +21,9 @@ namespace QDP {
     // Default constructing should be possible
     // then there is no need for MPL index when
     // construction a PMatrix<T,N>
-    WordJIT(): 
-      setup_m(false)
-      // r_base(jit_ptx_type::u64),
-      // offset_full(jit_ptx_type::s32),
-      // offset_level(jit_ptx_type::s32)
+    WordJIT(): setup_m(false)
     {
     }
-
-#if 0
-    void stack_setup( const llvm::Value *& base_m , IndexDomainVector args ) {
-      r_base = base_m;
-      offset = datalayout_stack( args );
-      setup_m = true;
-    }
-#endif
 
     void setup( llvm::Value * base_m , JitDeviceLayout lay , IndexDomainVector args ) {
       r_base = base_m;
@@ -43,26 +31,17 @@ namespace QDP {
       setup_m = true;
     }
 
-    // void setup( llvm::Value * r_base_, llvm::Value * full_, llvm::Value * level_ ) {
-    //   r_base        = r_base_;
-    //   offset_full   = full_;
-    //   offset_level  = level_;
-    //   setup_m = true;
-    // }
-
-
-    // llvm::Value * getAddress() const {
-    //   llvm::Value * ws         = llvm::Value *( sizeof(typename WordType<T>::Type_t) );
-    //   llvm::Value * lev_mul_ws = llvm_mul ( offset_level , ws );
-    //   llvm::Value * address    = llvm_add( r_base , lev_mul_ws );
-    //   return address;
-    // }
-
-    // llvm::Value * getOffset() const {
-    //   llvm::Value * ws         = llvm_create_value( sizeof(typename WordType<T>::Type_t) );
-    //   llvm::Value * lev_mul_ws = llvm_mul ( offset_level , ws );
-    //   return lev_mul_ws;
-    // }
+    
+    llvm::Value* get_base() const
+    {
+      if (!setup_m)
+	{
+	  QDPIO::cerr << "internal error: WordJIT not setup but requesting base" << std::endl;
+	  QDP_abort(1);
+	}
+      return r_base;
+    }
+    
 
 
     template<class T1>

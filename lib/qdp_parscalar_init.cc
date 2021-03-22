@@ -139,6 +139,9 @@ namespace COUNT {
     std::cout << "Setting GPU device to " << dev << "\n";
     gpu_set_device( dev );
 
+    // Sync init
+    jit_util_sync_init();
+    
     return dev;
   }
 
@@ -345,12 +348,30 @@ namespace COUNT {
 	  {
 	    llvm_set_clang_codegen();
 	  }
+	else if (strcmp((*argv)[i], "-pool-stats")==0) 
+	  {
+	    jit_set_config_pool_stats();
+	  }
 	else if (strcmp((*argv)[i], "-clang-opt")==0)
 	  {
 	    char tmp[1024];
 	    sscanf((*argv)[++i], "%s", &tmp[0]);
 	    llvm_set_clang_opt(tmp);
 	  }
+#ifdef QDP_DEEP_LOG
+	else if (strcmp((*argv)[i], "-deep-log-create")==0)
+	  {
+	    char tmp[1024];
+	    sscanf((*argv)[++i], "%s", &tmp[0]);
+	    jit_config_deep_set( tmp , true );
+	  }
+	else if (strcmp((*argv)[i], "-deep-log-compare")==0)
+	  {
+	    char tmp[1024];
+	    sscanf((*argv)[++i], "%s", &tmp[0]);
+	    jit_config_deep_set( tmp , false );
+	  }
+#endif
 	else if (strcmp((*argv)[i], "-optlevel")==0)
 	  {
 	    unsigned val;
@@ -595,6 +616,10 @@ namespace COUNT {
 	//! Turn off the machine
 	void QDP_finalize()
 	{
+#ifdef QDP_DEEP_LOG
+	  gpu_deep_logger_close();
+#endif
+
 		if ( ! QDP_isInitialized() )
 		{
 			QDPIO::cerr << "QDP is not inited" << std::endl;
@@ -616,6 +641,9 @@ namespace COUNT {
 		  {
 		QDPIO::cout << "  memory pool defragmentation count:       " << QDP_get_global_cache().getPoolDefrags() << "\n";
 		  }
+		
+		if (jit_config_pool_stats())
+		  {
 		QDPIO::cout << "  memory allocation count: \n";
 		auto& count = QDP_get_global_cache().get_alloc_count();
 		for ( auto i = count.begin() ; i != count.end() ; ++i )
@@ -623,6 +651,8 @@ namespace COUNT {
 		    QDPIO::cout << "  " << i->first << " bytes \t\t" << i->second << std::endl;
 		  }
 		QDPIO::cout << "\n";
+		  }
+		
 		QDPIO::cout << "Code generator \n";
 		QDPIO::cout << "  functions jit-compiled:                  " << get_jit_stats_jitted() << "\n";
 		if (get_ptx_db_enabled())
@@ -758,6 +788,9 @@ namespace COUNT {
 		
 		FnMapRsrcMatrix::Instance().cleanup();
 
+		// Sync done
+		jit_util_sync_done();
+		
 #if defined(QDP_USE_HDF5)
                 H5close();
 #endif

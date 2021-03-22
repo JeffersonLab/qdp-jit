@@ -53,6 +53,7 @@ namespace QDP {
     function_lat_sca_exec(function, dest, op, rhs, s);
   }
 
+  
 
 
   template<class T, class T1, class Op, class RHS>

@@ -17,7 +17,16 @@ namespace QDP
   
   void jit_config_print();
 
+  bool jit_config_pool_stats();
+  void jit_set_config_pool_stats();
   
+#ifdef QDP_DEEP_LOG
+  bool        jit_config_deep_log();
+  bool        jit_config_deep_log_create();
+  std::string jit_config_deep_log_name();
+
+  void        jit_config_deep_set( std::string name , bool create );
+#endif  
 }
 
 

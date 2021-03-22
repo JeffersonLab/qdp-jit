@@ -5,63 +5,38 @@
 namespace QDP {
 
   template<class T>
-  class OSubLatticeJIT: public QDPTypeJIT<T, OSubLatticeJIT<T> >
+  class OSubLatticeJIT//: public QDPTypeJIT<T, OSubLatticeJIT<T> >
   {
   public:
-    OSubLatticeJIT( ParamRef base_ ) : QDPTypeJIT<T, OSubLatticeJIT<T> >(base_) {}
-    OSubLatticeJIT( const OSubLatticeJIT& rhs ) : QDPTypeJIT<T, OSubLatticeJIT<T> >(rhs) {}
+    OSubLatticeJIT( ParamRef base_ ) : base_m(base_) {}
+    OSubLatticeJIT( const OSubLatticeJIT& rhs ) : base_m(rhs.base_m) {}
+
+    T& elem( JitDeviceLayout lay , llvm::Value * index ) {
+      IndexDomainVector args;
+      args.push_back( make_pair( Layout::sitesOnNode() , index ) );
+      F.setup( llvm_derefParam(base_m) , lay , args );
+      return F;
+    }
+
+    const T& elem( JitDeviceLayout lay , llvm::Value * index ) const {
+      IndexDomainVector args;
+      args.push_back( make_pair( Layout::sitesOnNode() , index ) );
+      F.setup( llvm_derefParam(base_m) , lay , args );
+      return F;
+    }
+
+    void set_base( ParamRef p ) const
+    {
+      base_m = p;
+    }
 
   private:
-    void operator=(const OSubLatticeJIT& a);
+    mutable ParamRef    base_m;
+    mutable T           F;
   };
 
 
 
-
-#if 0
-  template<class T>
-  class OSubScalarJIT: public QDPTypeJIT<T, OSubScalarJIT<T> >
-  {
-  public:
-    OSubScalarJIT( ParamRef base_ ) : QDPTypeJIT<T, OSubScalarJIT<T> >(base_) {}
-
-    OSubScalarJIT(const OSubScalarJIT& rhs) : QDPTypeJIT<T, OSubScalarJIT<T> >(rhs) {}
-
-  private:
-    void operator=(const OSubScalarJIT& a) {}
-  };
-#endif
-
-  
-  template<class T>
-  struct WordType<OSubLatticeJIT<T> >
-  {
-    typedef typename WordType<T>::Type_t  Type_t;
-  };
-
-  
-#if 0
-  template<class T>
-  struct WordType<OSubScalarJIT<T> >
-  {
-    typedef typename WordType<T>::Type_t  Type_t;
-  };
-#endif
-
-
-  // Default binary(OSubLattice,OSubLattice) -> OSubLattice
-  template<class T1, class T2, class Op>
-  struct BinaryReturn<OSubLatticeJIT<T1>, OSubLatticeJIT<T2>, Op> {
-    typedef OSubLatticeJIT<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
-  };
-
-  
-#if 0
-  template<class T1, class T2, class Op>
-  struct BinaryReturn<OSubScalarJIT<T1>, OSubScalarJIT<T2>, Op> {
-    typedef OSubScalarJIT<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
-  };
-#endif
   
 
 }

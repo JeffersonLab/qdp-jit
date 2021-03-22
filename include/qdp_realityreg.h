@@ -25,12 +25,16 @@ public:
     F.setup( rhs.elem() );
   }
 
+  void setup_value(const RScalarJIT< typename JITType<T>::Type_t >& rhs ) {
+    F.setup_value( rhs.elem() );
+  }
+
+  
   RScalarREG(const RScalarJIT< typename JITType<T>::Type_t >& rhs ) {
     setup( rhs.elem() );
   }
 
   RScalarREG(const typename WordType<T>::Type_t& rhs): F(rhs) {}
-
 
   
   // RScalarREG& operator=( const RScalarJIT< typename JITType<T>::Type_t >& rhs) {
@@ -337,6 +341,12 @@ public:
     im.setup( rhs.imag() );
   }
 
+  void setup_value(const RComplexJIT< typename JITType<T>::Type_t >& rhs ) {
+    re.setup_value( rhs.real() );
+    im.setup_value( rhs.imag() );
+  }
+
+  
   // RComplexREG& operator=( const RComplexJIT< typename JITType<T>::Type_t >& rhs) {
   //   setup(rhs);
   //   return *this;

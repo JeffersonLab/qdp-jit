@@ -131,9 +131,19 @@ public:
 
 private:
   T F[N];
- 
 };
 
+
+template <class T, int N, template<class,int> class C>
+struct FirstWord<PVector<T,N,C> >
+{
+  static typename WordType<T>::Type_t get(const PVector<T,N,C>& a)
+  {
+    return FirstWord<T>::get(a.elem());
+  }
+};
+
+  
 
 //! Stream input
 template<class T, int N, template<class,int> class C>  

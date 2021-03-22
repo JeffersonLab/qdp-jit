@@ -41,6 +41,13 @@ public:
       this->elem(i).setup( j.elem(i) );
   }
 
+  
+  void setup_value( const typename JITType< PSpinVectorREG >::Type_t& j ) {
+    for (int i = 0 ; i < N ; i++ )
+      this->elem(i).setup_value( j.elem(i) );
+  }
+
+  
 
   template<class T1>
   PSpinVectorREG(const PSpinVectorREG<T1,N>& a)

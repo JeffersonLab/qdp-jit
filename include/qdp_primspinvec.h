@@ -104,6 +104,18 @@ private:
   T F[N] QDP_ALIGN16; 
 };
 
+
+  template<class T, int N>
+  struct FirstWord<PSpinVector<T,N> >
+  {
+    static typename WordType<T>::Type_t get(const PSpinVector<T,N>& a)
+    {
+      return FirstWord<T>::get(a.elem(0));
+    }
+  };
+
+  
+
 //! Stream input
 template<class T, int N>  
 inline

@@ -19,7 +19,10 @@ namespace QDP {
 
     
     //Default constructor
-    BaseJIT(): setup_m(false) {}
+    BaseJIT(): setup_m(false)
+    {
+      //std::cout << "BaseJIT()  " << __PRETTY_FUNCTION__ << "\n";
+    }
 
     
     //Copy constructor
@@ -29,6 +32,7 @@ namespace QDP {
 				 layout(rhs.layout),
 				 F(rhs.F)
     {
+      //std::cout << "BaseJIT(const BaseJIT&) " << __PRETTY_FUNCTION__ << "\n";
     }
 
     
@@ -49,28 +53,39 @@ namespace QDP {
 
 
     
+    T& arrayF(int i)
+    {
+      assert(setup_m);
+      return F[i];
+    }
     
+    const T& arrayF(int i) const
+    {
+      assert(setup_m);
+      return F[i];
+    }
 
 
-    T& arrayF(int i) { assert(setup_m); return F[i]; }
-    const T& arrayF(int i) const { assert(setup_m); return F[i]; }
 
-
-
-    void setup( llvm::Value * base , JitDeviceLayout lay , IndexDomainVector args = IndexDomainVector() ) {
+    void setup( llvm::Value * base , JitDeviceLayout lay , IndexDomainVector args = IndexDomainVector() )
+    {
       m_base = base;
       layout = lay;
       partial_offset = args;
-      for (int i = 0 ; i < N ; i++ ) {
-	IndexDomainVector args_curry = args;
-	args_curry.push_back( make_pair( N , llvm_create_value(i) ) );
-	F[i].setup( m_base , lay , args_curry );
-      }
+      
+      for (int i = 0 ; i < N ; i++ )
+	{
+	  IndexDomainVector args_curry = args;
+	  args_curry.push_back( make_pair( N , llvm_create_value(i) ) );
+	  F[i].setup( m_base , lay , args_curry );
+	}
+      
       setup_m = true;
     }
 
 
-    T getJitElem( llvm::Value * index ) {
+    T getJitElem( llvm::Value * index )
+    {
       if (!setup_m)
 	{
 	  QDPIO::cerr << "qdp-jit internal error: BaseJIT::getJitElem elem not set up.\n";
@@ -84,7 +99,8 @@ namespace QDP {
     }
 
 
-    typename REGType<T>::Type_t getRegElem( llvm::Value * index ) {
+    typename REGType<T>::Type_t getRegElem( llvm::Value * index )
+    {
       if (!setup_m)
 	{
 	  QDPIO::cerr << "qdp-jit internal error: BaseJIT::getJitElem elem not set up.\n";

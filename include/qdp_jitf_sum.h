@@ -37,6 +37,11 @@ namespace QDP {
 	  return;
       }
 
+#ifdef QDP_DEEP_LOG
+    function.size_T = sizeof(T2);
+    function.type_W = typeid(typename WordType<T2>::Type_t).name();
+#endif
+    
     llvm_start_new_function("sum_convert_ind",__PRETTY_FUNCTION__ );
 
     ParamRef p_lo     = llvm_add_param<int>();
@@ -148,6 +153,12 @@ namespace QDP {
 	  return;
       }
 
+    
+#ifdef QDP_DEEP_LOG
+    function.size_T = sizeof(T2);
+    function.type_W = typeid(typename WordType<T2>::Type_t).name();
+#endif
+    
     llvm_start_new_function("sum_convert",__PRETTY_FUNCTION__ );
 
     ParamRef p_lo     = llvm_add_param<int>();
@@ -256,6 +267,12 @@ namespace QDP {
 	  return;
       }
 
+    
+#ifdef QDP_DEEP_LOG
+    function.size_T = sizeof(T1);
+    function.type_W = typeid(typename WordType<T1>::Type_t).name();
+#endif
+    
     llvm_start_new_function("sum",__PRETTY_FUNCTION__ );
 
     ParamRef p_lo     = llvm_add_param<int>();
@@ -366,6 +383,11 @@ namespace QDP {
 	  return;
       }
 
+#ifdef QDP_DEEP_LOG
+    function.size_T = sizeof(T2);
+    function.type_W = typeid(typename WordType<T2>::Type_t).name();
+#endif
+    
     llvm_start_new_function("bool_reduction_convert",__PRETTY_FUNCTION__ );
 
     ParamRef p_lo     = llvm_add_param<int>();
@@ -474,6 +496,11 @@ namespace QDP {
 	if (!function.empty())
 	  return;
       }
+
+#ifdef QDP_DEEP_LOG
+    function.size_T = sizeof(T1);
+    function.type_W = typeid(typename WordType<T1>::Type_t).name();
+#endif
 
     llvm_start_new_function("bool_reduction",__PRETTY_FUNCTION__ );
 

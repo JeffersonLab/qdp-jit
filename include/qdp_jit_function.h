@@ -59,7 +59,15 @@ namespace QDP {
     std::string get_kernel_name() { return kernel_name; }
     std::string get_pretty() { return pretty; }
     const std::vector<float>& get_timings() const { return timings; }
-    
+
+#ifdef QDP_DEEP_LOG
+    int start;
+    int count;
+    int size_T;
+    int dest_arg;
+    std::string type_W;
+#endif
+
   private:
     void check_empty();
     
@@ -82,6 +90,7 @@ namespace QDP {
     std::string pretty;
 
     std::vector<float> timings;
+
   };
 
 

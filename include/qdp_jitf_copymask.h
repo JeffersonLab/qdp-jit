@@ -56,6 +56,14 @@ namespace QDP {
   {
     AddressLeaf addr_leaf(all);
 
+#ifdef QDP_DEEP_LOG
+    function.start = 0;
+    function.count = Layout::sitesOnNode();
+    function.size_T = sizeof(T);
+    function.type_W = typeid(typename WordType<T>::Type_t).name();
+    function.dest_arg = 2;
+#endif
+
     forEach(dest, addr_leaf, NullCombine());
     forEach(src, addr_leaf, NullCombine());
     forEach(mask, addr_leaf, NullCombine());

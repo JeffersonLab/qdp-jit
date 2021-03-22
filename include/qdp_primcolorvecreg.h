@@ -30,6 +30,12 @@ public:
       this->elem(i).setup( j.elem(i) );
   }
 
+  void setup_value( const typename JITType< PColorVectorREG >::Type_t& j ) {
+    for (int i = 0 ; i < N ; i++ )
+      this->elem(i).setup_value( j.elem(i) );
+  }
+
+  
 
   //! PColorVectorREG = PColorVectorREG
   /*! Set equal to another PColorVectorREG */

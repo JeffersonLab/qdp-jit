@@ -37,6 +37,14 @@ private:
 };
 
 
+template<int N>
+struct FirstWord<GammaType<N> >
+{
+  static int get(const GammaType<N>& a)
+  {
+    return 0;
+  }
+};
 
 
 //-------------------------------------------------------------------------------------
@@ -66,18 +74,17 @@ private:
   const int m;
 };
 
-  // typedef typename ForEach<A, FTag, CTag>::Type_t TypeA_t;
-  // typedef typename ForEach<B, FTag, CTag>::Type_t TypeB_t;
-  // typedef typename Combine2<TypeA_t, TypeB_t, Op, CTag>::Type_t Type_t;
+  
+template<int N>
+struct FirstWord<GammaTypeDP<N> >
+{
+  static int get(const GammaTypeDP<N>& a)
+  {
+    return 0;
+  }
+};
 
-      // QDPTypeJIT<PSpinMatrixJIT<PScalarJIT<RComplexJIT<WordJIT<float> > >,4>,
-      // 		 OScalarJIT<PSpinMatrixJIT<PScalarJIT<RComplexJIT<WordJIT<float> > >,4> > >,
-
-
-      // Reference<QDPTypeJIT<PSpinMatrixJIT<PScalarJIT<RComplexJIT<float> >,4>,
-      // 			   OScalarJIT<PSpinMatrixJIT<PScalarJIT<RComplexJIT<float> >,4> > > >,
-
-
+  
 
 
 //-------------------------------------------------------------------------------------

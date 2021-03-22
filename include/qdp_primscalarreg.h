@@ -30,6 +30,10 @@ namespace QDP {
       F.setup( rhs.elem() );
     }
 
+    void setup_value(const PScalarJIT< typename JITType<T>::Type_t >& rhs ) {
+      F.setup_value( rhs.elem() );
+    }
+
     PScalarREG(const typename WordType<T>::Type_t& rhs): F(rhs) {}
 
 

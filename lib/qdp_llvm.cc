@@ -1729,10 +1729,9 @@ namespace QDP {
 #ifdef QDP_BACKEND_ROCM
   void llvm_build_function_rocm(JitFunction& func)
   {
+    //llvm_module_dump();
     QDPIO::cout << str_pretty << "\n";
 
-    llvm_module_dump();
-    
 #if 0
     {
       QDPIO::cout << "write code to module.bc ...\n";

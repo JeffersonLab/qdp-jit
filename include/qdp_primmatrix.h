@@ -167,7 +167,17 @@ private:
 };
 
 
+  template <class T, int N, template<class,int> class C>
+  struct FirstWord<PMatrix<T,N,C> >
+  {
+    static typename WordType<T>::Type_t get(const PMatrix<T,N,C>& a)
+    {
+      return FirstWord<T>::get(a.elem(0,0));
+    }
+  };
 
+
+  
 
 // Input
 //! Ascii input

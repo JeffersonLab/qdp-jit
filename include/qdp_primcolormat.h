@@ -47,6 +47,17 @@ public:
 
 };
 
+
+  template<class T, int N>
+  struct FirstWord<PColorMatrix<T,N> >
+  {
+    static typename WordType<T>::Type_t get(const PColorMatrix<T,N>& a)
+    {
+      return FirstWord<T>::get(a.elem(0,0));
+    }
+  };
+  
+
 /*! @} */   // end of group primcolormatrix
 
 //-----------------------------------------------------------------------------

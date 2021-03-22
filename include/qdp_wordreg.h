@@ -39,7 +39,6 @@ namespace QDP {
 
 
     void setup(llvm::Value * v) {
-      //std::cout << __PRETTY_FUNCTION__ << "\n";
       val = llvm_cast( llvm_get_type<T>() , v );
       //setup_m=true;
     }
@@ -47,20 +46,14 @@ namespace QDP {
     void setup(const WordJIT<T>& wj) {
       llvm::Value *val_j = llvm_load_ptr_idx( wj.getBaseReg() , wj.getOffset() );
       setup( val_j );
-      //
     }
 
-    // void replace(const WordREG& rhs ) {
-    //   //assert( rhs.get_val()->get_type() == jit_type<T>::value );
-    //   if (val) {
-    // 	llvm_mov_no_create( val , rhs.get_val() );	
-    //   } else {
-    // 	val = rhs.get_val();
-    //   }
-    //   setup_m = true;
-    // }
+    void setup_value(const WordJIT<T>& wj) {
+      llvm::Value *val_j = wj.get_base();
+      setup( val_j );
+    }
 
-
+    
     llvm::Value *get_val() const { return val; }
 
 

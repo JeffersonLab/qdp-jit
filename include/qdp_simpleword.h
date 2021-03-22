@@ -73,7 +73,13 @@ void zero_rep(double& dest)
   dest = 0;
 }
 
-//! No bool(dest) = 0
+#ifdef QDP_DEEP_LOG
+inline
+void zero_rep(bool& dest) 
+{
+  dest = false;
+}
+#endif
 
 
 //! d = (mask) ? s1 : d;

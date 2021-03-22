@@ -61,7 +61,8 @@ namespace QDP
       size_t size;
       size_t elem_size;
       Flags  flags;
-      void*  hstPtr;  // NULL if not allocated
+      std::vector<void*>  vecHstPtr;  // NULL if not allocated
+      //void* hstPtr() { return vecHstPtr.at(0); }
       void*  devPtr;  // NULL if not allocated
       std::list<int>::iterator iterTrack;
       LayoutFptr fptr;
@@ -102,7 +103,7 @@ namespace QDP
     int addDeviceStatic( size_t n_bytes );
     
     int add( size_t size, Flags flags, Status st, const void* ptr_host, const void* ptr_dev, LayoutFptr func );
-    int addArray( size_t element_size , int num_elements );
+    int addArray( size_t element_size , int num_elements , std::vector<void*> hstPtr );
 
     int addMulti( const multi1d<QDPCache::ArgKey>& ids );
 

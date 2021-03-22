@@ -2,7 +2,6 @@
 #define QDP_MULTI_OUTER
 
 
-
 namespace QDP {
 
   /*! @defgroup multi  Multi-dimensional arrays
@@ -15,6 +14,7 @@ namespace QDP {
 
 
   //! Container for a multi-dimensional 1D array
+
 
   template<class T1> class multi1d< OScalar<T1> >
   {
@@ -288,13 +288,18 @@ namespace QDP {
       n1 = ns1;
       //size_t size = n1 * sizeof(T1);
 
-      id = QDP_get_global_cache().addArray( sizeof(T1) , n1 );
-
       delete[] F;
       F = new(nothrow) OScalar<T1>[n1];
       if ( F == 0x0 ) { 
 	QDP_error_exit("Unable to allocate memory in multi1d::resize(%d)\n",ns1);
       }
+
+      std::vector<void*> tmp;
+      for ( int i = 0 ; i < n1 ; ++i )
+	{
+	  tmp.push_back( (void*)F[i].get_raw_F() );
+	}
+      id = QDP_get_global_cache().addArray( sizeof(T1) , n1 , tmp );      
 
       // Initialize all elements as the appropriate array element
 #if 1
@@ -327,9 +332,7 @@ namespace QDP {
     assert( dest.getId() >= 0 );
     QDP_get_global_cache().zero_rep( dest.getId() );
   }
-
   
-
 
   template<class T1> class multi2d< OScalar<T1> >
   {
@@ -386,13 +389,19 @@ namespace QDP {
       n2 = ns2;
       int sz = n1 * n2;
 
-      id = QDP_get_global_cache().addArray( sizeof(T1) , sz );
-
       delete[] F;
       F = new(nothrow) OScalar<T1>[sz];
       if ( F == 0x0 ) { 
 	QDP_error_exit("Unable to allocate memory in multi1d::resize(%d)\n",ns1);
       }
+
+      std::vector<void*> tmp;
+      for ( int i = 0 ; i < sz ; ++i )
+	{
+	  tmp.push_back( (void*)F[i].get_raw_F() );
+	}
+      id = QDP_get_global_cache().addArray( sizeof(T1) , sz , tmp );
+
 
 #if 1
       // Initialize all elements as the appropriate array element
@@ -557,13 +566,19 @@ namespace QDP {
       n3 = ns3;
       int sz = n1 * n2 * n3;
 
-      id = QDP_get_global_cache().addArray( sizeof(T1) , sz );
-
       delete[] F;
       F = new(nothrow) OScalar<T1>[sz];
       if ( F == 0x0 ) { 
 	QDP_error_exit("Unable to allocate memory in multi1d::resize(%d)\n",ns1);
       }
+
+      std::vector<void*> tmp;
+      for ( int i = 0 ; i < sz ; ++i )
+	{
+	  tmp.push_back( (void*)F[i].get_raw_F() );
+	}
+      id = QDP_get_global_cache().addArray( sizeof(T1) , sz , tmp );
+
 
 #if 1
       // Initialize all elements as the appropriate array element
@@ -755,13 +770,19 @@ namespace QDP {
       n4 = ns4;
       int sz = n1 * n2 * n3 * n4;
 
-      id = QDP_get_global_cache().addArray( sizeof(T1) , sz );
-
       delete[] F;
       F = new(nothrow) OScalar<T1>[sz];
       if ( F == 0x0 ) { 
 	QDP_error_exit("Unable to allocate memory in multi1d::resize(%d)\n",ns1);
       }
+
+      std::vector<void*> tmp;
+      for ( int i = 0 ; i < sz ; ++i )
+	{
+	  tmp.push_back( (void*)F[i].get_raw_F() );
+	}
+      id = QDP_get_global_cache().addArray( sizeof(T1) , sz , tmp );
+
 
 #if 1
       // Initialize all elements as the appropriate array element
@@ -893,5 +914,7 @@ namespace QDP {
 
   
 } // QDP
+
+
 
 #endif

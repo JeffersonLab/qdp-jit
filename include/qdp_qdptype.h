@@ -35,10 +35,10 @@ public:
   typedef C Container_t;
 
   //! Main constructor 
-  QDPType(){}
+  QDPType() {}
 
   //! Copy constructor
-  QDPType(const QDPType&) {}
+  QDPType(const QDPType&) = delete;
 
   //! Destructor
   ~QDPType(){}
@@ -388,6 +388,7 @@ public:
   int getId() const        { return static_cast<const C*>(this)->getId();}
   int getElemNum() const   { return static_cast<const C*>(this)->getElemNum();}
 
+  typename WordType<T>::Type_t get_word_value() const { return static_cast<const C*>(this)->get_word_value();}
 
         T& elem(int i)       {return static_cast<const C*>(this)->elem(i);}
   const T& elem(int i) const {return static_cast<const C*>(this)->elem(i);}
@@ -475,8 +476,8 @@ struct LeafFunctor<QDPType<T,C>, EvalLeaf1>
 template<class T>
 struct LeafFunctor<QDPType<T,OLattice<T> >, ParamLeaf>
 {
-  typedef QDPTypeJIT<typename JITType<T>::Type_t,typename JITType<OLattice<T> >::Type_t>  TypeA_t;
-  //typedef typename JITType< OLattice<T> >::Type_t  TypeA_t;
+  //typedef QDPTypeJIT<typename JITType<T>::Type_t,typename JITType<OLattice<T> >::Type_t>  TypeA_t;
+  typedef typename JITType< OLattice<T> >::Type_t  TypeA_t;
   typedef TypeA_t  Type_t;
   inline static Type_t apply(const QDPType<T,OLattice<T> > &a, const ParamLeaf& p)
   {
@@ -488,17 +489,17 @@ struct LeafFunctor<QDPType<T,OLattice<T> >, ParamLeaf>
 template<class T>
 struct LeafFunctor<QDPType<T,OScalar<T> >, ParamLeaf>
 {
-  typedef QDPTypeJIT<typename JITType<T>::Type_t,typename JITType<OScalar<T> >::Type_t>  TypeA_t;
-  //typedef typename JITType< OScalar<T> >::Type_t  TypeA_t;
-  typedef TypeA_t  Type_t;
+  //typedef QDPTypeJIT<typename JITType<T>::Type_t,typename JITType<OScalar<T> >::Type_t>  Type_t;
+  typedef typename JITType< OScalar<T> >::Type_t  Type_t;
   inline static Type_t apply(const QDPType<T,OScalar<T> > &a, const ParamLeaf& p)
   {
-    ParamRef    base_addr = llvm_add_param< typename WordType<T>::Type_t * >();
-    return Type_t( base_addr );
+    return Type_t( llvm_add_param< typename WordType<T>::Type_t * >() );
   }
 };
 
 
+
+  
 
 template<class T, class C>
 struct LeafFunctor<QDPType<T,C>, AddressLeaf>

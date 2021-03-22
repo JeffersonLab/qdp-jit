@@ -16,6 +16,14 @@ namespace QDP
 
     // In case memory allocation fails, decrease Pool size by this amount for next try.
     size_t pool_size_decrement = 10 * 1024*1024;   // 10MB
+
+    bool pool_count_allocations = false;
+    
+#ifdef QDP_DEEP_LOG
+    bool deep_log = false;
+    bool deep_log_create = false;
+    std::string deep_log_name = "qdp-jit-log.dat";
+#endif
   }
 
   void jit_config_print()
@@ -32,6 +40,24 @@ namespace QDP
       }
   }
 
+  bool jit_config_pool_stats() { return pool_count_allocations; }
+  void jit_set_config_pool_stats() { pool_count_allocations = true; }
+
+
+#ifdef QDP_DEEP_LOG
+  bool        jit_config_deep_log() { return deep_log; }
+  bool        jit_config_deep_log_create() { return deep_log_create; }
+  std::string jit_config_deep_log_name() { return deep_log_name; }
+  
+  void        jit_config_deep_set( std::string name , bool create )
+  {
+    deep_log = true;
+    deep_log_create = create;
+    deep_log_name = name;
+  }
+#endif
+
+  
   bool qdp_jit_config_defrag()
   {
     return use_defrag;

@@ -12,6 +12,11 @@ namespace QDP {
   void jit_build_seedMultiply();
 
 
+  void jit_util_sync_init();
+  void jit_util_sync_done();
+  void jit_util_sync_copy();
+
+      
   void jit_stats_lattice2dev();
   void jit_stats_lattice2host();
   void jit_stats_jitted();

@@ -107,9 +107,7 @@ void write(XMLWriter& xml, const string& s, const std::list<Boolean>& d);
 template<>
 struct SimpleScalar<float>
 {
-  typedef OLiteral< PScalar< PScalar< RScalar< Word< float > > > > > Type_t;
-  
-  //typedef Real32   Type_t;
+  typedef Real32   Type_t;
 };
 
 // Construct simple float word

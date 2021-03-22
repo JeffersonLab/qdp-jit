@@ -178,8 +178,6 @@ function_build(JitFunction& function, OLattice<T>& dest, const Op& op, const QDP
   typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
   View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
-  print_type(rhs_view);
-  
   llvm::Value * r_ordered      = llvm_derefParam( p_ordered );
   llvm::Value * r_th_count     = llvm_derefParam( p_th_count );
   llvm::Value * r_start        = llvm_derefParam( p_start );
@@ -209,10 +207,8 @@ function_build(JitFunction& function, OLattice<T>& dest, const Op& op, const QDP
   }
   ordered.end();
   
-
   op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ), 
 	  forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , r_idx ), OpCombine()));
-
 
   jit_get_function( function );
 }
@@ -353,13 +349,21 @@ function_lat_sca_exec(JitFunction& function, OLattice<T>& dest, const Op& op, co
   if (s.numSiteTable() < 1)
     return;
 
+#ifdef QDP_DEEP_LOG
+  function.start = s.start();
+  function.count = s.hasOrderedRep() ? s.numSiteTable() : Layout::sitesOnNode();
+  function.size_T = sizeof(T);
+  function.type_W = typeid(typename WordType<T>::Type_t).name();
+  function.dest_arg = 5;
+#endif
+
+  int th_count = s.hasOrderedRep() ? s.numSiteTable() : Layout::sitesOnNode();
+
   AddressLeaf addr_leaf(s);
 
   forEach(dest, addr_leaf, NullCombine());
   AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
   forEach(rhs, addr_leaf, NullCombine());
-
-  int th_count = s.hasOrderedRep() ? s.numSiteTable() : Layout::sitesOnNode();
 
   JitParam jit_ordered( QDP_get_global_cache().addJitParamBool( s.hasOrderedRep() ) );
   JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
@@ -380,6 +384,8 @@ function_lat_sca_exec(JitFunction& function, OLattice<T>& dest, const Op& op, co
 
 
 
+
+
   
 
 
@@ -387,6 +393,8 @@ template<class T, class T1, class Op, class RHS>
 void
 function_lat_sca_build(JitFunction& function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
 {
+  //std::cout << __PRETTY_FUNCTION__ << std::endl;
+  
   if (ptx_db::db_enabled)
     {
       llvm_ptx_db( function , __PRETTY_FUNCTION__ );
@@ -761,7 +769,20 @@ void
 function_exec(JitFunction& function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
 {
   //QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
+//  if (!s.hasOrderedRep())
+//    {
+//      QDPIO::cout << "no ordered rep " << __PRETTY_FUNCTION__ << std::endl;
+//      QDP_abort(1);
+//    }
 
+#ifdef QDP_DEEP_LOG
+  function.start = s.start();
+  function.count = s.hasOrderedRep() ? s.numSiteTable() : Layout::sitesOnNode();
+  function.size_T = sizeof(T);
+  function.type_W = typeid(typename WordType<T>::Type_t).name();
+  function.dest_arg = 7;
+#endif
+    
   if (s.numSiteTable() < 1)
     return;
 
@@ -987,6 +1008,14 @@ function_zero_rep_exec(JitFunction& function, OLattice<T>& dest, const Subset& s
   if (s.numSiteTable() < 1)
     return;
 
+#ifdef QDP_DEEP_LOG
+  function.start = s.start();
+  function.count = s.hasOrderedRep() ? s.numSiteTable() : Layout::sitesOnNode();
+  function.size_T = sizeof(T);
+  function.type_W = typeid(typename WordType<T>::Type_t).name();
+  function.dest_arg = 5;
+#endif
+  
   AddressLeaf addr_leaf(s);
   forEach(dest, addr_leaf, NullCombine());
 
@@ -1044,6 +1073,14 @@ function_random_exec(JitFunction& function, OLattice<T>& dest, const Subset& s ,
     QDP_error_exit("random on subset with unordered representation not implemented");
 
   //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+
+#ifdef QDP_DEEP_LOG
+  function.start = s.start();
+  function.count = s.numSiteTable();
+  function.size_T = sizeof(T);
+  function.type_W = typeid(typename WordType<T>::Type_t).name();
+  function.dest_arg = 2;
+#endif
 
   AddressLeaf addr_leaf(s);
 

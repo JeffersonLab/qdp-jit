@@ -29,8 +29,6 @@ namespace QDP {
  * @{
  */
 
-
-
   
   
 //! Outer grid Scalar class */
@@ -40,37 +38,42 @@ namespace QDP {
   {
   public:
     typedef T SubType_t;
-
+    
     OScalar(): QDPType<T, OScalar<T> >()
     {
+#ifdef QDP_DEEP_LOG
+      zero_rep( elem() );
+#endif
     }
 
     virtual ~OScalar() {
       free_mem();
     }
 
-    OScalar(const typename WordType<T>::Type_t& rhs): QDPType<T, OScalar<T> >()
+    OScalar(const typename WordType<T>::Type_t& rhs)//: QDPType<T, OScalar<T> >()
     {
+      //std::cout << "*** OScalar ctor from word type: " << elem() << "\n";
       typedef typename InternalScalar<T>::Type_t  Scalar_t;
       elem() = Scalar_t(rhs);
     }
 
+    
 
-    OScalar(const Zero& rhs): QDPType<T, OScalar<T> >()
+    OScalar(const Zero& rhs)//: QDPType<T, OScalar<T> >()
     {
       this->assign(rhs);
     }
 
 
     template<class T1>
-    OScalar(const OScalar<T1>& rhs): QDPType<T, OScalar<T> >()
+    OScalar(const OScalar<T1>& rhs)//: QDPType<T, OScalar<T> >()
     {
       this->assign(rhs);
     }
 
 
     template<class RHS, class T1>
-    OScalar(const QDPExpr<RHS, OScalar<T1> >& rhs): QDPType<T, OScalar<T> >()
+    OScalar(const QDPExpr<RHS, OScalar<T1> >& rhs)//: QDPType<T, OScalar<T> >()
     {
       this->assign(rhs);
     }
@@ -109,90 +112,36 @@ namespace QDP {
       return this->assign(rhs);
     }
 
-
-
-    OScalar(const OScalar& rhs): QDPType<T, OScalar<T> >()
+    OScalar(const OScalar& rhs)//: QDPType<T, OScalar<T> >()
     {
       this->assign(rhs);
     }
 
+    
   public:
 
+    inline T* get_raw_F() const {
+      return &F;
+    }
+    
     inline T* getF() const {
-      if ( elem_num < 0 )
-	{
-	  assert_on_host();
-	  return &F;
-	}
-      else
-	{
-	  accessed_on_host = true;
-	  assert( myId >= 0 );
-	  Fptr = (T*)QDP_get_global_cache().getHostArrayPtr( myId , elem_num );
-	  return Fptr;
-	}
+      assert_on_host();
+      return &F;
     };
 
 
     inline T& elem() {
-      if ( elem_num < 0 )
-	{
-	  assert_on_host();
-	  return F;
-	}
-      else
-	{
-	  accessed_on_host = true;
-	  assert( myId >= 0 );
-	  Fptr = (T*)QDP_get_global_cache().getHostArrayPtr( myId , elem_num );
-	  return *Fptr;
-	}
+      //std::cout << (void*)this << " elem() myId = " << myId << std::endl;
+      assert_on_host();
+      return F;
     }
     
     inline const T& elem() const {
-      if ( elem_num < 0 )
-	{
-	  assert_on_host();
-	  return F;
-	}
-      else
-	{
-	  accessed_on_host = true;
-	  assert( myId >= 0 );
-	  Fptr = (T*)QDP_get_global_cache().getHostArrayPtr( myId , elem_num );
-	  return *Fptr;
-	}
+      //std::cout << (void*)this << " elem() myId = " << myId << std::endl;
+      assert_on_host();
+      return F;
     }
 
-    inline T& elem(int i) {
-      if ( elem_num < 0 )
-	{
-	  assert_on_host();
-	  return F;
-	}
-      else
-	{
-	  accessed_on_host = true;
-	  assert( myId >= 0 );
-	  Fptr = (T*)QDP_get_global_cache().getHostArrayPtr( myId , elem_num );
-	  return *Fptr;
-	}
-    }
-
-    inline const T& elem(int i) const {
-      if ( elem_num < 0 )
-	{
-	  assert_on_host();
-	  return F;
-	}
-      else
-	{
-	  accessed_on_host = true;
-	  assert( myId >= 0 );
-	  Fptr = (T*)QDP_get_global_cache().getHostArrayPtr( myId , elem_num );
-	  return *Fptr;
-	}
-    }
 
 
     int getId() const {
@@ -205,19 +154,25 @@ namespace QDP {
     }
 
     void setId(int id) {
+      //std::cout << (void*)this << "set id to " << id << std::endl; 
       myId = id;
     }
 
     void setElemNum(int elemnum) {
+      //std::cout << (void*)this << "set elem to " << elemnum << std::endl; 
       elem_num = elemnum;
     }
 
     bool accessed() const { return accessed_on_host; }
 
 
+    typename WordType<T>::Type_t get_word_value() const
+    {
+      typename WordType<T>::Type_t tmp = FirstWord<T>::get(F);
+      return tmp;
+    }
 
   private:
-
     inline void alloc_mem() const {
       if ( myId >= 0 )
 	return;
@@ -250,31 +205,7 @@ namespace QDP {
     mutable bool accessed_on_host = false;
     mutable int elem_num = -1;
     mutable T  F;
-    mutable T* Fptr;
   };
-
-
-
-  template<class T>
-  class OLiteral: public OScalar<T>
-  {
-  };
-
-#if 1
-  template<>
-  class OLiteral<PScalar< PScalar < RScalar < Word <float> > > > >: public OScalar< PScalar< PScalar < RScalar < Word <float> > > > >
-  {
-    mutable PScalar< PScalar < RScalar < Word <float> > > > F;
-  public:
-    typedef PScalar< PScalar < RScalar < Word <float> > > > SubType_t;
-
-    OLiteral( const PScalar< PScalar < RScalar < Word <float> > > >& a ): OScalar< PScalar< PScalar < RScalar < Word <float> > > > >(), F(a) {}
-
-    float get_val() const { return F.elem().elem().elem().elem() ; }
-  };
-#endif
-  
-
 
 
 //! Ascii input
@@ -389,12 +320,16 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 {
   // Subset is not used at this level. It may be needed, though, within an inner operation
   op(dest.elem(), forEach(rhs, ElemLeaf(), OpCombine()));
+
+#ifdef QDP_DEEP_LOG
+  if (jit_config_deep_log())
+    {
+      gpu_deep_logger( dest.getF() , typeid(typename WordType<T>::Type_t).name() , sizeof(T) , 0 , 1 , __PRETTY_FUNCTION__ );
+    }
+#endif
+  
 }
 #endif
-
-
-
-
 
 
 //-------------------------------------------------------------------------------------
@@ -432,7 +367,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 
 
     template<class T1>
-    OLattice(const OScalar<T1>& rhs): QDPType<T, OLattice<T> >()
+    OLattice(const OScalar<T1>& rhs)//: QDPType<T, OLattice<T> >()
     {
       alloc_mem("construct from OScalar");
       this->assign(rhs);
@@ -440,7 +375,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 
 
     template<class T1>
-    OLattice(const OLattice<T1>& rhs): QDPType<T, OLattice<T> >()
+    OLattice(const OLattice<T1>& rhs)//: QDPType<T, OLattice<T> >()
     {
       alloc_mem("construct from OLattice");
       this->assign(rhs);
@@ -448,14 +383,14 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 
 
     template<class RHS, class T1>
-    OLattice(const QDPExpr<RHS, OLattice<T1> >& rhs): QDPType<T, OLattice<T> >()
+    OLattice(const QDPExpr<RHS, OLattice<T1> >& rhs)//: QDPType<T, OLattice<T> >()
     {
       alloc_mem("construct from expr");
       this->assign(rhs);
     }
 
 
-    OLattice(const typename WordType<T>::Type_t& rhs): QDPType<T, OLattice<T> >()
+    OLattice(const typename WordType<T>::Type_t& rhs)//: QDPType<T, OLattice<T> >()
     {
       alloc_mem("construct from const");
 
@@ -464,7 +399,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
     }
 
 
-    OLattice(const Zero& rhs): QDPType<T, OLattice<T> >()
+    OLattice(const Zero& rhs)//: QDPType<T, OLattice<T> >()
     {
       alloc_mem("construct from zero");
       this->assign(rhs);
@@ -520,7 +455,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
     {return OSubLattice<T>(*this,const_cast<Subset&>(s));}
 
 
-    OLattice(const OLattice& rhs): QDPType<T, OLattice<T> >()
+    OLattice(const OLattice& rhs)//: QDPType<T, OLattice<T> >()
     {
       alloc_mem("copy");
       this->assign(rhs);
@@ -643,16 +578,6 @@ struct LeafFunctor<OScalar<T>, ShiftPhase1>
 };
 
 template<class T>
-struct LeafFunctor<OLiteral<T>, ShiftPhase1>
-{
-  typedef int Type_t;
-  inline static Type_t apply(const OLiteral<T> &a, const ShiftPhase1 &f) {
-    return 0;
-  }
-};
-
-
-template<class T>
 struct LeafFunctor<OLattice<T>, ShiftPhase1>
 {
   typedef int Type_t;
@@ -670,16 +595,6 @@ struct LeafFunctor<OScalar<T>, ShiftPhase2>
     return 0;
   }
 };
-
-template<class T>
-struct LeafFunctor<OLiteral<T>, ShiftPhase2>
-{
-  typedef int Type_t;
-  inline static Type_t apply(const OLiteral<T> &a, const ShiftPhase2 &f) {
-    return 0;
-  }
-};
-
 
 template<class T>
 struct LeafFunctor<OLattice<T>, ShiftPhase2>
@@ -707,13 +622,108 @@ struct JITType<OScalar<T> >
 };
 
 
-template<class T> 
-struct JITType<OLiteral<T> >
+
+
+  // ------------------------------------------------------
+  
+template<>
+struct LeafFunctor<QDPType< PScalar< PScalar < RScalar< Word< float > > > > ,OScalar<PScalar< PScalar < RScalar< Word< float > > > > > >, ParamLeaf>
 {
-  typedef OLiteralJIT<typename JITType<T>::Type_t>  Type_t;
+  //typedef QDPTypeJIT<typename JITType<T>::Type_t,typename JITType<OScalar<PScalar< PScalar < RScalar< Word< float > > > > > > >::Type_t>  Type_t;
+  typedef typename JITType< OScalar<PScalar< PScalar < RScalar< Word< float > > > > > >::Type_t  Type_t;
+  inline static Type_t apply(const QDPType< PScalar< PScalar < RScalar< Word< float > > > > , OScalar<PScalar< PScalar < RScalar< Word< float > > > > > > &a, const ParamLeaf& p)
+  {
+    return Type_t( llvm_add_param< float >() );
+  }
+};
+
+template<>
+struct LeafFunctor<QDPType< PScalar< PScalar < RScalar< Word< double > > > > ,OScalar<PScalar< PScalar < RScalar< Word< double > > > > > >, ParamLeaf>
+{
+  //typedef QDPTypeJIT<typename JITType<T>::Type_t,typename JITType<OScalar<PScalar< PScalar < RScalar< Word< double > > > > > > >::Type_t>  Type_t;
+  typedef typename JITType< OScalar<PScalar< PScalar < RScalar< Word< double > > > > > >::Type_t  Type_t;
+  inline static Type_t apply(const QDPType< PScalar< PScalar < RScalar< Word< double > > > > , OScalar<PScalar< PScalar < RScalar< Word< double > > > > > > &a, const ParamLeaf& p)
+  {
+    return Type_t( llvm_add_param< double >() );
+  }
+};
+
+template<>
+struct LeafFunctor<QDPType< PScalar< PScalar < RScalar< Word< int > > > > ,OScalar<PScalar< PScalar < RScalar< Word< int > > > > > >, ParamLeaf>
+{
+  //typedef QDPTypeJIT<typename JITType<T>::Type_t,typename JITType<OScalar<PScalar< PScalar < RScalar< Word< int > > > > > > >::Type_t>  Type_t;
+  typedef typename JITType< OScalar<PScalar< PScalar < RScalar< Word< int > > > > > >::Type_t  Type_t;
+  inline static Type_t apply(const QDPType< PScalar< PScalar < RScalar< Word< int > > > > , OScalar<PScalar< PScalar < RScalar< Word< int > > > > > > &a, const ParamLeaf& p)
+  {
+    return Type_t( llvm_add_param< int >() );
+  }
+};
+
+template<>
+struct LeafFunctor<QDPType< PScalar< PScalar < RScalar< Word< bool > > > > , OScalar<PScalar< PScalar < RScalar< Word< bool > > > > > >, ParamLeaf>
+{
+  //typedef QDPTypeJIT<typename JITType<T>::Type_t,typename JITType<OScalar<PScalar< PScalar < RScalar< Word< bool > > > > > > >::Type_t>  Type_t;
+  typedef typename JITType< OScalar<PScalar< PScalar < RScalar< Word< bool > > > > > >::Type_t  Type_t;
+  inline static Type_t apply(const QDPType< PScalar< PScalar < RScalar< Word< bool > > > > , OScalar<PScalar< PScalar < RScalar< Word< bool > > > > > > &a, const ParamLeaf& p)
+  {
+    return Type_t( llvm_add_param< bool >() );
+  }
 };
 
 
+template<>
+struct LeafFunctor<QDPType<PScalar< PScalar < RScalar< Word< float > > > >  , OScalar< PScalar< PScalar < RScalar< Word< float > > > > > >, AddressLeaf>
+{
+  typedef int Type_t;
+  inline static
+  Type_t apply(const QDPType<PScalar< PScalar < RScalar< Word< float > > > > , OScalar< PScalar< PScalar < RScalar< Word< float > > > > > >& s, const AddressLeaf& p) 
+  {
+    p.setLit< float >( s.get_word_value() );	
+    return 0;
+  }
+};
+
+template<>
+struct LeafFunctor<QDPType<PScalar< PScalar < RScalar< Word< double > > > >  , OScalar< PScalar< PScalar < RScalar< Word< double > > > > > >, AddressLeaf>
+{
+  typedef int Type_t;
+  inline static
+  Type_t apply(const QDPType<PScalar< PScalar < RScalar< Word< double > > > > , OScalar< PScalar< PScalar < RScalar< Word< double > > > > > >& s, const AddressLeaf& p) 
+  {
+    p.setLit< double >( s.get_word_value() );	
+    return 0;
+  }
+};
+
+template<>
+struct LeafFunctor<QDPType<PScalar< PScalar < RScalar< Word< int > > > >  , OScalar< PScalar< PScalar < RScalar< Word< int > > > > > >, AddressLeaf>
+{
+  typedef int Type_t;
+  inline static
+  Type_t apply(const QDPType<PScalar< PScalar < RScalar< Word< int > > > > , OScalar< PScalar< PScalar < RScalar< Word< int > > > > > >& s, const AddressLeaf& p) 
+  {
+    p.setLit< int >( s.get_word_value() );	
+    return 0;
+  }
+};
+
+template<>
+struct LeafFunctor<QDPType<PScalar< PScalar < RScalar< Word< bool > > > >  , OScalar< PScalar< PScalar < RScalar< Word< bool > > > > > >, AddressLeaf>
+{
+  typedef int Type_t;
+  inline static
+  Type_t apply(const QDPType<PScalar< PScalar < RScalar< Word< bool > > > > , OScalar< PScalar< PScalar < RScalar< Word< bool > > > > > >& s, const AddressLeaf& p) 
+  {
+    p.setLit< bool >( s.get_word_value() );	
+    return 0;
+  }
+};
+
+
+  // ----------------------------------------------
+
+
+  
 
 /*! @} */  // end of group olattice
 
@@ -737,42 +747,57 @@ struct LeafFunctor<OScalar<T>, ParamLeaf>
   typedef typename JITType< OScalar<T> >::Type_t  TypeA_t;
   typedef TypeA_t  Type_t;
   inline static
-  Type_t apply(const OScalar<T>& do_not_use, const ParamLeaf& p) 
+  Type_t apply(const OScalar<T>& a, const ParamLeaf& p)
   {
-    ParamRef    base_addr = llvm_add_param< typename WordType<T>::Type_t * >();
-    return Type_t( base_addr );
+    return Type_t( llvm_add_param< typename WordType<T>::Type_t * >() );
   }
 };
 
 
-template<class T>
-struct LeafFunctor<OLiteral<T>, ParamLeaf>
-{
-  typedef typename JITType< OLiteral<T> >::Type_t  TypeA_t;
-  typedef TypeA_t  Type_t;
-  inline static
-  Type_t apply(const OLiteral<T>& do_not_use, const ParamLeaf& p) 
-  {
-    return Type_t( llvm_add_param< typename WordType<T>::Type_t >() );
-  }
-};
-
-
-#if 0
 template<>
-struct LeafFunctor< OScalar< PScalar< PScalar< RScalar< Word<float> > > > > , ParamLeaf >
+struct LeafFunctor<OScalar< PScalar< PScalar < RScalar< Word< float > > > > >, ParamLeaf>
 {
-  typedef typename JITType< OScalar< PScalar< PScalar< RScalar< Word<float> > > > > >::Type_t  TypeA_t;
-  typedef TypeA_t  Type_t;
+  typedef typename JITType< OScalar< PScalar< PScalar < RScalar< Word< float > > > > > >::Type_t  Type_t;
   inline static
-  Type_t apply(const OScalar< PScalar< PScalar< RScalar< Word<float> > > > >& do_not_use, const ParamLeaf& p) 
+  Type_t apply(const OScalar< PScalar< PScalar < RScalar< Word< float > > > > >& a, const ParamLeaf& p)
   {
-    std::cout << "special: " << __PRETTY_FUNCTION__ << std::endl;
-    ParamRef val = llvm_add_param< typename WordType< PScalar< PScalar< RScalar< Word<float> > > > >::Type_t >();
-    return Type_t( val );
+    return Type_t( llvm_add_param< float >() );
   }
 };
-#endif
+
+template<>
+struct LeafFunctor<OScalar< PScalar< PScalar < RScalar< Word< double > > > > >, ParamLeaf>
+{
+  typedef typename JITType< OScalar< PScalar< PScalar < RScalar< Word< double > > > > > >::Type_t  Type_t;
+  inline static
+  Type_t apply(const OScalar< PScalar< PScalar < RScalar< Word< double > > > > >& a, const ParamLeaf& p)
+  {
+    return Type_t( llvm_add_param< double >() );
+  }
+};
+
+template<>
+struct LeafFunctor<OScalar< PScalar< PScalar < RScalar< Word< int > > > > >, ParamLeaf>
+{
+  typedef typename JITType< OScalar< PScalar< PScalar < RScalar< Word< int > > > > > >::Type_t  Type_t;
+  inline static
+  Type_t apply(const OScalar< PScalar< PScalar < RScalar< Word< int > > > > >& a, const ParamLeaf& p)
+  {
+    return Type_t( llvm_add_param< int >() );
+  }
+};
+
+template<>
+struct LeafFunctor<OScalar< PScalar< PScalar < RScalar< Word< bool > > > > >, ParamLeaf>
+{
+  typedef typename JITType< OScalar< PScalar< PScalar < RScalar< Word< bool > > > > > >::Type_t  Type_t;
+  inline static
+  Type_t apply(const OScalar< PScalar< PScalar < RScalar< Word< bool > > > > >& a, const ParamLeaf& p)
+  {
+    return Type_t( llvm_add_param< bool >() );
+  }
+};
+
 
 
 template<class T>
@@ -792,7 +817,7 @@ struct LeafFunctor<OScalar<T>, AddressLeaf>
 {
   typedef int Type_t;
   inline static
-  Type_t apply(const OScalar<T>& s, const AddressLeaf& p) 
+  Type_t apply(const OScalar<T>& s, const AddressLeaf& p)
   {
     p.setIdElem( s.getId() , s.getElemNum() );
     return 0;
@@ -800,19 +825,60 @@ struct LeafFunctor<OScalar<T>, AddressLeaf>
 };
 
 
-
 template<>
-struct LeafFunctor<OLiteral< PScalar< PScalar < RScalar < Word <float> > > > >, AddressLeaf>
+struct LeafFunctor<OScalar< PScalar< PScalar < RScalar< Word< float > > > > >, AddressLeaf>
 {
-  typedef int Type_t;
+  typedef int  Type_t;
   inline static
-  Type_t apply(const OLiteral< PScalar< PScalar < RScalar < Word <float> > > > >& s, const AddressLeaf& p)
+  Type_t apply(const OScalar< PScalar< PScalar < RScalar< Word< float > > > > >& a, const AddressLeaf& p)
   {
-    p.setLit( s.get_val() );
+    //std::cout << "AddressLeaf: Real\n";
+    p.setLit< float >( a.get_word_value() );
     return 0;
   }
 };
 
+template<>
+struct LeafFunctor<OScalar< PScalar< PScalar < RScalar< Word< double > > > > >, AddressLeaf>
+{
+  typedef int  Type_t;
+  inline static
+  Type_t apply(const OScalar< PScalar< PScalar < RScalar< Word< double > > > > >& a, const AddressLeaf& p)
+  {
+    //std::cout << "AddressLeaf: Double\n";
+    p.setLit< double >( a.get_word_value() );
+    return 0;
+  }
+};
+
+template<>
+struct LeafFunctor<OScalar< PScalar< PScalar < RScalar< Word< int > > > > >, AddressLeaf>
+{
+  typedef int  Type_t;
+  inline static
+  Type_t apply(const OScalar< PScalar< PScalar < RScalar< Word< int > > > > >& a, const AddressLeaf& p)
+  {
+    //std::cout << "AddressLeaf: Int\n";
+    p.setLit< int >( a.get_word_value() );
+    return 0;
+  }
+};
+
+template<>
+struct LeafFunctor<OScalar< PScalar< PScalar < RScalar< Word< bool > > > > >, AddressLeaf>
+{
+  typedef int  Type_t;
+  inline static
+  Type_t apply(const OScalar< PScalar< PScalar < RScalar< Word< bool > > > > >& a, const AddressLeaf& p)
+  {
+    //std::cout << "AddressLeaf: Boolean\n";
+    p.setLit< bool >( a.get_word_value() );
+    return 0;
+  }
+};
+
+
+  
 
 
 //-----------------------------------------------------------------------------
@@ -823,20 +889,11 @@ struct LeafFunctor<OLiteral< PScalar< PScalar < RScalar < Word <float> > > > >, 
 template<class T>
 struct CreateLeaf<OScalar<T> >
 {
-//  typedef OScalar<T> Leaf_t;
+  //typedef OScalar<T> Leaf_t;
   typedef Reference<OScalar<T> > Leaf_t;
   inline static
   Leaf_t make(const OScalar<T> &a) { return Leaf_t(a); }
 };
-
-template<class T>
-struct CreateLeaf<OLiteral<T> >
-{
-  typedef OLiteral<T> Leaf_t;
-  inline static
-  Leaf_t make(const OLiteral<T> &a) { return Leaf_t(a); }
-};
-
 
 template<class T>
 struct CreateLeaf<OLattice<T> >
@@ -861,6 +918,7 @@ struct LeafFunctor<OScalar<T>, ElemLeaf>
   inline static Type_t apply(const OScalar<T> &a, const ElemLeaf &f)
     {return Type_t(a.elem());}
 };
+
 
 template<class T>
 struct LeafFunctor<OScalar<T>, EvalLeaf1>
@@ -891,13 +949,6 @@ struct WordType<OScalar<T> >
 {
   typedef typename WordType<T>::Type_t  Type_t;
 };
-
-template<class T>
-struct WordType<OLiteral<T> > 
-{
-  typedef typename WordType<T>::Type_t  Type_t;
-};
-
 
 template<class T>
 struct WordType<OLattice<T> > 
@@ -1025,35 +1076,6 @@ template<class T1, class T2, class Op>
 struct BinaryReturn<OLattice<T1>, OScalar<T2>, Op> {
   typedef OLattice<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
 };
-
-
-
-// Default binary(OLiteral,OLattice) -> OLattice
-template<class T1, class T2, class Op>
-struct BinaryReturn<OLiteral<T1>, OLattice<T2>, Op> {
-  typedef OLattice<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
-};
-
-// Default binary(OLattice,OLiteral) -> OLattice
-template<class T1, class T2, class Op>
-struct BinaryReturn<OLattice<T1>, OLiteral<T2>, Op> {
-  typedef OLattice<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
-};
-
-// Default binary(OLiteral,OScalar) -> OScalar
-template<class T1, class T2, class Op>
-struct BinaryReturn<OLiteral<T1>, OScalar<T2>, Op> {
-  typedef OScalar<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
-};
-
-// Default binary(OScalar,OLiteral) -> OScalar
-template<class T1, class T2, class Op>
-struct BinaryReturn<OScalar<T1>, OLiteral<T2>, Op> {
-  typedef OScalar<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
-};
-
-
-
 
 
 // Default trinary(OLattice,OLattice,OLattice) -> OLattice

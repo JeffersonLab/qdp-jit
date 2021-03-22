@@ -23,6 +23,11 @@ namespace QDP {
 	  return;
       }
 
+#ifdef QDP_DEEP_LOG
+    function.size_T = sizeof(T1);
+    function.type_W = typeid(typename WordType<T1>::Type_t).name();
+#endif
+    
     llvm_start_new_function("global_max",__PRETTY_FUNCTION__ );
 
     ParamRef p_lo     = llvm_add_param<int>();

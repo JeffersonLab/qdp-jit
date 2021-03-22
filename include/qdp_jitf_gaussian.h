@@ -45,6 +45,14 @@ function_gaussian_exec(JitFunction& function, OLattice<T>& dest,OLattice<T>& r1,
   if (s.numSiteTable() < 1)
     return;
 
+#ifdef QDP_DEEP_LOG
+  function.start = s.start();
+  function.count = s.hasOrderedRep() ? s.numSiteTable() : Layout::sitesOnNode();
+  function.size_T = sizeof(T);
+  function.type_W = typeid(typename WordType<T>::Type_t).name();
+  function.dest_arg = 5;
+#endif
+
   AddressLeaf addr_leaf(s);
 
   forEach(dest, addr_leaf, NullCombine());
@@ -70,21 +78,7 @@ function_gaussian_exec(JitFunction& function, OLattice<T>& dest,OLattice<T>& r1,
   for(unsigned i=0; i < addr_leaf.ids.size(); ++i)
     ids.push_back( addr_leaf.ids[i] );
   
-  jit_launch(function,Layout::sitesOnNode(),ids);
-#if 0
-  void * subset_member = QDP_get_global_cache().getDevicePtr( s.getIdMemberTable() );
-  
-  std::vector<void*> addr;
-  addr.push_back( &ordered );
-  addr.push_back( &th_count );
-  addr.push_back( &start );
-  addr.push_back( &end );
-  addr.push_back( &subset_member );
-  for(unsigned i=0; i < addr_leaf.addr.size(); ++i) {
-    addr.push_back( &addr_leaf.addr[i] );
-  }
-  jit_launch(function,th_count,addr);
-#endif
+  jit_launch(function,th_count,ids);
 }
 
 

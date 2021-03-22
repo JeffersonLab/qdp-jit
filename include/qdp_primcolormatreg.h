@@ -32,6 +32,13 @@ public:
 	this->elem(i,q).setup( j.elem(i,q) );
   }
 
+  void setup_value( const typename JITType< PColorMatrixREG >::Type_t& j ) {
+    for (int i = 0 ; i < N ; i++ ) 
+      for (int q = 0 ; q < N ; q++ ) 
+	this->elem(i,q).setup_value( j.elem(i,q) );
+  }
+
+  
   PColorMatrixREG() {}
 
   PColorMatrixREG( const typename JITType< PColorMatrixREG >::Type_t& rhs ) {

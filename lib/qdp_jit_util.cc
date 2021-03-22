@@ -21,6 +21,28 @@ namespace QDP {
 #endif
   }
 
+  namespace {
+    void *sync_hst_ptr;
+    void *sync_dev_ptr;
+  }
+  
+  void jit_util_sync_init()
+  {
+    gpu_host_alloc( &sync_hst_ptr , sizeof(int) );
+    gpu_malloc( &sync_dev_ptr , sizeof(int) );
+    *(int*)sync_hst_ptr = 0;
+  }
+
+  void jit_util_sync_done()
+  {
+    gpu_host_free( sync_hst_ptr );
+    gpu_free( sync_dev_ptr );
+  }
+
+  void jit_util_sync_copy()
+  {
+    gpu_memcpy_d2h( sync_hst_ptr , sync_dev_ptr , sizeof(int) );
+  }
 
   // For AMD the workgroup sizes are passed as kernel parameters
   // For now as placeholder values

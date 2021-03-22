@@ -301,7 +301,7 @@ namespace QDP
     e.flags     = Flags::Multi;
     e.status_vec.clear();
     e.karg_vec.clear();
-    e.hstPtr    = NULL;
+    e.vecHstPtr.clear();
     e.devPtr    = NULL;
     e.fptr      = NULL;
     e.size      = ids.size() * sizeof(void*);
@@ -449,7 +449,8 @@ namespace QDP
     e.size      = size;
     e.flags     = flags;
     //e.status    = status;
-    e.hstPtr    = hstptr;
+    e.vecHstPtr.clear();
+    e.vecHstPtr.push_back(hstptr);
     e.devPtr    = devptr;
     e.fptr      = func;
     e.multi.clear();
@@ -468,7 +469,7 @@ namespace QDP
 
 
   
-  int QDPCache::addArray( size_t element_size , int num_elements )
+  int QDPCache::addArray( size_t element_size , int num_elements , std::vector<void*> _vecHstPtr )
   {
     if (stackFree.size() == 0) {
       growStack();
@@ -478,7 +479,7 @@ namespace QDP
 
     size_t size = element_size * num_elements;
     void* dev_ptr;
-    void* hst_ptr;
+    //void* hst_ptr;
     
     while (!get__cache_pool_allocator().allocate( &dev_ptr , size , Id )) {
       if (!spill_lru()) {
@@ -486,13 +487,7 @@ namespace QDP
       }
     }
 
-    try {
-      hst_ptr = (void*)QDP::Allocator::theQDPAllocator::Instance().allocate( size , QDP::Allocator::DEFAULT );
-    }
-    catch(std::bad_alloc) {
-      QDP_error_exit("cache allocateHostMemory: host memory allocator flags=1 failed");
-    }
-
+  
     assert( vecEntry.size() > Id );
     Entry& e = vecEntry[ Id ];
 
@@ -500,7 +495,7 @@ namespace QDP
     e.size      = size;
     e.elem_size = element_size;
     e.flags     = QDPCache::Flags::Array;
-    e.hstPtr    = hst_ptr;
+    e.vecHstPtr = _vecHstPtr;
     e.devPtr    = dev_ptr;
     e.fptr      = NULL;
     
@@ -599,7 +594,7 @@ namespace QDP
 
     assureHost( e );
 
-    *ptr = e.hstPtr;
+    *ptr = e.vecHstPtr.at(0);
   }
 
 
@@ -615,23 +610,27 @@ namespace QDP
 
     assureOnHost( id , elem );
 
-    return (void*)((size_t)e.hstPtr + e.elem_size * elem);
+    return e.vecHstPtr.at(elem);
   }
 
 
 
-  void QDPCache::freeHostMemory(Entry& e) {
-    if ( e.flags & Flags::OwnHostMemory )
+  void QDPCache::freeHostMemory(Entry& e)
+  {
+    if ( e.flags & ( Flags::OwnHostMemory | Flags::Array ) )
       return;
     
-    if (!e.hstPtr)
+    if (e.vecHstPtr.empty())
+      return;
+
+    if (!e.vecHstPtr.at(0))
       return;
 
     assert(e.flags != Flags::JitParam);
     assert(e.flags != Flags::Static);
 
-    QDP::Allocator::theQDPAllocator::Instance().free( e.hstPtr );
-    e.hstPtr=NULL;
+    QDP::Allocator::theQDPAllocator::Instance().free( e.vecHstPtr.at(0) );
+    e.vecHstPtr.at(0)=NULL;
   }
 
 
@@ -643,11 +642,11 @@ namespace QDP
     if ( e.flags & Flags::OwnHostMemory )
       return;
     
-    if (e.hstPtr)
+    if (e.vecHstPtr.at(0))
       return;
     
     try {
-      e.hstPtr = (void*)QDP::Allocator::theQDPAllocator::Instance().allocate( e.size , QDP::Allocator::DEFAULT );
+      e.vecHstPtr.at(0) = (void*)QDP::Allocator::theQDPAllocator::Instance().allocate( e.size , QDP::Allocator::DEFAULT );
     }
     catch(std::bad_alloc) {
       QDP_error_exit("cache allocateHostMemory: host memory allocator flags=1 failed");
@@ -699,16 +698,15 @@ namespace QDP
     Entry& e = vecEntry[id];
     assert( e.flags & Flags::Array );
 
-    if (qdp_cache_get_cache_verbose())
-      {
-	if (e.size >= 1024*1024)
-	  QDPIO::cerr << "copy host <-- GPU " << e.size/1024/1024 << " MB\n";
-	else
-	  QDPIO::cerr << "copy host <-- GPU " << e.size << " bytes\n";
-      }
-    gpu_memcpy_d2h( e.hstPtr , e.devPtr , e.size );
     for( int i = 0 ; i < e.status_vec.size() ; ++i )
-      e.status_vec[i] = Status::host;
+      {
+	if (qdp_cache_get_cache_verbose())
+	  {
+	    QDPIO::cerr << "cache copyD2H: copy host <-- GPU " << e.elem_size << " bytes\n";
+	  }
+	gpu_memcpy_d2h( e.vecHstPtr.at(i) , (void*)((size_t)e.devPtr + e.elem_size * i) , e.elem_size );
+	e.status_vec[i] = Status::host;
+      }
   }
 
 
@@ -780,12 +778,12 @@ namespace QDP
 		if (e.fptr) {
 
 		  char * tmp = new char[e.size];
-		  e.fptr(true,tmp,e.hstPtr);
+		  e.fptr(true,tmp,e.vecHstPtr.at(0));
 		  gpu_memcpy_h2d( e.devPtr , tmp , e.size );
 		  delete[] tmp;
 
 		} else {
-		  gpu_memcpy_h2d( e.devPtr , e.hstPtr , e.size );
+		  gpu_memcpy_h2d( e.devPtr , e.vecHstPtr.at(0) , e.size );
 		}
 
 	      }
@@ -826,7 +824,7 @@ namespace QDP
 	  }
 
 	gpu_memcpy_h2d( (void*)((size_t)e.devPtr + e.elem_size * elem) ,
-			(void*)((size_t)e.hstPtr + e.elem_size * elem) , e.elem_size );
+			e.vecHstPtr.at(elem) , e.elem_size );
 	//std::cout << "copy to device\n";
       }
 
@@ -870,10 +868,10 @@ namespace QDP
 	    if (e.fptr) {
 	      char * tmp = new char[e.size];
 	      gpu_memcpy_d2h( tmp , e.devPtr , e.size );
-	      e.fptr(false,e.hstPtr,tmp);
+	      e.fptr(false,e.vecHstPtr.at(0),tmp);
 	      delete[] tmp;
 	    } else {
-	      gpu_memcpy_d2h( e.hstPtr , e.devPtr , e.size );
+	      gpu_memcpy_d2h( e.vecHstPtr.at(0) , e.devPtr , e.size );
 	    }
 	  }
 
@@ -902,7 +900,7 @@ namespace QDP
 	    QDPIO::cerr << "copy host <-- GPU " << e.elem_size << " bytes\n";
 	  }
 
-	gpu_memcpy_d2h( (void*)((size_t)e.hstPtr + e.elem_size * elem_num) ,
+	gpu_memcpy_d2h( e.vecHstPtr.at(elem_num) ,
 		       (void*)((size_t)e.devPtr + e.elem_size * elem_num) , e.elem_size );
       }
 
@@ -1083,7 +1081,8 @@ namespace QDP
 		
 		assert( e.Id == ak.id );
 		__vec_backed.push_back( e );
-		__vec_backed.back().hstPtr = hst_ptr;
+		__vec_backed.back().vecHstPtr.resize(1);
+		__vec_backed.back().vecHstPtr.at(0) = hst_ptr;
 	      }
 	  }
 	else

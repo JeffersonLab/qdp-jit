@@ -43,10 +43,19 @@ public:
   PSeedREG() {}
   ~PSeedREG() {}
 
-  void setup( const typename JITType< PSeedREG >::Type_t& j ) {
+  void setup( const typename JITType< PSeedREG >::Type_t& j )
+  {
     for (int i = 0 ; i < 4 ; i++ )
       elem(i).setup( j.elem(i) );
   }
+
+  
+  void setup_value( const typename JITType< PSeedREG >::Type_t& j )
+  {
+    for (int i = 0 ; i < 4 ; i++ )
+      elem(i).setup_value( j.elem(i) );
+  }
+
   
   // template<class T1>
   // PSeedREG& operator=( const PSeedREG<T1>& rhs) {
