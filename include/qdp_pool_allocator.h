@@ -213,6 +213,9 @@ namespace QDP
   template<class Allocator>
   bool QDPPoolAllocator<Allocator>::allocateInternalBuffer()
   {
+    //std::cout << "pool internal buffer: using alignment " << jit_config_get_pool_alignment() << std::endl;
+      
+
     if ( bufferAllocated )
       {
 	QDPIO::cerr << "pool memory already allocated" << std::endl;
@@ -230,7 +233,8 @@ namespace QDP
     
     while ( !pool_allocated && poolSize > (orig_size >> 1) )
       {
-	bytes_allocated = poolSize + 2 * QDP_ALIGNMENT_SIZE;
+	bytes_allocated = poolSize + 2 * jit_config_get_pool_alignment();
+
 
 	if (Allocator::allocate( (void**)&unaligned , bytes_allocated ))
 	  {
@@ -250,7 +254,7 @@ namespace QDP
 	return false;
       }
     
-    poolPtr = (unsigned char *)( ( (unsigned long)unaligned + (QDP_ALIGNMENT_SIZE-1) ) & ~(QDP_ALIGNMENT_SIZE - 1));
+    poolPtr = (unsigned char *)( ( (unsigned long)unaligned + (jit_config_get_pool_alignment()-1) ) & ~(jit_config_get_pool_alignment() - 1));
 
     entry_t e;
     e.ptr = poolPtr;
@@ -372,8 +376,7 @@ namespace QDP
 	  return false;
       }
 
-    //size_t alignment = QDP_ALIGNMENT_SIZE;
-    size_t alignment = Allocator::ALIGNMENT_SIZE;
+    size_t alignment = jit_config_get_pool_alignment();
 
     size_t size = (n_bytes + (alignment) - 1) & ~((alignment) - 1);
 
@@ -455,8 +458,7 @@ namespace QDP
 	  return false;
       }
 
-    //size_t alignment = QDP_ALIGNMENT_SIZE;
-    size_t alignment = Allocator::ALIGNMENT_SIZE;
+    size_t alignment = jit_config_get_pool_alignment();
 
     size_t size = (n_bytes + (alignment) - 1) & ~((alignment) - 1);
 

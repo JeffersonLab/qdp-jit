@@ -139,7 +139,10 @@ namespace QDP
   private:
     void printInfo(const Entry& e);
     std::string stringStatus( Status s );
-    
+
+    bool gpu_allocate_base( void ** ptr , size_t n_bytes , int id );
+    void gpu_free_base( void * ptr , size_t n_bytes );
+
     void growStack();
 
     void lockId(int id);

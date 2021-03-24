@@ -10,6 +10,8 @@ namespace QDP
     bool use_total_pool_size = false;
     size_t pool_size = 0;
     bool use_defrag = false;
+    int max_allocation_size = -1;
+    size_t pool_alignment = 128;
 
     // Kernel Launch
     int threads_per_block = 128;
@@ -40,6 +42,13 @@ namespace QDP
       }
   }
 
+  size_t jit_config_get_pool_alignment() { return pool_alignment; }
+  void jit_config_set_pool_alignment(size_t size ) { pool_alignment = size; }
+
+  
+  int jit_config_get_max_allocation() { return max_allocation_size; }
+  void jit_config_set_max_allocation(int size ) { max_allocation_size = size; }
+  
   bool jit_config_pool_stats() { return pool_count_allocations; }
   void jit_set_config_pool_stats() { pool_count_allocations = true; }
 

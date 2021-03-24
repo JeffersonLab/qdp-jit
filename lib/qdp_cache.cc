@@ -41,6 +41,35 @@ namespace QDP
     __cacheverbose = b;
   }
 
+
+
+  bool QDPCache::gpu_allocate_base( void ** ptr , size_t n_bytes , int id )
+  {
+    if ( jit_config_get_max_allocation() < 0   ||  (int)n_bytes <= jit_config_get_max_allocation() )
+      {
+	return get__cache_pool_allocator().allocate( ptr , n_bytes , id );
+      }
+    else
+      {
+	return gpu_malloc( ptr , n_bytes );
+      }
+  }
+    
+
+  void QDPCache::gpu_free_base( void * ptr , size_t n_bytes )
+  {
+    if ( jit_config_get_max_allocation() < 0   ||  (int)n_bytes <= jit_config_get_max_allocation() )
+      {
+	return get__cache_pool_allocator().free( ptr );
+      }
+    else
+      {
+	return gpu_free( ptr );
+      }
+  }
+
+  
+  
   std::map<size_t,size_t>& QDPCache::get_alloc_count()
   {
     return get__cache_pool_allocator().get_count();
@@ -398,7 +427,8 @@ namespace QDP
       }
     else
       {
-	while (!get__cache_pool_allocator().allocate( ptr , n_bytes , Id ))
+	//while (!get__cache_pool_allocator().allocate( ptr , n_bytes , Id ))
+	while (!gpu_allocate_base( ptr , n_bytes , Id ))
 	  {
 	    if (!spill_lru())
 	      {
@@ -481,7 +511,8 @@ namespace QDP
     void* dev_ptr;
     //void* hst_ptr;
     
-    while (!get__cache_pool_allocator().allocate( &dev_ptr , size , Id )) {
+    //while (!get__cache_pool_allocator().allocate( &dev_ptr , size , Id )) {
+    while (!gpu_allocate_base( &dev_ptr , size , Id )) {
       if (!spill_lru()) {
 	QDP_error_exit("cache allocate_device_static: can't spill LRU object");
       }
@@ -664,7 +695,8 @@ namespace QDP
     if (e.devPtr)
       return;
 
-    while (!get__cache_pool_allocator().allocate( &e.devPtr , e.size , e.Id )) {
+    //while (!get__cache_pool_allocator().allocate( &e.devPtr , e.size , e.Id )) {
+    while (!gpu_allocate_base( &e.devPtr , e.size , e.Id )) {
       if (!spill_lru()) {
 	QDP_info("Device pool:");
 	//get__cache_pool_allocator().printListPool();
@@ -686,7 +718,8 @@ namespace QDP
     if (!e.devPtr)
       return;
 
-    get__cache_pool_allocator().free( e.devPtr );
+    //get__cache_pool_allocator().free( e.devPtr );
+    gpu_free_base( e.devPtr , e.size );
     e.devPtr = NULL;
   }
 

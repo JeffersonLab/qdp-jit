@@ -79,6 +79,7 @@ namespace QDP
     return sum(localNorm2(s1),s);
   }
 
+
   template<class T, class C>
   inline typename UnaryReturn<C, FnNorm2>::Type_t
   norm2(const QDPExpr<T,C>& s1, const Subset& s)

@@ -20,15 +20,20 @@
 
 namespace QDP {
 
-namespace COUNT {
-  int count = 0;
-}
+  namespace COUNT {
+    int count = 0;
+  }
 
   namespace {
     bool setPoolSize = false;
+   
+    std::vector<std::shared_ptr<SpinMatrix> > vec_Gamma_values;
   }
 
-
+  namespace Layout {
+  // Destroy lattice coordinate
+  void destroyLatticeCoordinate();
+  }
 
   //! Private flag for status
   static bool isInit = false;
@@ -68,8 +73,7 @@ namespace COUNT {
 
 
 
-  SpinMatrix QDP_Gamma_values[Ns*Ns];
-
+  
   extern SpinMatrix& Gamma(int i) {
     if (i<0 || i>15)
       QDP_error_exit("Gamma(%d) value out of range",i);
@@ -79,7 +83,7 @@ namespace COUNT {
     }
     //QDP_info("++++ returning gammas[%d]",i);
     //std::cout << gammas[i] << "\n";
-    return QDP_Gamma_values[i];
+    return *vec_Gamma_values[i];
   }
 #endif
 
@@ -201,7 +205,7 @@ namespace COUNT {
 
     if (isInit)
       {
-	std::cerr << "QDP already inited" << endl;
+	std::cerr << "QDP already initialized" << endl;
 	QDP_abort(1);
       }
 
@@ -221,18 +225,25 @@ namespace COUNT {
     //QDP_info_primary("Finished setting gamma matrices");
     //QDP_info_primary("Multiplying gamma matrices");
 
-    QDP_Gamma_values[0]=dgr[4]; // Unity
+
+    for ( int i = 0 ; i < Ns*Ns ; i++ )
+      {
+	vec_Gamma_values.push_back( std::make_shared<SpinMatrix>() );
+      }
+
+    
+    *vec_Gamma_values[0]=dgr[4]; // Unity
     for (int i=1;i<16;i++) {
-      zero_rep(QDP_Gamma_values[i]);
+      zero_rep(*vec_Gamma_values[i]);
       bool first=true;
       //std::cout << "gamma value " << i << " ";
       for (int q=0;q<4;q++) {
 	if (i&(1<<q)) {
 	  //std::cout << q << " ";
 	  if (first)
-	    QDP_Gamma_values[i]=dgr[q];
+	    *vec_Gamma_values[i]=dgr[q];
 	  else
-	    QDP_Gamma_values[i]=QDP_Gamma_values[i]*dgr[q];
+	    *vec_Gamma_values[i]=*vec_Gamma_values[i]*dgr[q];
 	  first = false;
 	}
       }
@@ -329,6 +340,18 @@ namespace COUNT {
 	    sscanf((*argv)[++i],"%u",&val);
 	    //QDP_get_global_cache().get_allocator().enableMemset(val);
 	    QDP_get_global_cache().enableMemset(val);
+	  }
+	else if (strcmp((*argv)[i], "-pool-max-alloc")==0) 
+	  {
+	    int val;
+	    sscanf((*argv)[++i],"%d",&val);
+	    jit_config_set_max_allocation( val );
+	  }
+	else if (strcmp((*argv)[i], "-pool-alignment")==0) 
+	  {
+	    unsigned val;
+	    sscanf((*argv)[++i],"%u",&val);
+	    jit_config_set_pool_alignment( val );
 	  }
 	else if (strcmp((*argv)[i], "-blocksize")==0)
 	  {
@@ -625,6 +648,16 @@ namespace COUNT {
 			QDPIO::cerr << "QDP is not inited" << std::endl;
 			QDP_abort(1);
 		}
+
+		// Clear Gamma values
+		vec_Gamma_values.clear();
+
+		// Destroy lattice coordinates helpers
+		Layout::destroyLatticeCoordinate();
+		
+		// Close RNG
+		RNG::doneDefaultRNG();
+
 		
 		QDPIO::cout << "\n";
 		QDPIO::cout << "        ------------------------\n";

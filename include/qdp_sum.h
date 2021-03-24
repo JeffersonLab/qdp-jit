@@ -39,6 +39,28 @@ namespace QDP {
 
   // T1 input
   // T2 output
+  template < JitDeviceLayout input_layout, class T1 , class RHS >
+  void qdp_jit_reduce_convert_indirection_expr(int size, 
+					       int threads, 
+					       int blocks, 
+					       int shared_mem_usage,
+					       const QDPExpr<RHS,OLattice<T1> >& rhs, 
+					       int out_id, 
+					       int siteTableId)
+  {
+    static JitFunction function;
+
+    if (function.empty())
+      function_sum_convert_ind_expr_build<input_layout>(function,rhs);
+
+    function_sum_convert_ind_expr_exec(function, size, threads, blocks, shared_mem_usage, 
+				       rhs, out_id, siteTableId );
+  }
+
+  
+
+  // T1 input
+  // T2 output
   template < class T1 , class T2 , JitDeviceLayout input_layout >
   void qdp_jit_summulti_convert_indirection(int size, 
 					    int threads, 
@@ -246,6 +268,109 @@ namespace QDP {
   }
 
 
+  template<class T1, class RHS>
+  typename UnaryReturn< OLattice<T1> , FnSum>::Type_t
+  sum(const QDPExpr<RHS,OLattice<T1> >& rhs)
+  {
+    return sum(rhs,all);
+  }
+
+  
+  template<class T1, class RHS>
+  typename UnaryReturn< OLattice<T1> , FnSum>::Type_t
+  sum(const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
+  {
+    OLattice<T1> tmp = rhs;
+    return sum(tmp,s);
+  }
+
+  
+  template<class WT>
+  typename UnaryReturn< OLattice<PScalar<PScalar<RScalar<Word<double> > > > > , FnSum>::Type_t
+  sum(const QDPExpr<UnaryNode<FnLocalNorm2, Reference<QDPType<PSpinVector<PColorVector<RComplex<Word<WT> >, 3>, 4>, OLattice<PSpinVector<PColorVector<RComplex<Word<WT> >, 3>, 4> > > > >,OLattice<PScalar<PScalar<RScalar<Word<double> > > > > >& rhs, const Subset& s)
+  {
+    typedef typename UnaryReturn< OLattice< PScalar<PScalar<RScalar<Word<double> > > > > , FnSum>::Type_t::SubType_t T2;
+    
+    int out_id,in_id;
+
+    typename UnaryReturn< OLattice< PScalar<PScalar<RScalar<Word<double> > > > >, FnSum>::Type_t  d;
+    zero_rep(d);
+    
+    unsigned actsize=s.numSiteTable();
+    bool first=true;
+    bool allocated=false;
+    while (actsize > 0) {
+
+      unsigned numThreads = gpu_getMaxBlockX();
+      while ((numThreads*sizeof(T2) > gpu_getMaxSMem()) || (numThreads > (unsigned)actsize)) {
+	numThreads >>= 1;
+      }
+      unsigned numBlocks=(int)ceil(float(actsize)/numThreads);
+
+      if (numBlocks > gpu_getMaxGridX()) {
+	QDP_error_exit( "sum(Lat,subset) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)gpu_getMaxGridX());
+      }
+
+      int shared_mem_usage = numThreads*sizeof(T2);
+      //QDP_info("sum(Lat,subset): using %d threads per block, %d blocks, shared mem=%d" , numThreads , numBlocks , shared_mem_usage );
+
+      if (first) {
+	allocated=true;
+	out_id = QDP_get_global_cache().add( numBlocks*sizeof(T2) , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
+	in_id  = QDP_get_global_cache().add( numBlocks*sizeof(T2) , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
+      }
+
+      
+      if (numBlocks == 1)
+	{
+	  if (first)
+	    {
+	      qdp_jit_reduce_convert_indirection_expr<JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, shared_mem_usage, rhs , d.getId(), s.getIdSiteTable());
+	    }
+	  else
+	    {
+	      qdp_jit_reduce<T2>( actsize , numThreads , numBlocks, shared_mem_usage , in_id , d.getId() );
+	    }
+	}
+      else
+	{
+	  if (first)
+	    {
+	      qdp_jit_reduce_convert_indirection_expr<JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, shared_mem_usage, rhs , out_id, s.getIdSiteTable());
+	    }
+	  else
+	    {
+	      qdp_jit_reduce<T2>( actsize , numThreads , numBlocks , shared_mem_usage , in_id , out_id );
+	    }
+
+      }
+
+      first =false;
+
+      if (numBlocks==1) 
+	break;
+
+      actsize=numBlocks;
+
+      int tmp = in_id;
+      in_id = out_id;
+      out_id = tmp;
+    }
+
+    if (allocated)
+      {
+	QDP_get_global_cache().signoff( in_id );
+	QDP_get_global_cache().signoff( out_id );
+      }
+    
+    QDPInternal::globalSum(d);
+
+    return d;
+  }
+
+
+  
+
   //
   // globalMax
   //
@@ -393,33 +518,16 @@ namespace QDP {
 
       }
 
-#if 0
-      {
-	multi1d<T1> tmp(numBlocks*numsubsets);
-	std::vector<QDPCache::ArgKey> ids;
-	ids.push_back(dest.getId());
-	auto ptrs = QDP_get_global_cache().get_kernel_args( ids , false );
-      
-	CudaMemcpyD2H( (void*)tmp.slice() , ptrs[0] , numBlocks*numsubsets*sizeof(T1) );
-	QDPIO::cout << "out: ";
-	for(int i=0;i<tmp.size();i++)
-	  QDPIO::cout << tmp[i] << " ";
-	QDPIO::cout << "\n";
-      }
-#endif
       
       first =false;
 
       if (numBlocks==1)
 	break;
 
-      //QDPIO::cout << "new sizes = ";
       for (int i = 0 ; i < numsubsets ; ++i )
 	{
 	  sizes[i] = numBlocks;
-	  //QDPIO::cout << sizes[i] << " ";
 	}
-      //QDPIO::cout << "\n";
 
       int tmp = in_id;
       in_id = out_id;

@@ -52,7 +52,6 @@ namespace QDP {
 
     OScalar(const typename WordType<T>::Type_t& rhs)//: QDPType<T, OScalar<T> >()
     {
-      //std::cout << "*** OScalar ctor from word type: " << elem() << "\n";
       typedef typename InternalScalar<T>::Type_t  Scalar_t;
       elem() = Scalar_t(rhs);
     }
@@ -363,7 +362,9 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
     }
 
     
-    OLattice( int Id , float f ): myId(Id), mem(false) {}
+    OLattice( int Id , float f ): myId(Id), mem(false)
+    {
+    }
 
 
     template<class T1>

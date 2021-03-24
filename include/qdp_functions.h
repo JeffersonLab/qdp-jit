@@ -19,23 +19,6 @@ namespace QDP {
 
 
 
-
-
-#if 0
-  template<class T, class T1, class Op, class RHS>
-  inline
-  void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs,
-		const Subset& s)
-  {
-    static JitFunction function;
-
-    if (function.empty())
-      function = function_sca_sca_build(dest, op, rhs);
-
-    function_sca_sca_exec(function, dest, op, rhs);
-  }
-#endif
-
   //-----------------------------------------------------------------------------
   //! OLattice Op Scalar(Expression(source)) under an Subset
   /*! 
@@ -158,7 +141,7 @@ namespace QDP {
 
     function_random_exec(function, d, s , seed_tmp );
 
-    RNG::ran_seed = seed_tmp;
+    RNG::get_RNG_Internals()->ran_seed = seed_tmp;
   }
 
 
@@ -168,12 +151,12 @@ namespace QDP {
   void 
   random(OScalar<T>& d)
   {
-    Seed seed = RNG::ran_seed;
-    Seed skewed_seed = RNG::ran_seed * RNG::ran_mult;
+    Seed seed = RNG::get_RNG_Internals()->ran_seed;
+    Seed skewed_seed = RNG::get_RNG_Internals()->ran_seed * RNG::get_RNG_Internals()->ran_mult;
 
-    fill_random(d.elem(), seed, skewed_seed, RNG::ran_mult);
+    fill_random(d.elem(), seed, skewed_seed, RNG::get_RNG_Internals()->ran_mult);
 
-    RNG::ran_seed = seed;  // The seed from any site is the same as the new global seed
+    RNG::get_RNG_Internals()->ran_seed = seed;  // The seed from any site is the same as the new global seed
   }
 
 
@@ -282,31 +265,6 @@ namespace QDP {
     return d;
   }
 
-
-  //! OScalar = sum(OLattice)  under an explicit subset
-  /*!
-   * Allow a global sum that sums over the lattice, but returns an object
-   * of the same primitive type. E.g., contract only over lattice indices
-   */
-  template<class RHS, class T>
-  typename UnaryReturn<OLattice<T>, FnSum>::Type_t
-  sum(const QDPExpr<RHS,OLattice<T> >& s1, const Subset& s)
-  {
-    OLattice<T> l;
-    l[s]=s1;
-    return sum(l,s);
-  }
-
-
-
-  template<class RHS, class T>
-  typename UnaryReturn<OLattice<T>, FnSum>::Type_t
-  sum(const QDPExpr<RHS,OLattice<T> >& s1)
-  {
-    OLattice<T> l;
-    l=s1;
-    return sum(l,all);
-  }
 
 
 

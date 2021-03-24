@@ -620,10 +620,10 @@ function_random_build( JitFunction& function, OLattice<T>& dest , Seed& seed_tmp
   typedef typename LeafFunctor<LatticeSeed, ParamLeaf>::Type_t  LatticeSeedJIT;
   typedef typename REGType<typename SeedJIT::Subtype_t>::Type_t PSeedREG;
 
-  SeedJIT ran_seed_jit(forEach(RNG::ran_seed, param_leaf, TreeCombine()));
+  SeedJIT ran_seed_jit(forEach(RNG::get_RNG_Internals()->ran_seed, param_leaf, TreeCombine()));
   SeedJIT seed_tmp_jit(forEach(seed_tmp, param_leaf, TreeCombine()));
-  SeedJIT ran_mult_n_jit(forEach(RNG::ran_mult_n, param_leaf, TreeCombine()));
-  LatticeSeedJIT lattice_ran_mult_jit(forEach( *RNG::lattice_ran_mult , param_leaf, TreeCombine()));
+  SeedJIT ran_mult_n_jit(forEach(RNG::get_RNG_Internals()->ran_mult_n, param_leaf, TreeCombine()));
+  LatticeSeedJIT lattice_ran_mult_jit(forEach( RNG::get_RNG_Internals()->lattice_ran_mult , param_leaf, TreeCombine()));
 
   llvm::Value * r_lo     = llvm_derefParam( p_lo );
   llvm::Value * r_hi     = llvm_derefParam( p_hi );
@@ -1086,10 +1086,10 @@ function_random_exec(JitFunction& function, OLattice<T>& dest, const Subset& s ,
 
   forEach(dest, addr_leaf, NullCombine());
 
-  forEach(RNG::ran_seed, addr_leaf, NullCombine());
+  forEach(RNG::get_RNG_Internals()->ran_seed, addr_leaf, NullCombine());
   forEach(seed_tmp, addr_leaf, NullCombine());
-  forEach(RNG::ran_mult_n, addr_leaf, NullCombine());
-  forEach(*RNG::lattice_ran_mult, addr_leaf, NullCombine());
+  forEach(RNG::get_RNG_Internals()->ran_mult_n, addr_leaf, NullCombine());
+  forEach(RNG::get_RNG_Internals()->lattice_ran_mult, addr_leaf, NullCombine());
 
   JitParam jit_lo( QDP_get_global_cache().addJitParamInt( s.start() ) );
   JitParam jit_hi( QDP_get_global_cache().addJitParamInt( s.end() ) );

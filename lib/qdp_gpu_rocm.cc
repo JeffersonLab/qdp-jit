@@ -770,6 +770,11 @@ namespace QDP {
 
   void gpu_host_free(void *mem)
   {
+    if (!QDP_isInitialized())
+      {
+	//std::cout << "host free, QDP not initialized" << std::endl;
+	return;
+      }
     hipError_t ret;
     ret = hipHostFree ( mem );
     CheckError("hipHostFree",ret);
@@ -803,6 +808,11 @@ namespace QDP {
 
   void gpu_free(const void *mem )
   {
+    if (!QDP_isInitialized())
+      {
+	//std::cout << "GPU free, QDP not initialized" << std::endl;
+	return;
+      }
     hipError_t ret;
     ret = hipFree( (void*)mem );
     CheckError("hipFree",ret);

@@ -11,13 +11,23 @@ namespace QDP {
 
   namespace RNG
   {
-    extern Seed ran_seed;
-    extern Seed ran_mult;
-    extern Seed ran_mult_n;
-    extern LatticeSeed *lattice_ran_mult;
+    struct RNG_Internals_t
+    {
+      //! Global (current) seed
+      Seed ran_seed;
+      //! RNG multiplier
+      Seed ran_mult;
+      //! RNG multiplier raised to the volume+1
+      Seed ran_mult_n;
+      //! The lattice of skewed RNG multipliers
+      LatticeSeed lattice_ran_mult;
 
-    extern LatticeSeed *lat_ran_seed;
-    extern LatticeSeed *lat_ran_mult_n;
+      LatticeSeed lat_ran_mult_n;
+      LatticeSeed lat_ran_seed;
+    };
+
+    std::shared_ptr<RNG_Internals_t> get_RNG_Internals();
+
   }
 
 
@@ -35,6 +45,9 @@ namespace RNG
   //! Default initialization of the RNG
   /*! Uses arbitrary internal seed to initialize the RNG */
   void initDefaultRNG(void);
+
+  // Finalization of RNG
+  void doneDefaultRNG(void);
 
   //! Initialize the internals of the RNG
   void initRNG(void);

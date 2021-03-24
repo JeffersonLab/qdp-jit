@@ -285,6 +285,5 @@ namespace QDP {
   }
 
   
-  
 }
 

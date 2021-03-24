@@ -722,6 +722,11 @@ namespace QDP {
 
   void gpu_host_free(void *mem)
   {
+    if (!QDP_isInitialized())
+      {
+	//std::cout << "host free, QDP not initialized" << std::endl;
+	return;
+      }
     CUresult ret;
     ret = cuMemFreeHost(mem);
     CudaRes("cuMemFreeHost",ret);
@@ -784,6 +789,11 @@ namespace QDP {
 #ifdef GPU_DEBUG_DEEP
     QDP_debug_deep( "CudaFree %p", mem );
 #endif
+    if (!QDP_isInitialized())
+      {
+	//std::cout << "GPU free, QDP not initialized" << std::endl;
+	return;
+      }
     CUresult ret;
     ret = cuMemFree((CUdeviceptr)const_cast<void*>(mem));
     CudaRes("cuMemFree",ret);
