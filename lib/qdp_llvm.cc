@@ -43,7 +43,6 @@ namespace QDP {
 
     bool clang_codegen = false;
     std::string clang_opt;
-    int  codegen_optlevel = 1;
     
     //
     // Default search locations for libdevice
@@ -136,11 +135,6 @@ namespace QDP {
     std::string dbname = "dummy.dat";
     typedef std::map< std::string , std::pair< std::string , std::string > > DBType; // pretty+other stuff --> function name , PTX string
     DBType db;
-  }
-
-  void llvm_set_codegen_optlevel( int i )
-  {
-    codegen_optlevel = i;
   }
 
   
@@ -1727,12 +1721,10 @@ namespace QDP {
 
   
 #ifdef QDP_BACKEND_ROCM
-  void llvm_build_function_rocm(JitFunction& func)
-  {
-    //llvm_module_dump();
-    QDPIO::cout << str_pretty << "\n";
 
-#if 0
+  void build_function_codegen(const std::string& shared_path)
+  {
+  #if 0
     {
       QDPIO::cout << "write code to module.bc ...\n";
       std::error_code EC;
@@ -1742,12 +1734,8 @@ namespace QDP {
     }
 #endif
 
-    
-
     QDPIO::cout << "setting module data layout\n";
     Mod->setDataLayout(TargetMachine->createDataLayout());
-
-    
 
     if (math_declarations.size() > 0)
       {
@@ -1771,7 +1759,6 @@ namespace QDP {
 	  }
       }
 
-
 #if 0
     {
       QDPIO::cout << "write code to module_linked.bc ...\n";
@@ -1781,7 +1768,6 @@ namespace QDP {
       OS.flush();
     }
 #endif
-    
     
     llvm::legacy::PassManager PM2;
     
@@ -1814,8 +1800,7 @@ namespace QDP {
 	OS.flush();
       }
 
-
-    std::string isabin_path = "module.o";
+    std::string isabin_path = "module_" + str_kernel_name + ".o";
 
     if (clang_codegen)
       {	
@@ -1843,7 +1828,7 @@ namespace QDP {
 	//
 	// This PMBuilder.populateModulePassManager is essential
 	PassManagerBuilder PMBuilder;
-	PMBuilder.OptLevel = codegen_optlevel;
+	PMBuilder.OptLevel = jit_config_get_codegen_opt();
 
 	//PMBuilder.populateFunctionPassManager(PerFunctionPasses);
 	PMBuilder.populateModulePassManager(PM);
@@ -1911,14 +1896,30 @@ namespace QDP {
 
     
     std::string lld_path = std::string(ROCM_DIR) + "/llvm/bin/ld.lld";
-    std::string shared_path = "module.so";
-    std::string command = lld_path + " -shared " + isabin_path + " -o " + shared_path; 
+    std::string command = lld_path + " -shared " + isabin_path + " -o " + shared_path;
 
     std::cout << "System: " << command.c_str() << "\n";
 
     system( command.c_str() );
+  }
 
-    QDPIO::cout << "Using the power of strings!\n";
+  
+  void llvm_build_function_rocm(JitFunction& func)
+  {
+    //llvm_module_dump();
+    QDPIO::cout << str_pretty << "\n";
+
+    std::string shared_path = "module_" + str_kernel_name + ".so";
+
+    if (Layout::primaryNode())
+      {
+	build_function_codegen( shared_path );
+      }
+
+    //
+    // All nodes wait until primary node has finished LLVM codegen
+    QMP_barrier();
+    
     std::ostringstream sstream;
     std::ifstream fin(shared_path, ios::binary);
     sstream << fin.rdbuf();

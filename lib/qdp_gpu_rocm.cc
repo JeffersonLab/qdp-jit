@@ -500,27 +500,6 @@ namespace QDP {
 
 
   
-  
-  std::map< JitFunction::Func_t , std::string > mapCUFuncPTX;
-
-  std::string getPTXfromCUFunc(JitFunction& f) {
-    return mapCUFuncPTX[f.get_function()];
-  }
-
-
-
-   
-  int CudaGetAttributesLocalSize( JitFunction& f )
-  {
-#if 0
-    int local_mem = 0;
-    cuFuncGetAttribute( &local_mem , CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES , (CUfunction)f.get_function() );
-    return local_mem;
-#endif
-    return 0;
-  }
-
-
 
   JitResult gpu_launch_kernel( JitFunction& f, 
 			       unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 

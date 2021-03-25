@@ -6,6 +6,9 @@ namespace QDP
   size_t jit_config_get_pool_alignment();
   void jit_config_set_pool_alignment(size_t size );
 
+  int jit_config_get_codegen_opt();
+  void jit_config_set_codegen_opt(int opt);
+
   void jit_config_set_pool_size( size_t val );
   void jit_config_set_thread_stack( int stack );
   size_t jit_config_get_pool_size();

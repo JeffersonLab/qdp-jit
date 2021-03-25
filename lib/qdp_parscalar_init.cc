@@ -395,11 +395,11 @@ namespace QDP {
 	    jit_config_deep_set( tmp , false );
 	  }
 #endif
-	else if (strcmp((*argv)[i], "-optlevel")==0)
+	else if (strcmp((*argv)[i], "-opt")==0)
 	  {
 	    unsigned val;
 	    sscanf((*argv)[++i],"%u",&val);
-	    llvm_set_codegen_optlevel( val );
+	    jit_config_set_codegen_opt( val );
 	  }
 #ifdef QDP_CUDA_SPECIAL
 	else if (strcmp((*argv)[i], "-cudaspecial")==0)

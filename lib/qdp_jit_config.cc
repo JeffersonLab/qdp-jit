@@ -20,6 +20,10 @@ namespace QDP
     size_t pool_size_decrement = 10 * 1024*1024;   // 10MB
 
     bool pool_count_allocations = false;
+
+#ifdef QDP_BACKEND_ROCM
+    int  codegen_opt = 1;
+#endif
     
 #ifdef QDP_DEEP_LOG
     bool deep_log = false;
@@ -41,6 +45,9 @@ namespace QDP
     QDPIO::cout << "  resulting memory pool size          : " << val/1024/1024 << " MB\n";
       }
   }
+
+  int jit_config_get_codegen_opt() { return codegen_opt; }
+  void jit_config_set_codegen_opt(int opt) { codegen_opt = opt; }
 
   size_t jit_config_get_pool_alignment() { return pool_alignment; }
   void jit_config_set_pool_alignment(size_t size ) { pool_alignment = size; }
