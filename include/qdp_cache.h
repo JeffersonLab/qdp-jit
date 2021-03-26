@@ -11,13 +11,8 @@ namespace QDP
 {
   template<class T> class multi1d;
 
-  bool qdp_cache_get_cache_verbose();
   void qdp_cache_set_cache_verbose(bool b);
-
-  bool qdp_cache_get_launch_verbose();
-  void qdp_cache_set_launch_verbose(bool b);
-
-    
+  
   class QDPCache
   {
   public:
@@ -35,6 +30,13 @@ namespace QDP
     enum class JitParamType { float_, int_ , int64_, double_, bool_ };
     typedef void (* LayoutFptr)(bool toDev,void * outPtr,void * inPtr);
 
+#ifdef QDP_BACKEND_ROCM
+    typedef std::vector<unsigned char> KernelArgs_t;
+#else
+    typedef std::vector<void*> KernelArgs_t;
+#endif
+
+    
     struct ArgKey {
       // The default constructor is needed in the custom streaming kernel where multi1d<ArgKey> is used -- don't see a simple way around it
       ArgKey(): id(-1), elem(-1) {}
@@ -59,7 +61,8 @@ namespace QDP
       size_t size;
       size_t elem_size;
       Flags  flags;
-      void*  hstPtr;  // NULL if not allocated
+      std::vector<void*>  vecHstPtr;  // NULL if not allocated
+      //void* hstPtr() { return vecHstPtr.at(0); }
       void*  devPtr;  // NULL if not allocated
       std::list<int>::iterator iterTrack;
       LayoutFptr fptr;
@@ -74,10 +77,19 @@ namespace QDP
     
     QDPCache();
 
-    std::vector<void*> get_kernel_args(std::vector<ArgKey>& ids , bool for_kernel = true );
+    KernelArgs_t get_kernel_args(std::vector<ArgKey>& ids , bool for_kernel = true );
+    
+    std::vector<void*> get_dev_ptrs(std::vector<ArgKey>& ids );
     void backup_last_kernel_args();
     
     void printInfo(int id);
+
+    size_t free_mem();
+    void print_pool();
+    void defrag();
+    size_t get_max_allocated();
+
+    std::map<size_t,size_t>& get_alloc_count();
 
     int addJitParamFloat(float i);
     int addJitParamDouble(double i);
@@ -91,7 +103,7 @@ namespace QDP
     int addDeviceStatic( size_t n_bytes );
     
     int add( size_t size, Flags flags, Status st, const void* ptr_host, const void* ptr_dev, LayoutFptr func );
-    int addArray( size_t element_size , int num_elements );
+    int addArray( size_t element_size , int num_elements , std::vector<void*> hstPtr );
 
     int addMulti( const multi1d<QDPCache::ArgKey>& ids );
 
@@ -111,10 +123,11 @@ namespace QDP
     
     size_t getSize(int id);
     void printLockSet();
-    
-    void suspend();
-    void resume();
 
+    void updateDevPtr(int id, void* ptr);
+    
+    int  getPoolDefrags();
+    
     void   setPoolSize(size_t s);
     size_t getPoolSize();
     void   enableMemset(unsigned val);
@@ -126,7 +139,10 @@ namespace QDP
   private:
     void printInfo(const Entry& e);
     std::string stringStatus( Status s );
-    
+
+    bool gpu_allocate_base( void ** ptr , size_t n_bytes , int id );
+    void gpu_free_base( void * ptr , size_t n_bytes );
+
     void growStack();
 
     void lockId(int id);

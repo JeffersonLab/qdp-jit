@@ -25,6 +25,11 @@ public:
     F.setup( rhs.elem() );
   }
 
+  void setup_value(const RScalarJIT< typename JITType<T>::Type_t >& rhs ) {
+    F.setup_value( rhs.elem() );
+  }
+
+  
   RScalarREG(const RScalarJIT< typename JITType<T>::Type_t >& rhs ) {
     setup( rhs.elem() );
   }
@@ -336,6 +341,12 @@ public:
     im.setup( rhs.imag() );
   }
 
+  void setup_value(const RComplexJIT< typename JITType<T>::Type_t >& rhs ) {
+    re.setup_value( rhs.real() );
+    im.setup_value( rhs.imag() );
+  }
+
+  
   // RComplexREG& operator=( const RComplexJIT< typename JITType<T>::Type_t >& rhs) {
   //   setup(rhs);
   //   return *this;
@@ -2648,32 +2659,6 @@ fill_gaussian(RComplexREG<T>& d, RComplexREG<T>& r1, RComplexREG<T>& r2)
 #endif
 }
 
-
-
-template<class T>
-inline void 
-qdpPHI(RScalarREG<T>& d, 
-       const RScalarREG<T>& phi0, llvm::BasicBlock* bb0 ,
-       const RScalarREG<T>& phi1, llvm::BasicBlock* bb1 )
-{
-  qdpPHI(d.elem(),
-	 phi0.elem(),bb0,
-	 phi1.elem(),bb1);
-}
-
-template<class T>
-inline void 
-qdpPHI(RComplexREG<T>& d, 
-       const RComplexREG<T>& phi0, llvm::BasicBlock* bb0 ,
-       const RComplexREG<T>& phi1, llvm::BasicBlock* bb1 )
-{
-  qdpPHI(d.real(),
-	 phi0.real(),bb0,
-	 phi1.real(),bb1);
-  qdpPHI(d.imag(),
-	 phi0.imag(),bb0,
-	 phi1.imag(),bb1);
-}
 
 
 

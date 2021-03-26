@@ -30,6 +30,10 @@ namespace QDP {
       F.setup( rhs.elem() );
     }
 
+    void setup_value(const PScalarJIT< typename JITType<T>::Type_t >& rhs ) {
+      F.setup_value( rhs.elem() );
+    }
+
     PScalarREG(const typename WordType<T>::Type_t& rhs): F(rhs) {}
 
 
@@ -1543,16 +1547,6 @@ gather_sites(PScalarREG<T>& d,
 }
 
 
-template<class T>
-inline void 
-qdpPHI(PScalarREG<T>& d, 
-       const PScalarREG<T>& phi0, llvm::BasicBlock* bb0 ,
-       const PScalarREG<T>& phi1, llvm::BasicBlock* bb1 )
-{
-  qdpPHI(d.elem(),
-	 phi0.elem(),bb0,
-	 phi1.elem(),bb1);
-}
 
 
 

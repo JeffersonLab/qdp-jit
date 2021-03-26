@@ -16,11 +16,17 @@
 #define BASE_PRECISION 32
 #endif
 
+struct jit_half_t
+{
+  unsigned char a[2];
+};
+
 // These are fixed precision versions
 typedef int       INTEGER32;
 typedef float     REAL32;
 typedef double    REAL64;
 typedef bool      LOGICAL;
+typedef jit_half_t REAL16;
 
 // Set the base floating precision
 #if BASE_PRECISION == 32

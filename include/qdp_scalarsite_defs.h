@@ -385,6 +385,21 @@ typedef OScalar< PScalar< PColorVector< RComplex<Word<REAL64> >, 1> > > ColorVec
 typedef OScalar< PScalar< PScalar< RComplex<Word<REAL64> > > > > ComplexD;
 typedef OScalar< PScalar< PScalar< RScalar<Word<REAL64> > > > > RealD;
 
+  
+// Half precision types
+
+typedef OLattice< PScalar< PScalar< RScalar<Word<REAL16> > > > > LatticeRealH;
+
+typedef OLattice< PScalar< PColorVector< RComplex<Word<REAL16> >, Nc> > > LatticeColorVectorH;
+typedef OLattice< PSpinVector< PScalar< RComplex<Word<REAL16> > >, Ns> > LatticeSpinVectorH;
+typedef OLattice< PScalar< PColorMatrix< RComplex<Word<REAL16> >, Nc> > > LatticeColorMatrixH;
+typedef OLattice< PSpinMatrix< PScalar< RComplex<Word<REAL16> > >, Ns> > LatticeSpinMatrixH;
+typedef OLattice< PSpinVector< PColorVector< RComplex<Word<REAL16> >, Nc>, Ns> > LatticeFermionH;
+typedef OLattice< PSpinVector< PColorVector< RComplex<Word<REAL16> >, Nc>, (Ns>>1) > > LatticeHalfFermionH;
+typedef OLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL16> >, Nc>, Ns> > LatticePropagatorH;
+typedef OLattice< PScalar< PScalar< RComplex<Word<REAL16> > > > > LatticeComplexH;
+
+  
 // Equivalent names
 typedef Integer  Int;
 

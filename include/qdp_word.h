@@ -165,6 +165,15 @@ private:
 };
 
 
+template<class T>
+struct FirstWord<Word<T> >
+{
+  static T get(const Word<T>& a)
+  {
+    return a.elem();
+  }
+};
+
 
 
 template<class T> 

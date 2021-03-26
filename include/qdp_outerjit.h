@@ -5,14 +5,50 @@
 namespace QDP {
 
   template<class T>
-  class OLatticeJIT: public QDPTypeJIT<T, OLatticeJIT<T> >
+  class OLatticeJIT//: public QDPTypeJIT<T, OLatticeJIT<T> >
   {
   public:
-    OLatticeJIT( ParamRef base_ ) : QDPTypeJIT<T, OLatticeJIT<T> >(base_) {}
-    OLatticeJIT( const OLatticeJIT& rhs ) : QDPTypeJIT<T, OLatticeJIT<T> >(rhs) {}
+    //! Type of the first argument
+    typedef T Subtype_t;
+
+
+    OLatticeJIT( ParamRef base_ )
+    {
+      base_m = base_;
+    }
+
+    OLatticeJIT( const OLatticeJIT& rhs )
+    {
+      base_m = rhs.base_m;
+    }
+    
+
+    T& elem( JitDeviceLayout lay , llvm::Value * index )
+    {
+      IndexDomainVector args;
+      args.push_back( make_pair( Layout::sitesOnNode() , index ) );
+      F.setup( llvm_derefParam(base_m) , lay , args );
+      return F;
+    }
+
+    const T& elem( JitDeviceLayout lay , llvm::Value * index ) const
+    {
+      IndexDomainVector args;
+      args.push_back( make_pair( Layout::sitesOnNode() , index ) );
+      F.setup( llvm_derefParam(base_m) , lay , args );
+      return F;
+    }
+
+    void set_base( ParamRef p ) const
+    {     
+      base_m = p;
+    }
 
   private:
     void operator=(const OLatticeJIT& a);
+
+    mutable ParamRef base_m;
+    mutable T        F;
   };
 
 
@@ -20,15 +56,59 @@ namespace QDP {
 
 
   template<class T>
-  class OScalarJIT: public QDPTypeJIT<T, OScalarJIT<T> >
+  class OScalarJIT//: public QDPTypeJIT<T, OScalarJIT<T> >
   {
   public:
-    OScalarJIT( ParamRef base_ ) : QDPTypeJIT<T, OScalarJIT<T> >(base_) {}
+    //! Type of the first argument
+    typedef T Subtype_t;
 
-    OScalarJIT(const OScalarJIT& rhs) : QDPTypeJIT<T, OScalarJIT<T> >(rhs) {}
+
+    OScalarJIT( ParamRef base_ ) : base_m(base_)
+    {
+    }
+    
+
+
+    OScalarJIT(const OScalarJIT& rhs)
+    {
+      base_m = rhs.base_m;
+    }
+
+    void copy( const OScalarJIT& rhs ) const
+    {
+      base_m     = rhs.base_m;
+    }
+
+
+    llvm::Value* get_word_value() const
+    {
+      return llvm_derefParam( base_m );
+    }
+
+    T& elem() {
+      IndexDomainVector args;
+      args.push_back( make_pair( 1 , llvm_create_value(0) ) );
+      F.setup( llvm_derefParam(base_m) , JitDeviceLayout::Scalar , args );
+      return F;
+    }
+
+    const T& elem() const {
+      IndexDomainVector args;
+      args.push_back( make_pair( 1 , llvm_create_value(0) ) );
+      F.setup( llvm_derefParam(base_m) , JitDeviceLayout::Scalar , args );
+      return F;
+    }
+
+    void set_base( ParamRef p ) const
+    {
+      base_m = p;
+    }
 
   private:
-    void operator=(const OScalarJIT& a) {}
+    void operator=(const OScalarJIT& a);
+
+    mutable ParamRef    base_m;
+    mutable T F;
   };
 
 

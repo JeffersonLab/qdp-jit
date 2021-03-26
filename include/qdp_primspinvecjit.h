@@ -35,8 +35,6 @@ template <class T, int N> class PSpinVectorJIT: public BaseJIT<T,N>
 public:
 
   // Default constructing should be possible
-  // then there is no need for MPL index when
-  // construction a PMatrix<T,N>
   PSpinVectorJIT(){}
 
   template<class T1>

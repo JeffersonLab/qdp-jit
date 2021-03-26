@@ -413,6 +413,24 @@ private:
 };
 
 
+template<class T>
+struct FirstWord<RScalar<T> >
+{
+  static typename WordType<T>::Type_t get(const RScalar<T>& a)
+  {
+    return FirstWord<T>::get(a.elem());
+  }
+};
+
+template<class T>
+struct FirstWord<RComplex<T> >
+{
+  static typename WordType<T>::Type_t get(const RComplex<T>& a)
+  {
+    return FirstWord<T>::get(a.real());
+  }
+};
+
 
 template<class T> 
 struct JITType<RScalar<T> >

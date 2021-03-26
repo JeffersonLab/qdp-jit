@@ -107,6 +107,15 @@ private:
 };
 
 
+  template<class T>
+  struct FirstWord< PSeed<T> >
+  {
+    static typename WordType<T>::Type_t get(const PSeed<T>& a)
+    {
+      return FirstWord<T>::get(a.elem(0));
+    }
+  };
+
 
 template<class T> 
 struct JITType<PSeed<T> >

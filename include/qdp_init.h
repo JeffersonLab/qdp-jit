@@ -17,15 +17,11 @@
 // Info/error routines
 namespace QDP {
 
-#ifdef QDP_IS_QDPJIT
-  extern bool QDPuseGPU;
-  extern bool setPoolSize;
   int QDP_setGPU(); // returns the CUDA device number that was actually set
 #ifdef QDP_USE_COMM_SPLIT_INIT
   int QDP_setGPUCommSplit();
 #endif
   void QDP_startGPU();
-#endif
 
 //! Turn on the machine
 void QDP_initialize (int *argc, char ***argv);

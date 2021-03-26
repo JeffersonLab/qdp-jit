@@ -36,10 +36,10 @@ namespace QDP
     typename QDPSubTypeTrait< typename BinaryReturn<C1,C2,FnLocalInnerProduct>::Type_t >::Type_t ret;
     ret.setSubset( l.subset() );
 
-    static CUfunction function;
+    static JitFunction function;
 
-    if (function == NULL)
-      function = function_OP_subtype_type_build<FnLocalInnerProduct>(ret, l , r );
+    if (function.empty())
+      function_OP_subtype_type_build<FnLocalInnerProduct>(function, ret, l , r );
 
     function_OP_exec<FnLocalInnerProduct>(function, ret, l, r, l.subset() );
     
@@ -58,10 +58,10 @@ namespace QDP
     typename QDPSubTypeTrait< typename BinaryReturn<C1,C2,FnLocalInnerProduct>::Type_t >::Type_t ret;
     ret.setSubset( r.subset() );
 
-    static CUfunction function;
+    static JitFunction function;
 
-    if (function == NULL)
-      function = function_OP_type_subtype_build<FnLocalInnerProduct>(ret, l , r );
+    if (function.empty())
+      function_OP_type_subtype_build<FnLocalInnerProduct>(function, ret, l , r );
 
     function_OP_exec<FnLocalInnerProduct>(function, ret, l, r, r.subset() );
     
@@ -140,14 +140,14 @@ sum( const OSubLattice<T>& s1 )
   bool allocated=false;
   while (actsize > 0) {
 
-    unsigned numThreads = DeviceParams::Instance().getMaxBlockX();
-    while ((numThreads*sizeof(T2) > DeviceParams::Instance().getMaxSMem()) || (numThreads > (unsigned)actsize)) {
+    unsigned numThreads = gpu_getMaxBlockX();
+    while ((numThreads*sizeof(T2) > gpu_getMaxSMem()) || (numThreads > (unsigned)actsize)) {
       numThreads >>= 1;
     }
     unsigned numBlocks=(int)ceil(float(actsize)/numThreads);
     
-    if (numBlocks > DeviceParams::Instance().getMaxGridX()) {
-      QDP_error_exit( "sum(SubLat) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)DeviceParams::Instance().getMaxGridX());
+    if (numBlocks > gpu_getMaxGridX()) {
+      QDP_error_exit( "sum(SubLat) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)gpu_getMaxGridX());
     }
 
     int shared_mem_usage = numThreads*sizeof(T2);

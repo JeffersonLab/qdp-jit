@@ -37,6 +37,9 @@ namespace QDP
   fill_random(double* d, T1& seed, T2& skewed_seed, const T1& seed_mult);
 
 
+  template<class T> class FirstWord;
+  
+
   template<class T> class JITType;
   template<class T, int N > class BaseJIT;
 
@@ -143,52 +146,18 @@ namespace QDP
   class Set;
   class Subset;
 
-#if 0
-  template<class T> void *function_layout_to_jit_build( const OLattice<T>& dest );
-  template<class T> void  function_layout_to_jit_exec(void * function, T *dest, T *src );
-
-  template<class T> void *function_layout_to_native_build( const OLattice<T>& dest );
-  template<class T> void  function_layout_to_native_exec(void * function, T *dest, T *src );
-
-  typedef std::pair< int , llvm::Value * > IndexDomain;
-  typedef std::vector< IndexDomain >     IndexDomainVector;
-
-  llvm::Value * datalayout( JitDeviceLayout::LayoutEnum  lay , IndexDomainVector a );
-
-  llvm::Value      *get_index_from_index_vector( const IndexDomainVector& idx );
-  IndexDomainVector get_index_vector_from_index( llvm::Value *index );
-  IndexDomainVector get_scalar_index_vector_from_index( llvm::Value *index );
-  void setDataLayoutInnerSize( int64_t i );
-  int64_t getDataLayoutInnerSize();
-#endif
 
   template<class T, class T1, class RHS>
-  CUfunction
+  JitFunction
   function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs );
 
   namespace RNG 
   {
-//  float sranf(Seed&, Seed&, const Seed&);
-
-  template<class T>
-  void sranf(WordJIT<T>& dest,
-	     PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > & seed, 
-	     PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > >& skewed_seed, 
-	     const OScalarJIT<PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > >& seed_mult);
-
-#if 0
-  template<class T>
-  void sranf(WordJIT<T>& dest,
-	     OLatticeJIT<PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > >& seed, 
-	     OLatticeJIT<PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > >& skewed_seed, 
-	     const OLatticeJIT<PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > >& seed_mult);
-#endif
-#if 0
-  template<class T>
-  WordJIT<T> sranf(OScalarJIT<PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > >& seed, 
-		   OScalarJIT<PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > >& skewed_seed, 
-		   const OScalarJIT<PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > >& seed_mult);
-#endif
+    template<class T>
+    void sranf(WordJIT<T>& dest,
+	       PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > & seed, 
+	       PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > >& skewed_seed, 
+	       const OScalarJIT<PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > >& seed_mult);
   }
 
 

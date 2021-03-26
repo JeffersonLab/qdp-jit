@@ -14,17 +14,24 @@ namespace QDP {
 //-----------------------------------------------------------------------------
 namespace Layout
 {
+
+  namespace {
+    std::vector< std::shared_ptr<LatticeInteger> > latCoord(Nd);
+  }
+
+  void destroyLatticeCoordinate()
+  {
+    latCoord.clear();
+  }
+  
   //! coord[mu]  <- mu  : fill with lattice coord in mu direction
   /* Assumes no inner grid */
   LatticeInteger latticeCoordinate(int mu)
   {
-    static multi1d<LatticeInteger> latCoord(Nd);
-    static std::vector<bool> availCoord(Nd,false);
-
     if (mu < 0 || mu >= Nd)
       QDP_error_exit("dimension out of bounds");
 
-    if (!availCoord[mu]) {
+    if (!latCoord[mu]) {
       //QDPIO::cout << "creating latticeCoordinate " << mu << "\n";
       const int nodeSites = Layout::sitesOnNode();
       const int nodeNumber = Layout::nodeNumber();
@@ -34,11 +41,11 @@ namespace Layout
 	  Integer cc = Layout::siteCoords(nodeNumber,i)[mu];
 	  d.elem(i) = cc.elem();
 	}
-      latCoord[mu] = d;
-      availCoord[mu] = true;
+      latCoord[mu] = std::make_shared<LatticeInteger>(d);
+      //*latCoord[mu] = d;
     }
     
-    return latCoord[mu];
+    return *latCoord[mu];
   }
 }
 

@@ -170,7 +170,16 @@ private:
 };
 
 
+template<class T>
+struct FirstWord<PScalar<T> >
+{
+  static typename WordType<T>::Type_t get(const PScalar<T>& a)
+  {
+    return FirstWord<T>::get(a.elem());
+  }
+};
 
+    
 template<class T> 
 struct JITType<PScalar<T> >
 {

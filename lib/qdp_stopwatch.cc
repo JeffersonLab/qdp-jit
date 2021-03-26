@@ -26,6 +26,8 @@ void StopWatch::reset()
 
 void StopWatch::start() 
 {
+  jit_util_sync_copy();
+
   int ret_val;
   ret_val = gettimeofday(&t_start, NULL);
   if( ret_val != 0 ) 
@@ -39,6 +41,8 @@ void StopWatch::start()
 
 void StopWatch::stop() 
 {
+  jit_util_sync_copy();
+
   if( !startedP ) 
   { 
     QDPIO::cerr << __func__ << ": attempting to stop a non running stopwatch in StopWatch::stop()" << endl;

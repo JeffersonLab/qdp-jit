@@ -35,6 +35,19 @@ public:
 
 };
 
+
+  template<class T, int N>
+  struct FirstWord<PColorVector<T,N> >
+  {
+    static typename WordType<T>::Type_t get(const PColorVector<T,N>& a)
+    {
+      return FirstWord<T>::get(a.elem(0));
+    }
+  };
+
+
+
+  
 /*! @} */  // end of group primcolorvector
 
 //-----------------------------------------------------------------------------

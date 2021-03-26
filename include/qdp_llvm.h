@@ -10,12 +10,8 @@
 #include "llvm/IR/Module.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/IR/LLVMContext.h"
-//#include "llvm/Bitcode/BitstreamWriter.h"
 #include "llvm/Bitcode/BitcodeReader.h"
-//#include "llvm/Bitcode/Writer.h"
-//#include "llvm/IR/PassManager.h"  // not ready yet in LLVM 3.8
 #include "llvm/IR/LegacyPassManager.h"
-//#include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Analysis/BasicAliasAnalysis.h"
 #include "llvm/Pass.h"
 #include "llvm/Analysis/Passes.h"
@@ -30,23 +26,18 @@
 
 #include "llvm/CodeGen/TargetLowering.h"
 
-// pre llvm6
-#if 0
-#include "llvm/Target/TargetLowering.h"
-#endif
 
 #include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/Support/ToolOutputFile.h"
-//#include "llvm/ADT/OwningPtr.h"
 #include "llvm/Support/FormattedStream.h"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/Support/SourceMgr.h"
 
-#if defined (QDP_LLVM8) || (QDP_LLVM9) || (QDP_LLVM10) || (QDP_LLVM11)
-#else
-#include "llvm/IR/TypeBuilder.h"
-#endif
+//#if defined (QDP_LLVM12)
+//#else
+//#include "llvm/IR/TypeBuilder.h"
+//#endif
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/StringSet.h"
@@ -78,11 +69,11 @@
 
 
 namespace llvm {
-#if defined (QDP_LLVM8) || (QDP_LLVM9) || (QDP_LLVM10) || (QDP_LLVM11)
+  //#if defined (QDP_LLVM12)
   ModulePass *createNVVMReflectPass(unsigned int);
-#else
-  ModulePass *createNVVMReflectPass(void);
-#endif
+  //#else
+  //ModulePass *createNVVMReflectPass(void);
+  //#endif
 }
 
 
@@ -96,32 +87,29 @@ namespace QDP {
     extern bool debug_loop_vectorizer;
   }
 
-  namespace llvm_opt {
-    extern int opt_level;   // opt -O level
-    extern int nvptx_FTZ;   // NVPTX Flush subnormals to zero
-  }
 
   namespace ptx_db {
     extern bool db_enabled;
     extern std::string dbname;
   }
 
-  CUfunction llvm_ptx_db( const char * pretty );
+  void llvm_ptx_db( JitFunction& f, const char * pretty );
 
   
-  extern llvm::LLVMContext TheContext;
-
   typedef int ParamRef;
 
-  // llvm::IRBuilder<> *builder;
-  // llvm::BasicBlock  *entry;
-  extern llvm::Function    *mainFunc;
-  extern llvm::Function    *mainFunc_extern;
-  //extern llvm::Module      *Mod;
+
+  void llvm_module_dump();
+
+  void llvm_set_clang_codegen();
+  void llvm_set_clang_opt(const char* opt);
+  void llvm_set_codegen_optlevel( int i );
+  
+  void llvm_set_libdevice_path(const char* path);
+  void llvm_set_libdevice_name(const char* name);
 
 
   void llvm_set_debug( const char * str );
-  void llvm_set_opt( const char * c_str );
   void llvm_set_ptxdb( const char * c_str );
   void llvm_debug_write_set_name( const char* pretty, const char* additional );
 
@@ -135,29 +123,18 @@ namespace QDP {
   llvm::Value * llvm_create_value( size_t v );
   llvm::Value * llvm_create_value( bool v );
 
+  
+  template<class T> llvm::Type* llvm_get_type();
 
-  template<class T> struct llvm_type;
-
-  template<> struct llvm_type<float> { static llvm::Type* value; };
-  template<> struct llvm_type<double> { static llvm::Type* value; };
-  template<> struct llvm_type<int> { static llvm::Type* value; };
-  template<> struct llvm_type<bool> { static llvm::Type* value; };
-  template<> struct llvm_type<float*> { static llvm::Type* value; };
-  template<> struct llvm_type<double*> { static llvm::Type* value; };
-  template<> struct llvm_type<int*> { static llvm::Type* value; };
-  template<> struct llvm_type<bool*> { static llvm::Type* value; };
 
   struct IndexRet {
     IndexRet(){}
     ParamRef p_multi_index;  // if neg. -> recv. buffer, otherwise it's the local index
     ParamRef p_recv_buf;
-    // llvm::Value * r_newidx_local;
-    // llvm::Value * r_newidx_buffer;
-    // llvm::Value * r_pred_in_buf;
-    // llvm::Value * r_rcvbuf;
   };
 
-  std::string getPTXfromCUFunc(CUfunction f);
+
+
   
   void llvm_append_mattr( const char * attr );
 
@@ -167,8 +144,14 @@ namespace QDP {
   llvm::Value *llvm_get_arg_ordered();
   llvm::Value *llvm_get_arg_start();
 
-  void llvm_start_new_function();
-  void llvm_wrapper_init();
+  void llvm_start_new_function( const char* ftype , const char* pretty );
+
+  llvm::IRBuilder<>* llvm_get_builder();
+  llvm::Module* llvm_get_module();
+  llvm::LLVMContext& llvm_get_context();
+
+
+  void llvm_backend_init();
   llvm::PHINode * llvm_phi( llvm::Type* type, unsigned num = 0 );
   llvm::Type* promote( llvm::Type* t0 , llvm::Type* t1 );
   llvm::Value* llvm_cast( llvm::Type *dest_type , llvm::Value *src );
@@ -221,6 +204,8 @@ namespace QDP {
   template<> ParamRef llvm_add_param<int64_t>();
   template<> ParamRef llvm_add_param<int>();
   template<> ParamRef llvm_add_param<int*>();
+  template<> ParamRef llvm_add_param<jit_half_t>();
+  template<> ParamRef llvm_add_param<jit_half_t*>();
   template<> ParamRef llvm_add_param<float>();
   template<> ParamRef llvm_add_param<float*>();
   template<> ParamRef llvm_add_param<double>();
@@ -230,7 +215,6 @@ namespace QDP {
   template<> ParamRef llvm_add_param<float**>();
   template<> ParamRef llvm_add_param<double**>();
 
-  void llvm_module_dump();
   
   llvm::Value * llvm_derefParam( ParamRef r );
 
@@ -278,7 +262,7 @@ namespace QDP {
 
   void addKernelMetadata(llvm::Function *F);
 
-  CUfunction llvm_get_cufunction(const char* fname, const char* pretty);
+  void llvm_build_function(JitFunction&);
 
 
   llvm::Value* llvm_sin_f32( llvm::Value* lhs );

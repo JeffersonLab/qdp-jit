@@ -30,6 +30,12 @@ public:
       this->elem(i).setup( j.elem(i) );
   }
 
+  void setup_value( const typename JITType< PColorVectorREG >::Type_t& j ) {
+    for (int i = 0 ; i < N ; i++ )
+      this->elem(i).setup_value( j.elem(i) );
+  }
+
+  
 
   //! PColorVectorREG = PColorVectorREG
   /*! Set equal to another PColorVectorREG */
@@ -262,7 +268,7 @@ peekColor(const PColorVectorREG<T,N>& l, llvm::Value * row)
 
   typedef typename JITType< PColorVectorREG<T,N> >::Type_t TTjit;
 
-  llvm::Value * ptr_local = llvm_alloca( llvm_type<typename WordType<T>::Type_t>::value , TTjit::Size_t );
+  llvm::Value * ptr_local = llvm_alloca( llvm_get_type<typename WordType<T>::Type_t>() , TTjit::Size_t );
 
   TTjit dj;
   dj.setup( ptr_local , JitDeviceLayout::Scalar );

@@ -1,8 +1,6 @@
 #include "qdp.h"
 #include "qdp_config.h"
 
-#include "qdp_libdevice.h"
-
 #include "llvm/InitializePasses.h"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/IR/LegacyPassManager.h"
@@ -15,15 +13,12 @@
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/PassRegistry.h"
 
-#if defined (QDP_LLVM11)
+#include "llvm/IR/InstrTypes.h"
+#include "llvm/Bitcode/BitcodeWriter.h"
+
 #include "llvm/CodeGen/CommandFlags.h"
 using namespace llvm;
 using namespace llvm::codegen;
-#elif defined (QDP_LLVM8) || defined (QDP_LLVM9) || defined (QDP_LLVM10)
-#include "llvm/CodeGen/CommandFlags.inc"
-#else
-#include "llvm/CodeGen/CommandFlags.def"
-#endif
 
 #include "llvm/Support/CommandLine.h"
 
@@ -32,48 +27,85 @@ using namespace llvm::codegen;
 
 #include "llvm/Transforms/Utils/Cloning.h"
 
+#include "llvm/Target/TargetMachine.h"
+
 #include <memory>
+#include <unistd.h>
 
 namespace QDP {
 
-  llvm::LLVMContext TheContext;
+  enum jitprec { f32 , f64 };
 
+  namespace
+  {
+    std::string user_libdevice_path;
+    std::string user_libdevice_name;
 
-  llvm::BasicBlock  *entry;
-  llvm::Function    *mainFunc;
+    bool clang_codegen = false;
+    std::string clang_opt;
+    
+    //
+    // Default search locations for libdevice
+    // "ARCH"      gets replaced by "gfx908" (ROCm) or "70" (CUDA)
+    // "CUDAPATH"  gets replaced by the envvar CUDAPATH or CUDA_PATH
+    //
+#ifdef QDP_BACKEND_ROCM
+    std::vector<std::string> vec_str_libdevice_path = { ROCM_DIR };
+    std::vector<std::string> vec_str_libdevice_path_append = { "llvm/lib/libdevice/" };
+    std::vector<std::string> vec_str_libdevice_name = { "libm-amdgcn-ARCH.bc" };
+#else
+    std::vector<std::string> vec_str_libdevice_path = { "CUDAPATH" , "/usr/local/cuda/" , "/usr/lib/nvidia-cuda-toolkit/" };
+    std::vector<std::string> vec_str_libdevice_path_append = { "nvvm/libdevice/" , "libdevice/" };
+    std::vector<std::string> vec_str_libdevice_name = { "libdevice.10.bc" , "libdevice.compute_ARCH.10.bc" };
+#endif
+    
+    
+    llvm::LLVMContext TheContext;
 
+    llvm::Triple TheTriple;
+    std::unique_ptr<llvm::TargetMachine> TargetMachine;
+    
+    llvm::BasicBlock  *bb_stack;
+    llvm::BasicBlock  *bb_afterstack;
 
-  std::unique_ptr< llvm::Module >      Mod;
-  std::unique_ptr< llvm::Module >      module_libdevice;
-  std::unique_ptr< llvm::IRBuilder<> > builder;
+    BasicBlock::iterator it_stack;
+    
+    llvm::Function    *mainFunc;
 
+    std::unique_ptr< llvm::Module >      Mod;
+    std::unique_ptr< llvm::Module >      module_libdevice;
+#ifdef QDP_BACKEND_ROCM
+    std::vector<std::unique_ptr< llvm::Module > >     module_ocml;
+#endif
 
+    std::unique_ptr< llvm::IRBuilder<> > builder;
+    bool function_created;
 
-  std::map<CUfunction,std::string> mapCUFuncPTX;
+    std::string str_func_type;
+    std::string str_pretty;
+    std::map<std::string,int> map_func_counter;
+    std::string str_kernel_name;
+    std::string str_arch;
+    
+    std::vector< llvm::Type* > vecParamType;
+    std::vector< llvm::Value* > vecArgument;
 
-  std::string getPTXfromCUFunc(CUfunction f) {
-    return mapCUFuncPTX[f];
+    llvm::Value *r_arg_lo;
+    llvm::Value *r_arg_hi;
+    llvm::Value *r_arg_myId;
+    llvm::Value *r_arg_ordered;
+    llvm::Value *r_arg_start;
+
+    std::map< std::string , std::string > mapMath;
+
+    std::map< jitprec , std::map< std::string , int > > math_declarations;
   }
 
-  bool function_created;
+  namespace AMDspecific {
+    ParamRef __threads_per_group;
+    ParamRef __grid_size_x;
+  }
 
-  std::vector< llvm::Type* > vecParamType;
-  std::vector< llvm::Value* > vecArgument;
-
-  llvm::Value *r_arg_lo;
-  llvm::Value *r_arg_hi;
-  llvm::Value *r_arg_myId;
-  llvm::Value *r_arg_ordered;
-  llvm::Value *r_arg_start;
-
-  llvm::Type* llvm_type<float>::value;
-  llvm::Type* llvm_type<double>::value;
-  llvm::Type* llvm_type<int>::value;
-  llvm::Type* llvm_type<bool>::value;
-  llvm::Type* llvm_type<float*>::value;
-  llvm::Type* llvm_type<double*>::value;
-  llvm::Type* llvm_type<int*>::value;
-  llvm::Type* llvm_type<bool*>::value;
 
   namespace llvm_counters {
     int label_counter;
@@ -88,24 +120,70 @@ namespace QDP {
     std::string name_additional;
   }
 
-  namespace llvm_opt {
-    int opt_level   = 3;   // opt -O level
-    int nvptx_FTZ   = 0;   // NVPTX Flush subnormals to zero
-    bool DisableInline = false;
-    bool UnitAtATime = false;
-    bool DisableLoopUnrolling = false;
-    bool DisableLoopVectorization = false;
-    bool DisableSLPVectorization = false;
-  }
+
 
   namespace ptx_db {
     bool db_enabled = false;
     std::string dbname = "dummy.dat";
-    typedef std::map< std::string , std::string > DBType;
+    typedef std::map< std::string , std::pair< std::string , std::string > > DBType; // pretty+other stuff --> function name , PTX string
     DBType db;
   }
 
+  
+  void llvm_set_clang_codegen()
+  {
+    clang_codegen = true;
+  }
 
+  void llvm_set_clang_opt(const char* opt)
+  {
+    clang_opt = opt;
+  }
+      
+  void llvm_set_libdevice_path(const char* path)
+  {
+    user_libdevice_path = std::string(path);
+    if (user_libdevice_path.back() != '/')
+      user_libdevice_path.append("/");
+  }
+
+  void llvm_set_libdevice_name(const char* name)
+  {
+    user_libdevice_name = std::string(name);
+  }
+
+
+  llvm::LLVMContext& llvm_get_context()
+  {
+    return TheContext;
+  }
+
+  
+  llvm::IRBuilder<>* llvm_get_builder()
+  {
+    return builder.get();
+  }
+
+  llvm::Module* llvm_get_module()
+  {
+    return Mod.get();
+  }
+
+
+  template<> llvm::Type* llvm_get_type<jit_half_t>()  { return llvm::Type::getHalfTy(TheContext); }
+  template<> llvm::Type* llvm_get_type<float>()  { return llvm::Type::getFloatTy(TheContext); }
+  template<> llvm::Type* llvm_get_type<double>() { return llvm::Type::getDoubleTy(TheContext); }
+  template<> llvm::Type* llvm_get_type<int>()    { return llvm::Type::getIntNTy(TheContext,32); }
+  template<> llvm::Type* llvm_get_type<bool>()   { return llvm::Type::getIntNTy(TheContext,1); }
+
+  template<> llvm::Type* llvm_get_type<jit_half_t*>()  { return llvm::Type::getHalfPtrTy(TheContext); }
+  template<> llvm::Type* llvm_get_type<float*>()  { return llvm::Type::getFloatPtrTy(TheContext); }
+  template<> llvm::Type* llvm_get_type<double*>() { return llvm::Type::getDoublePtrTy(TheContext); }
+  template<> llvm::Type* llvm_get_type<int*>()    { return llvm::Type::getIntNPtrTy(TheContext,32); }
+  template<> llvm::Type* llvm_get_type<bool*>()   { return llvm::Type::getIntNPtrTy(TheContext,1); }
+
+
+  
   std::string get_ptx_db_fname() {
     return ptx_db::dbname;
   }
@@ -120,7 +198,7 @@ namespace QDP {
   {
     std::ostringstream oss;
     
-    oss << "sm_" <<  DeviceParams::Instance().getMajor() << DeviceParams::Instance().getMinor() << "_";
+    oss << "sm_" <<  gpu_getMajor() << gpu_getMinor() << "_";
 
     for ( int i = 0 ; i < Nd ; ++i )
       oss << Layout::subgridLattSize()[i] << "_";
@@ -133,72 +211,10 @@ namespace QDP {
   
   
 
-  CUfunction get_fptr_from_ptx( const char* fname , const std::string& kernel )
-  {
-    CUfunction func;
-    CUresult ret;
-    CUmodule cuModule;
-
-    CUresult ret_sync = cuCtxSynchronize();
-    if (ret_sync != CUDA_SUCCESS) {
-      QDPIO::cerr << "Error on sync before loading image.\n";
-
-      CudaCheckResult(ret_sync);
-
-      const char* pStr_name;
-      cuGetErrorName ( ret, &pStr_name );
-
-      QDPIO::cerr << "Error: " << pStr_name << "\n";
-	
-      const char* pStr_string;
-      cuGetErrorString ( ret, &pStr_string );
-
-      QDPIO::cerr << "String: " << pStr_string << "\n";
-
-      QDP_error_exit("Sync failed right before loading the PTX module.");
-    }
-
-    ret = cuModuleLoadData(&cuModule, (const void *)kernel.c_str());
-    //ret = cuModuleLoadDataEx( &cuModule , ptx_kernel.c_str() , 0 , 0 , 0 );
-
-    if (ret) {
-      if (Layout::primaryNode()) {
-
-	QDPIO::cerr << "Error loading external data.\n";
-	
-	const char* pStr_name;
-	cuGetErrorName ( ret, &pStr_name );
-
-	QDPIO::cerr << "Error: " << pStr_name << "\n";
-	
-	const char* pStr_string;
-	cuGetErrorString ( ret, &pStr_string );
-
-	QDPIO::cerr << "String: " << pStr_string << "\n";
-
-	QDPIO::cerr << "Dumping kernel to " << fname << "\n";
-#if 1
-	std::ofstream out(fname);
-	out << kernel;
-	out.close();
-	//Mod->dump();
-#endif
-	QDP_error_exit("Abort.");
-      }
-    }
-
-    ret = cuModuleGetFunction(&func, cuModule, "main");
-    if (ret)
-      QDP_error_exit("Error returned from cuModuleGetFunction. Abort.");
-
-    mapCUFuncPTX[func] = kernel;
-
-    return func;
-  }
 
 
 
-  CUfunction llvm_ptx_db( const char * pretty )
+  void llvm_ptx_db( JitFunction& f , const char * pretty )
   {
     std::string id = get_ptx_db_id( pretty );
     
@@ -206,11 +222,8 @@ namespace QDP {
 
     if ( it != ptx_db::db.end() )
       {
-	return get_fptr_from_ptx( "generic.ptx" , it->second );
-      }
-    else
-      {
-	return NULL;
+	//return get_fptr_from_ptx( "generic.ptx" , it->second );
+	get_jitf( f , it->second.second , it->second.first , str_pretty , str_arch );
       }
   }
 
@@ -221,55 +234,6 @@ namespace QDP {
     ptx_db::dbname = std::string( c_str );
   }
   
-
-  void llvm_set_opt( const char * c_str ) {
-    std::string str(c_str);
-    if (str.find("DisableInline") != string::npos) {
-      llvm_opt::DisableInline = true;
-      return;
-    }
-    if (str.find("UnitAtATime") != string::npos) {
-      llvm_opt::UnitAtATime = true;
-      return;
-    }
-    if (str.find("DisableLoopUnrolling") != string::npos) {
-      llvm_opt::DisableLoopUnrolling = true;
-      return;
-    }
-    if (str.find("DisableLoopVectorization") != string::npos) {
-      llvm_opt::DisableLoopVectorization = true;
-      return;
-    }
-    if (str.find("DisableSLPVectorization") != string::npos) {
-      llvm_opt::DisableSLPVectorization = true;
-      return;
-    }
-    if (str.find("O0") != string::npos) {
-      llvm_opt::opt_level = 0;
-      return;
-    }
-    if (str.find("O1") != string::npos) {
-      llvm_opt::opt_level = 1;
-      return;
-    }
-    if (str.find("O2") != string::npos) {
-      llvm_opt::opt_level = 2;
-      return;
-    }
-    if (str.find("O3") != string::npos) {
-      llvm_opt::opt_level = 3;
-      return;
-    }
-    if (str.find("FTZ0") != string::npos) {
-      llvm_opt::nvptx_FTZ = 0;
-      return;
-    }
-    if (str.find("FTZ1") != string::npos) {
-      llvm_opt::nvptx_FTZ = 1;
-      return;
-    }
-    QDP_error_exit("unknown llvm-opt argument: %s",c_str);
-  }
 
 
   void llvm_set_debug( const char * c_str ) {
@@ -293,172 +257,236 @@ namespace QDP {
     QDP_error_exit("unknown debug argument: %s",c_str);
   }
 
-  llvm::Function *func_sin_f32;
-  llvm::Function *func_acos_f32;
-  llvm::Function *func_asin_f32;
-  llvm::Function *func_atan_f32;
-  llvm::Function *func_ceil_f32;
-  llvm::Function *func_floor_f32;
-  llvm::Function *func_cos_f32;
-  llvm::Function *func_cosh_f32;
-  llvm::Function *func_exp_f32;
-  llvm::Function *func_log_f32;
-  llvm::Function *func_log10_f32;
-  llvm::Function *func_sinh_f32;
-  llvm::Function *func_tan_f32;
-  llvm::Function *func_tanh_f32;
-  llvm::Function *func_fabs_f32;
-  llvm::Function *func_sqrt_f32;
-  llvm::Function *func_isfinite_f32;
 
-  //Imported PTX Binary operations single precision
-  llvm::Function *func_pow_f32;
-  llvm::Function *func_atan2_f32;
 
-  //Imported PTX Unary operations double precision
-  llvm::Function *func_sin_f64;
-  llvm::Function *func_acos_f64;
-  llvm::Function *func_asin_f64;
-  llvm::Function *func_atan_f64;
-  llvm::Function *func_ceil_f64;
-  llvm::Function *func_floor_f64;
-  llvm::Function *func_cos_f64;
-  llvm::Function *func_cosh_f64;
-  llvm::Function *func_exp_f64;
-  llvm::Function *func_log_f64;
-  llvm::Function *func_log10_f64;
-  llvm::Function *func_sinh_f64;
-  llvm::Function *func_tan_f64;
-  llvm::Function *func_tanh_f64;
-  llvm::Function *func_fabs_f64;
-  llvm::Function *func_sqrt_f64;
-  llvm::Function *func_isfinite_f64;
   
-  //Imported PTX Binary operations double precision
-  llvm::Function *func_pow_f64;
-  llvm::Function *func_atan2_f64;
-
-
-  llvm::Function *llvm_get_func( const char * name )
+  llvm::Function *llvm_get_func( std::string name , jitprec p , int num_args )
   {
-    llvm::Function *func = Mod->getFunction(name);
-    if (!func)
-      QDP_error_exit("Function %s not found.\n",name);
-    return func;
+    if (math_declarations[p][name] == 1)
+      {
+	//QDPIO::cout << "math function declaration " << name << " found.\n";
+	llvm::Function *func = Mod->getFunction(name.c_str());
+	if (!func)
+	  {
+	    QDPIO::cerr << "Function " << name << " not found.\n";
+	    QDP_abort(1);
+	  }
+	return func;
+      }
+    else
+      {
+	math_declarations[p][name] = 1;
+	
+	llvm::Type* type;
+	switch(p)
+	  {
+	  case jitprec::f32:
+	    type = llvm::Type::getFloatTy(TheContext);
+	    break;
+	  case jitprec::f64:
+	    type = llvm::Type::getDoubleTy(TheContext);
+	    break;
+	  }
+
+	std::vector< llvm::Type* > Args( num_args , type );
+	llvm::FunctionType *funcType = llvm::FunctionType::get( type , Args , false); // no vararg
+	return llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, name.c_str() , Mod.get());
+      }
+  }
+
+  
+
+  namespace {
+    std::string append_slash(std::string tmp)
+    {
+      if (tmp.back() != '/')
+	tmp.append("/");
+      return tmp;
+    }
   }
 
 
+  
+#ifdef QDP_BACKEND_ROCM
+  void llvm_init_ocml()
+  {
+    std::string arch = str_arch;
+    auto index = arch.find("gfx", 0);
+    if (index != std::string::npos)
+      {
+	arch.replace(index, 3, "" ); // Remove 
+      }
+
+    std::vector<std::string> libs;
+    libs.push_back("/amdgcn/bitcode/ocml.bc");
+    libs.push_back("/amdgcn/bitcode/oclc_finite_only_on.bc");
+    libs.push_back("/amdgcn/bitcode/oclc_isa_version_" + arch + ".bc");
+    libs.push_back("/amdgcn/bitcode/oclc_unsafe_math_on.bc");
+    libs.push_back("/amdgcn/bitcode/oclc_daz_opt_on.bc");
+
+    module_ocml.clear();
+    
+    for( int i = 0 ; i < libs.size() ; ++i )
+      {
+	std::string FileName = std::string(ROCM_DIR) + libs[i];
+
+	QDPIO::cout << "Reading bitcode from " << FileName << "\n";
+	
+	std::ifstream ftmp(FileName.c_str());
+	if (!ftmp.good())
+	  {
+	    QDPIO::cerr << "file not found:" << FileName << "\n";
+	    QDP_abort(1);
+	  }
+    
+	ErrorOr<std::unique_ptr<MemoryBuffer>> mb = MemoryBuffer::getFile(FileName);
+	if (std::error_code ec = mb.getError()) {
+	  errs() << ec.message();
+	  QDP_abort(1);
+	}
+  
+	llvm::Expected<std::unique_ptr<llvm::Module>> m = llvm::parseBitcodeFile(mb->get()->getMemBufferRef(), TheContext);
+	if (std::error_code ec = errorToErrorCode(m.takeError()))
+	  {
+	    errs() << "Error reading bitcode from " << FileName << ": " << ec.message() << "\n";
+	    QDP_abort(1);
+	  }
+
+	module_ocml.push_back( std::move( m.get() ) );
+      }
+  }
+#endif
+
+
+  
   void llvm_init_libdevice()
   {
-    std::string ErrorMessage;
+    static std::string FileName;
 
-    llvm::StringRef libdevice_bc( (const char *) QDP::LIBDEVICE::libdevice_bc, 
-				  (size_t) QDP::LIBDEVICE::libdevice_bc_len );
+    if (FileName.empty())
+      {
+	// std::vector<std::string> vec_str_cuda_path = { "/usr/local/cuda" , "/usr/lib/nvidia-cuda-toolkit" };
+	// std::vector<std::string> vec_str_cuda_path_append = { "/nvvm/libdevice" , "/libdevice" };
+	// std::vector<std::string> vec_str_libdevice_name = { "libdevice.10.bc" };
 
-    {
-      llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer> > BufferOrErr =
-	llvm::MemoryBuffer::getMemBufferCopy(libdevice_bc );
-      
-      if (std::error_code ec = BufferOrErr.getError())
-	ErrorMessage = ec.message();
-      else {
-	std::unique_ptr<llvm::MemoryBuffer> &BufferPtr = BufferOrErr.get();
-	
-	llvm::Expected<std::unique_ptr<llvm::Module> > ModuleOrErr = llvm::parseBitcodeFile(BufferPtr.get()->getMemBufferRef(), TheContext);
-	
-	if (llvm::Error Err = ModuleOrErr.takeError()) {
-	  ErrorMessage = llvm::toString(std::move(Err));
-	}
-	else
+	std::vector<std::string> all;
+
+	if (!user_libdevice_path.empty())
 	  {
-	    module_libdevice.reset( ModuleOrErr.get().release() );
+	    vec_str_libdevice_path.resize(0);
+	    vec_str_libdevice_path.push_back( user_libdevice_path );
+	    vec_str_libdevice_path_append.resize(0);
+	    vec_str_libdevice_path_append.push_back( "" );
+	  }
+	
+	if (!user_libdevice_name.empty())
+	  {
+	    vec_str_libdevice_name.resize(0);
+	    vec_str_libdevice_name.push_back( user_libdevice_name );
+	  }
+
+	//
+	// Replace ARCH with architecture string
+	//
+	for( auto name = vec_str_libdevice_name.begin() ; name != vec_str_libdevice_name.end() ; ++name )
+	  {
+	    std::string arch = str_arch;
+	    auto index = arch.find("sm_", 0);
+	    if (index != std::string::npos)
+	      {
+		arch.replace(index, 3, "" ); // Remove 
+	      }
+	    
+	    index = name->find("ARCH", 0);
+	    if (index == std::string::npos) continue;
+
+	    name->replace(index, 4, arch );
+	  }
+
+	//
+	// Replace CUDAPATH with endvar
+	//
+	for( auto path = vec_str_libdevice_path.begin() ; path != vec_str_libdevice_path.end() ; ++path )
+	  {
+	    char *env = getenv( "CUDAPATH" );
+	    if (!env)
+	      env = getenv( "CUDA_PATH" );
+	    if (env)
+	      {
+		std::string ENV(env);
+		if (ENV.back() != '/')
+		  ENV.append("/");
+
+		auto index = path->find("CUDAPATH", 0);
+		if (index != std::string::npos)
+		  {
+		    path->replace(index, 8, ENV );
+		  }
+	      }
+	  }
+
+	
+	for( auto path = vec_str_libdevice_path.begin() ; path != vec_str_libdevice_path.end() ; ++path )
+	  for( auto append = vec_str_libdevice_path_append.begin() ; append != vec_str_libdevice_path_append.end() ; ++append )
+	    for( auto name = vec_str_libdevice_name.begin() ; name != vec_str_libdevice_name.end() ; ++name )
+	      {
+		std::string norm_path = append_slash( *path );
+		all.push_back( norm_path + *append + *name );
+	      }
+
+	for( auto fname = all.begin() ; fname != all.end() ; ++fname )
+	  {
+#ifdef QDP_BACKEND_ROCM
+	    QDPIO::cout << "trying: " << *fname << std::endl;
+#endif
+	    
+	    std::ifstream ftmp(fname->c_str());
+	    if (ftmp.good())
+	      {
+#ifdef QDP_BACKEND_ROCM
+		QDPIO::cout << "libdevice found.\n";
+#endif
+		FileName = *fname;
+		break;
+	      }
 	  }
       }
+
+    std::ifstream ftmp(FileName.c_str());
+    if (!ftmp.good())
+      {
+	QDPIO::cerr << "libdevice not found:" << FileName << "\n";
+	QDP_abort(1);
+      }
+
+    
+    ErrorOr<std::unique_ptr<MemoryBuffer>> mb = MemoryBuffer::getFile(FileName);
+    if (std::error_code ec = mb.getError()) {
+      errs() << ec.message();
+      QDP_abort(1);
     }
+  
+    llvm::Expected<std::unique_ptr<llvm::Module>> m = llvm::parseBitcodeFile(mb->get()->getMemBufferRef(), TheContext);
+    if (std::error_code ec = errorToErrorCode(m.takeError()))
+      {
+	errs() << "Error reading bitcode: " << ec.message() << "\n";
+	QDP_abort(1);
+      }
+
+    module_libdevice.reset( m.get().release() );
 
     if (!module_libdevice) {
-      if (ErrorMessage.size())
-	llvm::errs() << ErrorMessage << "\n";
-      else
-	llvm::errs() << "libdevice bitcode didn't read correctly.\n";
-      QDP_abort( 1 );
+      QDPIO::cerr << "libdevice bitcode didn't read correctly.\n";
+      QDP_abort(1);
     }
+
   }
 
 
-  void llvm_setup_math_functions() 
-  {
-    //QDPIO::cout << "Setup math functions..\n";
 
-    // Cloning a module takes more time than creating the module from scratch
-    // So, I am creating the libdevice module from the embedded bitcode.
-    //
-#if 0
-    std::unique_ptr<llvm::Module> libdevice_clone( CloneModule( module_libdevice.get() ) );
+  
 
-    std::string ErrorMsg;
-    if (llvm::Linker::linkModules( *Mod , std::move( libdevice_clone ) )) {  // llvm::Linker::PreserveSource
-      QDP_error_exit("Linking libdevice failed: %s",ErrorMsg.c_str());
-    }
-#else
-    llvm_init_libdevice();
-
-    std::string ErrorMsg;
-    if (llvm::Linker::linkModules( *Mod , std::move( module_libdevice ) )) {  // llvm::Linker::PreserveSource
-      QDP_error_exit("Linking libdevice failed: %s",ErrorMsg.c_str());
-    }
-#endif    
-
-    func_sin_f32 = llvm_get_func( "__nv_sinf" );
-    func_acos_f32 = llvm_get_func( "__nv_acosf" );
-    func_asin_f32 = llvm_get_func( "__nv_asinf" );
-    func_atan_f32 = llvm_get_func( "__nv_atanf" );
-    func_ceil_f32 = llvm_get_func( "__nv_ceilf" );
-    func_floor_f32 = llvm_get_func( "__nv_floorf" );
-    func_cos_f32 = llvm_get_func( "__nv_cosf" );
-    func_cosh_f32 = llvm_get_func( "__nv_coshf" );
-    func_exp_f32 = llvm_get_func( "__nv_expf" );
-    func_log_f32 = llvm_get_func( "__nv_logf" );
-    func_log10_f32 = llvm_get_func( "__nv_log10f" );
-    func_sinh_f32 = llvm_get_func( "__nv_sinhf" );
-    func_tan_f32 = llvm_get_func( "__nv_tanf" );
-    func_tanh_f32 = llvm_get_func( "__nv_tanhf" );
-    func_fabs_f32 = llvm_get_func( "__nv_fabsf" );
-    func_sqrt_f32 = llvm_get_func( "__nv_fsqrt_rn" );
-    func_isfinite_f32 = llvm_get_func( "__nv_finitef" );
-    // func_isinf_f32 = llvm_get_func( "__nv_isinff" );
-    // func_isnan_f32 = llvm_get_func( "__nv_isnanf" );
-
-    func_pow_f32 = llvm_get_func( "__nv_powf" );
-    func_atan2_f32 = llvm_get_func( "__nv_atan2f" );
-
-
-    func_sin_f64 = llvm_get_func( "__nv_sin" );
-    func_acos_f64 = llvm_get_func( "__nv_acos" );
-    func_asin_f64 = llvm_get_func( "__nv_asin" );
-    func_atan_f64 = llvm_get_func( "__nv_atan" );
-    func_ceil_f64 = llvm_get_func( "__nv_ceil" );
-    func_floor_f64 = llvm_get_func( "__nv_floor" );
-    func_cos_f64 = llvm_get_func( "__nv_cos" );
-    func_cosh_f64 = llvm_get_func( "__nv_cosh" );
-    func_exp_f64 = llvm_get_func( "__nv_exp" );
-    func_log_f64 = llvm_get_func( "__nv_log" );
-    func_log10_f64 = llvm_get_func( "__nv_log10" );
-    func_sinh_f64 = llvm_get_func( "__nv_sinh" );
-    func_tan_f64 = llvm_get_func( "__nv_tan" );
-    func_tanh_f64 = llvm_get_func( "__nv_tanh" );
-    func_fabs_f64 = llvm_get_func( "__nv_fabs" );
-    func_sqrt_f64 = llvm_get_func( "__nv_dsqrt_rn" );
-    func_isfinite_f64 = llvm_get_func( "__nv_isfinited" );
-    // func_isinf_f64 = llvm_get_func( "__nv_isinfd" );
-    // func_isnan_f64 = llvm_get_func( "__nv_isnand" );
-    
-    func_pow_f64 = llvm_get_func( "__nv_pow" );
-    func_atan2_f64 = llvm_get_func( "__nv_atan2" );
-  }
-
-
-  void llvm_wrapper_init() {
+  void llvm_backend_init_rocm() {
     function_created = false;
 
     llvm::InitializeAllTargets();
@@ -475,17 +503,163 @@ namespace QDP {
     llvm::initializeUnreachableBlockElimLegacyPassPass(*Registry);
     llvm::initializeConstantHoistingLegacyPassPass(*Registry);
 
-    llvm_type<float>::value  = llvm::Type::getFloatTy(TheContext);
-    llvm_type<double>::value = llvm::Type::getDoubleTy(TheContext);
-    llvm_type<int>::value    = llvm::Type::getIntNTy(TheContext,32);
-    llvm_type<bool>::value   = llvm::Type::getIntNTy(TheContext,1);
-    llvm_type<float*>::value  = llvm::Type::getFloatPtrTy(TheContext);
-    llvm_type<double*>::value = llvm::Type::getDoublePtrTy(TheContext);
-    llvm_type<int*>::value    = llvm::Type::getIntNPtrTy(TheContext,32);
-    llvm_type<bool*>::value   = llvm::Type::getIntNPtrTy(TheContext,1);
 
-    QDPIO::cout << "LLVM optimization level : " << llvm_opt::opt_level << "\n";
-    QDPIO::cout << "NVPTX Flush to zero     : " << llvm_opt::nvptx_FTZ << "\n";
+    // Get the GPU arch, e.g.
+    // sm_50 (CUDA)
+    // gfx908 (ROCM)
+    str_arch = gpu_get_arch();
+
+    
+    TheTriple.setArch (llvm::Triple::ArchType::amdgcn);
+    TheTriple.setVendor (llvm::Triple::VendorType::AMD);
+    TheTriple.setOS (llvm::Triple::OSType::AMDHSA);
+
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "triple set\n";
+      }
+    
+    std::string Error;
+    const llvm::Target *TheTarget = llvm::TargetRegistry::lookupTarget( TheTriple.str() , Error );
+    if (!TheTarget) {
+      std::cout << Error;
+      QDPIO::cerr << "Something went wrong setting the target\n";
+      QDP_abort(1);
+    }
+
+
+    
+    llvm::TargetOptions Options;
+
+    std::string FeaturesStr;
+    
+    TargetMachine.reset(TheTarget->createTargetMachine(
+						       TheTriple.getTriple(), 
+						       str_arch,
+						       FeaturesStr, 
+						       Options,
+						       llvm::Reloc::PIC_
+						       )
+			);
+
+    QDPIO::cout << "LLVM initialization" << std::endl;
+    QDPIO::cout << "  Target machine CPU                  : " << TargetMachine->getTargetCPU().str() << "\n";
+    QDPIO::cout << "  Target triple                       : " << TargetMachine->getTargetTriple().str() << "\n";
+
+
+    mapMath["sin_f32"]="sinf";
+    mapMath["acos_f32"]="acosf";
+    mapMath["asin_f32"]="asinf";
+    mapMath["atan_f32"]="atanf";
+    mapMath["ceil_f32"]="ceilf";
+    mapMath["floor_f32"]="floorf";
+    mapMath["cos_f32"]="cosf";
+    mapMath["cosh_f32"]="coshf";
+    mapMath["exp_f32"]="expf";
+    mapMath["log_f32"]="logf";
+    mapMath["log10_f32"]="log10f";
+    mapMath["sinh_f32"]="sinhf";
+    mapMath["tan_f32"]="tanf";
+    mapMath["tanh_f32"]="tanhf";
+    mapMath["fabs_f32"]="fabsf";
+    mapMath["sqrt_f32"]="sqrtf";
+    mapMath["isfinite_f32"]="__finitef";
+    // mapMath["isinf_f32"]="isinfdf";
+    // mapMath["isnan_f32"]="isnandf";
+    
+    mapMath["pow_f32"]="powf";
+    mapMath["atan2_f32"]="atan2f";
+    
+    mapMath["sin_f64"]="sin";
+    mapMath["acos_f64"]="acos";
+    mapMath["asin_f64"]="asin";
+    mapMath["atan_f64"]="atan";
+    mapMath["ceil_f64"]="ceil";
+    mapMath["floor_f64"]="floor";
+    mapMath["cos_f64"]="cos";
+    mapMath["cosh_f64"]="cosh";
+    mapMath["exp_f64"]="exp";
+    mapMath["log_f64"]="log";
+    mapMath["log10_f64"]="log10";
+    mapMath["sinh_f64"]="sinh";
+    mapMath["tan_f64"]="tan";
+    mapMath["tanh_f64"]="tanh";
+    mapMath["fabs_f64"]="fabs";
+    mapMath["sqrt_f64"]="sqrt";
+    mapMath["isfinite_f64"]="__finite";
+    // mapMath["isinf_f64"]="isinfd";
+    // mapMath["isnan_f64"]="isnand";
+    
+    mapMath["pow_f64"]="pow";
+    mapMath["atan2_f64"]="atan2";
+
+    
+    //
+    // libdevice is initialized in math_setup
+    //
+    //llvm_init_libdevice();
+  }  
+
+
+
+  void llvm_backend_init_cuda() {
+    function_created = false;
+
+    llvm::InitializeAllTargets();
+    llvm::InitializeAllTargetMCs();
+    llvm::InitializeAllAsmPrinters();
+    llvm::InitializeAllAsmParsers();
+
+    llvm::PassRegistry *Registry = llvm::PassRegistry::getPassRegistry();
+    llvm::initializeCore(*Registry);
+    llvm::initializeCodeGen(*Registry);
+    llvm::initializeLoopStrengthReducePass(*Registry);
+    llvm::initializeLowerIntrinsicsPass(*Registry);
+//    llvm::initializeCountingFunctionInserterPass(*Registry);
+    llvm::initializeUnreachableBlockElimLegacyPassPass(*Registry);
+    llvm::initializeConstantHoistingLegacyPassPass(*Registry);
+
+
+    // Get the GPU arch, e.g.
+    // sm_50 (CUDA)
+    // gfx908 (ROCM)
+    str_arch = gpu_get_arch();
+
+
+    std::string str_triple("nvptx64-nvidia-cuda");
+
+    TheTriple.setTriple(str_triple);
+      
+    std::string Error;
+    
+    const llvm::Target *TheTarget = llvm::TargetRegistry::lookupTarget( "", TheTriple, Error);
+    if (!TheTarget) {
+      llvm::errs() << "Error looking up target: " << Error;
+      exit(1);
+    }
+
+
+    llvm::TargetOptions options;
+
+    TargetMachine.reset ( TheTarget->createTargetMachine(
+							 TheTriple.str(),
+							 str_arch,
+							 "",
+							 options,
+							 Reloc::PIC_,
+							 None,
+							 llvm::CodeGenOpt::Aggressive, true ));
+    
+    if (!TargetMachine)
+      {
+	QDPIO::cerr << "Could not create LLVM target machine\n";
+	QDP_abort(1);
+      }
+
+    QDPIO::cout << "LLVM initialization" << std::endl;
+    QDPIO::cout << "  Target machine CPU                  : " << TargetMachine->getTargetCPU().str() << "\n";
+    QDPIO::cout << "  Target triple                       : " << TargetMachine->getTargetTriple().str() << "\n";
+    
 
     if (ptx_db::db_enabled) {
       // Load DB
@@ -514,47 +688,116 @@ namespace QDP {
 	      if (f.eof())
 		break;
 
-	      QDPIO::cout << "ptx_db: read key_size=" << size1 << " ptx_size=" << size2 << "\n";
+	      int size3;
+	      f >> size3;
+	      if (f.eof())
+		break;
+	      char* buf3 = new char[size3];
+	      f.read( buf3 , size3 );
+	      if (f.eof())
+		break;
+
+	      QDPIO::cout << "ptx_db: read "
+			  << " key_size=" << size1
+			  << " name_size=" << size2
+			  << " ptx_size=" << size3 << "\n";
 
 	      std::string key(buf1,size1);
-	      std::string val(buf2,size2);
-	      ptx_db::db.insert( std::make_pair( key , val ) );
+	      std::string name(buf2,size2);
+	      std::string ptx(buf3,size3);
+	      ptx_db::db.insert( std::make_pair( key , std::make_pair( name , ptx ) ) );
 
 	      delete[] buf1;
 	      delete[] buf2;
+	      delete[] buf3;
 	    }
 	}
 
     } // ptx db
 
-    //
-    // I initialize libdevice in math_setup
-    //
-    // llvm_init_libdevice();
+
+    mapMath["sin_f32"]="__nv_sinf";
+    mapMath["acos_f32"]="__nv_acosf";
+    mapMath["asin_f32"]="__nv_asinf";
+    mapMath["atan_f32"]="__nv_atanf";
+    mapMath["ceil_f32"]="__nv_ceilf";
+    mapMath["floor_f32"]="__nv_floorf";
+    mapMath["cos_f32"]="__nv_cosf";
+    mapMath["cosh_f32"]="__nv_coshf";
+    mapMath["exp_f32"]="__nv_expf";
+    mapMath["log_f32"]="__nv_logf";
+    mapMath["log10_f32"]="__nv_log10f";
+    mapMath["sinh_f32"]="__nv_sinhf";
+    mapMath["tan_f32"]="__nv_tanf";
+    mapMath["tanh_f32"]="__nv_tanhf";
+    mapMath["fabs_f32"]="__nv_fabsf";
+    mapMath["sqrt_f32"]="__nv_fsqrt_rn";
+    mapMath["isfinite_f32"]="__nv_finitef";
+    // mapMath["isinf_f32"]="__nv_isinfdf";
+    // mapMath["isnan_f32"]="__nv_isnandf";
+    
+    mapMath["pow_f32"]="__nv_powf";
+    mapMath["atan2_f32"]="__nv_atan2f";
+    
+
+    mapMath["sin_f64"]="__nv_sin";
+    mapMath["acos_f64"]="__nv_acos";
+    mapMath["asin_f64"]="__nv_asin";
+    mapMath["atan_f64"]="__nv_atan";
+    mapMath["ceil_f64"]="__nv_ceil";
+    mapMath["floor_f64"]="__nv_floor";
+    mapMath["cos_f64"]="__nv_cos";
+    mapMath["cosh_f64"]="__nv_cosh";
+    mapMath["exp_f64"]="__nv_exp";
+    mapMath["log_f64"]="__nv_log";
+    mapMath["log10_f64"]="__nv_log10";
+    mapMath["sinh_f64"]="__nv_sinh";
+    mapMath["tan_f64"]="__nv_tan";
+    mapMath["tanh_f64"]="__nv_tanh";
+    mapMath["fabs_f64"]="__nv_fabs";
+    mapMath["sqrt_f64"]="__nv_dsqrt_rn";
+    mapMath["isfinite_f64"]="__nv_isfinited";
+    // mapMath["isinf_f64"]="__nv_isinfd";
+    // mapMath["isnan_f64"]="__nv_isnand";
+    
+    mapMath["pow_f64"]="__nv_pow";
+    mapMath["atan2_f64"]="__nv_atan2";
   }  
 
 
+
+  void llvm_backend_init()
+  {
+#ifdef QDP_BACKEND_ROCM
+    llvm_backend_init_rocm();
+#else
+    llvm_backend_init_cuda();
+#endif
+  }
+
+
+  
   llvm::BasicBlock * llvm_get_insert_block() {
     return builder->GetInsertBlock();
   }
 
 
-  void llvm_start_new_function() {
-
+  void llvm_start_new_function( const char* ftype , const char* pretty )
+  {
+    math_declarations.clear();
+    
+    str_func_type = ftype;
+    str_pretty = pretty;
+    str_kernel_name = str_func_type + std::to_string( map_func_counter[str_func_type]++ );
+    
     // Count it
     jit_stats_jitted();
     
     //QDPIO::cout << "Starting new LLVM function..\n";
 
-#if 0
-    // C++14 version
-    Mod = std::make_unique< llvm::Module >( "module", TheContext);
-    builder = std::make_unique< llvm::IRBuilder<> >( TheContext );
-#else
     Mod.reset( new llvm::Module( "module", TheContext) );
-    builder.reset( new llvm::IRBuilder<>( TheContext ) );
-#endif
 
+    builder.reset( new llvm::IRBuilder<>( TheContext ) );
 
     jit_build_seedToFloat();
     jit_build_seedMultiply();
@@ -563,11 +806,10 @@ namespace QDP {
     vecArgument.clear();
     function_created = false;
 
-    llvm_setup_math_functions();
-
-    // llvm::outs() << "------------------------- linked module\n";
-    // llvm_print_module(Mod,"ir_linked.ll");
-    //Mod->dump();
+#ifdef QDP_BACKEND_ROCM
+    AMDspecific::__threads_per_group = llvm_add_param<int>();
+    AMDspecific::__grid_size_x       = llvm_add_param<int>();
+#endif
   }
 
 
@@ -579,16 +821,26 @@ namespace QDP {
       llvm::FunctionType::get( builder->getVoidTy() , 
 			       llvm::ArrayRef<llvm::Type*>( vecParamType.data() , vecParamType.size() ) , 
 			       false); // no vararg
-    mainFunc = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, "main", Mod.get());
+    mainFunc = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, str_kernel_name , Mod.get());
 
+#ifdef QDP_BACKEND_ROCM
+    mainFunc->setCallingConv( llvm::CallingConv::AMDGPU_KERNEL );
+#endif
+    
     unsigned Idx = 0;
     for (llvm::Function::arg_iterator AI = mainFunc->arg_begin(), AE = mainFunc->arg_end() ; AI != AE ; ++AI, ++Idx) {
       AI->setName( std::string("arg")+std::to_string(Idx) );
       vecArgument.push_back( &*AI );
     }
 
-    llvm::BasicBlock* entry = llvm::BasicBlock::Create(TheContext, "entrypoint", mainFunc);
-    builder->SetInsertPoint(entry);
+    bb_stack = llvm::BasicBlock::Create(TheContext, "stack", mainFunc);
+    builder->SetInsertPoint(bb_stack);
+    it_stack = builder->GetInsertPoint(); // probly bb_stack.begin()
+    
+    bb_afterstack = llvm::BasicBlock::Create(TheContext, "afterstack" );
+    mainFunc->getBasicBlockList().push_back(bb_afterstack);
+    
+    builder->SetInsertPoint(bb_afterstack);
 
     llvm_counters::label_counter = 0;
     function_created = true;
@@ -669,8 +921,11 @@ namespace QDP {
       if ( dest_type->getArrayElementType() == src->getType() )
 	return src;
 
+#if defined (QDP_LLVM12)
+#else
     if (!llvm::CastInst::isCastable( src->getType() , dest_type ))
       QDP_error_exit("not castable");
+#endif
 
     //llvm::outs() << "cast instruction: dest type = " << dest_type << "   from " << src->getType() << "\n";
     
@@ -681,21 +936,6 @@ namespace QDP {
 
 
 
-#if 0
-  llvm::Type* llvm_normalize_values(llvm::Value*& lhs , llvm::Value*& rhs)
-  {
-    llvm::Type* args_type = promote( lhs->getType() , rhs->getType() );
-    if ( args_type != lhs->getType() ) {
-      //llvm::outs() << "lhs needs conversion\n";
-      lhs = llvm_cast( args_type , lhs );
-    }
-    if ( args_type != rhs->getType() ) {
-      //llvm::outs() << "rhs needs conversion\n";
-      rhs = llvm_cast( args_type , rhs );
-    }
-    return args_type;
-  }
-#endif
 
   std::pair<llvm::Value*,llvm::Value*> llvm_normalize_values(llvm::Value* lhs , llvm::Value* rhs)
   {
@@ -886,19 +1126,7 @@ namespace QDP {
 
 
 
-
-  // std::string param_next()
-  // {
-  //   std::ostringstream oss;
-  //   oss << "arg" << llvm_counters::param_counter++;
-  //   llvm::outs() << "param_name = " << oss.str() << "\n";
-  //   return oss.str();
-  // }
-
-
   llvm::Value* llvm_get_shared_ptr( llvm::Type *ty ) {
-
-    //
 
     llvm::GlobalVariable *gv = new llvm::GlobalVariable ( *Mod , 
 							  llvm::ArrayType::get(ty,0) ,
@@ -911,15 +1139,29 @@ namespace QDP {
 							  3, // unsigned AddressSpace=0, 
 							  false); //bool isExternallyInitialized=false)
     return builder->CreatePointerCast(gv, llvm::PointerType::get(ty,3) );
-    //return builder->CreatePointerCast(gv,llvm_type<double*>::value);
-    //return gv;
   }
 
 
 
   llvm::Value * llvm_alloca( llvm::Type* type , int elements )
   {
-    return builder->CreateAlloca( type , llvm_create_value(elements) );    // This can be a llvm::Value*
+    auto it_save = builder->GetInsertPoint();
+    auto bb_save = builder->GetInsertBlock();
+    
+    builder->SetInsertPoint(bb_stack, it_stack);
+
+    auto DL = Mod->getDataLayout();
+    unsigned AddrSpace = DL.getAllocaAddrSpace();
+
+    //QDPIO::cout << "using address space : " << AddrSpace << "\n";
+    
+    llvm::Value* ret = builder->CreateAlloca( type , AddrSpace , llvm_create_value(elements) );    // This can be a llvm::Value*
+
+    it_stack = builder->GetInsertPoint();
+    
+    builder->SetInsertPoint(bb_save,it_save);
+
+    return ret;
   }
 
 
@@ -945,8 +1187,16 @@ namespace QDP {
     vecParamType.push_back( llvm::Type::getInt32PtrTy(TheContext) );
     return vecParamType.size()-1;
   }
+  template<> ParamRef llvm_add_param<jit_half_t>() { 
+    vecParamType.push_back( llvm::Type::getHalfTy(TheContext) );
+    return vecParamType.size()-1;
+  }
   template<> ParamRef llvm_add_param<float>() { 
     vecParamType.push_back( llvm::Type::getFloatTy(TheContext) );
+    return vecParamType.size()-1;
+  }
+  template<> ParamRef llvm_add_param<jit_half_t*>() { 
+    vecParamType.push_back( llvm::Type::getHalfPtrTy(TheContext) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<float*>() { 
@@ -990,7 +1240,7 @@ namespace QDP {
 
   void llvm_cond_branch(llvm::Value * cond, llvm::BasicBlock * thenBB, llvm::BasicBlock * elseBB)
   {
-    cond = llvm_cast( llvm_type<bool>::value , cond );
+    cond = llvm_cast( llvm_get_type<bool>() , cond );
     builder->CreateCondBr( cond , thenBB, elseBB);
   }
 
@@ -1093,12 +1343,17 @@ namespace QDP {
     llvm::AttrBuilder ABuilder;
     ABuilder.addAttribute(llvm::Attribute::ReadNone);
 
-    auto Bar = Mod->getOrInsertFunction( "llvm.nvvm.barrier0" , 
+#ifdef QDP_BACKEND_ROCM
+    std::string bar_name("llvm.amdgcn.s.barrier");
+#else
+    std::string bar_name("llvm.nvvm.barrier0");
+#endif
+    
+    auto Bar = Mod->getOrInsertFunction( bar_name.c_str() , 
 					 IntrinFnTy , 
 					 llvm::AttributeList::get(TheContext, 
 								  llvm::AttributeList::FunctionIndex, 
-								  ABuilder)
-					 );
+								  ABuilder) );
 
     builder->CreateCall(Bar);
   }
@@ -1125,13 +1380,27 @@ namespace QDP {
   }
 
 
+  
+#ifdef QDP_BACKEND_ROCM
+  llvm::Value * llvm_call_special_workitem_x() {     return llvm_special("llvm.amdgcn.workitem.id.x"); }
+  llvm::Value * llvm_call_special_workgroup_x() {     return llvm_special("llvm.amdgcn.workgroup.id.x"); }
+  llvm::Value * llvm_call_special_workgroup_y() {     return llvm_special("llvm.amdgcn.workgroup.id.y"); }
 
+  llvm::Value * llvm_call_special_tidx() { return llvm_call_special_workitem_x(); }
+  llvm::Value * llvm_call_special_ntidx() { return llvm_derefParam( AMDspecific::__threads_per_group ); }
+  llvm::Value * llvm_call_special_ctaidx() { return llvm_call_special_workgroup_x(); }
+  llvm::Value * llvm_call_special_nctaidx() { return llvm_derefParam( AMDspecific::__grid_size_x ); }
+  llvm::Value * llvm_call_special_ctaidy() { return llvm_call_special_workgroup_y();  }
+#else
   llvm::Value * llvm_call_special_tidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.tid.x"); }
   llvm::Value * llvm_call_special_ntidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.ntid.x"); }
   llvm::Value * llvm_call_special_ctaidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.x"); }
   llvm::Value * llvm_call_special_nctaidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.nctaid.x"); }
   llvm::Value * llvm_call_special_ctaidy() { return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.y"); }
+#endif
 
+  
+  
 
   llvm::Value * llvm_thread_idx() { 
     llvm::Value * tidx = llvm_call_special_tidx();
@@ -1145,44 +1414,23 @@ namespace QDP {
 
 
   void addKernelMetadata(llvm::Function *F) {
-#if 0
-    llvm::Module *M = F->getParent();
-    llvm::LLVMContext &Ctx = M->getContext();
+    auto i32_t = llvm::Type::getInt32Ty(TheContext);
+    
+    llvm::Metadata *md_args[] = {
+      llvm::ValueAsMetadata::get(F),
+      MDString::get(TheContext, "kernel"),
+      llvm::ValueAsMetadata::get(ConstantInt::get(i32_t, 1))};
 
-    // Get "nvvm.annotations" metadata node
-    llvm::NamedMDNode *MD = M->getOrInsertNamedMetadata("nvvm.annotations");
+    MDNode *md_node = MDNode::get(TheContext, md_args);
 
-    // Create !{<func-ref>, metadata !"kernel", i32 1} node
-    llvm::SmallVector<llvm::Value *, 3> MDVals;
-    MDVals.push_back(F);
-    MDVals.push_back(llvm::MDString::get(Ctx, "kernel"));
-    MDVals.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), 1));
-
-    // Append metadata to nvvm.annotations
-    MD->addOperand(llvm::MDNode::get(Ctx, MDVals));
-#else
-    llvm::Module *M = F->getParent();
-    llvm::LLVMContext &Ctx = M->getContext();
-
-    // Get "nvvm.annotations" metadata node
-    llvm::NamedMDNode *MD = M->getOrInsertNamedMetadata("nvvm.annotations");
-
-    // Create !{<func-ref>, metadata !"kernel", i32 1} node
-    llvm::SmallVector<llvm::Metadata *, 3> MDVals;
-    MDVals.push_back(llvm::ValueAsMetadata::get(F));
-    MDVals.push_back(llvm::MDString::get(Ctx, "kernel"));
-    MDVals.push_back(llvm::ValueAsMetadata::get(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), 1)));    //ConstantAsMetadata::get
-
-    // Append metadata to nvvm.annotations
-    MD->addOperand(llvm::MDNode::get(Ctx, MDVals));
-#endif
+    Mod->getOrInsertNamedMetadata("nvvm.annotations")->addOperand(md_node);
   }
 
 
   void llvm_print_module( llvm::Module* m , const char * fname ) {
     std::error_code EC;
     llvm::raw_fd_ostream outfd( fname , EC, llvm::sys::fs::OpenFlags::F_Text);
-    //ASSERT_FALSE(outfd.has_error());
+
     std::string banner;
     {
       llvm::outs() << "llvm_print_module ni\n";
@@ -1195,282 +1443,49 @@ namespace QDP {
   }
 
 
-  //  namespace {
-  
-  /// This routine adds optimization passes based on selected optimization level,
-  /// OptLevel.
-  ///
-  /// OptLevel - Optimization Level
-  void AddOptimizationPasses(llvm::legacy::PassManagerBase &MPM,
-  			     llvm::legacy::FunctionPassManager &FPM,
-  			     llvm::TargetMachine *TM, unsigned OptLevel,
-  			     unsigned SizeLevel)
-  {
-#if 1
-    //QDPIO::cout << " adding opt passes..\n";
 
-    const bool DisableInline = llvm_opt::DisableInline;
-    const bool UnitAtATime = llvm_opt::UnitAtATime;
-    const bool DisableLoopUnrolling = llvm_opt::DisableLoopUnrolling;
-    const bool DisableLoopVectorization = llvm_opt::DisableLoopVectorization;
-    const bool DisableSLPVectorization = llvm_opt::DisableSLPVectorization;
-      
-    FPM.add(llvm::createVerifierPass()); // Verify that input is correct
 
-    llvm::PassManagerBuilder Builder;
-    Builder.OptLevel = OptLevel;
-    Builder.SizeLevel = SizeLevel;
-
-    if (DisableInline) {
-      // No inlining pass
-    } else if (OptLevel > 1) {
-      Builder.Inliner = llvm::createFunctionInliningPass(OptLevel, SizeLevel, false);
-    } else {
-      Builder.Inliner = llvm::createAlwaysInlinerLegacyPass();
+  namespace {
+    bool all_but_kernel_name(const llvm::GlobalValue & gv)
+    {
+      return gv.getName().str() == str_kernel_name;
     }
-
-#if defined (QDP_LLVM9) || defined (QDP_LLVM10) || defined (QDP_LLVM11)
-#else
-    Builder.DisableUnitAtATime = !UnitAtATime;
-#endif
-    
-    //#ifndef QDP_LLVM9
-    //    Builder.DisableUnitAtATime = !UnitAtATime;
-    //#endif
-    
-    Builder.DisableUnrollLoops = DisableLoopUnrolling;
-
-    // This is final, unless there is a #pragma vectorize enable
-    if (DisableLoopVectorization)
-      Builder.LoopVectorize = false;
-    else 
-      Builder.LoopVectorize = OptLevel > 1 && SizeLevel < 2;
-
-    // When #pragma vectorize is on for SLP, do the same as above
-    Builder.SLPVectorize = DisableSLPVectorization ? false : OptLevel > 1 && SizeLevel < 2;
-
-    // Add target-specific passes that need to run as early as possible.
-#if 0
-    if (TM)
-      Builder.addExtension(
-			   llvm::PassManagerBuilder::EP_EarlyAsPossible,
-			   [&](llvm::PassManagerBuilder &PMB, llvm::legacy::PassManagerBase &PM) {
-			     TM->adjustPassManager(PMB);
-			   });
-#else
-   if( TM ) TM->adjustPassManager(Builder);
-#endif
-
-    Builder.populateFunctionPassManager(FPM);
-    Builder.populateModulePassManager(MPM);
-#endif
   }
 
-    //  } // ann. namespace
 
-  void optimize_module( std::unique_ptr< llvm::TargetMachine >& TM )
+
+  std::string get_ptx()
   {
-    //QDPIO::cout << "optimize module...\n";
-    
-    llvm::legacy::PassManager Passes;
-
-    llvm::Triple ModuleTriple(Mod->getTargetTriple());
-
-    llvm::TargetLibraryInfoImpl TLII(ModuleTriple);
-
-    Passes.add(new llvm::TargetLibraryInfoWrapperPass(TLII));
-
-    Passes.add(createTargetTransformInfoWrapperPass( TM->getTargetIRAnalysis() ) );
-
-    std::unique_ptr<llvm::legacy::FunctionPassManager> FPasses;
-
-    FPasses.reset(new llvm::legacy::FunctionPassManager(Mod.get()));
-    FPasses->add(createTargetTransformInfoWrapperPass( TM->getTargetIRAnalysis() ) );
-
-    //QDPIO::cout << "no optimization passes!!\n";
-    AddOptimizationPasses(Passes, *FPasses, TM.get(), llvm_opt::opt_level , 0);
-
-    if (FPasses) {
-      FPasses->doInitialization();
-      for (llvm::Function &F : *Mod)
-	FPasses->run(F);
-      FPasses->doFinalization();
-    }
-
-    Passes.add(llvm::createVerifierPass());
-
-    Passes.run(*Mod);
-  }
-  
-
-  std::string get_PTX_from_Module_using_llvm()
-  {
-    //QDPIO::cout << "get PTX using NVPTC..\n";
-
-    llvm::Triple triple("nvptx64-nvidia-cuda");
-      
-    std::string Error;
-    const llvm::Target *TheTarget = llvm::TargetRegistry::lookupTarget( "", triple, Error);
-    if (!TheTarget) {
-      llvm::errs() << "Error looking up target: " << Error;
-      exit(1);
-    }
-
-    //QDPIO::cout << "target name: " << TheTarget->getName() << "\n";
-
-    //llvm::Optional<llvm::Reloc::Model> relocModel;
-    // if (m_generatePIC) 
-    // relocModel = llvm::Reloc::PIC_;
-
-
-#if defined (QDP_LLVM11)
-    llvm::TargetOptions Options;
-#else
-    llvm::TargetOptions Options = InitTargetOptionsFromCodeGenFlags();
-#endif
-    // Options.DisableIntegratedAS = llvm::NoIntegratedAssembler;
-    // Options.MCOptions.ShowMCEncoding = llvm::ShowMCEncoding;
-    // Options.MCOptions.MCUseDwarfDirectory = llvm::EnableDwarfDirectory;
-    // Options.MCOptions.AsmVerbose = llvm::AsmVerbose;
-    // Options.MCOptions.PreserveAsmComments = llvm::PreserveComments;
-    // Options.MCOptions.IASSearchPaths = llvm::IncludeDirs;
-
-    
-    //std::unique_ptr<llvm::TargetMachine> target(TheTarget->createTargetMachine(TheTriple.getTriple(),"sm_50", "ptx50", Options , relocModel ));
-
-    auto major = DeviceParams::Instance().getMajor();
-    auto minor = DeviceParams::Instance().getMinor();
-
-    std::ostringstream oss;
-    oss << "sm_" << major * 10 + minor;
-
-    std::string compute = oss.str();
-
-    //QDPIO::cout << "create target machine for compute capability " << compute << "\n";
-   
-
-    std::unique_ptr<llvm::TargetMachine> target_machine(TheTarget->createTargetMachine(
-										       "nvptx64-nvidia-cuda",
-										       compute,
-										       "",
-										       llvm::TargetOptions(),
-#if defined (QDP_LLVM11)
-										       Reloc::PIC_,
-#else
-										       getRelocModel(),
-#endif
-										       None,
-										       llvm::CodeGenOpt::Aggressive, true ));
-// pre llvm6
-#if 0
-    std::unique_ptr<llvm::TargetMachine> target_machine(TheTarget->createTargetMachine(
-
-       "nvptx64-nvidia-cuda",
-
-       compute,
-
-       "",
-
-       llvm::TargetOptions(),
-
-       getRelocModel(),
-
-       llvm::CodeModel::Default,
-
-       llvm::CodeGenOpt::Aggressive));
-#endif
-
-    assert(target_machine.get() && "Could not allocate target machine!");
-
-    //QDPIO::cout << "target machine cpu:     " << target_machine->getTargetCPU().str() << "\n";
-    //QDPIO::cout << "target machine feature: " << target_machine->getTargetFeatureString().str() << "\n";
- 
-    //llvm::TargetMachine &Target = *target.get();
-
-
-    //std::string str;
-    //llvm::raw_string_ostream rss(str);
-    //llvm::formatted_raw_ostream FOS(rss);
-
     llvm::legacy::PassManager PM;
-    //FOS <<  "target datalayout = \"e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v32:32:32-v64:64:64-v128:128:128-n16:32:64\";\n";
-    Mod->setTargetTriple( "nvptx64-nvidia-cuda" );
-
-    llvm::TargetLibraryInfoImpl TLII(Triple(Mod->getTargetTriple()));
-    PM.add(new TargetLibraryInfoWrapperPass(TLII));
-    //PM.add(new llvm::TargetLibraryInfoWrapperPass(llvm::Triple(Mod->getTargetTriple())));
-
-    Mod->setDataLayout(target_machine->createDataLayout());
-    //Mod->setDataLayout("e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v32:32:32-v64:64:64-v128:128:128-n16:32:64");
-
-    //setFunctionAttributes("sm_30", "", *Mod);  // !!!!!
-
-    //QDPIO::cout << "BEFORE OPT ---------------\n";
-    //Mod->dump();
-    
-    optimize_module( target_machine );
-
-    //QDPIO::cout << "AFTER OPT ---------------\n";
-    //Mod->dump();
-
-    
+    PM.add( llvm::createInternalizePass( all_but_kernel_name ) );
 #if 0
-    // Add the target data from the target machine, if it exists, or the module.
-    if (const DataLayout *TD = Target.getDataLayout()) {
-      QDP_info_primary( "Using targets's data layout" );
-      PMTM.add(new DataLayout(*TD));
-    }
-    else {
-      QDP_info_primary( "Using module's data layout" );
-      PMTM.add(new DataLayout(Mod));
-    }
-#else
-    //QDP_info_primary( "Using module's data layout" );
-    //PMTM.add(new llvm::DataLayoutPass(Mod));
+    unsigned int sm_gpu = gpu_getMajor() * 10 + gpu_getMinor();
+    PM.add( llvm::createNVVMReflectPass( sm_gpu ));
 #endif
-
-
-#if defined (QDP_LLVM8) || defined (QDP_LLVM9) || defined (QDP_LLVM10) || defined (QDP_LLVM11)
-    std::string str;
-    llvm::raw_string_ostream rss(str);
-    llvm::buffer_ostream bos(rss);
+    PM.add( llvm::createGlobalDCEPass() );
     
-    // Ask the target to add backend passes as necessary.
-
-#if defined (QDP_LLVM10) || defined (QDP_LLVM11)
-    if (target_machine->addPassesToEmitFile(PM, bos , nullptr ,  llvm::CGFT_AssemblyFile )) {
-#else
-    if (target_machine->addPassesToEmitFile(PM, bos , nullptr ,  llvm::TargetMachine::CGFT_AssemblyFile )) {
-#endif
-      
-      llvm::errs() << ": target does not support generation of this"
-		   << " file type!\n";
-      exit(1);
-    }
-#else
-    std::string str;
-    llvm::raw_string_ostream rss(str);
-    llvm::buffer_ostream bos(rss);
-
-    // Ask the target to add backend passes as necessary.
-    if (target_machine->addPassesToEmitFile(PM, bos ,  llvm::TargetMachine::CGFT_AssemblyFile )) {
-      llvm::errs() << ": target does not support generation of this"
-		   << " file type!\n";
-      exit(1);
-    }
-#endif
-    
-
-    //Mod->dump();
-    //QDPIO::cout << "(module right before PTX codegen)------\n";
-	
-    //QDPIO::cout << "PTX code generation\n";
     PM.run(*Mod);
-    //bos.flush();
 
-    //QDPIO::cout << "PTX generated2: " << bos.str().str() << " (end)\n";
+    
+    //QDPIO::cout << "AFTER OPT ---------------\n";
+    //llvm_module_dump();
 
-    return bos.str().str();
+    
+    std::string str;
+    llvm::raw_string_ostream rss(str);
+    llvm::buffer_ostream bos(rss);
+    
+    if (TargetMachine->addPassesToEmitFile(PM, bos , nullptr ,  llvm::CGFT_AssemblyFile )) {
+      llvm::errs() << ": target does not support generation of this"
+		   << " file type!\n";
+      QDP_abort(1);
+    }
+    
+    PM.run(*Mod);
+
+    std::string ptx = bos.str().str();
+
+    return ptx;
   }
 
 
@@ -1512,123 +1527,57 @@ namespace QDP {
 
 
 
-  // LLVM 4.0
-  bool all_but_main(const llvm::GlobalValue & gv)
-  {
-    return gv.getName().str() == "main";
-  }
 
 
   void llvm_module_dump()
   {
-    QDPIO::cout << "Module dump...\n";
-    QDPIO::cout << "(disabled, as to be able to build LLVM in release mode)\n";
-    //Mod->dump();
-  }
-
-  std::string llvm_get_ptx_kernel(const char* fname)
-  {
-    //QDPIO::cout << "get PTX..\n";
-    //QDPIO::cout << "enter get_ptx_kernel------\n";
-    //Mod->dump();
-    //QDP_info_primary("Internalizing module");
-
-    //const char *ExportList[] = { "main" };
-
-    llvm::StringMap<int> Mapping;
-    Mapping["__CUDA_FTZ"] = llvm_opt::nvptx_FTZ;
-
-    llvm::legacy::PassManager OurPM;
-    OurPM.add( llvm::createInternalizePass( all_but_main ) );
-#if defined (QDP_LLVM8) || defined (QDP_LLVM9) || defined (QDP_LLVM10) || defined (QDP_LLVM11)
-    unsigned int sm_gpu = DeviceParams::Instance().getMajor() * 10 + DeviceParams::Instance().getMinor();
-    OurPM.add( llvm::createNVVMReflectPass( sm_gpu ));
-#else
-    OurPM.add( llvm::createNVVMReflectPass());
-#endif
-    
-    OurPM.run( *Mod );
-
-
-    //QDP_info_primary("Running optimization passes on module");
-
-    llvm::legacy::PassManager PM;
-    PM.add( llvm::createGlobalDCEPass() );
-    PM.run( *Mod );
-
-
-    //QDPIO::cout << "------------------------------------------------ new module\n";
-    //Mod->dump();
-    //QDPIO::cout << "--------------------------------------------------------------\n";
-
-    //Mod->dump();
-
-
-    //llvm_print_module(Mod,"ir_internalized_reflected_globalDCE.ll");
-
-    //std::string str = get_PTX_from_Module_using_nvvm( Mod );
-    std::string str = get_PTX_from_Module_using_llvm();
-
-#if 0
-    // Write PTX string to file
-    std::ofstream ptxfile;
-    ptxfile.open ( fname );
-    ptxfile << str << "\n";
-    ptxfile.close();
-#endif
-
-
-#if 0
-    // Read PTX string from file
-    std::ifstream ptxfile(fname);
-    std::stringstream buffer;
-    buffer << ptxfile.rdbuf();
-    ptxfile.close();
-    str = buffer.str();
-#endif
-
-    //llvm::outs() << str << "\n";
-
-    return str;
+    QDPIO::cout << "--------------------------  Module dump...\n";
+    Mod->print(llvm::errs(), nullptr);
+    QDPIO::cout << "--------------------------\n";
   }
 
 
+  
 
-
-
-  CUfunction llvm_get_cufunction(const char* fname, const char* pretty_cstr)
+  
+  void llvm_build_function_cuda(JitFunction& func)
   {
     addKernelMetadata( mainFunc );
 
-    std::string pretty( pretty_cstr );
+    if (math_declarations.size() > 0)
+      {
+	llvm_init_libdevice();
+    
+	std::string ErrorMsg;
+	if (llvm::Linker::linkModules( *Mod , std::move( module_libdevice ) )) {  // llvm::Linker::PreserveSource
+	  QDPIO::cerr << "Linking libdevice failed: " << ErrorMsg.c_str() << "\n";
+	  QDP_abort(1);
+	}
+      }
 
-    // llvm::FunctionType *funcType = mainFunc->getFunctionType();
-    // funcType->dump();
+    //QDPIO::cout << "setting module data layout\n";
+    Mod->setDataLayout(TargetMachine->createDataLayout());
 
-    std::string ptx_kernel = llvm_get_ptx_kernel(fname);
 
-    CUfunction func = get_fptr_from_ptx( fname , ptx_kernel );
+    
+    std::string ptx_kernel = get_ptx();
+
+    //JitFunction func = get_fptr_from_ptx( fname , ptx_kernel );
+    get_jitf( func , ptx_kernel , str_kernel_name , str_pretty , str_arch );
 
     if ( ptx_db::db_enabled ) {
 
       if (Layout::primaryNode())
 	{
-	  std::string id = get_ptx_db_id( pretty );
-
-	  // Add kernel
-	  //QDPIO::cout << "llvm_get_cufunction: add kernel for id = " << id << "\n";
+	  std::string id = get_ptx_db_id( str_pretty );
 
 	  if ( ptx_db::db.find( id ) != ptx_db::db.end() ) {
-	    QDPIO::cout << "internal error: key already exists in DB but wasn't found before\n" << id << "\n";
+	    QDPIO::cout << "internal error: key already exists in DB but wasn't found earlier\n" << id << "\n";
 	    QDP_abort(1);
 	  }
 
-	  ptx_db::db[ id ] = ptx_kernel;
+	  ptx_db::db[ id ] = std::make_pair( str_kernel_name , ptx_kernel );
 
-	  // Store DB
-	  //QDPIO::cout << "storing PTX DB " << ptx_db::dbname << "\n";
-
-	  // Simple minded, but enough for writing out only from a single node
 	  std::ofstream db;
 	  db.open ( ptx_db::dbname , ios::out | ios::binary );
 	  for ( ptx_db::DBType::iterator it = ptx_db::db.begin() ; it != ptx_db::db.end() ; ++it ) 
@@ -1637,46 +1586,315 @@ namespace QDP {
 	      db << size1;
 	      db.write( it->first.c_str() , size1 );
 
-	      int size2 = it->second.size();
+	      int size2 = it->second.first.size();
 	      db << size2;
-	      db.write( it->second.c_str() , size2 );
+	      db.write( it->second.first.c_str() , size2 );
+
+	      int size3 = it->second.second.size();
+	      db << size3;
+	      db.write( it->second.second.c_str() , size3 );
 	    }
 	  db.close();
 	}
     } // ptx db
-
-    return func;
   }
 
 
 
+  
+#ifdef QDP_BACKEND_ROCM
+
+  void build_function_codegen(const std::string& shared_path)
+  {
+  #if 0
+    {
+      QDPIO::cout << "write code to module.bc ...\n";
+      std::error_code EC;
+      llvm::raw_fd_ostream OS("module.bc", EC, llvm::sys::fs::F_None);
+      llvm::WriteBitcodeToFile(*Mod, OS);
+      OS.flush();
+    }
+#endif
+
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "setting module data layout\n";
+      }
+    Mod->setDataLayout(TargetMachine->createDataLayout());
+
+    if (math_declarations.size() > 0)
+      {
+	llvm_init_libdevice();
+
+	llvm_init_ocml();
+    
+	std::string ErrorMsg;
+	if (llvm::Linker::linkModules( *Mod , std::move( module_libdevice ) )) {  // llvm::Linker::PreserveSource
+	  QDPIO::cerr << "Linking libdevice failed: " << ErrorMsg.c_str() << "\n";
+	  QDP_abort(1);
+	}
+
+	for ( int i = 0 ; i < module_ocml.size() ; ++i )
+	  {
+	    QDPIO::cout << "linking in additional library " << i << "\n";
+	    if (llvm::Linker::linkModules( *Mod , std::move( module_ocml[i] ) )) {  // llvm::Linker::PreserveSource
+	      QDPIO::cerr << "Linking additional library failed: " << ErrorMsg.c_str() << "\n";
+	      QDP_abort(1);
+	    }
+	  }
+      }
+
+#if 0
+    {
+      QDPIO::cout << "write code to module_linked.bc ...\n";
+      std::error_code EC;
+      llvm::raw_fd_ostream OS("module_linked.bc", EC, llvm::sys::fs::F_None);
+      llvm::WriteBitcodeToFile(*Mod, OS);
+      OS.flush();
+    }
+#endif
+    
+    llvm::legacy::PassManager PM2;
+    
+    PM2.add( llvm::createInternalizePass( all_but_kernel_name ) );
+    PM2.add( llvm::createGlobalDCEPass() );
+
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "internalize and remove dead code ...\n";
+      }
+    PM2.run(*Mod);
+    
+    //llvm_module_dump();
+
+#if 0
+    {
+      QDPIO::cout << "write code to module_internal_dce.bc ...\n";
+      std::error_code EC;
+      llvm::raw_fd_ostream OS("module_internal_dce.bc", EC, llvm::sys::fs::F_None);
+      llvm::WriteBitcodeToFile(*Mod, OS);
+      OS.flush();
+    }
+#endif
+
+    std::string clang_name;
+    if (clang_codegen)
+      {
+	clang_name = "module_" + str_kernel_name + ".bc";
+	QDPIO::cout << "write code to " << clang_name << "\n";
+	std::error_code EC;
+	llvm::raw_fd_ostream OS(clang_name, EC, llvm::sys::fs::F_None);
+	llvm::WriteBitcodeToFile(*Mod, OS);
+	OS.flush();
+      }
+
+    std::string isabin_path = "module_" + str_kernel_name + ".o";
+
+    if (clang_codegen)
+      {	
+	std::string clang_path = std::string(ROCM_DIR) + "/llvm/bin/clang";
+	std::string command = clang_path + " -c " + clang_opt + " -target amdgcn-amd-amdhsa -mcpu=" + str_arch + " " + clang_name + " -o " + isabin_path;
+	
+	std::cout << "System: " << command.c_str() << "\n";
+    
+	system( command.c_str() );
+      }
+    else
+      {
+	//legacy::FunctionPassManager PerFunctionPasses(Mod.get());
+	//PerFunctionPasses.add( createTargetTransformInfoWrapperPass( TargetMachine->getTargetIRAnalysis() ) );
+    
+	llvm::legacy::PassManager PM;
+
+	llvm::TargetLibraryInfoImpl TLII( TheTriple );
+	//TLII.addVectorizableFunctionsFromVecLib(TargetLibraryInfoImpl::Accelerate);
+	//TLII.addVectorizableFunctionsFromVecLib(TargetLibraryInfoImpl::SVML);
+	//TLII.addVectorizableFunctionsFromVecLib(TargetLibraryInfoImpl::MASSV);
+	PM.add(new llvm::TargetLibraryInfoWrapperPass(TLII));
+
+	//
+	//
+	// This PMBuilder.populateModulePassManager is essential
+	PassManagerBuilder PMBuilder;
+	PMBuilder.OptLevel = jit_config_get_codegen_opt();
+
+	//PMBuilder.populateFunctionPassManager(PerFunctionPasses);
+	PMBuilder.populateModulePassManager(PM);
+
+	// New stuff
+	//PMBuilder.Inliner = createAlwaysInlinerLegacyPass(true);
+	//
+	
+#if 0
+	QDPIO::cout << "Running function passes..\n";
+	PerFunctionPasses.doInitialization();
+	for (Function &F : *Mod)
+	  if (!F.isDeclaration())
+	    PerFunctionPasses.run(F);
+	PerFunctionPasses.doFinalization();
+	QDPIO::cout << "..done\n";
+#endif
+
+
+	if (jit_config_get_verbose_output())
+	  {
+	    QDPIO::cout << "running module passes ...\n";
+	  }
+	PM.run(*Mod);
+
+
+#if 0
+	{
+	  QDPIO::cout << "write code to module.bc ...\n";
+	  std::error_code EC;
+	  llvm::raw_fd_ostream OS("module.bc", EC, llvm::sys::fs::F_None);
+	  llvm::WriteBitcodeToFile(*Mod, OS);
+	  OS.flush();
+	}
+#endif
+
+
+
+	// ------------------- CODE GEN ----------------------
+    
+	llvm::legacy::PassManager CodeGenPasses;
+    
+	llvm::LLVMTargetMachine &LLVMTM = static_cast<llvm::LLVMTargetMachine &>(*TargetMachine);
+
+	std::error_code ec;
+
+	{
+	  std::unique_ptr<llvm::raw_fd_ostream> isabin_fs( new llvm::raw_fd_ostream(isabin_path, ec, llvm::sys::fs::F_Text));
+
+	  if (TargetMachine->addPassesToEmitFile(CodeGenPasses, 
+						 *isabin_fs,
+						 nullptr,
+						 llvm::CodeGenFileType::CGFT_ObjectFile ))
+
+	    {
+	      QDPIO::cerr << "target does not support generation of object file type!\n";
+	      QDP_abort(1);
+	    }
+
+	  if (jit_config_get_verbose_output())
+	    {
+	      QDPIO::cout << "running code gen ...\n";
+	    }
+	  
+	  CodeGenPasses.run(*Mod);
+
+	  isabin_fs->flush();
+	}
+      }
+
+
+    
+    std::string lld_path = std::string(ROCM_DIR) + "/llvm/bin/ld.lld";
+    std::string command = lld_path + " -shared " + isabin_path + " -o " + shared_path;
+
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "System: " << command.c_str() << "\n";
+      }
+    
+    system( command.c_str() );
+  }
+
+  
+  void llvm_build_function_rocm(JitFunction& func)
+  {
+    //llvm_module_dump();
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << str_pretty << "\n";
+      }
+    
+    std::string shared_path = "module_" + str_kernel_name + ".so";
+
+    if (Layout::primaryNode())
+      {
+	build_function_codegen( shared_path );
+      }
+
+    //
+    // All nodes wait until primary node has finished LLVM codegen
+    QMP_barrier();
+    
+    std::ostringstream sstream;
+    std::ifstream fin(shared_path, ios::binary);
+    sstream << fin.rdbuf();
+    std::string shared(sstream.str());
+    
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "shared object file read back in. size = " << shared.size() << "\n";
+      }
+    
+    if (!get_jitf( func , shared , str_kernel_name , str_pretty , str_arch ))
+      {
+	// Something went wrong loading the module or finding the kernel
+	// Print some diagnostics about the module
+	QDPIO::cout << "Module declarations:" << std::endl;
+	auto F = Mod->begin();
+	while ( F != Mod->end() )
+	  {
+	    if (F->isDeclaration())
+	      {
+		QDPIO::cout << F->getName().str() << std::endl;
+	      }
+	    F++;
+	  }
+	sleep(1);
+      }
+  }
+#endif
+
+
+  
+
+  void llvm_build_function(JitFunction& func)
+  {
+    builder->SetInsertPoint(bb_stack,it_stack);
+    builder->CreateBr( bb_afterstack );
+    
+#ifdef QDP_BACKEND_ROCM
+    llvm_build_function_rocm(func);
+#else
+    llvm_build_function_cuda(func);
+#endif
+  }
+
+
+  
 
   llvm::Value* llvm_call_f32( llvm::Function* func , llvm::Value* lhs )
   {
-    llvm::Value* lhs_f32 = llvm_cast( llvm_type<float>::value , lhs );
+    llvm::Value* lhs_f32 = llvm_cast( llvm_get_type<float>() , lhs );
     return builder->CreateCall(func,lhs_f32);
   }
 
   llvm::Value* llvm_call_f32( llvm::Function* func , llvm::Value* lhs , llvm::Value* rhs )
   {
-    llvm::Value* lhs_f32 = llvm_cast( llvm_type<float>::value , lhs );
-    llvm::Value* rhs_f32 = llvm_cast( llvm_type<float>::value , rhs );
+    llvm::Value* lhs_f32 = llvm_cast( llvm_get_type<float>() , lhs );
+    llvm::Value* rhs_f32 = llvm_cast( llvm_get_type<float>() , rhs );
     return builder->CreateCall(func,{lhs_f32,rhs_f32});
   }
 
   llvm::Value* llvm_call_f64( llvm::Function* func , llvm::Value* lhs )
   {
-    llvm::Value* lhs_f64 = llvm_cast( llvm_type<double>::value , lhs );
+    llvm::Value* lhs_f64 = llvm_cast( llvm_get_type<double>() , lhs );
     return builder->CreateCall(func,lhs_f64);
   }
 
   llvm::Value* llvm_call_f64( llvm::Function* func , llvm::Value* lhs , llvm::Value* rhs )
   {
-    llvm::Value* lhs_f64 = llvm_cast( llvm_type<double>::value , lhs );
-    llvm::Value* rhs_f64 = llvm_cast( llvm_type<double>::value , rhs );
+    llvm::Value* lhs_f64 = llvm_cast( llvm_get_type<double>() , lhs );
+    llvm::Value* rhs_f64 = llvm_cast( llvm_get_type<double>() , rhs );
     return builder->CreateCall(func,{lhs_f64,rhs_f64});
   }
 
+
+#if 0
   llvm::Value* llvm_sin_f32( llvm::Value* lhs ) { return llvm_call_f32( func_sin_f32 , lhs ); }
   llvm::Value* llvm_acos_f32( llvm::Value* lhs ) { return llvm_call_f32( func_acos_f32 , lhs ); }
   llvm::Value* llvm_asin_f32( llvm::Value* lhs ) { return llvm_call_f32( func_asin_f32 , lhs ); }
@@ -1718,8 +1936,51 @@ namespace QDP {
 
   llvm::Value* llvm_pow_f64( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f64( func_pow_f64 , lhs , rhs ); }
   llvm::Value* llvm_atan2_f64( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f64( func_atan2_f64 , lhs , rhs ); }
+#endif
 
+  llvm::Value* llvm_sin_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("sin_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_acos_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("acos_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_asin_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("asin_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_atan_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("atan_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_ceil_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("ceil_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_floor_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("floor_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_cos_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("cos_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_cosh_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("cosh_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_exp_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("exp_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_log_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("log_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_log10_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("log10_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_sinh_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("sinh_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_tan_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("tan_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_tanh_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("tanh_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_fabs_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("fabs_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_sqrt_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("sqrt_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_isfinite_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("isfinite_f32") , jitprec::f32 , 1 )  , lhs ); }
 
+  llvm::Value* llvm_pow_f32( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("pow_f32") , jitprec::f32 , 2 )  , lhs , rhs ); }
+  llvm::Value* llvm_atan2_f32( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("atan2_f32") , jitprec::f32 , 2 )  , lhs , rhs ); }
 
+  
+  llvm::Value* llvm_sin_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("sin_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_acos_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("acos_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_asin_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("asin_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_atan_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("atan_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_ceil_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("ceil_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_floor_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("floor_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_cos_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("cos_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_cosh_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("cosh_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_exp_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("exp_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_log_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("log_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_log10_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("log10_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_sinh_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("sinh_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_tan_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("tan_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_tanh_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("tanh_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_fabs_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("fabs_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_sqrt_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("sqrt_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_isfinite_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("isfinite_f64") , jitprec::f64 , 1 )  , lhs ); }
+
+  llvm::Value* llvm_pow_f64( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("pow_f64") , jitprec::f64 , 2 )  , lhs , rhs ); }
+  llvm::Value* llvm_atan2_f64( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("atan2_f64") , jitprec::f64 , 2 )  , lhs , rhs ); }
+
+  
 } // namespace QDP
 

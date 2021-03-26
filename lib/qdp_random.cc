@@ -16,19 +16,21 @@ namespace QDP {
  * and multiplier a = (2**36)*m3 + (2**24)*m2 + (2**12)*m1 + m0.  
  */
 
+  namespace Layout {
+  // lattice coordinate
+  LatticeInteger latticeCoordinate(int mu);
+  }
+
+  
 namespace RNG
 {
-  //! Global (current) seed
-  Seed ran_seed;
-  //! RNG multiplier
-  Seed ran_mult;
-  //! RNG multiplier raised to the volume+1
-  Seed ran_mult_n;
-  //! The lattice of skewed RNG multipliers
-  LatticeSeed *lattice_ran_mult;
 
-  LatticeSeed *lat_ran_mult_n;
-  LatticeSeed *lat_ran_seed;
+  std::shared_ptr<RNG_Internals_t> RNG_Internals;
+
+  std::shared_ptr<RNG_Internals_t> get_RNG_Internals()
+  {
+    return RNG_Internals;
+  }
 
     //! Find the number of bits required to represent x.
   int numbits(int x)
@@ -48,12 +50,20 @@ namespace RNG
   //! Initialize the random number generator with a default seed
   void initDefaultRNG()
   {
+    RNG_Internals = std::make_shared< RNG_Internals_t >();
+    
     RNG::initRNG();
 
     Seed seed = 11;
     RNG::setrn(seed);
   }
 
+  void doneDefaultRNG()
+  {
+    RNG_Internals.reset();
+  }
+
+  
 
   //! Initialize the internals of the random number generator
   void initRNG()
@@ -71,7 +81,7 @@ namespace RNG
     seed_tmp1 = (seed_tmp2 << 12) | 712;
     seed_tmp0 = (seed_tmp1 << 12) | 1645;
 
-    ran_mult = seed_tmp0;
+    RNG_Internals->ran_mult = seed_tmp0;
 
     // Find the number of bits it takes to represent the total lattice volume.
     // NOTE: there are no lattice size restrictions here.
@@ -99,7 +109,7 @@ namespace RNG
      * Setup single multiplier ( a^1 ) on each site 
      */
     LatticeSeed laa;
-    laa = ran_mult;
+    laa = RNG_Internals->ran_mult;
 
     /*
      * Calculate the multiplier  a^n  where n = lexicographic numbering of the site.
@@ -138,46 +148,31 @@ namespace RNG
     Seed aamult;
 
     int ibit = Layout::vol();
-    aa = ran_mult;
+    aa = RNG_Internals->ran_mult;
 //    ran_mult_n = 1;    // produces def    ran_mult_n = ran_mult^{vol}
-    ran_mult_n = ran_mult;   // produces def  ran_mult_n = ran_mult^{vol+1}
+    RNG_Internals->ran_mult_n = RNG_Internals->ran_mult;   // produces def  ran_mult_n = ran_mult^{vol+1}
 
     for(int i=0; i<nbits; ++i)
     {
       bit = (ibit & 1) > 0;
 
-      aamult = ran_mult_n * aa;
+      aamult = RNG_Internals->ran_mult_n * aa;
       if (bit)
-	ran_mult_n = aamult;
+	RNG_Internals->ran_mult_n = aamult;
 
       ibit >>= 1;
       aamult = aa * aa;
       aa = aamult;
     }
 
-    lattice_ran_mult = new LatticeSeed;
-    if( lattice_ran_mult == 0x0 ) { 
-      QDP_error_exit("Unable to allocate lattice_ran_mult\n");
-    }
-
-    *lattice_ran_mult = lattice_ran_mult_tmp;
+    RNG_Internals->lattice_ran_mult = lattice_ran_mult_tmp;
     QDPIO::cout << "Finished init of RNG" << endl; 
 
-    lat_ran_seed = new LatticeSeed;
-    if( lat_ran_seed == 0x0 ) { 
-      QDP_error_exit("Unable to allocate lat_run_seed\n");
-    }
-
-    lat_ran_seed->elem(0) = ran_seed.elem();
+    RNG_Internals->lat_ran_seed.elem(0) = RNG_Internals->ran_seed.elem();
     for( int i = 1 ; i < Layout::sitesOnNode() ; i++ )    
-      lat_ran_seed->elem(i) = lat_ran_seed->elem(i-1) * ran_mult_n.elem();
+      RNG_Internals->lat_ran_seed.elem(i) = RNG_Internals->lat_ran_seed.elem(i-1) * RNG_Internals->ran_mult_n.elem();
 
-    lat_ran_mult_n = new LatticeSeed;
-    if( lat_ran_mult_n == 0x0 ) { 
-      QDP_error_exit("Unable to allocate lat_run_mult_n\n");
-    }
-
-    *lat_ran_mult_n = ran_mult_n;
+    RNG_Internals->lat_ran_mult_n = RNG_Internals->ran_mult_n;
 
     setProfileLevel(old_profile_level);
   }
@@ -186,14 +181,14 @@ namespace RNG
   //! Initialize the random number generator seed
   void setrn(const Seed& seed)
   {
-    ran_seed = seed;
+    RNG_Internals->ran_seed = seed;
   }
 
 
   //! Return a copy of the random number seed
   void savern(Seed& seed)
   {
-    seed = ran_seed;
+    seed = RNG_Internals->ran_seed;
   }
 
 

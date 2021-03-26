@@ -2,9 +2,6 @@
 
 namespace QDP {
 
-  extern llvm::IRBuilder<>  *builder;
-  extern llvm::Module       *Mod;
-
 
   llvm::Function    *func_seed2float;
   llvm::Function    *func_seedMultiply;
@@ -23,6 +20,42 @@ namespace QDP {
     };
 #endif
   }
+
+  namespace {
+    void *sync_hst_ptr;
+    void *sync_dev_ptr;
+  }
+  
+  void jit_util_sync_init()
+  {
+    gpu_host_alloc( &sync_hst_ptr , sizeof(int) );
+    gpu_malloc( &sync_dev_ptr , sizeof(int) );
+    *(int*)sync_hst_ptr = 0;
+  }
+
+  void jit_util_sync_done()
+  {
+    gpu_host_free( sync_hst_ptr );
+    gpu_free( sync_dev_ptr );
+  }
+
+  void jit_util_sync_copy()
+  {
+    gpu_memcpy_d2h( sync_hst_ptr , sync_dev_ptr , sizeof(int) );
+  }
+
+  // For AMD the workgroup sizes are passed as kernel parameters
+  // For now as placeholder values
+  //
+  void JIT_AMD_add_workgroup_sizes( std::vector<QDPCache::ArgKey>& ids )
+  {
+    JitParam jit_ntidx( QDP_get_global_cache().addJitParamInt( -1 ) );
+    JitParam jit_nctaidx( QDP_get_global_cache().addJitParamInt( -1 ) );
+
+    ids.insert(ids.begin(), jit_nctaidx.get_id() );
+    ids.insert(ids.begin(), jit_ntidx.get_id() );
+  }
+
 
 
   void jit_stats_lattice2dev()  { ++JITSTATS::lattice2dev; }
@@ -46,34 +79,31 @@ namespace QDP {
   // and returns 1 seed (as a literal aggregate)
   //
   void jit_build_seedMultiply() {
-    assert(builder && "no builder");
-    assert(Mod && "no module");
-
     std::vector< llvm::Type* > vecArgTypes;
 
-    vecArgTypes.push_back( builder->getInt32Ty() );
-    vecArgTypes.push_back( builder->getInt32Ty() );
-    vecArgTypes.push_back( builder->getInt32Ty() );
-    vecArgTypes.push_back( builder->getInt32Ty() );
+    vecArgTypes.push_back( llvm_get_builder()->getInt32Ty() );
+    vecArgTypes.push_back( llvm_get_builder()->getInt32Ty() );
+    vecArgTypes.push_back( llvm_get_builder()->getInt32Ty() );
+    vecArgTypes.push_back( llvm_get_builder()->getInt32Ty() );
 
-    vecArgTypes.push_back( builder->getInt32Ty() );
-    vecArgTypes.push_back( builder->getInt32Ty() );
-    vecArgTypes.push_back( builder->getInt32Ty() );
-    vecArgTypes.push_back( builder->getInt32Ty() );
+    vecArgTypes.push_back( llvm_get_builder()->getInt32Ty() );
+    vecArgTypes.push_back( llvm_get_builder()->getInt32Ty() );
+    vecArgTypes.push_back( llvm_get_builder()->getInt32Ty() );
+    vecArgTypes.push_back( llvm_get_builder()->getInt32Ty() );
 
-    llvm::Type* ret_types[] = { builder->getInt32Ty(),
-				builder->getInt32Ty(),
-				builder->getInt32Ty(),
-				builder->getInt32Ty() };
+    llvm::Type* ret_types[] = { llvm_get_builder()->getInt32Ty(),
+				llvm_get_builder()->getInt32Ty(),
+				llvm_get_builder()->getInt32Ty(),
+				llvm_get_builder()->getInt32Ty() };
     
-    llvm::StructType* ret_type = llvm::StructType::get(TheContext, 
+    llvm::StructType* ret_type = llvm::StructType::get(llvm_get_context(), 
 						       llvm::ArrayRef< llvm::Type * >( ret_types , 4 ) );
 
     llvm::FunctionType *funcType = llvm::FunctionType::get( ret_type , 
 							    llvm::ArrayRef<llvm::Type*>( vecArgTypes.data() , 
 											 vecArgTypes.size() ) ,
 							    false );
-    llvm::Function* F = llvm::Function::Create(funcType, llvm::Function::InternalLinkage, "seedMultiply", Mod);
+    llvm::Function* F = llvm::Function::Create(funcType, llvm::Function::InternalLinkage, "seedMultiply", llvm_get_module());
 
     std::vector< llvm::Value* > args;
     unsigned Idx = 0;
@@ -84,8 +114,8 @@ namespace QDP {
       args.push_back(&*AI);
     }
 
-    llvm::BasicBlock* entry = llvm::BasicBlock::Create(TheContext, "entrypoint", F);
-    builder->SetInsertPoint(entry);
+    llvm::BasicBlock* entry = llvm::BasicBlock::Create(llvm_get_context(), "entrypoint", F);
+    llvm_get_builder()->SetInsertPoint(entry);
 
     typedef RScalar<WordREG<int> >  T;
     PSeedREG<T> s1,s2;
@@ -107,7 +137,7 @@ namespace QDP {
 			       s1.elem(2).elem().get_val() ,
 			       s1.elem(3).elem().get_val() };
 
-    builder->CreateAggregateRet( ret_val , 4 );
+    llvm_get_builder()->CreateAggregateRet( ret_val , 4 );
 
     func_seedMultiply = F;
   }
@@ -128,13 +158,13 @@ namespace QDP {
 
     llvm::Value* pack[] = { a0,a1,a2,a3,a4,a5,a6,a7 };
 
-    llvm::Value* ret_val = builder->CreateCall( func_seedMultiply , llvm::ArrayRef< llvm::Value *>( pack ,  8 ) );
+    llvm::Value* ret_val = llvm_get_builder()->CreateCall( func_seedMultiply , llvm::ArrayRef< llvm::Value *>( pack ,  8 ) );
 
     std::vector<llvm::Value *> ret;
-    ret.push_back( builder->CreateExtractValue( ret_val , 0 ) );
-    ret.push_back( builder->CreateExtractValue( ret_val , 1 ) );
-    ret.push_back( builder->CreateExtractValue( ret_val , 2 ) );
-    ret.push_back( builder->CreateExtractValue( ret_val , 3 ) );
+    ret.push_back( llvm_get_builder()->CreateExtractValue( ret_val , 0 ) );
+    ret.push_back( llvm_get_builder()->CreateExtractValue( ret_val , 1 ) );
+    ret.push_back( llvm_get_builder()->CreateExtractValue( ret_val , 2 ) );
+    ret.push_back( llvm_get_builder()->CreateExtractValue( ret_val , 3 ) );
 
     return ret;
   }
@@ -142,20 +172,18 @@ namespace QDP {
 
 
   void jit_build_seedToFloat() {
-    assert(builder && "no builder");
-    assert(Mod && "no module");
 
     std::vector< llvm::Type* > vecArgTypes;
-    vecArgTypes.push_back( builder->getInt32Ty() );
-    vecArgTypes.push_back( builder->getInt32Ty() );
-    vecArgTypes.push_back( builder->getInt32Ty() );
-    vecArgTypes.push_back( builder->getInt32Ty() );
+    vecArgTypes.push_back( llvm_get_builder()->getInt32Ty() );
+    vecArgTypes.push_back( llvm_get_builder()->getInt32Ty() );
+    vecArgTypes.push_back( llvm_get_builder()->getInt32Ty() );
+    vecArgTypes.push_back( llvm_get_builder()->getInt32Ty() );
 
-    llvm::FunctionType *funcType = llvm::FunctionType::get( builder->getFloatTy(), 
+    llvm::FunctionType *funcType = llvm::FunctionType::get( llvm_get_builder()->getFloatTy(), 
 							    llvm::ArrayRef<llvm::Type*>( vecArgTypes.data() , 
 											 vecArgTypes.size() ) ,
 							    false );
-    llvm::Function* F = llvm::Function::Create(funcType, llvm::Function::InternalLinkage, "seedToFloat", Mod);
+    llvm::Function* F = llvm::Function::Create(funcType, llvm::Function::InternalLinkage, "seedToFloat", llvm_get_module());
 
     std::vector< llvm::Value* > args;
     unsigned Idx = 0;
@@ -166,8 +194,8 @@ namespace QDP {
       args.push_back(&*AI);
     }
 
-    llvm::BasicBlock* entry = llvm::BasicBlock::Create(TheContext, "entrypoint", F);
-    builder->SetInsertPoint(entry);
+    llvm::BasicBlock* entry = llvm::BasicBlock::Create(llvm_get_context(), "entrypoint", F);
+    llvm_get_builder()->SetInsertPoint(entry);
 
     typedef RScalar<WordREG<int> >  T;
     PSeedREG<T> s1;
@@ -202,7 +230,7 @@ namespace QDP {
     fs2 = fs1 + d.elem();
     d.elem() = twom11 * fs2;
 
-    builder->CreateRet( d.elem().elem().get_val() );
+    llvm_get_builder()->CreateRet( d.elem().elem().get_val() );
 
     func_seed2float = F;
   }
@@ -214,23 +242,24 @@ namespace QDP {
     assert(a2 && "llvm_seedToFloat a2");
     assert(a3 && "llvm_seedToFloat a3");
     assert(func_seed2float && "llvm_seedToFloat func_seed2float");
-    return builder->CreateCall( func_seed2float , {a0,a1,a2,a3} );
+    return llvm_get_builder()->CreateCall( func_seed2float , {a0,a1,a2,a3} );
   }
 
 
-  CUfunction jit_function_epilogue_get_cuf(const char * fname, const char* pretty )
+  void jit_get_function(JitFunction& f)
   {
     llvm_exit();
 
-    //llvm_module_dump();
-
-    return llvm_get_cufunction( fname , pretty );
+    llvm_build_function(f);
   }
 
 
-  std::vector<ParamRef> jit_function_preamble_param()
+
+  
+
+  std::vector<ParamRef> jit_function_preamble_param( const char* ftype , const char* pretty )
   {
-    llvm_start_new_function();
+    llvm_start_new_function( ftype , pretty );
 
     ParamRef p_ordered      = llvm_add_param<bool>();
     ParamRef p_th_count     = llvm_add_param<int>();
@@ -283,24 +312,38 @@ namespace QDP {
     return r_idx;
   }
 
-
+#if 0
   JitForLoop::JitForLoop( int start , int end )
+  {
+    JitForLoop( llvm_create_value(start) , llvm_create_value(end) );
+  }
+
+  JitForLoop::JitForLoop( int start , llvm::Value* end )
+  {
+    JitForLoop( llvm_create_value(start) , end );
+  }
+
+  JitForLoop::JitForLoop( llvm::Value* start , int end )
+  {
+    JitForLoop( start , llvm_create_value(end) );
+  }
+#endif
+
+  JitForLoop::JitForLoop( llvm::Value* start , llvm::Value* end )
   {
     block_outer = llvm_get_insert_point();
     block_loop_cond = llvm_new_basic_block();
     block_loop_body = llvm_new_basic_block();
     block_loop_exit = llvm_new_basic_block();
 
-    llvm::Value * i_start = llvm_create_value( start );
-    
     llvm_branch( block_loop_cond );
     llvm_set_insert_point(block_loop_cond);
   
-    r_i = llvm_phi( llvm_type<int>::value , 2 );
+    r_i = llvm_phi( llvm_get_type<int>() , 2 );
 
-    r_i->addIncoming( i_start , block_outer );
+    r_i->addIncoming( start , block_outer );
 
-    llvm_cond_branch( llvm_lt( r_i , llvm_create_value( end ) ) , block_loop_body , block_loop_exit );
+    llvm_cond_branch( llvm_lt( r_i , end ) , block_loop_body , block_loop_exit );
 
     llvm_set_insert_point( block_loop_body );
   }
@@ -318,6 +361,43 @@ namespace QDP {
     llvm_set_insert_point(block_loop_exit);
   }
 
+
+
+
+
+ 
+  JitForLoopPower::JitForLoopPower( llvm::Value* i_start  )
+  {
+    block_outer = llvm_get_insert_point();
+    block_loop_cond = llvm_new_basic_block();
+    block_loop_body = llvm_new_basic_block();
+    block_loop_exit = llvm_new_basic_block();
+
+    llvm_branch( block_loop_cond );
+    llvm_set_insert_point(block_loop_cond);
+  
+    r_i = llvm_phi( llvm_get_type<int>() , 2 );
+
+    r_i->addIncoming( i_start , block_outer );
+
+    llvm_cond_branch( llvm_gt( r_i , llvm_create_value( 0 ) ) , block_loop_body , block_loop_exit );
+
+    llvm_set_insert_point( block_loop_body );
+  }
+  llvm::Value * JitForLoopPower::index()
+  {
+    return r_i;
+  }
+  void JitForLoopPower::end()
+  {
+    llvm::Value * r_i_plus = llvm_shr( r_i , llvm_create_value(1) );
+    r_i->addIncoming( r_i_plus , llvm_get_insert_point() );
+  
+    llvm_branch( block_loop_cond );
+
+    llvm_set_insert_point(block_loop_exit);
+  }
+ 
 
 
 
@@ -344,14 +424,150 @@ namespace QDP {
 
 
 
+#if 0
+  llvm::Value* jit_ternary( llvm::Value* cond , llvm::Value* val_true , llvm::Value* val_false )
+  {
+    llvm::BasicBlock * block_exit  = llvm_new_basic_block();
+    llvm::BasicBlock * block_true  = llvm_new_basic_block();
+    llvm::BasicBlock * block_false = llvm_new_basic_block();
+
+    llvm_cond_branch( cond , block_true , block_false );
+    {
+      llvm_set_insert_point(block_true);
+      llvm_branch( block_exit );
+    }
+    {
+      llvm_set_insert_point(block_false);
+      llvm_branch( block_exit );
+    }
+    llvm_set_insert_point(block_exit);
+
+    llvm::PHINode* r = llvm_phi( val_true->getType() , 2 );
+    
+    r->addIncoming( val_true , block_true );
+    r->addIncoming( val_false , block_false );
+
+    return r;
+  }
+#endif
 
 
+  
+  llvm::Value* jit_ternary( llvm::Value* cond , const JitDefer& def_true , const JitDefer& def_false )
+  {
+    llvm::BasicBlock * block_exit  = llvm_new_basic_block();
+    llvm::BasicBlock * block_true  = llvm_new_basic_block();
+    llvm::BasicBlock * block_false = llvm_new_basic_block();
+
+    llvm::Value* r_true;
+    llvm::Value* r_false;
+    
+    llvm_cond_branch( cond , block_true , block_false );
+    {
+      llvm_set_insert_point(block_true);
+      r_true = def_true.val();
+      llvm_branch( block_exit );
+    }
+    {
+      llvm_set_insert_point(block_false);
+      r_false = def_false.val();
+      llvm_branch( block_exit );
+    }
+    llvm_set_insert_point(block_exit);
+
+    llvm::PHINode* r = llvm_phi( r_true->getType() , 2 );
+    
+    r->addIncoming( r_true , block_true );
+    r->addIncoming( r_false , block_false );
+
+    return r;
+  }
+
+  
+  llvm::Value* jit_ternary( llvm::Value* cond , llvm::Value*    val_true , llvm::Value*    val_false )
+  {
+    return jit_ternary( cond , JitDeferValue(val_true) , JitDeferValue(val_false) );
+  }
+
+  
+  llvm::Value* jit_ternary( llvm::Value* cond , const JitDefer& val_true , llvm::Value*    val_false )
+  {
+    return jit_ternary( cond , val_true , JitDeferValue(val_false) );
+  }
+
+  
+  llvm::Value* jit_ternary( llvm::Value* cond , llvm::Value*    val_true , const JitDefer& val_false )
+  {
+    return jit_ternary( cond , JitDeferValue(val_true) , val_false );
+  }
 
   
   
   
     // llvm::BasicBlock * block_start = llvm_new_basic_block();
   // llvm::BasicBlock * block_cont = llvm_new_basic_block();
+
+
+
+  void jit_launch(JitFunction& function,int th_count,std::vector<QDPCache::ArgKey>& ids)
+  {
+    // For ROCm we add the __threads_per_group and 
+    // __grid_size_x as parameters to the kernel.
+#ifdef QDP_BACKEND_ROCM
+    JIT_AMD_add_workgroup_sizes( ids );
+#endif
+    
+    QDPCache::KernelArgs_t args( QDP_get_global_cache().get_kernel_args(ids) );
+
+    // Check for no-op
+    if ( th_count == 0 )
+      return;
+
+    // Increment the call counter
+    function.inc_call_counter();
+
+    const int threads_per_block = jit_config_get_threads_per_block();
+    
+    kernel_geom_t geom = getGeom( th_count , threads_per_block );
+
+    JitResult result = gpu_launch_kernel( function,
+					  geom.Nblock_x,geom.Nblock_y,1,
+					  geom.threads_per_block,1,1,
+					  0, // shared mem
+					  args );
+
+    if (result != JitResult::JitSuccess) {
+      QDPIO::cerr << "jit launch error, grid=(" << geom.Nblock_x << "," << geom.Nblock_y << "1), block=(" << threads_per_block << ",1,1)\n";
+      QDP_abort(1);
+    }
+  }
+
+
+  void jit_launch_explicit_geom( JitFunction& function , std::vector<QDPCache::ArgKey>& ids , const kernel_geom_t& geom , unsigned int shared )
+  {
+    // For ROCm we add the __threads_per_group and 
+    // __grid_size_x as parameters to the kernel.
+#ifdef QDP_BACKEND_ROCM
+    JIT_AMD_add_workgroup_sizes( ids );
+#endif
+
+    QDPCache::KernelArgs_t args( QDP_get_global_cache().get_kernel_args(ids) );
+
+    // Increment the call counter
+    function.inc_call_counter();
+
+    JitResult result = gpu_launch_kernel( function,
+					  geom.Nblock_x,geom.Nblock_y,1,
+					  geom.threads_per_block,1,1,
+					  shared,
+					  args );
+
+    if (result != JitResult::JitSuccess) {
+      QDPIO::cerr << "jit launch explicit geom error, grid=(" << geom.Nblock_x << "," << geom.Nblock_y << "1), block=(" << geom.threads_per_block << ",1,1)\n";
+      QDP_abort(1);
+    }
+  }
+
 
 
 

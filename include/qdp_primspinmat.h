@@ -53,6 +53,19 @@ public:
 
 };
 
+
+
+  template<class T, int N>
+  struct FirstWord<PSpinMatrix<T,N> >
+  {
+    static typename WordType<T>::Type_t get(const PSpinMatrix<T,N>& a)
+    {
+      return FirstWord<T>::get(a.elem(0,0));
+    }
+  };
+
+
+  
 /*! @} */   // end of group primspinmatrix
 
 

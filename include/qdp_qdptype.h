@@ -35,10 +35,10 @@ public:
   typedef C Container_t;
 
   //! Main constructor 
-  QDPType(){}
+  QDPType() {}
 
   //! Copy constructor
-  QDPType(const QDPType&) {}
+  QDPType(const QDPType&) = delete;
 
   //! Destructor
   ~QDPType(){}
@@ -48,10 +48,10 @@ public:
   // Operators
 
   inline
-  C& assign(const typename WordType<C>::Type_t& rhs)
+  C& assign(const typename WordType<T>::Type_t& rhs)
     {
       C* me = static_cast<C*>(this);
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+      typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
       evaluate(*me,OpAssign(),PETE_identity(Scalar_t(rhs)),all);
       return *me;
     }
@@ -106,10 +106,10 @@ public:
 
 
   inline
-  C& operator+=(const typename WordType<C>::Type_t& rhs)
+  C& operator+=(const typename WordType<T>::Type_t& rhs)
     {
       C* me = static_cast<C*>(this);
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+      typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
       evaluate(*me,OpAddAssign(),PETE_identity(Scalar_t(rhs)),all);
       return *me;
     }
@@ -134,10 +134,10 @@ public:
 
 
   inline
-  C& operator-=(const typename WordType<C>::Type_t& rhs)
+  C& operator-=(const typename WordType<T>::Type_t& rhs)
     {
       C* me = static_cast<C*>(this);
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+      typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
       evaluate(*me,OpSubtractAssign(),PETE_identity(Scalar_t(rhs)),all);
       return *me;
     }
@@ -162,10 +162,10 @@ public:
 
 
   inline
-  C& operator*=(const typename WordType<C>::Type_t& rhs)
+  C& operator*=(const typename WordType<T>::Type_t& rhs)
     {
       C* me = static_cast<C*>(this);
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+      typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
       evaluate(*me,OpMultiplyAssign(),PETE_identity(Scalar_t(rhs)),all);
       return *me;
     }
@@ -190,10 +190,10 @@ public:
 
 
   inline
-  C& operator/=(const typename WordType<C>::Type_t& rhs)
+  C& operator/=(const typename WordType<T>::Type_t& rhs)
     {
       C* me = static_cast<C*>(this);
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+      typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
       evaluate(*me,OpDivideAssign(),PETE_identity(Scalar_t(rhs)),all);
       return *me;
     }
@@ -218,10 +218,10 @@ public:
 
 
   inline
-  C& operator%=(const typename WordType<C>::Type_t& rhs)
+  C& operator%=(const typename WordType<T>::Type_t& rhs)
     {
       C* me = static_cast<C*>(this);
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+      typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
       evaluate(*me,OpModAssign(),PETE_identity(Scalar_t(rhs)),all);
       return *me;
     }
@@ -246,10 +246,10 @@ public:
 
 
   inline
-  C& operator|=(const typename WordType<C>::Type_t& rhs)
+  C& operator|=(const typename WordType<T>::Type_t& rhs)
     {
       C* me = static_cast<C*>(this);
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+      typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
       evaluate(*me,OpBitwiseOrAssign(),PETE_identity(Scalar_t(rhs)),all);
       return *me;
     }
@@ -274,10 +274,10 @@ public:
 
 
   inline
-  C& operator&=(const typename WordType<C>::Type_t& rhs)
+  C& operator&=(const typename WordType<T>::Type_t& rhs)
     {
       C* me = static_cast<C*>(this);
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+      typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
       evaluate(*me,OpBitwiseAndAssign(),PETE_identity(Scalar_t(rhs)),all);
       return *me;
     }
@@ -302,10 +302,10 @@ public:
 
 
   inline
-  C& operator^=(const typename WordType<C>::Type_t& rhs)
+  C& operator^=(const typename WordType<T>::Type_t& rhs)
     {
       C* me = static_cast<C*>(this);
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+      typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
       evaluate(*me,OpBitwiseXorAssign(),PETE_identity(Scalar_t(rhs)),all);
       return *me;
     }
@@ -330,10 +330,10 @@ public:
 
 
   inline
-  C& operator<<=(const typename WordType<C>::Type_t& rhs)
+  C& operator<<=(const typename WordType<T>::Type_t& rhs)
     {
       C* me = static_cast<C*>(this);
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+      typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
       evaluate(*me,OpLeftShiftAssign(),PETE_identity(Scalar_t(rhs)),all);
       return *me;
     }
@@ -358,10 +358,10 @@ public:
 
 
   inline
-  C& operator>>=(const typename WordType<C>::Type_t& rhs)
+  C& operator>>=(const typename WordType<T>::Type_t& rhs)
     {
       C* me = static_cast<C*>(this);
-      typedef typename SimpleScalar<typename WordType<C>::Type_t>::Type_t  Scalar_t;
+      typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
       evaluate(*me,OpRightShiftAssign(),PETE_identity(Scalar_t(rhs)),all);
       return *me;
     }
@@ -388,6 +388,7 @@ public:
   int getId() const        { return static_cast<const C*>(this)->getId();}
   int getElemNum() const   { return static_cast<const C*>(this)->getElemNum();}
 
+  typename WordType<T>::Type_t get_word_value() const { return static_cast<const C*>(this)->get_word_value();}
 
         T& elem(int i)       {return static_cast<const C*>(this)->elem(i);}
   const T& elem(int i) const {return static_cast<const C*>(this)->elem(i);}
@@ -475,8 +476,8 @@ struct LeafFunctor<QDPType<T,C>, EvalLeaf1>
 template<class T>
 struct LeafFunctor<QDPType<T,OLattice<T> >, ParamLeaf>
 {
-  typedef QDPTypeJIT<typename JITType<T>::Type_t,typename JITType<OLattice<T> >::Type_t>  TypeA_t;
-  //typedef typename JITType< OLattice<T> >::Type_t  TypeA_t;
+  //typedef QDPTypeJIT<typename JITType<T>::Type_t,typename JITType<OLattice<T> >::Type_t>  TypeA_t;
+  typedef typename JITType< OLattice<T> >::Type_t  TypeA_t;
   typedef TypeA_t  Type_t;
   inline static Type_t apply(const QDPType<T,OLattice<T> > &a, const ParamLeaf& p)
   {
@@ -488,17 +489,17 @@ struct LeafFunctor<QDPType<T,OLattice<T> >, ParamLeaf>
 template<class T>
 struct LeafFunctor<QDPType<T,OScalar<T> >, ParamLeaf>
 {
-  typedef QDPTypeJIT<typename JITType<T>::Type_t,typename JITType<OScalar<T> >::Type_t>  TypeA_t;
-  //typedef typename JITType< OScalar<T> >::Type_t  TypeA_t;
-  typedef TypeA_t  Type_t;
+  //typedef QDPTypeJIT<typename JITType<T>::Type_t,typename JITType<OScalar<T> >::Type_t>  Type_t;
+  typedef typename JITType< OScalar<T> >::Type_t  Type_t;
   inline static Type_t apply(const QDPType<T,OScalar<T> > &a, const ParamLeaf& p)
   {
-    ParamRef    base_addr = llvm_add_param< typename WordType<T>::Type_t * >();
-    return Type_t( base_addr );
+    return Type_t( llvm_add_param< typename WordType<T>::Type_t * >() );
   }
 };
 
 
+
+  
 
 template<class T, class C>
 struct LeafFunctor<QDPType<T,C>, AddressLeaf>

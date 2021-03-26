@@ -73,7 +73,13 @@ void zero_rep(double& dest)
   dest = 0;
 }
 
-//! No bool(dest) = 0
+#ifdef QDP_DEEP_LOG
+inline
+void zero_rep(bool& dest) 
+{
+  dest = false;
+}
+#endif
 
 
 //! d = (mask) ? s1 : d;
@@ -520,6 +526,12 @@ struct TrinaryReturn<bool, int, int, FnWhere> {
 
 
 template<>
+struct UnaryReturn<jit_half_t, FnSum> {
+  typedef DOUBLE_TYPE  Type_t;
+};
+
+
+template<>
 struct UnaryReturn<float, FnSum> {
   typedef DOUBLE_TYPE  Type_t;
 };
@@ -536,6 +548,11 @@ struct UnaryReturn<float, FnGlobalMin> {
 
 template<>
 struct UnaryReturn<float, FnSumMulti> {
+  typedef DOUBLE_TYPE  Type_t;
+};
+
+template<>
+struct UnaryReturn<jit_half_t, FnNorm2> {
   typedef DOUBLE_TYPE  Type_t;
 };
 

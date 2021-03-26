@@ -5,16 +5,16 @@
 namespace QDP {
 
   template<class T,class T1>
-  CUfunction
-  function_copymask_build( OLattice<T>& dest , const OLattice<T1>& mask , const OLattice<T>& src )
+  void
+  function_copymask_build( JitFunction& function, OLattice<T>& dest , const OLattice<T1>& mask , const OLattice<T>& src )
   {
     if (ptx_db::db_enabled) {
-      CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-      if (func)
-	return func;
+      llvm_ptx_db( function , __PRETTY_FUNCTION__ );
+      if (!function.empty())
+	return;
     }
 
-    llvm_start_new_function();
+    llvm_start_new_function("copymask",__PRETTY_FUNCTION__ );
 
     llvm_add_param<int>();   // we don't need p_lo, since copymask on sublattices is not jitted
     ParamRef p_hi          = llvm_add_param<int>();
@@ -45,18 +45,24 @@ namespace QDP {
 
     copymask( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ) , mask_reg , src_reg );
 
-    llvm_exit();
-
-    return llvm_get_cufunction("jit_copymask.ptx", __PRETTY_FUNCTION__ );
+    jit_get_function(function);
   }
 
 
 
   template<class T,class T1>
   void 
-  function_copymask_exec(CUfunction function, OLattice<T>& dest, const OLattice<T1>& mask, const OLattice<T>& src )
+  function_copymask_exec(JitFunction& function, OLattice<T>& dest, const OLattice<T1>& mask, const OLattice<T>& src )
   {
     AddressLeaf addr_leaf(all);
+
+#ifdef QDP_DEEP_LOG
+    function.start = 0;
+    function.count = Layout::sitesOnNode();
+    function.size_T = sizeof(T);
+    function.type_W = typeid(typename WordType<T>::Type_t).name();
+    function.dest_arg = 2;
+#endif
 
     forEach(dest, addr_leaf, NullCombine());
     forEach(src, addr_leaf, NullCombine());

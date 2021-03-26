@@ -19,23 +19,6 @@ namespace QDP {
 
 
 
-
-
-#if 0
-  template<class T, class T1, class Op, class RHS>
-  inline
-  void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs,
-		const Subset& s)
-  {
-    static CUfunction function;
-
-    if (function == NULL)
-      function = function_sca_sca_build(dest, op, rhs);
-
-    function_sca_sca_exec(function, dest, op, rhs);
-  }
-#endif
-
   //-----------------------------------------------------------------------------
   //! OLattice Op Scalar(Expression(source)) under an Subset
   /*! 
@@ -46,22 +29,23 @@ namespace QDP {
   void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs,
 		const Subset& s)
   {
-    static CUfunction function;
-    if (function == NULL)
-      function = function_lat_sca_build(dest, op, rhs);
+    static JitFunction function;
+    if (function.empty())
+      function_lat_sca_build(function ,dest, op, rhs);
 
     function_lat_sca_exec(function, dest, op, rhs, s);
   }
 
+  
 
 
   template<class T, class T1, class Op, class RHS>
   void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs,
 		const Subset& s)
   {
-    static CUfunction function;
-    if (function == NULL)
-      function = function_build(dest, op, rhs);
+    static JitFunction function;
+    if (function.empty())
+      function_build(function, dest, op, rhs);
 
     function_exec(function, dest, op, rhs, s);
   }
@@ -73,10 +57,10 @@ namespace QDP {
   void evaluate_subtype_type(OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,C1 >& rhs,
 			     const Subset& s)
   {
-    static CUfunction function;
+    static JitFunction function;
 
-    if (function == NULL)
-      function = function_subtype_type_build(dest, op, rhs);
+    if (function.empty())
+      function_subtype_type_build(function, dest, op, rhs);
 
     function_subtype_type_exec(function, dest, op, rhs, s);
   }
@@ -87,10 +71,10 @@ namespace QDP {
   template<class T, class T1, class Op>
   void operator_type_subtype(OLattice<T>& dest, const Op& op, const QDPSubType<T1,OLattice<T1> >& rhs, const Subset& s)
   {
-    static CUfunction function;
+    static JitFunction function;
 
-    if (function == NULL)
-      function = operator_type_subtype_build(dest, op, rhs);
+    if (function.empty())
+      operator_type_subtype_build(function, dest, op, rhs);
 
     operator_type_subtype_exec(function, dest, op, rhs, s);
   }
@@ -101,10 +85,10 @@ namespace QDP {
   template<class T, class T1, class Op>
   void operator_subtype_subtype(OSubLattice<T>& dest, const Op& op, const QDPSubType<T1,OLattice<T1> >& rhs, const Subset& s)
   {
-    static CUfunction function;
+    static JitFunction function;
 
-    if (function == NULL)
-      function = operator_subtype_subtype_build(dest, op, rhs);
+    if (function.empty())
+      operator_subtype_subtype_build(function, dest, op, rhs);
 
     operator_subtype_subtype_exec(function, dest, op, rhs, s);
   }
@@ -115,10 +99,10 @@ namespace QDP {
   template<class T, class T1, class Op, class RHS>
   void evaluate_subtype(OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs, const Subset& s)
   {
-    static CUfunction function;
+    static JitFunction function;
 
-    if (function == NULL)
-      function = function_lat_sca_subtype_build(dest, op, rhs);
+    if (function.empty())
+      function_lat_sca_subtype_build(function, dest, op, rhs);
 
     function_lat_sca_subtype_exec(function, dest, op, rhs, s);
   }
@@ -132,10 +116,10 @@ namespace QDP {
   template<class T1, class T2>
   void copymask(OLattice<T2>& dest, const OLattice<T1>& mask, const OLattice<T2>& s1)
   {
-    static CUfunction function;
+    static JitFunction function;
 
-    if (function == NULL)
-      function = function_copymask_build( dest , mask , s1 );
+    if (function.empty())
+      function_copymask_build(function, dest , mask , s1 );
 
     function_copymask_exec(function, dest , mask , s1 );
   }
@@ -148,16 +132,16 @@ namespace QDP {
   random(OLattice<T>& d, const Subset& s)
   {
 
-    static CUfunction function;
+    static JitFunction function;
 
     Seed seed_tmp;
 
-    if (function == NULL)
-      function = function_random_build( d , seed_tmp );
+    if (function.empty())
+      function_random_build(function, d , seed_tmp );
 
     function_random_exec(function, d, s , seed_tmp );
 
-    RNG::ran_seed = seed_tmp;
+    RNG::get_RNG_Internals()->ran_seed = seed_tmp;
   }
 
 
@@ -167,12 +151,12 @@ namespace QDP {
   void 
   random(OScalar<T>& d)
   {
-    Seed seed = RNG::ran_seed;
-    Seed skewed_seed = RNG::ran_seed * RNG::ran_mult;
+    Seed seed = RNG::get_RNG_Internals()->ran_seed;
+    Seed skewed_seed = RNG::get_RNG_Internals()->ran_seed * RNG::get_RNG_Internals()->ran_mult;
 
-    fill_random(d.elem(), seed, skewed_seed, RNG::ran_mult);
+    fill_random(d.elem(), seed, skewed_seed, RNG::get_RNG_Internals()->ran_mult);
 
-    RNG::ran_seed = seed;  // The seed from any site is the same as the new global seed
+    RNG::get_RNG_Internals()->ran_seed = seed;  // The seed from any site is the same as the new global seed
   }
 
 
@@ -197,10 +181,10 @@ namespace QDP {
     random(r1,s);
     random(r2,s);
 
-    static CUfunction function;
+    static JitFunction function;
 
-    if (function == NULL)
-      function = function_gaussian_build( d , r1 , r2 );
+    if (function.empty())
+      function_gaussian_build(function, d , r1 , r2 );
 
     function_gaussian_exec(function, d, r1, r2, s );
   }
@@ -218,10 +202,10 @@ namespace QDP {
   inline
   void zero_rep(OLattice<T>& dest, const Subset& s) 
   {
-    static CUfunction function;
+    static JitFunction function;
 
-    if (function == NULL)
-      function = function_zero_rep_build( dest );
+    if (function.empty())
+      function_zero_rep_build(function, dest );
 
     function_zero_rep_exec( function , dest , s );
   }
@@ -230,10 +214,10 @@ namespace QDP {
   template<class T> 
   void zero_rep_subtype(OSubLattice<T>& dest, const Subset& s) 
   {
-    static CUfunction function;
+    static JitFunction function;
 
-    if (function == NULL)
-      function = function_zero_rep_subtype_build( dest );
+    if (function.empty())
+      function_zero_rep_subtype_build(function, dest );
 
     function_zero_rep_subtype_exec( function , dest , s );
   }
@@ -281,31 +265,6 @@ namespace QDP {
     return d;
   }
 
-
-  //! OScalar = sum(OLattice)  under an explicit subset
-  /*!
-   * Allow a global sum that sums over the lattice, but returns an object
-   * of the same primitive type. E.g., contract only over lattice indices
-   */
-  template<class RHS, class T>
-  typename UnaryReturn<OLattice<T>, FnSum>::Type_t
-  sum(const QDPExpr<RHS,OLattice<T> >& s1, const Subset& s)
-  {
-    OLattice<T> l;
-    l[s]=s1;
-    return sum(l,s);
-  }
-
-
-
-  template<class RHS, class T>
-  typename UnaryReturn<OLattice<T>, FnSum>::Type_t
-  sum(const QDPExpr<RHS,OLattice<T> >& s1)
-  {
-    OLattice<T> l;
-    l=s1;
-    return sum(l,all);
-  }
 
 
 
@@ -355,8 +314,6 @@ namespace QDP {
   multi2d<typename UnaryReturn<OLattice<T>, FnSum>::Type_t>
   sumMulti(const multi1d< OLattice<T> >& s1, const Set& ss)
   {
-    QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
-
     multi2d<typename UnaryReturn<OLattice<T>, FnSum>::Type_t> dest(s1.size(), ss.numSubsets());
 
     // Initialize result with zero
@@ -389,8 +346,6 @@ namespace QDP {
   inline typename UnaryReturn<OScalar<T>, FnNorm2>::Type_t
   norm2(const multi1d< OScalar<T> >& s1)
   {
-    QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
-
     typename UnaryReturn<OScalar<T>, FnNorm2>::Type_t  d;
 
     // Possibly loop entered
@@ -426,8 +381,6 @@ namespace QDP {
   inline typename UnaryReturn<OLattice<T>, FnNorm2>::Type_t
   norm2(const multi1d< OLattice<T> >& s1, const Subset& s)
   {
-    QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
-
     typename UnaryReturn<OLattice<T>, FnNorm2>::Type_t  d;
 
     // Possibly loop entered
@@ -479,8 +432,6 @@ namespace QDP {
   inline typename BinaryReturn<OScalar<T1>, OScalar<T2>, FnInnerProduct>::Type_t
   innerProduct(const multi1d< OScalar<T1> >& s1, const multi1d< OScalar<T2> >& s2)
   {
-    QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
-
     typename BinaryReturn<OScalar<T1>, OScalar<T2>, FnInnerProduct>::Type_t  d;
 
     // Possibly loop entered
@@ -520,8 +471,6 @@ namespace QDP {
   innerProduct(const multi1d< OLattice<T1> >& s1, const multi1d< OLattice<T2> >& s2,
 	       const Subset& s)
   {
-    QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
-
     typename BinaryReturn<OLattice<T1>, OLattice<T2>, FnInnerProduct>::Type_t  d;
 
     // Possibly loop entered
@@ -574,8 +523,6 @@ namespace QDP {
   inline typename BinaryReturn<OScalar<T1>, OScalar<T2>, FnInnerProductReal>::Type_t
   innerProductReal(const multi1d< OScalar<T1> >& s1, const multi1d< OScalar<T2> >& s2)
   {
-    QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
-
     typename BinaryReturn<OScalar<T1>, OScalar<T2>, FnInnerProductReal>::Type_t  d;
 
     // Possibly loop entered
@@ -615,8 +562,6 @@ namespace QDP {
   innerProductReal(const multi1d< OLattice<T1> >& s1, const multi1d< OLattice<T2> >& s2,
 		   const Subset& s)
   {
-    QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
-
     typename BinaryReturn<OLattice<T1>, OLattice<T2>, FnInnerProductReal>::Type_t  d;
 
     // Possibly loop entered
@@ -670,8 +615,6 @@ namespace QDP {
   typename UnaryReturn<OScalar<T>, FnGlobalMax>::Type_t
   globalMax(const QDPExpr<RHS,OScalar<T> >& s1)
   {
-    QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
-
     typename UnaryReturn<OScalar<T>, FnGlobalMax>::Type_t  d;
 
     evaluate(d,OpAssign(),s1,all);   // since OScalar, no global max needed
@@ -701,8 +644,6 @@ namespace QDP {
   typename UnaryReturn<OScalar<T>, FnGlobalMin>::Type_t
   globalMin(const QDPExpr<RHS,OScalar<T> >& s1)
   {
-    QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
-
     typename UnaryReturn<OScalar<T>, FnGlobalMin>::Type_t  d;
 
     evaluate(d,OpAssign(),s1,all);   // since OScalar, no global min needed
@@ -719,9 +660,10 @@ namespace QDP {
   typename UnaryReturn<OLattice<T>, FnGlobalMin>::Type_t
   globalMin(const QDPExpr<RHS,OLattice<T> >& s1)
   {
-    QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
-
     typename UnaryReturn<OLattice<T>, FnGlobalMin>::Type_t  d;
+    QDPIO::cerr << "globalMin not implemented\n";
+    QDP_abort(1);
+#if 0
 
     // Loop always entered so unroll
     d.elem() = forEach(s1, EvalLeaf1(0), OpCombine());   // SINGLE NODE VERSION FOR NOW
@@ -738,7 +680,7 @@ namespace QDP {
 
     // Do a global min on the result
     QDPInternal::globalMin(d); 
-
+#endif
     return d;
   }
 

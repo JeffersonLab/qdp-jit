@@ -878,17 +878,6 @@ where(const PScalarREG<T1>& a, const PVectorREG<T2,N,C>& b, const PVectorREG<T3,
 }
 
 
-template<class T, int N, template<class,int> class C>
-inline void 
-qdpPHI(PVectorREG<T,N,C>& d, 
-       const PVectorREG<T,N,C>& phi0, llvm::BasicBlock* bb0 ,
-       const PVectorREG<T,N,C>& phi1, llvm::BasicBlock* bb1 )
-{
-  for(int i=0; i < N; ++i)
-    qdpPHI(d.elem(i),
-	   phi0.elem(i),bb0,
-	   phi1.elem(i),bb1);
-}
 
 
 

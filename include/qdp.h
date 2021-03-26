@@ -88,7 +88,9 @@ using std::ostream;
 // END OF YUKKINESS
 
 
-#include "cuda.h"
+#include "qdp_jit_config.h"
+
+#include "qdp_jit_function.h"
 
 #include "qdp_dispatch.h"
 
@@ -105,8 +107,8 @@ namespace QDP {
 
 #include "qdp_init.h"
 
-#include "qdp_deviceparams.h"
-#include "qdp_cuda.h"
+#include "qdp_cache.h"
+#include "qdp_gpu.h"
 #include "qdp_cuda_allocator.h"
 
 #include "qdp_multi.h"
@@ -115,10 +117,6 @@ namespace QDP {
 
 #include "qdp_jit_util.h"
 
-//#include "qdp_multi.h"
-#include "qdp_cache.h"
-
-//
 
 #include "qdp_arrays.h"
 
@@ -151,7 +149,6 @@ namespace QDP {
 
 #include "qdp_traits.h"
 #include "qdp_qdpexpr.h"
-#include "qdp_qdptypejit.h"
 #include "qdp_qdptype.h"
 #include "qdp_qdpsubtypejit.h"
 #include "qdp_qdpsubtype.h"
@@ -171,6 +168,7 @@ namespace QDP {
 #include "qdp_optops.h"
 #include "qdp_mastermap.h"
 
+#include "qdp_expr_writer.h"
 #include "qdp_profile.h"
 
 #if defined(ARCH_SCALAR)
@@ -184,7 +182,7 @@ namespace QDP {
 #include "qdp_mapresource.h"
 #include "qdp_handle.h"
 #include "qdp_map.h"
-#include "qdp_autotuning.h"
+//#include "qdp_autotuning.h"
 
 #include "qdp_multi_outer.h"
 
@@ -211,7 +209,6 @@ namespace QDP {
 #include "qdp_specializations.h"
 
 #include "qdp_random.h"
-#include "qdp_poolbisect.h"
 
 #if defined(ARCH_SCALAR)
 #include "qdp_scalar_internal.h"

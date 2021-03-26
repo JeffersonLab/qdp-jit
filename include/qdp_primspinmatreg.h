@@ -40,6 +40,12 @@ public:
 	this->elem(i,q).setup( j.elem(i,q) );
   }
 
+  void setup_value( const typename JITType< PSpinMatrixREG >::Type_t& j ) {
+    for (int i = 0 ; i < N ; i++ ) 
+      for (int q = 0 ; q < N ; q++ ) 
+	this->elem(i,q).setup_value( j.elem(i,q) );
+  }
+
 
   template<class T1>
   PSpinMatrixREG(const PSpinMatrixREG<T1,N>& a)
@@ -576,7 +582,7 @@ peekSpin(const PSpinMatrixREG<T,N>& l, llvm::Value* row, llvm::Value* col)
 
   typedef typename JITType< PSpinMatrixREG<T,N> >::Type_t TTjit;
 
-  llvm::Value* ptr_local = llvm_alloca( llvm_type<typename WordType<T>::Type_t>::value , TTjit::Size_t );
+  llvm::Value* ptr_local = llvm_alloca( llvm_get_type<typename WordType<T>::Type_t>() , TTjit::Size_t );
 
   TTjit dj;
   dj.setup( ptr_local, JitDeviceLayout::Scalar );
@@ -1788,19 +1794,21 @@ quarkContract13(const PSpinMatrixREG<T1,4>& s1, const PSpinMatrixREG<T2,4>& s2)
   JitStackMatrix< T_return , 4 > d_a;
   
   JitForLoop loop_j(0,4);
-
-  JitForLoop loop_i(0,4);
-
-  d_a.elemJIT( loop_i.index() , loop_j.index() ) = quarkContractXX( s1_a.elemREG( llvm_create_value(0) , loop_i.index() ) ,
-								    s2_a.elemREG( llvm_create_value(0) , loop_j.index() ) );
-
-  JitForLoop loop_k(1,4);
-
-  d_a.elemJIT( loop_i.index() , loop_j.index() ) += quarkContractXX( s1_a.elemREG( loop_k.index() , loop_i.index() ) ,
-  								     s2_a.elemREG( loop_k.index() , loop_j.index() ) );
-
-  loop_k.end();
-  loop_i.end();
+  {
+    JitForLoop loop_i(0,4);
+    {
+      d_a.elemJIT( loop_i.index() , loop_j.index() ) = quarkContractXX( s1_a.elemREG( llvm_create_value(0) , loop_i.index() ) ,
+									s2_a.elemREG( llvm_create_value(0) , loop_j.index() ) );
+      
+      JitForLoop loop_k(1,4);
+      {
+	d_a.elemJIT( loop_i.index() , loop_j.index() ) += quarkContractXX( s1_a.elemREG( loop_k.index() , loop_i.index() ) ,
+									   s2_a.elemREG( loop_k.index() , loop_j.index() ) );
+      }
+      loop_k.end();
+    }
+    loop_i.end();
+  }
   loop_j.end();
   
   for(int i=0; i < 4; ++i)

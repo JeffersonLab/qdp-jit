@@ -12,6 +12,13 @@
 
 namespace QDP {
 
+  namespace {
+    bool gpu_getGPUDirect()
+    {
+      return false;
+    }
+  }
+
   void FnMapRsrc::setup(int _destNode,int _srcNode,int _sendMsgSize,int _rcvMsgSize) {
 
     bSet=true;
@@ -22,9 +29,9 @@ namespace QDP {
     int srcnode = _srcNode;
     int dstnode = _destNode;
 
-    if (!DeviceParams::Instance().getGPUDirect()) {
-      CudaHostAlloc(&send_buf,dstnum,0);
-      CudaHostAlloc(&recv_buf,srcnum,0);
+    if (!gpu_getGPUDirect()) {
+      gpu_host_alloc(&send_buf,dstnum);
+      gpu_host_alloc(&recv_buf,srcnum);
     }
 
     //QDPIO::cout << "Allocating receive buffer on device: " << srcnum << " bytes\n";
@@ -33,7 +40,7 @@ namespace QDP {
     //QDPIO::cout << "Allocating send buffer on device: " << dstnum << " bytes\n";
     send_buf_id = QDP_get_global_cache().addDeviceStatic( &send_buf_dev , dstnum);
 
-    if (!DeviceParams::Instance().getGPUDirect()) {
+    if (!gpu_getGPUDirect()) {
       msg[0] = QMP_declare_msgmem( recv_buf , srcnum );
     } else {
       msg[0] = QMP_declare_msgmem( recv_buf_dev , srcnum );
@@ -43,7 +50,7 @@ namespace QDP {
       QDP_error_exit("QMP_declare_msgmem for msg[0] failed in Map::operator()\n");
     }
 
-    if (!DeviceParams::Instance().getGPUDirect()) {
+    if (!gpu_getGPUDirect()) {
       msg[1] = QMP_declare_msgmem( send_buf , dstnum );
     } else {
       msg[1] = QMP_declare_msgmem( send_buf_dev , dstnum );
@@ -84,8 +91,8 @@ namespace QDP {
 #endif
       QDP_get_global_cache().signoff( send_buf_id );
       QDP_get_global_cache().signoff( recv_buf_id );
-      CudaHostFree(send_buf);
-      CudaHostFree(recv_buf);
+      gpu_host_free(send_buf);
+      gpu_host_free(recv_buf);
     }
   }
 
@@ -95,8 +102,8 @@ namespace QDP {
     if ((err = QMP_wait(mh)) != QMP_SUCCESS)
       QDP_error_exit(QMP_error_string(err));
 
-    if (!DeviceParams::Instance().getGPUDirect()) {
-      CudaMemcpyH2D( recv_buf_dev , recv_buf , srcnum );
+    if (!gpu_getGPUDirect()) {
+      gpu_memcpy_h2d( recv_buf_dev , recv_buf , srcnum );
     }
 
 #if QDP_DEBUG >= 3
@@ -130,8 +137,8 @@ namespace QDP {
     QDP_info("D2H %d bytes receive buffer",dstnum);
 #endif
 
-    if (!DeviceParams::Instance().getGPUDirect()) {
-      CudaMemcpyD2H( send_buf , send_buf_dev , dstnum );
+    if (!gpu_getGPUDirect()) {
+      gpu_memcpy_d2h( send_buf , send_buf_dev , dstnum );
     }
 
     // Launch the faces

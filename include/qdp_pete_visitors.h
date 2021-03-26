@@ -63,28 +63,30 @@ struct AddressLeaf
   void setIdElem( int id , int elem ) const {
     ids.push_back( QDPCache::ArgKey(id,elem) );
   }
-  void setLit( float f ) const {
-    ids.push_back( QDPCache::ArgKey(QDP_get_global_cache().addJitParamFloat(f)) );
-    ids_signoff.push_back( ids.back().id );
-  }
-  void setLit( double d ) const {
-    ids.push_back( QDPCache::ArgKey(QDP_get_global_cache().addJitParamDouble(d)) );
-    ids_signoff.push_back( ids.back().id );
-  }
-  void setLit( int i ) const {
-    ids.push_back( QDPCache::ArgKey(QDP_get_global_cache().addJitParamInt(i)) );
-    ids_signoff.push_back( ids.back().id );
-  }
-  void setLit( int64_t i ) const {
-    ids.push_back( QDPCache::ArgKey(QDP_get_global_cache().addJitParamInt64(i)) );
-    ids_signoff.push_back( ids.back().id );
-  }
-  void setLit( bool b ) const {
-    ids.push_back( QDPCache::ArgKey(QDP_get_global_cache().addJitParamBool(b)) );
-    ids_signoff.push_back( ids.back().id );
-  }
+  
+  template<class T> void setLit( T f ) const;
+
+  
 };
 
+  template<>
+  void AddressLeaf::setLit<float>( float f ) const;
+  
+  template<>
+  void AddressLeaf::setLit<double>( double d ) const;
+  
+  template<>
+  void AddressLeaf::setLit<int>( int i ) const;
+  
+  template<>
+  void AddressLeaf::setLit<int64_t>( int64_t i ) const;
+  
+  template<>
+  void AddressLeaf::setLit<bool>( bool b ) const;
+
+
+  
+  
 
   template<class LeafType, class LeafTag>
   struct AddOpParam

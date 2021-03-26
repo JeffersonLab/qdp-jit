@@ -31,33 +31,29 @@ namespace QDP {
       //      setup_m=true;
     }
 
-    // WordREG(const llvm::Value *& rhs): val(jit_type<T>::value) {
-    //   setup(rhs);
-    // }
+
+    explicit WordREG(llvm::Value * rhs)
+    {
+      setup(rhs);
+    }
+
 
     void setup(llvm::Value * v) {
-      //std::cout << __PRETTY_FUNCTION__ << "\n";
-      val = llvm_cast( llvm_type<T>::value , v );
+      val = llvm_cast( llvm_get_type<T>() , v );
       //setup_m=true;
     }
 
     void setup(const WordJIT<T>& wj) {
       llvm::Value *val_j = llvm_load_ptr_idx( wj.getBaseReg() , wj.getOffset() );
       setup( val_j );
-      //
     }
 
-    // void replace(const WordREG& rhs ) {
-    //   //assert( rhs.get_val()->get_type() == jit_type<T>::value );
-    //   if (val) {
-    // 	llvm_mov_no_create( val , rhs.get_val() );	
-    //   } else {
-    // 	val = rhs.get_val();
-    //   }
-    //   setup_m = true;
-    // }
+    void setup_value(const WordJIT<T>& wj) {
+      llvm::Value *val_j = wj.get_base();
+      setup( val_j );
+    }
 
-
+    
     llvm::Value *get_val() const { return val; }
 
 
@@ -538,31 +534,8 @@ operator||(const WordREG<T1>& l, const WordREG<T2>& r)
   {
     typename TrinaryReturn<WordREG<T1>, WordREG<T2>, WordREG<T3>, FnWhere >::Type_t ret;
 
-    llvm::Value * ret_phi0;
-    llvm::Value * ret_phi1;
-
-    llvm::BasicBlock * block_take_b      = llvm_new_basic_block();
-    llvm::BasicBlock * block_not_take_b  = llvm_new_basic_block();
-    llvm::BasicBlock * block_take_b_exit = llvm_new_basic_block();
-    llvm_cond_branch( a.get_val() , block_take_b , block_not_take_b );
-    {
-      llvm_set_insert_point(block_not_take_b);
-      ret_phi0 = c.get_val();
-      llvm_branch( block_take_b_exit );
-    }
-    {
-      llvm_set_insert_point(block_take_b);
-      ret_phi1 = b.get_val();
-      llvm_branch( block_take_b_exit );
-    }
-    llvm_set_insert_point(block_take_b_exit);
-
-    llvm::PHINode* ret_val = llvm_phi( ret_phi0->getType() , 2 );
-
-    ret_val->addIncoming( ret_phi0 , block_not_take_b );
-    ret_val->addIncoming( ret_phi1 , block_take_b );
-
-    ret.setup( ret_val );
+    ret.setup( jit_ternary( a.get_val() , b.get_val() , c.get_val() ) );
+    
     return ret;
   }
 
@@ -636,6 +609,13 @@ localInnerProductReal(const WordREG<T1>& s1, const WordREG<T2>& s2)
   }
 
   inline void 
+  zero_rep(WordREG<jit_half_t>& dest) 
+  {
+    //llvm_mov( dest.get_val() , llvm_create_value(0.0) );
+    dest.setup(llvm_create_value(0.0));
+  }
+
+inline void 
   zero_rep(WordREG<float>& dest) 
   {
     //llvm_mov( dest.get_val() , llvm_create_value(0.0) );
@@ -649,18 +629,6 @@ localInnerProductReal(const WordREG<T1>& s1, const WordREG<T2>& s2)
     dest.setup(llvm_create_value(0));
   }
 
-
-  template<class T>
-  inline void 
-  qdpPHI(WordREG<T>& d, 
-	 const WordREG<T>& phi0, llvm::BasicBlock* bb0 ,
-	 const WordREG<T>& phi1, llvm::BasicBlock* bb1 )
-  {
-    d.setup( llvm_phi( llvm_type<T>::value , 2 ) );
-    static_cast<llvm::PHINode*>(d.get_val())->addIncoming( phi0.get_val() , bb0 );
-    static_cast<llvm::PHINode*>(d.get_val())->addIncoming( phi1.get_val() , bb1 );
-    //d.get_val()->addIncoming( phi1 , bb1 );
-  }
 
 
 

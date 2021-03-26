@@ -18,17 +18,9 @@ namespace QDP {
 template<class T>
 class RScalarJIT : public BaseJIT<T,1>
 {
-private:
-  template<class T1>
-  RScalarJIT& operator=( const RScalarJIT<T1>& rhs);
-  RScalarJIT& operator=( const RScalarJIT& rhs);
-  RScalarJIT( const RScalarJIT& rhs);
-
 public:
 
   // Default constructing should be possible
-  // then there is no need for MPL index when
-  // construction a PMatrix<T,N>
   RScalarJIT() {}
   ~RScalarJIT() {}
 
@@ -38,9 +30,13 @@ public:
     return *this;
   }
 
+
   RScalarJIT(const T& rhs) {
+    this->setup( rhs.getBaseReg() , JitDeviceLayout::Scalar );
     elem() = rhs;
   }
+
+
 
 #if 0
   RScalarJIT& operator=( typename WordType<T>::Type_t rhs) {
@@ -48,6 +44,14 @@ public:
     return *this;
   }
 #endif
+
+
+  template<class T1>
+  RScalarJIT& operator=(const typename REGType<T1>::Type_t& rhs) 
+  {
+    elem() = rhs.elem();
+    return *this;
+  }
 
 
 

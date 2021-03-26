@@ -19,7 +19,6 @@ namespace QDP
     static CUDAPOOL* __cache_pool_allocator;
 
     bool __cacheverbose = false;
-    bool __launchverbose = false;
 
     CUDAPOOL& get__cache_pool_allocator()
     {
@@ -42,10 +41,44 @@ namespace QDP
     __cacheverbose = b;
   }
 
-  bool qdp_cache_get_launch_verbose() { return __launchverbose; }
-  void qdp_cache_set_launch_verbose(bool b) {
-    std::cout << "Set launch to verbose\n";
-    __launchverbose = b;
+
+
+  bool QDPCache::gpu_allocate_base( void ** ptr , size_t n_bytes , int id )
+  {
+    if ( jit_config_get_max_allocation() < 0   ||  (int)n_bytes <= jit_config_get_max_allocation() )
+      {
+	return get__cache_pool_allocator().allocate( ptr , n_bytes , id );
+      }
+    else
+      {
+	return gpu_malloc( ptr , n_bytes );
+      }
+  }
+    
+
+  void QDPCache::gpu_free_base( void * ptr , size_t n_bytes )
+  {
+    if ( jit_config_get_max_allocation() < 0   ||  (int)n_bytes <= jit_config_get_max_allocation() )
+      {
+	return get__cache_pool_allocator().free( ptr );
+      }
+    else
+      {
+	return gpu_free( ptr );
+      }
+  }
+
+  
+  
+  std::map<size_t,size_t>& QDPCache::get_alloc_count()
+  {
+    return get__cache_pool_allocator().get_count();
+  }
+
+
+  int QDPCache::getPoolDefrags()
+  {
+    return get__cache_pool_allocator().defrag_occurrences();
   }
 
 
@@ -64,17 +97,6 @@ namespace QDP
     return get__cache_pool_allocator().getPoolSize();
   }
 
-
-  void QDPCache::suspend()
-  {
-    get__cache_pool_allocator().suspend();
-  }
-
-
-  void QDPCache::resume()
-  {
-    get__cache_pool_allocator().resume();
-  }
 
   
   std::string QDPCache::stringStatus( Status s )
@@ -308,7 +330,7 @@ namespace QDP
     e.flags     = Flags::Multi;
     e.status_vec.clear();
     e.karg_vec.clear();
-    e.hstPtr    = NULL;
+    e.vecHstPtr.clear();
     e.devPtr    = NULL;
     e.fptr      = NULL;
     e.size      = ids.size() * sizeof(void*);
@@ -347,6 +369,27 @@ namespace QDP
   }
 
 
+  size_t QDPCache::free_mem()
+  {
+    return get__cache_pool_allocator().free_mem();
+  }
+
+  void QDPCache::print_pool()
+  {
+    get__cache_pool_allocator().print_pool();
+  }
+
+  void QDPCache::defrag()
+  {
+    get__cache_pool_allocator().defrag();
+  }
+
+  size_t QDPCache::get_max_allocated()
+  {
+    return get__cache_pool_allocator().get_max_allocated();
+  }
+  
+  
   int QDPCache::addDeviceStatic( size_t n_bytes )
   {
     void* dummy;
@@ -358,11 +401,42 @@ namespace QDP
     int Id = getNewId();
     Entry& e = vecEntry[ Id ];
 
-    while (!get__cache_pool_allocator().allocate( ptr , n_bytes )) {
-      if (!spill_lru()) {
-	QDP_error_exit("cache allocate_device_static: can't spill LRU object");
+    if ( qdp_jit_config_defrag() )
+      {
+	bool allocated = get__cache_pool_allocator().allocate_fixed( ptr , n_bytes , Id );
+	
+	while (!allocated)
+	  {
+	    bool defrag = false;
+	    
+	    if (!spill_lru())
+	      {
+		get__cache_pool_allocator().defrag();
+
+		defrag = true;
+	      }
+
+	    allocated = get__cache_pool_allocator().allocate_fixed( ptr , n_bytes , Id );
+	    
+	    if ( !allocated && defrag )
+	      {
+		QDPIO::cout << "Can't allocate static memory even after pool defragmentation." << std::endl;
+		QDP_abort(1);
+	      }
+	  }
       }
-    }
+    else
+      {
+	//while (!get__cache_pool_allocator().allocate( ptr , n_bytes , Id ))
+	while (!gpu_allocate_base( ptr , n_bytes , Id ))
+	  {
+	    if (!spill_lru())
+	      {
+		QDP_error_exit("cache allocate_device_static: can't spill LRU object");
+	      }
+	  }
+      }
+    
 
     e.Id        = Id;
     e.size      = n_bytes;
@@ -405,7 +479,8 @@ namespace QDP
     e.size      = size;
     e.flags     = flags;
     //e.status    = status;
-    e.hstPtr    = hstptr;
+    e.vecHstPtr.clear();
+    e.vecHstPtr.push_back(hstptr);
     e.devPtr    = devptr;
     e.fptr      = func;
     e.multi.clear();
@@ -424,7 +499,7 @@ namespace QDP
 
 
   
-  int QDPCache::addArray( size_t element_size , int num_elements )
+  int QDPCache::addArray( size_t element_size , int num_elements , std::vector<void*> _vecHstPtr )
   {
     if (stackFree.size() == 0) {
       growStack();
@@ -434,21 +509,16 @@ namespace QDP
 
     size_t size = element_size * num_elements;
     void* dev_ptr;
-    void* hst_ptr;
+    //void* hst_ptr;
     
-    while (!get__cache_pool_allocator().allocate( &dev_ptr , size )) {
+    //while (!get__cache_pool_allocator().allocate( &dev_ptr , size , Id )) {
+    while (!gpu_allocate_base( &dev_ptr , size , Id )) {
       if (!spill_lru()) {
 	QDP_error_exit("cache allocate_device_static: can't spill LRU object");
       }
     }
 
-    try {
-      hst_ptr = (void*)QDP::Allocator::theQDPAllocator::Instance().allocate( size , QDP::Allocator::DEFAULT );
-    }
-    catch(std::bad_alloc) {
-      QDP_error_exit("cache allocateHostMemory: host memory allocator flags=1 failed");
-    }
-
+  
     assert( vecEntry.size() > Id );
     Entry& e = vecEntry[ Id ];
 
@@ -456,7 +526,7 @@ namespace QDP
     e.size      = size;
     e.elem_size = element_size;
     e.flags     = QDPCache::Flags::Array;
-    e.hstPtr    = hst_ptr;
+    e.vecHstPtr = _vecHstPtr;
     e.devPtr    = dev_ptr;
     e.fptr      = NULL;
     
@@ -491,7 +561,7 @@ namespace QDP
     assert( e.size % 4 == 0 );
     
     // Arrays always have legal dev/hst memory pointers and are never spilled
-    CudaMemset( e.devPtr , 0 , e.size/sizeof(unsigned) );
+    gpu_memset( e.devPtr , 0 , e.size/sizeof(unsigned) );
     
     e.status_vec.clear();
     e.status_vec.resize( e.size / e.elem_size , Status::device );
@@ -555,7 +625,7 @@ namespace QDP
 
     assureHost( e );
 
-    *ptr = e.hstPtr;
+    *ptr = e.vecHstPtr.at(0);
   }
 
 
@@ -571,23 +641,27 @@ namespace QDP
 
     assureOnHost( id , elem );
 
-    return (void*)((size_t)e.hstPtr + e.elem_size * elem);
+    return e.vecHstPtr.at(elem);
   }
 
 
 
-  void QDPCache::freeHostMemory(Entry& e) {
-    if ( e.flags & Flags::OwnHostMemory )
+  void QDPCache::freeHostMemory(Entry& e)
+  {
+    if ( e.flags & ( Flags::OwnHostMemory | Flags::Array ) )
       return;
     
-    if (!e.hstPtr)
+    if (e.vecHstPtr.empty())
+      return;
+
+    if (!e.vecHstPtr.at(0))
       return;
 
     assert(e.flags != Flags::JitParam);
     assert(e.flags != Flags::Static);
 
-    QDP::Allocator::theQDPAllocator::Instance().free( e.hstPtr );
-    e.hstPtr=NULL;
+    QDP::Allocator::theQDPAllocator::Instance().free( e.vecHstPtr.at(0) );
+    e.vecHstPtr.at(0)=NULL;
   }
 
 
@@ -599,11 +673,11 @@ namespace QDP
     if ( e.flags & Flags::OwnHostMemory )
       return;
     
-    if (e.hstPtr)
+    if (e.vecHstPtr.at(0))
       return;
     
     try {
-      e.hstPtr = (void*)QDP::Allocator::theQDPAllocator::Instance().allocate( e.size , QDP::Allocator::DEFAULT );
+      e.vecHstPtr.at(0) = (void*)QDP::Allocator::theQDPAllocator::Instance().allocate( e.size , QDP::Allocator::DEFAULT );
     }
     catch(std::bad_alloc) {
       QDP_error_exit("cache allocateHostMemory: host memory allocator flags=1 failed");
@@ -621,10 +695,11 @@ namespace QDP
     if (e.devPtr)
       return;
 
-    while (!get__cache_pool_allocator().allocate( &e.devPtr , e.size )) {
+    //while (!get__cache_pool_allocator().allocate( &e.devPtr , e.size , e.Id )) {
+    while (!gpu_allocate_base( &e.devPtr , e.size , e.Id )) {
       if (!spill_lru()) {
 	QDP_info("Device pool:");
-	get__cache_pool_allocator().printListPool();
+	//get__cache_pool_allocator().printListPool();
 	//printLockSets();
 	QDP_error_exit("cache assureDevice: can't spill LRU object. Out of GPU memory!");
       }
@@ -643,7 +718,8 @@ namespace QDP
     if (!e.devPtr)
       return;
 
-    get__cache_pool_allocator().free( e.devPtr );
+    //get__cache_pool_allocator().free( e.devPtr );
+    gpu_free_base( e.devPtr , e.size );
     e.devPtr = NULL;
   }
 
@@ -655,16 +731,15 @@ namespace QDP
     Entry& e = vecEntry[id];
     assert( e.flags & Flags::Array );
 
-    if (qdp_cache_get_cache_verbose())
-      {
-	if (e.size >= 1024*1024)
-	  QDPIO::cerr << "copy host <-- GPU " << e.size/1024/1024 << " MB\n";
-	else
-	  QDPIO::cerr << "copy host <-- GPU " << e.size << " bytes\n";
-      }
-    CudaMemcpyD2H( e.hstPtr , e.devPtr , e.size );
     for( int i = 0 ; i < e.status_vec.size() ; ++i )
-      e.status_vec[i] = Status::host;
+      {
+	if (qdp_cache_get_cache_verbose())
+	  {
+	    QDPIO::cerr << "cache copyD2H: copy host <-- GPU " << e.elem_size << " bytes\n";
+	  }
+	gpu_memcpy_d2h( e.vecHstPtr.at(i) , (void*)((size_t)e.devPtr + e.elem_size * i) , e.elem_size );
+	e.status_vec[i] = Status::host;
+      }
   }
 
 
@@ -736,12 +811,12 @@ namespace QDP
 		if (e.fptr) {
 
 		  char * tmp = new char[e.size];
-		  e.fptr(true,tmp,e.hstPtr);
-		  CudaMemcpyH2D( e.devPtr , tmp , e.size );
+		  e.fptr(true,tmp,e.vecHstPtr.at(0));
+		  gpu_memcpy_h2d( e.devPtr , tmp , e.size );
 		  delete[] tmp;
 
 		} else {
-		  CudaMemcpyH2D( e.devPtr , e.hstPtr , e.size );
+		  gpu_memcpy_h2d( e.devPtr , e.vecHstPtr.at(0) , e.size );
 		}
 
 	      }
@@ -781,8 +856,8 @@ namespace QDP
 	    QDPIO::cerr << "copy host --> GPU " << e.elem_size << " bytes\n";
 	  }
 
-	CudaMemcpyH2D( (void*)((size_t)e.devPtr + e.elem_size * elem) ,
-		       (void*)((size_t)e.hstPtr + e.elem_size * elem) , e.elem_size );
+	gpu_memcpy_h2d( (void*)((size_t)e.devPtr + e.elem_size * elem) ,
+			e.vecHstPtr.at(elem) , e.elem_size );
 	//std::cout << "copy to device\n";
       }
 
@@ -825,11 +900,11 @@ namespace QDP
 	    
 	    if (e.fptr) {
 	      char * tmp = new char[e.size];
-	      CudaMemcpyD2H( tmp , e.devPtr , e.size );
-	      e.fptr(false,e.hstPtr,tmp);
+	      gpu_memcpy_d2h( tmp , e.devPtr , e.size );
+	      e.fptr(false,e.vecHstPtr.at(0),tmp);
 	      delete[] tmp;
 	    } else {
-	      CudaMemcpyD2H( e.hstPtr , e.devPtr , e.size );
+	      gpu_memcpy_d2h( e.vecHstPtr.at(0) , e.devPtr , e.size );
 	    }
 	  }
 
@@ -858,7 +933,7 @@ namespace QDP
 	    QDPIO::cerr << "copy host <-- GPU " << e.elem_size << " bytes\n";
 	  }
 
-	CudaMemcpyD2H( (void*)((size_t)e.hstPtr + e.elem_size * elem_num) ,
+	gpu_memcpy_d2h( e.vecHstPtr.at(elem_num) ,
 		       (void*)((size_t)e.devPtr + e.elem_size * elem_num) , e.elem_size );
       }
 
@@ -970,6 +1045,16 @@ namespace QDP
     return ( e.status_vec[elem] == QDPCache::Status::device );
   }
 
+
+  void QDPCache::updateDevPtr(int id, void* ptr)
+  {
+    assert( vecEntry.size() > id );
+    Entry& e = vecEntry[id];
+
+    e.devPtr = ptr;
+  }
+
+
   
   namespace {
     void* jit_param_null_ptr = NULL;
@@ -1017,7 +1102,7 @@ namespace QDP
 	      {
 		void* hst_ptr = (void*)QDP::Allocator::theQDPAllocator::Instance().allocate( e.size , QDP::Allocator::DEFAULT );
 
-		CudaMemcpyD2H( hst_ptr , e.devPtr , e.size );
+		gpu_memcpy_d2h( hst_ptr , e.devPtr , e.size );
 
 		if (e.flags & QDPCache::Flags::Array)
 		  {
@@ -1029,7 +1114,8 @@ namespace QDP
 		
 		assert( e.Id == ak.id );
 		__vec_backed.push_back( e );
-		__vec_backed.back().hstPtr = hst_ptr;
+		__vec_backed.back().vecHstPtr.resize(1);
+		__vec_backed.back().vecHstPtr.at(0) = hst_ptr;
 	      }
 	  }
 	else
@@ -1046,13 +1132,61 @@ namespace QDP
   }
 
 
-  
-  std::vector<void*> QDPCache::get_kernel_args(std::vector<ArgKey>& ids , bool for_kernel )
+#ifdef QDP_BACKEND_ROCM
+  namespace 
   {
-    if (qdp_cache_get_pool_bisect())
+    template<class T>
+    void insert_ret( std::vector<unsigned char>& ret, T t )
+    {
+      if (std::is_pointer<T>::value)
+	{
+	  //std::cout << "size is " << ret.size() << " resizing by " << ret.size() % sizeof(T) << " to meet padding requirements\n";
+	  ret.resize( ret.size() + ret.size() % sizeof(T) );
+	  ret.resize( ret.size() + sizeof(T) );
+	  *(T*)&ret[ ret.size() - sizeof(T) ] = t;
+	  //std::cout << "inserted pointer (size " << sizeof(T) << ") " << t << "\n";
+	}
+      else
+	{
+	  ret.resize( ret.size() + sizeof(T) );
+	  *(T*)&ret[ ret.size() - sizeof(T) ] = t;
+	  //std::cout << "inserted (size " << sizeof(T) << ") " << t << "\n";
+	}
+    }
+    template<>
+    void insert_ret<bool>( std::vector<unsigned char>& ret, bool t )
+    {
+      ret.resize( ret.size() + 4 );
+      *(bool*)&ret[ ret.size() - 4 ] = t;
+      //std::cout << "inserted bool (as size 4) " << t << "\n";
+    }
+
+  } // namespace
+#endif
+
+
+
+QDPCache::KernelArgs_t QDPCache::get_kernel_args(std::vector<ArgKey>& ids , bool for_kernel )
+  {
+#ifdef QDP_BACKEND_ROCM
+    if ( for_kernel )
       {
-	__ids_last = ids;
+	if ( ids.size() < 2 )
+	  {
+	    QDPIO::cerr << "get_kernel_args: Size less than 2\n";
+	    QDP_abort(1);
+	  }
+	Entry& e0 = vecEntry[ ids[0].id ];
+	Entry& e1 = vecEntry[ ids[1].id ];
+
+	if ( ( e0.param_type != JitParamType::int_ ) ||
+	     ( e1.param_type != JitParamType::int_ ) )
+	  {
+	    QDPIO::cerr << "get_kernel_args: For AMD expected for two parameters being integers\n";
+	    QDP_abort(1);
+	  }
       }
+#endif
     
     // Here we do two cycles through the ids:
     // 1) cache all objects
@@ -1172,7 +1306,7 @@ namespace QDP
 		    QDPIO::cerr << "copy host --> GPU " << e.multi.size() * sizeof(void*) << " bytes (kernel args, multi)\n";
 		  }
 		
-		CudaMemcpyH2D( e.devPtr , dev_ptr.slice() , e.multi.size() * sizeof(void*) );
+		gpu_memcpy_h2d( e.devPtr , dev_ptr.slice() , e.multi.size() * sizeof(void*) );
 		//QDPIO::cout << "multi-ids: copied elements = " << e.multi.size() << "\n";
 	      }
 	  }
@@ -1183,8 +1317,10 @@ namespace QDP
 
     if (print_param)
       QDPIO::cout << "Jit function param: ";
+
     
-    std::vector<void*> ret;
+    QDPCache::KernelArgs_t ret;
+
     for ( auto i : ids )
       {
 	if (i.id >= 0)
@@ -1212,8 +1348,18 @@ namespace QDP
 		  }
 	  
 		assert(for_kernel);
+#ifdef QDP_BACKEND_ROCM
+		switch(e.param_type)
+		  {
+		  case JitParamType::float_: insert_ret<float>(ret, e.param.float_ ); break;
+		  case JitParamType::double_: insert_ret<double>(ret, e.param.double_ ); break;
+		  case JitParamType::int_: insert_ret<int>(ret, e.param.int_ );break;
+		  case JitParamType::int64_: insert_ret<int64_t>(ret, e.param.int64_ ); break;
+		  case JitParamType::bool_: insert_ret<bool>(ret, e.param.bool_ ); ;break;
+		  }
+#else
 		ret.push_back( &e.param );
-	  
+#endif
 	      }
 	    else
 	      {
@@ -1229,19 +1375,31 @@ namespace QDP
 		    if ( i.elem == -1 )
 		      {
 			// This ArgKey comes from an multiXd<OScalar> access, like in sumMulti
+#ifdef QDP_BACKEND_ROCM
+			insert_ret<void*>( ret , e.devPtr );
+#else
 			ret.push_back( for_kernel ? &e.devPtr : e.devPtr );
+#endif
 		      }
 		    else
 		      {
 			// This ArgKey comes from an OScalar access through multiXd<OScalar> 
 			assert( e.karg_vec.size() > i.elem );
 			e.karg_vec[i.elem] = (void*)((size_t)e.devPtr + e.elem_size * i.elem);
+#ifdef QDP_BACKEND_ROCM
+			insert_ret<void*>( ret , e.karg_vec[i.elem] );
+#else
 			ret.push_back( for_kernel ? &e.karg_vec[i.elem] : e.karg_vec[i.elem] );
+#endif
 		      }
 		  }
 		else
 		  {
+#ifdef QDP_BACKEND_ROCM
+		    insert_ret<void*>( ret , e.devPtr );
+#else
 		    ret.push_back( for_kernel ? &e.devPtr : e.devPtr );
+#endif
 		  }
 	      }
 	  }
@@ -1254,7 +1412,11 @@ namespace QDP
 	      }
 
 	    assert(for_kernel);
+#ifdef QDP_BACKEND_ROCM
+	    insert_ret<void*>( ret , &jit_param_null_ptr );
+#else
 	    ret.push_back( &jit_param_null_ptr );
+#endif
 	
 	  }
       }
@@ -1264,6 +1426,173 @@ namespace QDP
     return ret;
   }
 
+
+  std::vector<void*> QDPCache::get_dev_ptrs( std::vector<ArgKey>& ids )
+  {
+    // Here we do two cycles through the ids:
+    // 1) cache all objects
+    // 2) check all are cached
+    // This should replace the old 'lock set'
+
+    //QDPIO::cout << "ids: ";
+    std::vector<ArgKey> allids;
+    for ( auto i : ids )
+      {
+	allids.push_back(i);
+	if (i.id >= 0)
+	  {
+	    //QDPIO::cout << i << " ";
+	    assert( vecEntry.size() > i.id );
+	    Entry& e = vecEntry[i.id];
+	    if (e.flags & QDPCache::Flags::Multi)
+	      {
+		for ( auto ak : e.multi )
+		  {
+		    allids.push_back( ak );
+		  }
+	      }
+	  }
+      }
+    //QDPIO::cout << "\n";
+
+    int run = 0;
+    bool all;
+      
+    do
+      {
+	// This never happens
+	// Can't defrag from pool's side as recv buffers are
+	// allocated as device static.
+	if (run == 1)
+	  {
+	    get__cache_pool_allocator().defrag();
+	  }
+	
+	//QDPIO::cout << "assureDevice:\n";
+	for ( auto i : allids ) {
+	  //QDPIO::cout << "id = " << i.id << ", elem = " << i.elem << "\n";
+	  if (i.elem < 0)
+	    assureDevice(i.id);
+	  else
+	    assureDevice(i.id,i.elem);
+	}
+	//QDPIO::cout << "done\n";
+    
+	all = true;
+	for ( auto i : allids )
+	  if (i.elem < 0)
+	    all = all && isOnDevice(i.id);
+	  else
+	    all = all && isOnDevice(i.id,i.elem);
+
+	run++;
+      }
+    while ( (run < 1) && (!all) );
+    
+    if (!all) {
+      QDPIO::cerr << "It was not possible to load all objects required by the kernel into device memory\n";
+      QDP_abort(1);
+    }
+
+
+    // Handle multi-ids
+    for ( auto i : ids )
+      {
+	if (i.id >= 0)
+	  {
+	    Entry& e = vecEntry[i.id];
+	    if (e.flags & QDPCache::Flags::Multi)
+	      {
+		assert( isOnDevice(i.id) );
+		multi1d<void*> dev_ptr(e.multi.size());
+
+		int count=0;
+		for( auto ak : e.multi )  // q == id
+		  {
+		    if ( ak.id >= 0 )
+		      {
+			assert( vecEntry.size() > ak.id );
+			Entry& qe = vecEntry[ ak.id ];
+			assert( ! (qe.flags & QDPCache::Flags::Multi) );
+			assert( isOnDevice( ak.id ) );
+			if (ak.elem == -1)
+			  {
+			    dev_ptr[count++] = qe.devPtr;
+			  }
+			else
+			  {
+			    dev_ptr[count++] = (void*)((size_t)qe.devPtr + qe.elem_size * ak.elem);
+			  }
+		      }
+		    else
+		      {
+			dev_ptr[count++] = NULL;
+		      }
+		  }
+		
+		if (qdp_cache_get_cache_verbose())
+		  {
+		    QDPIO::cerr << "copy host --> GPU " << e.multi.size() * sizeof(void*) << " bytes (kernel args, multi)\n";
+		  }
+		
+		gpu_memcpy_h2d( e.devPtr , dev_ptr.slice() , e.multi.size() * sizeof(void*) );
+		//QDPIO::cout << "multi-ids: copied elements = " << e.multi.size() << "\n";
+	      }
+	  }
+      }
+
+    std::vector<void*> ret;
+    for ( auto i : ids )
+      {
+	if (i.id >= 0)
+	  {
+	    Entry& e = vecEntry[i.id];
+	    if (e.flags & QDPCache::Flags::JitParam)
+	      {
+		QDPIO::cerr << __func__ << ": shouldnt be here\n";
+		QDP_abort(1);
+	      }
+	    else
+	      {
+		if (e.flags & QDPCache::Flags::Array)
+		  {
+		    if ( i.elem == -1 )
+		      {
+			// This ArgKey comes from an multiXd<OScalar> access, like in sumMulti
+			ret.push_back( e.devPtr );
+		      }
+		    else
+		      {
+			// This ArgKey comes from an OScalar access through multiXd<OScalar> 
+			if ( e.karg_vec.size() <= i.elem )
+			  {
+			    QDPIO::cerr << __func__ << ": shouldnt be here, code 3\n";
+			    QDP_abort(1);
+			  }
+			e.karg_vec[i.elem] = (void*)((size_t)e.devPtr + e.elem_size * i.elem);
+			ret.push_back( e.karg_vec[i.elem] );
+		      }
+		  }
+		else
+		  {
+		    ret.push_back( e.devPtr );
+		  }
+	      }
+	  }
+	else
+	  {
+	    QDPIO::cerr << __func__ << ": shouldnt be here neither\n";
+	    QDP_abort(1);
+	  }
+      }
+
+    return ret;
+  }
+
+
+
+
+  
   namespace {
     static QDPCache* __global_cache;
   }

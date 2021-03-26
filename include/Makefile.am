@@ -15,16 +15,15 @@ MEMORY_HDRS = qdp_allocator.h \
 	      qdp_default_allocator.h \
 	      qdp_qcdoc_allocator.h
 
-CUDA_HDRS = qdp_cuda.h \
+CUDA_HDRS = qdp_gpu.h \
             qdp_cache.h \
 	    qdp_quda.h \
 	    qdp_mapresource.h \
             qdp_pool_allocator.h \
 	    qdp_cuda_allocator.h \
-	    qdp_deviceparams.h \
 	    qdp_llvm.h qdp_viewleaf.h \
 	    qdp_word.h qdp_wordjit.h qdp_wordreg.h \
-	    qdp_jitfunction.h qdp_jit_util.h qdp_pete_visitors.h qdp_qdptypejit.h qdp_qdpsubtypejit.h \
+	    qdp_jitfunction.h qdp_jit_util.h qdp_pete_visitors.h qdp_qdpsubtypejit.h \
 	    qdp_outerjit.h qdp_realityjit.h qdp_realityreg.h qdp_primscalarjit.h qdp_primscalarreg.h \
             qdp_basejit.h qdp_basereg.h \
 	    qdp_primmatrixjit.h qdp_primcolormatjit.h qdp_primspinmatjit.h \
@@ -33,9 +32,9 @@ CUDA_HDRS = qdp_cuda.h \
             qdp_primseedreg.h \
             qdp_primvectorjit.h qdp_primspinvecjit.h qdp_primcolorvecjit.h \
             qdp_primvectorreg.h qdp_primspinvecreg.h qdp_primcolorvecreg.h \
-            qdp_handle.h qdp_mastermap.h qdp_masterset.h qdp_autotuning.h qdp_sum.h qdp_datalayout.h \
-            qdp_jitf_copymask.h qdp_jitf_sum.h qdp_jitf_summulti.h qdp_jitf_globalmax.h qdp_jitf_gaussian.h qdp_internal.h qdp_newopsreg.h qdp_libdevice.h
-
+            qdp_handle.h qdp_mastermap.h qdp_masterset.h qdp_sum.h qdp_datalayout.h \
+            qdp_jitf_copymask.h qdp_jitf_sum.h qdp_jitf_summulti.h qdp_jitf_globalmax.h qdp_jitf_gaussian.h qdp_internal.h qdp_newopsreg.h \
+            qdp_jit_function.h qdp_expr_writer.h qdp_jit_config.h
 
 
 if QDP_CUSTOM_KERNELS
@@ -62,7 +61,6 @@ nobase_include_HEADERS = \
 		qdp_layout.h \
 		qdp_map.h \
 		qdp_multi.h \
-		qdp_poolbisect.h \
 		qdp_multi_outer.h \
 		qdp_arrays.h \
 		qdp_newops.h \

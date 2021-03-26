@@ -125,6 +125,7 @@ namespace Layout
   const multi1d<int>& getIONodeGrid() QDP_CONST;
 
 
+
 }
 
 //! Declaration of shift function object

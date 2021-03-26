@@ -5,7 +5,7 @@ namespace QDP
 {
 
 
-  void function_multi_localInnerProduct_sum_convert_exec( CUfunction function,
+  void function_multi_localInnerProduct_sum_convert_exec( JitFunction function,
 							  int size, 
 							  int threads, 
 							  int blocks, 
@@ -23,16 +23,16 @@ namespace QDP
   // T2 output
   // T3 QDPType for localInnerProduct = vector
   template< class T1 , class T2 , class T3 , JitDeviceLayout input_layout >
-  CUfunction 
+  JitFunction 
   function_multi_localInnerProduct_sum_convert_build()
   {
     if (ptx_db::db_enabled) {
-      CUfunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
+      JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
       if (func)
 	return func;
     }
 
-    llvm_start_new_function();
+    llvm_start_new_function("multi_localInnerProduct_sum_convert",__PRETTY_FUNCTION__ );
 
     typedef typename WordType<T1>::Type_t T1WT;
     typedef typename WordType<T2>::Type_t T2WT;
@@ -51,7 +51,7 @@ namespace QDP
 
     llvm::Value* r_subsetnum = llvm_derefParam( p_numsubset );
 
-    llvm::Value* r_shared = llvm_get_shared_ptr( llvm_type<T2WT>::value );
+    llvm::Value* r_shared = llvm_get_shared_ptr( llvm_get_type<T2WT>() );
 
     typedef typename JITType<T2>::Type_t T2JIT;
 
@@ -75,7 +75,7 @@ namespace QDP
 
     llvm_set_insert_point( block_subset_loop_start );
 
-    llvm::PHINode * r_subset = llvm_phi( llvm_type<int>::value , 2 );
+    llvm::PHINode * r_subset = llvm_phi( llvm_get_type<int>() , 2 );
     r_subset->addIncoming( llvm_create_value(0) , entry_block );
 
     llvm_cond_branch( llvm_ge( r_subset , r_subsetnum ) , block_subset_loop_exit , block_subset_loop_body );
@@ -143,7 +143,7 @@ namespace QDP
       llvm_branch( block_red_loop_start );
       llvm_set_insert_point(block_red_loop_start);
     
-      llvm::PHINode * r_red_pow = llvm_phi( llvm_type<int>::value , 2 );    
+      llvm::PHINode * r_red_pow = llvm_phi( llvm_get_type<int>() , 2 );    
       r_red_pow->addIncoming( r_pow_shr1 , block_subset_loop_body_cont2 );  //block_power_loop_exit
       llvm_cond_branch( llvm_le( r_red_pow , llvm_create_value(0) ) , block_red_loop_end , block_red_loop_start_1 );
 
@@ -204,8 +204,7 @@ namespace QDP
 
     llvm_set_insert_point(block_subset_loop_exit);
 
-    
-    return jit_function_epilogue_get_cuf("jit_multi_innerproduct.ptx" , __PRETTY_FUNCTION__ );
+    return jit_get_function();
   }
 
 
@@ -223,7 +222,7 @@ namespace QDP
 						      const multi1d<int>& sizes,
 						      const multi1d<QDPCache::ArgKey>& table_ids)
   {
-    static CUfunction function;
+    static JitFunction function;
 
     if (function == NULL)
       function = function_multi_localInnerProduct_sum_convert_build<T1,T2,T3,input_layout>();
@@ -290,14 +289,14 @@ namespace QDP
       //QDPIO::cout << "   ";
       //QDPIO::cout << "maxsize: " << maxsize << "\n";
 
-      unsigned numThreads = DeviceParams::Instance().getMaxBlockX();
-      while ((numThreads*sizeof(T2) > DeviceParams::Instance().getMaxSMem()) || (numThreads > (unsigned)maxsize)) {
+      unsigned numThreads = gpu_getMaxBlockX();
+      while ((numThreads*sizeof(T2) > gpu_getMaxSMem()) || (numThreads > (unsigned)maxsize)) {
 	numThreads >>= 1;
       }
       unsigned numBlocks=(int)ceil(float(maxsize)/numThreads);
 
-      if (numBlocks > DeviceParams::Instance().getMaxGridX()) {
-	QDP_error_exit( "sumMulti(Lat,set) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)DeviceParams::Instance().getMaxGridX());
+      if (numBlocks > gpu_getMaxGridX()) {
+	QDP_error_exit( "sumMulti(Lat,set) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)gpu_getMaxGridX());
       }
 
       int shared_mem_usage = numThreads*sizeof(T2);

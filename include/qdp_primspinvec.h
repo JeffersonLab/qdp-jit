@@ -105,6 +105,18 @@ private:
   alignas((16 < alignof(T) ? alignof(T) : 16)) T F[N]; 
 };
 
+
+  template<class T, int N>
+  struct FirstWord<PSpinVector<T,N> >
+  {
+    static typename WordType<T>::Type_t get(const PSpinVector<T,N>& a)
+    {
+      return FirstWord<T>::get(a.elem(0));
+    }
+  };
+
+  
+
 //! Stream input
 template<class T, int N>  
 inline

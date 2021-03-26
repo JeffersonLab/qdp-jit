@@ -14,6 +14,12 @@ AM_INIT_AUTOMAKE
 dnl defines...
 AC_CONFIG_HEADERS([include/qdp_config_internal.h])
 
+AC_ARG_WITH(backend,
+  AC_HELP_STRING([--with-backend=(CUDA/ROCM)], [ Specify backend to use (default: CUDA)]),
+  [ backend_use="${withval}" ],
+  [ backend_use="CUDA" ]
+)
+
 
 AC_ARG_WITH(cuda,
   AC_HELP_STRING([--with-cuda=CUDADIR], [ Specify CUDA installation directory (default: /usr/local/cuda)]),
@@ -21,21 +27,42 @@ AC_ARG_WITH(cuda,
   [ cuda_home="/usr/local/cuda" ]
 )
 
+AC_ARG_WITH(rocm,
+  AC_HELP_STRING([--with-rocm=ROCMDIR], [ Specify ROCM installation directory (default: /opt/rocm)]),
+  [ rocm_home="${withval}" ],
+  [ rocm_home="/opt/rocm" ]
+)
+
+
+AC_ARG_ENABLE(rocm-stats,
+   AC_HELP_STRING([--enable-rocm-stats], [ Enable JIT statistics for ROCm ] ),
+   [ rocm_stats="${enableval}" ],
+   [ rocm_stats="no" ]
+)
+
+
 AC_ARG_ENABLE(cuda-managed-memory,
    AC_HELP_STRING([--enable-cuda-managed-memory], [ Enable memory to be allocated with Cuda Managed Memory ] ),
    [ cuda_managed_memory="${enableval}" ],
    [ cuda_managed_memory="no" ]
 )
 
-AC_MSG_NOTICE([Configuring with CUDA installed in = ${cuda_home}])
+
 AC_DEFINE_UNQUOTED(CUDA_DIR,"${cuda_home}",[CUDA install path])
 AC_SUBST(SUBST_CUDA_DIR,"${cuda_home}")
+
+
+AC_DEFINE_UNQUOTED(ROCM_DIR,"${rocm_home}",[ROCM install path])
+AC_SUBST(SUBST_ROCM_DIR,"${rocm_home}")
+
 
 if test "X${cuda_managed_memory}X" == "XyesX";
 then
   AC_MSG_NOTICE([Will Use CUDA Managed Memory for Allocations])
   AC_DEFINE(QDP_USE_CUDA_MANAGED_MEMORY, [1], [ CUDA use managed memory ])
 fi
+
+
 
 
 dnl
@@ -125,6 +152,19 @@ AC_ARG_ENABLE(cuda-special,
 )
 
 
+AC_ARG_ENABLE(deep-log,
+  AC_HELP_STRING([--enable-deep-log],
+    [Deep log facility.]),
+  [ac_deep_log="yes"],
+  [ac_deep_log="no"]
+)
+
+if test "X${ac_deep_log}X" = "XyesX"; then
+  AC_MSG_NOTICE([Enabling deep log facility])
+  AC_DEFINE(QDP_DEEP_LOG, [1], [ Deep log facility ])
+fi
+
+
 AC_ARG_ENABLE(cuda-sm,
   AC_HELP_STRING([--enable-cuda-sm=<arch>],
     [Build special CUDA function for compute capability <sm_50/...>]),
@@ -176,63 +216,18 @@ AC_ARG_ENABLE(filedb,
 )
 
 
-AC_ARG_ENABLE(llvm8,
+AC_ARG_ENABLE(llvm12,
   AC_HELP_STRING(
-    [--enable-llvm8],
-    [Enable changes to compile with LLVM 8.0 release]
+    [--enable-llvm12],
+    [Enable changes to compile with LLVM 12.0 release]
   ),
-  [LLVM8_ENABLED=$enableval],
-  [LLVM8_ENABLED="no"]
+  [LLVM12_ENABLED=$enableval],
+  [LLVM12_ENABLED="no"]
 )
 
-if test "X${LLVM8_ENABLED}X" = "XyesX"; then
-  AC_MSG_NOTICE([Enabling changes for LLVM 8.0 release ])
-  AC_DEFINE(QDP_LLVM8, [1], [ Compile for LLVM 8.0 release  ])
-fi
-
-
-AC_ARG_ENABLE(llvm9,
-  AC_HELP_STRING(
-    [--enable-llvm9],
-    [Enable changes to compile with LLVM 9.0 release]
-  ),
-  [LLVM9_ENABLED=$enableval],
-  [LLVM9_ENABLED="no"]
-)
-
-if test "X${LLVM9_ENABLED}X" = "XyesX"; then
-  AC_MSG_NOTICE([Enabling changes for LLVM 9.0 release ])
-  AC_DEFINE(QDP_LLVM9, [1], [ Compile for LLVM 9.0 release  ])
-fi
-
-
-AC_ARG_ENABLE(llvm10,
-  AC_HELP_STRING(
-    [--enable-llvm10],
-    [Enable changes to compile with LLVM 10.0 release]
-  ),
-  [LLVM10_ENABLED=$enableval],
-  [LLVM10_ENABLED="no"]
-)
-
-if test "X${LLVM10_ENABLED}X" = "XyesX"; then
-  AC_MSG_NOTICE([Enabling changes for LLVM 10.0 release ])
-  AC_DEFINE(QDP_LLVM10, [1], [ Compile for LLVM 10.0 release  ])
-fi
-
-
-AC_ARG_ENABLE(llvm11,
-  AC_HELP_STRING(
-    [--enable-llvm11],
-    [Enable changes to compile with LLVM 11.0 release]
-  ),
-  [LLVM11_ENABLED=$enableval],
-  [LLVM11_ENABLED="no"]
-)
-
-if test "X${LLVM11_ENABLED}X" = "XyesX"; then
-  AC_MSG_NOTICE([Enabling changes for LLVM 11.0 release ])
-  AC_DEFINE(QDP_LLVM11, [1], [ Compile for LLVM 11.0 release  ])
+if test "X${LLVM12_ENABLED}X" = "XyesX"; then
+  AC_MSG_NOTICE([Enabling changes for LLVM 12.0 release ])
+  AC_DEFINE(QDP_LLVM12, [1], [ Compile for LLVM 12.0 release  ])
 fi
 
 
@@ -251,15 +246,42 @@ then
  AC_DEFINE([QDP_USE_COMM_SPLIT_INIT], [1],[Comm split for local ranks])
 fi
 
-ac_gcc="$CXX"     				      
-AC_DEFINE_UNQUOTED([CUDA_GCC],"${ac_gcc}",[CUDA C/C++ Compiler])
-AC_DEFINE_UNQUOTED(QDP_IS_QDPJIT, ${gpu_enabled}, [Enable GPU/JIT])
-AC_DEFINE_UNQUOTED(QDPJIT_IS_QDPJITNVVM, ${gpu_enabled}, [Enable GPU/JIT])
-#AC_SUBST(CUDA_LIBS, [-lcuda])
-AC_SUBST(CUDA_CXXFLAGS, [-I${cuda_home}/include])
-AC_SUBST(CUDA_LDFLAGS, [-L${cuda_home}/lib64])
+ac_gcc="$CXX"
+
+if test "X${backend_use}X" == "XCUDAX";
+then
+  AC_MSG_NOTICE([Configuring with CUDA installed in = ${cuda_home}])
+  AC_DEFINE_UNQUOTED([CUDA_GCC],"${ac_gcc}",[CUDA C/C++ Compiler])
+  AC_DEFINE([QDP_BACKEND_CUDA], [1] , [CUDA] )
+  #AC_SUBST(CUDA_LIBS, [-lcuda])
+  AC_SUBST(GPU_CXXFLAGS, ["-I${cuda_home}/include"])
+  AC_SUBST(GPU_LDFLAGS, ["-L${cuda_home}/lib64"])
+  if test "X${ac_cuda_special}X" = "XyesX"; then
+    AC_DEFINE_UNQUOTED(QDP_CUDA_SPECIAL, ${ac_cuda_special}, [Include CUDA special kernels])
+    AC_MSG_NOTICE([Include CUDA special kernels])
+    tmp_gpu_libs="-lcuda -lcudart"
+  else
+    tmp_gpu_libs="-lcuda"
+  fi
+else
+  AC_MSG_NOTICE([Configuring with ROCM installed in = ${rocm_home}])
+  #AC_SUBST(CUDA_LIBS, [-lcuda])
+  AC_DEFINE([QDP_BACKEND_ROCM], [1] , [ROCM] )
+  AC_SUBST(GPU_CXXFLAGS, ["-I${rocm_home}/include"])
+  AC_SUBST(GPU_LDFLAGS, ["-L${rocm_home}/lib -L${rocm_home}/lib64"])
+  tmp_gpu_libs="-lamdhip64"
+fi
+
+if test "X${rocm_stats}X" == "XyesX";
+then
+  AC_MSG_NOTICE([Will Use ROCm statistics])
+  AC_DEFINE(QDP_USE_ROCM_STATS, [1], [ ROCM stats ])
+  tmp_gpu_libs+=" -lamd_comgr"
+fi
 
 
+AC_DEFINE_UNQUOTED(QDP_IS_QDPJIT, "1", [Enable GPU/JIT])
+AC_DEFINE_UNQUOTED(QDPJIT_IS_QDPJITNVVM, "1", [Enable GPU/JIT])
 
 
 
@@ -271,15 +293,8 @@ fi
 
 
 dnl Include custom kernels
-if test "X${ac_cuda_special}X" = "XyesX"; then
-   AC_DEFINE_UNQUOTED(QDP_CUDA_SPECIAL, ${ac_cuda_special}, [Include CUDA special kernels])
-   AC_MSG_NOTICE([Include CUDA special kernels])
-   tmp_cuda_libs="-lcuda -lcudart"
-else
-   tmp_cuda_libs="-lcuda"
-fi
 
-AC_SUBST(CUDA_LIBS, "${tmp_cuda_libs}" )
+AC_SUBST(GPU_LIBS, "${tmp_gpu_libs}" )
 
 
 dnl Check if memory debugging is enabled
@@ -508,8 +523,8 @@ fi
 
 
 AC_MSG_NOTICE([Found LLVM configuration program ${LLVM_CONFIG}])
-#AC_SUBST(LLVM_CXXFLAGS, "`${LLVM_CONFIG} --cxxflags| sed -e 's/-fno-exceptions//'| sed -e 's/-fno-rtti//'| sed -e 's/-fvisibility-inlines-hidden//'| sed -e 's/-fPIC//'| sed -e 's/-Woverloaded-virtual//'| sed -e 's/-Wcast-qual//'   `")
-AC_SUBST(LLVM_CXXFLAGS, "`${LLVM_CONFIG} --cxxflags| sed -e 's/-fno-exceptions//'| sed -e 's/-std=c++11//'`")
+AC_SUBST(LLVM_CXXFLAGS, "`${LLVM_CONFIG} --cxxflags| sed -e 's/-fno-exceptions//'| sed -e 's/-fno-rtti//'| sed -e 's/-fvisibility-inlines-hidden//'| sed -e 's/-fPIC//'| sed -e 's/-Woverloaded-virtual//'| sed -e 's/-Wcast-qual//'   `")
+#AC_SUBST(LLVM_CXXFLAGS, "`${LLVM_CONFIG} --cxxflags| sed -e 's/-fno-exceptions//'| sed -e 's/-std=c++11//'`")
 AC_MSG_NOTICE([LLVM compile flags: ${LLVM_CXXFLAGS}])
 AC_SUBST(LLVM_LDFLAGS,  ["`${LLVM_CONFIG} --ldflags` -Wl,-rpath,`${LLVM_CONFIG} --libdir`"])
 AC_MSG_NOTICE([LLVM linking flags: ${LLVM_LDFLAGS}])
@@ -688,6 +703,12 @@ AM_CONDITIONAL(QDP_USE_HDF5, [test "x${ac_build_hdf5}x" = "xyesx" ])
 AM_CONDITIONAL(QDP_CUSTOM_KERNELS, [test "x${ac_custom}x" = "xyesx" ])
 
 AM_CONDITIONAL(QDP_CUDA_SPECIAL, [test "x${ac_cuda_special}x" = "xyesx" ])
+
+AM_CONDITIONAL(QDP_DEEP_LOG, [test "x${ac_deep_log}x" = "xyesx" ])
+
+AM_CONDITIONAL(QDP_BACKEND_CUDA, [test "x${backend_use}x" = "xCUDAx" ])
+
+AM_CONDITIONAL(QDP_BACKEND_ROCM, [test "x${backend_use}x" = "xROCMx" ])
 
 
 
