@@ -51,9 +51,11 @@ namespace QDP
   bool jit_config_get_verbose_output() { return verbose_output; }
   void jit_config_set_verbose_output(bool v) { verbose_output = v; }
 
+#ifdef QDP_BACKEND_ROCM
   int jit_config_get_codegen_opt() { return codegen_opt; }
   void jit_config_set_codegen_opt(int opt) { codegen_opt = opt; }
-
+#endif
+  
   size_t jit_config_get_pool_alignment() { return pool_alignment; }
   void jit_config_set_pool_alignment(size_t size ) { pool_alignment = size; }
 

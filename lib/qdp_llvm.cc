@@ -656,6 +656,9 @@ namespace QDP {
 	QDP_abort(1);
       }
 
+    QDPIO::cout << "LLVM initialization" << std::endl;
+    QDPIO::cout << "  Target machine CPU                  : " << TargetMachine->getTargetCPU().str() << "\n";
+    QDPIO::cout << "  Target triple                       : " << TargetMachine->getTargetTriple().str() << "\n";
     
 
     if (ptx_db::db_enabled) {

@@ -395,12 +395,14 @@ namespace QDP {
 	    jit_config_deep_set( tmp , false );
 	  }
 #endif
+#ifdef QDP_BACKEND_ROCM
 	else if (strcmp((*argv)[i], "-opt")==0)
 	  {
 	    unsigned val;
 	    sscanf((*argv)[++i],"%u",&val);
 	    jit_config_set_codegen_opt( val );
 	  }
+#endif
 #ifdef QDP_CUDA_SPECIAL
 	else if (strcmp((*argv)[i], "-cudaspecial")==0)
 	  {
