@@ -101,7 +101,8 @@ public:
   T& elem(int i) {return F[i];}
   const T& elem(int i) const {return F[i];}
 private:
-  T F[N] QDP_ALIGN16; 
+  // Why this alignment is needed!?
+  alignas((16 < alignof(T) ? alignof(T) : 16)) T F[N]; 
 };
 
 //! Stream input
