@@ -1221,10 +1221,10 @@ namespace QDP
     writePrimitive(const T& output);
 
     //! Get the current checksum to modify
-    virtual QDPUtil::n_uint32_t& internalChecksum() = 0;
+    virtual QDPUtil::n_uint32_t& internalChecksum() override = 0;
   
     //! Get the internal output stream
-    virtual std::ostream& getOstream() = 0;
+    virtual std::ostream& getOstream() override = 0;
   };
 
 
