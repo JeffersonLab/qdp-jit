@@ -3,6 +3,9 @@
 
 namespace QDP
 {
+  bool jit_config_get_verbose_output();
+  void jit_config_set_verbose_output(bool v);
+
   size_t jit_config_get_pool_alignment();
   void jit_config_set_pool_alignment(size_t size );
 

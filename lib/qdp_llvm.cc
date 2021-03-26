@@ -120,15 +120,7 @@ namespace QDP {
     std::string name_additional;
   }
 
-  namespace llvm_opt {
-    int opt_level   = 3;   // opt -O level
-    int nvptx_FTZ   = 0;   // NVPTX Flush subnormals to zero
-    bool DisableInline = false;
-    bool UnitAtATime = false;
-    bool DisableLoopUnrolling = false;
-    bool DisableLoopVectorization = false;
-    bool DisableSLPVectorization = false;
-  }
+
 
   namespace ptx_db {
     bool db_enabled = false;
@@ -242,55 +234,6 @@ namespace QDP {
     ptx_db::dbname = std::string( c_str );
   }
   
-
-  void llvm_set_opt( const char * c_str ) {
-    std::string str(c_str);
-    if (str.find("DisableInline") != string::npos) {
-      llvm_opt::DisableInline = true;
-      return;
-    }
-    if (str.find("UnitAtATime") != string::npos) {
-      llvm_opt::UnitAtATime = true;
-      return;
-    }
-    if (str.find("DisableLoopUnrolling") != string::npos) {
-      llvm_opt::DisableLoopUnrolling = true;
-      return;
-    }
-    if (str.find("DisableLoopVectorization") != string::npos) {
-      llvm_opt::DisableLoopVectorization = true;
-      return;
-    }
-    if (str.find("DisableSLPVectorization") != string::npos) {
-      llvm_opt::DisableSLPVectorization = true;
-      return;
-    }
-    if (str.find("O0") != string::npos) {
-      llvm_opt::opt_level = 0;
-      return;
-    }
-    if (str.find("O1") != string::npos) {
-      llvm_opt::opt_level = 1;
-      return;
-    }
-    if (str.find("O2") != string::npos) {
-      llvm_opt::opt_level = 2;
-      return;
-    }
-    if (str.find("O3") != string::npos) {
-      llvm_opt::opt_level = 3;
-      return;
-    }
-    if (str.find("FTZ0") != string::npos) {
-      llvm_opt::nvptx_FTZ = 0;
-      return;
-    }
-    if (str.find("FTZ1") != string::npos) {
-      llvm_opt::nvptx_FTZ = 1;
-      return;
-    }
-    QDP_error_exit("unknown llvm-opt argument: %s",c_str);
-  }
 
 
   void llvm_set_debug( const char * c_str ) {
@@ -566,17 +509,16 @@ namespace QDP {
     // gfx908 (ROCM)
     str_arch = gpu_get_arch();
 
-
-    QDPIO::cout << "LLVM optimization level : " << llvm_opt::opt_level << "\n";
-    QDPIO::cout << "NVPTX Flush to zero     : " << llvm_opt::nvptx_FTZ << "\n";
-
     
     TheTriple.setArch (llvm::Triple::ArchType::amdgcn);
     TheTriple.setVendor (llvm::Triple::VendorType::AMD);
     TheTriple.setOS (llvm::Triple::OSType::AMDHSA);
 
-    std::cout << "triple set\n";
-
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "triple set\n";
+      }
+    
     std::string Error;
     const llvm::Target *TheTarget = llvm::TargetRegistry::lookupTarget( TheTriple.str() , Error );
     if (!TheTarget) {
@@ -585,11 +527,8 @@ namespace QDP {
       QDP_abort(1);
     }
 
-    QDPIO::cout << "got target: " << TheTarget->getName() << "\n";
-    QDPIO::cout << "using arch: " << str_arch << "\n";
 
-    llvm::CodeGenOpt::Level OLvl = llvm::CodeGenOpt::Default;
-
+    
     llvm::TargetOptions Options;
 
     std::string FeaturesStr;
@@ -603,9 +542,9 @@ namespace QDP {
 						       )
 			);
 
-
-    QDPIO::cout << "got target machine CPU: " << TargetMachine->getTargetCPU().str() << "\n";
-    QDPIO::cout << "got target machine triple: " << TargetMachine->getTargetTriple().str() << "\n";
+    QDPIO::cout << "LLVM initialization" << std::endl;
+    QDPIO::cout << "  Target machine CPU                  : " << TargetMachine->getTargetCPU().str() << "\n";
+    QDPIO::cout << "  Target triple                       : " << TargetMachine->getTargetTriple().str() << "\n";
 
 
     mapMath["sin_f32"]="sinf";
@@ -685,10 +624,6 @@ namespace QDP {
     // sm_50 (CUDA)
     // gfx908 (ROCM)
     str_arch = gpu_get_arch();
-
-
-    QDPIO::cout << "LLVM optimization level : " << llvm_opt::opt_level << "\n";
-    QDPIO::cout << "NVPTX Flush to zero     : " << llvm_opt::nvptx_FTZ << "\n";
 
 
     std::string str_triple("nvptx64-nvidia-cuda");
@@ -1506,62 +1441,6 @@ namespace QDP {
 
 
 
-  void AddOptimizationPasses(llvm::legacy::PassManagerBase &MPM,
-  			     llvm::legacy::FunctionPassManager &FPM,
-  			     llvm::TargetMachine *TM, unsigned OptLevel,
-  			     unsigned SizeLevel)
-  {
-    //QDPIO::cout << " adding opt passes..\n";
-
-    const bool DisableInline = llvm_opt::DisableInline;
-    const bool UnitAtATime = llvm_opt::UnitAtATime;
-    const bool DisableLoopUnrolling = llvm_opt::DisableLoopUnrolling;
-    const bool DisableLoopVectorization = llvm_opt::DisableLoopVectorization;
-    const bool DisableSLPVectorization = llvm_opt::DisableSLPVectorization;
-      
-    FPM.add(llvm::createVerifierPass()); // Verify that input is correct
-
-    llvm::PassManagerBuilder Builder;
-    Builder.OptLevel = OptLevel;
-    Builder.SizeLevel = SizeLevel;
-
-    if (DisableInline) {
-      // No inlining pass
-    } else if (OptLevel > 1) {
-      Builder.Inliner = llvm::createFunctionInliningPass(OptLevel, SizeLevel, false);
-    } else {
-      Builder.Inliner = llvm::createAlwaysInlinerLegacyPass();
-    }
-
-    //#if defined (QDP_LLVM9) || (QDP_LLVM10) || (QDP_LLVM11)
-    //#else
-    //Builder.DisableUnitAtATime = !UnitAtATime;
-    //#endif
-    
-    //#ifndef QDP_LLVM9
-    //    Builder.DisableUnitAtATime = !UnitAtATime;
-    //#endif
-    
-    Builder.DisableUnrollLoops = DisableLoopUnrolling;
-
-    // This is final, unless there is a #pragma vectorize enable
-    if (DisableLoopVectorization)
-      Builder.LoopVectorize = false;
-    else 
-      Builder.LoopVectorize = OptLevel > 1 && SizeLevel < 2;
-
-    // When #pragma vectorize is on for SLP, do the same as above
-    Builder.SLPVectorize = DisableSLPVectorization ? false : OptLevel > 1 && SizeLevel < 2;
-
-    // Add target-specific passes that need to run as early as possible.
-   if( TM ) TM->adjustPassManager(Builder);
-
-   Builder.populateFunctionPassManager(FPM);
-   Builder.populateModulePassManager(MPM);
-  }
-
-    //  } // ann. namespace
-
 
   namespace {
     bool all_but_kernel_name(const llvm::GlobalValue & gv)
@@ -1734,7 +1613,10 @@ namespace QDP {
     }
 #endif
 
-    QDPIO::cout << "setting module data layout\n";
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "setting module data layout\n";
+      }
     Mod->setDataLayout(TargetMachine->createDataLayout());
 
     if (math_declarations.size() > 0)
@@ -1773,8 +1655,11 @@ namespace QDP {
     
     PM2.add( llvm::createInternalizePass( all_but_kernel_name ) );
     PM2.add( llvm::createGlobalDCEPass() );
-    
-    QDPIO::cout << "internalize and remove dead code ...\n";
+
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "internalize and remove dead code ...\n";
+      }
     PM2.run(*Mod);
     
     //llvm_module_dump();
@@ -1848,7 +1733,10 @@ namespace QDP {
 #endif
 
 
-	QDPIO::cout << "running module passes ...\n";
+	if (jit_config_get_verbose_output())
+	  {
+	    QDPIO::cout << "running module passes ...\n";
+	  }
 	PM.run(*Mod);
 
 
@@ -1885,8 +1773,11 @@ namespace QDP {
 	      QDP_abort(1);
 	    }
 
-	  QDPIO::cout << "running code gen ...\n";
-    
+	  if (jit_config_get_verbose_output())
+	    {
+	      QDPIO::cout << "running code gen ...\n";
+	    }
+	  
 	  CodeGenPasses.run(*Mod);
 
 	  isabin_fs->flush();
@@ -1898,8 +1789,11 @@ namespace QDP {
     std::string lld_path = std::string(ROCM_DIR) + "/llvm/bin/ld.lld";
     std::string command = lld_path + " -shared " + isabin_path + " -o " + shared_path;
 
-    std::cout << "System: " << command.c_str() << "\n";
-
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "System: " << command.c_str() << "\n";
+      }
+    
     system( command.c_str() );
   }
 
@@ -1907,8 +1801,11 @@ namespace QDP {
   void llvm_build_function_rocm(JitFunction& func)
   {
     //llvm_module_dump();
-    QDPIO::cout << str_pretty << "\n";
-
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << str_pretty << "\n";
+      }
+    
     std::string shared_path = "module_" + str_kernel_name + ".so";
 
     if (Layout::primaryNode())
@@ -1924,8 +1821,11 @@ namespace QDP {
     std::ifstream fin(shared_path, ios::binary);
     sstream << fin.rdbuf();
     std::string shared(sstream.str());
-
-    std::cout << "shared object file read back in. size = " << shared.size() << "\n";
+    
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "shared object file read back in. size = " << shared.size() << "\n";
+      }
     
     if (!get_jitf( func , shared , str_kernel_name , str_pretty , str_arch ))
       {

@@ -21,6 +21,8 @@ namespace QDP
 
     bool pool_count_allocations = false;
 
+    bool verbose_output = false;
+    
 #ifdef QDP_BACKEND_ROCM
     int  codegen_opt = 1;
 #endif
@@ -45,6 +47,9 @@ namespace QDP
     QDPIO::cout << "  resulting memory pool size          : " << val/1024/1024 << " MB\n";
       }
   }
+
+  bool jit_config_get_verbose_output() { return verbose_output; }
+  void jit_config_set_verbose_output(bool v) { verbose_output = v; }
 
   int jit_config_get_codegen_opt() { return codegen_opt; }
   void jit_config_set_codegen_opt(int opt) { codegen_opt = opt; }

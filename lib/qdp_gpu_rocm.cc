@@ -836,16 +836,22 @@ namespace QDP {
 	return false;
       }
 
-    QDPIO::cout << "shared object file loaded as hip module\n";
-    QDPIO::cout << "looking for a function with name " << kernel_name << "\n";
-
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "shared object file loaded as hip module\n";
+	QDPIO::cout << "looking for a function with name " << kernel_name << "\n";
+      }
+    
     hipFunction_t f;
     ret = hipModuleGetFunction( &f , module , kernel_name.c_str() );
     CheckError( "hipModuleGetFunction" , ret );
 
     func.set_function( f );
     
-    QDPIO::cout << "Got function!\n";
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "Got function!\n";
+      }
     return true;
   }
 

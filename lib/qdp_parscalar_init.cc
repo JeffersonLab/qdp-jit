@@ -443,12 +443,6 @@ namespace QDP {
 	    sscanf((*argv)[++i], "%d", &stack);
 	    jit_config_set_thread_stack(stack);
 	  }
-	else if (strcmp((*argv)[i], "-llvm-opt")==0) 
-	  {
-	    char tmp[1024];
-	    sscanf((*argv)[++i], "%s", &tmp[0]);
-	    llvm_set_opt(tmp);
-	  }
 	else if (strcmp((*argv)[i], "-libdevice-path")==0) 
 	  {
 	    char tmp[1024];
@@ -461,9 +455,13 @@ namespace QDP {
 	    sscanf((*argv)[++i], "%s", &tmp[0]);
 	    llvm_set_libdevice_name(tmp);
 	  }
-	else if (strcmp((*argv)[i], "-cacheverbose")==0) 
+	else if (strcmp((*argv)[i], "-cache-verbose")==0) 
 	  {
 	    qdp_cache_set_cache_verbose(true);
+	  }
+	else if (strcmp((*argv)[i], "-codegen-verbose")==0) 
+	  {
+	    jit_config_set_verbose_output(true);
 	  }
 	else if (strcmp((*argv)[i], "-ptxdb")==0) 
 	  {
