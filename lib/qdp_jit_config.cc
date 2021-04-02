@@ -6,7 +6,7 @@ namespace QDP
   namespace
   {
     // Memory Pool
-    int thread_stack = 64 * sizeof(REAL);  //1024;
+    int thread_stack = 512 * sizeof(REAL);
     bool use_total_pool_size = false;
     size_t pool_size = 0;
     bool use_defrag = false;
