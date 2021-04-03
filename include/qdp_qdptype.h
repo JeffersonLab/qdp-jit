@@ -516,6 +516,19 @@ struct LeafFunctor<QDPType<T,C>, AddressLeaf>
 
 
 template<class T, class C>
+struct LeafFunctor<QDPType<T,C>, DynKeyTag >
+{
+  typedef bool Type_t;
+  inline static
+  Type_t apply(const QDPType<T,C>& s, const DynKeyTag& p) 
+  {
+    return false;
+  }
+};
+
+
+
+template<class T, class C>
 struct LeafFunctor<QDPType<T,C>, ShiftPhase1>
 {
   typedef int Type_t;

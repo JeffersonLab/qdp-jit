@@ -146,6 +146,9 @@ namespace QDP
   class Set;
   class Subset;
 
+  class JitFunction;
+  class DynKey;
+
 
   template<class T, class T1, class RHS>
   JitFunction

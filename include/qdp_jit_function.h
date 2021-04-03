@@ -4,11 +4,69 @@
 
 namespace QDP {
 
-  class JitFunction;
 
   void gpu_set_record_stats();
   bool gpu_get_record_stats();
   std::vector<JitFunction*>& gpu_get_functions();
+
+  
+  typedef std::map< DynKey , JitFunction >  JitFunctionMap;
+
+  
+  class DynKey
+  {
+    mutable std::vector<int> keys;
+    mutable bool offnode_comms = false;
+    
+  public:
+    void add( int i ) const
+    {
+      keys.push_back( i );
+    }
+
+    void set_offnode_comms( bool s ) const
+    {
+      offnode_comms = s;
+    }
+
+    bool get_offnode_comms() const
+    {
+      return offnode_comms;
+    }
+
+  
+    bool operator <(const DynKey& rhs) const
+    {
+      if ( rhs.keys.size() != keys.size() )
+	{
+	  std::cout << " DynKey: some weird error" << std::endl;
+	  QDP_abort(1);
+	}
+
+      for ( int i = 0 ; i < keys.size() ; ++i )
+	{
+	  if ( keys.at(i) > rhs.keys.at(i) )
+	    {
+	      return false;
+	    }
+	  if ( keys.at(i) < rhs.keys.at(i) )
+	    {
+	      return true;
+	    }
+	}
+      return false;
+    }
+
+    friend auto &operator<<(std::ostream &os, const DynKey& rhs);
+
+    friend StandardOutputStream& operator<<(StandardOutputStream& s, const DynKey& rhs);
+  };
+
+
+
+
+
+  
   
   class JitFunction
   {

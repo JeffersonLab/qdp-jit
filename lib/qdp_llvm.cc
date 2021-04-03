@@ -1803,7 +1803,11 @@ namespace QDP {
   
   void llvm_build_function_rocm(JitFunction& func)
   {
-    //llvm_module_dump();
+    if (Layout::primaryNode())
+      {
+	//llvm_module_dump();
+      }
+    
     if (jit_config_get_verbose_output())
       {
 	QDPIO::cout << str_pretty << "\n";

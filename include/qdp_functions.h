@@ -43,11 +43,16 @@ namespace QDP {
   void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs,
 		const Subset& s)
   {
-    static JitFunction function;
-    if (function.empty())
-      function_build(function, dest, op, rhs);
+    static JitFunctionMap function_map;
 
-    function_exec(function, dest, op, rhs, s);
+    auto key = get_dyn_key( op , rhs , s );
+
+    //QDPIO::cout << "dyn key = " << key << std::endl;
+
+    if (function_map[key].empty())
+      function_build(function_map[key], key, dest, op, rhs, s);
+
+    function_exec(function_map[key], dest, op, rhs, s);
   }
 
 

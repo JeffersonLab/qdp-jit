@@ -111,6 +111,20 @@ struct AddressLeaf
 
 
 
+
+
+
+  struct DynKeyTag
+  {
+    const DynKey& key;
+  
+    DynKeyTag(const DynKey& k): key(k) {}
+
+    DynKeyTag(const DynKeyTag& cp) = delete;
+    DynKeyTag& operator=(const DynKeyTag& cp) = delete;
+  };
+
+
   
 }
 

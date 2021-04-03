@@ -75,6 +75,7 @@
 #include <utility>
 #include <memory>
 #include <vector>
+#include <map>
 
 #include <string>
 #include <fstream>
@@ -90,8 +91,6 @@ using std::ostream;
 
 #include "qdp_jit_config.h"
 
-#include "qdp_jit_function.h"
-
 #include "qdp_dispatch.h"
 
 #include "qdp_forward.h"
@@ -106,6 +105,9 @@ namespace QDP {
 }
 
 #include "qdp_init.h"
+
+//
+
 
 #include "qdp_cache.h"
 #include "qdp_gpu.h"
@@ -132,6 +134,8 @@ namespace QDP {
 #include "qdp_xmlio.h"
 #include "qdp_qdpio.h"
 #endif
+
+#include "qdp_jit_function.h"
 
 #ifndef QDP_USE_HDF5
 //#warning not using hdf5
@@ -227,6 +231,7 @@ namespace QDP {
 #include "qdp_jitf_globalmax.h"
 #include "qdp_jitf_gaussian.h"
 
+#include "qdp_dyn_functions.h"
 #include "qdp_sum.h"
 #include "qdp_functions.h"
 

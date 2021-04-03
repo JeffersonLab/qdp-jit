@@ -102,6 +102,7 @@ nobase_include_HEADERS = \
 		qdp_subset.h \
 		qdp_traits.h \
 		qdp_dispatch.h \
+	        qdp_dyn_functions.h \
 	        qdp_functions.h \
 	        qdp_parscalar_specific.h \
 	        qdp_parscalar_mapresource.h \
