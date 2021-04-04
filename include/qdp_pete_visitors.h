@@ -125,6 +125,19 @@ struct AddressLeaf
   };
 
 
+  template<class T>
+  struct LeafFunctor< T , DynKeyTag >
+  {
+    typedef bool Type_t;
+    inline static
+    Type_t apply(const T &s, const DynKeyTag &) 
+    {
+      return false;
+    }
+  };
+
+
+
   
 }
 

@@ -802,30 +802,6 @@ struct LeafFunctor<OScalar< PScalar< PScalar < RScalar< Word< bool > > > > >, Pa
 
 
 
-template<class T>
-struct LeafFunctor<OLattice<T>, DynKeyTag>
-{
-  typedef bool Type_t;
-  inline static
-  Type_t apply(const OLattice<T>& s, const DynKeyTag& p) 
-  {
-    return false;
-  }
-};
-
-template<class T>
-struct LeafFunctor<OScalar<T>, DynKeyTag>
-{
-  typedef bool Type_t;
-  inline static
-  Type_t apply(const OScalar<T>& s, const DynKeyTag& p)
-  {
-    return false;
-  }
-};
-
-
-
 
 
 template<class T>
