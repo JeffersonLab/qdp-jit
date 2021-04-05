@@ -508,6 +508,104 @@ namespace QDP {
   // llvm::BasicBlock * block_cont = llvm_new_basic_block();
 
 
+  void jit_tune( JitFunction& function , int th_count , QDPCache::KernelArgs_t& args)
+  {
+    if ( function.get_dest_id() < 0 )
+      {
+	QDPIO::cout << "Tuning disabled for: " << function.get_kernel_name() << std::endl;
+	function.set_threads_per_block( jit_config_get_threads_per_block() );
+	return;
+      }
+
+    size_t field_size      = QDP_get_global_cache().getSize       ( function.get_dest_id() );
+
+    std::vector<QDPCache::ArgKey> vec_id;
+    vec_id.push_back( function.get_dest_id() );
+    std::vector<void*> vec_ptrs = QDP_get_global_cache().get_dev_ptrs( vec_id );
+    void* dev_ptr = vec_ptrs.at(0);
+  
+    void* host_ptr;
+
+    if ( ! (host_ptr = malloc( field_size )) )
+      {
+	QDPIO::cout << "Tuning: Cannot allocate host memory!" << endl;
+	QDP_abort(1);
+      }
+    
+    if ( args.size() <= function.get_dest_arg() )
+      {
+	QDPIO::cout << "Tuning: too few kernel args!" << endl;
+	QDP_abort(1);
+      }
+
+    QDPIO::cout << "Starting tuning of: " << function.get_kernel_name() << std::endl;
+
+
+    //QDPIO::cout << "d2h: start = " << f.start << "  count = " << f.count << "  size_T = " << f.size_T << "   \t";
+    
+    gpu_memcpy_d2h( host_ptr , dev_ptr , field_size );
+
+    // --------------------
+    // Main tuning loop
+
+    int config = -1;
+    double best_time;
+
+
+    for( int threads_per_block = jit_config_get_threads_per_block_min() ;
+	 threads_per_block <= jit_config_get_threads_per_block_max() ;
+	 threads_per_block += jit_config_get_threads_per_block_step() )
+      {
+	kernel_geom_t geom = getGeom( th_count , threads_per_block );
+
+	StopWatch w;
+	int loops = jit_config_get_threads_per_block_loops();
+
+	for( int i = 0 ; i < loops+5 ; ++i )
+	  {
+	    if (i==5)
+	      w.start();
+
+	    JitResult result = gpu_launch_kernel( function,
+						  geom.Nblock_x,geom.Nblock_y,1,
+						  geom.threads_per_block,1,1,
+						  0, // shared mem
+						  args );
+	  
+	    if (result != JitResult::JitSuccess) {
+	      QDPIO::cerr << "Tuning: jit launch error, grid=(" << geom.Nblock_x << "," << geom.Nblock_y << "1), block=(" << threads_per_block << ",1,1)\n";
+	      QDP_abort(1);
+	    }
+
+	  }
+	
+	w.stop();
+
+	double ms = w.getTimeInMicroseconds();
+
+	QDPIO::cout << "blocksize\t" << threads_per_block << "\ttime = \t" << ms << std::endl;
+
+	if (config == -1 || best_time > ms)
+	  {
+	    best_time = ms;
+
+	    config = threads_per_block;
+	  }
+      }
+
+    QDPIO::cout << "best   \t" << config << "\ttime = \t" << best_time << std::endl;
+
+    function.set_threads_per_block( config );
+    
+    // -------------------
+
+    // Restore memory for 'dest'
+    gpu_memcpy_h2d( dev_ptr , host_ptr , field_size );
+    
+    free( host_ptr );
+  }
+  
+
 
   void jit_launch(JitFunction& function,int th_count,std::vector<QDPCache::ArgKey>& ids)
   {
@@ -526,8 +624,27 @@ namespace QDP {
     // Increment the call counter
     function.inc_call_counter();
 
-    const int threads_per_block = jit_config_get_threads_per_block();
+
+    if (  jit_config_get_tuning()  &&  function.get_threads_per_block() == -1  )
+      {
+	jit_tune( function , th_count , args );
+      }
+
     
+    int threads_per_block;
+    
+    if ( function.get_threads_per_block() == -1 )
+      {
+	threads_per_block = jit_config_get_threads_per_block();
+      }
+    else
+      {
+	threads_per_block = function.get_threads_per_block();
+      }
+
+    //QDPIO::cout << "jit_launch using block size = " << threads_per_block << std::endl;
+    
+
     kernel_geom_t geom = getGeom( th_count , threads_per_block );
 
     JitResult result = gpu_launch_kernel( function,

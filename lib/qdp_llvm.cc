@@ -1165,6 +1165,16 @@ namespace QDP {
   }
 
 
+  int llvm_get_last_param_count()
+  {
+    if (vecParamType.size() == 0)
+      {
+	QDPIO::cerr << "Internal error: llvm_get_last_param_count" << std::endl;
+	QDP_abort(1);
+      }
+    return vecParamType.size() - 1 ;
+  }
+
   template<> ParamRef llvm_add_param<bool>() { 
     vecParamType.push_back( llvm::Type::getInt1Ty(TheContext) );
     return vecParamType.size()-1;

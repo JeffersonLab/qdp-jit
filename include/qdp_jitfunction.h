@@ -173,6 +173,9 @@ function_build(JitFunction& function, const DynKey& key, OLattice<T>& dest, cons
 
 	  typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
 	  FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
+	  
+	  // For tuning
+	  function.set_dest_arg( llvm_get_last_param_count() );
 
 	  auto op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
 
@@ -207,6 +210,9 @@ function_build(JitFunction& function, const DynKey& key, OLattice<T>& dest, cons
 
 	  typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
 	  FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
+	  
+	  // For tuning
+	  function.set_dest_arg( llvm_get_last_param_count() );
 
 	  auto op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
 
@@ -864,6 +870,10 @@ function_exec(JitFunction& function, OLattice<T>& dest, const Op& op, const QDPE
   AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
   forEach(rhs, addr_leaf, NullCombine());
 
+  // For tuning
+  function.set_dest_id( dest.getId() );
+
+  
   if (offnode_maps == 0)
     {
       int th_count = s.hasOrderedRep() ? s.numSiteTable() : Layout::sitesOnNode();

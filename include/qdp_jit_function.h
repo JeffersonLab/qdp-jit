@@ -118,11 +118,20 @@ namespace QDP {
     std::string get_pretty() { return pretty; }
     const std::vector<float>& get_timings() const { return timings; }
 
+    void set_dest_arg( int i ) { dest_arg = i; }
+    int  get_dest_arg() { return dest_arg; }
+
+    void set_dest_id( int i ) { dest_id = i; }
+    int  get_dest_id() { return dest_id; }
+
+    void set_threads_per_block( int i ) { threads_per_block = i; }
+    int  get_threads_per_block() { return threads_per_block; }
+    
+    
 #ifdef QDP_DEEP_LOG
     int start;
     int count;
     int size_T;
-    int dest_arg;
     std::string type_W;
 #endif
 
@@ -149,6 +158,11 @@ namespace QDP {
 
     std::vector<float> timings;
 
+    int dest_arg = -1;
+    int dest_id  = -1;
+
+    // Best configuration resulting from tuning
+    int threads_per_block = -1;
   };
 
 

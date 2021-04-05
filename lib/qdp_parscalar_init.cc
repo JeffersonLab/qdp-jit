@@ -363,6 +363,25 @@ namespace QDP {
 	  {
 	    gpu_set_record_stats();
 	  }
+	else if (strcmp((*argv)[i], "-tune")==0) 
+	  {
+	    jit_config_set_tuning(true);
+	  }
+	else if (strcmp((*argv)[i], "-tuneconfig")==0) 
+	  {
+	    int min,max,step,loops;
+	    sscanf( (*argv)[++i], "%d", &min );
+	    sscanf( (*argv)[++i], "%d", &max );
+	    sscanf( (*argv)[++i], "%d", &step );
+	    sscanf( (*argv)[++i], "%d", &loops );
+	    
+	    jit_config_set_threads_per_block_min( min );
+	    jit_config_set_threads_per_block_max( max );
+	    jit_config_set_threads_per_block_step( step );
+	    jit_config_set_threads_per_block_loops( loops );
+
+	    jit_config_set_tuning(true);
+	  }
 	else if (strcmp((*argv)[i], "-defrag")==0)
 	  {
 	    qdp_jit_set_defrag();

@@ -13,8 +13,6 @@ namespace QDP
     int max_allocation_size = -1;
     size_t pool_alignment = 128;
 
-    // Kernel Launch
-    int threads_per_block = 128;
 
     // In case memory allocation fails, decrease Pool size by this amount for next try.
     size_t pool_size_decrement = 10 * 1024*1024;   // 10MB
@@ -22,7 +20,16 @@ namespace QDP
     bool pool_count_allocations = false;
 
     bool verbose_output = false;
-    
+
+    // Kernel Launch & Tuning
+    //
+    bool tuning = false;
+    int threads_per_block = 128;       // default value
+    int threads_per_block_min = 8;
+    int threads_per_block_max = 256;
+    int threads_per_block_step = 8;
+    int threads_per_block_loops = 100;  // Number of loops to measure (after dry run of 5)
+
 #ifdef QDP_BACKEND_ROCM
     int  codegen_opt = 1;
 #endif
@@ -47,6 +54,9 @@ namespace QDP
     QDPIO::cout << "  resulting memory pool size          : " << val/1024/1024 << " MB\n";
       }
   }
+
+  bool jit_config_get_tuning() { return tuning; }
+  void jit_config_set_tuning(bool v) { tuning = v; }
 
   bool jit_config_get_verbose_output() { return verbose_output; }
   void jit_config_set_verbose_output(bool v) { verbose_output = v; }
@@ -109,6 +119,18 @@ namespace QDP
     return threads_per_block;
   }
 
+
+
+  void jit_config_set_threads_per_block_min( int t )  {    threads_per_block_min = t;  }
+  void jit_config_set_threads_per_block_max( int t )  {    threads_per_block_max = t;  }
+  void jit_config_set_threads_per_block_step( int t )  {   threads_per_block_step = t;  }
+  void jit_config_set_threads_per_block_loops( int t )  {   threads_per_block_loops = t;  }
+  int jit_config_get_threads_per_block_min()  {    return threads_per_block_min;  }
+  int jit_config_get_threads_per_block_max()  {    return threads_per_block_max;  }
+  int jit_config_get_threads_per_block_step()  {   return threads_per_block_step; }
+  int jit_config_get_threads_per_block_loops()  {  return threads_per_block_loops; }
+
+  
 
 
   void jit_config_set_pool_size( size_t val )

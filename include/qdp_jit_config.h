@@ -3,6 +3,18 @@
 
 namespace QDP
 {
+  bool jit_config_get_tuning();
+  void jit_config_set_tuning(bool v);
+
+  void jit_config_set_threads_per_block_min( int t );
+  void jit_config_set_threads_per_block_max( int t );
+  void jit_config_set_threads_per_block_step( int t );
+  void jit_config_set_threads_per_block_loops( int t );
+  int jit_config_get_threads_per_block_min();
+  int jit_config_get_threads_per_block_max();
+  int jit_config_get_threads_per_block_step();
+  int jit_config_get_threads_per_block_loops();
+
   bool jit_config_get_verbose_output();
   void jit_config_set_verbose_output(bool v);
 

@@ -195,8 +195,9 @@ namespace QDP {
   //
   llvm::Value* llvm_not( llvm::Value* lhs );
 
-  //  std::string param_next();
 
+  int llvm_get_last_param_count();
+  
   template<class T> ParamRef llvm_add_param();
 
   template<> ParamRef llvm_add_param<bool>();
