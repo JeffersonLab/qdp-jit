@@ -57,7 +57,7 @@ namespace QDP {
       return false;
     }
 
-    friend auto &operator<<(std::ostream &os, const DynKey& rhs);
+    friend std::ostream& operator<<(std::ostream &os, const DynKey& rhs);
 
     friend StandardOutputStream& operator<<(StandardOutputStream& s, const DynKey& rhs);
   };
@@ -126,8 +126,7 @@ namespace QDP {
 
     void set_threads_per_block( int i ) { threads_per_block = i; }
     int  get_threads_per_block() { return threads_per_block; }
-    
-    
+
 #ifdef QDP_DEEP_LOG
     int start;
     int count;
@@ -162,7 +161,8 @@ namespace QDP {
     int dest_id  = -1;
 
     // Best configuration resulting from tuning
-    int threads_per_block = -1;
+    int  threads_per_block = -1;
+    bool tuned = false;
   };
 
 

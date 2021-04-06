@@ -37,6 +37,11 @@ namespace QDP {
   void jit_launch(JitFunction& function,int th_count,std::vector<QDPCache::ArgKey>& ids);
   void jit_launch_explicit_geom( JitFunction& function , std::vector<QDPCache::ArgKey>& ids , const kernel_geom_t& geom , unsigned int shared );
 
+  std::string jit_util_get_static_dynamic_string( const std::string& pretty );
+
+  void db_tune_write( std::string filename );
+  void db_tune_read( std::string filename );
+
 
   template<class T>
   typename JITType<T>::Type_t stack_alloc()

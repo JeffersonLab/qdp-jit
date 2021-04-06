@@ -63,7 +63,7 @@ void printExprTree(ostream& os,
 
 template<class T, class C, class Op, class RHS, class C1>
 void printExprTreeSubset(ostream& os, 
-			 const QDPType<T,C>& dest, const Op& op, const QDPExpr<RHS,C1>& rhs, const Subset& s)
+			 const QDPType<T,C>& dest, const Op& op, const QDPExpr<RHS,C1>& rhs, const Subset& s, const DynKey& key)
 {
   typedef EvalLeaf1    FTag_t;
   typedef OpCombine    CTag_t;
@@ -89,17 +89,8 @@ void printExprTreeSubset(ostream& os,
   Print_t::apply(e, PrintTag(os), PrintTag(os), NullTag());
 #endif
 
-  if ( s.hasOrderedRep() )
-    {
-      os << "ordered";
-    }
-  else
-    {
-      os << "unordered";
-    }
-    
-
-  os << ";";
+  // Add dynamic info
+  os << "_key=" << key;
 }
 
 

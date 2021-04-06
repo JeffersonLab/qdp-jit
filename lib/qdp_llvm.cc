@@ -194,29 +194,13 @@ namespace QDP {
     return ptx_db::db.size();
   }
 
-  std::string get_ptx_db_id( const std::string& pretty )
-  {
-    std::ostringstream oss;
-    
-    oss << "sm_" <<  gpu_getMajor() << gpu_getMinor() << "_";
-
-    for ( int i = 0 ; i < Nd ; ++i )
-      oss << Layout::subgridLattSize()[i] << "_";
-
-    oss << pretty;
-
-    return oss.str();
-  }
-
   
-  
-
 
 
 
   void llvm_ptx_db( JitFunction& f , const char * pretty )
   {
-    std::string id = get_ptx_db_id( pretty );
+    std::string id = jit_util_get_static_dynamic_string( pretty );
     
     ptx_db::DBType::iterator it = ptx_db::db.find( id );
 
@@ -1579,7 +1563,7 @@ namespace QDP {
 
       if (Layout::primaryNode())
 	{
-	  std::string id = get_ptx_db_id( str_pretty );
+	  std::string id = jit_util_get_static_dynamic_string( str_pretty );
 
 	  if ( ptx_db::db.find( id ) != ptx_db::db.end() ) {
 	    QDPIO::cout << "internal error: key already exists in DB but wasn't found earlier\n" << id << "\n";

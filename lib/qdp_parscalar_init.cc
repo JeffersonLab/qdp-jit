@@ -192,6 +192,12 @@ namespace QDP {
     QDP_setGPUCommSplit();
 #endif
     QDP_startGPU();
+
+    if (jit_config_get_tuning())
+      {
+	db_tune_read( jit_config_get_tuning_file() );
+      }
+
   }
 	
   //! Turn on the machine
@@ -707,6 +713,7 @@ namespace QDP {
 		
 		QDPIO::cout << "Code generator \n";
 		QDPIO::cout << "  functions jit-compiled:                  " << get_jit_stats_jitted() << "\n";
+#ifndef QDP_BACKEND_ROCM
 		if (get_ptx_db_enabled())
 		  {
 		QDPIO::cout << "  ptx db file:                             " << get_ptx_db_fname() << "\n";
@@ -716,7 +723,7 @@ namespace QDP {
 		  {
 		QDPIO::cout << "  ptx db: (not used)\n";
 		  }
-		
+#endif		
 #ifdef QDP_CUDA_SPECIAL
 		for ( auto it = get_jit_stats_special_names().begin() ; it != get_jit_stats_special_names().end(); it++ )
 		  {
@@ -837,6 +844,13 @@ namespace QDP {
 		    
 
 		  }
+
+
+		if (jit_config_get_tuning())
+		  {
+		    db_tune_write( jit_config_get_tuning_file() );
+		  }
+		
 		
 		FnMapRsrcMatrix::Instance().cleanup();
 

@@ -6,6 +6,9 @@ namespace QDP
   bool jit_config_get_tuning();
   void jit_config_set_tuning(bool v);
 
+  std::string jit_config_get_tuning_file();
+  void jit_config_set_tuning_file( std::string v);
+
   void jit_config_set_threads_per_block_min( int t );
   void jit_config_set_threads_per_block_max( int t );
   void jit_config_set_threads_per_block_step( int t );

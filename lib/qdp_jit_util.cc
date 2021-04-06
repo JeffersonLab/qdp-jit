@@ -25,6 +25,95 @@ namespace QDP {
     void *sync_hst_ptr;
     void *sync_dev_ptr;
   }
+
+  namespace
+  {
+    typedef std::map< std::string , int > DBTuneType;
+    DBTuneType db_tune;
+    bool db_tune_modified = false;
+  }
+
+  
+  void db_tune_write( std::string filename )
+  {
+    if (!Layout::primaryNode())
+      return;
+
+    if (!db_tune_modified)
+      return;
+    
+    BinaryFileWriter db(filename);
+
+    QDPIO::cout << "Tuning db: writing " << db_tune.size() << " entries to: " << filename << std::endl;
+    write( db , (int)db_tune.size() );
+    for ( DBTuneType::iterator it = db_tune.begin() ; it != db_tune.end() ; ++it ) 
+      {
+	write(db , it->first);
+	write(db , it->second);
+      }
+    db.close();
+  }
+
+  
+  void db_tune_read( std::string filename )
+  {
+    {
+      ifstream f(filename.c_str());
+      if (! f.good() )
+	return;
+    }
+    
+    QDPIO::cout << "Tuning db: opening: " << filename << std::endl;
+
+    BinaryFileReader db(filename);
+
+    int n;
+    read( db , n );
+    
+    QDPIO::cout << "Number of entries in Tuning DB: " << n << std::endl;
+
+    for( int i = 0 ; i < n ; ++i )
+      {
+	std::string key;
+	int config;
+
+	read( db , key , 10*1024 );
+	read( db , config );
+
+	db_tune[ key ] = config;
+
+	QDPIO::cout << "read: " << config << "\t" << key << std::endl;
+      }
+    db.close();
+  }
+
+  
+  bool db_tune_find_info( JitFunction& function )
+  {
+    std::string key = jit_util_get_static_dynamic_string( function.get_pretty() );
+    
+    DBTuneType::iterator it = db_tune.find( key );
+
+    if ( it != db_tune.end() )
+      {
+	function.set_threads_per_block( it->second );
+	return true;
+      }
+
+    return false;
+  }
+
+  
+  void db_tune_insert_info( JitFunction& function , int config )
+  {
+    std::string key = jit_util_get_static_dynamic_string( function.get_pretty() );
+    db_tune[key] = config;
+    db_tune_modified = true;
+  }
+
+  
+
+
   
   void jit_util_sync_init()
   {
@@ -504,8 +593,6 @@ namespace QDP {
   
   
   
-    // llvm::BasicBlock * block_start = llvm_new_basic_block();
-  // llvm::BasicBlock * block_cont = llvm_new_basic_block();
 
 
   void jit_tune( JitFunction& function , int th_count , QDPCache::KernelArgs_t& args)
@@ -516,6 +603,13 @@ namespace QDP {
 	function.set_threads_per_block( jit_config_get_threads_per_block() );
 	return;
       }
+
+
+    if (db_tune_find_info( function ))
+      {
+	return;
+      }
+    
 
     size_t field_size      = QDP_get_global_cache().getSize       ( function.get_dest_id() );
 
@@ -600,7 +694,10 @@ namespace QDP {
     QDPIO::cout << "best   \t" << config << "\ttime = \t" << best_time << std::endl;
 
     function.set_threads_per_block( config );
-    
+
+    // DB tune
+    db_tune_insert_info( function , config );
+
     // -------------------
 
     // Restore memory for 'dest'
@@ -690,6 +787,23 @@ namespace QDP {
   }
 
 
+
+  std::string jit_util_get_static_dynamic_string( const std::string& pretty )
+  {
+    std::ostringstream oss;
+    
+    oss << gpu_get_arch() << "_";
+
+    for ( int i = 0 ; i < Nd ; ++i )
+      oss << Layout::subgridLattSize()[i] << "_";
+
+    oss << pretty;
+
+    return oss.str();
+  }
+
+  
+  
 
 
   

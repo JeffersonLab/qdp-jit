@@ -29,7 +29,8 @@ namespace QDP
     int threads_per_block_max = 256;
     int threads_per_block_step = 8;
     int threads_per_block_loops = 1000; // Number of loops to measure (after dry run of 5)
-
+    std::string tuning_file = "qdp-jit.tuning.dat";
+    
 #ifdef QDP_BACKEND_ROCM
     int  codegen_opt = 1;
 #endif
@@ -55,6 +56,10 @@ namespace QDP
       }
   }
 
+  
+  std::string jit_config_get_tuning_file() { return tuning_file; }
+  void jit_config_set_tuning_file( std::string v) { tuning_file = v; }
+  
   bool jit_config_get_tuning() { return tuning; }
   void jit_config_set_tuning(bool v) { tuning = v; }
 

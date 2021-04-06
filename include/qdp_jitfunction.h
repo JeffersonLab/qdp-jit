@@ -148,7 +148,7 @@ void
 function_build(JitFunction& function, const DynKey& key, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
 {
   std::ostringstream expr;
-  printExprTreeSubset( expr , dest, op, rhs , s);
+  printExprTreeSubset( expr , dest, op, rhs , s , key );
 
   if (ptx_db::db_enabled)
     {
