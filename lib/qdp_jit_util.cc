@@ -561,10 +561,11 @@ namespace QDP {
 	StopWatch w;
 	int loops = jit_config_get_threads_per_block_loops();
 
+	
 	for( int i = 0 ; i < loops+5 ; ++i )
 	  {
 	    if (i==5)
-	      w.start();
+	      gpu_record_start();
 
 	    JitResult result = gpu_launch_kernel( function,
 						  geom.Nblock_x,geom.Nblock_y,1,
@@ -579,9 +580,12 @@ namespace QDP {
 
 	  }
 	
-	w.stop();
+	//w.stop();
+	gpu_record_stop();
+	gpu_event_sync();
+	float ms = gpu_get_time();
 
-	double ms = w.getTimeInMicroseconds();
+	//double ms = w.getTimeInMicroseconds();
 
 	QDPIO::cout << "blocksize\t" << threads_per_block << "\ttime = \t" << ms << std::endl;
 

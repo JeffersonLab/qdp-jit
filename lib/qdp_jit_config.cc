@@ -24,11 +24,11 @@ namespace QDP
     // Kernel Launch & Tuning
     //
     bool tuning = false;
-    int threads_per_block = 128;       // default value
+    int threads_per_block = 128;        // default value
     int threads_per_block_min = 8;
     int threads_per_block_max = 256;
     int threads_per_block_step = 8;
-    int threads_per_block_loops = 100;  // Number of loops to measure (after dry run of 5)
+    int threads_per_block_loops = 1000; // Number of loops to measure (after dry run of 5)
 
 #ifdef QDP_BACKEND_ROCM
     int  codegen_opt = 1;
