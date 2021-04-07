@@ -647,11 +647,12 @@ namespace QDP {
 
     if (ptx_db::db_enabled) {
       // Load DB
-      QDPIO::cout << "Checking for PTX DB " << ptx_db::dbname << "\n";
+      QDPIO::cout << "PTX DB" << std::endl;
+      QDPIO::cout << "  database file name                  : " << ptx_db::dbname << "\n";
       std::ifstream f(ptx_db::dbname , ios::in | ios::binary );
-      if (f.good()) 
+      if (f.good())
 	{
-	  QDPIO::cout << "Reading in PTX DB " << ptx_db::dbname << "\n";
+	  int count = 0;
 	  while ( ! f.eof() )
 	    {
 	      int size1;
@@ -681,20 +682,23 @@ namespace QDP {
 	      if (f.eof())
 		break;
 
-	      QDPIO::cout << "ptx_db: read "
-			  << " key_size=" << size1
-			  << " name_size=" << size2
-			  << " ptx_size=" << size3 << "\n";
+	      // QDPIO::cout << "ptx_db: read "
+	      // 		  << " key_size=" << size1
+	      // 		  << " name_size=" << size2
+	      // 		  << " ptx_size=" << size3 << "\n";
 
 	      std::string key(buf1,size1);
 	      std::string name(buf2,size2);
 	      std::string ptx(buf3,size3);
 	      ptx_db::db.insert( std::make_pair( key , std::make_pair( name , ptx ) ) );
-
+	      
+	      ++count;
+	      
 	      delete[] buf1;
 	      delete[] buf2;
 	      delete[] buf3;
 	    }
+	  QDPIO::cout << "  number of records read in           : " << count << "\n";
 	}
 
     } // ptx db

@@ -128,7 +128,7 @@ namespace COUNT {
 #endif
     }
 
-    std::cout << "Setting CUDA device to " << dev << "\n";
+    //std::cout << "Setting CUDA device to " << dev << "\n";
     CudaSetDevice( dev );
     return dev;
   }

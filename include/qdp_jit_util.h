@@ -6,6 +6,8 @@ namespace QDP {
   llvm::Value *jit_function_preamble_get_idx( const std::vector<ParamRef>& vec );
   std::vector<ParamRef> jit_function_preamble_param( const char* ftype , const char* pretty );
 
+  int jit_util_get_tune_count();
+
   void jit_get_function(JitFunction&);
 
   void jit_build_seedToFloat();

@@ -95,6 +95,9 @@ namespace QDP {
 
   void QDP_startGPU()
   {
+    // print the delayed messages
+    jit_config_print_delayed_message();
+
     // Getting GPU device properties
     gpu_auto_detect();
 
@@ -128,13 +131,13 @@ namespace QDP {
     } else {
       if ( gpu_get_default_GPU() == -1 )
 	{
-	  std::cerr << "Couldnt determine local rank. Selecting device 0. In a multi-GPU per node run this is not what one wants.\n";
+	  jit_config_delayed_message("Couldnt determine local rank. Selecting device 0. In a multi-GPU per node run this is not what one wants.");
 	  dev = 0;
 	}
       else
 	{
 	  dev = gpu_get_default_GPU();
-	  std::cerr << "Couldnt determine local rank. Selecting device " << dev << " as per user request.\n";
+	  jit_config_delayed_message("Couldnt determine local rank. Selecting device " + std::to_string(dev) + " as per user request.");
 	}
 #if 0
       // we don't have an initialized QMP at this point
@@ -145,7 +148,7 @@ namespace QDP {
 #endif
     }
 
-    std::cout << "Setting GPU device to " << dev << "\n";
+    //std::cout << "Setting GPU device to " << dev << "\n";
     gpu_set_device( dev );
 
     // Sync init
@@ -371,6 +374,11 @@ namespace QDP {
 	else if (strcmp((*argv)[i], "-tune")==0) 
 	  {
 	    jit_config_set_tuning(true);
+	  }
+	else if (strcmp((*argv)[i], "-tuneverbose")==0) 
+	  {
+	    jit_config_set_tuning(true);
+	    jit_config_set_tuning_verbose(true);
 	  }
 	else if (strcmp((*argv)[i], "-tuneconfig")==0) 
 	  {
@@ -845,8 +853,11 @@ namespace QDP {
 		  }
 
 
+
 		if (jit_config_get_tuning())
 		  {
+		    QDPIO::cout << "Kernel auto-tuner"  << std::endl;
+		    QDPIO::cout << "  kernels tuned in this run:               " << jit_util_get_tune_count() << std::endl;
 		    db_tune_write( jit_config_get_tuning_file() );
 		  }
 		

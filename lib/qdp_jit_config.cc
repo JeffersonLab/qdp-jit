@@ -24,12 +24,15 @@ namespace QDP
     // Kernel Launch & Tuning
     //
     bool tuning = false;
+    bool tuning_verbose = false;
     int threads_per_block = 128;        // default value
     int threads_per_block_min = 8;
     int threads_per_block_max = 256;
     int threads_per_block_step = 8;
     int threads_per_block_loops = 1000; // Number of loops to measure (after dry run of 5)
     std::string tuning_file = "qdp-jit.tuning.dat";
+
+    std::vector<std::string> delayed_output;
     
 #ifdef QDP_BACKEND_ROCM
     int  codegen_opt = 1;
@@ -42,9 +45,23 @@ namespace QDP
 #endif
   }
 
+
+  void jit_config_delayed_message(std::string txt)
+  {
+    delayed_output.push_back(txt);
+  }
+
+  void jit_config_print_delayed_message()
+  {
+    for ( auto i : delayed_output )
+      {
+	QDPIO::cout << i << std::endl;
+      }
+  }
+  
   void jit_config_print()
   {
-    QDPIO::cout << "qdp-jit configuration\n";
+    QDPIO::cout << "QDP-JIT configuration\n";
     QDPIO::cout << "  threads per block                   : " << threads_per_block << "\n";
     if (use_total_pool_size)
     QDPIO::cout << "  memory pool size (user request)     : " << pool_size/1024/1024 << " MB\n";
@@ -62,6 +79,9 @@ namespace QDP
   
   bool jit_config_get_tuning() { return tuning; }
   void jit_config_set_tuning(bool v) { tuning = v; }
+
+  bool jit_config_get_tuning_verbose() { return tuning_verbose; }
+  void jit_config_set_tuning_verbose(bool v) { tuning_verbose = v; }
 
   bool jit_config_get_verbose_output() { return verbose_output; }
   void jit_config_set_verbose_output(bool v) { verbose_output = v; }

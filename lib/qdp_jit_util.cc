@@ -31,20 +31,21 @@ namespace QDP {
     typedef std::map< std::string , int > DBTuneType;
     DBTuneType db_tune;
     bool db_tune_modified = false;
+    int db_tune_count = 0;
   }
 
+  int jit_util_get_tune_count()
+  {
+    return db_tune_count;
+  }
   
   void db_tune_write( std::string filename )
   {
-    if (!Layout::primaryNode())
-      return;
-
     if (!db_tune_modified)
       return;
     
     BinaryFileWriter db(filename);
 
-    QDPIO::cout << "Tuning db: writing " << db_tune.size() << " entries to: " << filename << std::endl;
     write( db , (int)db_tune.size() );
     for ( DBTuneType::iterator it = db_tune.begin() ; it != db_tune.end() ; ++it ) 
       {
@@ -52,29 +53,31 @@ namespace QDP {
 	write(db , it->second);
       }
     db.close();
+    QDPIO::cout << "  tuning file updated" << std::endl;
   }
 
   
   void db_tune_read( std::string filename )
   {
-    QDPIO::cout << "Tuning db: Checking: " << filename << std::endl;
+    QDPIO::cout << "Tuning DB" << std::endl;
+    QDPIO::cout << "  checking file                       : " << filename << std::endl;
     {
       ifstream f(filename.c_str());
       if (! f.good() )
 	{
-	  QDPIO::cout << "Tuning db: Creating new tune file" << std::endl;
+	  QDPIO::cout << "  creating new tuning file" << std::endl;
 	  return;
 	}
     }
     
-    QDPIO::cout << "Tuning db: opening: " << filename << std::endl;
+    QDPIO::cout << "  opening file" << std::endl;
 
     BinaryFileReader db(filename);
 
     int n;
     read( db , n );
     
-    QDPIO::cout << "Number of entries in Tuning DB: " << n << std::endl;
+    QDPIO::cout << "  number of tuning records            : " << n << std::endl;
 
     for( int i = 0 ; i < n ; ++i )
       {
@@ -86,9 +89,11 @@ namespace QDP {
 
 	db_tune[ key ] = config;
 
-	QDPIO::cout << "read: " << config << "\t" << key << std::endl;
+	//QDPIO::cout << "read: " << config << "\t" << key << std::endl;
       }
     db.close();
+
+    QDPIO::cout << "  done reading tuning file" << std::endl;
   }
 
   
@@ -113,6 +118,7 @@ namespace QDP {
     std::string key = jit_util_get_static_dynamic_string( function.get_pretty() );
     db_tune[key] = config;
     db_tune_modified = true;
+    db_tune_count++;
   }
 
   
@@ -603,7 +609,7 @@ namespace QDP {
   {
     if ( function.get_dest_id() < 0 )
       {
-	QDPIO::cout << "Tuning disabled for: " << function.get_kernel_name() << std::endl;
+	//QDPIO::cout << "Tuning disabled for: " << function.get_kernel_name() << std::endl;
 	function.set_threads_per_block( jit_config_get_threads_per_block() );
 	return;
       }
@@ -630,9 +636,11 @@ namespace QDP {
 	QDP_abort(1);
       }
     
-
-    QDPIO::cout << "Starting tuning of: " << function.get_kernel_name() << std::endl;
-    QDPIO::cout << function.get_pretty() << std::endl;
+    if (jit_config_get_tuning_verbose())
+      {
+	QDPIO::cout << "Starting tuning of: " << function.get_kernel_name() << std::endl;
+	QDPIO::cout << function.get_pretty() << std::endl;
+      }
 
 
     //QDPIO::cout << "d2h: start = " << f.start << "  count = " << f.count << "  size_T = " << f.size_T << "   \t";
@@ -681,8 +689,11 @@ namespace QDP {
 
 	//double ms = w.getTimeInMicroseconds();
 
-	QDPIO::cout << "blocksize\t" << threads_per_block << "\ttime = \t" << ms << std::endl;
-
+	if (jit_config_get_tuning_verbose())
+	  {
+	    QDPIO::cout << "blocksize\t" << threads_per_block << "\ttime = \t" << ms << std::endl;
+	  }
+	
 	if (config == -1 || best_time > ms)
 	  {
 	    best_time = ms;
@@ -691,8 +702,11 @@ namespace QDP {
 	  }
       }
 
-    QDPIO::cout << "best   \t" << config << "\ttime = \t" << best_time << std::endl;
-
+    if (jit_config_get_tuning_verbose())
+      {
+	QDPIO::cout << "best   \t" << config << "\ttime = \t" << best_time << std::endl;
+      }
+    
     function.set_threads_per_block( config );
 
     // DB tune

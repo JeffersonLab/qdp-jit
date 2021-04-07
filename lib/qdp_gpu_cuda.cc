@@ -639,20 +639,20 @@ namespace QDP {
   {
     CUresult ret;
 
-    std::cout << "trying to get device " << dev << "\n";
+    //std::cout << "trying to get device " << dev << "\n";
     ret = cuDeviceGet(&cuDevice, dev);
     CudaRes(__func__,ret);
 
-    std::cout << "trying to grab pre-existing context\n";
+    //std::cout << "trying to grab pre-existing context\n";
     ret = cuCtxGetCurrent(&cuContext);
     
     if (ret != CUDA_SUCCESS || cuContext == NULL) {
-      std::cout << "trying to create a context";
+      //std::cout << "trying to create a context";
       ret = cuCtxCreate(&cuContext, CU_CTX_MAP_HOST, cuDevice);
     }
     CudaRes(__func__,ret);
 
-    std::cout << "creating CUDA events\n";
+    //std::cout << "creating CUDA events\n";
     gpu_create_events();
   }
 

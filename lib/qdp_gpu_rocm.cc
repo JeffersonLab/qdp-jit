@@ -652,22 +652,11 @@ namespace QDP {
   {
     hipError_t ret;
 
-    std::cout << "trying to get device " << dev << "\n";
+    //std::cout << "trying to get device " << dev << "\n";
     
     ret = hipSetDevice(dev);
     CheckError("hitSetDevice",ret);
 
-#if 0
-    QDP_info_primary("trying to grab pre-existing context",dev);
-    ret = cuCtxGetCurrent(&cuContext);
-    
-    if (ret != hipSuccess || cuContext == NULL) {
-      QDP_info_primary("trying to create a context");
-      ret = cuCtxCreate(&cuContext, CU_CTX_MAP_HOST, cuDevice);
-    }
-    CheckError(__func__,ret);
-#endif
-    
     gpu_create_events();
   }
 

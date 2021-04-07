@@ -6,6 +6,12 @@ namespace QDP
   bool jit_config_get_tuning();
   void jit_config_set_tuning(bool v);
 
+  bool jit_config_get_tuning_verbose();
+  void jit_config_set_tuning_verbose(bool v);
+
+  void jit_config_delayed_message(std::string txt);
+  void jit_config_print_delayed_message();
+
   std::string jit_config_get_tuning_file();
   void jit_config_set_tuning_file( std::string v);
 
