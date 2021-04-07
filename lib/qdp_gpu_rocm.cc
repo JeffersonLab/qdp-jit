@@ -629,8 +629,6 @@ namespace QDP {
   void gpu_init() {
     // no need to initialize in ROCm
 
-    std::cout << "gpu_init\n";
-    
     hipError_t ret = hipGetDeviceCount(&deviceCount);
     CheckError("hipGetDeviceCount",ret);
     
