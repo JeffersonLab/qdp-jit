@@ -118,9 +118,6 @@ namespace QDP {
     std::string get_pretty() { return pretty; }
     const std::vector<float>& get_timings() const { return timings; }
 
-    void set_dest_arg( int i ) { dest_arg = i; }
-    int  get_dest_arg() { return dest_arg; }
-
     void set_dest_id( int i ) { dest_id = i; }
     int  get_dest_id() { return dest_id; }
 
@@ -157,7 +154,7 @@ namespace QDP {
 
     std::vector<float> timings;
 
-    int dest_arg = -1;
+    // for tuning
     int dest_id  = -1;
 
     // Best configuration resulting from tuning

@@ -100,6 +100,11 @@ namespace QDP {
 
     // Initialize the LLVM wrapper
     llvm_backend_init();
+
+    if (jit_config_get_tuning())
+      {
+	db_tune_read( jit_config_get_tuning_file() );
+      }
   }
 
 
@@ -192,12 +197,6 @@ namespace QDP {
     QDP_setGPUCommSplit();
 #endif
     QDP_startGPU();
-
-    if (jit_config_get_tuning())
-      {
-	db_tune_read( jit_config_get_tuning_file() );
-      }
-
   }
 	
   //! Turn on the machine

@@ -207,7 +207,7 @@ namespace QDP {
     if ( it != ptx_db::db.end() )
       {
 	//return get_fptr_from_ptx( "generic.ptx" , it->second );
-	get_jitf( f , it->second.second , it->second.first , str_pretty , str_arch );
+	get_jitf( f , it->second.second , it->second.first , pretty , str_arch );
       }
   }
 

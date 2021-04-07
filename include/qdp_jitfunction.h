@@ -152,16 +152,12 @@ function_build(JitFunction& function, const DynKey& key, OLattice<T>& dest, cons
 
   if (ptx_db::db_enabled)
     {
-      llvm_ptx_db( function , __PRETTY_FUNCTION__ );
+      llvm_ptx_db( function , expr.str().c_str() );
       if (!function.empty())
 	return;
     }
-
   llvm_start_new_function("eval",expr.str().c_str() );
-  //llvm_start_new_function("eval", __PRETTY_FUNCTION__ );
-
-  //ParamRef p_ordered      = llvm_add_param<bool>();
-
+  
   if ( key.get_offnode_comms() )
     {
       if ( s.hasOrderedRep() )
@@ -174,9 +170,6 @@ function_build(JitFunction& function, const DynKey& key, OLattice<T>& dest, cons
 	  typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
 	  FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
 	  
-	  // For tuning
-	  function.set_dest_arg( llvm_get_last_param_count() );
-
 	  auto op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
 
 	  typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
@@ -211,9 +204,6 @@ function_build(JitFunction& function, const DynKey& key, OLattice<T>& dest, cons
 	  typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
 	  FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
 	  
-	  // For tuning
-	  function.set_dest_arg( llvm_get_last_param_count() );
-
 	  auto op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
 
 	  typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;

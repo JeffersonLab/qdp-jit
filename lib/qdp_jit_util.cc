@@ -57,10 +57,14 @@ namespace QDP {
   
   void db_tune_read( std::string filename )
   {
+    QDPIO::cout << "Tuning db: Checking: " << filename << std::endl;
     {
       ifstream f(filename.c_str());
       if (! f.good() )
-	return;
+	{
+	  QDPIO::cout << "Tuning db: Creating new tune file" << std::endl;
+	  return;
+	}
     }
     
     QDPIO::cout << "Tuning db: opening: " << filename << std::endl;
@@ -626,13 +630,9 @@ namespace QDP {
 	QDP_abort(1);
       }
     
-    if ( args.size() <= function.get_dest_arg() )
-      {
-	QDPIO::cout << "Tuning: too few kernel args!" << endl;
-	QDP_abort(1);
-      }
 
     QDPIO::cout << "Starting tuning of: " << function.get_kernel_name() << std::endl;
+    QDPIO::cout << function.get_pretty() << std::endl;
 
 
     //QDPIO::cout << "d2h: start = " << f.start << "  count = " << f.count << "  size_T = " << f.size_T << "   \t";
