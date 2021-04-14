@@ -6,7 +6,7 @@ namespace QDP
   namespace
   {
     // Memory Pool
-    int thread_stack = 512 * sizeof(REAL);
+    size_t thread_stack = 512 * sizeof(REAL);
     bool use_total_pool_size = false;
     size_t pool_size = 0;
     bool use_defrag = false;
@@ -61,6 +61,9 @@ namespace QDP
   
   void jit_config_print()
   {
+    size_t tmp = gpu_mem_free() - (size_t)Layout::sitesOnNode() * thread_stack;
+    std::cout << "jit_config_print print " << tmp << std::endl;
+
     QDPIO::cout << "QDP-JIT configuration\n";
     QDPIO::cout << "  threads per block                   : " << threads_per_block << "\n";
     if (use_total_pool_size)
@@ -68,7 +71,7 @@ namespace QDP
     else
       {
     QDPIO::cout << "  reserved memory per thread          : " << thread_stack << " bytes\n";
-    auto val = gpu_mem_free() - Layout::sitesOnNode() * thread_stack;
+    size_t val = gpu_mem_free() - (size_t)Layout::sitesOnNode() * thread_stack;
     QDPIO::cout << "  resulting memory pool size          : " << val/1024/1024 << " MB\n";
       }
   }
@@ -177,7 +180,8 @@ namespace QDP
       }
     else
       {
-	return gpu_mem_free() - Layout::sitesOnNode() * thread_stack;
+	size_t tmp = gpu_mem_free() - (size_t)Layout::sitesOnNode() * thread_stack;
+	return tmp;
       }
   }
 
