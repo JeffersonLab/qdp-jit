@@ -62,7 +62,6 @@ namespace QDP
   void jit_config_print()
   {
     size_t tmp = gpu_mem_free() - (size_t)Layout::sitesOnNode() * thread_stack;
-    std::cout << "jit_config_print print " << tmp << std::endl;
 
     QDPIO::cout << "QDP-JIT configuration\n";
     QDPIO::cout << "  threads per block                   : " << threads_per_block << "\n";
