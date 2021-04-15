@@ -188,7 +188,7 @@ function_build(JitFunction& function, const DynKey& key, OLattice<T>& dest, cons
 	}
       else
 	{
-	  QDPIO::cout << "eval on unordered subsets not supported" << std::endl;
+	  QDPIO::cout << "eval with shifts on unordered subsets not supported" << std::endl;
 	  QDP_abort(1);
 	}
     }
@@ -223,8 +223,29 @@ function_build(JitFunction& function, const DynKey& key, OLattice<T>& dest, cons
 	}
       else // unordered Subset
 	{
-	  QDPIO::cout << "eval on unordered subsets not supported" << std::endl;
-	  QDP_abort(1);
+	  ParamRef p_th_count   = llvm_add_param<int>();
+	  ParamRef p_site_table = llvm_add_param<int*>();
+
+	  ParamLeaf param_leaf;
+
+	  typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
+	  FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
+	  
+	  auto op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
+
+	  typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
+	  View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
+
+	  llvm::Value * r_th_count     = llvm_derefParam( p_th_count );
+
+	  llvm::Value* r_idx_thread = llvm_thread_idx();
+       
+	  llvm_cond_exit( llvm_ge( r_idx_thread , r_th_count ) );
+
+	  llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
+
+	  op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ), 
+		  forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , r_idx ), OpCombine()));	  
 	}
     }
   
@@ -866,10 +887,10 @@ function_exec(JitFunction& function, OLattice<T>& dest, const Op& op, const QDPE
   
   if (offnode_maps == 0)
     {
-      int th_count = s.hasOrderedRep() ? s.numSiteTable() : Layout::sitesOnNode();
-
       if ( s.hasOrderedRep() )
 	{
+	  int th_count = s.numSiteTable();
+		
 	  JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
 	  JitParam jit_start( QDP_get_global_cache().addJitParamInt( s.start() ) );
 
@@ -883,8 +904,17 @@ function_exec(JitFunction& function, OLattice<T>& dest, const Op& op, const QDPE
 	}
       else
 	{
-	  QDPIO::cout << "eval on Subsets not supported." << std::endl;
-	  QDP_abort(1);
+	  int th_count = s.numSiteTable();
+      
+	  JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
+
+	  std::vector<QDPCache::ArgKey> ids;
+	  ids.push_back( jit_th_count.get_id() );
+	  ids.push_back( s.getIdSiteTable() );
+	  for(unsigned i=0; i < addr_leaf.ids.size(); ++i)
+	    ids.push_back( addr_leaf.ids[i] );
+ 
+	  jit_launch(function,th_count,ids);
 	}
     }
   else
