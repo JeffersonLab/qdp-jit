@@ -81,20 +81,29 @@ namespace QDPInternal
   template<class T1>
   inline void globalSumArray(multi1d< OScalar<T1> >& dest)
   {
-  //QDPIO::cout << "globalSumArray special " << endl;
+    //QDPIO::cout << "globalSumArray special " << endl;
     // The implementation here is relying on the structure being packed
     // tightly in memory - no padding
     typedef typename WordType<T1>::Type_t  W;   // find the machine word type
     typedef          T1                    P;   // Primitive type
 
 #if 0
-  QDPIO::cout << "sizeof(P) = " << sizeof(P) << endl;
-  QDPIO::cout << "sizeof(W) = " << sizeof(W) << endl;
-  QDPIO::cout << "Calling multi1d global sum array with length " << dest.size()*sizeof(P)/sizeof(W) << endl;
+    QDPIO::cout << "sizeof(P) = " << sizeof(P) << endl;
+    QDPIO::cout << "sizeof(W) = " << sizeof(W) << endl;
+    QDPIO::cout << "Calling multi1d global sum array with length " << dest.size()*sizeof(P)/sizeof(W) << endl;
 #endif
 
     //globalSumArray((W *)dest.slice(), dest.size()*sizeof(T)/sizeof(W)); // call appropriate hook
+    // multi1d< OScalar<T1> > do no longer have contiguous host memory that could be used
+    // for globalSumArray
+#if 0
     globalSumArray((W *)dest.slice_host(), dest.size()*sizeof(P)/sizeof(W)); // call appropriate hook
+#else
+    for (int i = 0 ; i < dest.size() ; ++i )
+      {
+	globalSumArray( (W *)dest[i].getF(), sizeof(P)/sizeof(W)); // call appropriate hook
+      }
+#endif
   }
 
 
