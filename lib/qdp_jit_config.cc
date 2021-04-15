@@ -12,6 +12,7 @@ namespace QDP
     bool use_defrag = false;
     int max_allocation_size = -1;
     size_t pool_alignment = 128;
+    size_t min_total_reserved_GPU_memory = 50*1024*1024; // 50 MB
 
 
     // In case memory allocation fails, decrease Pool size by this amount for next try.
@@ -61,8 +62,6 @@ namespace QDP
   
   void jit_config_print()
   {
-    size_t tmp = gpu_mem_free() - (size_t)Layout::sitesOnNode() * thread_stack;
-
     QDPIO::cout << "QDP-JIT configuration\n";
     QDPIO::cout << "  threads per block                   : " << threads_per_block << "\n";
     if (use_total_pool_size)
@@ -70,8 +69,7 @@ namespace QDP
     else
       {
     QDPIO::cout << "  reserved memory per thread          : " << thread_stack << " bytes\n";
-    size_t val = gpu_mem_free() - (size_t)Layout::sitesOnNode() * thread_stack;
-    QDPIO::cout << "  resulting memory pool size          : " << val/1024/1024 << " MB\n";
+    QDPIO::cout << "  resulting memory pool size          : " << jit_config_get_pool_size()/1024/1024 << " MB\n";
       }
   }
 
@@ -180,6 +178,12 @@ namespace QDP
     else
       {
 	size_t tmp = gpu_mem_free() - (size_t)Layout::sitesOnNode() * thread_stack;
+
+	if ( (size_t)Layout::sitesOnNode() * thread_stack < min_total_reserved_GPU_memory )
+	  {
+	    tmp = gpu_mem_free() - min_total_reserved_GPU_memory;
+	  }
+	  
 	return tmp;
       }
   }
