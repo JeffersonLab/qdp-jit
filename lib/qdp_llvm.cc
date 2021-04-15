@@ -1544,8 +1544,16 @@ namespace QDP {
 
     if (math_declarations.size() > 0)
       {
+	if (jit_config_get_verbose_output())
+	  {
+	    QDPIO::cout << "adding math function definitions ...\n";
+	  }
 	llvm_init_libdevice();
     
+	if (jit_config_get_verbose_output())
+	  {
+	    QDPIO::cout << "link modules ...\n";
+	  }
 	std::string ErrorMsg;
 	if (llvm::Linker::linkModules( *Mod , std::move( module_libdevice ) )) {  // llvm::Linker::PreserveSource
 	  QDPIO::cerr << "Linking libdevice failed: " << ErrorMsg.c_str() << "\n";
@@ -1557,6 +1565,30 @@ namespace QDP {
     Mod->setDataLayout(TargetMachine->createDataLayout());
 
 
+    llvm::legacy::PassManager PM2;
+    
+    PM2.add( llvm::createInternalizePass( all_but_kernel_name ) );
+    PM2.add( llvm::createGlobalDCEPass() );
+
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "internalize and remove dead code ...\n";
+      }
+    PM2.run(*Mod);
+    
+
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "\n\n";
+	QDPIO::cout << str_pretty << std::endl;
+	
+	if (Layout::primaryNode())
+	  {
+	    llvm_module_dump();
+	  }
+      }
+
+    
     
     std::string ptx_kernel = get_ptx();
 
@@ -1858,6 +1890,7 @@ namespace QDP {
   {
     builder->SetInsertPoint(bb_stack,it_stack);
     builder->CreateBr( bb_afterstack );
+
     
 #ifdef QDP_BACKEND_ROCM
     llvm_build_function_rocm(func);

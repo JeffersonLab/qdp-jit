@@ -121,12 +121,15 @@ namespace QDP {
     void set_dest_id( int i ) { dest_id = i; }
     int  get_dest_id() { return dest_id; }
 
+    void set_enable_tuning() { enable_tuning = true; }
+    bool get_enable_tuning() { return enable_tuning; }
+    
     void set_threads_per_block( int i ) { threads_per_block = i; }
     int  get_threads_per_block() { return threads_per_block; }
 
 #ifdef QDP_DEEP_LOG
     int start;
-    int count;
+    int count;   // number of elements of size T
     int size_T;
     std::string type_W;
 #endif
@@ -156,7 +159,8 @@ namespace QDP {
 
     // for tuning
     int dest_id  = -1;
-
+    bool enable_tuning = false;
+    
     // Best configuration resulting from tuning
     int  threads_per_block = -1;
     bool tuned = false;

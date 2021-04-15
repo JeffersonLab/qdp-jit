@@ -214,9 +214,9 @@ namespace QDP {
 
   void gpu_deep_logger_close()
   {
-    std::cout << "closing log file" << std::endl;
     if (logger_cmp)
       {
+	std::cout << "closing log file" << std::endl;
 	logger_cmp->close();
       }
   }
@@ -486,7 +486,9 @@ namespace QDP {
 #ifdef QDP_DEEP_LOG
     if (jit_config_deep_log())
       {
-	size_t field_size = f.count * f.size_T;
+	//size_t field_size = f.count * f.size_T;
+
+	size_t field_size = QDP_get_global_cache().getSize( f.get_dest_id() );
 
 	if (f.count > 0)
 	  {
@@ -497,14 +499,12 @@ namespace QDP {
 		QDPIO::cout << "Cannot allocate host memory!" << endl;
 		QDP_abort(1);
 	      }
-    
-	    if (kernelArgs.size() <= f.dest_arg)
-	      {
-		QDPIO::cout << "too few kernel args!" << endl;
-		QDP_abort(1);
-	      }
 
-	    void* dev_ptr = *(void**)(kernelArgs[ f.dest_arg ]);
+	    
+	    std::vector<QDPCache::ArgKey> vec_id;
+	    vec_id.push_back( f.get_dest_id() );
+	    std::vector<void*> vec_ptrs = QDP_get_global_cache().get_dev_ptrs( vec_id );
+	    void* dev_ptr = vec_ptrs.at(0);
 
 	    //std::cout << "d2h: start = " << f.start << "  count = " << f.count << "  size_T = " << f.size_T << "   \t";
     

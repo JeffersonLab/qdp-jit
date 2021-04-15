@@ -18,7 +18,7 @@ namespace QDP {
 #ifdef QDP_DEEP_LOG
     function.start = 0;
     function.count = blocks;
-    function.dest_arg = 4;
+    function.set_dest_id( out_id );
 #endif
     
     int lo = 0;
@@ -57,7 +57,7 @@ namespace QDP {
 #ifdef QDP_DEEP_LOG
     function.start = 0;
     function.count = blocks;
-    function.dest_arg = 4;
+    function.set_dest_id( out_id );
 #endif
 
     int sizes_id = QDP_get_global_cache().add( sizes.size()*sizeof(int) , QDPCache::Flags::OwnHostMemory , QDPCache::Status::host , sizes.slice() , NULL , NULL );
@@ -125,7 +125,7 @@ namespace QDP {
 #ifdef QDP_DEEP_LOG
     function.start = 0;
     function.count = blocks;
-    function.dest_arg = 3;
+    function.set_dest_id( out_id );
 #endif
 
     int lo = 0;
@@ -160,7 +160,7 @@ namespace QDP {
 #ifdef QDP_DEEP_LOG
     function.start = 0;
     function.count = blocks;
-    function.dest_arg = 3;
+    function.set_dest_id( out_id );
 #endif
 
     int lo = 0;
@@ -195,7 +195,7 @@ namespace QDP {
 #ifdef QDP_DEEP_LOG
     function.start = 0;
     function.count = blocks;
-    function.dest_arg = 3;
+    function.set_dest_id( out_id );
 #endif
     
     int lo = 0;
@@ -231,7 +231,7 @@ namespace QDP {
 #ifdef QDP_DEEP_LOG
     function.start = 0;
     function.count = blocks;
-    function.dest_arg = 3;
+    function.set_dest_id( out_id );
 #endif
     
     int lo = 0;
@@ -266,7 +266,7 @@ namespace QDP {
 #ifdef QDP_DEEP_LOG
     function.start = 0;
     function.count = blocks;
-    function.dest_arg = 3;
+    function.set_dest_id( out_id );
 #endif
 
     int lo = 0;

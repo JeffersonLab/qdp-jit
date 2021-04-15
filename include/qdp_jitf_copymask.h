@@ -61,7 +61,7 @@ namespace QDP {
     function.count = Layout::sitesOnNode();
     function.size_T = sizeof(T);
     function.type_W = typeid(typename WordType<T>::Type_t).name();
-    function.dest_arg = 2;
+    function.set_dest_id( dest.getId() );
 #endif
 
     forEach(dest, addr_leaf, NullCombine());

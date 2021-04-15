@@ -50,7 +50,7 @@ function_gaussian_exec(JitFunction& function, OLattice<T>& dest,OLattice<T>& r1,
   function.count = s.hasOrderedRep() ? s.numSiteTable() : Layout::sitesOnNode();
   function.size_T = sizeof(T);
   function.type_W = typeid(typename WordType<T>::Type_t).name();
-  function.dest_arg = 5;
+  function.set_dest_id( dest.getId() );
 #endif
 
   AddressLeaf addr_leaf(s);

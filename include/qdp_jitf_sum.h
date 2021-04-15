@@ -39,8 +39,10 @@ namespace QDP {
 #ifdef QDP_DEEP_LOG
     function.start = 0;
     function.count = blocks;
-    function.dest_arg = 4;
+    function.set_dest_id( out_id );
 #endif
+
+
     
     int lo = 0;
     int hi = size;

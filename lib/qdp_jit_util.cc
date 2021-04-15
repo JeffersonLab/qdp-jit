@@ -607,9 +607,9 @@ namespace QDP {
 
   void jit_tune( JitFunction& function , int th_count , QDPCache::KernelArgs_t& args)
   {
-    if ( function.get_dest_id() < 0 )
+    if ( ! function.get_enable_tuning() )
       {
-	//QDPIO::cout << "Tuning disabled for: " << function.get_kernel_name() << std::endl;
+	QDPIO::cout << "Tuning disabled for: " << function.get_kernel_name() << std::endl;
 	function.set_threads_per_block( jit_config_get_threads_per_block() );
 	return;
       }

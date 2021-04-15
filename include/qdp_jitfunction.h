@@ -420,7 +420,7 @@ function_lat_sca_exec(JitFunction& function, OLattice<T>& dest, const Op& op, co
   function.count = s.hasOrderedRep() ? s.numSiteTable() : Layout::sitesOnNode();
   function.size_T = sizeof(T);
   function.type_W = typeid(typename WordType<T>::Type_t).name();
-  function.dest_arg = 5;
+  function.set_dest_id( dest.getId() );
 #endif
 
   int th_count = s.hasOrderedRep() ? s.numSiteTable() : Layout::sitesOnNode();
@@ -846,7 +846,7 @@ function_exec(JitFunction& function, OLattice<T>& dest, const Op& op, const QDPE
   function.count = s.hasOrderedRep() ? s.numSiteTable() : Layout::sitesOnNode();
   function.size_T = sizeof(T);
   function.type_W = typeid(typename WordType<T>::Type_t).name();
-  function.dest_arg = 7;
+  function.set_dest_id( dest.getId() );
 #endif
     
   if (s.numSiteTable() < 1)
@@ -862,7 +862,7 @@ function_exec(JitFunction& function, OLattice<T>& dest, const Op& op, const QDPE
 
   // For tuning
   function.set_dest_id( dest.getId() );
-
+  function.set_enable_tuning();
   
   if (offnode_maps == 0)
     {
@@ -1062,7 +1062,7 @@ function_zero_rep_exec(JitFunction& function, OLattice<T>& dest, const Subset& s
   function.count = s.hasOrderedRep() ? s.numSiteTable() : Layout::sitesOnNode();
   function.size_T = sizeof(T);
   function.type_W = typeid(typename WordType<T>::Type_t).name();
-  function.dest_arg = 5;
+  function.set_dest_id( dest.getId() );
 #endif
   
   AddressLeaf addr_leaf(s);
@@ -1128,7 +1128,7 @@ function_random_exec(JitFunction& function, OLattice<T>& dest, const Subset& s ,
   function.count = s.numSiteTable();
   function.size_T = sizeof(T);
   function.type_W = typeid(typename WordType<T>::Type_t).name();
-  function.dest_arg = 2;
+  function.set_dest_id( dest.getId() );
 #endif
 
   AddressLeaf addr_leaf(s);
