@@ -38,6 +38,10 @@ namespace QDP
 #ifdef QDP_BACKEND_ROCM
     int  codegen_opt = 1;
 #endif
+
+#ifdef QDP_BACKEND_CUDA
+    int CUDA_FTZ = 0;
+#endif
     
 #ifdef QDP_DEEP_LOG
     bool deep_log = false;
@@ -46,6 +50,12 @@ namespace QDP
 #endif
   }
 
+
+#ifdef QDP_BACKEND_CUDA
+  int  jit_config_get_CUDA_FTZ()   { return CUDA_FTZ; }
+  void jit_config_set_CUDA_FTZ(int i)   { CUDA_FTZ = i; }
+#endif
+  
 
   void jit_config_delayed_message(std::string txt)
   {
@@ -62,7 +72,7 @@ namespace QDP
   
   void jit_config_print()
   {
-    QDPIO::cout << "QDP-JIT configuration\n";
+    QDPIO::cout << "Memory pool config:\n";
     QDPIO::cout << "  threads per block                   : " << threads_per_block << "\n";
     if (use_total_pool_size)
     QDPIO::cout << "  memory pool size (user request)     : " << pool_size/1024/1024 << " MB\n";
@@ -71,6 +81,10 @@ namespace QDP
     QDPIO::cout << "  reserved memory per thread          : " << thread_stack << " bytes\n";
     QDPIO::cout << "  resulting memory pool size          : " << jit_config_get_pool_size()/1024/1024 << " MB\n";
       }
+#ifdef QDP_BACKEND_CUDA
+    QDPIO::cout << "Code generation:\n";
+    QDPIO::cout << "  CUDA flush denormals to zero        : " << jit_config_get_CUDA_FTZ() << std::endl;
+#endif      
   }
 
   

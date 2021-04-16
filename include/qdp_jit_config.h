@@ -34,6 +34,12 @@ namespace QDP
   int jit_config_get_codegen_opt();
   void jit_config_set_codegen_opt(int opt);
 #endif
+
+#ifdef QDP_BACKEND_CUDA
+  int  jit_config_get_CUDA_FTZ();
+  void jit_config_set_CUDA_FTZ(int i);
+#endif
+
   
   void jit_config_set_pool_size( size_t val );
   void jit_config_set_thread_stack( int stack );

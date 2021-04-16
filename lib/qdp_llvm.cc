@@ -34,7 +34,7 @@ using namespace llvm::codegen;
 
 namespace QDP {
 
-  enum jitprec { f32 , f64 };
+  enum jitprec { i32 , f32 , f64 };
 
   namespace
   {
@@ -266,6 +266,9 @@ namespace QDP {
 	llvm::Type* type;
 	switch(p)
 	  {
+	  case jitprec::i32:
+	    type = llvm::Type::getInt32Ty(TheContext);
+	    break;
 	  case jitprec::f32:
 	    type = llvm::Type::getFloatTy(TheContext);
 	    break;
@@ -1529,7 +1532,7 @@ namespace QDP {
 
   
 
-  
+#ifdef QDP_BACKEND_CUDA
   void llvm_build_function_cuda(JitFunction& func)
   {
     addKernelMetadata( mainFunc );
@@ -1564,10 +1567,12 @@ namespace QDP {
     //QDPIO::cout << "setting module data layout\n";
     Mod->setDataLayout(TargetMachine->createDataLayout());
 
+    uint32_t NVPTX_CUDA_FTZ = jit_config_get_CUDA_FTZ();
+    Mod->addModuleFlag( llvm::Module::ModFlagBehavior::Override, "nvvm-reflect-ftz" , NVPTX_CUDA_FTZ );
 
     llvm::legacy::PassManager PM2;
     PM2.add( llvm::createInternalizePass( all_but_kernel_name ) );
-#if 0
+#if 1
     unsigned int sm_gpu = gpu_getMajor() * 10 + gpu_getMinor();
     PM2.add( llvm::createNVVMReflectPass( sm_gpu ));
 #endif
@@ -1644,12 +1649,11 @@ namespace QDP {
 	}
     } // ptx db
   }
-
+#endif
 
 
   
 #ifdef QDP_BACKEND_ROCM
-
   void build_function_codegen(const std::string& shared_path)
   {
   #if 0
@@ -1947,49 +1951,6 @@ namespace QDP {
   }
 
 
-#if 0
-  llvm::Value* llvm_sin_f32( llvm::Value* lhs ) { return llvm_call_f32( func_sin_f32 , lhs ); }
-  llvm::Value* llvm_acos_f32( llvm::Value* lhs ) { return llvm_call_f32( func_acos_f32 , lhs ); }
-  llvm::Value* llvm_asin_f32( llvm::Value* lhs ) { return llvm_call_f32( func_asin_f32 , lhs ); }
-  llvm::Value* llvm_atan_f32( llvm::Value* lhs ) { return llvm_call_f32( func_atan_f32 , lhs ); }
-  llvm::Value* llvm_ceil_f32( llvm::Value* lhs ) { return llvm_call_f32( func_ceil_f32 , lhs ); }
-  llvm::Value* llvm_floor_f32( llvm::Value* lhs ) { return llvm_call_f32( func_floor_f32 , lhs ); }
-  llvm::Value* llvm_cos_f32( llvm::Value* lhs ) { return llvm_call_f32( func_cos_f32 , lhs ); }
-  llvm::Value* llvm_cosh_f32( llvm::Value* lhs ) { return llvm_call_f32( func_cosh_f32 , lhs ); }
-  llvm::Value* llvm_exp_f32( llvm::Value* lhs ) { return llvm_call_f32( func_exp_f32 , lhs ); }
-  llvm::Value* llvm_log_f32( llvm::Value* lhs ) { return llvm_call_f32( func_log_f32 , lhs ); }
-  llvm::Value* llvm_log10_f32( llvm::Value* lhs ) { return llvm_call_f32( func_log10_f32 , lhs ); }
-  llvm::Value* llvm_sinh_f32( llvm::Value* lhs ) { return llvm_call_f32( func_sinh_f32 , lhs ); }
-  llvm::Value* llvm_tan_f32( llvm::Value* lhs ) { return llvm_call_f32( func_tan_f32 , lhs ); }
-  llvm::Value* llvm_tanh_f32( llvm::Value* lhs ) { return llvm_call_f32( func_tanh_f32 , lhs ); }
-  llvm::Value* llvm_fabs_f32( llvm::Value* lhs ) { return llvm_call_f32( func_fabs_f32 , lhs ); }
-  llvm::Value* llvm_sqrt_f32( llvm::Value* lhs ) { return llvm_call_f32( func_sqrt_f32 , lhs ); }
-  llvm::Value* llvm_isfinite_f32( llvm::Value* lhs ) { return llvm_call_f32( func_isfinite_f32 , lhs ); }
-
-  llvm::Value* llvm_pow_f32( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f32( func_pow_f32 , lhs , rhs ); }
-  llvm::Value* llvm_atan2_f32( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f32( func_atan2_f32 , lhs , rhs ); }
-
-  llvm::Value* llvm_sin_f64( llvm::Value* lhs ) { return llvm_call_f64( func_sin_f64 , lhs ); }
-  llvm::Value* llvm_acos_f64( llvm::Value* lhs ) { return llvm_call_f64( func_acos_f64 , lhs ); }
-  llvm::Value* llvm_asin_f64( llvm::Value* lhs ) { return llvm_call_f64( func_asin_f64 , lhs ); }
-  llvm::Value* llvm_atan_f64( llvm::Value* lhs ) { return llvm_call_f64( func_atan_f64 , lhs ); }
-  llvm::Value* llvm_ceil_f64( llvm::Value* lhs ) { return llvm_call_f64( func_ceil_f64 , lhs ); }
-  llvm::Value* llvm_floor_f64( llvm::Value* lhs ) { return llvm_call_f64( func_floor_f64 , lhs ); }
-  llvm::Value* llvm_cos_f64( llvm::Value* lhs ) { return llvm_call_f64( func_cos_f64 , lhs ); }
-  llvm::Value* llvm_cosh_f64( llvm::Value* lhs ) { return llvm_call_f64( func_cosh_f64 , lhs ); }
-  llvm::Value* llvm_exp_f64( llvm::Value* lhs ) { return llvm_call_f64( func_exp_f64 , lhs ); }
-  llvm::Value* llvm_log_f64( llvm::Value* lhs ) { return llvm_call_f64( func_log_f64 , lhs ); }
-  llvm::Value* llvm_log10_f64( llvm::Value* lhs ) { return llvm_call_f64( func_log10_f64 , lhs ); }
-  llvm::Value* llvm_sinh_f64( llvm::Value* lhs ) { return llvm_call_f64( func_sinh_f64 , lhs ); }
-  llvm::Value* llvm_tan_f64( llvm::Value* lhs ) { return llvm_call_f64( func_tan_f64 , lhs ); }
-  llvm::Value* llvm_tanh_f64( llvm::Value* lhs ) { return llvm_call_f64( func_tanh_f64 , lhs ); }
-  llvm::Value* llvm_fabs_f64( llvm::Value* lhs ) { return llvm_call_f64( func_fabs_f64 , lhs ); }
-  llvm::Value* llvm_sqrt_f64( llvm::Value* lhs ) { return llvm_call_f64( func_sqrt_f64 , lhs ); }
-  llvm::Value* llvm_isfinite_f64( llvm::Value* lhs ) { return llvm_call_f64( func_isfinite_f64 , lhs ); }
-
-  llvm::Value* llvm_pow_f64( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f64( func_pow_f64 , lhs , rhs ); }
-  llvm::Value* llvm_atan2_f64( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f64( func_atan2_f64 , lhs , rhs ); }
-#endif
 
   llvm::Value* llvm_sin_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("sin_f32") , jitprec::f32 , 1 )  , lhs ); }
   llvm::Value* llvm_acos_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("acos_f32") , jitprec::f32 , 1 )  , lhs ); }
@@ -2007,7 +1968,7 @@ namespace QDP {
   llvm::Value* llvm_tanh_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("tanh_f32") , jitprec::f32 , 1 )  , lhs ); }
   llvm::Value* llvm_fabs_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("fabs_f32") , jitprec::f32 , 1 )  , lhs ); }
   llvm::Value* llvm_sqrt_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("sqrt_f32") , jitprec::f32 , 1 )  , lhs ); }
-  llvm::Value* llvm_isfinite_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("isfinite_f32") , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_isfinite_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("isfinite_f32") , jitprec::i32 , 1 )  , lhs ); }
 
   llvm::Value* llvm_pow_f32( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("pow_f32") , jitprec::f32 , 2 )  , lhs , rhs ); }
   llvm::Value* llvm_atan2_f32( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("atan2_f32") , jitprec::f32 , 2 )  , lhs , rhs ); }
@@ -2029,7 +1990,7 @@ namespace QDP {
   llvm::Value* llvm_tanh_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("tanh_f64") , jitprec::f64 , 1 )  , lhs ); }
   llvm::Value* llvm_fabs_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("fabs_f64") , jitprec::f64 , 1 )  , lhs ); }
   llvm::Value* llvm_sqrt_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("sqrt_f64") , jitprec::f64 , 1 )  , lhs ); }
-  llvm::Value* llvm_isfinite_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("isfinite_f64") , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_isfinite_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("isfinite_f64") , jitprec::i32 , 1 )  , lhs ); }
 
   llvm::Value* llvm_pow_f64( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("pow_f64") , jitprec::f64 , 2 )  , lhs , rhs ); }
   llvm::Value* llvm_atan2_f64( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("atan2_f64") , jitprec::f64 , 2 )  , lhs , rhs ); }
