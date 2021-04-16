@@ -148,8 +148,12 @@ void
 function_build(JitFunction& function, const DynKey& key, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
 {
   std::ostringstream expr;
+#if 0
   printExprTreeSubset( expr , dest, op, rhs , s , key );
-
+#else
+  expr << std::string(__PRETTY_FUNCTION__) << "_key=" << key;
+#endif
+  
   if (ptx_db::db_enabled)
     {
       llvm_ptx_db( function , expr.str().c_str() );

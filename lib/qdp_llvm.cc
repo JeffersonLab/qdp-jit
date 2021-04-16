@@ -38,6 +38,8 @@ namespace QDP {
 
   namespace
   {
+    StopWatch swatch_builder(false);
+    
     std::string user_libdevice_path;
     std::string user_libdevice_name;
 
@@ -772,6 +774,9 @@ namespace QDP {
 
   void llvm_start_new_function( const char* ftype , const char* pretty )
   {
+    swatch_builder.reset();
+    swatch_builder.start();
+    
     math_declarations.clear();
     
     str_func_type = ftype;
@@ -1455,20 +1460,7 @@ namespace QDP {
   std::string get_ptx()
   {
     llvm::legacy::PassManager PM;
-    PM.add( llvm::createInternalizePass( all_but_kernel_name ) );
-#if 0
-    unsigned int sm_gpu = gpu_getMajor() * 10 + gpu_getMinor();
-    PM.add( llvm::createNVVMReflectPass( sm_gpu ));
-#endif
-    PM.add( llvm::createGlobalDCEPass() );
-    
-    PM.run(*Mod);
 
-    
-    //QDPIO::cout << "AFTER OPT ---------------\n";
-    //llvm_module_dump();
-
-    
     std::string str;
     llvm::raw_string_ostream rss(str);
     llvm::buffer_ostream bos(rss);
@@ -1542,6 +1534,9 @@ namespace QDP {
   {
     addKernelMetadata( mainFunc );
 
+    StopWatch swatch(false);
+    swatch.start();
+    
     if (math_declarations.size() > 0)
       {
 	if (jit_config_get_verbose_output())
@@ -1561,22 +1556,34 @@ namespace QDP {
 	}
       }
 
+    swatch.stop();
+    func.time_math = swatch.getTimeInMicroseconds();
+    swatch.reset();
+    swatch.start();
+    
     //QDPIO::cout << "setting module data layout\n";
     Mod->setDataLayout(TargetMachine->createDataLayout());
 
 
     llvm::legacy::PassManager PM2;
-    
     PM2.add( llvm::createInternalizePass( all_but_kernel_name ) );
+#if 0
+    unsigned int sm_gpu = gpu_getMajor() * 10 + gpu_getMinor();
+    PM2.add( llvm::createNVVMReflectPass( sm_gpu ));
+#endif
     PM2.add( llvm::createGlobalDCEPass() );
 
+    
     if (jit_config_get_verbose_output())
       {
 	QDPIO::cout << "internalize and remove dead code ...\n";
       }
     PM2.run(*Mod);
     
+    swatch.stop();
+    func.time_passes = swatch.getTimeInMicroseconds();
 
+    
     if (jit_config_get_verbose_output())
       {
 	QDPIO::cout << "\n\n";
@@ -1589,12 +1596,21 @@ namespace QDP {
       }
 
     
-    
+    swatch.reset();
+    swatch.start();
     std::string ptx_kernel = get_ptx();
+    swatch.stop();
+    func.time_codegen = swatch.getTimeInMicroseconds();
 
-    //JitFunction func = get_fptr_from_ptx( fname , ptx_kernel );
+    
+    swatch.reset();
+    swatch.start();
     get_jitf( func , ptx_kernel , str_kernel_name , str_pretty , str_arch );
+    swatch.stop();
+    func.time_dynload = swatch.getTimeInMicroseconds();
 
+
+    
     if ( ptx_db::db_enabled ) {
 
       if (Layout::primaryNode())
@@ -1891,6 +1907,8 @@ namespace QDP {
     builder->SetInsertPoint(bb_stack,it_stack);
     builder->CreateBr( bb_afterstack );
 
+    swatch_builder.stop();
+    func.time_builder = swatch_builder.getTimeInMicroseconds();
     
 #ifdef QDP_BACKEND_ROCM
     llvm_build_function_rocm(func);

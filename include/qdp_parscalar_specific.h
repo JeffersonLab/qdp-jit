@@ -24,8 +24,6 @@ namespace QDP {
   inline OScalar<T1>
   peekSite(const OLattice<T1>& l, const multi1d<int>& coord)
   {
-    QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
-
     OScalar<T1> dest;
     int nodenum = Layout::nodeNumber(coord);
 

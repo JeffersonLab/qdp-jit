@@ -134,6 +134,12 @@ namespace QDP {
     std::string type_W;
 #endif
 
+    double time_builder = 0.;
+    double time_math = 0.;
+    double time_passes = 0.;
+    double time_codegen = 0.;
+    double time_dynload = 0.;
+
   private:
     void check_empty();
     
@@ -164,6 +170,7 @@ namespace QDP {
     // Best configuration resulting from tuning
     int  threads_per_block = -1;
     bool tuned = false;
+
   };
 
 

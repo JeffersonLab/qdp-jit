@@ -10,10 +10,11 @@
 
 namespace QDP {
 
-StopWatch::StopWatch() 
+StopWatch::StopWatch( bool _device_sync )
 {
   stoppedP=false;
   startedP=false;
+  device_sync = _device_sync;
 }
 
 StopWatch::~StopWatch() {}
@@ -26,7 +27,8 @@ void StopWatch::reset()
 
 void StopWatch::start() 
 {
-  jit_util_sync_copy();
+  if (device_sync)
+    jit_util_sync_copy();
 
   int ret_val;
   ret_val = gettimeofday(&t_start, NULL);
@@ -41,7 +43,8 @@ void StopWatch::start()
 
 void StopWatch::stop() 
 {
-  jit_util_sync_copy();
+  if (device_sync)
+    jit_util_sync_copy();
 
   if( !startedP ) 
   { 

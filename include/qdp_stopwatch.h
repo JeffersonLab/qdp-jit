@@ -22,7 +22,7 @@ class StopWatch
 {
 public:
   //! Constructor
-  StopWatch();
+  StopWatch( bool device_sync = true );
 
   //! Destructor
   ~StopWatch();
@@ -47,7 +47,8 @@ private:
   long usec;
   bool startedP;
   bool stoppedP;
-
+  bool device_sync;
+  
   struct timeval t_start;
   struct timeval t_end;
 };
