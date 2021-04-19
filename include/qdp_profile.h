@@ -43,6 +43,7 @@ void popProfileInfo();
 #define QDP_PUSH_PROFILE(a) pushProfileInfo(a, __FILE__, __func__, __LINE__)
 #define QDP_POP_PROFILE()  popProfileInfo()
 
+#include <PETE/ForEachInOrder.h>
 
 //-----------------------------------------------------------------------------
 // Support of printing
@@ -56,55 +57,86 @@ void registerProfile(QDPProfile_t* qp);
 /*!
  * Hold profiling state
  */
-struct QDPProfile_t
+class QDPProfile_t
 {
-  QDPTime_t     time;
-  QDPTime_t     first_time;
+  QDPTime_t     time;       // accum time for all calls excluding 1st call
+  QDPTime_t     time_1st;   // time for 1st call
+  bool          first = true;
+public:
   std::string   expr;
   int           count;
-  int           num_regs;
-  int           local_size;
-  int           const_size;
   QDPProfile_t* next;
-  bool          first;
 
-  // Start time
-  void stime(QDPTime_t t) {
+  QDPTime_t get_time() {return time;}
+  QDPTime_t get_time_1st() {return time_1st;}
+  
+  void start_time()
+  {
+    QDPTime_t t = getClockTime();
     if (first)
-      first_time -= t;
+      time_1st -= t;
     else
       time -= t;
   }
 
-  // End time
-  void etime(QDPTime_t t) {
+  void end_time()
+  {
+    QDPTime_t t = getClockTime();
     if (first)
-      first_time += t;
+      {
+	time_1st += t;
+	first = false;
+      }
     else
       time += t;
-    first=false;
   }
 
-  // End time
-  void etime(QDPTime_t t, JitFunction f) {
-    if (first) {
-      first_time += t;
-#if 0
-      num_regs = CudaAttributeNumRegs(f);
-      local_size = CudaAttributeLocalSize(f);
-      const_size = CudaAttributeConstSize(f);
-#endif
-      first=false;
-    } else {
-      time += t;
-    }
-  }
-
+  
   void print();
 
   void init();
-  QDPProfile_t() {init();}
+  QDPProfile_t()
+  {
+    init();
+  }
 
+
+  template<class T, class Op, class OpOuter, class T1, class C1>
+  QDPProfile_t(T* dest, const Op& op, const OpOuter& opOuter, const QDPType<T1,C1>& rhs)
+    {
+      init();
+
+      if (getProfileLevel() > 0)
+      {
+	typedef UnaryNode<OpOuter, typename CreateLeaf<QDPType<T1,C1> >::Leaf_t> Tree_t;
+	typedef typename UnaryReturn<C1,OpOuter>::Type_t Container_t;
+
+	std::ostringstream os;
+	printExprTree(os, dest, op, 
+		      MakeReturn<Tree_t,Container_t>::make(Tree_t(
+			CreateLeaf<QDPType<T1,C1> >::make(rhs))));
+	expr = os.str();
+	registerProfile(this);
+      }
+    }
+
+  
+  //! Profile rhs for subtypes
+  template<class T, class Op, class RHS, class C1>
+  QDPProfile_t(T* dest, const Op& op, const QDPExpr<RHS,C1>& rhs)
+    {
+      init();
+
+      if (getProfileLevel() > 0)
+      {
+	std::ostringstream os;
+	printExprTree(os, dest, op, rhs);
+	expr = os.str();
+	registerProfile(this);
+      }
+    }
+
+  
   //! Profile rhs
   template<class T, class C, class Op, class RHS, class C1>
   QDPProfile_t(const QDPType<T,C>& dest, const Op& op, const QDPExpr<RHS,C1>& rhs)
@@ -113,7 +145,7 @@ struct QDPProfile_t
 
       if (getProfileLevel() > 0)
       {
-	ostringstream os;
+	std::ostringstream os;
 	printExprTree(os, dest, op, rhs);
 	expr = os.str();
 	registerProfile(this);
@@ -131,7 +163,7 @@ struct QDPProfile_t
 	typedef UnaryNode<OpOuter, typename CreateLeaf<QDPExpr<RHS,C1> >::Leaf_t> Tree_t;
 	typedef typename UnaryReturn<C1,OpOuter>::Type_t Container_t;
 
-	ostringstream os;
+	std::ostringstream os;
 	printExprTree(os, dest, op, 
 		      MakeReturn<Tree_t,Container_t>::make(Tree_t(
 			CreateLeaf<QDPExpr<RHS,C1> >::make(rhs))));
@@ -151,7 +183,7 @@ struct QDPProfile_t
 	typedef UnaryNode<OpOuter, typename CreateLeaf<QDPType<T1,C1> >::Leaf_t> Tree_t;
 	typedef typename UnaryReturn<C1,OpOuter>::Type_t Container_t;
 
-	ostringstream os;
+	std::ostringstream os;
 	printExprTree(os, dest, op, 
 		      MakeReturn<Tree_t,Container_t>::make(Tree_t(
 			CreateLeaf<QDPType<T1,C1> >::make(rhs))));

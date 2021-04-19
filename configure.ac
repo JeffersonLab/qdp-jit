@@ -34,6 +34,14 @@ AC_ARG_WITH(rocm,
 )
 
 
+AC_ARG_ENABLE(profiling,
+  AC_HELP_STRING([--enable-profiling],
+    [Enable profiling. Diagnostic use only.]),
+  [ac_profile=1],
+  [ac_profile=0]
+)
+
+
 AC_ARG_ENABLE(rocm-stats,
    AC_HELP_STRING([--enable-rocm-stats], [ Enable JIT statistics for ROCm ] ),
    [ rocm_stats="${enableval}" ],
@@ -54,6 +62,13 @@ AC_SUBST(SUBST_CUDA_DIR,"${cuda_home}")
 
 AC_DEFINE_UNQUOTED(ROCM_DIR,"${rocm_home}",[ROCM install path])
 AC_SUBST(SUBST_ROCM_DIR,"${rocm_home}")
+
+
+dnl Check if profiling is enabled
+if test ${ac_profile} -eq 1; then 
+   AC_DEFINE_UNQUOTED(QDP_USE_PROFILING, ${ac_profile}, [Enable profiling])
+   AC_MSG_NOTICE([Enable profiling])
+fi
 
 
 if test "X${cuda_managed_memory}X" == "XyesX";

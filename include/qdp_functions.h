@@ -29,11 +29,22 @@ namespace QDP {
   void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs,
 		const Subset& s)
   {
+#if defined(QDP_USE_PROFILING)	 
+    static QDPProfile_t prof(dest, op, rhs);
+    prof.start_time();
+#endif
+	
     static JitFunction function;
     if (function.empty())
       function_lat_sca_build(function ,dest, op, rhs);
 
     function_lat_sca_exec(function, dest, op, rhs, s);
+
+#if defined(QDP_USE_PROFILING)
+    prof.end_time();
+    prof.count++;
+    prof.print();
+#endif
   }
 
   
@@ -43,6 +54,11 @@ namespace QDP {
   void evaluate(OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs,
 		const Subset& s)
   {
+#if defined(QDP_USE_PROFILING)	 
+    static QDPProfile_t prof(dest, op, rhs);
+    prof.start_time();
+#endif
+
     static JitFunctionMap function_map;
 
     auto key = get_dyn_key( op , rhs , s );
@@ -53,6 +69,12 @@ namespace QDP {
       function_build(function_map[key], key, dest, op, rhs, s);
 
     function_exec(function_map[key], dest, op, rhs, s);
+
+#if defined(QDP_USE_PROFILING)
+    prof.end_time();
+    prof.count++;
+    prof.print();
+#endif
   }
 
 
@@ -136,7 +158,6 @@ namespace QDP {
   void 
   random(OLattice<T>& d, const Subset& s)
   {
-
     static JitFunction function;
 
     Seed seed_tmp;

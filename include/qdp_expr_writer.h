@@ -61,6 +61,42 @@ void printExprTree(ostream& os,
 
 
 
+
+template<class T, class Op, class RHS, class C1>
+//inline
+void printExprTree(std::ostream& os, 
+		   T* dest, const Op& op, const QDPExpr<RHS,C1>& rhs)
+{
+  typedef EvalLeaf1    FTag_t;
+  typedef OpCombine    CTag_t;
+  typedef NullCombine  VTag_t;
+  typedef QDPExpr<RHS,C1>  Expr;
+    
+  typedef typename CreateLeaf<Expr>::Leaf_t Expr_t;
+  const Expr_t &e = CreateLeaf<Expr>::make(rhs);
+
+#if 0
+  // Compact version
+  typedef BinaryNode<Op, QDPType<T,C>, Expr_t> Assign_t;
+  typedef ForEachInOrder<Assign_t, PrintTag, PrintTag, NullTag> Print_t;
+  Assign_t t(op, dest, e);
+  Print_t::apply(t, PrintTag(os), PrintTag(os), NullTag());
+#else
+  // Makes assignment part special
+  typedef ForEachInOrder<RHS, PrintTag, PrintTag, NullTag> Print_t;
+  LeafFunctor<T,PrintTag>::apply(*dest,PrintTag(os));
+  os << " ";
+  TagVisitor<Op,PrintTag>::visit(op, PrintTag(os));
+  os << " ";
+  Print_t::apply(e, PrintTag(os), PrintTag(os), NullTag());
+#endif
+
+  os << ";";
+}
+
+
+
+
 template<class T, class C, class Op, class RHS, class C1>
 void printExprTreeSubset(ostream& os, 
 			 const QDPType<T,C>& dest, const Op& op, const QDPExpr<RHS,C1>& rhs, const Subset& s, const DynKey& key)
