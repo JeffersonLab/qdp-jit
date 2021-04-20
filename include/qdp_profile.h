@@ -43,8 +43,12 @@ void popProfileInfo();
 #define QDP_PUSH_PROFILE(a) pushProfileInfo(a, __FILE__, __func__, __LINE__)
 #define QDP_POP_PROFILE()  popProfileInfo()
 
-#include <PETE/ForEachInOrder.h>
 
+  struct FnVoidOp {};
+  struct FnCopyMask: public FnVoidOp {};
+  struct FnRandom: public FnVoidOp {};
+
+  
 //-----------------------------------------------------------------------------
 // Support of printing
 //-----------------------------------------------------------------------------
@@ -89,6 +93,9 @@ public:
       }
     else
       time += t;
+
+    count++;
+    print();
   }
 
   
@@ -152,6 +159,118 @@ public:
       }
     }
 
+  
+  //! Profile rhs
+  template<class T, class Op, class RHS, class C1>
+  QDPProfile_t(const OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,C1>& rhs)
+    {
+      init();
+
+      if (getProfileLevel() > 0)
+      {
+	std::ostringstream os;
+	printExprTree(os, dest, op, rhs);
+	expr = os.str();
+	registerProfile(this);
+      }
+    }
+
+
+  template<class T1, class T2, class T3>
+  QDPProfile_t( const FnVoidOp& op , const std::string& name , const OLattice<T1>& L1, const OLattice<T2>& L2, const OLattice<T3>& L3 )
+    {
+      init();
+
+      if (getProfileLevel() > 0)
+      {
+	std::ostringstream os;
+	printExprTree(os, name , L1 , L2 , L3 );
+	expr = os.str();
+	registerProfile(this);
+      }
+    }
+
+
+  template<class T1>
+  QDPProfile_t( const FnVoidOp& op , const std::string& name , const OLattice<T1>& L1)
+    {
+      init();
+
+      if (getProfileLevel() > 0)
+      {
+	std::ostringstream os;
+	printExprTree( os , name , L1 );
+	expr = os.str();
+	registerProfile(this);
+      }
+    }
+
+  template<class T1>
+  QDPProfile_t( const FnVoidOp& op , const std::string& name , const OSubLattice<T1>& L1)
+    {
+      init();
+
+      if (getProfileLevel() > 0)
+      {
+	std::ostringstream os;
+	printExprTree( os , name , L1 );
+	expr = os.str();
+	registerProfile(this);
+      }
+    }
+
+
+  //   template<class T>
+  // multi2d<typename UnaryReturn<OScalar<T>, FnSum>::Type_t>
+  // sumMulti(const multi1d< OScalar<T> >& s1, const Set& ss)
+
+  template<class Op, class T1>
+  QDPProfile_t(const Op& op, const multi1d<OScalar<T1> >& rhs)
+    {
+      init();
+
+      if (getProfileLevel() > 0)
+      {
+	std::ostringstream os;
+	printExprTree(os, op , rhs );
+	expr = os.str();
+	registerProfile(this);
+      }
+    }
+
+  
+
+  template<class T, class Op, class T1>
+  QDPProfile_t(const OLattice<T>& dest, const Op& op, const OSubLattice<T1>& rhs)
+    {
+      init();
+
+      if (getProfileLevel() > 0)
+      {
+	std::ostringstream os;
+	printExprTree(os, dest, op, rhs);
+	expr = os.str();
+	registerProfile(this);
+      }
+    }
+
+
+  template<class T, class Op, class T1>
+  QDPProfile_t(const OSubLattice<T>& dest, const Op& op, const OSubLattice<T1>& rhs)
+    {
+      init();
+
+      if (getProfileLevel() > 0)
+      {
+	std::ostringstream os;
+	printExprTree(os, dest, op, rhs);
+	expr = os.str();
+	registerProfile(this);
+      }
+    }
+
+  
+  
   //! Profile  opOuter(rhs)
   template<class T, class C, class Op, class OpOuter, class RHS, class C1>
   QDPProfile_t(const QDPType<T,C>& dest, const Op& op, const OpOuter& opOuter, const QDPExpr<RHS,C1>& rhs)

@@ -83,9 +83,10 @@ public:
     }
 
 
-  template<class T1,class C1>
+  template<class T1>
   inline
-  void assign(const QDPSubType<T1,C1>& rhs)
+  //void assign(const QDPSubType<T1,C1>& rhs)
+  void assign(const OSubLattice<T1>& rhs)
   {
     if (!rhs.getOwnsMemory()) 
       QDP_error_exit("Assigning subtype(view) to qdptype is not supported");

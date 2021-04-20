@@ -146,7 +146,7 @@ printProfile()
 	  // is not really a stream instantiation, hence the needed member functions
 	  // are not there. Sigh.
 	  char lin[80];  // more than adequate
-	  sprintf(lin, "  %7d   [%8d]  [%8d] ", qp->count, qp->get_time_1st(), qp->get_time());
+	  sprintf(lin, " %7d [%10lu] [%10lu] ", qp->count, qp->get_time_1st(), qp->get_time());
 	  QDPIO::cout << lin << qp->expr << std::endl;
 	}
 

@@ -276,16 +276,6 @@ struct FnMapJIT
 
 
 
-#if defined(QDP_USE_PROFILING)   
-template <>
-struct TagVisitor<FnMap, PrintTag> : public ParenPrinter<FnMap>
-{ 
-  static void visit(FnMap op, PrintTag t) 
-    { t.os_m << "shift"; }
-};
-#endif
-
-
 
 
 

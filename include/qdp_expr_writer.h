@@ -4,7 +4,7 @@
 namespace QDP {
 
 
-#include <PETE/ForEachInOrder.h>
+#include <PETE/ForEachInOrderStatic.h>
 
 
   //
@@ -35,30 +35,132 @@ void printExprTree(ostream& os,
   typedef EvalLeaf1    FTag_t;
   typedef OpCombine    CTag_t;
   typedef NullCombine  VTag_t;
-  typedef QDPExpr<RHS,C1>  Expr;
-    
-  typedef typename CreateLeaf<Expr>::Leaf_t Expr_t;
-  const Expr_t &e = CreateLeaf<Expr>::make(rhs);
 
 #if 0
   // Compact version
   typedef BinaryNode<Op, QDPType<T,C>, Expr_t> Assign_t;
-  typedef ForEachInOrder<Assign_t, PrintTag, PrintTag, NullTag> Print_t;
+  typedef ForEachInOrderStatic<Assign_t, PrintTag, PrintTag, NullTag> Print_t;
   Assign_t t(op, dest, e);
   Print_t::apply(t, PrintTag(os), PrintTag(os), NullTag());
 #else
   // Makes assignment part special
-  typedef ForEachInOrder<RHS, PrintTag, PrintTag, NullTag> Print_t;
-  LeafFunctor<C,PrintTag>::apply(static_cast<const C&>(dest),PrintTag(os));
+  typedef ForEachInOrderStatic<RHS, PrintTag, PrintTag, NullTag> Print_t;
+  LeafFunctor<C,PrintTag>::apply(PrintTag(os));
   os << " ";
-  TagVisitor<Op,PrintTag>::visit(op, PrintTag(os));
+  TagVisitor<Op,PrintTag>::visit(PrintTag(os));
   os << " ";
-  Print_t::apply(e, PrintTag(os), PrintTag(os), NullTag());
+  Print_t::apply(PrintTag(os), PrintTag(os), NullTag());
 #endif
 
   os << ";";
 }
 
+
+template<class T, class Op, class T1>
+void printExprTree(ostream& os, 
+		   const OLattice<T>& dest, const Op& op, const OSubLattice<T1>& rhs)
+{
+  LeafFunctor<OLattice<T>,PrintTag>::apply(PrintTag(os));
+  os << " ";
+  TagVisitor<Op,PrintTag>::visit(PrintTag(os));
+  os << " ";
+  LeafFunctor<OSubLattice<T>,PrintTag>::apply(PrintTag(os));
+  os << ";";
+}
+
+
+template<class T, class Op, class T1>
+void printExprTree(ostream& os, 
+		   const OSubLattice<T>& dest, const Op& op, const OSubLattice<T1>& rhs)
+{
+  LeafFunctor<OSubLattice<T>,PrintTag>::apply(PrintTag(os));
+  os << " ";
+  TagVisitor<Op,PrintTag>::visit(PrintTag(os));
+  os << " ";
+  LeafFunctor<OSubLattice<T>,PrintTag>::apply(PrintTag(os));
+  os << ";";
+}
+
+
+
+  template<class T1, class T2, class T3>
+void printExprTree(ostream& os,
+		   const std::string& name,
+		   const OLattice<T1>& L1, 
+		   const OLattice<T2>& L2, 
+		   const OLattice<T3>& L3) 
+{
+  os << name << "(";
+  LeafFunctor<OLattice<T1>,PrintTag>::apply(PrintTag(os));
+  os << ",";
+  LeafFunctor<OLattice<T2>,PrintTag>::apply(PrintTag(os));
+  os << ",";
+  LeafFunctor<OLattice<T3>,PrintTag>::apply(PrintTag(os));
+  os << ");";
+}
+
+
+template<class T1>
+void printExprTree(ostream& os,
+		   const std::string& name,
+		   const OLattice<T1>& L1) 
+{
+  os << name << "(";
+  LeafFunctor<OLattice<T1>,PrintTag>::apply(PrintTag(os));
+  os << ");";
+}
+
+
+template<class T1>
+void printExprTree(ostream& os,
+		   const std::string& name,
+		   const OSubLattice<T1>& L1) 
+{
+  os << name << "(";
+  LeafFunctor<OSubLattice<T1>,PrintTag>::apply(PrintTag(os));
+  os << ");";
+}
+
+
+template<class Op, class T1>
+void printExprTree(ostream& os, const Op& op, const multi1d<T1>& L1)
+{
+  TagVisitor< Op , PrintTag>::visit(PrintTag(os));
+  os << "(";
+  LeafFunctor< multi1d<T1> , PrintTag>::apply(PrintTag(os));
+  os << ");";
+}
+
+
+
+template<class T, class Op, class RHS, class C1>
+//inline
+void printExprTree(ostream& os, 
+		   const OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,C1>& rhs)
+{
+  typedef EvalLeaf1    FTag_t;
+  typedef OpCombine    CTag_t;
+  typedef NullCombine  VTag_t;
+#if 0
+  // Compact version
+  typedef BinaryNode<Op, QDPType<T,C>, Expr_t> Assign_t;
+  typedef ForEachInOrderStatic<Assign_t, PrintTag, PrintTag, NullTag> Print_t;
+  Assign_t t(op, dest, e);
+  Print_t::apply(t, PrintTag(os), PrintTag(os), NullTag());
+#else
+  // Makes assignment part special
+  typedef ForEachInOrderStatic<RHS, PrintTag, PrintTag, NullTag> Print_t;
+  LeafFunctor<OSubLattice<T>,PrintTag>::apply(PrintTag(os));
+  os << " ";
+  TagVisitor<Op,PrintTag>::visit(PrintTag(os));
+  os << " ";
+  Print_t::apply(PrintTag(os), PrintTag(os), NullTag());
+#endif
+
+  os << ";";
+}
+
+  
 
 
 
@@ -70,25 +172,21 @@ void printExprTree(std::ostream& os,
   typedef EvalLeaf1    FTag_t;
   typedef OpCombine    CTag_t;
   typedef NullCombine  VTag_t;
-  typedef QDPExpr<RHS,C1>  Expr;
-    
-  typedef typename CreateLeaf<Expr>::Leaf_t Expr_t;
-  const Expr_t &e = CreateLeaf<Expr>::make(rhs);
 
 #if 0
   // Compact version
   typedef BinaryNode<Op, QDPType<T,C>, Expr_t> Assign_t;
-  typedef ForEachInOrder<Assign_t, PrintTag, PrintTag, NullTag> Print_t;
+  typedef ForEachInOrderStatic<Assign_t, PrintTag, PrintTag, NullTag> Print_t;
   Assign_t t(op, dest, e);
   Print_t::apply(t, PrintTag(os), PrintTag(os), NullTag());
 #else
   // Makes assignment part special
-  typedef ForEachInOrder<RHS, PrintTag, PrintTag, NullTag> Print_t;
-  LeafFunctor<T,PrintTag>::apply(*dest,PrintTag(os));
+  typedef ForEachInOrderStatic<RHS, PrintTag, PrintTag, NullTag> Print_t;
+  LeafFunctor<T,PrintTag>::apply(PrintTag(os));
   os << " ";
-  TagVisitor<Op,PrintTag>::visit(op, PrintTag(os));
+  TagVisitor<Op,PrintTag>::visit(PrintTag(os));
   os << " ";
-  Print_t::apply(e, PrintTag(os), PrintTag(os), NullTag());
+  Print_t::apply(PrintTag(os), PrintTag(os), NullTag());
 #endif
 
   os << ";";
@@ -104,25 +202,21 @@ void printExprTreeSubset(ostream& os,
   typedef EvalLeaf1    FTag_t;
   typedef OpCombine    CTag_t;
   typedef NullCombine  VTag_t;
-  typedef QDPExpr<RHS,C1>  Expr;
-    
-  typedef typename CreateLeaf<Expr>::Leaf_t Expr_t;
-  const Expr_t &e = CreateLeaf<Expr>::make(rhs);
 
 #if 0
   // Compact version
   typedef BinaryNode<Op, QDPType<T,C>, Expr_t> Assign_t;
-  typedef ForEachInOrder<Assign_t, PrintTag, PrintTag, NullTag> Print_t;
+  typedef ForEachInOrderStatic<Assign_t, PrintTag, PrintTag, NullTag> Print_t;
   Assign_t t(op, dest, e);
   Print_t::apply(t, PrintTag(os), PrintTag(os), NullTag());
 #else
   // Makes assignment part special
-  typedef ForEachInOrder<RHS, PrintTag, PrintTag, NullTag> Print_t;
-  LeafFunctor<C,PrintTag>::apply(static_cast<const C&>(dest),PrintTag(os));
+  typedef ForEachInOrderStatic<RHS, PrintTag, PrintTag, NullTag> Print_t;
+  LeafFunctor<C,PrintTag>::apply(PrintTag(os));
   os << " ";
-  TagVisitor<Op,PrintTag>::visit(op, PrintTag(os));
+  TagVisitor<Op,PrintTag>::visit(PrintTag(os));
   os << " ";
-  Print_t::apply(e, PrintTag(os), PrintTag(os), NullTag());
+  Print_t::apply(PrintTag(os), PrintTag(os), NullTag());
 #endif
 
   // Add dynamic info
@@ -144,9 +238,9 @@ template<class T, class C>
 struct LeafFunctor<QDPType<T,C>, PrintTag>
 {
   typedef int Type_t;
-  static int apply(const QDPType<T,C> &s, const PrintTag &f)
+  static int apply(const PrintTag &f)
     { 
-      return LeafFunctor<C,PrintTag>::apply(static_cast<const C&>(s),f);
+      return LeafFunctor<C,PrintTag>::apply(f);
     }
 };
 
@@ -162,7 +256,7 @@ template<>
 struct LeafFunctor<jit_half_t, PrintTag>
 {
   typedef int Type_t;
-  static int apply(const jit_half_t &s, const PrintTag &f)
+  static int apply(const PrintTag &f)
     { 
       f.os_m << "half"; 
       return 0;
@@ -174,7 +268,7 @@ template<>
 struct LeafFunctor<float, PrintTag>
 {
   typedef int Type_t;
-  static int apply(const float &s, const PrintTag &f)
+  static int apply(const PrintTag &f)
     { 
       f.os_m << "float"; 
       return 0;
@@ -185,7 +279,7 @@ template<>
 struct LeafFunctor<double, PrintTag>
 {
   typedef int Type_t;
-  static int apply(const double &s, const PrintTag &f)
+  static int apply(const PrintTag &f)
     { 
       f.os_m << "double"; 
       return 0;
@@ -196,7 +290,7 @@ template<>
 struct LeafFunctor<int, PrintTag>
 {
   typedef int Type_t;
-  static int apply(const int &s, const PrintTag &f)
+  static int apply(const PrintTag &f)
     { 
       f.os_m << "int"; 
       return 0;
@@ -207,7 +301,7 @@ template<>
 struct LeafFunctor<char, PrintTag>
 {
   typedef int Type_t;
-  static int apply(const char &s, const PrintTag &f)
+  static int apply(const PrintTag &f)
     { 
       f.os_m << "char"; 
       return 0;
@@ -218,47 +312,22 @@ template<>
 struct LeafFunctor<bool, PrintTag>
 {
   typedef int Type_t;
-  static int apply(const bool &s, const PrintTag &f)
+  static int apply(const PrintTag &f)
     { 
       f.os_m << "bool"; 
       return 0;
     }
 };
 
-template<class T>
-struct LeafFunctor<IScalar<T>, PrintTag>
-{
-  typedef int Type_t;
-  static int apply(const IScalar<T> &s, const PrintTag &f)
-    { 
-      f.os_m << "IScal<";
-      LeafFunctor<T,PrintTag>::apply(s.elem(),f);
-      f.os_m << ">"; 
-      return 0;
-    }
-};
-
-template<class T, int N>
-struct LeafFunctor<ILattice<T,N>, PrintTag>
-{
-  typedef int Type_t;
-  static int apply(const ILattice<T,N> &s, const PrintTag &f)
-    { 
-      f.os_m << "ILat<";
-      LeafFunctor<T,PrintTag>::apply(s.elem(0),f);
-      f.os_m << "," << N << ">"; 
-      return 0;
-    }
-};
 
 template<class T>
 struct LeafFunctor<RScalar<T>, PrintTag>
 {
   typedef int Type_t;
-  static int apply(const RScalar<T> &s, const PrintTag &f)
+  static int apply(const PrintTag &f)
     { 
       f.os_m << "RScal<"; 
-      LeafFunctor<T,PrintTag>::apply(s.elem(),f);
+      LeafFunctor<T,PrintTag>::apply(f);
       f.os_m << ">"; 
       return 0;
     }
@@ -268,9 +337,9 @@ template<class T>
 struct LeafFunctor<Word<T>, PrintTag>
 {
   typedef int Type_t;
-  static int apply(const Word<T> &s, const PrintTag &f)
+  static int apply(const PrintTag &f)
     { 
-      LeafFunctor<T,PrintTag>::apply(s.elem(),f);
+      LeafFunctor<T,PrintTag>::apply(f);
       return 0;
     }
 };
@@ -279,10 +348,10 @@ template<class T>
 struct LeafFunctor<RComplex<T>, PrintTag>
 {
   typedef int Type_t;
-  static int apply(const RComplex<T> &s, const PrintTag &f)
+  static int apply(const PrintTag &f)
     { 
       f.os_m << "RCplx<"; 
-      LeafFunctor<T,PrintTag>::apply(s.real(),f);
+      LeafFunctor<T,PrintTag>::apply(f);
       f.os_m << ">"; 
       return 0;
     }
@@ -292,10 +361,10 @@ template<class T>
 struct LeafFunctor<PScalar<T>, PrintTag>
 {
   typedef int Type_t;
-  static int apply(const PScalar<T> &s, const PrintTag &f)
+  static int apply(const PrintTag &f)
     { 
       f.os_m << "PScal<"; 
-      LeafFunctor<T,PrintTag>::apply(s.elem(),f);
+      LeafFunctor<T,PrintTag>::apply(f);
       f.os_m << ">"; 
       return 0;
     }
@@ -305,10 +374,10 @@ template<class T>
 struct LeafFunctor<PSeed<T>, PrintTag>
 {
   typedef int Type_t;
-  static int apply(const PSeed<T> &s, const PrintTag &f)
+  static int apply(const PrintTag &f)
     { 
       f.os_m << "PSeed<"; 
-      LeafFunctor<T,PrintTag>::apply(s.elem(0),f);
+      LeafFunctor<T,PrintTag>::apply(f);
       f.os_m << ">"; 
       return 0;
     }
@@ -318,10 +387,10 @@ template <class T, int N>
 struct LeafFunctor<PColorMatrix<T,N>, PrintTag>
 {
   typedef int Type_t;
-  static int apply(const PColorMatrix<T,N> &s, const PrintTag &f)
+  static int apply(const PrintTag &f)
     { 
       f.os_m << "CMat<"; 
-      LeafFunctor<T,PrintTag>::apply(s.elem(0,0),f);
+      LeafFunctor<T,PrintTag>::apply(f);
       f.os_m << "," << N << ">"; 
       return 0;
     }
@@ -331,10 +400,10 @@ template <class T, int N>
 struct LeafFunctor<PSpinMatrix<T,N>, PrintTag>
 {
   typedef int Type_t;
-  static int apply(const PSpinMatrix<T,N> &s, const PrintTag &f)
+  static int apply(const PrintTag &f)
     { 
       f.os_m << "SMat<"; 
-      LeafFunctor<T,PrintTag>::apply(s.elem(0,0),f);
+      LeafFunctor<T,PrintTag>::apply(f);
       f.os_m << "," << N << ">"; 
       return 0;
     }
@@ -344,10 +413,10 @@ template <class T, int N>
 struct LeafFunctor<PColorVector<T,N>, PrintTag>
 {
   typedef int Type_t;
-  static int apply(const PColorVector<T,N> &s, const PrintTag &f)
+  static int apply(const PrintTag &f)
     { 
       f.os_m << "ColorVec<"; 
-      LeafFunctor<T,PrintTag>::apply(s.elem(0),f);
+      LeafFunctor<T,PrintTag>::apply(f);
       f.os_m << "," << N << ">"; 
       return 0;
     }
@@ -357,10 +426,10 @@ template <class T, int N>
 struct LeafFunctor<PSpinVector<T,N>, PrintTag>
 {
   typedef int Type_t;
-  static int apply(const PSpinVector<T,N> &s, const PrintTag &f)
+  static int apply(const PrintTag &f)
     { 
       f.os_m << "SpinVec<"; 
-      LeafFunctor<T,PrintTag>::apply(s.elem(0),f);
+      LeafFunctor<T,PrintTag>::apply(f);
       f.os_m << "," << N << ">"; 
       return 0;
     }
@@ -370,9 +439,9 @@ template <class T, int N, template<class,int> class C>
 struct LeafFunctor<PMatrix<T,N,C>, PrintTag>
 {
   typedef int Type_t;
-  static int apply(const PMatrix<T,N,C> &s, const PrintTag &f)
+  static int apply(const PrintTag &f)
     { 
-      return LeafFunctor<C<T,N>,PrintTag>::apply(static_cast<const C<T,N>&>(s),f);
+      return LeafFunctor<C<T,N>,PrintTag>::apply(f);
     }
 };
 
@@ -380,9 +449,9 @@ template <class T, int N, template<class,int> class C>
 struct LeafFunctor<PVector<T,N,C>, PrintTag>
 {
   typedef int Type_t;
-  static int apply(const PVector<T,N,C> &s, const PrintTag &f)
+  static int apply(const PrintTag &f)
     { 
-      return LeafFunctor<C<T,N>,PrintTag>::apply(static_cast<const C<T,N>&>(s),f);
+      return LeafFunctor<C<T,N>,PrintTag>::apply(f);
     }
 };
 
@@ -390,10 +459,10 @@ template<class T>
 struct LeafFunctor<OScalar<T>, PrintTag>
 {
   typedef int Type_t;
-  static int apply(const OScalar<T> &s, const PrintTag &f)
+  static int apply(const PrintTag &f)
     { 
       f.os_m << "OScal<";
-      LeafFunctor<T,PrintTag>::apply(T(),f);
+      LeafFunctor<T,PrintTag>::apply(f);
       f.os_m << ">"; 
       return 0;
     }
@@ -404,20 +473,64 @@ template<class T>
 struct LeafFunctor<OLattice<T>, PrintTag>
 {
   typedef int Type_t;
-  static int apply(const OLattice<T> &s, const PrintTag &f)
+  static int apply(const PrintTag &f)
     { 
       f.os_m << "OLat<";
-      LeafFunctor<T,PrintTag>::apply(T(),f);
+      LeafFunctor<T,PrintTag>::apply(f);
       f.os_m << ">"; 
       return 0;
     }
 };
 
+
+template<class T>
+struct LeafFunctor<OSubLattice<T>, PrintTag>
+{
+  typedef int Type_t;
+  static int apply(const PrintTag &f)
+    { 
+      f.os_m << "OSubLat<";
+      LeafFunctor<T,PrintTag>::apply(f);
+      f.os_m << ">"; 
+      return 0;
+    }
+};
+
+
+template<class T>
+struct LeafFunctor<multi1d<T>, PrintTag>
+{
+  typedef int Type_t;
+  static int apply(const PrintTag &f)
+    { 
+      f.os_m << "multi1d<";
+      LeafFunctor<T,PrintTag>::apply(f);
+      f.os_m << ">"; 
+      return 0;
+    }
+};
+
+
+template<class T>
+struct LeafFunctor<multi2d<T>, PrintTag>
+{
+  typedef int Type_t;
+  static int apply(const PrintTag &f)
+    { 
+      f.os_m << "multi2d<";
+      LeafFunctor<T,PrintTag>::apply(f);
+      f.os_m << ">"; 
+      return 0;
+    }
+};
+
+
+
 template<int N>
 struct LeafFunctor<GammaType<N>, PrintTag>
 {
   typedef int Type_t;
-  static int apply(const GammaType<N> &s, const PrintTag &f)
+  static int apply(const PrintTag &f)
     { 
       f.os_m << "GammaType";
       return 0;
@@ -428,7 +541,7 @@ template<int N, int m>
 struct LeafFunctor<GammaConst<N,m>, PrintTag>
 {
   typedef int Type_t;
-  static int apply(const GammaConst<N,m> &s, const PrintTag &f)
+  static int apply(const PrintTag &f)
     { 
       f.os_m << "GammaConst";
       return 0;
@@ -449,13 +562,13 @@ struct LeafFunctor<GammaConst<N,m>, PrintTag>
 template<class Op>
 struct ParenPrinter
 {
-  static void start(Op,PrintTag p)
+  static void start(PrintTag p)
     { p.os_m << "("; }
 
-  static void center(Op,PrintTag p)
+  static void center(PrintTag p)
     { p.os_m << ","; }
 
-  static void finish(Op,PrintTag p)
+  static void finish(PrintTag p)
     { p.os_m << ")"; }
 };
 
@@ -469,9 +582,24 @@ struct ParenPrinter
 //
 // FnArcCos
 template <>
+struct TagVisitor<FnMap, PrintTag> : public ParenPrinter<FnMap>
+{ 
+  static void visit(PrintTag t) 
+    { t.os_m << "shift"; }
+};
+
+template <>
+struct TagVisitor<FnSumMulti, PrintTag> : public ParenPrinter<FnSumMulti>
+{ 
+  static void visit(PrintTag t) 
+    { t.os_m << "sumMulti"; }
+};
+
+
+template <>
 struct TagVisitor<FnArcCos, PrintTag> : public ParenPrinter<FnArcCos>
 { 
-  static void visit(FnArcCos op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "acos"; }
 };
 
@@ -479,7 +607,7 @@ struct TagVisitor<FnArcCos, PrintTag> : public ParenPrinter<FnArcCos>
 template <>
 struct TagVisitor<FnArcSin, PrintTag> : public ParenPrinter<FnArcSin>
 { 
-  static void visit(FnArcSin op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "asin"; }
 };
 
@@ -487,7 +615,7 @@ struct TagVisitor<FnArcSin, PrintTag> : public ParenPrinter<FnArcSin>
 template <>
 struct TagVisitor<FnArcTan, PrintTag> : public ParenPrinter<FnArcTan>
 { 
-  static void visit(FnArcTan op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "atan"; }
 };
 
@@ -495,7 +623,7 @@ struct TagVisitor<FnArcTan, PrintTag> : public ParenPrinter<FnArcTan>
 template <>
 struct TagVisitor<FnCeil, PrintTag> : public ParenPrinter<FnCeil>
 { 
-  static void visit(FnCeil op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "ceil"; }
 };
 
@@ -503,7 +631,7 @@ struct TagVisitor<FnCeil, PrintTag> : public ParenPrinter<FnCeil>
 template <>
 struct TagVisitor<FnCos, PrintTag> : public ParenPrinter<FnCos>
 { 
-  static void visit(FnCos op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "cos"; }
 };
 
@@ -511,7 +639,7 @@ struct TagVisitor<FnCos, PrintTag> : public ParenPrinter<FnCos>
 template <>
 struct TagVisitor<FnHypCos, PrintTag> : public ParenPrinter<FnHypCos>
 { 
-  static void visit(FnHypCos op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "cosh"; }
 };
 
@@ -519,7 +647,7 @@ struct TagVisitor<FnHypCos, PrintTag> : public ParenPrinter<FnHypCos>
 template <>
 struct TagVisitor<FnExp, PrintTag> : public ParenPrinter<FnExp>
 { 
-  static void visit(FnExp op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "exp"; }
 };
 
@@ -527,7 +655,7 @@ struct TagVisitor<FnExp, PrintTag> : public ParenPrinter<FnExp>
 template <>
 struct TagVisitor<FnFabs, PrintTag> : public ParenPrinter<FnFabs>
 { 
-  static void visit(FnFabs op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "fabs"; }
 };
 
@@ -535,7 +663,7 @@ struct TagVisitor<FnFabs, PrintTag> : public ParenPrinter<FnFabs>
 template <>
 struct TagVisitor<FnFloor, PrintTag> : public ParenPrinter<FnFloor>
 { 
-  static void visit(FnFloor op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "floor"; }
 };
 
@@ -543,7 +671,7 @@ struct TagVisitor<FnFloor, PrintTag> : public ParenPrinter<FnFloor>
 template <>
 struct TagVisitor<FnLog, PrintTag> : public ParenPrinter<FnLog>
 { 
-  static void visit(FnLog op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "log"; }
 };
 
@@ -551,7 +679,7 @@ struct TagVisitor<FnLog, PrintTag> : public ParenPrinter<FnLog>
 template <>
 struct TagVisitor<FnLog10, PrintTag> : public ParenPrinter<FnLog10>
 { 
-  static void visit(FnLog10 op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "log10"; }
 };
 
@@ -559,7 +687,7 @@ struct TagVisitor<FnLog10, PrintTag> : public ParenPrinter<FnLog10>
 template <>
 struct TagVisitor<FnSin, PrintTag> : public ParenPrinter<FnSin>
 { 
-  static void visit(FnSin op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "sin"; }
 };
 
@@ -567,7 +695,7 @@ struct TagVisitor<FnSin, PrintTag> : public ParenPrinter<FnSin>
 template <>
 struct TagVisitor<FnHypSin, PrintTag> : public ParenPrinter<FnHypSin>
 { 
-  static void visit(FnHypSin op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "sinh"; }
 };
 
@@ -575,7 +703,7 @@ struct TagVisitor<FnHypSin, PrintTag> : public ParenPrinter<FnHypSin>
 template <>
 struct TagVisitor<FnSqrt, PrintTag> : public ParenPrinter<FnSqrt>
 { 
-  static void visit(FnSqrt op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "sqrt"; }
 };
 
@@ -583,7 +711,7 @@ struct TagVisitor<FnSqrt, PrintTag> : public ParenPrinter<FnSqrt>
 template <>
 struct TagVisitor<FnTan, PrintTag> : public ParenPrinter<FnTan>
 { 
-  static void visit(FnTan op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "tan"; }
 };
 
@@ -591,7 +719,7 @@ struct TagVisitor<FnTan, PrintTag> : public ParenPrinter<FnTan>
 template <>
 struct TagVisitor<FnHypTan, PrintTag> : public ParenPrinter<FnHypTan>
 { 
-  static void visit(FnHypTan op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "tanh"; }
 };
 
@@ -599,7 +727,7 @@ struct TagVisitor<FnHypTan, PrintTag> : public ParenPrinter<FnHypTan>
 template <>
 struct TagVisitor<OpUnaryMinus, PrintTag> : public ParenPrinter<OpUnaryMinus>
 { 
-  static void visit(OpUnaryMinus op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "-"; }
 };
 
@@ -607,7 +735,7 @@ struct TagVisitor<OpUnaryMinus, PrintTag> : public ParenPrinter<OpUnaryMinus>
 template <>
 struct TagVisitor<OpUnaryPlus, PrintTag> : public ParenPrinter<OpUnaryPlus>
 { 
-  static void visit(OpUnaryPlus op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "+"; }
 };
 
@@ -615,7 +743,7 @@ struct TagVisitor<OpUnaryPlus, PrintTag> : public ParenPrinter<OpUnaryPlus>
 template <>
 struct TagVisitor<OpBitwiseNot, PrintTag> : public ParenPrinter<OpBitwiseNot>
 { 
-  static void visit(OpBitwiseNot op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "~"; }
 };
 
@@ -623,7 +751,7 @@ struct TagVisitor<OpBitwiseNot, PrintTag> : public ParenPrinter<OpBitwiseNot>
 template <>
 struct TagVisitor<OpIdentity, PrintTag> : public ParenPrinter<OpIdentity>
 { 
-  static void visit(OpIdentity op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "PETE_identity"; }
 };
 
@@ -631,7 +759,7 @@ struct TagVisitor<OpIdentity, PrintTag> : public ParenPrinter<OpIdentity>
 template <>
 struct TagVisitor<OpNot, PrintTag> : public ParenPrinter<OpNot>
 { 
-  static void visit(OpNot op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "!"; }
 };
 
@@ -639,7 +767,7 @@ struct TagVisitor<OpNot, PrintTag> : public ParenPrinter<OpNot>
 template <>
 struct TagVisitor<OpAdd, PrintTag> : public ParenPrinter<OpAdd>
 { 
-  static void visit(OpAdd op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "+"; }
 };
 
@@ -647,7 +775,7 @@ struct TagVisitor<OpAdd, PrintTag> : public ParenPrinter<OpAdd>
 template <>
 struct TagVisitor<OpSubtract, PrintTag> : public ParenPrinter<OpSubtract>
 { 
-  static void visit(OpSubtract op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "-"; }
 };
 
@@ -655,7 +783,7 @@ struct TagVisitor<OpSubtract, PrintTag> : public ParenPrinter<OpSubtract>
 template <>
 struct TagVisitor<OpMultiply, PrintTag> : public ParenPrinter<OpMultiply>
 { 
-  static void visit(OpMultiply op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "*"; }
 };
 
@@ -663,7 +791,7 @@ struct TagVisitor<OpMultiply, PrintTag> : public ParenPrinter<OpMultiply>
 template <>
 struct TagVisitor<OpDivide, PrintTag> : public ParenPrinter<OpDivide>
 { 
-  static void visit(OpDivide op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "/"; }
 };
 
@@ -671,7 +799,7 @@ struct TagVisitor<OpDivide, PrintTag> : public ParenPrinter<OpDivide>
 template <>
 struct TagVisitor<OpMod, PrintTag> : public ParenPrinter<OpMod>
 { 
-  static void visit(OpMod op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "%"; }
 };
 
@@ -679,7 +807,7 @@ struct TagVisitor<OpMod, PrintTag> : public ParenPrinter<OpMod>
 template <>
 struct TagVisitor<OpBitwiseAnd, PrintTag> : public ParenPrinter<OpBitwiseAnd>
 { 
-  static void visit(OpBitwiseAnd op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "&"; }
 };
 
@@ -687,7 +815,7 @@ struct TagVisitor<OpBitwiseAnd, PrintTag> : public ParenPrinter<OpBitwiseAnd>
 template <>
 struct TagVisitor<OpBitwiseOr, PrintTag> : public ParenPrinter<OpBitwiseOr>
 { 
-  static void visit(OpBitwiseOr op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "|"; }
 };
 
@@ -695,7 +823,7 @@ struct TagVisitor<OpBitwiseOr, PrintTag> : public ParenPrinter<OpBitwiseOr>
 template <>
 struct TagVisitor<OpBitwiseXor, PrintTag> : public ParenPrinter<OpBitwiseXor>
 { 
-  static void visit(OpBitwiseXor op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "^"; }
 };
 
@@ -703,7 +831,7 @@ struct TagVisitor<OpBitwiseXor, PrintTag> : public ParenPrinter<OpBitwiseXor>
 template <>
 struct TagVisitor<FnLdexp, PrintTag> : public ParenPrinter<FnLdexp>
 { 
-  static void visit(FnLdexp op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "ldexp"; }
 };
 
@@ -711,7 +839,7 @@ struct TagVisitor<FnLdexp, PrintTag> : public ParenPrinter<FnLdexp>
 template <>
 struct TagVisitor<FnPow, PrintTag> : public ParenPrinter<FnPow>
 { 
-  static void visit(FnPow op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "pow"; }
 };
 
@@ -719,7 +847,7 @@ struct TagVisitor<FnPow, PrintTag> : public ParenPrinter<FnPow>
 template <>
 struct TagVisitor<FnFmod, PrintTag> : public ParenPrinter<FnFmod>
 { 
-  static void visit(FnFmod op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "fmod"; }
 };
 
@@ -727,7 +855,7 @@ struct TagVisitor<FnFmod, PrintTag> : public ParenPrinter<FnFmod>
 template <>
 struct TagVisitor<FnArcTan2, PrintTag> : public ParenPrinter<FnArcTan2>
 { 
-  static void visit(FnArcTan2 op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "atan2"; }
 };
 
@@ -735,7 +863,7 @@ struct TagVisitor<FnArcTan2, PrintTag> : public ParenPrinter<FnArcTan2>
 template <>
 struct TagVisitor<OpLT, PrintTag> : public ParenPrinter<OpLT>
 { 
-  static void visit(OpLT op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "<"; }
 };
 
@@ -743,7 +871,7 @@ struct TagVisitor<OpLT, PrintTag> : public ParenPrinter<OpLT>
 template <>
 struct TagVisitor<OpLE, PrintTag> : public ParenPrinter<OpLE>
 { 
-  static void visit(OpLE op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "<="; }
 };
 
@@ -751,7 +879,7 @@ struct TagVisitor<OpLE, PrintTag> : public ParenPrinter<OpLE>
 template <>
 struct TagVisitor<OpGT, PrintTag> : public ParenPrinter<OpGT>
 { 
-  static void visit(OpGT op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << ">"; }
 };
 
@@ -759,7 +887,7 @@ struct TagVisitor<OpGT, PrintTag> : public ParenPrinter<OpGT>
 template <>
 struct TagVisitor<OpGE, PrintTag> : public ParenPrinter<OpGE>
 { 
-  static void visit(OpGE op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << ">="; }
 };
 
@@ -767,7 +895,7 @@ struct TagVisitor<OpGE, PrintTag> : public ParenPrinter<OpGE>
 template <>
 struct TagVisitor<OpEQ, PrintTag> : public ParenPrinter<OpEQ>
 { 
-  static void visit(OpEQ op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "=="; }
 };
 
@@ -775,7 +903,7 @@ struct TagVisitor<OpEQ, PrintTag> : public ParenPrinter<OpEQ>
 template <>
 struct TagVisitor<OpNE, PrintTag> : public ParenPrinter<OpNE>
 { 
-  static void visit(OpNE op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "!="; }
 };
 
@@ -783,7 +911,7 @@ struct TagVisitor<OpNE, PrintTag> : public ParenPrinter<OpNE>
 template <>
 struct TagVisitor<OpAnd, PrintTag> : public ParenPrinter<OpAnd>
 { 
-  static void visit(OpAnd op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "&&"; }
 };
 
@@ -791,7 +919,7 @@ struct TagVisitor<OpAnd, PrintTag> : public ParenPrinter<OpAnd>
 template <>
 struct TagVisitor<OpOr, PrintTag> : public ParenPrinter<OpOr>
 { 
-  static void visit(OpOr op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "||"; }
 };
 
@@ -799,7 +927,7 @@ struct TagVisitor<OpOr, PrintTag> : public ParenPrinter<OpOr>
 template <>
 struct TagVisitor<OpLeftShift, PrintTag> : public ParenPrinter<OpLeftShift>
 { 
-  static void visit(OpLeftShift op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "<<"; }
 };
 
@@ -807,7 +935,7 @@ struct TagVisitor<OpLeftShift, PrintTag> : public ParenPrinter<OpLeftShift>
 template <>
 struct TagVisitor<OpRightShift, PrintTag> : public ParenPrinter<OpRightShift>
 { 
-  static void visit(OpRightShift op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << ">>"; }
 };
 
@@ -815,7 +943,7 @@ struct TagVisitor<OpRightShift, PrintTag> : public ParenPrinter<OpRightShift>
 template <>
 struct TagVisitor<OpAssign, PrintTag> : public ParenPrinter<OpAssign>
 { 
-  static void visit(OpAssign op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "="; }
 };
 
@@ -823,7 +951,7 @@ struct TagVisitor<OpAssign, PrintTag> : public ParenPrinter<OpAssign>
 template <>
 struct TagVisitor<OpAddAssign, PrintTag> : public ParenPrinter<OpAddAssign>
 { 
-  static void visit(OpAddAssign op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "+="; }
 };
 
@@ -831,7 +959,7 @@ struct TagVisitor<OpAddAssign, PrintTag> : public ParenPrinter<OpAddAssign>
 template <>
 struct TagVisitor<OpSubtractAssign, PrintTag> : public ParenPrinter<OpSubtractAssign>
 { 
-  static void visit(OpSubtractAssign op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "-="; }
 };
 
@@ -839,7 +967,7 @@ struct TagVisitor<OpSubtractAssign, PrintTag> : public ParenPrinter<OpSubtractAs
 template <>
 struct TagVisitor<OpMultiplyAssign, PrintTag> : public ParenPrinter<OpMultiplyAssign>
 { 
-  static void visit(OpMultiplyAssign op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "*="; }
 };
 
@@ -847,7 +975,7 @@ struct TagVisitor<OpMultiplyAssign, PrintTag> : public ParenPrinter<OpMultiplyAs
 template <>
 struct TagVisitor<OpDivideAssign, PrintTag> : public ParenPrinter<OpDivideAssign>
 { 
-  static void visit(OpDivideAssign op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "/="; }
 };
 
@@ -855,7 +983,7 @@ struct TagVisitor<OpDivideAssign, PrintTag> : public ParenPrinter<OpDivideAssign
 template <>
 struct TagVisitor<OpModAssign, PrintTag> : public ParenPrinter<OpModAssign>
 { 
-  static void visit(OpModAssign op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "%="; }
 };
 
@@ -863,7 +991,7 @@ struct TagVisitor<OpModAssign, PrintTag> : public ParenPrinter<OpModAssign>
 template <>
 struct TagVisitor<OpBitwiseOrAssign, PrintTag> : public ParenPrinter<OpBitwiseOrAssign>
 { 
-  static void visit(OpBitwiseOrAssign op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "|="; }
 };
 
@@ -871,7 +999,7 @@ struct TagVisitor<OpBitwiseOrAssign, PrintTag> : public ParenPrinter<OpBitwiseOr
 template <>
 struct TagVisitor<OpBitwiseAndAssign, PrintTag> : public ParenPrinter<OpBitwiseAndAssign>
 { 
-  static void visit(OpBitwiseAndAssign op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "&="; }
 };
 
@@ -879,7 +1007,7 @@ struct TagVisitor<OpBitwiseAndAssign, PrintTag> : public ParenPrinter<OpBitwiseA
 template <>
 struct TagVisitor<OpBitwiseXorAssign, PrintTag> : public ParenPrinter<OpBitwiseXorAssign>
 { 
-  static void visit(OpBitwiseXorAssign op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "^="; }
 };
 
@@ -887,7 +1015,7 @@ struct TagVisitor<OpBitwiseXorAssign, PrintTag> : public ParenPrinter<OpBitwiseX
 template <>
 struct TagVisitor<OpLeftShiftAssign, PrintTag> : public ParenPrinter<OpLeftShiftAssign>
 { 
-  static void visit(OpLeftShiftAssign op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "<<="; }
 };
 
@@ -895,7 +1023,7 @@ struct TagVisitor<OpLeftShiftAssign, PrintTag> : public ParenPrinter<OpLeftShift
 template <>
 struct TagVisitor<OpRightShiftAssign, PrintTag> : public ParenPrinter<OpRightShiftAssign>
 { 
-  static void visit(OpRightShiftAssign op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << ">>="; }
 };
 
@@ -903,7 +1031,7 @@ struct TagVisitor<OpRightShiftAssign, PrintTag> : public ParenPrinter<OpRightShi
 template <>
 struct TagVisitor<FnWhere, PrintTag> : public ParenPrinter<FnWhere>
 { 
-  static void visit(FnWhere op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "where"; }
 };
 
@@ -911,7 +1039,7 @@ struct TagVisitor<FnWhere, PrintTag> : public ParenPrinter<FnWhere>
 template <>
 struct TagVisitor<FnAdjoint, PrintTag> : public ParenPrinter<FnAdjoint>
 { 
-  static void visit(FnAdjoint op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "adj"; }
 };
 
@@ -919,7 +1047,7 @@ struct TagVisitor<FnAdjoint, PrintTag> : public ParenPrinter<FnAdjoint>
 template <>
 struct TagVisitor<FnConjugate, PrintTag> : public ParenPrinter<FnConjugate>
 { 
-  static void visit(FnConjugate op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "conj"; }
 };
 
@@ -927,7 +1055,7 @@ struct TagVisitor<FnConjugate, PrintTag> : public ParenPrinter<FnConjugate>
 template <>
 struct TagVisitor<FnTranspose, PrintTag> : public ParenPrinter<FnTranspose>
 { 
-  static void visit(FnTranspose op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "transpose"; }
 };
 
@@ -935,7 +1063,7 @@ struct TagVisitor<FnTranspose, PrintTag> : public ParenPrinter<FnTranspose>
 template <>
 struct TagVisitor<FnTrace, PrintTag> : public ParenPrinter<FnTrace>
 { 
-  static void visit(FnTrace op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "trace"; }
 };
 
@@ -943,7 +1071,7 @@ struct TagVisitor<FnTrace, PrintTag> : public ParenPrinter<FnTrace>
 template <>
 struct TagVisitor<FnRealTrace, PrintTag> : public ParenPrinter<FnRealTrace>
 { 
-  static void visit(FnRealTrace op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "realTrace"; }
 };
 
@@ -951,7 +1079,7 @@ struct TagVisitor<FnRealTrace, PrintTag> : public ParenPrinter<FnRealTrace>
 template <>
 struct TagVisitor<FnImagTrace, PrintTag> : public ParenPrinter<FnImagTrace>
 { 
-  static void visit(FnImagTrace op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "imagTrace"; }
 };
 
@@ -959,7 +1087,7 @@ struct TagVisitor<FnImagTrace, PrintTag> : public ParenPrinter<FnImagTrace>
 template <>
 struct TagVisitor<FnTraceColor, PrintTag> : public ParenPrinter<FnTraceColor>
 { 
-  static void visit(FnTraceColor op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "traceColor"; }
 };
 
@@ -967,7 +1095,7 @@ struct TagVisitor<FnTraceColor, PrintTag> : public ParenPrinter<FnTraceColor>
 template <>
 struct TagVisitor<FnTraceSpin, PrintTag> : public ParenPrinter<FnTraceSpin>
 { 
-  static void visit(FnTraceSpin op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "traceSpin"; }
 };
 
@@ -975,7 +1103,7 @@ struct TagVisitor<FnTraceSpin, PrintTag> : public ParenPrinter<FnTraceSpin>
 template <>
 struct TagVisitor<FnTransposeSpin, PrintTag> : public ParenPrinter<FnTransposeSpin>
 {
-  static void visit(FnTransposeSpin op, PrintTag t)
+  static void visit(PrintTag t)
   {
     t.os_m << "transposeSpin"; }
 };
@@ -984,7 +1112,7 @@ struct TagVisitor<FnTransposeSpin, PrintTag> : public ParenPrinter<FnTransposeSp
 template <>
 struct TagVisitor<FnReal, PrintTag> : public ParenPrinter<FnReal>
 { 
-  static void visit(FnReal op, PrintTag t) 
+  static void visit(PrintTag t) 
     { t.os_m << "real"; }
 };
 
@@ -992,7 +1120,7 @@ struct TagVisitor<FnReal, PrintTag> : public ParenPrinter<FnReal>
 template <>
 struct TagVisitor<FnImag, PrintTag> : public ParenPrinter<FnImag>
 { 
-  static void visit(FnImag op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "imag"; }
 };
 
@@ -1000,7 +1128,7 @@ struct TagVisitor<FnImag, PrintTag> : public ParenPrinter<FnImag>
 template <>
 struct TagVisitor<FnLocalNorm2, PrintTag> : public ParenPrinter<FnLocalNorm2>
 { 
-  static void visit(FnLocalNorm2 op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "localNorm2"; }
 };
 
@@ -1008,7 +1136,7 @@ struct TagVisitor<FnLocalNorm2, PrintTag> : public ParenPrinter<FnLocalNorm2>
 template <>
 struct TagVisitor<FnTimesI, PrintTag> : public ParenPrinter<FnTimesI>
 { 
-  static void visit(FnTimesI op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "timesI"; }
 };
 
@@ -1016,7 +1144,7 @@ struct TagVisitor<FnTimesI, PrintTag> : public ParenPrinter<FnTimesI>
 template <>
 struct TagVisitor<FnTimesMinusI, PrintTag> : public ParenPrinter<FnTimesMinusI>
 { 
-  static void visit(FnTimesMinusI op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "timesMinusI"; }
 };
 
@@ -1024,7 +1152,7 @@ struct TagVisitor<FnTimesMinusI, PrintTag> : public ParenPrinter<FnTimesMinusI>
 template <>
 struct TagVisitor<FnSeedToFloat, PrintTag> : public ParenPrinter<FnSeedToFloat>
 { 
-  static void visit(FnSeedToFloat op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "seedToFloat"; }
 };
 
@@ -1032,7 +1160,7 @@ struct TagVisitor<FnSeedToFloat, PrintTag> : public ParenPrinter<FnSeedToFloat>
 template <>
 struct TagVisitor<FnSpinProjectDir0Plus, PrintTag> : public ParenPrinter<FnSpinProjectDir0Plus>
 { 
-  static void visit(FnSpinProjectDir0Plus op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "spinProjectDir0Plus"; }
 };
 
@@ -1040,7 +1168,7 @@ struct TagVisitor<FnSpinProjectDir0Plus, PrintTag> : public ParenPrinter<FnSpinP
 template <>
 struct TagVisitor<FnSpinProjectDir1Plus, PrintTag> : public ParenPrinter<FnSpinProjectDir1Plus>
 { 
-  static void visit(FnSpinProjectDir1Plus op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "spinProjectDir1Plus"; }
 };
 
@@ -1048,7 +1176,7 @@ struct TagVisitor<FnSpinProjectDir1Plus, PrintTag> : public ParenPrinter<FnSpinP
 template <>
 struct TagVisitor<FnSpinProjectDir2Plus, PrintTag> : public ParenPrinter<FnSpinProjectDir2Plus>
 { 
-  static void visit(FnSpinProjectDir2Plus op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "spinProjectDir2Plus"; }
 };
 
@@ -1056,7 +1184,7 @@ struct TagVisitor<FnSpinProjectDir2Plus, PrintTag> : public ParenPrinter<FnSpinP
 template <>
 struct TagVisitor<FnSpinProjectDir3Plus, PrintTag> : public ParenPrinter<FnSpinProjectDir3Plus>
 { 
-  static void visit(FnSpinProjectDir3Plus op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "spinProjectDir3Plus"; }
 };
 
@@ -1064,7 +1192,7 @@ struct TagVisitor<FnSpinProjectDir3Plus, PrintTag> : public ParenPrinter<FnSpinP
 template <>
 struct TagVisitor<FnSpinProjectDir0Minus, PrintTag> : public ParenPrinter<FnSpinProjectDir0Minus>
 { 
-  static void visit(FnSpinProjectDir0Minus op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "spinProjectDir0Minus"; }
 };
 
@@ -1072,7 +1200,7 @@ struct TagVisitor<FnSpinProjectDir0Minus, PrintTag> : public ParenPrinter<FnSpin
 template <>
 struct TagVisitor<FnSpinProjectDir1Minus, PrintTag> : public ParenPrinter<FnSpinProjectDir1Minus>
 { 
-  static void visit(FnSpinProjectDir1Minus op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "spinProjectDir1Minus"; }
 };
 
@@ -1080,7 +1208,7 @@ struct TagVisitor<FnSpinProjectDir1Minus, PrintTag> : public ParenPrinter<FnSpin
 template <>
 struct TagVisitor<FnSpinProjectDir2Minus, PrintTag> : public ParenPrinter<FnSpinProjectDir2Minus>
 { 
-  static void visit(FnSpinProjectDir2Minus op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "spinProjectDir2Minus"; }
 };
 
@@ -1088,7 +1216,7 @@ struct TagVisitor<FnSpinProjectDir2Minus, PrintTag> : public ParenPrinter<FnSpin
 template <>
 struct TagVisitor<FnSpinProjectDir3Minus, PrintTag> : public ParenPrinter<FnSpinProjectDir3Minus>
 { 
-  static void visit(FnSpinProjectDir3Minus op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "spinProjectDir3Minus"; }
 };
 
@@ -1096,7 +1224,7 @@ struct TagVisitor<FnSpinProjectDir3Minus, PrintTag> : public ParenPrinter<FnSpin
 template <>
 struct TagVisitor<FnSpinReconstructDir0Plus, PrintTag> : public ParenPrinter<FnSpinReconstructDir0Plus>
 { 
-  static void visit(FnSpinReconstructDir0Plus op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "spinReconstructDir0Plus"; }
 };
 
@@ -1104,7 +1232,7 @@ struct TagVisitor<FnSpinReconstructDir0Plus, PrintTag> : public ParenPrinter<FnS
 template <>
 struct TagVisitor<FnSpinReconstructDir1Plus, PrintTag> : public ParenPrinter<FnSpinReconstructDir1Plus>
 { 
-  static void visit(FnSpinReconstructDir1Plus op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "spinReconstructDir1Plus"; }
 };
 
@@ -1112,7 +1240,7 @@ struct TagVisitor<FnSpinReconstructDir1Plus, PrintTag> : public ParenPrinter<FnS
 template <>
 struct TagVisitor<FnSpinReconstructDir2Plus, PrintTag> : public ParenPrinter<FnSpinReconstructDir2Plus>
 { 
-  static void visit(FnSpinReconstructDir2Plus op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "spinReconstructDir2Plus"; }
 };
 
@@ -1120,7 +1248,7 @@ struct TagVisitor<FnSpinReconstructDir2Plus, PrintTag> : public ParenPrinter<FnS
 template <>
 struct TagVisitor<FnSpinReconstructDir3Plus, PrintTag> : public ParenPrinter<FnSpinReconstructDir3Plus>
 { 
-  static void visit(FnSpinReconstructDir3Plus op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "spinReconstructDir3Plus"; }
 };
 
@@ -1128,7 +1256,7 @@ struct TagVisitor<FnSpinReconstructDir3Plus, PrintTag> : public ParenPrinter<FnS
 template <>
 struct TagVisitor<FnSpinReconstructDir0Minus, PrintTag> : public ParenPrinter<FnSpinReconstructDir0Minus>
 { 
-  static void visit(FnSpinReconstructDir0Minus op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "spinReconstructDir0Minus"; }
 };
 
@@ -1136,7 +1264,7 @@ struct TagVisitor<FnSpinReconstructDir0Minus, PrintTag> : public ParenPrinter<Fn
 template <>
 struct TagVisitor<FnSpinReconstructDir1Minus, PrintTag> : public ParenPrinter<FnSpinReconstructDir1Minus>
 { 
-  static void visit(FnSpinReconstructDir1Minus op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "spinReconstructDir1Minus"; }
 };
 
@@ -1144,7 +1272,7 @@ struct TagVisitor<FnSpinReconstructDir1Minus, PrintTag> : public ParenPrinter<Fn
 template <>
 struct TagVisitor<FnSpinReconstructDir2Minus, PrintTag> : public ParenPrinter<FnSpinReconstructDir2Minus>
 { 
-  static void visit(FnSpinReconstructDir2Minus op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "spinReconstructDir2Minus"; }
 };
 
@@ -1152,7 +1280,7 @@ struct TagVisitor<FnSpinReconstructDir2Minus, PrintTag> : public ParenPrinter<Fn
 template <>
 struct TagVisitor<FnSpinReconstructDir3Minus, PrintTag> : public ParenPrinter<FnSpinReconstructDir3Minus>
 { 
-  static void visit(FnSpinReconstructDir3Minus op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "spinReconstructDir3Minus"; }
 };
 
@@ -1160,7 +1288,7 @@ struct TagVisitor<FnSpinReconstructDir3Minus, PrintTag> : public ParenPrinter<Fn
 template <>
 struct TagVisitor<FnChiralProjectPlus, PrintTag> : public ParenPrinter<FnChiralProjectPlus>
 { 
-  static void visit(FnChiralProjectPlus op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "chiralProjectPlus"; }
 };
 
@@ -1168,7 +1296,7 @@ struct TagVisitor<FnChiralProjectPlus, PrintTag> : public ParenPrinter<FnChiralP
 template <>
 struct TagVisitor<FnChiralProjectMinus, PrintTag> : public ParenPrinter<FnChiralProjectMinus>
 { 
-  static void visit(FnChiralProjectMinus op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "chiralProjectMinus"; }
 };
 
@@ -1176,7 +1304,7 @@ struct TagVisitor<FnChiralProjectMinus, PrintTag> : public ParenPrinter<FnChiral
 template <>
 struct TagVisitor<FnCmplx, PrintTag> : public ParenPrinter<FnCmplx>
 { 
-  static void visit(FnCmplx op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "cmplx"; }
 };
 
@@ -1184,7 +1312,7 @@ struct TagVisitor<FnCmplx, PrintTag> : public ParenPrinter<FnCmplx>
 template <>
 struct TagVisitor<FnOuterProduct, PrintTag> : public ParenPrinter<FnOuterProduct>
 { 
-  static void visit(FnOuterProduct op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "outerProduct"; }
 };
 
@@ -1192,7 +1320,7 @@ struct TagVisitor<FnOuterProduct, PrintTag> : public ParenPrinter<FnOuterProduct
 template <>
 struct TagVisitor<FnLocalInnerProduct, PrintTag> : public ParenPrinter<FnLocalInnerProduct>
 { 
-  static void visit(FnLocalInnerProduct op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "localInnerProduct"; }
 };
 
@@ -1200,7 +1328,7 @@ struct TagVisitor<FnLocalInnerProduct, PrintTag> : public ParenPrinter<FnLocalIn
 template <>
 struct TagVisitor<FnLocalInnerProductReal, PrintTag> : public ParenPrinter<FnLocalInnerProductReal>
 { 
-  static void visit(FnLocalInnerProductReal op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "localInnerProductReal"; }
 };
 
@@ -1208,7 +1336,7 @@ struct TagVisitor<FnLocalInnerProductReal, PrintTag> : public ParenPrinter<FnLoc
 template <>
 struct TagVisitor<FnQuarkContract13, PrintTag> : public ParenPrinter<FnQuarkContract13>
 { 
-  static void visit(FnQuarkContract13 op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "quarkContract13"; }
 };
 
@@ -1216,7 +1344,7 @@ struct TagVisitor<FnQuarkContract13, PrintTag> : public ParenPrinter<FnQuarkCont
 template <>
 struct TagVisitor<FnQuarkContract14, PrintTag> : public ParenPrinter<FnQuarkContract14>
 { 
-  static void visit(FnQuarkContract14 op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "quarkContract14"; }
 };
 
@@ -1224,7 +1352,7 @@ struct TagVisitor<FnQuarkContract14, PrintTag> : public ParenPrinter<FnQuarkCont
 template <>
 struct TagVisitor<FnQuarkContract23, PrintTag> : public ParenPrinter<FnQuarkContract23>
 { 
-  static void visit(FnQuarkContract23 op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "quarkContract23"; }
 };
 
@@ -1232,7 +1360,7 @@ struct TagVisitor<FnQuarkContract23, PrintTag> : public ParenPrinter<FnQuarkCont
 template <>
 struct TagVisitor<FnQuarkContract24, PrintTag> : public ParenPrinter<FnQuarkContract24>
 { 
-  static void visit(FnQuarkContract24 op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "quarkContract24"; }
 };
 
@@ -1240,7 +1368,7 @@ struct TagVisitor<FnQuarkContract24, PrintTag> : public ParenPrinter<FnQuarkCont
 template <>
 struct TagVisitor<FnQuarkContract12, PrintTag> : public ParenPrinter<FnQuarkContract12>
 { 
-  static void visit(FnQuarkContract12 op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "quarkContract12"; }
 };
 
@@ -1248,7 +1376,7 @@ struct TagVisitor<FnQuarkContract12, PrintTag> : public ParenPrinter<FnQuarkCont
 template <>
 struct TagVisitor<FnQuarkContract34, PrintTag> : public ParenPrinter<FnQuarkContract34>
 { 
-  static void visit(FnQuarkContract34 op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "quarkContract34"; }
 };
 
@@ -1256,7 +1384,7 @@ struct TagVisitor<FnQuarkContract34, PrintTag> : public ParenPrinter<FnQuarkCont
 template <>
 struct TagVisitor<FnColorContract, PrintTag> : public ParenPrinter<FnColorContract>
 { 
-  static void visit(FnColorContract op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "colorContract"; }
 };
 
@@ -1268,49 +1396,49 @@ struct TagVisitor<FnColorContract, PrintTag> : public ParenPrinter<FnColorContra
 template <>
 struct TagVisitor<FnGlobalMax, PrintTag> : public ParenPrinter<FnGlobalMax>
 { 
-  static void visit(FnGlobalMax op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "max"; }
 };
 
 template <>
 struct TagVisitor<FnSum, PrintTag> : public ParenPrinter<FnSum>
 { 
-  static void visit(FnSum op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "sum"; }
 };
 
 template <>
 struct TagVisitor<FnNorm2, PrintTag> : public ParenPrinter<FnNorm2>
 { 
-  static void visit(FnNorm2 op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "norm2"; }
 };
 
 template <>
 struct TagVisitor<OpGammaConstMultiply, PrintTag> : public ParenPrinter<OpGammaConstMultiply>
 { 
-  static void visit(OpGammaConstMultiply op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "*"; }
 };
 
 template <>
 struct TagVisitor<OpMultiplyGammaConst, PrintTag> : public ParenPrinter<OpMultiplyGammaConst>
 { 
-  static void visit(OpMultiplyGammaConst op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "*"; }
 };
 
 template <>
 struct TagVisitor<OpGammaTypeMultiply, PrintTag> : public ParenPrinter<OpGammaTypeMultiply>
 { 
-  static void visit(OpGammaTypeMultiply op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "*"; }
 };
 
 template <>
 struct TagVisitor<OpMultiplyGammaType, PrintTag> : public ParenPrinter<OpMultiplyGammaType>
 { 
-  static void visit(OpMultiplyGammaType op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "*"; }
 };
 
@@ -1322,49 +1450,49 @@ struct TagVisitor<OpMultiplyGammaType, PrintTag> : public ParenPrinter<OpMultipl
 template <>
 struct TagVisitor<OpAdjMultiply, PrintTag> : public ParenPrinter<OpAdjMultiply>
 { 
-  static void visit(OpAdjMultiply op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "adjMultiply"; }
 };
 
 template <>
 struct TagVisitor<OpMultiplyAdj, PrintTag> : public ParenPrinter<OpMultiplyAdj>
 { 
-  static void visit(OpMultiplyAdj op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "multiplyAdj"; }
 };
 
 template <>
 struct TagVisitor<OpAdjMultiplyAdj, PrintTag> : public ParenPrinter<OpAdjMultiplyAdj>
 { 
-  static void visit(OpAdjMultiplyAdj op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "adjMultiplyAdj"; }
 };
 
 template <>
 struct TagVisitor<FnTraceMultiply, PrintTag> : public ParenPrinter<FnTraceMultiply>
 { 
-  static void visit(FnTraceMultiply op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "traceMultiply"; }
 };
 
 template <>
 struct TagVisitor<FnTraceColorMultiply, PrintTag> : public ParenPrinter<FnTraceColorMultiply>
 { 
-  static void visit(FnTraceColorMultiply op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "traceColorMultiply"; }
 };
 
 template <>
 struct TagVisitor<FnTraceSpinMultiply, PrintTag> : public ParenPrinter<FnTraceSpinMultiply>
 { 
-  static void visit(FnTraceSpinMultiply op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "traceSpinMultiply"; }
 };
 
 template <>
 struct TagVisitor<FnTraceSpinQuarkContract13, PrintTag> : public ParenPrinter<FnTraceSpinQuarkContract13>
 { 
-  static void visit(FnTraceSpinQuarkContract13 op, PrintTag t) 
+  static void visit( PrintTag t) 
     { t.os_m << "traceSpinQuarkContract13"; }
 };
 

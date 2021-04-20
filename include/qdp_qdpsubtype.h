@@ -82,9 +82,10 @@ public:
   }
 
 
-  template<class T1,class C1>
+  template<class T1>
   inline
-  void assign(const QDPSubType<T1,C1>& rhs)
+  //void assign(const QDPSubType<T1,C1>& rhs)
+  void assign(const OSubLattice<T1>& rhs)
   {
     if (getOwnsMemory() && rhs.getOwnsMemory()) {
       if (subset().numSiteTable() != rhs.subset().numSiteTable())

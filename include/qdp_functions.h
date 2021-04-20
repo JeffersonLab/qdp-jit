@@ -42,8 +42,6 @@ namespace QDP {
 
 #if defined(QDP_USE_PROFILING)
     prof.end_time();
-    prof.count++;
-    prof.print();
 #endif
   }
 
@@ -72,8 +70,6 @@ namespace QDP {
 
 #if defined(QDP_USE_PROFILING)
     prof.end_time();
-    prof.count++;
-    prof.print();
 #endif
   }
 
@@ -84,41 +80,67 @@ namespace QDP {
   void evaluate_subtype_type(OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,C1 >& rhs,
 			     const Subset& s)
   {
+#if defined(QDP_USE_PROFILING)	 
+    static QDPProfile_t prof(dest, op, rhs);
+    prof.start_time();
+#endif
+
     static JitFunction function;
 
     if (function.empty())
       function_subtype_type_build(function, dest, op, rhs);
 
     function_subtype_type_exec(function, dest, op, rhs, s);
+#if defined(QDP_USE_PROFILING)
+    prof.end_time();
+#endif
   }
 
 
   
 
   template<class T, class T1, class Op>
-  void operator_type_subtype(OLattice<T>& dest, const Op& op, const QDPSubType<T1,OLattice<T1> >& rhs, const Subset& s)
+  void operator_type_subtype(OLattice<T>& dest, const Op& op, const OSubLattice<T1>& rhs, const Subset& s)
   {
+#if defined(QDP_USE_PROFILING)
+    static QDPProfile_t prof(dest, op, rhs);
+    prof.start_time();
+#endif
+
     static JitFunction function;
 
     if (function.empty())
       operator_type_subtype_build(function, dest, op, rhs);
 
     operator_type_subtype_exec(function, dest, op, rhs, s);
+
+#if defined(QDP_USE_PROFILING)
+    prof.end_time();
+#endif
   }
 
 
   
 
   template<class T, class T1, class Op>
-  void operator_subtype_subtype(OSubLattice<T>& dest, const Op& op, const QDPSubType<T1,OLattice<T1> >& rhs, const Subset& s)
+  void operator_subtype_subtype(OSubLattice<T>& dest, const Op& op, const OSubLattice<T1>& rhs, const Subset& s)
   {
+#if defined(QDP_USE_PROFILING)
+    static QDPProfile_t prof(dest, op, rhs);
+    prof.start_time();
+#endif
+
     static JitFunction function;
 
     if (function.empty())
       operator_subtype_subtype_build(function, dest, op, rhs);
 
     operator_subtype_subtype_exec(function, dest, op, rhs, s);
-  }
+
+#if defined(QDP_USE_PROFILING)
+    prof.end_time();
+#endif
+}
 
 
 
@@ -126,12 +148,21 @@ namespace QDP {
   template<class T, class T1, class Op, class RHS>
   void evaluate_subtype(OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs, const Subset& s)
   {
+#if defined(QDP_USE_PROFILING)
+    static QDPProfile_t prof(dest, op, rhs);
+    prof.start_time();
+#endif
+
     static JitFunction function;
 
     if (function.empty())
       function_lat_sca_subtype_build(function, dest, op, rhs);
 
     function_lat_sca_subtype_exec(function, dest, op, rhs, s);
+
+#if defined(QDP_USE_PROFILING)
+    prof.end_time();
+#endif
   }
 
 
@@ -143,12 +174,21 @@ namespace QDP {
   template<class T1, class T2>
   void copymask(OLattice<T2>& dest, const OLattice<T1>& mask, const OLattice<T2>& s1)
   {
+#if defined(QDP_USE_PROFILING)
+    static QDPProfile_t prof(FnCopyMask(), "copymask", dest, mask , s1);
+    prof.start_time();
+#endif
+
     static JitFunction function;
 
     if (function.empty())
       function_copymask_build(function, dest , mask , s1 );
 
     function_copymask_exec(function, dest , mask , s1 );
+
+#if defined(QDP_USE_PROFILING)
+    prof.end_time();
+#endif
   }
 
 
@@ -158,6 +198,11 @@ namespace QDP {
   void 
   random(OLattice<T>& d, const Subset& s)
   {
+#if defined(QDP_USE_PROFILING)
+    static QDPProfile_t prof(FnRandom(), "random", d);
+    prof.start_time();
+#endif
+
     static JitFunction function;
 
     Seed seed_tmp;
@@ -168,6 +213,10 @@ namespace QDP {
     function_random_exec(function, d, s , seed_tmp );
 
     RNG::get_RNG_Internals()->ran_seed = seed_tmp;
+
+#if defined(QDP_USE_PROFILING)
+    prof.end_time();
+#endif
   }
 
 
@@ -202,6 +251,11 @@ namespace QDP {
   template<class T>
   void gaussian(OLattice<T>& d, const Subset& s)
   {
+#if defined(QDP_USE_PROFILING)
+    static QDPProfile_t prof(FnRandom(), "gaussian", d);
+    prof.start_time();
+#endif
+
     OLattice<T>  r1, r2;
 
     random(r1,s);
@@ -213,6 +267,10 @@ namespace QDP {
       function_gaussian_build(function, d , r1 , r2 );
 
     function_gaussian_exec(function, d, r1, r2, s );
+
+#if defined(QDP_USE_PROFILING)
+    prof.end_time();
+#endif
   }
 
 
@@ -228,24 +286,42 @@ namespace QDP {
   inline
   void zero_rep(OLattice<T>& dest, const Subset& s) 
   {
+#if defined(QDP_USE_PROFILING)
+    static QDPProfile_t prof(FnRandom(), "zero_rep", dest);
+    prof.start_time();
+#endif
+
     static JitFunction function;
 
     if (function.empty())
       function_zero_rep_build(function, dest );
 
     function_zero_rep_exec( function , dest , s );
+
+#if defined(QDP_USE_PROFILING)
+    prof.end_time();
+#endif
   }
 
 
   template<class T> 
   void zero_rep_subtype(OSubLattice<T>& dest, const Subset& s) 
   {
+#if defined(QDP_USE_PROFILING)
+    static QDPProfile_t prof(FnRandom(), "zero_rep", dest);
+    prof.start_time();
+#endif
+
     static JitFunction function;
 
     if (function.empty())
       function_zero_rep_subtype_build(function, dest );
 
     function_zero_rep_subtype_exec( function , dest , s );
+
+#if defined(QDP_USE_PROFILING)
+    prof.end_time();
+#endif
   }
 
   template<class T> 
@@ -319,21 +395,30 @@ namespace QDP {
 
 
 
-
-
+  // Not sure if needed
+#if 1
   template<class T>
   multi2d<typename UnaryReturn<OScalar<T>, FnSum>::Type_t>
   sumMulti(const multi1d< OScalar<T> >& s1, const Set& ss)
   {
-    multi2d<typename UnaryReturn<OScalar<T>, FnSumMulti>::Type_t> dest(s1.size(), ss.numSubsets());
+    multi2d<typename UnaryReturn<OScalar<T>, FnSum>::Type_t> dest(s1.size(), ss.numSubsets());
+
+#if defined(QDP_USE_PROFILING)
+    static QDPProfile_t prof( FnSumMulti() , s1 );
+    prof.start_time();
+#endif
 
     for(int i=0; i < dest.size1(); ++i)
       for(int j=0; j < dest.size2(); ++j)
 	dest(j,i) = s1[j];
 
+#if defined(QDP_USE_PROFILING)
+    prof.end_time();
+#endif
+
     return dest;
   }
-
+#endif
 
 
   template<class T>
