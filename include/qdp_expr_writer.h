@@ -570,6 +570,7 @@ struct ParenPrinter
 
   static void finish(PrintTag p)
     { p.os_m << ")"; }
+
 };
 
 
@@ -581,6 +582,77 @@ struct ParenPrinter
 // to the ostream carried by PrintTag.
 //
 // FnArcCos
+
+
+  
+
+  
+template <>
+struct TagVisitor<FnPeekColorMatrix, PrintTag> : public ParenPrinter<FnPeekColorMatrix>
+{ 
+  static void visit(PrintTag t) 
+    { t.os_m << "peekColor"; }
+};
+
+
+template <>
+struct TagVisitor<FnPeekColorVector, PrintTag> : public ParenPrinter<FnPeekColorVector>
+{ 
+  static void visit(PrintTag t) 
+    { t.os_m << "peekColor"; }
+};
+
+
+template <>
+struct TagVisitor<FnPokeColorMatrix, PrintTag> : public ParenPrinter<FnPokeColorMatrix>
+{ 
+  static void visit(PrintTag t) 
+    { t.os_m << "pokeColor"; }
+};
+
+
+template <>
+struct TagVisitor<FnPokeColorVector, PrintTag> : public ParenPrinter<FnPokeColorVector>
+{ 
+  static void visit(PrintTag t) 
+    { t.os_m << "pokeColor"; }
+};
+
+
+  
+template <>
+struct TagVisitor<FnPeekSpinMatrix, PrintTag> : public ParenPrinter<FnPeekSpinMatrix>
+{ 
+  static void visit(PrintTag t) 
+    { t.os_m << "peekSpin"; }
+};
+
+
+template <>
+struct TagVisitor<FnPeekSpinVector, PrintTag> : public ParenPrinter<FnPeekSpinVector>
+{ 
+  static void visit(PrintTag t) 
+    { t.os_m << "peekSpin"; }
+};
+
+
+template <>
+struct TagVisitor<FnPokeSpinMatrix, PrintTag> : public ParenPrinter<FnPokeSpinMatrix>
+{ 
+  static void visit(PrintTag t) 
+    { t.os_m << "pokeSpin"; }
+};
+
+
+template <>
+struct TagVisitor<FnPokeSpinVector, PrintTag> : public ParenPrinter<FnPokeSpinVector>
+{ 
+  static void visit(PrintTag t) 
+    { t.os_m << "pokeSpin"; }
+};
+
+  
+  
 template <>
 struct TagVisitor<FnMap, PrintTag> : public ParenPrinter<FnMap>
 { 

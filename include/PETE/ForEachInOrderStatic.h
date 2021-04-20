@@ -35,6 +35,8 @@
 #ifndef POOMA_PETE_FOREACHINORDERSTATIC_H
 #define POOMA_PETE_FOREACHINORDERSTATIC_H
 
+#include <typeinfo>
+
 //-----------------------------------------------------------------------------
 // Overview: 
 //
@@ -159,6 +161,7 @@
 // the traversal moves down and back up an edge, respectively.
 //
 
+#if 0
 template <class Op, class VTag>
 struct TagVisitor 
 {
@@ -167,7 +170,23 @@ struct TagVisitor
   static void visit(VTag) { }
   static void finish(VTag) { }
 };  
+#else
+template <class Op, class VTag>
+struct TagVisitor 
+{
+  static void start(VTag p)
+  { p.os_m << "("; }
 
+  static void center(VTag p)
+  { p.os_m << ","; }
+
+  static void finish(VTag p)
+  { p.os_m << ")"; }
+
+  static void visit(VTag p)
+  { p.os_m << typeid(Op).name(); }
+};
+#endif
 
 // 
 // struct ForEachInOrderStatic
