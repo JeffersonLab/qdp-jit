@@ -1523,6 +1523,21 @@ struct TagVisitor<OpMultiplyGammaConst, PrintTag> : public ParenPrinter<OpMultip
 };
 
 template <>
+struct TagVisitor<OpGammaConstDPMultiply, PrintTag> : public ParenPrinter<OpGammaConstDPMultiply>
+{ 
+  static void visit( PrintTag t) 
+    { t.os_m << "*"; }
+};
+
+template <>
+struct TagVisitor<OpMultiplyGammaConstDP, PrintTag> : public ParenPrinter<OpMultiplyGammaConstDP>
+{ 
+  static void visit( PrintTag t) 
+    { t.os_m << "*"; }
+};
+
+
+template <>
 struct TagVisitor<OpGammaTypeMultiply, PrintTag> : public ParenPrinter<OpGammaTypeMultiply>
 { 
   static void visit( PrintTag t) 
@@ -1531,6 +1546,20 @@ struct TagVisitor<OpGammaTypeMultiply, PrintTag> : public ParenPrinter<OpGammaTy
 
 template <>
 struct TagVisitor<OpMultiplyGammaType, PrintTag> : public ParenPrinter<OpMultiplyGammaType>
+{ 
+  static void visit( PrintTag t) 
+    { t.os_m << "*"; }
+};
+
+template <>
+struct TagVisitor<OpGammaTypeDPMultiply, PrintTag> : public ParenPrinter<OpGammaTypeDPMultiply>
+{ 
+  static void visit( PrintTag t) 
+    { t.os_m << "*"; }
+};
+
+template <>
+struct TagVisitor<OpMultiplyGammaTypeDP, PrintTag> : public ParenPrinter<OpMultiplyGammaTypeDP>
 { 
   static void visit( PrintTag t) 
     { t.os_m << "*"; }
