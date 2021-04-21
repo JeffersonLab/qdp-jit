@@ -815,6 +815,20 @@ namespace QDP {
 		Allocator::theQDPAllocator::DestroySingleton();
 
 		printProfile();
+
+#if defined(QDP_USE_PROFILING)
+		if (qdp_jit_CPU_getall().size() > 0)
+		  {
+		    QDPIO::cout << std::endl << std::endl;
+		    QDPIO::cout << "Functions executed on host:" << std::endl;
+		    for (auto const& x : qdp_jit_CPU_getall())
+		      {
+			char lin[80];
+			sprintf(lin, " [%8d] ", x.second );
+			QDPIO::cout << lin << x.first << std::endl;
+		      }
+		  }
+#endif
 		
 		QMP_finalize_msg_passing();
 		

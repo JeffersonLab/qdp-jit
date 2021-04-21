@@ -202,4 +202,22 @@ namespace QDP
       }
   }
 
+
+#if defined(QDP_USE_PROFILING)
+  namespace
+  {
+    std::map<std::string,int> _map_cpu;
+  }
+
+  void qdp_jit_CPU_add( const std::string& pretty )
+  {
+    _map_cpu[ pretty ]++;
+  }
+  
+  std::map<std::string,int>& qdp_jit_CPU_getall()
+  {
+    return _map_cpu;
+  }
+#endif
+
 }

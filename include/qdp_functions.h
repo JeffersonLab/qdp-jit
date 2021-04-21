@@ -18,7 +18,6 @@ namespace QDP {
   }
 
 
-
   //-----------------------------------------------------------------------------
   //! OLattice Op Scalar(Expression(source)) under an Subset
   /*! 
@@ -425,6 +424,10 @@ namespace QDP {
   multi2d<typename UnaryReturn<OLattice<T>, FnSum>::Type_t>
   sumMulti(const multi1d< OLattice<T> >& s1, const Set& ss)
   {
+#if defined(QDP_USE_PROFILING)
+    qdp_jit_CPU_add(__PRETTY_FUNCTION__);
+#endif
+    
     multi2d<typename UnaryReturn<OLattice<T>, FnSum>::Type_t> dest(s1.size(), ss.numSubsets());
 
     // Initialize result with zero
@@ -492,6 +495,10 @@ namespace QDP {
   inline typename UnaryReturn<OLattice<T>, FnNorm2>::Type_t
   norm2(const multi1d< OLattice<T> >& s1, const Subset& s)
   {
+#if defined(QDP_USE_PROFILING)
+    qdp_jit_CPU_add(__PRETTY_FUNCTION__);
+#endif
+    
     typename UnaryReturn<OLattice<T>, FnNorm2>::Type_t  d;
 
     // Possibly loop entered
@@ -582,6 +589,10 @@ namespace QDP {
   innerProduct(const multi1d< OLattice<T1> >& s1, const multi1d< OLattice<T2> >& s2,
 	       const Subset& s)
   {
+#if defined(QDP_USE_PROFILING)
+    qdp_jit_CPU_add(__PRETTY_FUNCTION__);
+#endif
+    
     typename BinaryReturn<OLattice<T1>, OLattice<T2>, FnInnerProduct>::Type_t  d;
 
     // Possibly loop entered
@@ -673,6 +684,10 @@ namespace QDP {
   innerProductReal(const multi1d< OLattice<T1> >& s1, const multi1d< OLattice<T2> >& s2,
 		   const Subset& s)
   {
+#if defined(QDP_USE_PROFILING)
+    qdp_jit_CPU_add(__PRETTY_FUNCTION__);
+#endif
+    
     typename BinaryReturn<OLattice<T1>, OLattice<T2>, FnInnerProductReal>::Type_t  d;
 
     // Possibly loop entered
@@ -844,6 +859,10 @@ namespace QDP {
   inline void 
   QDP_extract(multi1d<OScalar<T> >& dest, const OLattice<T>& src, const Subset& s)
   {
+#if defined(QDP_USE_PROFILING)
+    qdp_jit_CPU_add(__PRETTY_FUNCTION__);
+#endif
+    
     const int *tab = s.siteTable().slice();
     for(int j=0; j < s.numSiteTable(); ++j) 
       {
@@ -863,6 +882,10 @@ namespace QDP {
   inline void 
   QDP_insert(OLattice<T>& dest, const multi1d<OScalar<T> >& src, const Subset& s)
   {
+#if defined(QDP_USE_PROFILING)
+    qdp_jit_CPU_add(__PRETTY_FUNCTION__);
+#endif
+    
     const int *tab = s.siteTable().slice();
     for(int j=0; j < s.numSiteTable(); ++j) 
       {

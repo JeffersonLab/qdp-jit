@@ -67,7 +67,13 @@ namespace QDP
   std::string jit_config_deep_log_name();
 
   void        jit_config_deep_set( std::string name , bool create );
-#endif  
+#endif
+
+#if defined(QDP_USE_PROFILING)
+  void qdp_jit_CPU_add( const std::string& pretty );
+  std::map<std::string,int>& qdp_jit_CPU_getall();
+#endif
+
 }
 
 

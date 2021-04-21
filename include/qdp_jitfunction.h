@@ -253,54 +253,6 @@ function_build(JitFunction& function, const DynKey& key, OLattice<T>& dest, cons
 	}
     }
   
-#if 0
-  // ParamRef p_do_site_perm = llvm_add_param<bool>();
-  // ParamRef p_site_table   = llvm_add_param<int*>();
-  // ParamRef p_member_array = llvm_add_param<bool*>();
-  
-  ParamLeaf param_leaf;
-
-  typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
-  FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
-
-  auto op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
-
-  typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
-  View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
-
-  llvm::Value * r_ordered      = llvm_derefParam( p_ordered );
-  llvm::Value * r_th_count     = llvm_derefParam( p_th_count );
-  llvm::Value * r_start        = llvm_derefParam( p_start );
-  llvm::Value * r_end          = llvm_derefParam( p_end );
-  llvm::Value * r_do_site_perm = llvm_derefParam( p_do_site_perm );
-
-  llvm::Value* r_idx_thread = llvm_thread_idx();
-
-  llvm_cond_exit( llvm_ge( r_idx_thread , r_th_count ) );
-
-  llvm::Value* r_idx = jit_ternary( r_do_site_perm ,
-				    JitDeferArrayTypeIndirection( p_site_table , r_idx_thread ),
-                                    jit_ternary( r_ordered,
-                                                 JitDeferAdd( r_idx_thread , r_start ),
-                                                 r_idx_thread
-						 )
-				    );
-
-  JitIf ordered(r_ordered);
-  {
-    llvm_cond_exit( llvm_gt( r_idx , r_end ) );
-    llvm_cond_exit( llvm_lt( r_idx , r_start ) ); // This can be removed, as r_idx >= 0
-  }
-  ordered.els();
-  {
-    llvm_cond_exit( llvm_not( llvm_array_type_indirection( p_member_array , r_idx ) ) );
-  }
-  ordered.end();
-  
-  op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ), 
-	  forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , r_idx ), OpCombine()));
-#endif
-  
   jit_get_function( function );
 }
 

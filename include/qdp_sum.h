@@ -202,6 +202,11 @@ namespace QDP {
 
     typename UnaryReturn<OLattice<T1>, FnSum>::Type_t  d;
     zero_rep(d);
+
+#if defined(QDP_USE_PROFILING)
+    static QDPProfile_t prof(d, OpAssign(), FnSum(), s1);
+    prof.start_time();
+#endif
     
     unsigned actsize=s.numSiteTable();
     bool first=true;
@@ -264,6 +269,10 @@ namespace QDP {
     
     QDPInternal::globalSum(d);
 
+#if defined(QDP_USE_PROFILING)
+    prof.end_time();
+#endif
+
     return d;
   }
 
@@ -295,7 +304,12 @@ namespace QDP {
 
     typename UnaryReturn< OLattice< PScalar<PScalar<RScalar<Word<double> > > > >, FnSum>::Type_t  d;
     zero_rep(d);
-    
+
+#if defined(QDP_USE_PROFILING)
+    static QDPProfile_t prof(d, OpAssign(), FnSum(), rhs);
+    prof.start_time();
+#endif
+
     unsigned actsize=s.numSiteTable();
     bool first=true;
     bool allocated=false;
@@ -365,6 +379,10 @@ namespace QDP {
     
     QDPInternal::globalSum(d);
 
+#if defined(QDP_USE_PROFILING)
+    prof.end_time();
+#endif
+
     return d;
   }
 
@@ -423,6 +441,11 @@ namespace QDP {
     const int numsubsets = ss.numSubsets();
 
     typename UnaryReturn<OLattice<T1>, FnSumMulti>::Type_t  dest( numsubsets );
+
+#if defined(QDP_USE_PROFILING)
+    static QDPProfile_t prof(dest, OpAssign(), FnSumMulti(), s1);
+    prof.start_time();
+#endif
 
     
     //QDPIO::cout << "number of subsets: " << numsubsets << "\n";
@@ -545,6 +568,10 @@ namespace QDP {
     
     QDPInternal::globalSumArray(dest);
 
+#if defined(QDP_USE_PROFILING)
+    prof.end_time();
+#endif
+
     return dest;
   }
 #else
@@ -600,6 +627,11 @@ namespace QDP {
 
     typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t  d;
 
+#if defined(QDP_USE_PROFILING)
+    static QDPProfile_t prof(d, OpAssign(), FnGlobalMax(), s1);
+    prof.start_time();
+#endif
+
     int actsize=nodeSites;
     bool first=true;
     while (1) {
@@ -649,6 +681,10 @@ namespace QDP {
 
     QDPInternal::globalMax(d);
 
+#if defined(QDP_USE_PROFILING)
+    prof.end_time();
+#endif
+
     return d;
   }
 
@@ -663,6 +699,11 @@ namespace QDP {
     typedef typename Ret_t::SubType_t T2;
     
     Ret_t d;
+
+#if defined(QDP_USE_PROFILING)
+    static QDPProfile_t prof(d, OpAssign(), FnIsFinite(), s1);
+    prof.start_time();
+#endif
 
     int out_id,in_id;
     unsigned actsize=Layout::sitesOnNode();
@@ -721,6 +762,10 @@ namespace QDP {
 
     bool ret_ = toBool(d);
     QDPInternal::globalAnd(ret_);
+
+#if defined(QDP_USE_PROFILING)
+    prof.end_time();
+#endif
 
     return ret_;
   }

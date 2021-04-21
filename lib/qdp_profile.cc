@@ -116,7 +116,6 @@ closeProfile()
 void 
 printProfile()
 {
-  QDPIO::cout << "Using profiling\n";
   if (profqueue.size() == 0)
     return;
 

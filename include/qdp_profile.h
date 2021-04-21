@@ -310,6 +310,29 @@ public:
 	registerProfile(this);
       }
     }
+
+  
+  //! Profile  opOuter(rhs)
+  template<class T, class Op, class OpOuter, class T1, class C1>
+  QDPProfile_t(const multi1d<OScalar<T> >& dest, const Op& op, const OpOuter& opOuter, const QDPType<T1,C1>& rhs)
+    {
+      init();
+
+      if (getProfileLevel() > 0)
+      {
+	typedef UnaryNode<OpOuter, typename CreateLeaf<QDPType<T1,C1> >::Leaf_t> Tree_t;
+	typedef typename UnaryReturn<C1,OpOuter>::Type_t Container_t;
+
+	std::ostringstream os;
+	printExprTree(os, dest, op, 
+		      MakeReturn<Tree_t,Container_t>::make(Tree_t(
+			CreateLeaf<QDPType<T1,C1> >::make(rhs))));
+	expr = os.str();
+	registerProfile(this);
+      }
+    }
+
+
 };
 
 

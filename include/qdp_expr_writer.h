@@ -56,6 +56,24 @@ void printExprTree(ostream& os,
 }
 
 
+
+template<class T, class Op, class RHS, class C1>
+//inline
+void printExprTree(ostream& os, 
+		   const multi1d< OScalar<T> >& dest, const Op& op, const QDPExpr<RHS,C1>& rhs)
+{
+  typedef ForEachInOrderStatic<RHS, PrintTag, PrintTag, NullTag> Print_t;
+  LeafFunctor<multi1d< OScalar<T> >,PrintTag>::apply(PrintTag(os));
+  os << " ";
+  TagVisitor<Op,PrintTag>::visit(PrintTag(os));
+  os << " ";
+  Print_t::apply(PrintTag(os), PrintTag(os), NullTag());
+
+  os << ";";
+}
+
+  
+
 template<class T, class Op, class T1>
 void printExprTree(ostream& os, 
 		   const OLattice<T>& dest, const Op& op, const OSubLattice<T1>& rhs)
