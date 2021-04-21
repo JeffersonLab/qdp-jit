@@ -170,6 +170,61 @@ struct LeafFunctor<GammaType<N>, DynKeyTag>
   }
 };
 
+  
+//
+// GammaConst  Trait classes for code generation
+//
+  
+template<int N, int m >
+struct LeafFunctor<GammaConst<N,m>, ParamLeaf>
+{
+  typedef GammaConst<N,m> Type_t;
+  inline static
+  Type_t apply(const GammaConst<N,m>& g, const ParamLeaf& p) 
+  {
+    Type_t ret;
+    return ret;
+  }
+};
+
+template<int N, int m >
+struct LeafFunctor<GammaConst<N,m>, ShiftPhase1>
+{
+  typedef int Type_t;
+  static int apply(const GammaConst<N,m> &s, const ShiftPhase1 &f) { return 0; }
+};
+
+template<int N, int m >
+struct LeafFunctor<GammaConst<N,m>, ShiftPhase2>
+{
+  typedef int Type_t;
+  static int apply(const GammaConst<N,m> &s, const ShiftPhase2 &f) { return 0; }
+};
+
+template<int N, int m >
+struct LeafFunctor<GammaConst<N,m>, ViewLeaf>
+{
+  typedef GammaConst<N,m> Type_t;
+  inline static
+  Type_t apply(const GammaConst<N,m>& g, const ViewLeaf& v)
+  {
+    Type_t ret;
+    return ret;
+  }
+};
+
+template<int N, int m >
+struct LeafFunctor<GammaConst<N,m>, AddressLeaf>
+{
+  typedef int Type_t;
+  inline static
+  Type_t apply(const GammaConst<N,m>& g, const AddressLeaf& v)
+  {
+    return 0;
+  }
+};
+
+  
 
 //
 // GammaTypeDP Trait classes for code generation
@@ -236,7 +291,63 @@ struct LeafFunctor<GammaTypeDP<N>, DynKeyTag>
   }
 };
 
+
+//
+// GammaConstDP  Trait classes for code generation
+//
   
+template<int N, int m >
+struct LeafFunctor<GammaConstDP<N,m>, ParamLeaf>
+{
+  typedef GammaConstDP<N,m> Type_t;
+  inline static
+  Type_t apply(const GammaConstDP<N,m>& g, const ParamLeaf& p) 
+  {
+    Type_t ret;
+    return ret;
+  }
+};
+
+template<int N, int m >
+struct LeafFunctor<GammaConstDP<N,m>, ShiftPhase1>
+{
+  typedef int Type_t;
+  static int apply(const GammaConstDP<N,m> &s, const ShiftPhase1 &f) { return 0; }
+};
+
+template<int N, int m >
+struct LeafFunctor<GammaConstDP<N,m>, ShiftPhase2>
+{
+  typedef int Type_t;
+  static int apply(const GammaConstDP<N,m> &s, const ShiftPhase2 &f) { return 0; }
+};
+
+template<int N, int m >
+struct LeafFunctor<GammaConstDP<N,m>, ViewLeaf>
+{
+  typedef GammaConstDP<N,m> Type_t;
+  inline static
+  Type_t apply(const GammaConstDP<N,m>& g, const ViewLeaf& v)
+  {
+    Type_t ret;
+    return ret;
+  }
+};
+
+template<int N, int m >
+struct LeafFunctor<GammaConstDP<N,m>, AddressLeaf>
+{
+  typedef int Type_t;
+  inline static
+  Type_t apply(const GammaConstDP<N,m>& g, const AddressLeaf& v)
+  {
+    return 0;
+  }
+};
+
+
+
+
 
 //-----------------------------------------------------------------------------
 // Traits classes to support return types
