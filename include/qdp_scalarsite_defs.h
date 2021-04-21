@@ -21,10 +21,8 @@ namespace QDP {
 #include <qdp_config.h>
 #include "qdp_precision.h"
 
-#if 0
-typedef GammaType<Ns> Gamma;
-#endif
 
+typedef GammaType<Ns> Gamma;
 typedef GammaTypeDP<Ns> GammaDP;
 
 

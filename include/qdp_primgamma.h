@@ -103,116 +103,29 @@ template<int N, int m> class GammaConstDP
 };
 
 
-template<int N, int m>
-struct LeafFunctor<GammaConst<N,m>, ParamLeaf>
-{
-  //typedef typename JITType< OScalar<T> >::Type_t  TypeA_t;
-  typedef GammaConst<N,m> TypeA_t;
-  typedef TypeA_t  Type_t;
-  inline static
-  Type_t apply(const GammaConst<N,m>& do_not_use, const ParamLeaf& p) 
-  {
-    return Type_t();
-  }
-};
 
-
-template<int N, int m>
-struct LeafFunctor<GammaConst<N,m>, ViewLeaf>
-{
-  //typedef typename JITType< OScalar<T> >::Type_t  TypeA_t;
-  typedef GammaConst<N,m> TypeA_t;
-  typedef TypeA_t  Type_t;
-  inline static
-  Type_t apply(const GammaConst<N,m>& do_not_use, const ViewLeaf& p) 
-  {
-    return Type_t();
-  }
-};
-
-
-
-template<int N, int m>
-struct LeafFunctor<GammaConst<N,m>, AddressLeaf>
-{
-  typedef int Type_t;
-  inline static
-  Type_t apply(const GammaConst<N,m>& s, const AddressLeaf& p) 
-  {
-    return 0;
-  }
-};
+//
+// GammaType Trait classes for code generation
+//
 
 
 template<int N>
-struct LeafFunctor<GammaType<N>, AddressLeaf>
+struct LeafFunctor<GammaType<N>, ParamLeaf>
 {
-  typedef int Type_t;
+  typedef GammaType<N> Type_t;
   inline static
-  Type_t apply(const GammaType<N>& s, const AddressLeaf& p) 
+  Type_t apply(const GammaType<N>& g, const ParamLeaf& p) 
   {
-    return 0;
+    Type_t ret(g.elem());
+    return ret;
   }
 };
-
-
-
-
-
-template<int N, int m>
-struct LeafFunctor<GammaConstDP<N,m>, ParamLeaf>
-{
-  //typedef typename JITType< OScalar<T> >::Type_t  TypeA_t;
-  typedef GammaConstDP<N,m> TypeA_t;
-  typedef TypeA_t  Type_t;
-  inline static
-  Type_t apply(const GammaConstDP<N,m>& do_not_use, const ParamLeaf& p) 
-  {
-    return Type_t();
-  }
-};
-
-
-template<int N, int m>
-struct LeafFunctor<GammaConstDP<N,m>, ViewLeaf>
-{
-  //typedef typename JITType< OScalar<T> >::Type_t  TypeA_t;
-  typedef GammaConstDP<N,m> TypeA_t;
-  typedef TypeA_t  Type_t;
-  inline static
-  Type_t apply(const GammaConstDP<N,m>& do_not_use, const ViewLeaf& p) 
-  {
-    return Type_t();
-  }
-};
-
-
-
-template<int N, int m>
-struct LeafFunctor<GammaConstDP<N,m>, AddressLeaf>
-{
-  typedef int Type_t;
-  inline static
-  Type_t apply(const GammaConstDP<N,m>& s, const AddressLeaf& p) 
-  {
-    return 0;
-  }
-};
-
-
 
 template<int N>
 struct LeafFunctor<GammaType<N>, ShiftPhase1>
 {
   typedef int Type_t;
   static int apply(const GammaType<N> &s, const ShiftPhase1 &f) { return 0; }
-};
-
-template<int N, int m>
-struct LeafFunctor<GammaConst<N,m>, ShiftPhase1>
-{
-  typedef int Type_t;
-  static int apply(const GammaConst<N,m> &s, const ShiftPhase1 &f) { return 0; }
 };
 
 template<int N>
@@ -222,15 +135,108 @@ struct LeafFunctor<GammaType<N>, ShiftPhase2>
   static int apply(const GammaType<N> &s, const ShiftPhase2 &f) { return 0; }
 };
 
-template<int N, int m>
-struct LeafFunctor<GammaConst<N,m>, ShiftPhase2>
+template<int N>
+struct LeafFunctor<GammaType<N>, ViewLeaf>
+{
+  typedef GammaType<N> Type_t;
+  inline static
+  Type_t apply(const GammaType<N>& g, const ViewLeaf& v)
+  {
+    Type_t ret(g.elem());
+    return ret;
+  }
+};
+
+template<int N>
+struct LeafFunctor<GammaType<N>, AddressLeaf>
 {
   typedef int Type_t;
-  static int apply(const GammaConst<N,m> &s, const ShiftPhase2 &f) { return 0; }
+  inline static
+  Type_t apply(const GammaType<N>& g, const AddressLeaf& v)
+  {
+    return 0;
+  }
+};
+
+template<int N>
+struct LeafFunctor<GammaType<N>, DynKeyTag>
+{
+  typedef bool Type_t;
+  inline static
+  Type_t apply(const GammaType<N>& g, const DynKeyTag& v)
+  {
+    v.key.add( g.elem() );
+    return false;
+  }
 };
 
 
+//
+// GammaTypeDP Trait classes for code generation
+//
 
+template<int N>
+struct LeafFunctor<GammaTypeDP<N>, ParamLeaf>
+{
+  typedef GammaTypeDP<N> Type_t;
+  inline static
+  Type_t apply(const GammaTypeDP<N>& g, const ParamLeaf& p) 
+  {
+    Type_t ret(g.elem());
+    return ret;
+  }
+};
+
+template<int N>
+struct LeafFunctor<GammaTypeDP<N>, ShiftPhase1>
+{
+  typedef int Type_t;
+  static int apply(const GammaTypeDP<N> &s, const ShiftPhase1 &f) { return 0; }
+};
+
+template<int N>
+struct LeafFunctor<GammaTypeDP<N>, ShiftPhase2>
+{
+  typedef int Type_t;
+  static int apply(const GammaTypeDP<N> &s, const ShiftPhase2 &f) { return 0; }
+};
+
+template<int N>
+struct LeafFunctor<GammaTypeDP<N>, ViewLeaf>
+{
+  typedef GammaTypeDP<N> Type_t;
+  inline static
+  Type_t apply(const GammaTypeDP<N>& g, const ViewLeaf& v)
+  {
+    Type_t ret(g.elem());
+    return ret;
+  }
+};
+
+template<int N>
+struct LeafFunctor<GammaTypeDP<N>, AddressLeaf>
+{
+  typedef int Type_t;
+  inline static
+  Type_t apply(const GammaTypeDP<N>& g, const AddressLeaf& v)
+  {
+    return 0;
+  }
+};
+
+template<int N>
+struct LeafFunctor<GammaTypeDP<N>, DynKeyTag>
+{
+  typedef bool Type_t;
+  inline static
+  Type_t apply(const GammaTypeDP<N>& g, const DynKeyTag& v)
+  {
+    v.key.add( g.elem() );
+    return false;
+  }
+};
+
+  
 
 //-----------------------------------------------------------------------------
 // Traits classes to support return types
@@ -473,15 +479,6 @@ inline T OpMultiplyGammaTypeDP::operator()(const T &a, const GammaTypeDP<N>& b) 
   // integer since Gamma was constructed (and should check it).
   return s[b.elem()](a);
 }
-
-
-#if 1
-extern SpinMatrix gammas[Ns*Ns];
-extern SpinMatrix& Gamma(int i);
-#endif
-
-
-
 
 
 

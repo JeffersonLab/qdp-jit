@@ -1654,7 +1654,7 @@ namespace QDP {
 
   
 #ifdef QDP_BACKEND_ROCM
-  void build_function_codegen(const std::string& shared_path)
+  void build_function_rocm_codegen(const std::string& shared_path)
   {
   #if 0
     {
@@ -1670,6 +1670,7 @@ namespace QDP {
       {
 	QDPIO::cout << "setting module data layout\n";
       }
+    
     Mod->setDataLayout(TargetMachine->createDataLayout());
 
     if (math_declarations.size() > 0)
@@ -1853,21 +1854,22 @@ namespace QDP {
   
   void llvm_build_function_rocm(JitFunction& func)
   {
-    if (Layout::primaryNode())
-      {
-	//llvm_module_dump();
-      }
-    
     if (jit_config_get_verbose_output())
       {
-	QDPIO::cout << str_pretty << "\n";
+	QDPIO::cout << "\n\n";
+	QDPIO::cout << str_pretty << std::endl;
+	
+	if (Layout::primaryNode())
+	  {
+	    llvm_module_dump();
+	  }
       }
     
     std::string shared_path = "module_" + str_kernel_name + ".so";
 
     if (Layout::primaryNode())
       {
-	build_function_codegen( shared_path );
+	build_function_rocm_codegen( shared_path );
       }
 
     //

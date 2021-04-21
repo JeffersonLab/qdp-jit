@@ -548,6 +548,28 @@ struct LeafFunctor<GammaConst<N,m>, PrintTag>
     }
 };
 
+template<int N>
+struct LeafFunctor<GammaTypeDP<N>, PrintTag>
+{
+  typedef int Type_t;
+  static int apply(const PrintTag &f)
+    { 
+      f.os_m << "GammaTypeDP";
+      return 0;
+    }
+};
+
+template<int N, int m>
+struct LeafFunctor<GammaConstDP<N,m>, PrintTag>
+{
+  typedef int Type_t;
+  static int apply(const PrintTag &f)
+    { 
+      f.os_m << "GammaConstDP";
+      return 0;
+    }
+};
+
 
 
 
