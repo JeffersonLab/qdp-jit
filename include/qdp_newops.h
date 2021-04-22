@@ -764,13 +764,13 @@ struct LeafFunctor<GammaType<N>, ElemLeaf>
 };
 
 
-// template<int N>
-// struct LeafFunctor<GammaType<N>, EvalLeaf1>
-// {
-//   typedef GammaType<N> Type_t;
-//   inline static Type_t apply(const GammaType<N> &a, const EvalLeaf1 &f)
-//     {return a;}
-// };
+template<int N>
+struct LeafFunctor<GammaType<N>, EvalLeaf1>
+{
+  typedef GammaType<N> Type_t;
+  inline static Type_t apply(const GammaType<N> &a, const EvalLeaf1 &f)
+    {return a;}
+};
 
 
 template<int N, int m>
@@ -791,13 +791,13 @@ struct LeafFunctor<GammaConst<N,m>, ElemLeaf>
     {return a;}
 };
 
-// template<int N, int m>
-// struct LeafFunctor<GammaConst<N,m>, EvalLeaf1>
-// {
-//   typedef GammaConst<N,m> Type_t;
-//   inline static Type_t apply(const GammaConst<N,m> &a, const EvalLeaf1 &f)
-//     {return a;}
-// };
+template<int N, int m>
+struct LeafFunctor<GammaConst<N,m>, EvalLeaf1>
+{
+  typedef GammaConst<N,m> Type_t;
+  inline static Type_t apply(const GammaConst<N,m> &a, const EvalLeaf1 &f)
+    {return a;}
+};
 
 
 
