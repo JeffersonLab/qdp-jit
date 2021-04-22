@@ -370,6 +370,12 @@ namespace QDP
   template<class Allocator>
   bool QDPPoolAllocator<Allocator>::allocate( void ** ptr , size_t n_bytes , int id )
   {
+    if (n_bytes == 0)
+      {
+        *ptr = nullptr;
+        return true;
+      }
+
     if (!bufferAllocated)
       {
 	if ( !allocateInternalBuffer() )
@@ -452,6 +458,12 @@ namespace QDP
   template<class Allocator>
   bool QDPPoolAllocator<Allocator>::allocate_fixed( void ** ptr , size_t n_bytes , int id )
   {
+    if (n_bytes == 0)
+      {
+        *ptr = nullptr;
+        return true;
+      }
+
     if (!bufferAllocated)
       {
 	if ( !allocateInternalBuffer() )
@@ -536,6 +548,9 @@ namespace QDP
   template<class Allocator>
   void QDPPoolAllocator<Allocator>::free(const void *mem)
   {
+    if (mem == nullptr)
+      return;
+
     iterEntry_t p;
     
     if (!findMemMatch( p , mem ))
