@@ -52,9 +52,7 @@ getClockTime()
 
 void initProfile(const std::string& file, const std::string& caller, int line) {}
 void closeProfile() {}
-void printProfile() {
-  QDPIO::cout << "not using profiling\n";
-}
+void printProfile() {}
 int setProfileLevel(int n) {return prof_level;}
 int setProgramProfileLevel(int n) {return prog_prof_level;}
 
