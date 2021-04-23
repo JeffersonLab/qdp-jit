@@ -207,6 +207,9 @@ namespace QDP {
     static QDPProfile_t prof(d, OpAssign(), FnSum(), s1);
     prof.start_time();
 #endif
+
+    // Register the destination object with the memory cache
+    int d_id = QDP_get_global_cache().registrateOwnHostMem( sizeof(typename UnaryReturn<OLattice<T1>, FnSum>::Type_t::SubType_t) , d.getF() , nullptr );
     
     unsigned actsize=s.numSiteTable();
     bool first=true;
@@ -235,10 +238,10 @@ namespace QDP {
       
       if (numBlocks == 1) {
 	if (first) {
-	  qdp_jit_reduce_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, shared_mem_usage, s1.getId(), d.getId(), s.getIdSiteTable());
+	  qdp_jit_reduce_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, shared_mem_usage, s1.getId(), d_id , s.getIdSiteTable());
 	}
 	else {
-	  qdp_jit_reduce<T2>( actsize , numThreads , numBlocks, shared_mem_usage , in_id , d.getId() );
+	  qdp_jit_reduce<T2>( actsize , numThreads , numBlocks, shared_mem_usage , in_id , d_id );
 	}
       } else {
 	if (first) {
@@ -266,8 +269,15 @@ namespace QDP {
 	QDP_get_global_cache().signoff( in_id );
 	QDP_get_global_cache().signoff( out_id );
       }
-    
+
+    // Copy result to host
+    QDP_get_global_cache().assureOnHost(d_id);
+
+    // Global sum
     QDPInternal::globalSum(d);
+
+    // Sign off result
+    QDP_get_global_cache().signoff( d_id );
 
 #if defined(QDP_USE_PROFILING)
     prof.end_time();
@@ -310,6 +320,9 @@ namespace QDP {
     prof.start_time();
 #endif
 
+    // Register the destination object with the memory cache
+    int d_id = QDP_get_global_cache().registrateOwnHostMem( sizeof(typename UnaryReturn< OLattice< PScalar<PScalar<RScalar<Word<double> > > > > , FnSum>::Type_t::SubType_t) , d.getF() , nullptr );
+    
     unsigned actsize=s.numSiteTable();
     bool first=true;
     bool allocated=false;
@@ -339,11 +352,11 @@ namespace QDP {
 	{
 	  if (first)
 	    {
-	      qdp_jit_reduce_convert_indirection_expr<JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, shared_mem_usage, rhs , d.getId(), s.getIdSiteTable());
+	      qdp_jit_reduce_convert_indirection_expr<JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, shared_mem_usage, rhs , d_id , s.getIdSiteTable());
 	    }
 	  else
 	    {
-	      qdp_jit_reduce<T2>( actsize , numThreads , numBlocks, shared_mem_usage , in_id , d.getId() );
+	      qdp_jit_reduce<T2>( actsize , numThreads , numBlocks, shared_mem_usage , in_id , d_id );
 	    }
 	}
       else
@@ -376,8 +389,16 @@ namespace QDP {
 	QDP_get_global_cache().signoff( in_id );
 	QDP_get_global_cache().signoff( out_id );
       }
-    
+
+    // Copy result to host
+    QDP_get_global_cache().assureOnHost(d_id);
+
+    // Global sum
     QDPInternal::globalSum(d);
+
+    // Sign off result
+    QDP_get_global_cache().signoff( d_id );
+
 
 #if defined(QDP_USE_PROFILING)
     prof.end_time();
@@ -425,7 +446,15 @@ namespace QDP {
       
       return 1 << count;  
     }
+
+    template <class T>
+    void print_type()
+    {
+      QDPIO::cout << __PRETTY_FUNCTION__ << std::endl;
+    }
   }
+
+  
   
   //
   // sumMulti 
@@ -447,9 +476,10 @@ namespace QDP {
     prof.start_time();
 #endif
 
+    // Register the destination object with the memory cache
+    int d_id = QDP_get_global_cache().registrateOwnHostMem( sizeof(T2) * numsubsets , dest.slice() , nullptr );
     
     //QDPIO::cout << "number of subsets: " << numsubsets << "\n";
-
     multi1d<QDPCache::ArgKey> table_ids( numsubsets );
     multi1d<int>              sizes    ( numsubsets );
 
@@ -510,7 +540,7 @@ namespace QDP {
 	if (first) {
 	  qdp_jit_summulti_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(maxsize, numThreads, numBlocks,
 										 shared_mem_usage,
-										 s1.getId(), dest.getId(),
+										 s1.getId(), d_id,
 										 numsubsets,
 										 sizes,
 										 table_ids);
@@ -518,7 +548,7 @@ namespace QDP {
 	else {
 	  qdp_jit_summulti<T2>(maxsize, numThreads, numBlocks,
 			       shared_mem_usage,
-			       in_id, dest.getId(),
+			       in_id, d_id,
 			       numsubsets,
 			       sizes);
 	}
@@ -563,10 +593,15 @@ namespace QDP {
 	QDP_get_global_cache().signoff( out_id );
       }
 
-    // This avoids an element-wise cuda memory copy
-    dest.copyD2H();
-    
+
+    // Copy result to host
+    QDP_get_global_cache().assureOnHost(d_id);
+
+    // Global sum
     QDPInternal::globalSumArray(dest);
+
+    // Sign off result
+    QDP_get_global_cache().signoff( d_id );
 
 #if defined(QDP_USE_PROFILING)
     prof.end_time();

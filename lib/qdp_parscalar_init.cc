@@ -64,6 +64,9 @@ namespace QDP {
       {
 	db_tune_read( jit_config_get_tuning_file() );
       }
+
+    // Initialize the ring buffer for OScalars
+    jit_util_ringBuffer_init();
   }
 
 
@@ -396,6 +399,12 @@ namespace QDP {
 	    int stack;
 	    sscanf((*argv)[++i], "%d", &stack);
 	    jit_config_set_thread_stack(stack);
+	  }
+	else if (strcmp((*argv)[i], "-ringbuffersize")==0)
+	  {
+	    int s;
+	    sscanf((*argv)[++i], "%d", &s);
+	    jit_config_set_oscalar_ringbuffer_size(s);
 	  }
 	else if (strcmp((*argv)[i], "-libdevice-path")==0) 
 	  {

@@ -23,7 +23,8 @@ namespace QDP
       JitParam = 4,
       Static = 8,
       Multi = 16,
-      Array = 32
+      Array = 32,
+      NoPage = 64
     };
 
     enum class Status       { undef , host , device };
@@ -113,7 +114,8 @@ namespace QDP
     // Wrappers to the previous interface
     int registrate( size_t size, unsigned flags, LayoutFptr func );
     int registrateOwnHostMem( size_t size, const void* ptr , LayoutFptr func );
-    
+    int registrateOwnHostMemNoPage( size_t size, const void* ptr );
+
     void signoff(int id);
     void assureOnHost(int id);
     void assureOnHost(int id, int elem_num);

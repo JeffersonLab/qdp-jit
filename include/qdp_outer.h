@@ -46,8 +46,7 @@ namespace QDP {
 #endif
     }
 
-    virtual ~OScalar() {
-      free_mem();
+    ~OScalar() {
     }
 
     OScalar(const typename WordType<T>::Type_t& rhs)//: QDPType<T, OScalar<T> >()
@@ -119,52 +118,26 @@ namespace QDP {
     
   public:
 
-    inline T* get_raw_F() const {
+    T* get_raw_F() const {
       return &F;
     }
     
-    inline T* getF() const {
-      assert_on_host();
-      return &F;
-    };
+    const T* getF() const { return &F; };
+    T* getF() { return &F; };
 
 
-    inline T& elem() {
+    T& elem() {
       //std::cout << (void*)this << " elem() myId = " << myId << std::endl;
-      assert_on_host();
       return F;
     }
+
     
-    inline const T& elem() const {
+    const T& elem() const {
       //std::cout << (void*)this << " elem() myId = " << myId << std::endl;
-      assert_on_host();
       return F;
     }
 
-
-
-    int getId() const {
-      alloc_mem(); 
-      return myId; 
-    }
-
-    int getElemNum() const {       
-      return elem_num;
-    }
-
-    void setId(int id) {
-      //std::cout << (void*)this << "set id to " << id << std::endl; 
-      myId = id;
-    }
-
-    void setElemNum(int elemnum) {
-      //std::cout << (void*)this << "set elem to " << elemnum << std::endl; 
-      elem_num = elemnum;
-    }
-
-    bool accessed() const { return accessed_on_host; }
-
-
+    
     typename WordType<T>::Type_t get_word_value() const
     {
       typename WordType<T>::Type_t tmp = FirstWord<T>::get(F);
@@ -172,38 +145,7 @@ namespace QDP {
     }
 
   private:
-    inline void alloc_mem() const {
-      if ( myId >= 0 )
-	return;
-
-      QDPCache::Status status = accessed_on_host ? QDPCache::Status::host : QDPCache::Status::undef;
-
-      myId = QDP_get_global_cache().add( sizeof(T) , QDPCache::Flags::OwnHostMemory , status , &F , NULL , NULL );
-    }
-    
-    inline void free_mem() {
-      if ( myId >= 0  &&  elem_num < 0 )
-	QDP_get_global_cache().signoff( myId );
-    }
-    
-    inline void assert_on_host() const {
-      //std::cout << "Oscalar assert on host\n";
-      
-      accessed_on_host = true;
-      
-      if (myId < 0)
-	return;
-
-      if ( elem_num < 0 )
-	QDP_get_global_cache().assureOnHost( myId );
-      else
-	QDP_get_global_cache().assureOnHost( myId , elem_num );
-    }
-
-    mutable int myId = -1;
-    mutable bool accessed_on_host = false;
-    mutable int elem_num = -1;
-    mutable T  F;
+    T F;
   };
 
 
@@ -356,7 +298,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
     }
 
 
-    virtual ~OLattice()
+    ~OLattice()
     {
       free_mem();
     }
@@ -823,7 +765,8 @@ struct LeafFunctor<OScalar<T>, AddressLeaf>
   inline static
   Type_t apply(const OScalar<T>& s, const AddressLeaf& p)
   {
-    p.setIdElem( s.getId() , s.getElemNum() );
+    int id = jit_util_ringBuffer_allocate( sizeof(T) , s.getF() );
+    p.setIdElem( id , -1 );
     return 0;
   }
 };

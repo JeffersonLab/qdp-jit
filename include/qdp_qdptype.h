@@ -391,6 +391,9 @@ public:
 
   typename WordType<T>::Type_t get_word_value() const { return static_cast<const C*>(this)->get_word_value();}
 
+  T* getF() {return static_cast<const C*>(this)->getF();}
+  const T* getF() const {return static_cast<const C*>(this)->getF();}
+
         T& elem(int i)       {return static_cast<const C*>(this)->elem(i);}
   const T& elem(int i) const {return static_cast<const C*>(this)->elem(i);}
 
@@ -510,6 +513,20 @@ struct LeafFunctor<QDPType<T,C>, AddressLeaf>
   Type_t apply(const QDPType<T,C>& s, const AddressLeaf& p) 
   {
     p.setIdElem( s.getId() , s.getElemNum() );
+    return 0;
+  }
+};
+
+
+template<class T>
+struct LeafFunctor<QDPType<T,OScalar<T> >, AddressLeaf>
+{
+  typedef int Type_t;
+  inline static
+  Type_t apply(const QDPType<T,OScalar<T> >& s, const AddressLeaf& p) 
+  {
+    int id = jit_util_ringBuffer_allocate( sizeof(T) , s.getF() );
+    p.setIdElem( id , -1 );
     return 0;
   }
 };

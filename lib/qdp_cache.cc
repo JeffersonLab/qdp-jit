@@ -212,6 +212,10 @@ namespace QDP
   }
 
 
+  int QDPCache::registrateOwnHostMemNoPage( size_t size, const void *ptr )
+  {
+    return add( size , Flags::OwnHostMemory | Flags::NoPage , Status::host , ptr , NULL , NULL );
+  }
 
   int QDPCache::registrateOwnHostMem( size_t size, const void* ptr , QDPCache::LayoutFptr func )
   {

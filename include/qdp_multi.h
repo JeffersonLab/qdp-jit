@@ -284,6 +284,17 @@ private:
 };
 
 
+  template<class T> 
+  void zero_rep(multi1d<T>& dest) 
+  {
+    for( int i = 0 ; i < dest.size() ; ++i )
+      {
+	zero_rep( dest[i] );
+      }
+  }
+
+
+  
 
 //---------------------------------------------------------------
 // Comparisons/recombinations

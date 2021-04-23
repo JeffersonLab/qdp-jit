@@ -33,7 +33,11 @@ namespace QDP
     int threads_per_block_loops = 1000; // Number of loops to measure (after dry run of 5)
     std::string tuning_file = "qdp-jit.tuning.dat";
 
+    // Delay output when QDPIO is not ready yet
     std::vector<std::string> delayed_output;
+
+    // Ring buffer size for OScalars
+    int oscalar_ringbuffer_size = 100;
     
 #ifdef QDP_BACKEND_ROCM
     int  codegen_opt = 1;
@@ -100,6 +104,10 @@ namespace QDP
   bool jit_config_get_verbose_output() { return verbose_output; }
   void jit_config_set_verbose_output(bool v) { verbose_output = v; }
 
+  int jit_config_get_oscalar_ringbuffer_size() { return oscalar_ringbuffer_size; }
+  void jit_config_set_oscalar_ringbuffer_size(int n) { oscalar_ringbuffer_size = n; }
+
+  
 #ifdef QDP_BACKEND_ROCM
   int jit_config_get_codegen_opt() { return codegen_opt; }
   void jit_config_set_codegen_opt(int opt) { codegen_opt = opt; }
