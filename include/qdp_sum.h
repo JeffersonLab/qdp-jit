@@ -667,6 +667,9 @@ namespace QDP {
     prof.start_time();
 #endif
 
+    // Register the destination object with the memory cache
+    int d_id = QDP_get_global_cache().registrateOwnHostMem( sizeof(typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t) , d.getF() , nullptr );
+    
     int actsize=nodeSites;
     bool first=true;
     while (1) {
@@ -689,9 +692,9 @@ namespace QDP {
 
       if (numBlocks == 1) {
 	if (first)
-	  globalMax_kernel<T>(actsize, numThreads, numBlocks, s1.getId() , d.getId() );
+	  globalMax_kernel<T>(actsize, numThreads, numBlocks, s1.getId() , d_id );
 	else
-	  globalMax_kernel<T>(actsize, numThreads, numBlocks, in_id, d.getId() );
+	  globalMax_kernel<T>(actsize, numThreads, numBlocks, in_id, d_id );
       } else {
 	if (first)
 	  globalMax_kernel<T>(actsize, numThreads, numBlocks, s1.getId() , out_id );
@@ -714,7 +717,14 @@ namespace QDP {
     QDP_get_global_cache().signoff( in_id );
     QDP_get_global_cache().signoff( out_id );
 
+    // Copy result to host
+    QDP_get_global_cache().assureOnHost(d_id);
+
+    // Global max
     QDPInternal::globalMax(d);
+
+    // Sign off result
+    QDP_get_global_cache().signoff( d_id );
 
 #if defined(QDP_USE_PROFILING)
     prof.end_time();
