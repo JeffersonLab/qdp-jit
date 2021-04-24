@@ -654,6 +654,9 @@ namespace QDP {
 		  double time_passes = 0.;
 		  double time_codegen = 0.;
 		  double time_dynload = 0.;
+#ifdef QDP_BACKEND_ROCM
+		  double time_linking = 0.;
+#endif
 		  for ( int i = 0 ; i < all.size() ; ++i )
 		    {
 		      time_builder += all.at(i)->time_builder;
@@ -661,11 +664,17 @@ namespace QDP {
 		      time_passes  += all.at(i)->time_passes;
 		      time_codegen += all.at(i)->time_codegen;
 		      time_dynload += all.at(i)->time_dynload;
+#ifdef QDP_BACKEND_ROCM
+		      time_linking += all.at(i)->time_linking;
+#endif
 		    }
 		  QDPIO::cout << "  total time for IR builder:               " << time_builder/1.e6 << " s\n";
 		  QDPIO::cout << "  total time for libm IR linking:          " << time_math/1.e6 << " s\n";
 		  QDPIO::cout << "  total time for IR passes:                " << time_passes/1.e6 << " s\n";
 		  QDPIO::cout << "  total time for code generation:          " << time_codegen/1.e6 << " s\n";
+#ifdef QDP_BACKEND_ROCM
+		  QDPIO::cout << "  total time for linking:                  " << time_linking/1.e6 << " s\n";
+#endif
 		  QDPIO::cout << "  total time for dynamic loading:          " << time_dynload/1.e6 << " s\n";
 		}
 

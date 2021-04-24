@@ -139,7 +139,10 @@ namespace QDP {
     double time_passes = 0.;
     double time_codegen = 0.;
     double time_dynload = 0.;
-
+#ifdef QDP_BACKEND_ROCM
+    double time_linking = 0.;
+#endif
+    
   private:
     void check_empty();
     

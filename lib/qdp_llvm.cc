@@ -1654,7 +1654,7 @@ namespace QDP {
 
   
 #ifdef QDP_BACKEND_ROCM
-  void build_function_rocm_codegen(const std::string& shared_path)
+  void build_function_rocm_codegen( JitFunction& func , const std::string& shared_path)
   {
   #if 0
     {
@@ -1673,6 +1673,9 @@ namespace QDP {
     
     Mod->setDataLayout(TargetMachine->createDataLayout());
 
+    StopWatch swatch(false);
+    swatch.start();
+    
     if (math_declarations.size() > 0)
       {
 	llvm_init_libdevice();
@@ -1695,6 +1698,9 @@ namespace QDP {
 	  }
       }
 
+    swatch.stop();
+    func.time_math = swatch.getTimeInMicroseconds();
+    
 #if 0
     {
       QDPIO::cout << "write code to module_linked.bc ...\n";
@@ -1704,7 +1710,10 @@ namespace QDP {
       OS.flush();
     }
 #endif
-    
+
+    swatch.reset();
+    swatch.start();
+
     llvm::legacy::PassManager PM2;
     
     PM2.add( llvm::createInternalizePass( all_but_kernel_name ) );
@@ -1718,6 +1727,9 @@ namespace QDP {
     
     //llvm_module_dump();
 
+    swatch.stop();
+    func.time_passes = swatch.getTimeInMicroseconds();
+
 #if 0
     {
       QDPIO::cout << "write code to module_internal_dce.bc ...\n";
@@ -1727,6 +1739,9 @@ namespace QDP {
       OS.flush();
     }
 #endif
+    
+    swatch.reset();
+    swatch.start();
 
     std::string clang_name;
     if (clang_codegen)
@@ -1838,7 +1853,8 @@ namespace QDP {
 	}
       }
 
-
+    swatch.stop();
+    func.time_codegen = swatch.getTimeInMicroseconds();
     
     std::string lld_path = std::string(ROCM_DIR) + "/llvm/bin/ld.lld";
     std::string command = lld_path + " -shared " + isabin_path + " -o " + shared_path;
@@ -1847,8 +1863,14 @@ namespace QDP {
       {
 	QDPIO::cout << "System: " << command.c_str() << "\n";
       }
-    
+
+    swatch.reset();
+    swatch.start();
+
     system( command.c_str() );
+
+    swatch.stop();
+    func.time_linking = swatch.getTimeInMicroseconds();
   }
 
   
@@ -1869,7 +1891,7 @@ namespace QDP {
 
     if (Layout::primaryNode())
       {
-	build_function_rocm_codegen( shared_path );
+	build_function_rocm_codegen( func , shared_path );
       }
 
     //
@@ -1885,7 +1907,10 @@ namespace QDP {
       {
 	QDPIO::cout << "shared object file read back in. size = " << shared.size() << "\n";
       }
-    
+
+    StopWatch swatch(false);
+    swatch.start();
+
     if (!get_jitf( func , shared , str_kernel_name , str_pretty , str_arch ))
       {
 	// Something went wrong loading the module or finding the kernel
@@ -1902,6 +1927,9 @@ namespace QDP {
 	  }
 	sleep(1);
       }
+
+    swatch.stop();
+    func.time_dynload = swatch.getTimeInMicroseconds();
   }
 #endif
 
