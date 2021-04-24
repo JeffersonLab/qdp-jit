@@ -1117,12 +1117,16 @@ function_random_exec(JitFunction& function, OLattice<T>& dest, const Subset& s ,
   function.set_dest_id( dest.getId() );
 #endif
 
+  // Register the seed_tmp object with the memory cache
+  int seed_tmp_id = QDP_get_global_cache().registrateOwnHostMemStatus( sizeof(Seed) , seed_tmp.getF() , QDPCache::Status::undef );
+
   AddressLeaf addr_leaf(s);
 
   forEach(dest, addr_leaf, NullCombine());
 
   forEach(RNG::get_RNG_Internals()->ran_seed, addr_leaf, NullCombine());
-  forEach(seed_tmp, addr_leaf, NullCombine());
+  //forEach(seed_tmp, addr_leaf, NullCombine()); // Caution: ParamLeaf treats OScalar as read-only
+  addr_leaf.setId( seed_tmp_id );
   forEach(RNG::get_RNG_Internals()->ran_mult_n, addr_leaf, NullCombine());
   forEach(RNG::get_RNG_Internals()->lattice_ran_mult, addr_leaf, NullCombine());
 
@@ -1136,6 +1140,12 @@ function_random_exec(JitFunction& function, OLattice<T>& dest, const Subset& s ,
     ids.push_back( addr_leaf.ids[i] );
  
   jit_launch(function,s.numSiteTable(),ids);
+
+  // Copy seed_tmp to host
+  QDP_get_global_cache().assureOnHost(seed_tmp_id);
+
+  // Sign off seed_tmp
+  QDP_get_global_cache().signoff( seed_tmp_id );
 }
 
 

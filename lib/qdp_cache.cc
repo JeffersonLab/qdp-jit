@@ -211,6 +211,10 @@ namespace QDP
     }
   }
 
+  int QDPCache::registrateOwnHostMemStatus( size_t size, const void* ptr , Status st )
+  {
+    return add( size , Flags::OwnHostMemory , st , ptr , NULL , NULL );
+  }
 
   int QDPCache::registrateOwnHostMemNoPage( size_t size, const void *ptr )
   {

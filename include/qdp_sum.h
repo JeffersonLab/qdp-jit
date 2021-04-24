@@ -679,6 +679,8 @@ namespace QDP {
 	numThreads >>= 1;
       }
       int numBlocks=(int)ceil(float(actsize)/numThreads);
+      
+      //QDP_info("max(Lat): using %d threads per block, %d blocks" , numThreads , numBlocks );
 
       if (numBlocks > gpu_getMaxGridX()) {
 	QDP_error_exit( "globalMax(Lat) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)gpu_getMaxGridX());

@@ -201,7 +201,6 @@ namespace QDP {
     static QDPProfile_t prof(FnRandom(), "random", d);
     prof.start_time();
 #endif
-
     static JitFunction function;
 
     Seed seed_tmp;
