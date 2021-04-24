@@ -118,24 +118,11 @@ namespace QDP {
     
   public:
 
-    T* get_raw_F() const {
-      return &F;
-    }
-    
     const T* getF() const { return &F; };
-    T* getF() { return &F; };
+    T*       getF()       { return &F; };
 
-
-    T& elem() {
-      //std::cout << (void*)this << " elem() myId = " << myId << std::endl;
-      return F;
-    }
-
-    
-    const T& elem() const {
-      //std::cout << (void*)this << " elem() myId = " << myId << std::endl;
-      return F;
-    }
+    T&       elem()       { return F; }
+    const T& elem() const { return F; }
 
     
     typename WordType<T>::Type_t get_word_value() const
@@ -476,38 +463,31 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
       return myId;
     }
 
-    int getElemNum() const {       
-      return -1;
-    }
-
 
   private:
 
-
-    inline void alloc_mem(const char* msg) const {
+    inline void alloc_mem(const char* msg) const
+    {
       myId = QDP_get_global_cache().registrate( Layout::sitesOnNode() * sizeof(T) , 1 , &changeLayout );
       mem = true;
     }
-    inline void free_mem()  { 
+
+    inline void free_mem()
+    { 
       if (myId >= 0 && mem)
 	QDP_get_global_cache().signoff( myId );
       mem = false;
     }
 
-
-
-    inline void assert_on_host() const {
-      // Here or somewhere we sould make sure that 
-      // if the pointer is still valid, we do not too much
+    inline void assert_on_host() const
+    {
       QDP_get_global_cache().getHostPtr( (void**)&F , myId );
     }
 
-  private:
 
     mutable T *F;
     mutable int myId = -2;
     mutable bool mem = false;       // did this class register the memory?
-
   };
 
 
@@ -753,7 +733,7 @@ struct LeafFunctor<OLattice<T>, AddressLeaf>
   inline static
   Type_t apply(const OLattice<T>& s, const AddressLeaf& p) 
   {
-    p.setIdElem( s.getId() , s.getElemNum() );
+    p.setId( s.getId() );
     return 0;
   }
 };
@@ -766,7 +746,7 @@ struct LeafFunctor<OScalar<T>, AddressLeaf>
   Type_t apply(const OScalar<T>& s, const AddressLeaf& p)
   {
     int id = jit_util_ringBuffer_allocate( sizeof(T) , s.getF() );
-    p.setIdElem( id , -1 );
+    p.setId( id );
     return 0;
   }
 };

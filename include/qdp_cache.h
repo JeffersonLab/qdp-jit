@@ -16,6 +16,8 @@ namespace QDP
   class QDPCache
   {
   public:
+    typedef int ArgKey;
+    
     enum Flags {
       Empty = 0,
       OwnHostMemory = 1,
@@ -23,8 +25,7 @@ namespace QDP
       JitParam = 4,
       Static = 8,
       Multi = 16,
-      Array = 32,
-      NoPage = 64
+      NoPage = 32
     };
 
     enum class Status       { undef , host , device };
@@ -38,14 +39,6 @@ namespace QDP
 #endif
 
     
-    struct ArgKey {
-      // The default constructor is needed in the custom streaming kernel where multi1d<ArgKey> is used -- don't see a simple way around it
-      ArgKey(): id(-1), elem(-1) {}
-      ArgKey(int id): id(id), elem(-1) {}
-      ArgKey(int id,int elem): id(id), elem(elem) {}
-      int id;
-      int elem;
-    };
     
     struct Entry 
     {
@@ -62,26 +55,23 @@ namespace QDP
       size_t size;
       size_t elem_size;
       Flags  flags;
-      std::vector<void*>  vecHstPtr;  // NULL if not allocated
-      //void* hstPtr() { return vecHstPtr.at(0); }
+      void*  hstPtr;
       void*  devPtr;  // NULL if not allocated
       std::list<int>::iterator iterTrack;
       LayoutFptr fptr;
       JitParamUnion param;
       JitParamType param_type;
-      std::vector<ArgKey> multi;
-      std::vector<Status> status_vec;
-      std::vector<void* > karg_vec;
+      std::vector<int> multi;
+      Status status;
     };
 
 
     
     QDPCache();
 
-    KernelArgs_t get_kernel_args(std::vector<ArgKey>& ids , bool for_kernel = true );
+    KernelArgs_t get_kernel_args(std::vector<int>& ids , bool for_kernel = true );
     
-    std::vector<void*> get_dev_ptrs(std::vector<ArgKey>& ids );
-    void backup_last_kernel_args();
+    std::vector<void*> get_dev_ptrs(std::vector<int>& ids );
     
     void printInfo(int id);
 
@@ -104,9 +94,8 @@ namespace QDP
     int addDeviceStatic( size_t n_bytes );
     
     int add( size_t size, Flags flags, Status st, const void* ptr_host, const void* ptr_dev, LayoutFptr func );
-    int addArray( size_t element_size , int num_elements , std::vector<void*> hstPtr );
 
-    int addMulti( const multi1d<QDPCache::ArgKey>& ids );
+    int addMulti( const multi1d<int>& ids );
 
     void zero_rep( int id );
     void copyD2H(int id);
@@ -119,10 +108,8 @@ namespace QDP
 
     void signoff(int id);
     void assureOnHost(int id);
-    void assureOnHost(int id, int elem_num);
 
     void  getHostPtr(void ** ptr , int id);
-    void* getHostArrayPtr( int id , int elem );
     
     size_t getSize(int id);
     void printLockSet();
@@ -174,7 +161,7 @@ namespace QDP
     std::stack<int>          stackFree;
     std::list<int>           lstTracker;
 
-    std::vector<QDPCache::ArgKey> __ids_last;
+    std::vector<int> __ids_last;
     std::vector<QDPCache::Entry> __vec_backed;
     std::vector<void*>  __hst_ptr;
   };
