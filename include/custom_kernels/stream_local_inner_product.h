@@ -258,6 +258,10 @@ namespace QDP
 
     typename UnaryReturn<OLattice<TT3>, FnSumMulti>::Type_t  dest( N );
 
+    // Register the destination object with the memory cache
+    int d_id = QDP_get_global_cache().registrateOwnHostMem( sizeof(T2) * N , dest.slice() , nullptr );
+
+    
     multi1d<QDPCache::ArgKey> ms1_ids(N);
     multi1d<QDPCache::ArgKey> table_ids( N );
     multi1d<int>              sizes    ( N );
@@ -316,7 +320,7 @@ namespace QDP
 	    {
 	      qdp_jit_multi_localInnerProduct_reduce_convert<T,T2,T3,JitDeviceLayout::Scalar>(maxsize, numThreads, numBlocks, shared_mem_usage ,  // ok: Scalar
 	      										      ms1_ids ,
-	      										      dest.getId() ,
+	      										      d_id ,
 	      										      v1.getId() ,
 	      										      N, sizes, table_ids );
 	    }
@@ -324,7 +328,7 @@ namespace QDP
 	    {
 	      qdp_jit_summulti<T2>(maxsize, numThreads, numBlocks,
 				   shared_mem_usage,
-				   in_id, dest.getId(),
+				   in_id, d_id,
 				   N,
 				   sizes);
 	    }
@@ -368,11 +372,16 @@ namespace QDP
     
     }
 
-    // This avoids an element-wise cuda memory copy
-    dest.copyD2H();
+    // Copy result to host
+    QDP_get_global_cache().assureOnHost(d_id);
 
+    // Global sum
     QDPInternal::globalSumArray(dest);
 
+    // Sign off result
+    QDP_get_global_cache().signoff( d_id );
+
+    
     if (allocated)
       {
 	QDP_get_global_cache().signoff( in_id );
