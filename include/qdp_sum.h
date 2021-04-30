@@ -742,15 +742,17 @@ namespace QDP {
   bool
   isfinite(const OLattice<T1>& s1)
   {
-    typedef Boolean Ret_t;
-    typedef typename Ret_t::SubType_t T2;
+    typedef Boolean::SubType_t T2;
     
-    Ret_t d;
+    Boolean d;
 
 #if defined(QDP_USE_PROFILING)
     static QDPProfile_t prof(d, OpAssign(), FnIsFinite(), s1);
     prof.start_time();
 #endif
+
+    // Register the destination object with the memory cache
+    int d_id = QDP_get_global_cache().registrateOwnHostMem( sizeof(Boolean) , d.getF() , nullptr );
 
     int out_id,in_id;
     unsigned actsize=Layout::sitesOnNode();
@@ -778,10 +780,10 @@ namespace QDP {
       
       if (numBlocks == 1) {
 	if (first) {
-	  qdp_jit_bool_reduction_convert<T1,T2,JitDeviceLayout::Coalesced,IsFiniteAssign,AndAssign>(actsize, numThreads, numBlocks, shared_mem_usage, s1.getId(), d.getId() );
+	  qdp_jit_bool_reduction_convert<T1,T2,JitDeviceLayout::Coalesced,IsFiniteAssign,AndAssign>(actsize, numThreads, numBlocks, shared_mem_usage, s1.getId(), d_id );
 	}
 	else {
-	  qdp_jit_bool_reduction<T2,AndAssign>( actsize , numThreads , numBlocks, shared_mem_usage , in_id , d.getId() );
+	  qdp_jit_bool_reduction<T2,AndAssign>( actsize , numThreads , numBlocks, shared_mem_usage , in_id , d_id );
 	}
       } else {
 	if (first) {
@@ -807,9 +809,16 @@ namespace QDP {
     QDP_get_global_cache().signoff( in_id );
     QDP_get_global_cache().signoff( out_id );
 
+    // Copy result to host
+    QDP_get_global_cache().assureOnHost(d_id);
+
     bool ret_ = toBool(d);
     QDPInternal::globalAnd(ret_);
 
+    // Sign off result
+    QDP_get_global_cache().signoff( d_id );
+
+    
 #if defined(QDP_USE_PROFILING)
     prof.end_time();
 #endif
