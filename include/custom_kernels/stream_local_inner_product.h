@@ -5,7 +5,7 @@ namespace QDP
 {
 
 
-  void function_multi_localInnerProduct_sum_convert_exec( JitFunction function,
+  void function_multi_localInnerProduct_sum_convert_exec( JitFunction& function,
 							  int size, 
 							  int threads, 
 							  int blocks, 
@@ -23,14 +23,15 @@ namespace QDP
   // T2 output
   // T3 QDPType for localInnerProduct = vector
   template< class T1 , class T2 , class T3 , JitDeviceLayout input_layout >
-  JitFunction 
-  function_multi_localInnerProduct_sum_convert_build()
+  void
+  function_multi_localInnerProduct_sum_convert_build(JitFunction& function)
   {
-    if (ptx_db::db_enabled) {
-      JitFunction func = llvm_ptx_db( __PRETTY_FUNCTION__ );
-      if (func)
-	return func;
-    }
+    if (ptx_db::db_enabled)
+      {
+	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
+	if (!function.empty())
+	  return;
+      }
 
     llvm_start_new_function("multi_localInnerProduct_sum_convert",__PRETTY_FUNCTION__ );
 
@@ -204,7 +205,7 @@ namespace QDP
 
     llvm_set_insert_point(block_subset_loop_exit);
 
-    return jit_get_function();
+    jit_get_function(function);
   }
 
 
@@ -224,8 +225,8 @@ namespace QDP
   {
     static JitFunction function;
 
-    if (function == NULL)
-      function = function_multi_localInnerProduct_sum_convert_build<T1,T2,T3,input_layout>();
+    if (function.empty())
+      function_multi_localInnerProduct_sum_convert_build<T1,T2,T3,input_layout>(function);
 
     function_multi_localInnerProduct_sum_convert_exec(function, size, threads, blocks, shared_mem_usage, in_ids, out_id, v_id , N, sizes, table_ids );
   }
