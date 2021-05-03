@@ -57,6 +57,9 @@ namespace QDP {
     // Getting GPU device properties
     gpu_auto_detect();
 
+    // Set the pool size
+    QDP_get_global_cache().setPoolSize( jit_config_get_pool_size() );
+    
     // Initialize the LLVM wrapper
     llvm_backend_init();
 
