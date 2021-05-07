@@ -246,9 +246,9 @@ namespace QDP {
 
 
   
-  llvm::Function *llvm_get_func( std::string name , jitprec p , int num_args )
+  llvm::Function *llvm_get_func( std::string name , jitprec p_out , jitprec p_in , int num_args )
   {
-    if (math_declarations[p][name] == 1)
+    if (math_declarations[p_in][name] == 1)
       {
 	//QDPIO::cout << "math function declaration " << name << " found.\n";
 	llvm::Function *func = Mod->getFunction(name.c_str());
@@ -261,24 +261,38 @@ namespace QDP {
       }
     else
       {
-	math_declarations[p][name] = 1;
+	math_declarations[p_in][name] = 1;
 	
-	llvm::Type* type;
-	switch(p)
+	llvm::Type* type_in;
+	switch(p_in)
 	  {
 	  case jitprec::i32:
-	    type = llvm::Type::getInt32Ty(TheContext);
+	    type_in = llvm::Type::getInt32Ty(TheContext);
 	    break;
 	  case jitprec::f32:
-	    type = llvm::Type::getFloatTy(TheContext);
+	    type_in = llvm::Type::getFloatTy(TheContext);
 	    break;
 	  case jitprec::f64:
-	    type = llvm::Type::getDoubleTy(TheContext);
+	    type_in = llvm::Type::getDoubleTy(TheContext);
 	    break;
 	  }
 
-	std::vector< llvm::Type* > Args( num_args , type );
-	llvm::FunctionType *funcType = llvm::FunctionType::get( type , Args , false); // no vararg
+	llvm::Type* type_out;
+	switch(p_out)
+	  {
+	  case jitprec::i32:
+	    type_out = llvm::Type::getInt32Ty(TheContext);
+	    break;
+	  case jitprec::f32:
+	    type_out = llvm::Type::getFloatTy(TheContext);
+	    break;
+	  case jitprec::f64:
+	    type_out = llvm::Type::getDoubleTy(TheContext);
+	    break;
+	  }
+	
+	std::vector< llvm::Type* > Args( num_args , type_in );
+	llvm::FunctionType *funcType = llvm::FunctionType::get( type_out , Args , false); // no vararg
 	return llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, name.c_str() , Mod.get());
       }
   }
@@ -1989,48 +2003,48 @@ namespace QDP {
 
 
 
-  llvm::Value* llvm_sin_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("sin_f32") , jitprec::f32 , 1 )  , lhs ); }
-  llvm::Value* llvm_acos_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("acos_f32") , jitprec::f32 , 1 )  , lhs ); }
-  llvm::Value* llvm_asin_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("asin_f32") , jitprec::f32 , 1 )  , lhs ); }
-  llvm::Value* llvm_atan_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("atan_f32") , jitprec::f32 , 1 )  , lhs ); }
-  llvm::Value* llvm_ceil_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("ceil_f32") , jitprec::f32 , 1 )  , lhs ); }
-  llvm::Value* llvm_floor_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("floor_f32") , jitprec::f32 , 1 )  , lhs ); }
-  llvm::Value* llvm_cos_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("cos_f32") , jitprec::f32 , 1 )  , lhs ); }
-  llvm::Value* llvm_cosh_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("cosh_f32") , jitprec::f32 , 1 )  , lhs ); }
-  llvm::Value* llvm_exp_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("exp_f32") , jitprec::f32 , 1 )  , lhs ); }
-  llvm::Value* llvm_log_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("log_f32") , jitprec::f32 , 1 )  , lhs ); }
-  llvm::Value* llvm_log10_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("log10_f32") , jitprec::f32 , 1 )  , lhs ); }
-  llvm::Value* llvm_sinh_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("sinh_f32") , jitprec::f32 , 1 )  , lhs ); }
-  llvm::Value* llvm_tan_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("tan_f32") , jitprec::f32 , 1 )  , lhs ); }
-  llvm::Value* llvm_tanh_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("tanh_f32") , jitprec::f32 , 1 )  , lhs ); }
-  llvm::Value* llvm_fabs_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("fabs_f32") , jitprec::f32 , 1 )  , lhs ); }
-  llvm::Value* llvm_sqrt_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("sqrt_f32") , jitprec::f32 , 1 )  , lhs ); }
-  llvm::Value* llvm_isfinite_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("isfinite_f32") , jitprec::i32 , 1 )  , lhs ); }
+  llvm::Value* llvm_sin_f32( llvm::Value* lhs )      { return llvm_call_f32( llvm_get_func( mapMath.at("sin_f32")      , jitprec::f32 , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_acos_f32( llvm::Value* lhs )     { return llvm_call_f32( llvm_get_func( mapMath.at("acos_f32")     , jitprec::f32 , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_asin_f32( llvm::Value* lhs )     { return llvm_call_f32( llvm_get_func( mapMath.at("asin_f32")     , jitprec::f32 , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_atan_f32( llvm::Value* lhs )     { return llvm_call_f32( llvm_get_func( mapMath.at("atan_f32")     , jitprec::f32 , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_ceil_f32( llvm::Value* lhs )     { return llvm_call_f32( llvm_get_func( mapMath.at("ceil_f32")     , jitprec::f32 , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_floor_f32( llvm::Value* lhs )    { return llvm_call_f32( llvm_get_func( mapMath.at("floor_f32")    , jitprec::f32 , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_cos_f32( llvm::Value* lhs )      { return llvm_call_f32( llvm_get_func( mapMath.at("cos_f32")      , jitprec::f32 , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_cosh_f32( llvm::Value* lhs )     { return llvm_call_f32( llvm_get_func( mapMath.at("cosh_f32")     , jitprec::f32 , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_exp_f32( llvm::Value* lhs )      { return llvm_call_f32( llvm_get_func( mapMath.at("exp_f32")      , jitprec::f32 , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_log_f32( llvm::Value* lhs )      { return llvm_call_f32( llvm_get_func( mapMath.at("log_f32")      , jitprec::f32 , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_log10_f32( llvm::Value* lhs )    { return llvm_call_f32( llvm_get_func( mapMath.at("log10_f32")    , jitprec::f32 , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_sinh_f32( llvm::Value* lhs )     { return llvm_call_f32( llvm_get_func( mapMath.at("sinh_f32")     , jitprec::f32 , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_tan_f32( llvm::Value* lhs )      { return llvm_call_f32( llvm_get_func( mapMath.at("tan_f32")      , jitprec::f32 , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_tanh_f32( llvm::Value* lhs )     { return llvm_call_f32( llvm_get_func( mapMath.at("tanh_f32")     , jitprec::f32 , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_fabs_f32( llvm::Value* lhs )     { return llvm_call_f32( llvm_get_func( mapMath.at("fabs_f32")     , jitprec::f32 , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_sqrt_f32( llvm::Value* lhs )     { return llvm_call_f32( llvm_get_func( mapMath.at("sqrt_f32")     , jitprec::f32 , jitprec::f32 , 1 )  , lhs ); }
+  llvm::Value* llvm_isfinite_f32( llvm::Value* lhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("isfinite_f32") , jitprec::i32 , jitprec::f32 , 1 )  , lhs ); }
 
-  llvm::Value* llvm_pow_f32( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("pow_f32") , jitprec::f32 , 2 )  , lhs , rhs ); }
-  llvm::Value* llvm_atan2_f32( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("atan2_f32") , jitprec::f32 , 2 )  , lhs , rhs ); }
+  llvm::Value* llvm_pow_f32( llvm::Value* lhs, llvm::Value* rhs )   { return llvm_call_f32( llvm_get_func( mapMath.at("pow_f32")   , jitprec::f32 , jitprec::f32 , 2 )  , lhs , rhs ); }
+  llvm::Value* llvm_atan2_f32( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f32( llvm_get_func( mapMath.at("atan2_f32") , jitprec::f32 , jitprec::f32 , 2 )  , lhs , rhs ); }
 
   
-  llvm::Value* llvm_sin_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("sin_f64") , jitprec::f64 , 1 )  , lhs ); }
-  llvm::Value* llvm_acos_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("acos_f64") , jitprec::f64 , 1 )  , lhs ); }
-  llvm::Value* llvm_asin_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("asin_f64") , jitprec::f64 , 1 )  , lhs ); }
-  llvm::Value* llvm_atan_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("atan_f64") , jitprec::f64 , 1 )  , lhs ); }
-  llvm::Value* llvm_ceil_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("ceil_f64") , jitprec::f64 , 1 )  , lhs ); }
-  llvm::Value* llvm_floor_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("floor_f64") , jitprec::f64 , 1 )  , lhs ); }
-  llvm::Value* llvm_cos_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("cos_f64") , jitprec::f64 , 1 )  , lhs ); }
-  llvm::Value* llvm_cosh_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("cosh_f64") , jitprec::f64 , 1 )  , lhs ); }
-  llvm::Value* llvm_exp_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("exp_f64") , jitprec::f64 , 1 )  , lhs ); }
-  llvm::Value* llvm_log_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("log_f64") , jitprec::f64 , 1 )  , lhs ); }
-  llvm::Value* llvm_log10_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("log10_f64") , jitprec::f64 , 1 )  , lhs ); }
-  llvm::Value* llvm_sinh_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("sinh_f64") , jitprec::f64 , 1 )  , lhs ); }
-  llvm::Value* llvm_tan_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("tan_f64") , jitprec::f64 , 1 )  , lhs ); }
-  llvm::Value* llvm_tanh_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("tanh_f64") , jitprec::f64 , 1 )  , lhs ); }
-  llvm::Value* llvm_fabs_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("fabs_f64") , jitprec::f64 , 1 )  , lhs ); }
-  llvm::Value* llvm_sqrt_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("sqrt_f64") , jitprec::f64 , 1 )  , lhs ); }
-  llvm::Value* llvm_isfinite_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("isfinite_f64") , jitprec::i32 , 1 )  , lhs ); }
+  llvm::Value* llvm_sin_f64( llvm::Value* lhs )      { return llvm_call_f64( llvm_get_func( mapMath.at("sin_f64")      , jitprec::f64 , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_acos_f64( llvm::Value* lhs )     { return llvm_call_f64( llvm_get_func( mapMath.at("acos_f64")     , jitprec::f64 , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_asin_f64( llvm::Value* lhs )     { return llvm_call_f64( llvm_get_func( mapMath.at("asin_f64")     , jitprec::f64 , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_atan_f64( llvm::Value* lhs )     { return llvm_call_f64( llvm_get_func( mapMath.at("atan_f64")     , jitprec::f64 , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_ceil_f64( llvm::Value* lhs )     { return llvm_call_f64( llvm_get_func( mapMath.at("ceil_f64")     , jitprec::f64 , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_floor_f64( llvm::Value* lhs )    { return llvm_call_f64( llvm_get_func( mapMath.at("floor_f64")    , jitprec::f64 , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_cos_f64( llvm::Value* lhs )      { return llvm_call_f64( llvm_get_func( mapMath.at("cos_f64")      , jitprec::f64 , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_cosh_f64( llvm::Value* lhs )     { return llvm_call_f64( llvm_get_func( mapMath.at("cosh_f64")     , jitprec::f64 , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_exp_f64( llvm::Value* lhs )      { return llvm_call_f64( llvm_get_func( mapMath.at("exp_f64")      , jitprec::f64 , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_log_f64( llvm::Value* lhs )      { return llvm_call_f64( llvm_get_func( mapMath.at("log_f64")      , jitprec::f64 , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_log10_f64( llvm::Value* lhs )    { return llvm_call_f64( llvm_get_func( mapMath.at("log10_f64")    , jitprec::f64 , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_sinh_f64( llvm::Value* lhs )     { return llvm_call_f64( llvm_get_func( mapMath.at("sinh_f64")     , jitprec::f64 , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_tan_f64( llvm::Value* lhs )      { return llvm_call_f64( llvm_get_func( mapMath.at("tan_f64")      , jitprec::f64 , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_tanh_f64( llvm::Value* lhs )     { return llvm_call_f64( llvm_get_func( mapMath.at("tanh_f64")     , jitprec::f64 , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_fabs_f64( llvm::Value* lhs )     { return llvm_call_f64( llvm_get_func( mapMath.at("fabs_f64")     , jitprec::f64 , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_sqrt_f64( llvm::Value* lhs )     { return llvm_call_f64( llvm_get_func( mapMath.at("sqrt_f64")     , jitprec::f64 , jitprec::f64 , 1 )  , lhs ); }
+  llvm::Value* llvm_isfinite_f64( llvm::Value* lhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("isfinite_f64") , jitprec::i32 , jitprec::f64 , 1 )  , lhs ); }
 
-  llvm::Value* llvm_pow_f64( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("pow_f64") , jitprec::f64 , 2 )  , lhs , rhs ); }
-  llvm::Value* llvm_atan2_f64( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("atan2_f64") , jitprec::f64 , 2 )  , lhs , rhs ); }
+  llvm::Value* llvm_pow_f64( llvm::Value* lhs, llvm::Value* rhs )   { return llvm_call_f64( llvm_get_func( mapMath.at("pow_f64")   , jitprec::f64 , jitprec::f64 , 2 )  , lhs , rhs ); }
+  llvm::Value* llvm_atan2_f64( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("atan2_f64") , jitprec::f64 , jitprec::f64 , 2 )  , lhs , rhs ); }
 
   
 } // namespace QDP
