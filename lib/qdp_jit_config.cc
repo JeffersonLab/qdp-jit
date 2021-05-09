@@ -44,6 +44,9 @@ namespace QDP
 
     // Ring buffer size for OScalars
     int oscalar_ringbuffer_size = 100;
+
+    // Timing run?
+    bool timing_run = false;
     
 #ifdef QDP_BACKEND_ROCM
     int  codegen_opt = 1;
@@ -65,6 +68,10 @@ namespace QDP
   int  jit_config_get_CUDA_FTZ()   { return CUDA_FTZ; }
   void jit_config_set_CUDA_FTZ(int i)   { CUDA_FTZ = i; }
 #endif
+
+
+  bool jit_config_get_timing_run() { return timing_run; }
+  void jit_config_set_timing_run(bool v) { timing_run = v; }
   
 
   void jit_config_delayed_message(std::string txt)

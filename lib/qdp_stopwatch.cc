@@ -27,7 +27,7 @@ void StopWatch::reset()
 
 void StopWatch::start() 
 {
-  if (device_sync)
+  if (device_sync && jit_config_get_timing_run())
     jit_util_sync_copy();
 
   int ret_val;
@@ -43,7 +43,7 @@ void StopWatch::start()
 
 void StopWatch::stop() 
 {
-  if (device_sync)
+  if (device_sync && jit_config_get_timing_run())
     jit_util_sync_copy();
 
   if( !startedP ) 

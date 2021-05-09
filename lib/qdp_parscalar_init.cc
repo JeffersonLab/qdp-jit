@@ -293,6 +293,10 @@ namespace QDP {
 	  {
 	    jit_config_set_tuning(true);
 	  }
+	else if (strcmp((*argv)[i], "-timing-run")==0) 
+	  {
+	    jit_config_set_timing_run(true);
+	  }
 	else if (strcmp((*argv)[i], "-tuneverbose")==0) 
 	  {
 	    jit_config_set_tuning(true);
