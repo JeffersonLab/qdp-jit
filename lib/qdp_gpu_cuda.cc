@@ -9,6 +9,7 @@
 #include <string>
 
 #include "cuda.h"
+#include "cuda_runtime.h"
 
 #include <unistd.h>
 
@@ -24,6 +25,7 @@ namespace QDP {
   namespace {
     CUdevice cuDevice;
     CUcontext cuContext;
+    bool deviceSet = false;
 
     CUevent evStart;
     CUevent evStop;
@@ -63,10 +65,73 @@ namespace QDP {
       return s;
     }
   }
-  
+
+  static std::map<CUresult, std::string> mapCuErrorString = {
+    {CUDA_SUCCESS, "CUDA_SUCCESS"},
+    {CUDA_ERROR_INVALID_VALUE, "CUDA_ERROR_INVALID_VALUE"},
+    {CUDA_ERROR_OUT_OF_MEMORY, "CUDA_ERROR_OUT_OF_MEMORY"},
+    {CUDA_ERROR_NOT_INITIALIZED, "CUDA_ERROR_NOT_INITIALIZED"},
+    {CUDA_ERROR_DEINITIALIZED, "CUDA_ERROR_DEINITIALIZED"},
+    {CUDA_ERROR_PROFILER_DISABLED, "CUDA_ERROR_PROFILER_DISABLED"},
+    {CUDA_ERROR_PROFILER_NOT_INITIALIZED, "CUDA_ERROR_PROFILER_NOT_INITIALIZED"},
+    {CUDA_ERROR_PROFILER_ALREADY_STARTED, "CUDA_ERROR_PROFILER_ALREADY_STARTED"},
+    {CUDA_ERROR_PROFILER_ALREADY_STOPPED, "CUDA_ERROR_PROFILER_ALREADY_STOPPED"},
+    {CUDA_ERROR_NO_DEVICE, "CUDA_ERROR_NO_DEVICE"},
+    {CUDA_ERROR_INVALID_DEVICE, "CUDA_ERROR_INVALID_DEVICE"},
+    {CUDA_ERROR_INVALID_IMAGE, "CUDA_ERROR_INVALID_IMAGE"},
+    {CUDA_ERROR_INVALID_CONTEXT, "CUDA_ERROR_INVALID_CONTEXT"},
+    {CUDA_ERROR_CONTEXT_ALREADY_CURRENT, "CUDA_ERROR_CONTEXT_ALREADY_CURRENT"},
+    {CUDA_ERROR_MAP_FAILED, "CUDA_ERROR_MAP_FAILED"},
+    {CUDA_ERROR_UNMAP_FAILED, "CUDA_ERROR_UNMAP_FAILED"},
+    {CUDA_ERROR_ARRAY_IS_MAPPED, "CUDA_ERROR_ARRAY_IS_MAPPED"},
+    {CUDA_ERROR_ALREADY_MAPPED, "CUDA_ERROR_ALREADY_MAPPED"},
+    {CUDA_ERROR_NO_BINARY_FOR_GPU, "CUDA_ERROR_NO_BINARY_FOR_GPU"},
+    {CUDA_ERROR_ALREADY_ACQUIRED, "CUDA_ERROR_ALREADY_ACQUIRED"},
+    {CUDA_ERROR_NOT_MAPPED, "CUDA_ERROR_NOT_MAPPED"},
+    {CUDA_ERROR_NOT_MAPPED_AS_ARRAY, "CUDA_ERROR_NOT_MAPPED_AS_ARRAY"},
+    {CUDA_ERROR_NOT_MAPPED_AS_POINTER, "CUDA_ERROR_NOT_MAPPED_AS_POINTER"},
+    {CUDA_ERROR_ECC_UNCORRECTABLE, "CUDA_ERROR_ECC_UNCORRECTABLE"},
+    {CUDA_ERROR_UNSUPPORTED_LIMIT, "CUDA_ERROR_UNSUPPORTED_LIMIT"},
+    {CUDA_ERROR_CONTEXT_ALREADY_IN_USE, "CUDA_ERROR_CONTEXT_ALREADY_IN_USE"},
+    {CUDA_ERROR_INVALID_SOURCE, "CUDA_ERROR_INVALID_SOURCE"},
+    {CUDA_ERROR_FILE_NOT_FOUND, "CUDA_ERROR_FILE_NOT_FOUND"},
+    {CUDA_ERROR_SHARED_OBJECT_SYMBOL_NOT_FOUND, "CUDA_ERROR_SHARED_OBJECT_SYMBOL_NOT_FOUND"},
+    {CUDA_ERROR_SHARED_OBJECT_INIT_FAILED, "CUDA_ERROR_SHARED_OBJECT_INIT_FAILED"},
+    {CUDA_ERROR_OPERATING_SYSTEM, "CUDA_ERROR_OPERATING_SYSTEM"},
+    {CUDA_ERROR_INVALID_HANDLE, "CUDA_ERROR_INVALID_HANDLE"},
+    {CUDA_ERROR_NOT_FOUND, "CUDA_ERROR_NOT_FOUND"},
+    {CUDA_ERROR_NOT_READY, "CUDA_ERROR_NOT_READY"},
+    {CUDA_ERROR_LAUNCH_FAILED, "CUDA_ERROR_LAUNCH_FAILED"},
+    {CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES, "CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES"},
+    {CUDA_ERROR_LAUNCH_TIMEOUT, "CUDA_ERROR_LAUNCH_TIMEOUT"},
+    {CUDA_ERROR_LAUNCH_INCOMPATIBLE_TEXTURING, "CUDA_ERROR_LAUNCH_INCOMPATIBLE_TEXTURING"},
+    {CUDA_ERROR_PEER_ACCESS_ALREADY_ENABLED, "CUDA_ERROR_PEER_ACCESS_ALREADY_ENABLED"},
+    {CUDA_ERROR_PEER_ACCESS_NOT_ENABLED, "CUDA_ERROR_PEER_ACCESS_NOT_ENABLED"},
+    {CUDA_ERROR_PRIMARY_CONTEXT_ACTIVE, "CUDA_ERROR_PRIMARY_CONTEXT_ACTIVE"},
+    {CUDA_ERROR_CONTEXT_IS_DESTROYED, "CUDA_ERROR_CONTEXT_IS_DESTROYED"},
+    {CUDA_ERROR_ASSERT, "CUDA_ERROR_ASSERT"},
+    {CUDA_ERROR_TOO_MANY_PEERS, "CUDA_ERROR_TOO_MANY_PEERS"},
+    {CUDA_ERROR_HOST_MEMORY_ALREADY_REGISTERED, "CUDA_ERROR_HOST_MEMORY_ALREADY_REGISTERED"},
+    {CUDA_ERROR_HOST_MEMORY_NOT_REGISTERED, "CUDA_ERROR_HOST_MEMORY_NOT_REGISTERED"},
+    {CUDA_ERROR_UNKNOWN, "CUDA_ERROR_UNKNOWN"}};
+
+  void CudaCheckResult(CUresult result)
+  {
+    if (result != CUDA_SUCCESS) {
+      QDP_error_exit("CUDA error %d (%s)", (int)result , mapCuErrorString[result].c_str());
+    }
+  }
+
+  void CudaCheckResult(cudaError_t result)
+  {
+    if (result != cudaSuccess) {
+      QDP_error_exit("CUDA error %s: %s", cudaGetErrorName(result) , cudaGetErrorString(result));
+    }
+  }
 
   void gpu_create_events()
   {
+    CudaCheckResult(cuCtxSetCurrent(cuContext));
     CUresult res = cuEventCreate ( &evStart, 0 );
     if (res != CUDA_SUCCESS)
       {
@@ -83,6 +148,7 @@ namespace QDP {
 
   void gpu_record_start()
   {
+    CudaCheckResult(cuCtxSetCurrent(cuContext));
     CUresult res = cuEventRecord ( evStart, 0 );
     if (res != CUDA_SUCCESS)
       {
@@ -93,6 +159,7 @@ namespace QDP {
 
   void gpu_record_stop()
   {
+    CudaCheckResult(cuCtxSetCurrent(cuContext));
     CUresult res = cuEventRecord ( evStop, 0 );
     if (res != CUDA_SUCCESS)
       {
@@ -103,6 +170,7 @@ namespace QDP {
 
   void gpu_event_sync()
   {
+    CudaCheckResult(cuCtxSetCurrent(cuContext));
     CUresult res = cuEventSynchronize ( evStop );
     if (res != CUDA_SUCCESS)
       {
@@ -115,6 +183,7 @@ namespace QDP {
   float gpu_get_time()
   {
     float pMilliseconds;
+    CudaCheckResult(cuCtxSetCurrent(cuContext));
     CUresult res = cuEventElapsedTime( &pMilliseconds, evStart, evStop );
     if (res != CUDA_SUCCESS)
       {
@@ -147,61 +216,13 @@ namespace QDP {
 
 
 
-  std::map<CUresult,std::string> mapCuErrorString= {
-    {CUDA_SUCCESS,"CUDA_SUCCESS"},
-    {CUDA_ERROR_INVALID_VALUE,"CUDA_ERROR_INVALID_VALUE"},
-    {CUDA_ERROR_OUT_OF_MEMORY,"CUDA_ERROR_OUT_OF_MEMORY"},
-    {CUDA_ERROR_NOT_INITIALIZED,"CUDA_ERROR_NOT_INITIALIZED"},
-    {CUDA_ERROR_DEINITIALIZED,"CUDA_ERROR_DEINITIALIZED"},
-    {CUDA_ERROR_PROFILER_DISABLED,"CUDA_ERROR_PROFILER_DISABLED"},
-    {CUDA_ERROR_PROFILER_NOT_INITIALIZED,"CUDA_ERROR_PROFILER_NOT_INITIALIZED"},
-    {CUDA_ERROR_PROFILER_ALREADY_STARTED,"CUDA_ERROR_PROFILER_ALREADY_STARTED"},
-    {CUDA_ERROR_PROFILER_ALREADY_STOPPED,"CUDA_ERROR_PROFILER_ALREADY_STOPPED"},
-    {CUDA_ERROR_NO_DEVICE,"CUDA_ERROR_NO_DEVICE"},
-    {CUDA_ERROR_INVALID_DEVICE,"CUDA_ERROR_INVALID_DEVICE"},
-    {CUDA_ERROR_INVALID_IMAGE,"CUDA_ERROR_INVALID_IMAGE"},
-    {CUDA_ERROR_INVALID_CONTEXT,"CUDA_ERROR_INVALID_CONTEXT"},
-    {CUDA_ERROR_CONTEXT_ALREADY_CURRENT,"CUDA_ERROR_CONTEXT_ALREADY_CURRENT"},
-    {CUDA_ERROR_MAP_FAILED,"CUDA_ERROR_MAP_FAILED"},
-    {CUDA_ERROR_UNMAP_FAILED,"CUDA_ERROR_UNMAP_FAILED"},
-    {CUDA_ERROR_ARRAY_IS_MAPPED,"CUDA_ERROR_ARRAY_IS_MAPPED"},
-    {CUDA_ERROR_ALREADY_MAPPED,"CUDA_ERROR_ALREADY_MAPPED"},
-    {CUDA_ERROR_NO_BINARY_FOR_GPU,"CUDA_ERROR_NO_BINARY_FOR_GPU"},
-    {CUDA_ERROR_ALREADY_ACQUIRED,"CUDA_ERROR_ALREADY_ACQUIRED"},
-    {CUDA_ERROR_NOT_MAPPED,"CUDA_ERROR_NOT_MAPPED"},
-    {CUDA_ERROR_NOT_MAPPED_AS_ARRAY,"CUDA_ERROR_NOT_MAPPED_AS_ARRAY"},
-    {CUDA_ERROR_NOT_MAPPED_AS_POINTER,"CUDA_ERROR_NOT_MAPPED_AS_POINTER"},
-    {CUDA_ERROR_ECC_UNCORRECTABLE,"CUDA_ERROR_ECC_UNCORRECTABLE"},
-    {CUDA_ERROR_UNSUPPORTED_LIMIT,"CUDA_ERROR_UNSUPPORTED_LIMIT"},
-    {CUDA_ERROR_CONTEXT_ALREADY_IN_USE,"CUDA_ERROR_CONTEXT_ALREADY_IN_USE"},
-    {CUDA_ERROR_INVALID_SOURCE,"CUDA_ERROR_INVALID_SOURCE"},
-    {CUDA_ERROR_FILE_NOT_FOUND,"CUDA_ERROR_FILE_NOT_FOUND"},
-    {CUDA_ERROR_SHARED_OBJECT_SYMBOL_NOT_FOUND,"CUDA_ERROR_SHARED_OBJECT_SYMBOL_NOT_FOUND"},
-    {CUDA_ERROR_SHARED_OBJECT_INIT_FAILED,"CUDA_ERROR_SHARED_OBJECT_INIT_FAILED"},
-    {CUDA_ERROR_OPERATING_SYSTEM,"CUDA_ERROR_OPERATING_SYSTEM"},
-    {CUDA_ERROR_INVALID_HANDLE,"CUDA_ERROR_INVALID_HANDLE"},
-    {CUDA_ERROR_NOT_FOUND,"CUDA_ERROR_NOT_FOUND"},
-    {CUDA_ERROR_NOT_READY,"CUDA_ERROR_NOT_READY"},
-    {CUDA_ERROR_LAUNCH_FAILED,"CUDA_ERROR_LAUNCH_FAILED"},
-    {CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES,"CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES"},
-    {CUDA_ERROR_LAUNCH_TIMEOUT,"CUDA_ERROR_LAUNCH_TIMEOUT"},
-    {CUDA_ERROR_LAUNCH_INCOMPATIBLE_TEXTURING,"CUDA_ERROR_LAUNCH_INCOMPATIBLE_TEXTURING"},
-    {CUDA_ERROR_PEER_ACCESS_ALREADY_ENABLED,"CUDA_ERROR_PEER_ACCESS_ALREADY_ENABLED"},
-    {CUDA_ERROR_PEER_ACCESS_NOT_ENABLED,"CUDA_ERROR_PEER_ACCESS_NOT_ENABLED"},
-    {CUDA_ERROR_PRIMARY_CONTEXT_ACTIVE,"CUDA_ERROR_PRIMARY_CONTEXT_ACTIVE"},
-    {CUDA_ERROR_CONTEXT_IS_DESTROYED,"CUDA_ERROR_CONTEXT_IS_DESTROYED"},
-    {CUDA_ERROR_ASSERT,"CUDA_ERROR_ASSERT"},
-    {CUDA_ERROR_TOO_MANY_PEERS,"CUDA_ERROR_TOO_MANY_PEERS"},
-    {CUDA_ERROR_HOST_MEMORY_ALREADY_REGISTERED,"CUDA_ERROR_HOST_MEMORY_ALREADY_REGISTERED"},
-    {CUDA_ERROR_HOST_MEMORY_NOT_REGISTERED,"CUDA_ERROR_HOST_MEMORY_NOT_REGISTERED"},
-    {CUDA_ERROR_UNKNOWN,"CUDA_ERROR_UNKNOWN"}};
-
 
 
   
   int CudaGetAttributesLocalSize( JitFunction& f )
   {
     int local_mem = 0;
+    CudaCheckResult(cuCtxSetCurrent(cuContext));
     cuFuncGetAttribute( &local_mem , CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES , (CUfunction)f.get_function() );
     return local_mem;
   }
@@ -457,6 +478,7 @@ namespace QDP {
 	gpu_record_start();
       }
     
+    CudaCheckResult(cuCtxSetCurrent(cuContext));
     CUresult res = cuLaunchKernel((CUfunction)f.get_function(), gridDimX, gridDimY, gridDimZ, 
 				  blockDimX, blockDimY, blockDimZ, 
 				  sharedMemBytes, 0, (void**)&kernelArgs[0], 0 );
@@ -526,12 +548,6 @@ namespace QDP {
 
 
     
-
-  void CudaCheckResult(CUresult result) {
-    if (result != CUDA_SUCCESS) {
-      QDP_info("CUDA error %d (%s)", (int)result , mapCuErrorString[result].c_str());
-    }
-  }
 
 
   void CudaRes(const std::string& s,CUresult ret) {
@@ -640,16 +656,19 @@ namespace QDP {
     CUresult ret;
 
     //std::cout << "trying to get device " << dev << "\n";
+    if (cudaSetDevice(dev) != cudaSuccess)
+    {
+      std::cout << "Error setting device.\n"; 
+      exit(1);
+    }
+
     ret = cuDeviceGet(&cuDevice, dev);
     CudaRes(__func__,ret);
 
     //std::cout << "trying to grab pre-existing context\n";
-    ret = cuCtxGetCurrent(&cuContext);
-    
-    if (ret != CUDA_SUCCESS || cuContext == NULL) {
-      //std::cout << "trying to create a context";
-      ret = cuCtxCreate(&cuContext, CU_CTX_MAP_HOST, cuDevice);
-    }
+    ret = cuDevicePrimaryCtxRetain(&cuContext, dev);
+    CudaRes(__func__,ret);
+    ret = cuCtxPushCurrent(cuContext);
     CudaRes(__func__,ret);
 
     //std::cout << "creating CUDA events\n";
@@ -715,6 +734,7 @@ namespace QDP {
   void gpu_host_alloc(void **mem , const size_t size)
   {
     CUresult ret;
+    CudaCheckResult(cuCtxSetCurrent(cuContext));
     ret = cuMemHostAlloc(mem,size,0);
     CudaRes("cudaHostAlloc",ret);
   }
@@ -728,6 +748,7 @@ namespace QDP {
 	return;
       }
     CUresult ret;
+    CudaCheckResult(cuCtxSetCurrent(cuContext));
     ret = cuMemFreeHost(mem);
     CudaRes("cuMemFreeHost",ret);
   }
@@ -743,6 +764,7 @@ namespace QDP {
     QDP_debug_deep("CudaMemcpyH2D dest=%p src=%p size=%d" ,  dest , src , size );
 #endif
     //std::cout << "H2D " << size << std::endl;
+    CudaCheckResult(cuCtxSetCurrent(cuContext));
     ret = cuMemcpyHtoD((CUdeviceptr)const_cast<void*>(dest), src, size);
     CudaRes("cuMemcpyH2D",ret);
   }
@@ -754,6 +776,7 @@ namespace QDP {
     QDP_debug_deep("CudaMemcpyD2H dest=%p src=%p size=%d" ,  dest , src , size );
 #endif
     //std::cout << "D2H " << size << std::endl;
+    CudaCheckResult(cuCtxSetCurrent(cuContext));
     ret = cuMemcpyDtoH( dest, (CUdeviceptr)const_cast<void*>(src), size);
     CudaRes("cuMemcpyD2H",ret);
   }
@@ -761,11 +784,13 @@ namespace QDP {
 
   bool gpu_malloc(void **mem , size_t size )
   {
+	  if (size == 0) *mem = nullptr;
     CUresult ret;
+    CudaCheckResult(cuCtxSetCurrent(cuContext));
 #ifndef QDP_USE_CUDA_MANAGED_MEMORY
-    ret = cuMemAlloc( (CUdeviceptr*)mem,size);
+    CudaCheckResult(cudaMalloc(mem, size));
 #else
-    ret = cuMemAllocManaged( (CUdeviceptr*)mem, size, CU_MEM_ATTACH_GLOBAL ); 
+    CudaCheckResult(cudaMallocManaged(mem, size, cudaMemAttachGlobal));
 #endif
 
 #ifdef GPU_DEBUG_DEEP
@@ -786,6 +811,7 @@ namespace QDP {
   
   void gpu_free(const void *mem )
   {
+	  if (mem == nullptr) return;
 #ifdef GPU_DEBUG_DEEP
     QDP_debug_deep( "CudaFree %p", mem );
 #endif
@@ -795,8 +821,8 @@ namespace QDP {
 	return;
       }
     CUresult ret;
-    ret = cuMemFree((CUdeviceptr)const_cast<void*>(mem));
-    CudaRes("cuMemFree",ret);
+    CudaCheckResult(cuCtxSetCurrent(cuContext));
+    CudaCheckResult(cudaFree((void*)mem));
   }
 
 
@@ -804,6 +830,7 @@ namespace QDP {
   void gpu_memset( void * dest , unsigned val , size_t N )
   {
     CUresult ret;
+    CudaCheckResult(cuCtxSetCurrent(cuContext));
     ret = cuMemsetD32((CUdeviceptr)const_cast<void*>(dest), val, N);
     CudaRes("cuMemsetD32",ret);
   }
@@ -820,6 +847,7 @@ namespace QDP {
     func.set_kernel_name( kernel_name );
     func.set_pretty( pretty );
     
+    CudaCheckResult(cuCtxSetCurrent(cuContext));
     ret = cuModuleLoadData(&cuModule, (const void *)kernel_ptx.c_str());
 
     if (ret != CUDA_SUCCESS) {
