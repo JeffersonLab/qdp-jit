@@ -78,8 +78,13 @@ namespace QDP {
   {
     int deviceCount = gpu_get_device_count();
 
-    // Try MVapich fist
-    char *rank = getenv( "MV2_COMM_WORLD_LOCAL_RANK"  );
+    // Try SLURM
+    char *rank = getenv( "SLURM_LOCALID" );
+
+    // Try MVapich
+    if( ! rank ) {
+	rank = getenv( "MV2_COMM_WORLD_LOCAL_RANK"  );
+    } 
 
     // Try OpenMPI
     if( ! rank ) {
@@ -178,7 +183,12 @@ namespace QDP {
 	std::cerr << "QDP already initialized" << endl;
 	QDP_abort(1);
       }
-
+    
+      // initialize the global streams
+      QDPIO::cin.init(&std::cin);
+      QDPIO::cout.init(&std::cout);
+      QDPIO::cerr.init(&std::cerr);
+	
     //
     // Init CUDA
     //
