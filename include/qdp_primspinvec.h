@@ -8,6 +8,9 @@
 #ifndef QDP_PRIMSPINVEC_H
 #define QDP_PRIMSPINVEC_H
 
+#define M_MIN(X,Y) ((X)<=(Y)?(X):(Y))
+#define M_MAX(X,Y) ((X)>=(Y)?(X):(Y))
+
 namespace QDP {
 
 
@@ -102,7 +105,7 @@ public:
   const T& elem(int i) const {return F[i];}
 private:
   // Why this alignment is needed!?
-  alignas((16 < alignof(T) ? alignof(T) : 16)) T F[N]; 
+  alignas(M_MIN(M_MAX(16, alignof(T)), sizeof(T)*N)) T F[N]; 
 };
 
 
@@ -1916,5 +1919,8 @@ chiralProjectMinus(const PSpinVector<T,4>& s1)
 /*! @} */   // end of group primspinvector
 
 } // namespace QDP
+
+#undef M_MIN
+#undef M_MAX
 
 #endif
