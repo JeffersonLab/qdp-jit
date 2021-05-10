@@ -6,6 +6,7 @@
 #include <stack>
 #include <list>
 
+#include <qdp_config.h>
 
 namespace QDP 
 {
