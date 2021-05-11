@@ -78,8 +78,13 @@ namespace QDP {
   {
     int deviceCount = gpu_get_device_count();
 
-    // Try MVapich fist
-    char *rank = getenv( "MV2_COMM_WORLD_LOCAL_RANK"  );
+    // Try SLURM
+    char *rank = getenv( "SLURM_LOCALID" );
+
+    // Try MVapich
+    if( ! rank ) {
+	rank = getenv( "MV2_COMM_WORLD_LOCAL_RANK"  );
+    } 
 
     // Try OpenMPI
     if( ! rank ) {
