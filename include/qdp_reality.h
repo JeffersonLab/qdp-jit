@@ -263,8 +263,7 @@ void read(XMLReader& xml, const string& path, RScalar<T>& d)
 
 //! Reality complex
 /*! All fields are either complex or scalar reality */
-// NOTE: superbblas requires this special alignment
-template<class T> class alignas(sizeof(T)*2) RComplex
+template<class T> class RComplex
 {
 public:
   typedef T Sub_t;
@@ -410,7 +409,7 @@ public:
 private:
   T re;
   T im;
-};
+} QDP_ALIGN8;   // possibly force alignment
 
 
 template<class T>
