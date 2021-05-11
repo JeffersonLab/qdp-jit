@@ -409,7 +409,7 @@ public:
 private:
   T re;
   T im;
-} QDP_ALIGN8;   // possibly force alignment
+};
 
 
 template<class T>

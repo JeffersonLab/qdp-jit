@@ -101,7 +101,7 @@ public:
   T& elem(int i) {return F[i];}
   const T& elem(int i) const {return F[i];}
 private:
-  T F[N] QDP_ALIGN16; 
+  T F[N];
 };
 
 
