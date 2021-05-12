@@ -263,7 +263,11 @@ void read(XMLReader& xml, const string& path, RScalar<T>& d)
 
 //! Reality complex
 /*! All fields are either complex or scalar reality */
+#ifdef QDP_THRUSTALIGN
+template<class T> class alignas(sizeof(T)*2) RComplex
+#else
 template<class T> class RComplex
+#endif
 {
 public:
   typedef T Sub_t;

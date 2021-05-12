@@ -10,6 +10,10 @@
 
 #include "cuda.h"
 
+#ifdef QDP_THRUSTALIGN
+#include "cuda_runtime.h"
+#endif
+
 #include <unistd.h>
 
 
@@ -24,6 +28,9 @@ namespace QDP {
   namespace {
     CUdevice cuDevice;
     CUcontext cuContext;
+#ifdef QDP_THRUSTALIGN
+    bool deviceSet = false;
+#endif
 
     CUevent evStart;
     CUevent evStop;
@@ -65,8 +72,34 @@ namespace QDP {
   }
   
 
+
+
+
+  void CudaCheckResult(CUresult result)
+  {
+    if (result != CUDA_SUCCESS) {
+      const char *errStr;
+      cuGetErrorString(result, &errStr);
+      const char *errName;
+      cuGetErrorName(result, &errName);
+      QDP_error_exit("CUDA error %d %s (%s)", (int)result , errName, errStr );
+    }
+  }
+
+#ifdef QDP_THRUSTALIGN
+  void CudaCheckResult(cudaError_t result)
+  {
+    if (result != cudaSuccess) {
+      QDP_error_exit("CUDA error %s: %s", cudaGetErrorName(result) , cudaGetErrorString(result));
+    }
+  }
+#endif
+
   void gpu_create_events()
   {
+#ifdef QDP_THRUSTALIGN
+    CudaCheckResult(cuCtxSetCurrent(cuContext));
+#endif
     CUresult res = cuEventCreate ( &evStart, 0 );
     if (res != CUDA_SUCCESS)
       {
@@ -83,6 +116,9 @@ namespace QDP {
 
   void gpu_record_start()
   {
+#ifdef QDP_THRUSTALIGN
+    CudaCheckResult(cuCtxSetCurrent(cuContext));
+#endif
     CUresult res = cuEventRecord ( evStart, 0 );
     if (res != CUDA_SUCCESS)
       {
@@ -93,6 +129,9 @@ namespace QDP {
 
   void gpu_record_stop()
   {
+#ifdef QDP_THRUSTALIGN
+    CudaCheckResult(cuCtxSetCurrent(cuContext));
+#endif
     CUresult res = cuEventRecord ( evStop, 0 );
     if (res != CUDA_SUCCESS)
       {
@@ -103,6 +142,9 @@ namespace QDP {
 
   void gpu_event_sync()
   {
+#ifdef QDP_THRUSTALIGN
+    CudaCheckResult(cuCtxSetCurrent(cuContext));
+#endif
     CUresult res = cuEventSynchronize ( evStop );
     if (res != CUDA_SUCCESS)
       {
@@ -115,6 +157,9 @@ namespace QDP {
   float gpu_get_time()
   {
     float pMilliseconds;
+#ifdef QDP_THRUSTALIGN
+    CudaCheckResult(cuCtxSetCurrent(cuContext));
+#endif
     CUresult res = cuEventElapsedTime( &pMilliseconds, evStart, evStop );
     if (res != CUDA_SUCCESS)
       {
@@ -147,61 +192,15 @@ namespace QDP {
 
 
 
-  std::map<CUresult,std::string> mapCuErrorString= {
-    {CUDA_SUCCESS,"CUDA_SUCCESS"},
-    {CUDA_ERROR_INVALID_VALUE,"CUDA_ERROR_INVALID_VALUE"},
-    {CUDA_ERROR_OUT_OF_MEMORY,"CUDA_ERROR_OUT_OF_MEMORY"},
-    {CUDA_ERROR_NOT_INITIALIZED,"CUDA_ERROR_NOT_INITIALIZED"},
-    {CUDA_ERROR_DEINITIALIZED,"CUDA_ERROR_DEINITIALIZED"},
-    {CUDA_ERROR_PROFILER_DISABLED,"CUDA_ERROR_PROFILER_DISABLED"},
-    {CUDA_ERROR_PROFILER_NOT_INITIALIZED,"CUDA_ERROR_PROFILER_NOT_INITIALIZED"},
-    {CUDA_ERROR_PROFILER_ALREADY_STARTED,"CUDA_ERROR_PROFILER_ALREADY_STARTED"},
-    {CUDA_ERROR_PROFILER_ALREADY_STOPPED,"CUDA_ERROR_PROFILER_ALREADY_STOPPED"},
-    {CUDA_ERROR_NO_DEVICE,"CUDA_ERROR_NO_DEVICE"},
-    {CUDA_ERROR_INVALID_DEVICE,"CUDA_ERROR_INVALID_DEVICE"},
-    {CUDA_ERROR_INVALID_IMAGE,"CUDA_ERROR_INVALID_IMAGE"},
-    {CUDA_ERROR_INVALID_CONTEXT,"CUDA_ERROR_INVALID_CONTEXT"},
-    {CUDA_ERROR_CONTEXT_ALREADY_CURRENT,"CUDA_ERROR_CONTEXT_ALREADY_CURRENT"},
-    {CUDA_ERROR_MAP_FAILED,"CUDA_ERROR_MAP_FAILED"},
-    {CUDA_ERROR_UNMAP_FAILED,"CUDA_ERROR_UNMAP_FAILED"},
-    {CUDA_ERROR_ARRAY_IS_MAPPED,"CUDA_ERROR_ARRAY_IS_MAPPED"},
-    {CUDA_ERROR_ALREADY_MAPPED,"CUDA_ERROR_ALREADY_MAPPED"},
-    {CUDA_ERROR_NO_BINARY_FOR_GPU,"CUDA_ERROR_NO_BINARY_FOR_GPU"},
-    {CUDA_ERROR_ALREADY_ACQUIRED,"CUDA_ERROR_ALREADY_ACQUIRED"},
-    {CUDA_ERROR_NOT_MAPPED,"CUDA_ERROR_NOT_MAPPED"},
-    {CUDA_ERROR_NOT_MAPPED_AS_ARRAY,"CUDA_ERROR_NOT_MAPPED_AS_ARRAY"},
-    {CUDA_ERROR_NOT_MAPPED_AS_POINTER,"CUDA_ERROR_NOT_MAPPED_AS_POINTER"},
-    {CUDA_ERROR_ECC_UNCORRECTABLE,"CUDA_ERROR_ECC_UNCORRECTABLE"},
-    {CUDA_ERROR_UNSUPPORTED_LIMIT,"CUDA_ERROR_UNSUPPORTED_LIMIT"},
-    {CUDA_ERROR_CONTEXT_ALREADY_IN_USE,"CUDA_ERROR_CONTEXT_ALREADY_IN_USE"},
-    {CUDA_ERROR_INVALID_SOURCE,"CUDA_ERROR_INVALID_SOURCE"},
-    {CUDA_ERROR_FILE_NOT_FOUND,"CUDA_ERROR_FILE_NOT_FOUND"},
-    {CUDA_ERROR_SHARED_OBJECT_SYMBOL_NOT_FOUND,"CUDA_ERROR_SHARED_OBJECT_SYMBOL_NOT_FOUND"},
-    {CUDA_ERROR_SHARED_OBJECT_INIT_FAILED,"CUDA_ERROR_SHARED_OBJECT_INIT_FAILED"},
-    {CUDA_ERROR_OPERATING_SYSTEM,"CUDA_ERROR_OPERATING_SYSTEM"},
-    {CUDA_ERROR_INVALID_HANDLE,"CUDA_ERROR_INVALID_HANDLE"},
-    {CUDA_ERROR_NOT_FOUND,"CUDA_ERROR_NOT_FOUND"},
-    {CUDA_ERROR_NOT_READY,"CUDA_ERROR_NOT_READY"},
-    {CUDA_ERROR_LAUNCH_FAILED,"CUDA_ERROR_LAUNCH_FAILED"},
-    {CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES,"CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES"},
-    {CUDA_ERROR_LAUNCH_TIMEOUT,"CUDA_ERROR_LAUNCH_TIMEOUT"},
-    {CUDA_ERROR_LAUNCH_INCOMPATIBLE_TEXTURING,"CUDA_ERROR_LAUNCH_INCOMPATIBLE_TEXTURING"},
-    {CUDA_ERROR_PEER_ACCESS_ALREADY_ENABLED,"CUDA_ERROR_PEER_ACCESS_ALREADY_ENABLED"},
-    {CUDA_ERROR_PEER_ACCESS_NOT_ENABLED,"CUDA_ERROR_PEER_ACCESS_NOT_ENABLED"},
-    {CUDA_ERROR_PRIMARY_CONTEXT_ACTIVE,"CUDA_ERROR_PRIMARY_CONTEXT_ACTIVE"},
-    {CUDA_ERROR_CONTEXT_IS_DESTROYED,"CUDA_ERROR_CONTEXT_IS_DESTROYED"},
-    {CUDA_ERROR_ASSERT,"CUDA_ERROR_ASSERT"},
-    {CUDA_ERROR_TOO_MANY_PEERS,"CUDA_ERROR_TOO_MANY_PEERS"},
-    {CUDA_ERROR_HOST_MEMORY_ALREADY_REGISTERED,"CUDA_ERROR_HOST_MEMORY_ALREADY_REGISTERED"},
-    {CUDA_ERROR_HOST_MEMORY_NOT_REGISTERED,"CUDA_ERROR_HOST_MEMORY_NOT_REGISTERED"},
-    {CUDA_ERROR_UNKNOWN,"CUDA_ERROR_UNKNOWN"}};
-
 
 
   
   int CudaGetAttributesLocalSize( JitFunction& f )
   {
     int local_mem = 0;
+#ifdef QDP_THRUSTALIGN
+    CudaCheckResult(cuCtxSetCurrent(cuContext));
+#endif
     cuFuncGetAttribute( &local_mem , CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES , (CUfunction)f.get_function() );
     return local_mem;
   }
@@ -457,6 +456,9 @@ namespace QDP {
 	gpu_record_start();
       }
     
+#ifdef QDP_THRUSTALIGN
+    CudaCheckResult(cuCtxSetCurrent(cuContext));
+#endif
     CUresult res = cuLaunchKernel((CUfunction)f.get_function(), gridDimX, gridDimY, gridDimZ, 
 				  blockDimX, blockDimY, blockDimZ, 
 				  sharedMemBytes, 0, (void**)&kernelArgs[0], 0 );
@@ -527,19 +529,12 @@ namespace QDP {
 
     
 
-  void CudaCheckResult(CUresult result) {
-    if (result != CUDA_SUCCESS) {
-      QDP_info("CUDA error %d (%s)", (int)result , mapCuErrorString[result].c_str());
-    }
-  }
-
 
   void CudaRes(const std::string& s,CUresult ret) {
     if (ret != CUDA_SUCCESS) {
-      if (mapCuErrorString.count(ret)) 
-	std::cout << s << " Error: " << mapCuErrorString.at(ret) << "\n";
-      else
-	std::cout << s << " Error: (not known)\n";
+      const char *errStr;
+      cuGetErrorString(ret, &errStr);
+      std::cout << s << " Error: " << errStr << "\n";
       exit(1);
     }
   }
@@ -637,20 +632,37 @@ namespace QDP {
 
   void gpu_set_device(int dev)
   {
+#ifdef QDP_THRUSTALIGN
     CUresult ret;
 
-    //std::cout << "trying to get device " << dev << "\n";
+    if (cudaSetDevice(dev) != cudaSuccess)
+    {
+      std::cout << "Error setting device.\n"; 
+      exit(1);
+    }
+
     ret = cuDeviceGet(&cuDevice, dev);
     CudaRes(__func__,ret);
 
-    //std::cout << "trying to grab pre-existing context\n";
+    ret = cuDevicePrimaryCtxRetain(&cuContext, dev);
+    CudaRes(__func__,ret);
+
+    ret = cuCtxPushCurrent(cuContext);
+    CudaRes(__func__,ret);
+#else
+    CUresult ret;
+
+    ret = cuDeviceGet(&cuDevice, dev);
+    CudaRes(__func__,ret);
+
     ret = cuCtxGetCurrent(&cuContext);
     
-    if (ret != CUDA_SUCCESS || cuContext == NULL) {
-      //std::cout << "trying to create a context";
+    if (ret != CUDA_SUCCESS || cuContext == NULL) 
+    {
       ret = cuCtxCreate(&cuContext, CU_CTX_MAP_HOST, cuDevice);
     }
     CudaRes(__func__,ret);
+#endif
 
     //std::cout << "creating CUDA events\n";
     gpu_create_events();
@@ -715,6 +727,9 @@ namespace QDP {
   void gpu_host_alloc(void **mem , const size_t size)
   {
     CUresult ret;
+#ifdef QDP_THRUSTALIGN
+    CudaCheckResult(cuCtxSetCurrent(cuContext));
+#endif
     ret = cuMemHostAlloc(mem,size,0);
     CudaRes("cudaHostAlloc",ret);
   }
@@ -728,6 +743,9 @@ namespace QDP {
 	return;
       }
     CUresult ret;
+#ifdef QDP_THRUSTALIGN
+    CudaCheckResult(cuCtxSetCurrent(cuContext));
+#endif
     ret = cuMemFreeHost(mem);
     CudaRes("cuMemFreeHost",ret);
   }
@@ -743,6 +761,9 @@ namespace QDP {
     QDP_debug_deep("CudaMemcpyH2D dest=%p src=%p size=%d" ,  dest , src , size );
 #endif
     //std::cout << "H2D " << size << std::endl;
+#ifdef QDP_THRUSTALIGN
+    CudaCheckResult(cuCtxSetCurrent(cuContext));
+#endif
     ret = cuMemcpyHtoD((CUdeviceptr)const_cast<void*>(dest), src, size);
     CudaRes("cuMemcpyH2D",ret);
   }
@@ -754,6 +775,9 @@ namespace QDP {
     QDP_debug_deep("CudaMemcpyD2H dest=%p src=%p size=%d" ,  dest , src , size );
 #endif
     //std::cout << "D2H " << size << std::endl;
+#ifdef QDP_THRUSTALIGN
+    CudaCheckResult(cuCtxSetCurrent(cuContext));
+#endif
     ret = cuMemcpyDtoH( dest, (CUdeviceptr)const_cast<void*>(src), size);
     CudaRes("cuMemcpyD2H",ret);
   }
@@ -761,24 +785,28 @@ namespace QDP {
 
   bool gpu_malloc(void **mem , size_t size )
   {
+#ifdef QDP_THRUSTALIGN
+
+if (size == 0) *mem = nullptr;
+    CUresult ret;
+    CudaCheckResult(cuCtxSetCurrent(cuContext));
+#ifndef QDP_USE_CUDA_MANAGED_MEMORY
+    CudaCheckResult(cudaMalloc(mem, size));
+#else
+    CudaCheckResult(cudaMallocManaged(mem, size, cudaMemAttachGlobal));
+#endif
+    return ret == CUDA_SUCCESS;
+
+#else
+
     CUresult ret;
 #ifndef QDP_USE_CUDA_MANAGED_MEMORY
     ret = cuMemAlloc( (CUdeviceptr*)mem,size);
 #else
     ret = cuMemAllocManaged( (CUdeviceptr*)mem, size, CU_MEM_ATTACH_GLOBAL ); 
 #endif
-
-#ifdef GPU_DEBUG_DEEP
-    QDP_debug_deep( "CudaMalloc %p", *mem );
-#endif
-
-#ifndef  QDP_USE_CUDA_MANAGED_MEMORY
-    //CudaRes("cuMemAlloc",ret);
-#else 
-    //CudaRes("cuMemAllocManaged", ret);
-#endif
-
     return ret == CUDA_SUCCESS;
+#endif
   }
 
 
@@ -786,17 +814,24 @@ namespace QDP {
   
   void gpu_free(const void *mem )
   {
-#ifdef GPU_DEBUG_DEEP
-    QDP_debug_deep( "CudaFree %p", mem );
+#ifdef QDP_THRUSTALIGN
+	  if (mem == nullptr) return;
 #endif
+
     if (!QDP_isInitialized())
       {
 	//std::cout << "GPU free, QDP not initialized" << std::endl;
 	return;
       }
+
     CUresult ret;
+#ifdef QDP_THRUSTALIGN
+    CudaCheckResult(cuCtxSetCurrent(cuContext));
+    CudaCheckResult(cudaFree((void*)mem));
+#else
     ret = cuMemFree((CUdeviceptr)const_cast<void*>(mem));
     CudaRes("cuMemFree",ret);
+#endif
   }
 
 
@@ -804,6 +839,9 @@ namespace QDP {
   void gpu_memset( void * dest , unsigned val , size_t N )
   {
     CUresult ret;
+#ifdef QDP_THRUSTALIGN
+    CudaCheckResult(cuCtxSetCurrent(cuContext));
+#endif
     ret = cuMemsetD32((CUdeviceptr)const_cast<void*>(dest), val, N);
     CudaRes("cuMemsetD32",ret);
   }
@@ -820,6 +858,9 @@ namespace QDP {
     func.set_kernel_name( kernel_name );
     func.set_pretty( pretty );
     
+#ifdef QDP_THRUSTALIGN
+    CudaCheckResult(cuCtxSetCurrent(cuContext));
+#endif
     ret = cuModuleLoadData(&cuModule, (const void *)kernel_ptx.c_str());
 
     if (ret != CUDA_SUCCESS) {

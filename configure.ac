@@ -158,6 +158,15 @@ AC_ARG_ENABLE(custom-kernels,
 )
 
 
+AC_ARG_ENABLE(thrust-alignment,
+  AC_HELP_STRING([--enable-thrust-alignment],
+    [Enables alignment for thrust]),
+  [ac_thrustalign="yes"],
+  [ac_thrustalign="no"]
+)
+
+
+
 dnl --enable-custom-kernels
 AC_ARG_ENABLE(cuda-special,
   AC_HELP_STRING([--enable-cuda-special],
@@ -287,6 +296,13 @@ else
   tmp_gpu_libs="-lamdhip64"
 fi
 
+
+if test "X${ac_thrustalign}X" = "XyesX";
+then
+  tmp_gpu_libs+=" -lcudart"
+fi
+
+
 if test "X${rocm_stats}X" == "XyesX";
 then
   AC_MSG_NOTICE([Will Use ROCm statistics])
@@ -307,7 +323,12 @@ if test "X${ac_custom}X" = "XyesX"; then
 fi
 
 
-dnl Include custom kernels
+if test "X${ac_thrustalign}X" = "XyesX"; then
+   AC_DEFINE_UNQUOTED(QDP_THRUSTALIGN, ${ac_thrustalign}, [Enable alignment for Thrust])
+   AC_MSG_NOTICE([Enable alignment for Thrust])
+fi
+
+
 
 AC_SUBST(GPU_LIBS, "${tmp_gpu_libs}" )
 
@@ -716,6 +737,8 @@ AM_CONDITIONAL(QDP_USE_LIBXML2, [test "x${with_libxml2}x" != "xnox" ])
 AM_CONDITIONAL(QDP_USE_HDF5, [test "x${ac_build_hdf5}x" = "xyesx" ])
 
 AM_CONDITIONAL(QDP_CUSTOM_KERNELS, [test "x${ac_custom}x" = "xyesx" ])
+
+AM_CONDITIONAL(QDP_THRUSTALIGN, [test "x${ac_thrustalign}x" = "xyesx" ])
 
 AM_CONDITIONAL(QDP_CUDA_SPECIAL, [test "x${ac_cuda_special}x" = "xyesx" ])
 
