@@ -149,7 +149,7 @@ namespace QDP {
 
     printf("Global Rank: %d of %d Host: %s  Local Rank: %d of %d Setting CUDA Device to %d \n",
         rank_global, np_global, hostname, rank_local, np_local, rank_local);
-    CudaSetDevice(rank_local);
+    gpu_set_device(rank_local);
     return rank_local;
  
   }
