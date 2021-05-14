@@ -238,6 +238,26 @@ public:
       }
     }
 
+
+  template<class T1, class T , class C>
+  QDPProfile_t(const std::string& name, const multi1d<OScalar<T1> >& dest , const QDPType<T,C>& src)
+    {
+      init();
+
+      if (getProfileLevel() > 0)
+      {
+	std::ostringstream os;
+	os << name << "(";
+	printExprTree(os, dest );
+	os << ",";
+	printExprTree(os, src );
+	os << ");";
+	expr = os.str();
+	registerProfile(this);
+      }
+    }
+
+  
   
 
   template<class T, class Op, class T1>

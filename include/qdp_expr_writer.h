@@ -56,6 +56,23 @@ void printExprTree(ostream& os,
 }
 
 
+template<class T, class C>
+void printExprTree(ostream& os, const QDPType<T,C>& dest)
+{
+  LeafFunctor<C,PrintTag>::apply(PrintTag(os));
+}
+
+
+  template<class T>
+  void printExprTree(ostream& os, const multi1d< OScalar<T> >& dest)
+  {
+    os << "multi1d<";
+    LeafFunctor< OScalar<T> ,PrintTag>::apply(PrintTag(os));
+    os << ">";
+  }
+
+  
+
 
 template<class T, class Op, class RHS, class C1>
 //inline
@@ -86,6 +103,8 @@ void printExprTree(ostream& os,
   os << ";";
 }
 
+
+  
 
 template<class T, class Op, class T1>
 void printExprTree(ostream& os, 

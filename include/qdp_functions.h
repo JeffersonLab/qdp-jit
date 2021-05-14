@@ -854,20 +854,25 @@ namespace QDP {
     @param s     subset
     @ingroup group1
     @relates QDPType */
-  template<class T>
+  template<class T , class T2>
   inline void 
-  QDP_extract(multi1d<OScalar<T> >& dest, const OLattice<T>& src, const Subset& s)
+  QDP_extract(multi1d<OScalar<T> >& dest, const OLattice<T2>& src, const Subset& s)
   {
 #if defined(QDP_USE_PROFILING)
-    qdp_jit_CPU_add(__PRETTY_FUNCTION__);
+    static QDPProfile_t prof("QDP_extract", dest, src);
+    prof.start_time();
 #endif
+    dest.resize(s.numSiteTable());
     
-    const int *tab = s.siteTable().slice();
-    for(int j=0; j < s.numSiteTable(); ++j) 
-      {
-	int i = tab[j];
-	dest[i].elem() = src.elem(i);
-      }
+    static JitFunction function;
+    if (function.empty())
+      function_extract_build(function ,dest, src);
+
+    function_extract_exec(function, dest, src, s);
+
+#if defined(QDP_USE_PROFILING)
+    prof.end_time();
+#endif
   }
 
   //! Inserts data values from site array src.
