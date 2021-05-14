@@ -208,8 +208,14 @@ namespace QDP {
 
     if ( it != ptx_db::db.end() )
       {
-	//return get_fptr_from_ptx( "generic.ptx" , it->second );
+	StopWatch swatch(false);
+	swatch.start();
+
+	// Get jit function
 	get_jitf( f , it->second.second , it->second.first , pretty , str_arch );
+
+	swatch.stop();
+	f.time_dynload = swatch.getTimeInMicroseconds();
       }
   }
 
