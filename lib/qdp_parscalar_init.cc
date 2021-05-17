@@ -78,8 +78,8 @@ namespace QDP {
   {
     int deviceCount = gpu_get_device_count();
 
-    // Try SLURM
-    char *rank = getenv( "SLURM_LOCALID" );
+    // Try 
+    char *rank = getenv( "PMI_RANK" );
 
     // Try MVapich
     if( ! rank ) {
@@ -89,7 +89,13 @@ namespace QDP {
     // Try OpenMPI
     if( ! rank ) {
        rank = getenv( "OMPI_COMM_WORLD_LOCAL_RANK" );
-    } 
+    }
+
+    // Try SLURM
+    if( ! rank ) {
+       rank = getenv( "SLURM_LOCALID" );
+    }
+
 
     int dev=0;
     if (rank) {
