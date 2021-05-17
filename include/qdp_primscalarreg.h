@@ -25,6 +25,7 @@ namespace QDP {
   {
     T F;
   public:
+    typedef T Sub_t;
 
     void setup(const PScalarJIT< typename JITType<T>::Type_t >& rhs ) {
       F.setup( rhs.elem() );

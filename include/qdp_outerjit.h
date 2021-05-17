@@ -21,38 +21,54 @@ namespace QDP {
     {
       base_m = rhs.base_m;
     }
-    
 
-    T& elem( JitDeviceLayout lay , llvm::Value * index )
+
+    typename REGType<T>::Type_t elemREG( JitDeviceLayout lay , llvm::Value * index ) const
     {
+      T F;
+      IndexDomainVector args;
+      args.push_back( make_pair( Layout::sitesOnNode() , index ) );
+      F.setup( llvm_derefParam(base_m) , lay , args );
+
+      typename REGType<T>::Type_t ret;
+      ret.setup( elem( lay , index ) );
+      return ret;
+    }
+
+
+    T elem( JitDeviceLayout lay , llvm::Value * index ) const
+    {
+      T F;
       IndexDomainVector args;
       args.push_back( make_pair( Layout::sitesOnNode() , index ) );
       F.setup( llvm_derefParam(base_m) , lay , args );
       return F;
     }
 
-    const T& elem( JitDeviceLayout lay , llvm::Value * index ) const
+    // const T& elem( JitDeviceLayout lay , llvm::Value * index ) const
+    // {
+    //   IndexDomainVector args;
+    //   args.push_back( make_pair( Layout::sitesOnNode() , index ) );
+    //   F.setup( llvm_derefParam(base_m) , lay , args );
+    //   return F;
+    // }
+
+
+    T elem( JitDeviceLayout lay , llvm::Value * index , llvm::Value * multi_index ) const
     {
-      IndexDomainVector args;
-      args.push_back( make_pair( Layout::sitesOnNode() , index ) );
-      F.setup( llvm_derefParam(base_m) , lay , args );
-      return F;
-    }
-
-
-    T& elem( JitDeviceLayout lay , llvm::Value * index , llvm::Value * multi_index ) {
+      T F;
       IndexDomainVector args;
       args.push_back( make_pair( Layout::sitesOnNode() , index ) );
       F.setup( llvm_array_type_indirection( base_m , multi_index ) , lay , args );
       return F;
     }
 
-    const T& elem( JitDeviceLayout lay , llvm::Value * index , llvm::Value * multi_index ) const {
-      IndexDomainVector args;
-      args.push_back( make_pair( Layout::sitesOnNode() , index ) );
-      F.setup( llvm_array_type_indirection( base_m , multi_index ) , lay , args );
-      return F;
-    }
+    // const T& elem( JitDeviceLayout lay , llvm::Value * index , llvm::Value * multi_index ) const {
+    //   IndexDomainVector args;
+    //   args.push_back( make_pair( Layout::sitesOnNode() , index ) );
+    //   F.setup( llvm_array_type_indirection( base_m , multi_index ) , lay , args );
+    //   return F;
+    // }
 
 
     void set_base( ParamRef p ) const
@@ -64,7 +80,8 @@ namespace QDP {
     void operator=(const OLatticeJIT& a);
 
     mutable ParamRef base_m;
-    mutable T        F;
+    mutable      T F;
+
   };
 
 

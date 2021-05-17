@@ -234,8 +234,66 @@ namespace QDP {
 
     jit_get_function( function );
   }
-  
 
+
+#if 0
+  namespace
+  {
+    template <class T>
+    void print_type()
+    {
+      QDPIO::cout << __PRETTY_FUNCTION__ << std::endl;
+    }
+  }
+
+
+template<>
+struct ForEach<BinaryNode<OpMultiply, OLatticeJIT<PScalarJIT<PScalarJIT<RScalarJIT<WordJIT<float> > > > >, OLatticeJIT<PScalarJIT<PScalarJIT<RScalarJIT<WordJIT<float> > > > >>, ViewLeaf, OpCombine >
+{
+  typedef typename ForEach<OLatticeJIT<PScalarJIT<PScalarJIT<RScalarJIT<WordJIT<float> > > > >, ViewLeaf, OpCombine>::Type_t TypeA_t;
+  typedef typename ForEach<OLatticeJIT<PScalarJIT<PScalarJIT<RScalarJIT<WordJIT<float> > > > >, ViewLeaf, OpCombine>::Type_t TypeB_t;
+  typedef typename Combine2<TypeA_t, TypeB_t, OpMultiply, OpCombine>::Type_t Type_t;
+  inline static
+  Type_t apply(const BinaryNode<OpMultiply, OLatticeJIT<PScalarJIT<PScalarJIT<RScalarJIT<WordJIT<float> > > > >, OLatticeJIT<PScalarJIT<PScalarJIT<RScalarJIT<WordJIT<float> > > > >> &expr,
+	       const ViewLeaf &f,
+	       const OpCombine &c) 
+  {
+    std::cout << "special\n";
+    print_type<Type_t>();
+#if 1
+    return Combine2<TypeA_t, TypeB_t, OpMultiply, OpCombine>::
+      combine(ForEach<OLatticeJIT<PScalarJIT<PScalarJIT<RScalarJIT<WordJIT<float> > > > >, ViewLeaf, OpCombine>::apply(expr.left(), f, c),
+              ForEach<OLatticeJIT<PScalarJIT<PScalarJIT<RScalarJIT<WordJIT<float> > > > >, ViewLeaf, OpCombine>::apply(expr.right(), f, c),
+	      expr.operation(), c);
+#else
+
+    //return expr.left().elemREG( f.getLayout() , f.getIndex() ) * expr.right().elemREG( f.getLayout() , f.getIndex() );
+
+    Type_t ret;
+    JitStackMatrix< Type_t::Sub_t , 1 > ret_a;
+
+    JitForLoop spin(0,1);
+    //return expr.left().elem( f.getLayout() , f.getIndex() ).getRegElem( spin.index() ) * expr.right().elemREG( f.getLayout() , f.getIndex() ).getRegElem( spin.index() );
+    ret_a.elemJIT( spin.index() , spin.index() ) =
+      expr.left() .elem( f.getLayout() , f.getIndex() ).getRegElem( spin.index() ) *
+      expr.right().elem( f.getLayout() , f.getIndex() ).getRegElem( spin.index() );
+    spin.end();
+
+    ret.elem().setup( ret_a.elemJIT(0,0) );
+  // for(int i=0; i < 4; ++i)
+  //   for(int j=0; j < 4; ++j)
+  //     d.elem(i,j).setup( d_a.elemJIT(i,j) );
+
+    
+    return ret;
+#endif
+  }
+};
+#endif
+
+
+
+  
   
 template<class T, class T1, class Op, class RHS>
 void
@@ -307,6 +365,8 @@ function_build(JitFunction& function, const DynKey& key, OLattice<T>& dest, cons
 	  typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
 	  View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
+	  //print_type<View_t>();
+	  
 	  llvm::Value * r_th_count     = llvm_derefParam( p_th_count );
 	  llvm::Value * r_start        = llvm_derefParam( p_start );
 
@@ -349,6 +409,198 @@ function_build(JitFunction& function, const DynKey& key, OLattice<T>& dest, cons
   
   jit_get_function( function );
 }
+
+
+#if 1
+
+  // typedef PSpinMatrix<PColorMatrix<RComplex<Word<WT> >, 3>, 4> T;
+  // typedef PSpinMatrix<PColorMatrix<RComplex<Word<WT> >, 3>, 4> T1;
+  // typedef OpAssign Op;
+  // typedef BinaryNode<FnQuarkContract13,
+  // 		     BinaryNode<OpMultiply,
+  // 				Reference<QDPType<PSpinMatrix<PColorMatrix<RComplex<Word<WT> >, 3>, 4>, OLattice<PSpinMatrix<PColorMatrix<RComplex<Word<WT> >, 3>, 4> > > >,
+  // 				Reference<QDPType<PSpinMatrix<PScalar<RComplex<Word<WT> > >, 4>, OScalar<PSpinMatrix<PScalar<RComplex<Word<WT> > >, 4> > > > >,
+  // 		     BinaryNode<OpMultiply,
+  // 				Reference<QDPType<PSpinMatrix<PScalar<RComplex<Word<WT> > >, 4>, OScalar<PSpinMatrix<PScalar<RComplex<Word<WT> > >, 4> > > >,
+  // 				Reference<QDPType<PSpinMatrix<PColorMatrix<RComplex<Word<WT> >, 3>, 4>, OLattice<PSpinMatrix<PColorMatrix<RComplex<Word<WT> >, 3>, 4> > > > > > RHS;
+
+template< class WT >
+void function_build(JitFunction& function,
+		    const DynKey& key,
+		    OLattice< PSpinMatrix<PColorMatrix<RComplex<Word<WT> >, 3>, 4> >& dest,
+		    const OpAssign& op,
+		    const QDPExpr< BinaryNode<FnQuarkContract13,
+		    BinaryNode<OpMultiply,
+		    Reference<QDPType<PSpinMatrix<PColorMatrix<RComplex<Word<WT> >, 3>, 4>, OLattice<PSpinMatrix<PColorMatrix<RComplex<Word<WT> >, 3>, 4> > > >,
+		    Reference<QDPType<PSpinMatrix<PScalar<RComplex<Word<WT> > >, 4>, OScalar<PSpinMatrix<PScalar<RComplex<Word<WT> > >, 4> > > > >,
+		    BinaryNode<OpMultiply,
+		    Reference<QDPType<PSpinMatrix<PScalar<RComplex<Word<WT> > >, 4>, OScalar<PSpinMatrix<PScalar<RComplex<Word<WT> > >, 4> > > >,
+		    Reference<QDPType<PSpinMatrix<PColorMatrix<RComplex<Word<WT> >, 3>, 4>, OLattice<PSpinMatrix<PColorMatrix<RComplex<Word<WT> >, 3>, 4> > > > > > ,
+		    OLattice< PSpinMatrix<PColorMatrix<RComplex<Word<WT> >, 3>, 4> > >& rhs,
+		    const Subset& s)
+  {
+    typedef PSpinMatrix<PColorMatrix<RComplex<Word<WT> >, 3>, 4> T;
+    typedef PSpinMatrix<PColorMatrix<RComplex<Word<WT> >, 3>, 4> T1;
+    typedef OpAssign Op;
+    typedef BinaryNode<FnQuarkContract13,
+		       BinaryNode<OpMultiply,
+				  Reference<QDPType<PSpinMatrix<PColorMatrix<RComplex<Word<WT> >, 3>, 4>, OLattice<PSpinMatrix<PColorMatrix<RComplex<Word<WT> >, 3>, 4> > > >,
+				  Reference<QDPType<PSpinMatrix<PScalar<RComplex<Word<WT> > >, 4>, OScalar<PSpinMatrix<PScalar<RComplex<Word<WT> > >, 4> > > > >,
+		       BinaryNode<OpMultiply,
+				  Reference<QDPType<PSpinMatrix<PScalar<RComplex<Word<WT> > >, 4>, OScalar<PSpinMatrix<PScalar<RComplex<Word<WT> > >, 4> > > >,
+				  Reference<QDPType<PSpinMatrix<PColorMatrix<RComplex<Word<WT> >, 3>, 4>, OLattice<PSpinMatrix<PColorMatrix<RComplex<Word<WT> >, 3>, 4> > > > > > RHS;
+
+    QDPIO::cout << "special func" << std::endl;
+
+    if ( !s.hasOrderedRep() )
+      {
+	QDPIO::cout << "special func called on unordered set" << std::endl;
+	QDP_abort(1);
+      }
+    
+    std::ostringstream expr;
+    expr << std::string(__PRETTY_FUNCTION__) << "_key=" << key;
+  
+    if (ptx_db::db_enabled)
+      {
+	llvm_ptx_db( function , expr.str().c_str() );
+	if (!function.empty())
+	  return;
+      }
+
+    llvm_start_new_function("eval",expr.str().c_str() );
+
+    ParamRef p_th_count = llvm_add_param<int>();
+    ParamRef p_start    = llvm_add_param<int>();
+
+    ParamLeaf param_leaf;
+
+    typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
+    FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
+	  
+    typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
+    View_t rv(forEach(rhs, param_leaf, TreeCombine()));
+
+    llvm::Value * r_th_count     = llvm_derefParam( p_th_count );
+    llvm::Value * r_start        = llvm_derefParam( p_start );
+
+    llvm::Value* r_idx_thread = llvm_thread_idx();
+
+    llvm_cond_exit( llvm_ge( r_idx_thread , r_th_count ) );
+
+    llvm::Value* r_idx = llvm_add( r_idx_thread , r_start );
+    
+    // op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ), 
+    // 	    forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , r_idx ), OpCombine()));
+
+    // ret_a.elemJIT( spin.index() , spin.index() ) =
+    //   expr.left() .elem( f.getLayout() , f.getIndex() ).getRegElem( spin.index() ) ;
+
+    // quarkContractXX(rv.left() .left() .elem( f.getLayout() , f.getIndex() ).getRegElem( loop_b.index() , loop_d.index() ) *
+    // 		    rv.left() .right().elem( f.getLayout() , f.getIndex() ).getRegElem( loop_d.index() , loop_a.index() ),
+    // 		    rv.right().left() .elem( f.getLayout() , f.getIndex() ).getRegElem( loop_b.index() , loop_e.index() ) *
+    // 		    rv.right().right().elem( f.getLayout() , f.getIndex() ).getRegElem( loop_e.index() , loop_c.index() ));
+
+    //auto coal = JitDeviceLayout::Coalesced;
+    
+    JitForLoop loop_c(0,4);
+    {
+      JitForLoop loop_a(0,4);
+      {
+#if 1
+	zero_rep( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ).getJitElem( loop_a.index() , loop_c.index() ) );
+	// dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ).getJitElem( loop_a.index() , loop_c.index() ) =
+	//   quarkContractXX(rv.left() .left() .elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( llvm_create_value(0) , llvm_create_value(0) ) *
+	// 		  rv.left() .right().elem()                                    .getRegElem( llvm_create_value(0) , loop_a.index() ),
+	// 		  rv.right().left() .elem()                                    .getRegElem( llvm_create_value(0) , llvm_create_value(0) ) *
+	// 		  rv.right().right().elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( llvm_create_value(0) , loop_c.index() ));
+
+	// qc13[a][c](l,r) = l[b][a] o r[b][c]
+	//                 = ll[b][d] lr[d][a] o rl[b][e] rr[e][c]
+	// l[b][a] = ll[b][d] lr[d][a]
+	// r[b][c] = rl[b][e] rr[e][c]
+	
+	// d[a][c] = ll[][] lr[][] o rl[][] rr[][]
+	
+	JitForLoop loop_b(0,4);
+	{
+	  JitForLoop loop_d(0,4);
+	  {
+#if 1
+	    JitForLoop loop_e(0,4);
+	    {
+	      dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ).getJitElem( loop_a.index() , loop_c.index() ) +=
+	    	quarkContractXX(rv.left() .left() .elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( loop_b.index() , loop_d.index() ) *
+	    			rv.left() .right().elem()                                    .getRegElem( loop_d.index() , loop_a.index() ),
+	    			rv.right().left() .elem()                                    .getRegElem( loop_b.index() , loop_e.index() ) *
+	    			rv.right().right().elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( loop_e.index() , loop_c.index() ));
+
+	    }
+	    loop_e.end();
+#else
+	    dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ).getJitElem( loop_a.index() , loop_c.index() ) +=
+		quarkContractXX(rv.left() .left() .elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( loop_b.index() , loop_d.index() ) *
+				rv.left() .right().elem()                                    .getRegElem( loop_d.index() , loop_a.index() ),
+				rv.right().left() .elem()                                    .getRegElem( loop_b.index() , llvm_create_value(0) ) *
+				rv.right().right().elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( llvm_create_value(0) , loop_c.index() )) +
+		quarkContractXX(rv.left() .left() .elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( loop_b.index() , loop_d.index() ) *
+				rv.left() .right().elem()                                    .getRegElem( loop_d.index() , loop_a.index() ),
+				rv.right().left() .elem()                                    .getRegElem( loop_b.index() , llvm_create_value(1) ) *
+				rv.right().right().elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( llvm_create_value(1) , loop_c.index() )) +
+		quarkContractXX(rv.left() .left() .elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( loop_b.index() , loop_d.index() ) *
+				rv.left() .right().elem()                                    .getRegElem( loop_d.index() , loop_a.index() ),
+				rv.right().left() .elem()                                    .getRegElem( loop_b.index() , llvm_create_value(2) ) *
+				rv.right().right().elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( llvm_create_value(2) , loop_c.index() )) +
+		quarkContractXX(rv.left() .left() .elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( loop_b.index() , loop_d.index() ) *
+				rv.left() .right().elem()                                    .getRegElem( loop_d.index() , loop_a.index() ),
+				rv.right().left() .elem()                                    .getRegElem( loop_b.index() , llvm_create_value(3) ) *
+				rv.right().right().elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( llvm_create_value(3) , loop_c.index() ));
+#endif
+	  }
+	  loop_d.end();
+	}
+	loop_b.end();
+#endif
+#if 0
+	// dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ).getJitElem( loop_a.index() , loop_c.index() ) =
+	//   rv.left() .left() .elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( llvm_create_value(0) , loop_a.index() ) *
+	//   rv.right().right().elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( llvm_create_value(0) , loop_c.index() );
+
+	dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ).getJitElem( loop_a.index() , loop_c.index() ) =
+	  quarkContractXX(rv.left() .left() .elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( llvm_create_value(0) , loop_a.index() ),
+			  rv.right().right().elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( llvm_create_value(0) , loop_c.index() ) );
+      
+	JitForLoop loop_b(1,4);
+	{
+	  dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ).getJitElem( loop_a.index() , loop_c.index() ) +=
+	    quarkContractXX(rv.left() .left() .elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( loop_b.index() , loop_a.index() ),
+			    rv.right().right().elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( loop_b.index() , loop_c.index() ) );
+
+	}
+	loop_b.end();
+#endif
+#if 0
+	dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ).getJitElem( loop_a.index() , loop_c.index() ) =
+	  rv.left() .left() .elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( loop_a.index() , loop_c.index() );
+#endif
+#if 0
+	dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ).getJitElem( loop_a.index() , loop_c.index() ) =
+	  rv.right() .right() .elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( loop_a.index() , loop_c.index() );
+#endif
+	
+      }
+      loop_a.end();
+    }
+    loop_c.end();
+
+    
+    jit_get_function( function );
+
+  }
+
+#endif
+
+  
 
 
 

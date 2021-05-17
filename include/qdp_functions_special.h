@@ -5,6 +5,7 @@
 namespace QDP
 {
 
+
   // template<>
   // void evaluate<
   //   PScalar<PScalar<RScalar<Word<float> > > >,

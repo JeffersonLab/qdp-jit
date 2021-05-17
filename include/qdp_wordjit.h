@@ -243,25 +243,25 @@ namespace QDP {
 
 
   inline void 
-  zero_rep(WordJIT<double>& dest)
+  zero_rep(WordJIT<double> dest)
   {
     llvm_store_ptr_idx( llvm_create_value( 0.0 ) , dest.getBaseReg() , dest.getOffset() );
   }
 
   inline void 
-  zero_rep(WordJIT<jit_half_t>& dest)
+  zero_rep(WordJIT<jit_half_t> dest)
   {
     llvm_store_ptr_idx( llvm_create_value( 0.0 ) , dest.getBaseReg() , dest.getOffset() );
   }
 
   inline void 
-  zero_rep(WordJIT<float>& dest)
+  zero_rep(WordJIT<float> dest)
   {
     llvm_store_ptr_idx( llvm_create_value( 0.0 ) , dest.getBaseReg() , dest.getOffset() );
   }
 
   inline void 
-  zero_rep(WordJIT<int>& dest)
+  zero_rep(WordJIT<int> dest)
   {
     llvm_store_ptr_idx( llvm_create_value( 0 ) , dest.getBaseReg() , dest.getOffset() );
   }
@@ -291,7 +291,7 @@ namespace QDP {
   //! dest  = random  
   template<class T, class T1, class T2, class T3>
   inline void
-  fill_random(WordJIT<T>& d, T1& seed, T2& skewed_seed, const T3& seed_mult)
+  fill_random(WordJIT<T> d, T1& seed, T2& skewed_seed, const T3& seed_mult)
   {
     d = seedToFloat( skewed_seed ).elem().elem().elem();
 

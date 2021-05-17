@@ -1573,7 +1573,7 @@ gather_sites(PScalarJIT<T>& d,
 //! dest = (mask) ? s1 : dest
 template<class T, class T1, class T2> 
 inline void 
-copymask(PScalarJIT<T>& d, const PScalarREG<T1>& mask, const PScalarREG<T2>& s1) 
+copymask(PScalarJIT<T> d, const PScalarREG<T1>& mask, const PScalarREG<T2>& s1) 
 {
   copymask(d.elem(),mask.elem(),s1.elem());
 }
@@ -1582,7 +1582,7 @@ copymask(PScalarJIT<T>& d, const PScalarREG<T1>& mask, const PScalarREG<T2>& s1)
 //! dest = 0
 template<class T> 
 inline void 
-zero_rep(PScalarJIT<T>& dest) 
+zero_rep(PScalarJIT<T> dest) 
 {
   zero_rep(dest.elem());
 }
@@ -1591,7 +1591,7 @@ zero_rep(PScalarJIT<T>& dest)
 //! dest  = random  
 template<class T, class T1, class T2,class T3>
 inline void
-fill_random( PScalarJIT<T>& d, T1& seed, T2& skewed_seed, const T3& seed_mult)
+fill_random( PScalarJIT<T> d, T1& seed, T2& skewed_seed, const T3& seed_mult)
 {
   fill_random(d.elem(), seed, skewed_seed, seed_mult);
 }
@@ -1600,7 +1600,7 @@ fill_random( PScalarJIT<T>& d, T1& seed, T2& skewed_seed, const T3& seed_mult)
 //! dest  = gaussian  
 template<class T,class T2>
 inline void
-fill_gaussian(PScalarJIT<T>& d, PScalarREG<T2>& r1, PScalarREG<T2>& r2)
+fill_gaussian(PScalarJIT<T> d, PScalarREG<T2>& r1, PScalarREG<T2>& r2)
 {
   fill_gaussian(d.elem(), r1.elem(), r2.elem());
 }

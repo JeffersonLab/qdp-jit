@@ -84,7 +84,7 @@ namespace QDP {
     }
 
 
-    T getJitElem( llvm::Value * index )
+    T getJitElem( llvm::Value * index ) const
     {
       if (!setup_m)
 	{
@@ -99,7 +99,7 @@ namespace QDP {
     }
 
 
-    typename REGType<T>::Type_t getRegElem( llvm::Value * index )
+    typename REGType<T>::Type_t getRegElem( llvm::Value * index ) const
     {
       if (!setup_m)
 	{
@@ -109,7 +109,7 @@ namespace QDP {
       T jit;
       IndexDomainVector args = partial_offset;
       args.push_back( make_pair( N , index ) );
-      jit.setup( m_base , JitDeviceLayout::Scalar, args );
+      jit.setup( m_base , layout , args );
       typename REGType<T>::Type_t ret_reg;
       ret_reg.setup( jit );
       return ret_reg;

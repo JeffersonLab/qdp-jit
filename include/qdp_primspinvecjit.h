@@ -498,7 +498,7 @@ pokeColor(PSpinVectorJIT<T1,N>& l, const PSpinVectorREG<T2,N>& r, llvm::Value* r
 //! dest = 0
 template<class T, int N> 
 inline void 
-zero_rep(PSpinVectorJIT<T,N>& dest) 
+zero_rep(PSpinVectorJIT<T,N> dest) 
 {
   for(int i=0; i < N; ++i)
     zero_rep(dest.elem(i));
@@ -508,7 +508,7 @@ zero_rep(PSpinVectorJIT<T,N>& dest)
 //! dest [some type] = source [some type]
 template<class T, class T1, int N>
 inline void 
-copy_site(PSpinVectorJIT<T,N>& d, int isite, const PSpinVectorJIT<T1,N>& s1)
+copy_site(PSpinVectorJIT<T,N> d, int isite, const PSpinVectorJIT<T1,N>& s1)
 {
   for(int i=0; i < N; ++i)
     copy_site(d.elem(i), isite, s1.elem(i));
@@ -517,7 +517,7 @@ copy_site(PSpinVectorJIT<T,N>& d, int isite, const PSpinVectorJIT<T1,N>& s1)
 //! dest [some type] = source [some type]
 template<class T, class T1, int N>
 inline void 
-copy_site(PSpinVectorJIT<T,N>& d, int isite, const PScalarJIT<T1>& s1)
+copy_site(PSpinVectorJIT<T,N> d, int isite, const PScalarJIT<T1>& s1)
 {
   for(int i=0; i < N; ++i)
     copy_site(d.elem(i), isite, s1.elem());
@@ -527,7 +527,7 @@ copy_site(PSpinVectorJIT<T,N>& d, int isite, const PScalarJIT<T1>& s1)
 //! gather several inner sites together
 template<class T, class T1, int N>
 inline void 
-gather_sites(PSpinVectorJIT<T,N>& d, 
+gather_sites(PSpinVectorJIT<T,N> d, 
 	     const PSpinVectorJIT<T1,N>& s0, int i0, 
 	     const PSpinVectorJIT<T1,N>& s1, int i1,
 	     const PSpinVectorJIT<T1,N>& s2, int i2,
@@ -1787,7 +1787,7 @@ chiralProjectMinus(const PSpinVectorJIT<T,4>& s1)
 //! dest  = random  
 template<class T, int N,  class T1, class T2, class T3>
 inline void
-fill_random(PSpinVectorJIT<T,N>& d, T1& seed, T2& skewed_seed, const T3& seed_mult)
+fill_random(PSpinVectorJIT<T,N> d, T1& seed, T2& skewed_seed, const T3& seed_mult)
 {
   // Loop over rows the slowest
   for(int i=0; i < N; ++i)
@@ -1797,7 +1797,7 @@ fill_random(PSpinVectorJIT<T,N>& d, T1& seed, T2& skewed_seed, const T3& seed_mu
 //! dest  = gaussian
 template<class T,class T2, int N>
 inline void
-fill_gaussian(PSpinVectorJIT<T,N>& d, PSpinVectorREG<T2,N>& r1, PSpinVectorREG<T2,N>& r2)
+fill_gaussian(PSpinVectorJIT<T,N> d, PSpinVectorREG<T2,N>& r1, PSpinVectorREG<T2,N>& r2)
 {
   for(int i=0; i < N; ++i)
     fill_gaussian(d.elem(i), r1.elem(i), r2.elem(i));
@@ -1808,7 +1808,7 @@ fill_gaussian(PSpinVectorJIT<T,N>& d, PSpinVectorREG<T2,N>& r1, PSpinVectorREG<T
 //! dest = (mask) ? s1 : dest
 template<class T, class T1, class T2, int N> 
 inline void 
-copymask(PSpinVectorJIT<T,N>& d, const PScalarREG<T1>& mask, const PSpinVectorREG<T2,N>& s1) 
+copymask(PSpinVectorJIT<T,N> d, const PScalarREG<T1>& mask, const PSpinVectorREG<T2,N>& s1) 
 {
   for(int i=0; i < N; ++i)
     copymask(d.elem(i),mask.elem(),s1.elem(i));
