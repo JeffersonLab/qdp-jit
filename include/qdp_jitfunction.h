@@ -450,8 +450,6 @@ void function_build(JitFunction& function,
 				  Reference<QDPType<PSpinMatrix<PScalar<RComplex<Word<WT> > >, 4>, OScalar<PSpinMatrix<PScalar<RComplex<Word<WT> > >, 4> > > >,
 				  Reference<QDPType<PSpinMatrix<PColorMatrix<RComplex<Word<WT> >, 3>, 4>, OLattice<PSpinMatrix<PColorMatrix<RComplex<Word<WT> >, 3>, 4> > > > > > RHS;
 
-    QDPIO::cout << "special func" << std::endl;
-
     if ( !s.hasOrderedRep() )
       {
 	QDPIO::cout << "special func called on unordered set" << std::endl;
@@ -507,7 +505,6 @@ void function_build(JitFunction& function,
     {
       JitForLoop loop_a(0,4);
       {
-#if 1
 	zero_rep( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ).getJitElem( loop_a.index() , loop_c.index() ) );
 	// dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ).getJitElem( loop_a.index() , loop_c.index() ) =
 	//   quarkContractXX(rv.left() .left() .elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( llvm_create_value(0) , llvm_create_value(0) ) *
@@ -526,68 +523,47 @@ void function_build(JitFunction& function,
 	{
 	  JitForLoop loop_d(0,4);
 	  {
-#if 1
-	    JitForLoop loop_e(0,4);
-	    {
-	      dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ).getJitElem( loop_a.index() , loop_c.index() ) +=
-	    	quarkContractXX(rv.left() .left() .elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( loop_b.index() , loop_d.index() ) *
-	    			rv.left() .right().elem()                                    .getRegElem( loop_d.index() , loop_a.index() ),
-	    			rv.right().left() .elem()                                    .getRegElem( loop_b.index() , loop_e.index() ) *
-	    			rv.right().right().elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( loop_e.index() , loop_c.index() ));
+	    if (sizeof(WT) == 8)
+	      {
+		QDPIO::cout << "special func (all loops)" << std::endl;
 
-	    }
-	    loop_e.end();
-#else
-	    dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ).getJitElem( loop_a.index() , loop_c.index() ) +=
-		quarkContractXX(rv.left() .left() .elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( loop_b.index() , loop_d.index() ) *
-				rv.left() .right().elem()                                    .getRegElem( loop_d.index() , loop_a.index() ),
-				rv.right().left() .elem()                                    .getRegElem( loop_b.index() , llvm_create_value(0) ) *
-				rv.right().right().elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( llvm_create_value(0) , loop_c.index() )) +
-		quarkContractXX(rv.left() .left() .elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( loop_b.index() , loop_d.index() ) *
-				rv.left() .right().elem()                                    .getRegElem( loop_d.index() , loop_a.index() ),
-				rv.right().left() .elem()                                    .getRegElem( loop_b.index() , llvm_create_value(1) ) *
-				rv.right().right().elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( llvm_create_value(1) , loop_c.index() )) +
-		quarkContractXX(rv.left() .left() .elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( loop_b.index() , loop_d.index() ) *
-				rv.left() .right().elem()                                    .getRegElem( loop_d.index() , loop_a.index() ),
-				rv.right().left() .elem()                                    .getRegElem( loop_b.index() , llvm_create_value(2) ) *
-				rv.right().right().elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( llvm_create_value(2) , loop_c.index() )) +
-		quarkContractXX(rv.left() .left() .elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( loop_b.index() , loop_d.index() ) *
-				rv.left() .right().elem()                                    .getRegElem( loop_d.index() , loop_a.index() ),
-				rv.right().left() .elem()                                    .getRegElem( loop_b.index() , llvm_create_value(3) ) *
-				rv.right().right().elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( llvm_create_value(3) , loop_c.index() ));
-#endif
+		JitForLoop loop_e(0,4);
+		{
+		  dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ).getJitElem( loop_a.index() , loop_c.index() ) +=
+		    quarkContractXX(rv.left() .left() .elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( loop_b.index() , loop_d.index() ) *
+				    rv.left() .right().elem()                                    .getRegElem( loop_d.index() , loop_a.index() ),
+				    rv.right().left() .elem()                                    .getRegElem( loop_b.index() , loop_e.index() ) *
+				    rv.right().right().elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( loop_e.index() , loop_c.index() ));
+
+		}
+		loop_e.end();
+	      }
+	    else
+	      {
+		QDPIO::cout << "special func (partial unroll)" << std::endl;
+				
+		dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ).getJitElem( loop_a.index() , loop_c.index() ) +=
+		  quarkContractXX(rv.left() .left() .elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( loop_b.index() , loop_d.index() ) *
+				  rv.left() .right().elem()                                    .getRegElem( loop_d.index() , loop_a.index() ),
+				  rv.right().left() .elem()                                    .getRegElem( loop_b.index() , llvm_create_value(0) ) *
+				  rv.right().right().elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( llvm_create_value(0) , loop_c.index() )) +
+		  quarkContractXX(rv.left() .left() .elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( loop_b.index() , loop_d.index() ) *
+				  rv.left() .right().elem()                                    .getRegElem( loop_d.index() , loop_a.index() ),
+				  rv.right().left() .elem()                                    .getRegElem( loop_b.index() , llvm_create_value(1) ) *
+				  rv.right().right().elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( llvm_create_value(1) , loop_c.index() )) +
+		  quarkContractXX(rv.left() .left() .elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( loop_b.index() , loop_d.index() ) *
+				  rv.left() .right().elem()                                    .getRegElem( loop_d.index() , loop_a.index() ),
+				  rv.right().left() .elem()                                    .getRegElem( loop_b.index() , llvm_create_value(2) ) *
+				  rv.right().right().elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( llvm_create_value(2) , loop_c.index() )) +
+		  quarkContractXX(rv.left() .left() .elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( loop_b.index() , loop_d.index() ) *
+				  rv.left() .right().elem()                                    .getRegElem( loop_d.index() , loop_a.index() ),
+				  rv.right().left() .elem()                                    .getRegElem( loop_b.index() , llvm_create_value(3) ) *
+				  rv.right().right().elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( llvm_create_value(3) , loop_c.index() ));
+	      }
 	  }
 	  loop_d.end();
 	}
 	loop_b.end();
-#endif
-#if 0
-	// dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ).getJitElem( loop_a.index() , loop_c.index() ) =
-	//   rv.left() .left() .elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( llvm_create_value(0) , loop_a.index() ) *
-	//   rv.right().right().elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( llvm_create_value(0) , loop_c.index() );
-
-	dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ).getJitElem( loop_a.index() , loop_c.index() ) =
-	  quarkContractXX(rv.left() .left() .elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( llvm_create_value(0) , loop_a.index() ),
-			  rv.right().right().elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( llvm_create_value(0) , loop_c.index() ) );
-      
-	JitForLoop loop_b(1,4);
-	{
-	  dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ).getJitElem( loop_a.index() , loop_c.index() ) +=
-	    quarkContractXX(rv.left() .left() .elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( loop_b.index() , loop_a.index() ),
-			    rv.right().right().elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( loop_b.index() , loop_c.index() ) );
-
-	}
-	loop_b.end();
-#endif
-#if 0
-	dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ).getJitElem( loop_a.index() , loop_c.index() ) =
-	  rv.left() .left() .elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( loop_a.index() , loop_c.index() );
-#endif
-#if 0
-	dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ).getJitElem( loop_a.index() , loop_c.index() ) =
-	  rv.right() .right() .elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( loop_a.index() , loop_c.index() );
-#endif
-	
       }
       loop_a.end();
     }
