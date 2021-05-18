@@ -80,8 +80,6 @@ namespace QDP {
     void operator=(const OLatticeJIT& a);
 
     mutable ParamRef base_m;
-    mutable      T F;
-
   };
 
 
@@ -107,10 +105,11 @@ namespace QDP {
       base_m = rhs.base_m;
     }
 
-    void copy( const OScalarJIT& rhs ) const
-    {
-      base_m     = rhs.base_m;
-    }
+    
+    // void copy( const OScalarJIT& rhs ) const
+    // {
+    //   base_m     = rhs.base_m;
+    // }
 
 
     llvm::Value* get_word_value() const
@@ -118,20 +117,23 @@ namespace QDP {
       return llvm_derefParam( base_m );
     }
 
-    T& elem() {
+    T elem() const {
+      T F;
       IndexDomainVector args;
       args.push_back( make_pair( 1 , llvm_create_value(0) ) );
       F.setup( llvm_derefParam(base_m) , JitDeviceLayout::Scalar , args );
       return F;
     }
 
-    const T& elem() const {
-      IndexDomainVector args;
-      args.push_back( make_pair( 1 , llvm_create_value(0) ) );
-      F.setup( llvm_derefParam(base_m) , JitDeviceLayout::Scalar , args );
-      return F;
+    
+    typename REGType<T>::Type_t elemRegValue() const
+    {
+      typename REGType<T>::Type_t reg;
+      reg.setup_value( this->elem() );
+      return reg;
     }
 
+    
     void set_base( ParamRef p ) const
     {
       base_m = p;
@@ -141,7 +143,6 @@ namespace QDP {
     void operator=(const OScalarJIT& a);
 
     mutable ParamRef    base_m;
-    mutable T F;
   };
 
 

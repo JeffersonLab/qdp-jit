@@ -834,6 +834,109 @@ void function_build(JitFunction& function,
   }
 
 
+#endif
+#if 1
+template< class WT , class WT1 , class WTe >
+void function_build(JitFunction& function,
+		    const DynKey& key,
+		    OLattice<PScalar<PScalar<RComplex<Word<WT> > > > >& dest,
+		    const OpAddAssign& op,
+		    const QDPExpr< BinaryNode<OpMultiply,
+		    OScalar<PScalar<PScalar<RScalar<Word<WTe> > > > >,
+		    BinaryNode<FnTraceMultiply,
+		    BinaryNode<OpMultiply,
+		    Reference<QDPType<PSpinMatrix<PScalar<RComplex<Word<WTe> > >, 4>, OScalar<PSpinMatrix<PScalar<RComplex<Word<WTe> > >, 4> > > >,
+		    Reference<QDPType<PSpinMatrix<PColorMatrix<RComplex<Word<WTe> >, 3>, 4>, OLattice<PSpinMatrix<PColorMatrix<RComplex<Word<WTe> >, 3>, 4> > > > >,
+		    Reference<QDPType<PSpinMatrix<PColorMatrix<RComplex<Word<WTe> >, 3>, 4>, OLattice<PSpinMatrix<PColorMatrix<RComplex<Word<WTe> >, 3>, 4> > > > > > ,
+		    OLattice<PScalar<PScalar<RComplex<Word<WT1> > > > > >& rhs,
+		    const Subset& s)
+{
+  typedef PScalar<PScalar<RComplex<Word<WT> > > > T;
+  typedef PScalar<PScalar<RComplex<Word<WT1> > > > T1;
+  typedef OpAddAssign Op;
+  typedef BinaryNode<OpMultiply,
+		     OScalar<PScalar<PScalar<RScalar<Word<WTe> > > > >,
+		     BinaryNode<FnTraceMultiply,
+				BinaryNode<OpMultiply,
+					   Reference<QDPType<PSpinMatrix<PScalar<RComplex<Word<WTe> > >, 4>, OScalar<PSpinMatrix<PScalar<RComplex<Word<WTe> > >, 4> > > >,
+					   Reference<QDPType<PSpinMatrix<PColorMatrix<RComplex<Word<WTe> >, 3>, 4>, OLattice<PSpinMatrix<PColorMatrix<RComplex<Word<WTe> >, 3>, 4> > > > >,
+				Reference<QDPType<PSpinMatrix<PColorMatrix<RComplex<Word<WTe> >, 3>, 4>, OLattice<PSpinMatrix<PColorMatrix<RComplex<Word<WTe> >, 3>, 4> > > > > > RHS;
+  
+  QDPIO::cout << "special jit z += m * trace( ( S * Q ) * Q )" << std::endl;
+    
+  if ( !s.hasOrderedRep() )
+    {
+	QDPIO::cout << "special func called on unordered set" << std::endl;
+	QDP_abort(1);
+      }
+    
+    std::ostringstream expr;
+    expr << std::string(__PRETTY_FUNCTION__) << "_key=" << key;
+  
+    if (ptx_db::db_enabled)
+      {
+	llvm_ptx_db( function , expr.str().c_str() );
+	if (!function.empty())
+	  return;
+      }
+
+    llvm_start_new_function("eval",expr.str().c_str() );
+
+    ParamRef p_th_count = llvm_add_param<int>();
+    ParamRef p_start    = llvm_add_param<int>();
+
+    ParamLeaf param_leaf;
+
+    typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
+    FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
+	  
+    typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
+    View_t rv(forEach(rhs, param_leaf, TreeCombine()));
+
+    llvm::Value * r_th_count     = llvm_derefParam( p_th_count );
+    llvm::Value * r_start        = llvm_derefParam( p_start );
+
+    llvm::Value* r_idx_thread = llvm_thread_idx();
+
+    llvm_cond_exit( llvm_ge( r_idx_thread , r_th_count ) );
+
+    llvm::Value* r_idx = llvm_add( r_idx_thread , r_start );
+
+
+
+    // z += m * trace( ( M * B ) * C );
+
+    // z += m * M^{ik} B^{kj} o C^{ji}
+
+    // m = rv.left()
+    // M = rv.right().left().left() (Gamma)
+    // B = rv.right().left().right()
+    // C = rv.right().right()
+
+
+    
+    JitForLoop loop_i(0,4);
+    {
+      JitForLoop loop_j(0,4);
+      {
+	JitForLoop loop_k(0,4);
+	{
+	  dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ).elem() +=
+	    rv.left().elemRegValue().elem() * 
+	    traceMultiply(rv.right().left() .left() .elem()                                    .getRegElem( loop_i.index() , loop_k.index() ) *
+			  rv.right().left() .right().elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( loop_k.index() , loop_j.index() ),
+			  rv.right().right()        .elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( loop_j.index() , loop_i.index() ) ) ;
+	}
+	loop_k.end();
+      }
+      loop_j.end();
+    }
+    loop_i.end();
+    
+
+    jit_get_function( function );
+
+  }
 
 
 
