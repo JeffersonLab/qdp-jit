@@ -607,7 +607,10 @@ namespace QDP {
   }
 
   void gpu_init() {
-    cuInit(0);
+    CUresult ret;
+    ret = cuInit(0);
+
+    CudaRes("CUDA init",ret);
 
     cuDeviceGetCount(&deviceCount);
     if (deviceCount == 0) { 
@@ -662,6 +665,10 @@ namespace QDP {
       ret = cuCtxCreate(&cuContext, CU_CTX_MAP_HOST, cuDevice);
     }
     CudaRes(__func__,ret);
+
+    // Set cache config
+    ret = cuCtxSetCacheConfig( CU_FUNC_CACHE_PREFER_L1 );
+    CudaRes("setting cache config",ret);
 #endif
 
     //std::cout << "creating CUDA events\n";

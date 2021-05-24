@@ -92,22 +92,9 @@ public:
     }
 
 
-
-  // PSeedJIT& operator=(const PSeedJIT& rhs) 
-  //   {
-  //     for(int i=0; i < 4; ++i)
-  // 	elem(i) = rhs.elem(i);
-
-  //     return *this;
-  //   }
-
-
 public:
         T& elem(int i)       {return this->arrayF(i);}
   const T& elem(int i) const {return this->arrayF(i);}
-
-  // T& elem(int i)             {return JV<T,4>::getF()[i]; }
-  // const T& elem(int i) const {return JV<T,4>::getF()[i]; }
 };
 
 
@@ -120,6 +107,12 @@ template<class T>
 struct REGType< PSeedJIT<T> >
 {
   typedef PSeedREG<typename REGType<T>::Type_t>  Type_t;
+};
+
+template<class T> 
+struct BASEType< PSeedJIT<T> >
+{
+  typedef PSeed<typename BASEType<T>::Type_t>  Type_t;
 };
 
 

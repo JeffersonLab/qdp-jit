@@ -450,6 +450,19 @@ struct REGType< RComplexJIT<T> >
 };
 
 
+template<class T>
+struct BASEType< RScalarJIT<T> >
+{
+  typedef RScalar<typename BASEType<T>::Type_t>  Type_t;
+};
+
+template<class T>
+struct BASEType< RComplexJIT<T> >
+{
+  typedef RComplex<typename BASEType<T>::Type_t>  Type_t;
+};
+
+
 // Underlying word type
 template<class T>
 struct WordType<RScalarJIT<T> > 

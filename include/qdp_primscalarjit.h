@@ -256,6 +256,12 @@ struct REGType< PScalarJIT<T> >
   typedef PScalarREG<typename REGType<T>::Type_t>  Type_t;
 };
 
+template<class T> 
+struct BASEType< PScalarJIT<T> >
+{
+  typedef PScalar<typename BASEType<T>::Type_t>  Type_t;
+};
+
 
 // Underlying word type
 template<class T>

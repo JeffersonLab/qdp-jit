@@ -632,6 +632,12 @@ struct REGType<PSpinVectorJIT<T1,N> >
   typedef PSpinVectorREG<typename REGType<T1>::Type_t,N>  Type_t;
 };
 
+template<class T1, int N>
+struct BASEType<PSpinVectorJIT<T1,N> > 
+{
+  typedef PSpinVector<typename BASEType<T1>::Type_t,N>  Type_t;
+};
+
 
 // Underlying word type
 template<class T1, int N>

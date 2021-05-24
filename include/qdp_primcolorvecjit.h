@@ -100,6 +100,12 @@ struct REGType<PColorVectorJIT<T1,N> >
   typedef PColorVectorREG<typename REGType<T1>::Type_t,N>  Type_t;
 };
 
+template<class T1, int N>
+struct BASEType<PColorVectorJIT<T1,N> > 
+{
+  typedef PColorVector<typename BASEType<T1>::Type_t,N>  Type_t;
+};
+
 
 // Underlying word type
 template<class T1, int N>

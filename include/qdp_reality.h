@@ -449,6 +449,20 @@ struct JITType<RComplex<T> >
 };
 
 
+template<class T> 
+struct REGType<RScalar<T> >
+{
+  typedef RScalarREG<typename REGType<T>::Type_t>  Type_t;
+};
+
+
+template<class T> 
+struct REGType<RComplex<T> >
+{
+  typedef RComplexREG<typename REGType<T>::Type_t>  Type_t;
+};
+
+
 
 
 //! Stream output

@@ -179,7 +179,15 @@ struct FirstWord<Word<T> >
 template<class T> 
 struct JITType<Word<T> >
 {
-  typedef WordJIT<typename JITType<T>::Type_t>  Type_t;
+  typedef WordJIT<T>  Type_t;
+};
+
+
+
+template<class T> 
+struct REGType<Word<T> >
+{
+  typedef WordREG<T>  Type_t;
 };
 
 

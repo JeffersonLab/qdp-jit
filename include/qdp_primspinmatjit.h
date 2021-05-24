@@ -158,6 +158,12 @@ struct REGType<PSpinMatrixJIT<T1,N> >
   typedef PSpinMatrixREG<typename REGType<T1>::Type_t,N>  Type_t;
 };
 
+template<class T1, int N>
+struct BASEType<PSpinMatrixJIT<T1,N> > 
+{
+  typedef PSpinMatrix<typename BASEType<T1>::Type_t,N>  Type_t;
+};
+
 
 // Underlying word type
 template<class T1, int N>

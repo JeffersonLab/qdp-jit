@@ -214,7 +214,14 @@ namespace QDP {
     typedef WordREG<typename REGType<T>::Type_t>  Type_t;
   };
 
+  
+  template<class T>
+  struct BASEType< WordJIT<T> >
+  {
+    typedef Word<typename BASEType<T>::Type_t>  Type_t;
+  };
 
+  
   template<class T> 
   struct WordType<WordJIT<T> >
   {
@@ -266,7 +273,7 @@ namespace QDP {
     llvm_store_ptr_idx( llvm_create_value( 0 ) , dest.getBaseReg() , dest.getOffset() );
   }
 
-
+  
   template<class T1, class T3>
   void random_seed_mul(T1& seed, const T3& seed_mult)
   {

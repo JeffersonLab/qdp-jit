@@ -99,16 +99,54 @@ namespace QDP {
     }
 
 
-    typename REGType<T>::Type_t getRegElem( llvm::Value * index ) const
+    T getJitElem() const
     {
       if (!setup_m)
 	{
 	  QDPIO::cerr << "qdp-jit internal error: BaseJIT::getJitElem elem not set up.\n";
 	  QDP_abort(1);
 	}
+      T ret;
+      IndexDomainVector args = partial_offset;
+      args.push_back( make_pair( N , llvm_create_value(0) ) );
+      ret.setup( m_base , layout , args );
+      return ret;
+    }
+
+
+    typename REGType<T>::Type_t getRegElem( llvm::Value * index ) const
+    {
+      if (!setup_m)
+	{
+	  QDPIO::cerr << "qdp-jit internal error: BaseJIT::getRegElem(index) elem not set up.\n";
+	  QDP_abort(1);
+	}
       T jit;
       IndexDomainVector args = partial_offset;
       args.push_back( make_pair( N , index ) );
+      jit.setup( m_base , layout , args );
+      typename REGType<T>::Type_t ret_reg;
+      ret_reg.setup( jit );
+      return ret_reg;
+    }
+
+
+
+    typename REGType<T>::Type_t getRegElem() const
+    {
+      if (!setup_m)
+	{
+	  QDPIO::cerr << "qdp-jit internal error: BaseJIT::getRegElem() elem not set up.\n";
+	  QDP_abort(1);
+	}
+      if (N != 1)
+	{
+	  QDPIO::cout << "qdp-jit internal error: BaseJIT::getRegElem() not size 1.\n";
+	  QDP_abort(1);
+	}
+      T jit;
+      IndexDomainVector args = partial_offset;
+      args.push_back( make_pair( N , llvm_create_value(0) ) );
       jit.setup( m_base , layout , args );
       typename REGType<T>::Type_t ret_reg;
       ret_reg.setup( jit );

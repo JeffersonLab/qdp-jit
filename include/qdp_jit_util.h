@@ -197,7 +197,8 @@ namespace QDP {
   template<class T, int N>
   class JitStackArray
   {
-    typedef typename JITType<  T >::Type_t T_jit;
+    typedef typename JITType< T > ::Type_t T_jit;
+    //typedef typename REGType< T > ::Type_t T_reg;
     typedef typename WordType< T >::Type_t W;
     BaseJIT<T_jit,N> array;
     llvm::Value * ptr;
@@ -243,6 +244,12 @@ namespace QDP {
     {
       return array.getRegElem(index);
     }
+
+    T elemREG(int i)
+    {
+      return array.getRegElem( llvm_create_value(i) );
+    }
+
   };
 
 

@@ -677,6 +677,11 @@ struct LeafFunctor<OScalar<T>, ParamLeaf>
 };
 
 
+
+
+
+
+
 template<>
 struct LeafFunctor<OScalar< PScalar< PScalar < RScalar< Word< float > > > > >, ParamLeaf>
 {
