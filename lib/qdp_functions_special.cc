@@ -16,11 +16,13 @@ namespace QDP
 		 const Subset& s)
   {
     //QDPIO::cout << "in template specialization quarkContract13 \n";
-
+    
+    typedef PSpinMatrix<PColorMatrix<RComplex<Word<float> >, 3>, 4> T;
+    
     std::vector<QDPCache::ArgKey> ids = {
       dest.getId(),
-      rhs.expression().left().getId(),
-      rhs.expression().right().getId()
+      static_cast<const OLattice<T>*>(&rhs.expression().left())->getId(),
+      static_cast<const OLattice<T>*>(&rhs.expression().right())->getId()
     };
 
     std::vector<void*> args = QDP_get_global_cache().get_kernel_args( ids , false );
@@ -44,10 +46,12 @@ namespace QDP
   {
     //QDPIO::cout << "in template specialization quarkContract14 \n";
 
+    typedef PSpinMatrix<PColorMatrix<RComplex<Word<float> >, 3>, 4> T;
+
     std::vector<QDPCache::ArgKey> ids = {
       dest.getId(),
-      rhs.expression().left().getId(),
-      rhs.expression().right().getId()
+      static_cast<const OLattice<T>*>(&rhs.expression().left())->getId(),
+      static_cast<const OLattice<T>*>(&rhs.expression().right())->getId()
     };
 
     std::vector<void*> args = QDP_get_global_cache().get_kernel_args( ids , false );
@@ -71,10 +75,12 @@ namespace QDP
   {
     //QDPIO::cout << "in template specialization quarkContract23 \n";
 
+    typedef PSpinMatrix<PColorMatrix<RComplex<Word<float> >, 3>, 4> T;
+
     std::vector<QDPCache::ArgKey> ids = {
       dest.getId(),
-      rhs.expression().left().getId(),
-      rhs.expression().right().getId()
+      static_cast<const OLattice<T>*>(&rhs.expression().left())->getId(),
+      static_cast<const OLattice<T>*>(&rhs.expression().right())->getId()
     };
 
     std::vector<void*> args = QDP_get_global_cache().get_kernel_args( ids , false );
@@ -98,10 +104,12 @@ namespace QDP
   {
     //QDPIO::cout << "in template specialization quarkContract24 \n";
 
+    typedef PSpinMatrix<PColorMatrix<RComplex<Word<float> >, 3>, 4> T;
+
     std::vector<QDPCache::ArgKey> ids = {
       dest.getId(),
-      rhs.expression().left().getId(),
-      rhs.expression().right().getId()
+      static_cast<const OLattice<T>*>(&rhs.expression().left())->getId(),
+      static_cast<const OLattice<T>*>(&rhs.expression().right())->getId()
     };
 
     std::vector<void*> args = QDP_get_global_cache().get_kernel_args( ids , false );

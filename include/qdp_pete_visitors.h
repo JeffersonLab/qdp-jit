@@ -53,15 +53,12 @@ struct AddressLeaf
   AddressLeaf& operator=(const AddressLeaf& cp) = delete;
 
   
-  mutable std::vector<QDPCache::ArgKey> ids;
+  mutable std::vector<int> ids;
   mutable std::vector<int> ids_signoff;
   const Subset& subset;
 
   void setId( int id ) const {
-    ids.push_back( QDPCache::ArgKey(id) );
-  }
-  void setIdElem( int id , int elem ) const {
-    ids.push_back( QDPCache::ArgKey(id,elem) );
+    ids.push_back( id );
   }
   
   template<class T> void setLit( T f ) const;

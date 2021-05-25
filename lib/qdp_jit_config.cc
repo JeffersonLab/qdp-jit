@@ -13,8 +13,14 @@ namespace QDP
     int max_allocation_size = -1;
     size_t pool_alignment = 128;
     size_t min_total_reserved_GPU_memory = 50*1024*1024; // 50 MB
+    
+    // In case the Layout is not initialized when the pool size is set
+    // use this fraction of free GPU memory to determine the pool size
+    double free_mem_fraction = 0.92; 
 
-
+    enum PoolSetMethod { User , PerThread , Fraction };
+    PoolSetMethod poolSetMethod = PoolSetMethod::PerThread;
+    
     // In case memory allocation fails, decrease Pool size by this amount for next try.
     size_t pool_size_decrement = 10 * 1024*1024;   // 10MB
 
@@ -33,7 +39,14 @@ namespace QDP
     int threads_per_block_loops = 1000; // Number of loops to measure (after dry run of 5)
     std::string tuning_file = "qdp-jit.tuning.dat";
 
+    // Delay output when QDPIO is not ready yet
     std::vector<std::string> delayed_output;
+
+    // Ring buffer size for OScalars
+    int oscalar_ringbuffer_size = 100;
+
+    // Timing run?
+    bool timing_run = false;
     
 #ifdef QDP_BACKEND_ROCM
     int  codegen_opt = 1;
@@ -55,6 +68,10 @@ namespace QDP
   int  jit_config_get_CUDA_FTZ()   { return CUDA_FTZ; }
   void jit_config_set_CUDA_FTZ(int i)   { CUDA_FTZ = i; }
 #endif
+
+
+  bool jit_config_get_timing_run() { return timing_run; }
+  void jit_config_set_timing_run(bool v) { timing_run = v; }
   
 
   void jit_config_delayed_message(std::string txt)
@@ -74,13 +91,19 @@ namespace QDP
   {
     QDPIO::cout << "Memory pool config:\n";
     QDPIO::cout << "  threads per block                   : " << threads_per_block << "\n";
-    if (use_total_pool_size)
-    QDPIO::cout << "  memory pool size (user request)     : " << pool_size/1024/1024 << " MB\n";
-    else
-      {
-    QDPIO::cout << "  reserved memory per thread          : " << thread_stack << " bytes\n";
-    QDPIO::cout << "  resulting memory pool size          : " << jit_config_get_pool_size()/1024/1024 << " MB\n";
-      }
+
+    switch (poolSetMethod) {
+      case PoolSetMethod::PerThread:
+      QDPIO::cout << "  reserved memory per thread          : " << thread_stack << " bytes\n";
+      QDPIO::cout << "  resulting memory pool size          : " << pool_size/1024/1024 << " MB\n";
+      break;
+      case PoolSetMethod::User:
+      QDPIO::cout << "  memory pool size (user request)     : " << pool_size/1024/1024 << " MB\n";
+      break;
+      case PoolSetMethod::Fraction:
+      QDPIO::cout << "  memory pool size (per fraction)     : " << pool_size/1024/1024 << " MB\n";
+      break;
+    }
 #ifdef QDP_BACKEND_CUDA
     QDPIO::cout << "Code generation:\n";
     QDPIO::cout << "  CUDA flush denormals to zero        : " << jit_config_get_CUDA_FTZ() << std::endl;
@@ -100,6 +123,10 @@ namespace QDP
   bool jit_config_get_verbose_output() { return verbose_output; }
   void jit_config_set_verbose_output(bool v) { verbose_output = v; }
 
+  int jit_config_get_oscalar_ringbuffer_size() { return oscalar_ringbuffer_size; }
+  void jit_config_set_oscalar_ringbuffer_size(int n) { oscalar_ringbuffer_size = n; }
+
+  
 #ifdef QDP_BACKEND_ROCM
   int jit_config_get_codegen_opt() { return codegen_opt; }
   void jit_config_set_codegen_opt(int opt) { codegen_opt = opt; }
@@ -187,18 +214,34 @@ namespace QDP
   {
     if (use_total_pool_size)
       {
+	poolSetMethod = PoolSetMethod::User;
+
 	return pool_size;
       }
     else
       {
-	size_t tmp = gpu_mem_free() - (size_t)Layout::sitesOnNode() * thread_stack;
-
-	if ( (size_t)Layout::sitesOnNode() * thread_stack < min_total_reserved_GPU_memory )
+	size_t size;
+	
+	if (Layout::initialized())
 	  {
-	    tmp = gpu_mem_free() - min_total_reserved_GPU_memory;
+	    size = gpu_mem_free() - (size_t)Layout::sitesOnNode() * thread_stack;
+
+	    if ( (size_t)Layout::sitesOnNode() * thread_stack < min_total_reserved_GPU_memory )
+	      {
+		size = gpu_mem_free() - min_total_reserved_GPU_memory;
+	      }
+
+	    poolSetMethod = PoolSetMethod::PerThread;
+	    pool_size = size;
+	  }
+	else
+	  {
+	    size = (size_t)((double)gpu_mem_free() * free_mem_fraction);
+	    poolSetMethod = PoolSetMethod::Fraction;
+	    pool_size = size;
 	  }
 	  
-	return tmp;
+	return size;
       }
   }
 

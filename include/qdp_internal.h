@@ -71,9 +71,13 @@ namespace QDPInternal
   QDPIO::cout << "sizeof(W) = " << sizeof(W) << endl;
   QDPIO::cout << "Calling " << dest.size() << "x global sum array with length " << sizeof(P)/sizeof(W) << endl;
 #endif
-  
+
+#if 0
   for (int i = 0 ; i < dest.size() ; ++i )
     globalSumArray( (W *)dest[i].getF(), sizeof(P)/sizeof(W)); // call appropriate hook
+#else
+    globalSumArray((W *)dest.slice(), dest.size()*sizeof(P)/sizeof(W)); // call appropriate hook
+#endif  
 }
 
 
@@ -93,17 +97,7 @@ namespace QDPInternal
     QDPIO::cout << "Calling multi1d global sum array with length " << dest.size()*sizeof(P)/sizeof(W) << endl;
 #endif
 
-    //globalSumArray((W *)dest.slice(), dest.size()*sizeof(T)/sizeof(W)); // call appropriate hook
-    // multi1d< OScalar<T1> > do no longer have contiguous host memory that could be used
-    // for globalSumArray
-#if 0
-    globalSumArray((W *)dest.slice_host(), dest.size()*sizeof(P)/sizeof(W)); // call appropriate hook
-#else
-    for (int i = 0 ; i < dest.size() ; ++i )
-      {
-	globalSumArray( (W *)dest[i].getF(), sizeof(P)/sizeof(W)); // call appropriate hook
-      }
-#endif
+    globalSumArray((W *)dest.slice(), dest.size()*sizeof(P)/sizeof(W)); // call appropriate hook
   }
 
 

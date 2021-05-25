@@ -186,9 +186,6 @@ namespace QDP {
 #include "qdp_mapresource.h"
 #include "qdp_handle.h"
 #include "qdp_map.h"
-//#include "qdp_autotuning.h"
-
-#include "qdp_multi_outer.h"
 
 
 #include "qdp_simpleword.h"

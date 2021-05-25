@@ -3,6 +3,12 @@
 
 namespace QDP {
 
+
+  void jit_util_ringBuffer_init();
+  int  jit_util_ringBuffer_allocate( size_t size , const void *hstPtr );
+
+  
+
   llvm::Value *jit_function_preamble_get_idx( const std::vector<ParamRef>& vec );
   std::vector<ParamRef> jit_function_preamble_param( const char* ftype , const char* pretty );
 

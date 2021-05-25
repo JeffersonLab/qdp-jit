@@ -8,6 +8,11 @@
 #ifndef QDP_PRIMSPINVEC_H
 #define QDP_PRIMSPINVEC_H
 
+#ifdef QDP_THRUSTALIGN
+#define M_MIN(X,Y) ((X)<=(Y)?(X):(Y))
+#define M_MAX(X,Y) ((X)>=(Y)?(X):(Y))
+#endif
+
 namespace QDP {
 
 
@@ -101,8 +106,11 @@ public:
   T& elem(int i) {return F[i];}
   const T& elem(int i) const {return F[i];}
 private:
-  // Why this alignment is needed!?
-  alignas((16 < alignof(T) ? alignof(T) : 16)) T F[N]; 
+#ifdef QDP_THRUSTALIGN
+  alignas(M_MIN(M_MAX(16, alignof(T)), sizeof(T)*N)) T F[N];
+#else
+  T F[N];
+#endif
 };
 
 

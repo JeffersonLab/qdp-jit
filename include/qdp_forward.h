@@ -163,6 +163,7 @@ namespace QDP
 	       const OScalarJIT<PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > >& seed_mult);
   }
 
+  int  jit_util_ringBuffer_allocate( size_t size , const void *hstPtr );
 
 
 } // namespace QDP

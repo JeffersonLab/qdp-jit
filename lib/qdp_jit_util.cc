@@ -34,6 +34,40 @@ namespace QDP {
     int db_tune_count = 0;
   }
 
+  namespace
+  {
+    std::vector<int> ringBufferOScalar;
+    int ringBufferNext;
+  }
+
+
+  void jit_util_ringBuffer_init()
+  {
+    ringBufferOScalar.resize( jit_config_get_oscalar_ringbuffer_size() , -1 );
+    ringBufferNext = 0;
+  }
+  
+
+  int jit_util_ringBuffer_allocate( size_t size , const void *hstPtr )
+  {
+    int& buf_elem = ringBufferOScalar.at( ringBufferNext );
+
+    if ( buf_elem >= 0)
+      {
+	//QDPIO::cout << "ringBuffer: sign off " << buf_elem << std::endl;
+      	QDP_get_global_cache().signoff( buf_elem );
+      }
+    
+    buf_elem = QDP_get_global_cache().registrateOwnHostMemNoPage( size, hstPtr );
+    //QDPIO::cout << "ringBuffer: allocated " << buf_elem << std::endl;
+
+    ringBufferNext = ( ringBufferNext + 1 ) % ringBufferOScalar.size();
+    //QDPIO::cout << "ringBufferNext = " << ringBufferNext << std::endl;
+
+    return buf_elem;
+  }
+  
+
   int jit_util_get_tune_count()
   {
     return db_tune_count;

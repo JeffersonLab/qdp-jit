@@ -386,10 +386,10 @@ public:
     }
 
 public:
-  int getId() const        { return static_cast<const C*>(this)->getId();}
-  int getElemNum() const   { return static_cast<const C*>(this)->getElemNum();}
-
   typename WordType<T>::Type_t get_word_value() const { return static_cast<const C*>(this)->get_word_value();}
+
+  T* getF() {return static_cast<const C*>(this)->getF();}
+  const T* getF() const {return static_cast<const C*>(this)->getF();}
 
         T& elem(int i)       {return static_cast<const C*>(this)->elem(i);}
   const T& elem(int i) const {return static_cast<const C*>(this)->elem(i);}
@@ -502,14 +502,32 @@ struct LeafFunctor<QDPType<T,OScalar<T> >, ParamLeaf>
 
   
 
-template<class T, class C>
-struct LeafFunctor<QDPType<T,C>, AddressLeaf>
+
+
+template<class T>
+struct LeafFunctor<QDPType<T,OLattice<T> >, AddressLeaf>
 {
   typedef int Type_t;
   inline static
-  Type_t apply(const QDPType<T,C>& s, const AddressLeaf& p) 
+  Type_t apply(const QDPType<T,OLattice<T> >& s, const AddressLeaf& p) 
   {
-    p.setIdElem( s.getId() , s.getElemNum() );
+    p.setId( static_cast<const OLattice<T>*>(&s)->getId() );
+    return 0;
+  }
+};
+
+
+  
+
+template<class T>
+struct LeafFunctor<QDPType<T,OScalar<T> >, AddressLeaf>
+{
+  typedef int Type_t;
+  inline static
+  Type_t apply(const QDPType<T,OScalar<T> >& s, const AddressLeaf& p) 
+  {
+    int id = jit_util_ringBuffer_allocate( sizeof(T) , s.getF() );
+    p.setId( id );
     return 0;
   }
 };

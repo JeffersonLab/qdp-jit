@@ -3,6 +3,12 @@
 
 namespace QDP
 {
+  bool jit_config_get_timing_run();
+  void jit_config_set_timing_run(bool v);
+
+  int jit_config_get_oscalar_ringbuffer_size();
+  void jit_config_set_oscalar_ringbuffer_size(int n);
+
   bool jit_config_get_tuning();
   void jit_config_set_tuning(bool v);
 
