@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.17)
-project(QDPXX VERSION 1.46.1 LANGUAGES CXX;C)
+project(QDP-JIT VERSION 0.1 LANGUAGES CXX;C)
 
 include(GNUInstallDirs)
 
@@ -11,10 +11,91 @@ include(CheckIncludeFile)
 include(CheckSymbolExists)
 include(CheckTypeSize)
 
+
+set(QDP_ENABLE_BACKEND "CUDA" CACHE STRING "The backend, can be either CUDA or ROCM")
+set_property(CACHE QDP_ENABLE_BACKEND PROPERTY
+  STRINGS CUDA ROCM)
+
+set(CUDA_TOOLKIT_ROOT_DIR "/usr/local/cuda" CACHE STRING "Root dir for CUDA")
+set(ROCM_ROCM_DIR "/opt/rocm" CACHE STRING "Root dir for ROCm")
+
+option(QDP_ENABLE_PROFILING "Enable profiling" OFF)
+option(QDP_ENABLE_ROCM_STATS "Enable ROCM statistics" OFF)
+option(QDP_ENABLE_CUDA_MANAGED_MEMORY "Enable CUDA Managed Memory" OFF)
+
+option(QDP_ENABLE_CUSTOM_KERNELS "Enable Custom Kernels" OFF)
+option(QDP_ENABLE_CUDA_SPECIAL "Enable CUDA Special" OFF)
+option(QDP_ENABLE_DEEP_LOG "Enable Deep logging" OFF)
+set(QDP_DEEP_LOG ${QDP_ENABLE_DEEP_LOG})
+
+set(QDP_ENABLE_CUDA_SM "sm_70" CACHE STRING "The CUDA SM eg. sm_50, sm_70 etc")
+set(CUDA_SM ${QDP_ENABLE_CUDA_SM})
+
+set(QDP_ENABLE_CUDA_NVCC "nvcc" CACHE STRING "Path to cuda NVCC")
+set(CUDA_NVCC ${QDP_ENABLE_CUDA_NVCCC})
+
+option(QDP_ENABLE_LLVM12 "Enable changes to compile with LLVM12 release" OFF)
+
+if( QDP_ENABLE_LLVM12 )
+  set(QDP_LLVM12 "1")
+endif()
+
+option(QDP_ENABLE_COMM_SPLIT_DEVICEINIT "Enable using MPI_Comm_split when initializing devices" OFF)
+if(QDP_ENABLE_COMM_SPLIT_DEVICEINIT)
+  set(QDP_USE_COMM_SPLIT_INIT "1")
+endif()
+
+##
+## NB: Substituting Incflags and link variables will need
+##     to be done differently for CUDA and ROCm
+##     CUda has nice modules: CUDA::cuda CUDA::cudart
+##     There is no find_package(for ROCm so we may need
+##     To explicitly use -I flags and -L and -l flags...
+##
+if( ${QDP_ENABLE_BACKEND} STREQUAL "CUDA")
+  message(STATUS "Building For CUDA")
+  find_package(CUDAToolkit REQUIRED)
+  set(CUDA_GCC ${CMAKE_CXX_COMPILER})
+  set(QDP_BACKEND_CUDA  "1")
+  set(GPU_LIBS "CUDA::cuda")
+  if( QDP_ENABLE_CUDA_SPECIAL )
+    set( QDP_CUDA_SPECIAL "yes" )
+    list(APPEND GPU_LIBS "CUDA::cudart")
+  endif()
+endif()
+
+if( ${QDP_ENABLE_BACKEND} STREQUAL "ROCM")
+  message(STATUS "Building for ROCM")
+  set(QDP_BACKEND_ROCM "1")
+
+  if( NOT DEFINED ROCM_PATH )
+    if( NOT DEFINED ENV{ROCM_PATH})
+      set(ROCM_PATH "/opt/rocm" CACHE_PATH "ROCm PATH")
+    else()
+      set(ROCM_PATH $ENV{ROCM_PATH} CACHE PATH "ROCm PATH")
+    endif()
+  endif()
+  set(CMAKE_MODULE_PATH "${ROCM_PATH}/lib/cmake" ${CMAKE_MODULE_PATH})
+  find_package(hip REQUIRED)
+  set(GPU_LIBS "hip::amdhip64")
+  if( QDP_ENABLE_ROCM_STATS )
+    set(QDP_USE_ROCM_STATS "1")
+    find_package(amd_comgr REQUIRED)
+    set(GPU_LIBS ${GPU_LIBS} amd_comgr)
+  endif()
+endif()
+ 
+set(QDP_IS_QDPJIT "1")
+set(QDPJIT_IS_QDPJITNVVM "1")
+
+if ( QDP_ENABLE_CUSTOM_KERNELS )
+  set(QDP_CUSTOM_KERNELS "yes" )
+endif()
+
 # Config parameters: ARCHs - one can turn them on/off
-set(QDP_PARALLEL_ARCH "parscalar" CACHE STRING "The Parallel ARCH. One of scalar, parscalar, scalarvec, parscalarvec")
+set(QDP_PARALLEL_ARCH "parscalar" CACHE STRING "The Parallel ARCH. One of scalar, parscalar")
 set_property(CACHE QDP_PARALLEL_ARCH PROPERTY
-		STRINGS scalar scalarvec parscalar parscalarvec
+		STRINGS scalar parscalar
 ) # FOR GUIs
 
 set(QDP_PRECISION "double" CACHE STRING "THe Base Precision: single or double (default is double)")
@@ -34,8 +115,6 @@ set(QDP_NS 4 CACHE STRING "Number of spins (default 4)")
 # Alignment for OLattice stuff (64=512 bits e.g. KNL, Xeon)
 set(QDP_ALIGNMENT_SIZE "64" CACHE STRING "OLattice memory alignment size in bytes (default 512)")
 
-# Generic C Opts
-option(QDP_USE_GENERIC_OPTS "Enable Generic C specializations" OFF)
 
 # Profiling and memory debugging
 option(QDP_USE_PROFILING "Enable Profiling interface" OFF)
@@ -47,17 +126,8 @@ option(QDP_USE_LIBXML2 "Use Libxml2 library" ON)
 # FileDB on by default
 option(QDP_USE_FILEDB  "Enable FileDB Usage" ON)
 
-# SSE Levels
-option(QDP_USE_SSE  "Enable SSE Code" OFF)
-option(QDP_USE_SSE2 "Enable SSE2 Code" OFF)
-option(QDP_USE_SSE3 "Enable SSE3 Code" OFF)
-
 # HDF5 from Thorsten
 option(QDP_USE_HDF5 "Enable HDF5 Code" OFF)
-
-# Deprecate 3DNow option
-# Deprecate BG/L option
-# Deprecate BG/Q Thread binding option
 
 # Threaded Building Block (needs TBB installed, and their CMake Location on the Module path
 option(QDP_USE_TBBPOOL_ALLOCATOR "Enable TBB based Pool Allocator" OFF)
@@ -86,40 +156,18 @@ if ( ${qdpParArch} STREQUAL "parscalar" )
 	message(STATUS "QDP++: Configuring for Parscalar build" )
 	
 	# Turn on Parallel QIO
-	set(QIO_ENABLE_PARALLEL_BUILD ON CACHE BOOL "Parscalar build: force QIO Parallel build" 
-		FORCE)
+	set(QIO_ENABLE_PARALLEL_BUILD ON CACHE BOOL "Parscalar build: force QIO Parallel build" FORCE)
 		
 	set(QDP_ARCH_PARSCALAR ON)  # Build System
 	set(ARCH_PARSCALAR 1)      # Configured header file (should rationalize these)
 
-elseif( ${qdpParArch} STREQUAL "parscalarvec" )
-	message(STATUS "QDP++: Configuring for Parscalarvec build" ) 
-	
-        # Set QIO Build 
-	set(QIO_ENABLE_PARALLEL_BUILD ON CACHE BOOL "Parscalarvec build: force QIO Parallel build"
-		FORCE)
-		
-	set(QDP_ARCH_PARSCALARVEC ON) # Build system
-	set(ARCH_PARSCALARVEC 1)      # Configured header file (should rationalize these)
-	
-elseif( ${qdpParArch} STREQUAL "scalarvec" )
-    	message(STATUS "QDP++: Configuring for ScalarVec build" ) 
-    
-        # Set QIO Parallel build to false
-	set(QIO_ENABLE_PARALLEL_BUILD OFF CACHE BOOL "Scalarvec buld: Force QIO Scalar build"
-        FORCE )
-        
-	set(QDP_ARCH_SCALARVEC ON)    # Build System
-        set(ARCH_SCALARVEC 1)         # Configured header file
-    	
 elseif( ${qdpParArch} STREQUAL "scalar" )
-        message(STATUS "QDP++: Configuring for Scalar build" ) 
+  message(STATUS "QDP++: Configuring for Scalar build" ) 
      
-        # Set QIO Parallel build to false
-	set(QIO_ENABLE_PARALLEL_BUILD OFF CACHE BOOL "Scalar buld: Force QIO Scalar build"
-        FORCE )
+  # Set QIO Parallel build to false
+	set(QIO_ENABLE_PARALLEL_BUILD OFF CACHE BOOL "Scalar buld: Force QIO Scalar build" FORCE )
         
-        set(QDP_ARCH_SCALAR ON)		# Build system 
+  set(QDP_ARCH_SCALAR ON)		# Build system 
 	set(ARCH_SCALAR 1)   		# Configured header file (should rationalize this
 else()
     message(ERROR "QDP++: Unknown architecture. Please set QDP_PARALLEL_ARCH to either scalar, parscalar, scalarvec or parscalarvec")
@@ -154,6 +202,11 @@ endif()
 
 message( STATUS "QDP++: Setting Base Precision to ${BASE_PRECISION}")
 
+
+## These are higher up in the original confiure. They define CUDA_DIR and ROCM_DIR
+#
+
+
 if( QDP_ENABLE_EXTRA_MESSAGES )
   set(QPHIX_EMIT_MESSAGES ON) # FIXME: Refactor this later to use QDP
   message( STATUS "QDP++: Enabling pragma messages" )
@@ -162,11 +215,11 @@ endif()
 # Autoconf variable name backard compatibility 
 set(QDP_AC_ALIGNMENT_SIZE ${QDP_ALIGNMENT_SIZE})
 message( STATUS "QDP++: Setting alignment size to ${QDP_ALIGNMENT_SIZE}")
- 
-# OpenMP Support hardwired now
-find_package(OpenMP REQUIRED)
-find_package(Threads REQUIRED)
-set(QDP_USE_OMP_THREADS "1")
+
+
+find_package(LLVM "12.0" REQUIRED CONFIG)
+message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+message(STATUS "Using LLVMConfig.cmake in ${LLVM_DIR}")
 
 # If we are parallel we need QMP
 if ( QDP_ARCH_PARSCALAR  OR  QDP_ARCH_PARSCALARVEC )
@@ -188,23 +241,6 @@ endif()
 if( QDP_USE_TBBPOOL_ALLOCATOR ) 
    find_package(TBB REQUIRED )
    message(STATUS "QDP++: Using Threader Building Blocks Pool Allocator")
-endif()
-
-# SSE3 => SSE2 (and SSE )
-if( QDP_USE_SSE3 ) 
-  message(STATUS "QDP++: SSE3 optimizations enabled")
-  set(QDP_USE_SSE2 ON)
-
-endif()
-
-# SSE2 => SSE
-if( QDP_USE_SSE2 )
-  message(STATUS "QDP++: SSE2 optimizations enabled")
-  set(QDP_USE_SSE ON)
-endif()
-
-if( QDP_USE_SSE )
-  message(STATUS "QDP++: SSE optimizations enabled")
 endif()
 
 # Write config file with currently set values
@@ -238,9 +274,6 @@ endif()
 # Include just does installing
 add_subdirectory(include)
 
-  
-
-
 # In practice this is always taken, but
 # in principle we can make QDP++ not depend on LibXML
 # 
@@ -253,25 +286,15 @@ if (QDP_USE_FILEDB )
   add_subdirectory(other_libs/filedb)
 endif()
 
-# If SSE2 is on we can use libintrin
-if( QDP_USE_SSE2 )
-  add_subdirectory(other_libs/libintrin)
-endif()
-
 # We always build QIO
 add_subdirectory(other_libs/qio)
-
 add_subdirectory(lib)
 
 # The examples and nersc2ildg etc
-add_subdirectory(examples)
+# add_subdirectory(examples)
 
 # The tests -- test primarily whether SSE implementations 
 # are correct so we can do that
-if( QDP_USE_SSE )
-	add_subdirectory(tests)
-endif()
-
 
 #Install config files.
 # Make the config file
