@@ -7,7 +7,7 @@
 extern "C" { 
 
   /* Drop in replacement for strnlen */
-  size_t strnlen(const char *s, size_t maxlen)
+  size_t strnlen(const char *s, size_t maxlen) noexcept
   {
     size_t pos;
 

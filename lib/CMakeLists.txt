@@ -91,7 +91,7 @@ target_include_directories( qdp PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../include>
         $<INSTALL_INTERFACE:include> )
 target_include_directories(qdp PUBLIC ${LLVM_INCLUDE_DIRS} )
-target_link_libraries( qdp PUBLIC ${LLVM_AVAILABLE_LIBS} )
+target_link_libraries( qdp PUBLIC ${GPU_LIBS} ${LLVM_AVAILABLE_LIBS} )
 
 # Link QIO from subtree
 target_link_libraries( qdp PUBLIC QIO::qio )
@@ -105,3 +105,5 @@ endif()
 if( QDP_USE_FILEDB )
         target_link_libraries( qdp PUBLIC FileDB::filedb )
 endif()
+
+add_library( QDPXX::qdp ALIAS qdp )

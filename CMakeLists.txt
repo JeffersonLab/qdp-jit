@@ -17,7 +17,6 @@ set_property(CACHE QDP_ENABLE_BACKEND PROPERTY
   STRINGS CUDA ROCM)
 
 set(CUDA_TOOLKIT_ROOT_DIR "/usr/local/cuda" CACHE STRING "Root dir for CUDA")
-set(ROCM_ROCM_DIR "/opt/rocm" CACHE STRING "Root dir for ROCm")
 
 option(QDP_ENABLE_PROFILING "Enable profiling" OFF)
 option(QDP_ENABLE_ROCM_STATS "Enable ROCM statistics" OFF)
@@ -34,7 +33,7 @@ set(CUDA_SM ${QDP_ENABLE_CUDA_SM})
 set(QDP_ENABLE_CUDA_NVCC "nvcc" CACHE STRING "Path to cuda NVCC")
 set(CUDA_NVCC ${QDP_ENABLE_CUDA_NVCCC})
 
-option(QDP_ENABLE_LLVM12 "Enable changes to compile with LLVM12 release" OFF)
+option(QDP_ENABLE_LLVM12 "Enable changes to compile with LLVM12 release" ON)
 
 if( QDP_ENABLE_LLVM12 )
   set(QDP_LLVM12 "1")
@@ -43,6 +42,15 @@ endif()
 option(QDP_ENABLE_COMM_SPLIT_DEVICEINIT "Enable using MPI_Comm_split when initializing devices" OFF)
 if(QDP_ENABLE_COMM_SPLIT_DEVICEINIT)
   set(QDP_USE_COMM_SPLIT_INIT "1")
+endif()
+
+## Standards: LLVM likes C++14, QIO/QMP like C99
+if( NOT CMAKE_CXX_STANDARD )
+	set(CMAKE_CXX_STANDARD 14)
+endif()
+
+if( NOT CMAKE_C_STANDARD )
+	set(CMAKE_C_STANDARD 99)
 endif()
 
 ##
@@ -75,18 +83,32 @@ if( ${QDP_ENABLE_BACKEND} STREQUAL "ROCM")
       set(ROCM_PATH $ENV{ROCM_PATH} CACHE PATH "ROCm PATH")
     endif()
   endif()
+
+  if( NOT DEFINED GPU_TARGETS )
+    if( NOT DEFINED ENV{GPU_TARGETS} )
+      set(GPU_TARGETS "gfx908" CACHE STRING "THe AMD GPU TARGET")
+    else()
+      set(GPU_TARGETS $ENV{GPU_TARGETS} CACHE STRING "THe AMD GPU TARGET")
+    endif()
+  endif()
+  message(STATUS "Setting GPU_TARGETS to ${GPU_TARGETS}") 
   set(CMAKE_MODULE_PATH "${ROCM_PATH}/lib/cmake" ${CMAKE_MODULE_PATH})
   find_package(hip REQUIRED)
+
   set(GPU_LIBS "hip::amdhip64")
   if( QDP_ENABLE_ROCM_STATS )
     set(QDP_USE_ROCM_STATS "1")
     find_package(amd_comgr REQUIRED)
     set(GPU_LIBS ${GPU_LIBS} amd_comgr)
   endif()
+  set(ROCM_DIR ${ROCM_PATH})
 endif()
  
 set(QDP_IS_QDPJIT "1")
-set(QDPJIT_IS_QDPJITNVVM "1")
+
+if( QDP_ENABLE_BACKEND STREQUAL "CUDA" )
+  set(QDPJIT_IS_QDPJITNVVM "1")
+endif()
 
 if ( QDP_ENABLE_CUSTOM_KERNELS )
   set(QDP_CUSTOM_KERNELS "yes" )
@@ -151,6 +173,13 @@ message(STATUS "QDP++:  Nc=${QDP_NC}")
 message(STATUS "QDP++:  Nd=${QDP_ND}")
 message(STATUS "QDP++:  Ns=${QDP_NS}")
 
+if( ${QDP_NS} EQUAL 1 ) 
+  set(BUILD_STAGGERED_EXAMPLES ON)
+else()
+  set(BUILD_WILSON_EXAMPLES ON)
+endif()
+
+
 
 if ( ${qdpParArch} STREQUAL "parscalar" )
 	message(STATUS "QDP++: Configuring for Parscalar build" )
@@ -176,19 +205,19 @@ endif()
 
 if( ${qdpLayout} STREQUAL "lexico") 
   message( STATUS "QDP++: Enabling Lexicographic Layout" )
-  set(QDP_USE_LEXICO_LAYOUT ON)
+  set(QDP_USE_LEXICO_LAYOUT 1)
   
 elseif( ${qdpLayout} STREQUAL "cb2")
   message( STATUS "QDP++: Enabling CB2 (4D Checkerboard) Layout" )
-  set(QDP_USE_CB2_LAYOUT ON)
+  set(QDP_USE_CB2_LAYOUT 1)
   
 elseif( ${qdpLayout} STREQUAL "cb32") 
   message( STATUS "QDP++: Enabling CB32 (32 colored ) Layout" )
-  set(QDP_USE_CB32_LAYOUT ON)
+  set(QDP_USE_CB32_LAYOUT 1)
 
 elseif( ${qdpLayout} STREQUAL "cb3d")
   message( STATUS "QDP++: Enabling CB3D (3D checkerboarded ) Layout" )
-  set(QDP_USE_CB3D_LAYOUT ON)
+  set(QDP_USE_CB3D_LAYOUT 1)
 
 else()
   message( ERROR "QDP++: Unknown layout. Please set either QDP_LAYOUT_LEXICO, QDP_LAYOUT_CB2, QDP_LAYOUT_CB3D or QDP_LAYOUT_CB32")
@@ -291,7 +320,7 @@ add_subdirectory(other_libs/qio)
 add_subdirectory(lib)
 
 # The examples and nersc2ildg etc
-# add_subdirectory(examples)
+add_subdirectory(examples)
 
 # The tests -- test primarily whether SSE implementations 
 # are correct so we can do that

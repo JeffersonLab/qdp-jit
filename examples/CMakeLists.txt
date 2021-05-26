@@ -8,52 +8,36 @@ if(NOT SubBuild)
 endif()
 
 add_library(examples mesplq.cc reunit.cc dslashm_w.cc rgauge.cc taproj.cc 
-			expm12.cc baryon_w.cc mesons_w.cc formfac_w.cc linalg1.cc linalg.h 
-			blas1.cc blas1.h cblas1.cc cblas1.h)
+		expm12.cc baryon_w.cc mesons_w.cc formfac_w.cc linalg1.cc linalg.h 
+		blas1.cc blas1.h cblas1.cc cblas1.h unittest.h testOpenPartFile.h)
 			
 target_link_libraries(examples PUBLIC QDPXX::qdp)
 
 set(TESTS t_skeleton 
-	t_foo 
-	t_xml 
-	t_qio 
-	t_qio_factory 
-	t_partfile
-	t_basic 
-	t_shift 
-	t_io 
-	t_entry 
-	t_nersc 
-	t_dslashm 
+	t_io
 	t_mesplq
-    t_exotic 
-    t_formfac 
-    t_spectrum 
-    t_qdp 
-    t_linalg 
-    t_blas 
-    t_iprod
-    t_cblas 
-    t_clov_force 
-    t_db 
-    t_map_obj_disk 
-    t_map_obj_memory 
-    t_blas_g5 
-    t_blas_g5_2 
-    t_blas_g5_3 
-    t_spinproj 
-    t_spinproj2
-    t_cugauge 
-    t_transpose_spin 
-    nersc2ildg 
-    test_ildglat 
-    t_su3
-    lhpc2ildg 
-)
+	t_db
+	t_xml
+	t_entry
+	t_nersc
+	t_shift
+	t_exotic
+	t_basic
+	t_qio
+	t_cugauge
+	t_transpose_spin
+	t_partfile
+	t_map_obj_disk
+	t_map_obj_memory
+	t_iprod	
+	)
 
-if( QDP_USE_SSE )
-	set(TESTS ${TESTS} t_gsum)
+if( BUILD_WILSON_EXAMPLES )
+  set(TESTS ${TESTS} t_dslashm t_formfac t_spectrum t_qdp t_linalg)
 endif()
+
+set(TESTS ${TESTS} nersc2ildg test_ildglat lhpc2ildg)
+
 
 foreach(TEST ${TESTS})
  add_executable(${TEST} ${TEST}.cc)

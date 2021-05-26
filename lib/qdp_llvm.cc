@@ -1,6 +1,6 @@
 #include "qdp.h"
 #include "qdp_config.h"
-
+#include "qdp_internal.h"
 #include "llvm/InitializePasses.h"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/IR/LegacyPassManager.h"
@@ -1923,7 +1923,7 @@ namespace QDP {
 
     //
     // All nodes wait until primary node has finished LLVM codegen
-    QMP_barrier();
+    QDPInternal::barrier();
     
     std::ostringstream sstream;
     std::ifstream fin(shared_path, ios::binary);

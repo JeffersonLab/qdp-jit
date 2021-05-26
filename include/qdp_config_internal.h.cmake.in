@@ -130,7 +130,7 @@
 #cmakedefine QDP_USE_ROCM_STATS			@QDP_USE_ROCM_STATS@
 
 /* ROCM install path */
-#cmakedefine ROCM_DIR				@ROCM_DIR@
+#cmakedefine ROCM_DIR				"@ROCM_DIR@"
 
 #define PACKAGE_STRING  "@PROJECT_NAME@"
 #define PACKAGE_VERSION "@QDP-JIT_VERSION@"
