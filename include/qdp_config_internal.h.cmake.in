@@ -25,7 +25,7 @@
 #cmakedefine CUDA_GCC		@CUDA_GCC@
 
 /* Define to 1 if you have the `gethostname' function. */
-#cmakedefine HAVE_GETHOSTNAME
+#cmakedefine HAVE_GETHOSTNAME	@HAVE_GETHOSTNAME@ 
 
 /* Define to 1 if you have the `QMP_abort' function. */
 #cmakedefine HAVE_QMP_ABORT
@@ -36,9 +36,7 @@
 /* Define to 1 if you have the `QMP_verbose' function. */
 #cmakedefine HAVE_QMP_VERBOSE
 
-/* Define to 1 if you have the `strnlen' function. */
-#cmakedefine HAVE_STRNLEN
-
+#cmakedefine HAVE_STRNLEN 	@HAVE_STRNLEN@
 /* Name of package */
 #undef PACKAGE
 

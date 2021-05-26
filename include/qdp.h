@@ -64,7 +64,7 @@
 #ifdef QDP_AC_ALIGNMENT_SIZE
 #define QDP_ALIGNMENT_SIZE QDP_AC_ALIGNMENT_SIZE
 #else
-#define QDP_ALIGNMENT_SIZE 16
+#define QDP_ALIGNMENT_SIZE 64
 #endif
 
 // YUKKY - Eventually get rid of these includes

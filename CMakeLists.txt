@@ -1,11 +1,13 @@
 cmake_minimum_required(VERSION 3.17)
 project(QDP-JIT VERSION 0.1 LANGUAGES CXX;C)
 
+include(CheckSymbolExists)
+include(CheckFunctionExists)
 include(GNUInstallDirs)
 
 include(FindOpenMP)          # Gives us find_package() for OpenMP
 
-# I have not actually used these -- I dont know if they are needed
+# I have not actually used these -- I dont know if they are nHAVE_STRNLENHAVE_STRNLENeeded
 #
 include(CheckIncludeFile)
 include(CheckSymbolExists)
@@ -44,15 +46,6 @@ if(QDP_ENABLE_COMM_SPLIT_DEVICEINIT)
   set(QDP_USE_COMM_SPLIT_INIT "1")
 endif()
 
-## Standards: LLVM likes C++14, QIO/QMP like C99
-if( NOT CMAKE_CXX_STANDARD )
-	set(CMAKE_CXX_STANDARD 14)
-endif()
-
-if( NOT CMAKE_C_STANDARD )
-	set(CMAKE_C_STANDARD 99)
-endif()
-
 ##
 ## NB: Substituting Incflags and link variables will need
 ##     to be done differently for CUDA and ROCm
@@ -84,22 +77,22 @@ if( ${QDP_ENABLE_BACKEND} STREQUAL "ROCM")
     endif()
   endif()
 
-  if( NOT DEFINED GPU_TARGETS )
+  if( NOT DEFINED  )
     if( NOT DEFINED ENV{GPU_TARGETS} )
-      set(GPU_TARGETS "gfx908" CACHE STRING "THe AMD GPU TARGET")
+	    set( "gfx908" CACHE STRING "THe AMD GPU TARGET")
     else()
-      set(GPU_TARGETS $ENV{GPU_TARGETS} CACHE STRING "THe AMD GPU TARGET")
+	    set( $ENV{GPU_TARGETS} CACHE STRING "THe AMD GPU TARGET")
     endif()
   endif()
-  message(STATUS "Setting GPU_TARGETS to ${GPU_TARGETS}") 
+  message(STATUS "Setting  to ${GPU_TARGETS}") 
   set(CMAKE_MODULE_PATH "${ROCM_PATH}/lib/cmake" ${CMAKE_MODULE_PATH})
   find_package(hip REQUIRED)
 
-  set(GPU_LIBS "hip::amdhip64")
+  set(GPU_LIBS hip::host;hip::device;hip::amdhip64)
   if( QDP_ENABLE_ROCM_STATS )
     set(QDP_USE_ROCM_STATS "1")
     find_package(amd_comgr REQUIRED)
-    set(GPU_LIBS ${GPU_LIBS} amd_comgr)
+    set(GPU_LIBS ${GPU_LIBS};amd_comgr)
   endif()
   set(ROCM_DIR ${ROCM_PATH})
 endif()
@@ -245,6 +238,9 @@ endif()
 set(QDP_AC_ALIGNMENT_SIZE ${QDP_ALIGNMENT_SIZE})
 message( STATUS "QDP++: Setting alignment size to ${QDP_ALIGNMENT_SIZE}")
 
+# CHeck for Strnlen which seems to be needed
+check_function_exists("gethostname" HAVE_GETHOSTNAME)
+check_function_exists("strnlen" HAVE_STRNLEN)
 
 find_package(LLVM "12.0" REQUIRED CONFIG)
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
@@ -299,6 +295,8 @@ if( QDP_ENABLE_SANITIZERS )
     message(STATUS "Don't know how to enable sanitizers for ${CMAKE_CXX_COMPILER_ID}... Ignoring")
   endif()
 endif()  
+
+
 # Configure subdirectories
 # Include just does installing
 add_subdirectory(include)

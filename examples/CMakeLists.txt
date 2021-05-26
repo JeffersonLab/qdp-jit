@@ -1,17 +1,22 @@
 cmake_minimum_required(VERSION 3.17)
-PROJECT( QDPXXExamples VERSION 1.0.0 LANGUAGES C;CXX)
+PROJECT( QDP-JIT-Examples VERSION 1.0.0 LANGUAGES C;CXX)
 
 get_directory_property(SubBuild PARENT_DIRECTORY)
 
 if(NOT SubBuild)
-        find_package(QDPXX REQUIRED)
+  find_package(QDPXX REQUIRED)
 endif()
 
 add_library(examples mesplq.cc reunit.cc dslashm_w.cc rgauge.cc taproj.cc 
-		expm12.cc baryon_w.cc mesons_w.cc formfac_w.cc linalg1.cc linalg.h 
-		blas1.cc blas1.h cblas1.cc cblas1.h unittest.h testOpenPartFile.h)
+	expm12.cc baryon_w.cc mesons_w.cc formfac_w.cc linalg1.cc linalg.h 
+	blas1.cc blas1.h cblas1.cc cblas1.h unittest.h testOpenPartFile.h)
 			
 target_link_libraries(examples PUBLIC QDPXX::qdp)
+set_target_properties(examples PROPERTIES 
+	CXX_STANDARD 14
+	CXX_EXTENSIONS OFF
+	C_STANDARD 99
+	C_EXTENSIONS OFF)
 
 set(TESTS t_skeleton 
 	t_io
@@ -42,6 +47,9 @@ set(TESTS ${TESTS} nersc2ildg test_ildglat lhpc2ildg)
 foreach(TEST ${TESTS})
  add_executable(${TEST} ${TEST}.cc)
  target_link_libraries(${TEST} examples)
+ set_target_properties(${TEST} PROPERTIES 
+	CXX_STANDARD 14
+ 	CXX_EXTENSIONS OFF)
 endforeach()
 
 install(TARGETS nersc2ildg test_ildglat lhpc2ildg)

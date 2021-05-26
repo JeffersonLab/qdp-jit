@@ -11,7 +11,6 @@ add_library(qdp qdp_map.cc
 	qdp_stdio.cc
 	qdp_jit_function.cc
 	qdp_profile.cc 
- 	qdp_strnlen.cc 
  	qdp_crc32.cc
  	qdp_stopwatch.cc
 	qdp_rannyu.cc
@@ -92,6 +91,12 @@ target_include_directories( qdp PUBLIC
         $<INSTALL_INTERFACE:include> )
 target_include_directories(qdp PUBLIC ${LLVM_INCLUDE_DIRS} )
 target_link_libraries( qdp PUBLIC ${GPU_LIBS} ${LLVM_AVAILABLE_LIBS} )
+set_target_properties( qdp PROPERTIES 
+	CXX_STANDARD 14
+	CXX_EXTENSIONS OFF
+	PROPERTIES C_STANDARD 99 
+	PROPERTIES CXX_EXTENSIONS OFF
+)
 
 # Link QIO from subtree
 target_link_libraries( qdp PUBLIC QIO::qio )
@@ -106,4 +111,21 @@ if( QDP_USE_FILEDB )
         target_link_libraries( qdp PUBLIC FileDB::filedb )
 endif()
 
-add_library( QDPXX::qdp ALIAS qdp )
+if( QDP_SANITIZER_OPTS )
+  target_compile_options(qdp PUBLIC ${QDP_SANITIZER_OPTS})
+  target_link_options(qdp PUBLIC ${QDP_SANITIZER_OPTS})
+endif()
+
+install(TARGETS qdp EXPORT QDPXXTargets
+  ARCHIVE DESTINATION lib
+  LIBRARY  DESTINATION lib
+  RUNTIME DESTINATION bin
+  INCLUDES DESTINATION include
+)
+#install the export description of the targets
+install(EXPORT QDPXXTargets
+	FILE QDPXXTargets.cmake
+        NAMESPACE QDPXX::
+        DESTINATION lib/cmake/QDPXX)
+
+add_library(QDPXX::qdp ALIAS qdp)
