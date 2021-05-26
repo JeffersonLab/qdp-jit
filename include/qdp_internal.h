@@ -134,9 +134,8 @@ namespace QDPInternal
     broadcast_str(dest);
   }
 
-
-
-
+  //! Call a barrier
+  void barrier();
 
 } // QDPInternal
 
