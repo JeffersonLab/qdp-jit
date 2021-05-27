@@ -42,3 +42,54 @@ Here the tricks were
         make -j 32
 ```
 
+## CUDA Based builds
+
+Here the main steps were:
+ * obtain an LLVM build of LLVM-12 supporting NVPTX
+ * ensure CUDA itself is set up
+ * make a parallel build dir with `qdp-jit` and enter it:
+```mkdir build_qdpjit_nv ; cd build_qdpjit_nv```
+ * configure with
+```cmake ../qdp-jit \
+        -DQDP_PARALLEL_ARCH=parscalar \
+        -DQDP_ENABLE_BACKEND=CUDA \
+        -DCMAKE_CXX_COMPILER=mpicxx \
+        -DCMAKE_C_COMPILER=mpicc \
+        -DBUILD_SHARED_LIBS=ON \
+        -DLLVM_DIR=<llvm-prefix>/lib/cmake/llvm \
+        -DQMP_DIR=<qmp-prefix>/lib/cmake/QMP
+```
+  unlike for ROCM we do not need to provide the SM -- it will be queried at runtime.
+  if CUDA is not found one can also add `-DCUDAToolkit_ROOT_DIR=<cuda prefix>`
+  * build an install
+```
+    cmake --build . -j 32
+    cmake --install . --prefix <qdp_install_prefix>
+```
+  or if GNU makefiles are used for the build (CMake default), add a 
+  `-DCMAKE_INSTALL_PREFIX=<qdp_install_prefix>` option to the cmake configure and
+``` make -j 32
+    make install
+``` 
+### Building against installed QDP-JIT
+To check that the `QDPXXConfig.cmake` is sane, one can build the examples against an installed QDP-JIT
+  * make a parallel directory to the `qdp-jit` and go to it:
+```
+	mkdir build_examples_nv ; cd build_examples_nv
+```
+  * configure the build of the examples
+```
+cmake ../qdp-jit/examples -DQDPXX_DIR=<qdp-jit-CUDA-install-prefix>/lib/cmake/QDPXX \
+                          -DQMP_DIR=<qmp-install-prefix>/lib/cmake/QMP \
+			  -DLLVM_DIR=<llvm-install-prefix>/lib/cmake/llvm \
+                          -DCMAKE_CXX_COMPILER=mpicxx -DCMAKE_C_COMPILER=mpicc
+
+``` 
+  * make with `cmake` as:
+``` 
+	cmake --build . -j 32
+```
+   or if CMake generated UNIX Makefiles (default) with e.g.: 
+```
+         make -j 32
+```
