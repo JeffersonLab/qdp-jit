@@ -99,10 +99,6 @@ endif()
  
 set(QDP_IS_QDPJIT "1")
 
-if( QDP_ENABLE_BACKEND STREQUAL "CUDA" )
-  set(QDPJIT_IS_QDPJITNVVM "1")
-endif()
-
 if ( QDP_ENABLE_CUSTOM_KERNELS )
   set(QDP_CUSTOM_KERNELS "yes" )
 endif()

@@ -54,7 +54,6 @@ elseif( QUDA_ENABLE_BACKEND STREQUAL "CUDA")
   if( QDP_ENABLE_CUDA_SPECIAL )
      set(QDP_CUDA_SPECIAL 1)
   endif()  
-  set(QDPJIT_IS_QDPJITNVVM 1) 
 endif()
 
 # Check if we need QMP
