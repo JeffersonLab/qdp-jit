@@ -50,7 +50,8 @@ Here the main steps were:
  * make a parallel build dir with `qdp-jit` and enter it:
 ```mkdir build_qdpjit_nv ; cd build_qdpjit_nv```
  * configure with
-```cmake ../qdp-jit \
+```
+   cmake ../qdp-jit \
         -DQDP_PARALLEL_ARCH=parscalar \
         -DQDP_ENABLE_BACKEND=CUDA \
         -DCMAKE_CXX_COMPILER=mpicxx \
