@@ -180,6 +180,10 @@ namespace QDP {
       QMP_binary_reduction(&dest, sizeof(bool), globalCheckAnd);
     }
 
+    inline void barrier()
+    {
+      QMP_barrier();
+    }
   } // QDPInternal
   
 } // QDP
