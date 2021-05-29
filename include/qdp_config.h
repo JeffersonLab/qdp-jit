@@ -15,14 +15,9 @@
 #include "qdp_config_internal.h"
 
 /* Prefix everything with QDP_ */
-static const char* const QDP_PACKAGE(PACKAGE);
-static const char* const QDP_PACKAGE_BUGREPORT(PACKAGE_BUGREPORT);
-static const char* const QDP_PACKAGE_NAME(PACKAGE_NAME);
-static const char* const QDP_PACKAGE_STRING(PACKAGE_STRING);
-static const char* const QDP_PACKAGE_TARNAME(PACKAGE_TARNAME);
-static const char* const QDP_PACKAGE_VERSION(PACKAGE_VERSION);
-static const char* const QDP_VERSION(VERSION);
 
+static const char* const QDP_PACKAGE_STRING(PACKAGE_STRING);
+static const char* const QDP_PACKAGE_VERSION(PACKAGE_VERSION);
 
 /* Undef the unwanted */
 #undef PACKAGE
