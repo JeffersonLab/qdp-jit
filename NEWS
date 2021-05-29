@@ -1,3 +1,16 @@
+05/26/2021 -- Balint Joo
+        Initial CMakeification
+5/26/2021 -- Balint Joo
+        Initial CMakeification
+5/26/2021 -- Balint Joo
+        Initial CMakeification
+5/26/2021 -- Balint Joo
+        Initial CMakeification
+5/26/2021 -- Balint Joo
+        Initial CMakeification
+5/26/2021 -- Balint Joo
+        Initial CMakeification
+
 07/13/2018 -- Balint Joo
 	This branch is still evolving rapidly. Current mods from Frank need LLVM in Debug
         mode to have access to Module::dump() const;

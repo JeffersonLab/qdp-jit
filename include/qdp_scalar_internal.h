@@ -109,6 +109,11 @@ namespace QDP {
     {
     }
 
+    //! Call a barrier
+    inline void barrier()
+    {
+    }
+
   } // QDPInternal
   
 } // QDP
