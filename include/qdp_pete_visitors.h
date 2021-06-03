@@ -36,9 +36,7 @@ struct ViewSpinLeaf
 {
   JitDeviceLayout layout_m;
   llvm::Value * index_m;
-  mutable std::vector< int > ind;
   mutable std::vector< JitForLoop > loops;
-  mutable int loop_pos = 0;
   ViewSpinLeaf( JitDeviceLayout layout , llvm::Value * index  ) : layout_m(layout), index_m(index) {}
   JitDeviceLayout getLayout() const { return layout_m; }
   llvm::Value    *getIndex() const  { return index_m; }
@@ -53,9 +51,7 @@ struct JIT2BASE {};
 
 struct JitCreateLoopsLeaf
 {
-  mutable std::vector< int > loop_bounds;
   mutable std::vector< JitForLoop > loops;
-  mutable bool ops_only = false;
 };
 
 

@@ -158,18 +158,13 @@ struct LeafFunctor<OLattice<PSpinMatrix<T,N> >, JitCreateLoopsLeaf >
   inline static
   Type_t apply(const OLattice<PSpinMatrix<T,N> > & s, const JitCreateLoopsLeaf& v)
   {
-    if ( ! v.ops_only )
-      {
-	QDPIO::cout << "create spin mat\n";
+    QDPIO::cout << "create spin mat\n";
 	
-	QDPIO::cout << "loop(0,N)\n";
-	//v.loops.push_back( JitForLoop(0,N) );
-	v.loop_bounds.push_back( N );
+    QDPIO::cout << "loop(0,N)\n";
+    v.loops.push_back( JitForLoop(0,N) );
 
-	QDPIO::cout << "loop(0,N)\n";
-	//v.loops.push_back( JitForLoop(0,N) );
-	v.loop_bounds.push_back( N );
-      }
+    QDPIO::cout << "loop(0,N)\n";
+    v.loops.push_back( JitForLoop(0,N) );
     return 0;
   }
 };
@@ -199,20 +194,40 @@ struct LeafFunctor<OLatticeJIT<PSpinMatrixJIT<T,N> >, ViewSpinLeaf>
   inline static
   Type_t apply(const OLatticeJIT<PSpinMatrixJIT<T,N> > & s, const ViewSpinLeaf& v)
   {
-    if (v.ind.size() != 2)
+    if (v.loops.size() != 2)
       {
-	QDPIO::cout << "at spinmat but not 2 indices provided (" << v.ind.size() << ")" << std::endl;
+	QDPIO::cout << "at spinmat leaf but not 2 indices provided" << std::endl;
 	QDP_abort(1);
       }
 
-    QDPIO::cout << "leaf spinmat " << v.ind[0] << " " << v.ind[1] << std::endl;
+    QDPIO::cout << "leaf spinmat " << std::endl;
     
-    return s.elem( v.getLayout() , v.getIndex() ).getRegElem( v.loops[ v.ind[0] ].index() , v.loops[ v.ind[1] ].index() );
+    return s.elem( v.getLayout() , v.getIndex() ).getRegElem( v.loops[ 0 ].index() , v.loops[ 1 ].index() );
+  }
+};
+
+
+template<class T,int N>
+struct LeafFunctor<OLatticeJIT<PSpinVectorJIT<T,N> >, ViewSpinLeaf>
+{
+  typedef typename REGType<T>::Type_t Type_t;
+  inline static
+  Type_t apply(const OLatticeJIT<PSpinVectorJIT<T,N> > & s, const ViewSpinLeaf& v)
+  {
+    if (v.loops.size() != 1)
+      {
+	QDPIO::cout << "at spinvec leaf but not 1 index provided" << std::endl;
+	QDP_abort(1);
+      }
+
+    QDPIO::cout << "leaf spinvec " << std::endl;
+    
+    return s.elem( v.getLayout() , v.getIndex() ).getRegElem( v.loops[ 0 ].index() );
   }
 };
 
   
-  // rv.right().right().elem( JitDeviceLayout::Coalesced , r_idx ).getRegElem( loop_e.index() , loop_c.index() );
+  
 
 template<class T>
 struct LeafFunctor<OScalarJIT< PScalarJIT<T> >, ViewSpinLeaf>

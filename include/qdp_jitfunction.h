@@ -269,6 +269,18 @@ struct Strip<PSpinMatrix<T,N> >
   typedef PSpinMatrix<float,N> Type_t;
 };
 
+template<class T,int N>
+struct Strip<Reference<PSpinVector<T,N> > >
+{
+  typedef PSpinVector<float,N> Type_t;
+};
+
+template<class T,int N>
+struct Strip<PSpinVector<T,N> >
+{
+  typedef PSpinVector<float,N> Type_t;
+};
+
 
 
 template<class T>
@@ -297,31 +309,47 @@ struct HasProp< Reference<QDPType<PSpinMatrix<PColorMatrix<RComplex<Word<float> 
 };
 
 
-
-template<class A, class B, class CTag>
-struct ForEach<BinaryNode<OpMultiply, A, B>, JitCreateLoopsLeaf, CTag >
+template<class A>
+struct EvalToSpinMatrix
 {
-  typedef typename ForEach<A, JitCreateLoopsLeaf, CTag>::Type_t TypeA_t;
-  typedef typename ForEach<B, JitCreateLoopsLeaf, CTag>::Type_t TypeB_t;
-  typedef typename Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::Type_t Type_t;
-  inline static
-  Type_t apply(const BinaryNode<OpMultiply, A, B> &expr, const JitCreateLoopsLeaf &f,
-	       const CTag &c) 
-  {
-    if ( is_same<typename Strip< typename ForEach<A, EvalLeaf1, OpCombine>::Type_t >::Type_t , PSpinMatrix<float, 4> >::value &&   // float is okay
-	 is_same<typename Strip< typename ForEach<B, EvalLeaf1, OpCombine>::Type_t >::Type_t , PSpinMatrix<float, 4> >::value )
-      {
-	QDPIO::cout << "mul(spinMat,spinMat) -> insert loop" << std::endl;
-	//f.loops.push_back( JitForLoop(0,4) );
-	f.loop_bounds.push_back( 4 );
-      }
-    
-    return Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::
-      combine(ForEach<A, JitCreateLoopsLeaf, CTag>::apply(expr.left(), f, c),
-              ForEach<B, JitCreateLoopsLeaf, CTag>::apply(expr.right(), f, c),
-	      expr.operation(), c);
-  }
+  typedef typename ForEach<A , JIT2BASE , TreeCombine >::Type_t A_a;
+  constexpr static bool value = is_same<typename Strip< typename ForEach<A_a, EvalLeaf1, OpCombine>::Type_t >::Type_t , PSpinMatrix<float, 4> >::value;
 };
+
+template<class A>
+struct EvalToSpinVector
+{
+  typedef typename ForEach<A , JIT2BASE , TreeCombine >::Type_t A_a;
+  constexpr static bool value = is_same<typename Strip< typename ForEach<A_a, EvalLeaf1, OpCombine>::Type_t >::Type_t , PSpinVector<float, 4> >::value;
+};
+
+
+
+
+// template<class A, class B, class CTag>
+// struct ForEach<BinaryNode<OpMultiply, A, B>, JitCreateLoopsLeaf, CTag >
+// {
+//   typedef typename ForEach<A, JitCreateLoopsLeaf, CTag>::Type_t TypeA_t;
+//   typedef typename ForEach<B, JitCreateLoopsLeaf, CTag>::Type_t TypeB_t;
+//   typedef typename Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::Type_t Type_t;
+//   inline static
+//   Type_t apply(const BinaryNode<OpMultiply, A, B> &expr, const JitCreateLoopsLeaf &f,
+// 	       const CTag &c) 
+//   {
+//     if ( is_same<typename Strip< typename ForEach<A, EvalLeaf1, OpCombine>::Type_t >::Type_t , PSpinMatrix<float, 4> >::value &&   // float is okay
+// 	 is_same<typename Strip< typename ForEach<B, EvalLeaf1, OpCombine>::Type_t >::Type_t , PSpinMatrix<float, 4> >::value )
+//       {
+// 	QDPIO::cout << "mul(spinMat,spinMat) -> insert loop" << std::endl;
+// 	//f.loops.push_back( JitForLoop(0,4) );
+// 	f.loop_bounds.push_back( 4 );
+//       }
+    
+//     return Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::
+//       combine(ForEach<A, JitCreateLoopsLeaf, CTag>::apply(expr.left(), f, c),
+//               ForEach<B, JitCreateLoopsLeaf, CTag>::apply(expr.right(), f, c),
+// 	      expr.operation(), c);
+//   }
+// };
 
 
 template<class A, class B, class CTag>
@@ -334,40 +362,69 @@ struct ForEach<BinaryNode<OpMultiply, A, B>, ViewSpinLeaf, CTag >
   Type_t apply(const BinaryNode<OpMultiply, A, B> &expr, const ViewSpinLeaf &f,
 	       const CTag &c) 
   {
-    ViewSpinLeaf f_left(f);
-    ViewSpinLeaf f_right(f);
-
-    typedef typename ForEach<A , JIT2BASE , TreeCombine >::Type_t A_a;
-    typedef typename ForEach<B , JIT2BASE , TreeCombine >::Type_t B_a;
-    
-    if ( is_same<typename Strip< typename ForEach<A_a, EvalLeaf1, OpCombine>::Type_t >::Type_t , PSpinMatrix<float, 4> >::value &&
-	 is_same<typename Strip< typename ForEach<B_a, EvalLeaf1, OpCombine>::Type_t >::Type_t , PSpinMatrix<float, 4> >::value )
+    if (EvalToSpinMatrix<A>::value && EvalToSpinMatrix<B>::value)
       {
-	QDPIO::cout << "mul(spinMat,spinMat) -> split index    " << std::endl;
-
-	if (f.ind.size() != 2)
-	  {
-	    QDPIO::cout << "at mul(spinmat,spinmat) but not 2 indices provided (" << f.ind.size() << ")" << std::endl;
-	    QDP_abort(1);
-	  }
-
-	if (f.loops.size() < f.loop_pos)
-	  {
-	    QDPIO::cout << "at mul(spinmat,spinmat) but not enough loops created (" << f.loops.size() << " < " << f.loop_pos << ")" << std::endl;
-	    QDP_abort(1);
-	  }
+	QDPIO::cout << "mul(matrix,matrix)" << std::endl;
 	
-	f_left.ind[1] = f.loop_pos;
-	f_left.loop_pos++;
-	
-	f_right.ind[0] = f.loop_pos;
-	f_right.loop_pos++;
-      }
+	print_type<TypeA_t>();
+	print_type<TypeB_t>();
+	print_type<Type_t>();
+
+	JitStackArray< Type_t , 1 > stack;
+	zero_rep( stack.elemJIT(0) );
+
+	JitForLoop loop(0,4);
+	{
+	  ViewSpinLeaf f_left(f);
+	  ViewSpinLeaf f_right(f);
     
-    return Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::
-      combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), f_left, c),
-              ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), f_right, c),
-	      expr.operation(), c);
+	  f_left. loops[1] = loop;
+	  f_right.loops[0] = loop;
+
+	  stack.elemJIT(0) += Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), f_left, c),
+		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), f_right, c),
+		    expr.operation(), c);
+	}
+	loop.end();
+    
+	return stack.elemREG(0);
+      }
+    else if (EvalToSpinMatrix<A>::value && EvalToSpinVector<B>::value)
+      {
+	QDPIO::cout << "mul(matrix,vector)" << std::endl;
+	
+	print_type<TypeA_t>();
+	print_type<TypeB_t>();
+	print_type<Type_t>();
+
+	JitStackArray< Type_t , 1 > stack;
+	zero_rep( stack.elemJIT(0) );
+
+	JitForLoop loop(0,4);
+	{
+	  ViewSpinLeaf f_left(f);
+	  ViewSpinLeaf f_right(f);
+    
+	  f_left. loops[1] = loop;
+	  f_right.loops[0] = loop;
+
+	  stack.elemJIT(0) += Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), f_left, c),
+		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), f_right, c),
+		    expr.operation(), c);
+	}
+	loop.end();
+    
+	return stack.elemREG(0);
+      }
+    else
+      {
+	return Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), f, c),
+		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), f, c),
+		    expr.operation(), c);
+      }
   }
 };
 
@@ -377,21 +434,35 @@ struct ForEach<BinaryNode<OpMultiply, A, B>, ViewSpinLeaf, CTag >
 template<class T,int N>
 T viewSpinJit( OLatticeJIT< PSpinMatrixJIT<T,N> >& dest , const ViewSpinLeaf& v )
 {
-  if (v.ind.size() != 2)
+  if (v.loops.size() != 2)
     {
-      QDPIO::cout << "at viewSpinJit(spinmat) but not 2 indices provided (" << v.ind.size() << ")" << std::endl;
+      QDPIO::cout << "at viewSpinJit(spinmat) but not 2 indices provided" << std::endl;
       QDP_abort(1);
     }
   
   return dest.elem( v.getLayout() , v.getIndex() ).getJitElem( v.loops[0].index() , v.loops[1].index() );
 }
 
+
+template<class T,int N>
+T viewSpinJit( OLatticeJIT< PSpinVectorJIT<T,N> >& dest , const ViewSpinLeaf& v )
+{
+  if (v.loops.size() != 1)
+    {
+      QDPIO::cout << "at viewSpinJit(spinvec) but not 1 index provided" << std::endl;
+      QDP_abort(1);
+    }
+  
+  return dest.elem( v.getLayout() , v.getIndex() ).getJitElem( v.loops[0].index() );
+}
+
+
 template<class T>
 T viewSpinJit( OLatticeJIT< PScalarJIT<T> >& dest , const ViewSpinLeaf& v )
 {
-  if (v.ind.size() != 0)
+  if (v.loops.size() != 0)
     {
-      QDPIO::cout << "at viewSpinJit(pscalar) but not 0 indices provided (" << v.ind.size() << ")" << std::endl;
+      QDPIO::cout << "at viewSpinJit(pscalar) but not 0 indices provided " << std::endl;
       QDP_abort(1);
     }
   
@@ -607,54 +678,23 @@ function_build(JitFunction& function, const DynKey& key, OLattice<T>& dest, cons
 	  JitCreateLoopsLeaf jitCreateLoopsLeaf;
 	  forEach( dest , jitCreateLoopsLeaf , NullCombine() );
 
-	  int dest_rank = jitCreateLoopsLeaf.loop_bounds.size();
+	  int dest_rank = jitCreateLoopsLeaf.loops.size();
 	  
-	  jitCreateLoopsLeaf.ops_only = true;
-	  forEach( rhs , jitCreateLoopsLeaf , NullCombine() );
+	  // typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, EvalLeaf1, OpCombine>::Type_t RHS_result_t;
+	  // JitStackArray< typename REGType< typename RHS_result_t::Sub_t >::Type_t , 1 > stack;
 
-	  typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, EvalLeaf1, OpCombine>::Type_t RHS_result_t;
-	  JitStackArray< typename REGType< typename RHS_result_t::Sub_t >::Type_t , 1 > stack;
+	  // // zero-out accumulation object on stack
+	  // zero_rep( stack.elemJIT(0) );
 
-	  // create loops for 'dest'
-	  for ( int i = 0 ; i < dest_rank ; ++i )
-	    {
-	      int bound = jitCreateLoopsLeaf.loop_bounds[i];
-	      jitCreateLoopsLeaf.loops.push_back( JitForLoop(0,bound) );
-	    }
-
-	  // zero-out accumulation object on stack
-	  zero_rep( stack.elemJIT(0) );
-
-	  // create loops for operations
-	  for ( int i = dest_rank ; i < jitCreateLoopsLeaf.loop_bounds.size() ; ++i )
-	    {
-	      int bound = jitCreateLoopsLeaf.loop_bounds[i];
-	      jitCreateLoopsLeaf.loops.push_back( JitForLoop(0,bound) );
-	    }
-	      
 	  ViewSpinLeaf viewSpin( JitDeviceLayout::Coalesced , r_idx );
 	  viewSpin.loops = jitCreateLoopsLeaf.loops;
-	  viewSpin.loop_pos = dest_rank;
 	    
-	  for( int i = 0 ; i < dest_rank ; ++i )
-	    {
-	      viewSpin.ind.push_back( i );
-	    }
-	  
-	  stack.elemJIT(0) += forEach( rhs_view , viewSpin , OpCombine() );
+	  //stack.elemJIT(0) = forEach( rhs_view , viewSpin , OpCombine() );
+	  op_jit( viewSpinJit( dest_jit , viewSpin ) , forEach( rhs_view , viewSpin , OpCombine() ) );
+ 
+	  //QDPIO::cout << "copy stack to dest, viewSpin.ind=" << std::endl;
 
-	  for( int i = jitCreateLoopsLeaf.loops.size()-1 ; dest_rank <= i ; --i )
-	    {
-	      QDPIO::cout << "loop[" << i << "].end();" << std::endl;
-	      jitCreateLoopsLeaf.loops[i].end();
-	    }
-
-	  QDPIO::cout << "copy stack to dest, viewSpin.ind=" << std::endl;
-
-	  for(int i = 0 ; i < viewSpin.ind.size() ; ++i )
-	    QDPIO::cout << i << ": " << viewSpin.ind[i] << std::endl;
-	  
-	  op_jit( viewSpinJit( dest_jit , viewSpin ) , stack.elemREG(0) );
+	  //op_jit( viewSpinJit( dest_jit , viewSpin ) , stack.elemREG(0) );
 
 	  for( int i = dest_rank-1 ; 0 <= i ; --i )
 	    {

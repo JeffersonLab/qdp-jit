@@ -68,6 +68,7 @@ namespace RNG
   //! Initialize the internals of the random number generator
   void initRNG()
   {
+#if 1
     int old_profile_level = setProfileLevel(0);
 
     /* Multiplier used. Use big integer arithmetic */
@@ -175,6 +176,7 @@ namespace RNG
     RNG_Internals->lat_ran_mult_n = RNG_Internals->ran_mult_n;
 
     setProfileLevel(old_profile_level);
+#endif
   }
 
 
