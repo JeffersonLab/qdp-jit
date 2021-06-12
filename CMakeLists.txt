@@ -35,6 +35,8 @@ set(CUDA_NVCC ${QDP_ENABLE_CUDA_NVCCC})
 
 option(QDP_ENABLE_LLVM12 "Enable changes to compile with LLVM12 release" ON)
 
+option(QDP_BUILD_EXAMPLES "Build examples" ON)
+
 if( QDP_ENABLE_LLVM12 )
   set(QDP_LLVM12 "1")
 endif()
@@ -313,7 +315,9 @@ add_subdirectory(other_libs/qio)
 add_subdirectory(lib)
 
 # The examples and nersc2ildg etc
-add_subdirectory(examples)
+if( QDP_BUILD_EXAMPLES )
+  add_subdirectory(examples)
+endif()
 
 # The tests -- test primarily whether SSE implementations 
 # are correct so we can do that
