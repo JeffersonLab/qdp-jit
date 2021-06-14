@@ -1,36 +1,77 @@
 #include "qdp.h"
 #include "qdp_config.h"
 #include "qdp_internal.h"
-#include "llvm/InitializePasses.h"
-#include "llvm/IR/DataLayout.h"
-#include "llvm/IR/LegacyPassManager.h"
 
-#include "llvm/Support/FileSystem.h"
-#include "llvm/Support/MemoryBuffer.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/Linker/Linker.h"
 
-#include "llvm/Support/TargetRegistry.h"
-#include "llvm/PassRegistry.h"
-
-#include "llvm/IR/InstrTypes.h"
+#include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/Statistic.h"
+#include "llvm/ADT/StringSet.h"
+#include "llvm/Analysis/BasicAliasAnalysis.h"
+#include "llvm/Analysis/Passes.h"
+#include "llvm/Analysis/TargetLibraryInfo.h"
+#include "llvm/Analysis/TargetTransformInfo.h"
+#include "llvm/Bitcode/BitcodeReader.h"
 #include "llvm/Bitcode/BitcodeWriter.h"
-
 #include "llvm/CodeGen/CommandFlags.h"
-using namespace llvm;
-using namespace llvm::codegen;
-
+#include "llvm/CodeGen/TargetLowering.h"
+#include "llvm/ExecutionEngine/ExecutionEngine.h"
+#include "llvm/ExecutionEngine/MCJIT.h"
+#include "llvm/InitializePasses.h"
+#include "llvm/IR/AssemblyAnnotationWriter.h"
+#include "llvm/IR/Attributes.h"
+#include "llvm/IR/BasicBlock.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/DataLayout.h"
+#include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/Function.h"
+#include "llvm/IR/GlobalVariable.h"
+#include "llvm/IR/InstrTypes.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/Module.h"
+#include "llvm/IRReader/IRReader.h"
+#include "llvm/IR/Verifier.h"
+#include "llvm/Linker/Linker.h"
+#include "llvm/Pass.h"
+#include "llvm/PassRegistry.h"
 #include "llvm/Support/CommandLine.h"
-
-#include "llvm/Transforms/IPO/PassManagerBuilder.h"
+#include "llvm/Support/Debug.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/FormattedStream.h"
+#include "llvm/Support/Host.h"
+#include "llvm/Support/MemoryBuffer.h"
+#include "llvm/Support/Program.h"
+#include "llvm/Support/raw_os_ostream.h"
+#include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/SourceMgr.h"
+#include "llvm/Support/TargetRegistry.h"
+#include "llvm/Support/TargetSelect.h"
+#include "llvm/Support/ToolOutputFile.h"
+#include "llvm/Target/TargetMachine.h"
 #include "llvm/Transforms/IPO/AlwaysInliner.h"
-
+#include "llvm/Transforms/IPO.h"
+#include "llvm/Transforms/IPO/PassManagerBuilder.h"
+#include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Utils/Cloning.h"
 
-#include "llvm/Target/TargetMachine.h"
+
+#include <system_error>
 
 #include <memory>
 #include <unistd.h>
+
+
+
+
+namespace llvm {
+  ModulePass *createNVVMReflectPass(unsigned int);
+}
+
+using namespace llvm;
+using namespace llvm::codegen;
+
+
 
 namespace QDP {
 
@@ -2052,6 +2093,356 @@ namespace QDP {
   llvm::Value* llvm_pow_f64( llvm::Value* lhs, llvm::Value* rhs )   { return llvm_call_f64( llvm_get_func( mapMath.at("pow_f64")   , jitprec::f64 , jitprec::f64 , 2 )  , lhs , rhs ); }
   llvm::Value* llvm_atan2_f64( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("atan2_f64") , jitprec::f64 , jitprec::f64 , 2 )  , lhs , rhs ); }
 
+
+
+  // seedMultiply
+  //
+
+
+  namespace
+  {
+    llvm::Function    *func_seed2float;
+    llvm::Function    *func_seedMultiply;
+  }
+  
+
+  void jit_build_seedMultiply()
+  {
+    std::vector< llvm::Type* > vecArgTypes;
+
+    
+    vecArgTypes.push_back( llvm_get_type<int>() );
+    vecArgTypes.push_back( llvm_get_type<int>() );
+    vecArgTypes.push_back( llvm_get_type<int>() );
+    vecArgTypes.push_back( llvm_get_type<int>() );
+
+    vecArgTypes.push_back( llvm_get_type<int>() );
+    vecArgTypes.push_back( llvm_get_type<int>() );
+    vecArgTypes.push_back( llvm_get_type<int>() );
+    vecArgTypes.push_back( llvm_get_type<int>() );
+
+    llvm::Type* ret_types[] = { llvm_get_type<int>(),
+				llvm_get_type<int>(),
+				llvm_get_type<int>(),
+				llvm_get_type<int>() };
+    
+    llvm::StructType* ret_type = llvm::StructType::get(llvm_get_context(), 
+						       llvm::ArrayRef< llvm::Type * >( ret_types , 4 ) );
+
+    llvm::FunctionType *funcType = llvm::FunctionType::get( ret_type , 
+							    llvm::ArrayRef<llvm::Type*>( vecArgTypes.data() , 
+											 vecArgTypes.size() ) ,
+							    false );
+    llvm::Function* F = llvm::Function::Create(funcType, llvm::Function::InternalLinkage, "seedMultiply", llvm_get_module());
+
+    std::vector< llvm::Value* > args;
+    unsigned Idx = 0;
+    for (llvm::Function::arg_iterator AI = F->arg_begin(), AE = F->arg_end() ; AI != AE ; ++AI, ++Idx) {
+      std::ostringstream oss;
+      oss << "arg" << Idx;
+      AI->setName( oss.str() );
+      args.push_back(&*AI);
+    }
+
+    llvm::BasicBlock* entry = llvm::BasicBlock::Create(llvm_get_context(), "entrypoint", F);
+    llvm_get_builder()->SetInsertPoint(entry);
+
+    typedef RScalar<WordREG<int> >  T;
+    PSeedREG<T> s1,s2;
+
+    s1.elem(0).elem().setup( args[0] );
+    s1.elem(1).elem().setup( args[1] );
+    s1.elem(2).elem().setup( args[2] );
+    s1.elem(3).elem().setup( args[3] );
+
+    s2.elem(0).elem().setup( args[4] );
+    s2.elem(1).elem().setup( args[5] );
+    s2.elem(2).elem().setup( args[6] );
+    s2.elem(3).elem().setup( args[7] );
+
+    s1 = s1 * s2;
+
+    llvm::Value* ret_val[] = { s1.elem(0).elem().get_val() ,
+			       s1.elem(1).elem().get_val() ,
+			       s1.elem(2).elem().get_val() ,
+			       s1.elem(3).elem().get_val() };
+
+    llvm_get_builder()->CreateAggregateRet( ret_val , 4 );
+
+    func_seedMultiply = F;
+  }
+
+
+  std::vector<llvm::Value *> llvm_seedMultiply( llvm::Value* a0 , llvm::Value* a1 , llvm::Value* a2 , llvm::Value* a3 , 
+						llvm::Value* a4 , llvm::Value* a5 , llvm::Value* a6 , llvm::Value* a7 )
+  {
+    assert(a0 && "llvm_seedToFloat a0");
+    assert(a1 && "llvm_seedToFloat a1");
+    assert(a2 && "llvm_seedToFloat a2");
+    assert(a3 && "llvm_seedToFloat a3");
+    assert(a4 && "llvm_seedToFloat a4");
+    assert(a5 && "llvm_seedToFloat a5");
+    assert(a6 && "llvm_seedToFloat a6");
+    assert(a7 && "llvm_seedToFloat a7");
+
+    assert(func_seedMultiply && "llvm_seedMultiply func_seedMultiply");
+
+    llvm::Value* pack[] = { a0,a1,a2,a3,a4,a5,a6,a7 };
+
+    llvm::Value* ret_val = llvm_get_builder()->CreateCall( func_seedMultiply , llvm::ArrayRef< llvm::Value *>( pack ,  8 ) );
+
+    std::vector<llvm::Value *> ret;
+    ret.push_back( llvm_get_builder()->CreateExtractValue( ret_val , 0 ) );
+    ret.push_back( llvm_get_builder()->CreateExtractValue( ret_val , 1 ) );
+    ret.push_back( llvm_get_builder()->CreateExtractValue( ret_val , 2 ) );
+    ret.push_back( llvm_get_builder()->CreateExtractValue( ret_val , 3 ) );
+
+    return ret;
+  }
+
+
+
+  void jit_build_seedToFloat()
+  {
+    std::vector< llvm::Type* > vecArgTypes;
+    vecArgTypes.push_back( llvm_get_builder()->getInt32Ty() );
+    vecArgTypes.push_back( llvm_get_builder()->getInt32Ty() );
+    vecArgTypes.push_back( llvm_get_builder()->getInt32Ty() );
+    vecArgTypes.push_back( llvm_get_builder()->getInt32Ty() );
+
+    llvm::FunctionType *funcType = llvm::FunctionType::get( llvm_get_builder()->getFloatTy(), 
+							    llvm::ArrayRef<llvm::Type*>( vecArgTypes.data() , 
+											 vecArgTypes.size() ) ,
+							    false );
+    llvm::Function* F = llvm::Function::Create(funcType, llvm::Function::InternalLinkage, "seedToFloat", llvm_get_module());
+
+    std::vector< llvm::Value* > args;
+    unsigned Idx = 0;
+    for (llvm::Function::arg_iterator AI = F->arg_begin(), AE = F->arg_end() ; AI != AE ; ++AI, ++Idx) {
+      std::ostringstream oss;
+      oss << "arg" << Idx;
+      AI->setName( oss.str() );
+      args.push_back(&*AI);
+    }
+
+    llvm::BasicBlock* entry = llvm::BasicBlock::Create(llvm_get_context(), "entrypoint", F);
+    llvm_get_builder()->SetInsertPoint(entry);
+
+    typedef RScalar<WordREG<int> >  T;
+    PSeedREG<T> s1;
+    s1.elem(0).elem().setup( args[0] );
+    s1.elem(1).elem().setup( args[1] );
+    s1.elem(2).elem().setup( args[2] );
+    s1.elem(3).elem().setup( args[3] );
+
+     UnaryReturn<PSeedREG<T>, FnSeedToFloat>::Type_t  d; // QDP::PScalarREG<QDP::RScalarREG<QDP::WordREG<float> > >
+    typedef  RealScalar<T>::Type_t  S;                                   // QDP::RScalarREG<QDP::WordREG<float> >
+
+    S  twom11(1.0 / 2048.0);
+    S  twom12(1.0 / 4096.0);
+    S  fs1, fs2;
+
+    //  recast_rep(fs1, s1.elem(0));
+    fs1 = S(s1.elem(0));
+    d.elem() = twom12 * S(s1.elem(0));
+
+    //  recast_rep(fs1, s1.elem(1));
+    fs1 = S(s1.elem(1));
+    fs2 = fs1 + d.elem();
+    d.elem() = twom12 * fs2;
+
+    //  recast_rep(fs1, s1.elem(2));
+    fs1 = S(s1.elem(2));
+    fs2 = fs1 + d.elem();
+    d.elem() = twom12 * fs2;
+
+    //  recast_rep(fs1, s1.elem(3));
+    fs1 = S(s1.elem(3));
+    fs2 = fs1 + d.elem();
+    d.elem() = twom11 * fs2;
+
+    llvm_get_builder()->CreateRet( d.elem().elem().get_val() );
+
+    func_seed2float = F;
+  }
+
+
+  llvm::Value * llvm_seedToFloat( llvm::Value* a0 , llvm::Value* a1 , llvm::Value* a2 , llvm::Value* a3 )
+  {
+    assert(a0 && "llvm_seedToFloat a0");
+    assert(a1 && "llvm_seedToFloat a1");
+    assert(a2 && "llvm_seedToFloat a2");
+    assert(a3 && "llvm_seedToFloat a3");
+    assert(func_seed2float && "llvm_seedToFloat func_seed2float");
+    return llvm_get_builder()->CreateCall( func_seed2float , {a0,a1,a2,a3} );
+  }
+
+
+
+  llvm::Value *jit_function_preamble_get_idx( const std::vector<ParamRef>& vec )
+  {
+    llvm::Value * r_ordered      = llvm_derefParam( vec[0] );
+    llvm::Value * r_th_count     = llvm_derefParam( vec[1] );
+    llvm::Value * r_start        = llvm_derefParam( vec[2] );
+                                   llvm_derefParam( vec[3]);     // r_end not used
+    ParamRef      p_member_array = vec[4];
+
+    llvm::Value * r_idx_phi0 = llvm_thread_idx();
+
+    llvm::Value * r_idx_phi1;
+
+    llvm_cond_exit( llvm_ge( r_idx_phi0 , r_th_count ) );
+
+    llvm::BasicBlock * block_ordered = llvm_new_basic_block();
+    llvm::BasicBlock * block_not_ordered = llvm_new_basic_block();
+    llvm::BasicBlock * block_ordered_exit = llvm_new_basic_block();
+    llvm::BasicBlock * cond_exit;
+    llvm_cond_branch( r_ordered , block_ordered , block_not_ordered );
+    {
+      llvm_set_insert_point(block_not_ordered);
+      llvm::Value* r_ismember     = llvm_array_type_indirection( p_member_array , r_idx_phi0 );
+      llvm::Value* r_ismember_not = llvm_not( r_ismember );
+      cond_exit = llvm_cond_exit( r_ismember_not ); 
+      llvm_branch( block_ordered_exit );
+    }
+    {
+      llvm_set_insert_point(block_ordered);
+      r_idx_phi1 = llvm_add( r_idx_phi0 , r_start );
+      llvm_branch( block_ordered_exit );
+    }
+    llvm_set_insert_point(block_ordered_exit);
+
+    llvm::PHINode* r_idx = llvm_phi( r_idx_phi0->getType() , 2 );
+
+    r_idx->addIncoming( r_idx_phi0 , cond_exit );
+    r_idx->addIncoming( r_idx_phi1 , block_ordered );
+
+    return r_idx;
+  }
+
+
+
+  JitForLoop::JitForLoop( llvm::Value* start , llvm::Value* end )
+  {
+    block_outer = llvm_get_insert_point();
+    block_loop_cond = llvm_new_basic_block();
+    block_loop_body = llvm_new_basic_block();
+    block_loop_exit = llvm_new_basic_block();
+
+    llvm_branch( block_loop_cond );
+    llvm_set_insert_point(block_loop_cond);
+  
+    r_i = llvm_phi( llvm_get_type<int>() , 2 );
+
+    r_i->addIncoming( start , block_outer );
+
+    llvm_cond_branch( llvm_lt( r_i , end ) , block_loop_body , block_loop_exit );
+
+    llvm_set_insert_point( block_loop_body );
+  }
+  llvm::Value * JitForLoop::index()
+  {
+    return r_i;
+  }
+  void JitForLoop::end()
+  {
+    llvm::Value * r_i_plus = llvm_add( r_i , llvm_create_value(1) );
+    r_i->addIncoming( r_i_plus , llvm_get_insert_point() );
+  
+    llvm_branch( block_loop_cond );
+
+    llvm_set_insert_point(block_loop_exit);
+  }
+
+
+
+
+
+ 
+  JitForLoopPower::JitForLoopPower( llvm::Value* i_start  )
+  {
+    block_outer = llvm_get_insert_point();
+    block_loop_cond = llvm_new_basic_block();
+    block_loop_body = llvm_new_basic_block();
+    block_loop_exit = llvm_new_basic_block();
+
+    llvm_branch( block_loop_cond );
+    llvm_set_insert_point(block_loop_cond);
+  
+    r_i = llvm_phi( llvm_get_type<int>() , 2 );
+
+    r_i->addIncoming( i_start , block_outer );
+
+    llvm_cond_branch( llvm_gt( r_i , llvm_create_value( 0 ) ) , block_loop_body , block_loop_exit );
+
+    llvm_set_insert_point( block_loop_body );
+  }
+  llvm::Value * JitForLoopPower::index()
+  {
+    return r_i;
+  }
+  void JitForLoopPower::end()
+  {
+    llvm::Value * r_i_plus = llvm_shr( r_i , llvm_create_value(1) );
+    r_i->addIncoming( r_i_plus , llvm_get_insert_point() );
+  
+    llvm_branch( block_loop_cond );
+
+    llvm_set_insert_point(block_loop_exit);
+  }
+
+
+
+  llvm::Value* jit_ternary( llvm::Value* cond , const JitDefer& def_true , const JitDefer& def_false )
+  {
+    llvm::BasicBlock * block_exit  = llvm_new_basic_block();
+    llvm::BasicBlock * block_true  = llvm_new_basic_block();
+    llvm::BasicBlock * block_false = llvm_new_basic_block();
+
+    llvm::Value* r_true;
+    llvm::Value* r_false;
+    
+    llvm_cond_branch( cond , block_true , block_false );
+    {
+      llvm_set_insert_point(block_true);
+      r_true = def_true.val();
+      llvm_branch( block_exit );
+    }
+    {
+      llvm_set_insert_point(block_false);
+      r_false = def_false.val();
+      llvm_branch( block_exit );
+    }
+    llvm_set_insert_point(block_exit);
+
+    llvm::PHINode* r = llvm_phi( r_true->getType() , 2 );
+    
+    r->addIncoming( r_true , block_true );
+    r->addIncoming( r_false , block_false );
+
+    return r;
+  }
+
+  
+  llvm::Value* jit_ternary( llvm::Value* cond , llvm::Value*    val_true , llvm::Value*    val_false )
+  {
+    return jit_ternary( cond , JitDeferValue(val_true) , JitDeferValue(val_false) );
+  }
+
+  
+  llvm::Value* jit_ternary( llvm::Value* cond , const JitDefer& val_true , llvm::Value*    val_false )
+  {
+    return jit_ternary( cond , val_true , JitDeferValue(val_false) );
+  }
+
+  
+  llvm::Value* jit_ternary( llvm::Value* cond , llvm::Value*    val_true , const JitDefer& val_false )
+  {
+    return jit_ternary( cond , JitDeferValue(val_true) , val_false );
+  }
+
+  
+  
   
 } // namespace QDP
 

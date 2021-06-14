@@ -15,7 +15,6 @@ add_library(qdp qdp_map.cc
  	qdp_stopwatch.cc
 	qdp_rannyu.cc
 	qdp_mapresource.cc
-	qdp_llvm.cc
 	qdp_cache.cc
 	qdp_mastermap.cc
 	qdp_masterset.cc
@@ -27,6 +26,8 @@ add_library(qdp qdp_map.cc
 	qdp_pete_visitors.cc
 	qdp_default_allocator.cc
 )
+
+add_library(jit qdp_llvm.cc)
 
 if( QDP_ENABLE_BACKEND STREQUAL "CUDA" )
 	target_sources(qdp PRIVATE qdp_gpu_cuda.cc)
@@ -85,30 +86,52 @@ if( QDP_ARCH_PARSCALAR )
 	)	
 endif()
 
-target_include_directories( qdp PUBLIC
+
+target_include_directories( jit PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../include>
         $<INSTALL_INTERFACE:include> )
-target_include_directories(qdp PUBLIC ${LLVM_INCLUDE_DIRS} )
-target_link_libraries( qdp PUBLIC ${GPU_LIBS} ${LLVM_AVAILABLE_LIBS} )
-set_target_properties( qdp PROPERTIES 
+target_include_directories(jit PUBLIC ${LLVM_INCLUDE_DIRS} )
+target_link_libraries( jit PUBLIC ${GPU_LIBS} ${LLVM_AVAILABLE_LIBS} )
+set_target_properties( jit PROPERTIES 
 	CXX_STANDARD 14
 	CXX_EXTENSIONS OFF
 	PROPERTIES C_STANDARD 99 
 	PROPERTIES CXX_EXTENSIONS OFF
 )
 
+
+target_include_directories( qdp PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../include>
+        $<INSTALL_INTERFACE:include> )
+target_include_directories(qdp PUBLIC ${LLVM_INCLUDE_DIRS} )
+target_link_libraries( qdp PUBLIC ${GPU_LIBS} ${LLVM_AVAILABLE_LIBS} jit )
+set_target_properties( qdp PROPERTIES 
+	CXX_STANDARD 20
+	CXX_EXTENSIONS OFF
+	PROPERTIES C_STANDARD 99 
+	PROPERTIES CXX_EXTENSIONS OFF
+)
+
+
+
+
+
 # Link QIO from subtree
 target_link_libraries( qdp PUBLIC QIO::qio )
+target_link_libraries( jit PUBLIC QIO::qio )
 
 # If using libxml link the XPathReader and xmlWriter libraries
 if( QDP_USE_LIBXML2 )
         target_link_libraries( qdp PUBLIC XPathReader::XPathReader XPathReader::xmlWriter )
+        target_link_libraries( jit PUBLIC XPathReader::XPathReader XPathReader::xmlWriter )
 endif()
 
 # If we want filedb (always?) link that
 if( QDP_USE_FILEDB )
         target_link_libraries( qdp PUBLIC FileDB::filedb )
+        target_link_libraries( jit PUBLIC FileDB::filedb )
 endif()
 
 if( QDP_SANITIZER_OPTS )
@@ -116,12 +139,15 @@ if( QDP_SANITIZER_OPTS )
   target_link_options(qdp PUBLIC ${QDP_SANITIZER_OPTS})
 endif()
 
-install(TARGETS qdp EXPORT QDPXXTargets
+install(TARGETS qdp jit
+  EXPORT QDPXXTargets
   ARCHIVE DESTINATION lib
   LIBRARY  DESTINATION lib
   RUNTIME DESTINATION bin
   INCLUDES DESTINATION include
 )
+
+
 #install the export description of the targets
 install(EXPORT QDPXXTargets
 	FILE QDPXXTargets.cmake

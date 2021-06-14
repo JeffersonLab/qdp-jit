@@ -9,16 +9,11 @@ namespace QDP {
 
   
 
-  llvm::Value *jit_function_preamble_get_idx( const std::vector<ParamRef>& vec );
   std::vector<ParamRef> jit_function_preamble_param( const char* ftype , const char* pretty );
 
   int jit_util_get_tune_count();
 
   void jit_get_function(JitFunction&);
-
-  void jit_build_seedToFloat();
-  void jit_build_seedMultiply();
-
 
   void jit_util_sync_init();
   void jit_util_sync_done();
@@ -36,11 +31,6 @@ namespace QDP {
   long get_jit_stats_special(int i);
   std::map<int,std::string>& get_jit_stats_special_names();
   
-  std::vector<llvm::Value *> llvm_seedMultiply( llvm::Value* a0 , llvm::Value* a1 , llvm::Value* a2 , llvm::Value* a3 , 
-						llvm::Value* a4 , llvm::Value* a5 , llvm::Value* a6 , llvm::Value* a7 );
-
-  llvm::Value * llvm_seedToFloat( llvm::Value* a0,llvm::Value* a1,llvm::Value* a2,llvm::Value* a3);
-
 
   void jit_launch(JitFunction& function,int th_count,std::vector<QDPCache::ArgKey>& ids);
   void jit_launch_explicit_geom( JitFunction& function , std::vector<QDPCache::ArgKey>& ids , const kernel_geom_t& geom , unsigned int shared );
@@ -65,37 +55,6 @@ namespace QDP {
 
 
 
-  class JitForLoop
-  {
-  public:
-    JitForLoop( int start          , int end ):           JitForLoop( llvm_create_value(start) , llvm_create_value(end) ) {}
-    JitForLoop( int start          , llvm::Value*  end ): JitForLoop( llvm_create_value(start) , end ) {}
-    JitForLoop( llvm::Value* start , int  end ):          JitForLoop( start , llvm_create_value(end) ) {}
-    JitForLoop( llvm::Value* start , llvm::Value*  end );
-    llvm::Value * index();
-    void end();
-  private:
-    llvm::BasicBlock * block_outer;
-    llvm::BasicBlock * block_loop_cond;
-    llvm::BasicBlock * block_loop_body;
-    llvm::BasicBlock * block_loop_exit;
-    llvm::PHINode * r_i;
-  };
-
-
-  class JitForLoopPower
-  {
-  public:
-    JitForLoopPower( llvm::Value* start );
-    llvm::Value * index();
-    void end();
-  private:
-    llvm::BasicBlock * block_outer;
-    llvm::BasicBlock * block_loop_cond;
-    llvm::BasicBlock * block_loop_body;
-    llvm::BasicBlock * block_loop_exit;
-    llvm::PHINode * r_i;
-  };
   
 
   
@@ -139,58 +98,11 @@ namespace QDP {
   
 
 
-  class JitDefer
-  {
-  public:
-    virtual llvm::Value* val() const = 0;
-  };
-
-
-  class JitDeferValue: public JitDefer
-  {
-    llvm::Value* r;
-  public:
-    JitDeferValue( llvm::Value* r ): r(r) {}
-    virtual llvm::Value* val() const
-    {
-      return r;
-    }
-  };
-
-
-  class JitDeferAdd: public JitDefer
-  {
-    llvm::Value* r;
-    llvm::Value* l;
-  public:
-    JitDeferAdd( llvm::Value* l , llvm::Value* r ): l(l), r(r) {}
-    virtual llvm::Value* val() const
-    {
-      return llvm_add( l , r );
-    }
-  };
-
-
-  class JitDeferArrayTypeIndirection: public JitDefer
-  {
-    const ParamRef& p;
-    llvm::Value* r;
-  public:
-    JitDeferArrayTypeIndirection( const ParamRef& p , llvm::Value* r ): p(p), r(r) {}
-    virtual llvm::Value* val() const
-    {
-      return llvm_array_type_indirection( p , r );
-    }
-  };
 
 
 
 
 
-  llvm::Value* jit_ternary( llvm::Value* cond , llvm::Value*    val_true , llvm::Value*    val_false );
-  llvm::Value* jit_ternary( llvm::Value* cond , const JitDefer& val_true , llvm::Value*    val_false );
-  llvm::Value* jit_ternary( llvm::Value* cond , llvm::Value*    val_true , const JitDefer& val_false );
-  llvm::Value* jit_ternary( llvm::Value* cond , const JitDefer& val_true , const JitDefer& val_false );
 
 
 

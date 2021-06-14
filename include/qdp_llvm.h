@@ -6,76 +6,14 @@
 //#define __STDC_LIMIT_MACROS
 //#define __STDC_CONSTANT_MACROS
 
-#include "llvm/IRReader/IRReader.h"
-#include "llvm/IR/Module.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/Bitcode/BitcodeReader.h"
-#include "llvm/IR/LegacyPassManager.h"
-#include "llvm/Analysis/BasicAliasAnalysis.h"
-#include "llvm/Pass.h"
-#include "llvm/Analysis/Passes.h"
-#include "llvm/Transforms/Scalar.h"
-#include "llvm/Transforms/IPO.h"
-#include "llvm/Support/TargetRegistry.h"
-#include "llvm/Support/TargetSelect.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/Support/CommandLine.h"
-#include "llvm/Target/TargetMachine.h"
-
-
-#include "llvm/CodeGen/TargetLowering.h"
-
-
-#include "llvm/Analysis/TargetTransformInfo.h"
-#include "llvm/Analysis/TargetLibraryInfo.h"
-#include "llvm/Support/ToolOutputFile.h"
-#include "llvm/Support/FormattedStream.h"
-#include "llvm/IR/DataLayout.h"
-#include "llvm/Support/SourceMgr.h"
-
-//#if defined (QDP_LLVM12)
-//#else
-//#include "llvm/IR/TypeBuilder.h"
-//#endif
-
-#include "llvm/ADT/ArrayRef.h"
-#include "llvm/ADT/StringSet.h"
-#include "llvm/IR/Function.h"
-#include "llvm/IR/BasicBlock.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/Constants.h"
-#include "llvm/IR/Attributes.h"
-#include "llvm/IR/DerivedTypes.h"
-#include "llvm/IR/Attributes.h"
-
-#include "llvm/Support/raw_os_ostream.h"
-
-#include "llvm/ADT/Statistic.h"
-#include "llvm/Support/Program.h"
-
-#include "llvm/Support/MemoryBuffer.h"
-#include "llvm/Support/Debug.h"
-#include "llvm/Support/Host.h"
-
-#include <system_error>
-
-#include "llvm/IR/GlobalVariable.h"
-
-#include "llvm/ExecutionEngine/ExecutionEngine.h"
-#include "llvm/ExecutionEngine/MCJIT.h"
-#include "llvm/IR/Verifier.h"
-#include "llvm/IR/AssemblyAnnotationWriter.h"
-
-
-namespace llvm {
-  //#if defined (QDP_LLVM12)
-  ModulePass *createNVVMReflectPass(unsigned int);
-  //#else
-  //ModulePass *createNVVMReflectPass(void);
-  //#endif
+namespace llvm
+{
+  struct Value;
+  struct BasicBlock;
+  struct Type;
+  struct PHINode;
+  struct Function;
 }
-
 
 namespace QDP {
 
@@ -146,29 +84,12 @@ namespace QDP {
 
   void llvm_start_new_function( const char* ftype , const char* pretty );
 
-  llvm::IRBuilder<>* llvm_get_builder();
-  llvm::Module* llvm_get_module();
-  llvm::LLVMContext& llvm_get_context();
-
 
   void llvm_backend_init();
   llvm::PHINode * llvm_phi( llvm::Type* type, unsigned num = 0 );
   llvm::Type* promote( llvm::Type* t0 , llvm::Type* t1 );
   llvm::Value* llvm_cast( llvm::Type *dest_type , llvm::Value *src );
 
-  llvm::SwitchInst * llvm_switch( llvm::Value* val , llvm::BasicBlock* bb_default );
-
-  //llvm::Type* llvm_normalize_values(llvm::Value* lhs , llvm::Value* rhs);
-
-#if 0
-  llvm::Value* llvm_b_op( llvm::Value *(*)(llvm::Value *, llvm::Value *) func_float,
-			  llvm::Value *(*)(llvm::Value *, llvm::Value *) func_int,
-			  llvm::Value* lhs , llvm::Value* rhs );
-
-  llvm::Value* llvm_u_op( llvm::Value *(*)(llvm::Value *) func_float,
-			  llvm::Value *(*)(llvm::Value *) func_int,
-			  llvm::Value* lhs );
-#endif
 
   llvm::Value* llvm_shl( llvm::Value* lhs , llvm::Value* rhs );
   llvm::Value* llvm_shr( llvm::Value* lhs , llvm::Value* rhs );
@@ -222,14 +143,13 @@ namespace QDP {
   llvm::BasicBlock * llvm_get_insert_block();
 
   llvm::BasicBlock * llvm_new_basic_block();
+
   void llvm_cond_branch(llvm::Value * cond, llvm::BasicBlock * thenBB, llvm::BasicBlock * elseBB);
   void llvm_branch(llvm::BasicBlock * BB);
   void llvm_set_insert_point( llvm::BasicBlock * BB );
   llvm::BasicBlock * llvm_get_insert_point();
   void llvm_exit();
   llvm::BasicBlock * llvm_cond_exit( llvm::Value * cond );
-
-  llvm::ConstantInt * llvm_create_const_int(int i);
 
   llvm::Value * llvm_create_value( double v );
   llvm::Value * llvm_create_value(int v );
@@ -261,7 +181,6 @@ namespace QDP {
 
   llvm::Value * llvm_thread_idx();
 
-  void addKernelMetadata(llvm::Function *F);
 
   void llvm_build_function(JitFunction&);
 
@@ -308,6 +227,100 @@ namespace QDP {
   llvm::Value* llvm_pow_f64( llvm::Value* lhs, llvm::Value* rhs );
   llvm::Value* llvm_atan2_f64( llvm::Value* lhs, llvm::Value* rhs );
 
+
+  void jit_build_seedMultiply();
+  std::vector<llvm::Value *> llvm_seedMultiply( llvm::Value* a0 , llvm::Value* a1 , llvm::Value* a2 , llvm::Value* a3 , 
+						llvm::Value* a4 , llvm::Value* a5 , llvm::Value* a6 , llvm::Value* a7 );
+  void jit_build_seedToFloat();
+  llvm::Value * llvm_seedToFloat( llvm::Value* a0 , llvm::Value* a1 , llvm::Value* a2 , llvm::Value* a3 );
+
+  llvm::Value *jit_function_preamble_get_idx( const std::vector<ParamRef>& vec );
+
+
+  class JitDefer
+  {
+  public:
+    virtual llvm::Value* val() const = 0;
+  };
+
+
+  class JitDeferValue: public JitDefer
+  {
+    llvm::Value* r;
+  public:
+    JitDeferValue( llvm::Value* r ): r(r) {}
+    virtual llvm::Value* val() const
+    {
+      return r;
+    }
+  };
+
+
+  class JitDeferAdd: public JitDefer
+  {
+    llvm::Value* r;
+    llvm::Value* l;
+  public:
+    JitDeferAdd( llvm::Value* l , llvm::Value* r ): l(l), r(r) {}
+    virtual llvm::Value* val() const
+    {
+      return llvm_add( l , r );
+    }
+  };
+
+
+  class JitDeferArrayTypeIndirection: public JitDefer
+  {
+    const ParamRef& p;
+    llvm::Value* r;
+  public:
+    JitDeferArrayTypeIndirection( const ParamRef& p , llvm::Value* r ): p(p), r(r) {}
+    virtual llvm::Value* val() const
+    {
+      return llvm_array_type_indirection( p , r );
+    }
+  };
+
+  
+  llvm::Value* jit_ternary( llvm::Value* cond , llvm::Value*    val_true , llvm::Value*    val_false );
+  llvm::Value* jit_ternary( llvm::Value* cond , const JitDefer& val_true , llvm::Value*    val_false );
+  llvm::Value* jit_ternary( llvm::Value* cond , llvm::Value*    val_true , const JitDefer& val_false );
+  llvm::Value* jit_ternary( llvm::Value* cond , const JitDefer& val_true , const JitDefer& val_false );
+
+
+  class JitForLoop
+  {
+  public:
+    JitForLoop( int start          , int end ):           JitForLoop( llvm_create_value(start) , llvm_create_value(end) ) {}
+    JitForLoop( int start          , llvm::Value*  end ): JitForLoop( llvm_create_value(start) , end ) {}
+    JitForLoop( llvm::Value* start , int  end ):          JitForLoop( start , llvm_create_value(end) ) {}
+    JitForLoop( llvm::Value* start , llvm::Value*  end );
+    llvm::Value * index();
+    void end();
+  private:
+    llvm::BasicBlock * block_outer;
+    llvm::BasicBlock * block_loop_cond;
+    llvm::BasicBlock * block_loop_body;
+    llvm::BasicBlock * block_loop_exit;
+    llvm::PHINode * r_i;
+  };
+
+
+  class JitForLoopPower
+  {
+  public:
+    JitForLoopPower( llvm::Value* start );
+    llvm::Value * index();
+    void end();
+  private:
+    llvm::BasicBlock * block_outer;
+    llvm::BasicBlock * block_loop_cond;
+    llvm::BasicBlock * block_loop_body;
+    llvm::BasicBlock * block_loop_exit;
+    llvm::PHINode * r_i;
+  };
+
+  
 
 } // namespace QDP
 

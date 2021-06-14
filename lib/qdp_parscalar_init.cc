@@ -7,6 +7,7 @@
 
 #include <stdlib.h>
 #include <unistd.h>
+#include <numeric>
 //#include <iomanip>
 
 #include "qdp.h"
