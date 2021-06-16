@@ -3,6 +3,40 @@
 
 #include "qdp_config.h"
 
+#include<string>
+#include<vector>
+#include<iostream>
+#include<fstream>
+#include<sstream>
+#include<map>
+
+using namespace std;
+
+class JitFunction;
+class DynKey;
+class ArrayBiDirectionalMap;
+
+#define QDP_CONST
+
+#include "qdp_init.h"
+#include "qdp_multi.h"
+#include "qdp_stdio.h"
+#include "qdp_jit_function.h"
+#include "qdp_cache.h"
+#include "qdp_gpu.h"
+#include "qdp_jit_config.h"
+#include "qdp_precision.h"
+#include "qdp_layout.h"
+
+
+// Forward declarations
+//
+struct jit_half_t;
+//bool get_jitf( JitFunction& func, const std::string& kernel , const std::string& func_name , const std::string& pretty , const std::string& compute );
+std::string jit_util_get_static_dynamic_string( const std::string& pretty );
+//void QDP_error_exit (const char *format, ...);
+
+
 //#define __STDC_LIMIT_MACROS
 //#define __STDC_CONSTANT_MACROS
 
@@ -319,6 +353,18 @@ namespace QDP {
     llvm::BasicBlock * block_loop_exit;
     llvm::PHINode * r_i;
   };
+
+
+  void jit_stats_lattice2dev();
+  void jit_stats_lattice2host();
+  void jit_stats_jitted();
+  void jit_stats_special(int i);
+
+  long get_jit_stats_lattice2dev();
+  long get_jit_stats_lattice2host();
+  long get_jit_stats_jitted();
+  long get_jit_stats_special(int i);
+  std::map<int,std::string>& get_jit_stats_special_names();
 
   
 

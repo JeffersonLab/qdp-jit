@@ -159,18 +159,21 @@ public:
 
 
 public:
-  typename REGType<T>::Type_t getRegElem(llvm::Value * row,llvm::Value * col) {
+  typename REGType<T>::Type_t getRegElem(llvm::Value * row,llvm::Value * col) const
+  {
     llvm::Value * tmp = llvm_mul( row , llvm_create_value( N ) );
     llvm::Value * lin = llvm_add( tmp , col );
     return BaseJIT<T,N*N>::getRegElem( lin );
   }
 
-  T getJitElem(llvm::Value * row,llvm::Value * col) {
+  T getJitElem(llvm::Value * row,llvm::Value * col) const
+  {
     llvm::Value * tmp = llvm_mul( row , llvm_create_value( N ) );
     llvm::Value * lin = llvm_add( tmp , col );
     return BaseJIT<T,N*N>::getJitElem( lin );
   }
 
+  
         T& elem(int i, int j)       {return this->arrayF(j+N*i);}
   const T& elem(int i, int j) const {return this->arrayF(j+N*i);}
 
@@ -1440,7 +1443,7 @@ struct UnaryReturn<PMatrixJIT<T,N,C>, FnPokeSpinMatrix> {
 //! dest = 0
 template<class T, int N, template<class,int> class C> 
 inline void 
-zero_rep(PMatrixJIT<T,N,C>& dest) 
+zero_rep(PMatrixJIT<T,N,C> dest) 
 {
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -1452,7 +1455,7 @@ zero_rep(PMatrixJIT<T,N,C>& dest)
 //! dest [some type] = source [some type]
 template<class T, class T1, int N, template<class,int> class C>
 inline void 
-copy_site(PMatrixJIT<T,N,C>& d, int isite, const PMatrixJIT<T1,N,C>& s1)
+copy_site(PMatrixJIT<T,N,C> d, int isite, const PMatrixJIT<T1,N,C>& s1)
 {
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -1462,7 +1465,7 @@ copy_site(PMatrixJIT<T,N,C>& d, int isite, const PMatrixJIT<T1,N,C>& s1)
 //! dest [some type] = source [some type]
 template<class T, class T1, int N, template<class,int> class C>
 inline void 
-copy_site(PMatrixJIT<T,N,C>& d, int isite, const PScalarJIT<T1>& s1)
+copy_site(PMatrixJIT<T,N,C> d, int isite, const PScalarJIT<T1>& s1)
 {
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -1473,7 +1476,7 @@ copy_site(PMatrixJIT<T,N,C>& d, int isite, const PScalarJIT<T1>& s1)
 //! gather several inner sites together
 template<class T, class T1, int N, template<class,int> class C>
 inline void 
-gather_sites(PMatrixJIT<T,N,C>& d, 
+gather_sites(PMatrixJIT<T,N,C> d, 
 	     const PMatrixJIT<T1,N,C>& s0, int i0, 
 	     const PMatrixJIT<T1,N,C>& s1, int i1,
 	     const PMatrixJIT<T1,N,C>& s2, int i2,
@@ -1492,7 +1495,7 @@ gather_sites(PMatrixJIT<T,N,C>& d,
 //! dest  = random  
 template<class T, int N, template<class,int> class C, class T1, class T2, class T3>
 inline void
-fill_random(PMatrixJIT<T,N,C>& d, T1& seed, T2& skewed_seed, const T3& seed_mult)
+fill_random(PMatrixJIT<T,N,C> d, T1& seed, T2& skewed_seed, const T3& seed_mult)
 {
   // The skewed_seed is the starting seed to use
   for(int i=0; i < N; ++i)
@@ -1503,7 +1506,7 @@ fill_random(PMatrixJIT<T,N,C>& d, T1& seed, T2& skewed_seed, const T3& seed_mult
 //! dest  = gaussian
 template<class T,class T2, int N, template<class,int> class C, template<class,int> class C2>
 inline void
-fill_gaussian(PMatrixJIT<T,N,C>& d, PMatrixREG<T2,N,C2>& r1, PMatrixREG<T2,N,C2>& r2)
+fill_gaussian(PMatrixJIT<T,N,C> d, PMatrixREG<T2,N,C2>& r1, PMatrixREG<T2,N,C2>& r2)
 {
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)
@@ -1729,7 +1732,7 @@ where(const PScalarJIT<T1>& a, const PMatrixJIT<T2,N,C>& b, const PMatrixJIT<T3,
 //! dest = (mask) ? s1 : dest
 template<class T, class T1, class T2, int N, template<class,int> class C, template<class,int> class C2> 
 inline void 
-copymask(PMatrixJIT<T,N,C>& d, const PScalarREG<T1>& mask, const PMatrixREG<T2,N,C2>& s1) 
+copymask(PMatrixJIT<T,N,C> d, const PScalarREG<T1>& mask, const PMatrixREG<T2,N,C2>& s1) 
 {
   for(int i=0; i < N; ++i)
     for(int j=0; j < N; ++j)

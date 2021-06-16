@@ -20,16 +20,6 @@ namespace QDP {
   void jit_util_sync_copy();
 
       
-  void jit_stats_lattice2dev();
-  void jit_stats_lattice2host();
-  void jit_stats_jitted();
-  void jit_stats_special(int i);
-
-  long get_jit_stats_lattice2dev();
-  long get_jit_stats_lattice2host();
-  long get_jit_stats_jitted();
-  long get_jit_stats_special(int i);
-  std::map<int,std::string>& get_jit_stats_special_names();
   
 
   void jit_launch(JitFunction& function,int th_count,std::vector<QDPCache::ArgKey>& ids);

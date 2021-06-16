@@ -500,9 +500,6 @@ struct LeafFunctor<QDPType<T,OScalar<T> >, ParamLeaf>
 
 
 
-  
-
-
 
 template<class T>
 struct LeafFunctor<QDPType<T,OLattice<T> >, AddressLeaf>

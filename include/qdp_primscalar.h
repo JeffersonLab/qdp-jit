@@ -187,6 +187,13 @@ struct JITType<PScalar<T> >
 };
 
 
+template<class T> 
+struct REGType<PScalar<T> >
+{
+  typedef PScalarREG<typename REGType<T>::Type_t>  Type_t;
+};
+
+
 
 // Input
 //! Ascii input
