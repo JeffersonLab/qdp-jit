@@ -409,7 +409,7 @@ struct ForEach<BinaryNode<OpMultiply, A, B>, ViewSpinLeaf, CTag >
     print_type<Type_t>();
 
     JitStackArray< Type_t , 1 > stack;
-    zero_rep( stack.elemJIT(0) );
+    zero_rep( stack.elemJITint(0) );
 
     JitForLoop loop(0,4);
     {
@@ -419,14 +419,14 @@ struct ForEach<BinaryNode<OpMultiply, A, B>, ViewSpinLeaf, CTag >
       f_left. loops[1] = loop;
       f_right.loops[0] = loop;
 
-      stack.elemJIT(0) += Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::
+      stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::
 	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), f_left, c),
 		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), f_right, c),
 		expr.operation(), c);
     }
     loop.end();
     
-    return stack.elemREG(0);
+    return stack.elemREGint(0);
   }
 
 };

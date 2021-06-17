@@ -25,8 +25,6 @@ namespace QDP {
   void jit_launch(JitFunction& function,int th_count,std::vector<QDPCache::ArgKey>& ids);
   void jit_launch_explicit_geom( JitFunction& function , std::vector<QDPCache::ArgKey>& ids , const kernel_geom_t& geom , unsigned int shared );
 
-  std::string jit_util_get_static_dynamic_string( const std::string& pretty );
-
   void db_tune_write( std::string filename );
   void db_tune_read( std::string filename );
 
@@ -131,20 +129,26 @@ namespace QDP {
     }
 
     
-    T_jit elemJIT(int i)
-    {
-      return array.arrayF(i);
-    }
-
-    T_jit elemJIT(llvm::Value * index)
+    T_jit elemJITvalue(llvm::Value * index)
     {
       return array.getJitElem(index);
     }
 
-    T elemREG(llvm::Value * index)
+    T_jit elemJITint(int i)
+    {
+      return array.arrayF(i);
+    }
+
+    T elemREGvalue(llvm::Value * index)
     {
       return array.getRegElem(index);
     }
+
+    T elemREGint(int i)
+    {
+      return array.getRegElem(llvm_create_value(i));
+    }
+
   };
 
 

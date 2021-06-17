@@ -119,8 +119,8 @@ set_target_properties( qdp PROPERTIES
 
 
 # Link QIO from subtree
-target_link_libraries( qdp PUBLIC QIO::qio )
-target_link_libraries( jit PUBLIC QIO::qio )
+target_link_libraries( qdp PUBLIC jit QIO::qio )
+target_link_libraries( jit PUBLIC qdp QIO::qio )
 
 # If using libxml link the XPathReader and xmlWriter libraries
 if( QDP_USE_LIBXML2 )

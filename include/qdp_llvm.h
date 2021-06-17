@@ -29,14 +29,6 @@ class ArrayBiDirectionalMap;
 #include "qdp_layout.h"
 
 
-// Forward declarations
-//
-struct jit_half_t;
-//bool get_jitf( JitFunction& func, const std::string& kernel , const std::string& func_name , const std::string& pretty , const std::string& compute );
-std::string jit_util_get_static_dynamic_string( const std::string& pretty );
-//void QDP_error_exit (const char *format, ...);
-
-
 //#define __STDC_LIMIT_MACROS
 //#define __STDC_CONSTANT_MACROS
 
@@ -365,6 +357,8 @@ namespace QDP {
   long get_jit_stats_jitted();
   long get_jit_stats_special(int i);
   std::map<int,std::string>& get_jit_stats_special_names();
+
+  std::string jit_util_get_static_dynamic_string( const std::string& pretty );
 
   
 

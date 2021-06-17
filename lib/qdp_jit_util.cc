@@ -434,20 +434,6 @@ namespace QDP {
 
 
 
-  std::string jit_util_get_static_dynamic_string( const std::string& pretty )
-  {
-    std::ostringstream oss;
-    
-    oss << gpu_get_arch() << "_";
-
-    for ( int i = 0 ; i < Nd ; ++i )
-      oss << Layout::subgridLattSize()[i] << "_";
-
-    oss << pretty;
-
-    return oss.str();
-  }
-
   
   
 

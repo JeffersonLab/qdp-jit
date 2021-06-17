@@ -1,6 +1,6 @@
 #include "qdp_llvm.h"
 #include "qdp_config.h"
-//#include "qdp_internal.h"
+#include "qdp_params.h"
 
 
 
@@ -69,11 +69,13 @@ namespace llvm {
   ModulePass *createNVVMReflectPass(unsigned int);
 }
 
+using namespace QDP;
 using namespace llvm;
 using namespace llvm::codegen;
 
 
-namespace QDP {
+namespace QDP
+{
 
   namespace JITSTATS {
     long lattice2dev  = 0;   // changing lattice data layout to device format
@@ -187,7 +189,7 @@ namespace QDP {
     DBType db;
   }
 
-  
+
   void llvm_set_clang_codegen()
   {
     clang_codegen = true;
@@ -564,7 +566,7 @@ namespace QDP {
     llvm::initializeCodeGen(*Registry);
     llvm::initializeLoopStrengthReducePass(*Registry);
     llvm::initializeLowerIntrinsicsPass(*Registry);
-//    llvm::initializeCountingFunctionInserterPass(*Registry);
+    //    llvm::initializeCountingFunctionInserterPass(*Registry);
     llvm::initializeUnreachableBlockElimLegacyPassPass(*Registry);
     llvm::initializeConstantHoistingLegacyPassPass(*Registry);
 
@@ -680,7 +682,7 @@ namespace QDP {
     llvm::initializeCodeGen(*Registry);
     llvm::initializeLoopStrengthReducePass(*Registry);
     llvm::initializeLowerIntrinsicsPass(*Registry);
-//    llvm::initializeCountingFunctionInserterPass(*Registry);
+    //    llvm::initializeCountingFunctionInserterPass(*Registry);
     llvm::initializeUnreachableBlockElimLegacyPassPass(*Registry);
     llvm::initializeConstantHoistingLegacyPassPass(*Registry);
 
@@ -1002,7 +1004,7 @@ namespace QDP {
     //llvm::outs() << "cast instruction: dest type = " << dest_type << "   from " << src->getType() << "\n";
     
     llvm::Value* ret = builder->CreateCast( llvm::CastInst::getCastOpcode( src , true , dest_type , true ) , 
-				src , dest_type , "" );
+					    src , dest_type , "" );
     return ret;
   }
 
@@ -1051,8 +1053,8 @@ namespace QDP {
 
   llvm::Value* llvm_shr( llvm::Value* lhs , llvm::Value* rhs ) {  
     auto vals = llvm_normalize_values(lhs,rhs);
- //   llvm::Type* args_type = vals.first->getType();
- //   assert( !args_type->isFloatingPointTy() );
+    //   llvm::Type* args_type = vals.first->getType();
+    //   assert( !args_type->isFloatingPointTy() );
 
     assert( ! ( vals.first->getType()->isFloatingPointTy() ) );
     return builder->CreateAShr( vals.first , vals.second );
@@ -1061,8 +1063,8 @@ namespace QDP {
 
   llvm::Value* llvm_shl( llvm::Value* lhs , llvm::Value* rhs ) {  
     auto vals = llvm_normalize_values(lhs,rhs);
-  //  llvm::Type* args_type = vals.first->getType();
-  //  assert( !args_type->isFloatingPointTy() );
+    //  llvm::Type* args_type = vals.first->getType();
+    //  assert( !args_type->isFloatingPointTy() );
 
     assert( ! ( vals.first->getType()->isFloatingPointTy()  ) );
     return builder->CreateShl( vals.first , vals.second );
@@ -1080,8 +1082,8 @@ namespace QDP {
 
   llvm::Value* llvm_or( llvm::Value* lhs , llvm::Value* rhs ) {  
     auto vals = llvm_normalize_values(lhs,rhs);
-  //  llvm::Type* args_type = vals.first->getType();
-   // assert( !args_type->isFloatingPointTy() );
+    //  llvm::Type* args_type = vals.first->getType();
+    // assert( !args_type->isFloatingPointTy() );
     assert( ! ( vals.first->getType()->isFloatingPointTy()  ) );
 
     return builder->CreateOr( vals.first , vals.second );
@@ -1090,8 +1092,8 @@ namespace QDP {
 
   llvm::Value* llvm_xor( llvm::Value* lhs , llvm::Value* rhs ) {  
     auto vals = llvm_normalize_values(lhs,rhs);
-//    llvm::Type* args_type = vals.first->getType();
-//    assert( !args_type->isFloatingPointTy() );
+    //    llvm::Type* args_type = vals.first->getType();
+    //    assert( !args_type->isFloatingPointTy() );
 
     assert( ! ( vals.first->getType()->isFloatingPointTy()  ) );
 
@@ -1499,9 +1501,9 @@ namespace QDP {
     auto i32_t = llvm::Type::getInt32Ty(TheContext);
     
     llvm::Metadata *md_args[] = {
-      llvm::ValueAsMetadata::get(F),
-      MDString::get(TheContext, "kernel"),
-      llvm::ValueAsMetadata::get(ConstantInt::get(i32_t, 1))};
+				 llvm::ValueAsMetadata::get(F),
+				 MDString::get(TheContext, "kernel"),
+				 llvm::ValueAsMetadata::get(ConstantInt::get(i32_t, 1))};
 
     MDNode *md_node = MDNode::get(TheContext, md_args);
 
@@ -1576,20 +1578,20 @@ namespace QDP {
     mapAttr.clear();
     size_t pos = 0;
     while((pos = str.find("attributes #", pos)) != std::string::npos)
-    {
-	  size_t pos_space = str.find(" ", pos+12);
-	  std::string num = str.substr(pos+12,pos_space-pos-12);
-	  num = " #"+num;
-	  //QDPIO::cout << "# num found = " << num << "()\n";
-	  size_t pos_open = str.find("{", pos_space);
-	  size_t pos_close = str.find("}", pos_open);
-	  std::string val = str.substr(pos_open+1,pos_close-pos_open-1);
-	  //QDPIO::cout << "# val found = " << val << "\n";
-	  str.replace(pos, pos_close-pos+1, "");
-	  if (mapAttr.count(num) > 0)
-	    QDP_error_exit("unexp.");
-	  mapAttr[num]=val;
-    }
+      {
+	size_t pos_space = str.find(" ", pos+12);
+	std::string num = str.substr(pos+12,pos_space-pos-12);
+	num = " #"+num;
+	//QDPIO::cout << "# num found = " << num << "()\n";
+	size_t pos_open = str.find("{", pos_space);
+	size_t pos_close = str.find("}", pos_open);
+	std::string val = str.substr(pos_open+1,pos_close-pos_open-1);
+	//QDPIO::cout << "# val found = " << val << "\n";
+	str.replace(pos, pos_close-pos+1, "");
+	if (mapAttr.count(num) > 0)
+	  QDP_error_exit("unexp.");
+	mapAttr[num]=val;
+      }
   }
 
 
@@ -1739,7 +1741,7 @@ namespace QDP {
 #ifdef QDP_BACKEND_ROCM
   void build_function_rocm_codegen( JitFunction& func , const std::string& shared_path)
   {
-  #if 0
+#if 0
     {
       QDPIO::cout << "write code to module.bc ...\n";
       std::error_code EC;
@@ -2254,7 +2256,7 @@ namespace QDP {
     s1.elem(2).elem().setup( args[2] );
     s1.elem(3).elem().setup( args[3] );
 
-     UnaryReturn<PSeedREG<T>, FnSeedToFloat>::Type_t  d; // QDP::PScalarREG<QDP::RScalarREG<QDP::WordREG<float> > >
+    UnaryReturn<PSeedREG<T>, FnSeedToFloat>::Type_t  d; // QDP::PScalarREG<QDP::RScalarREG<QDP::WordREG<float> > >
     typedef  RealScalar<T>::Type_t  S;                                   // QDP::RScalarREG<QDP::WordREG<float> >
 
     S  twom11(1.0 / 2048.0);
@@ -2304,7 +2306,7 @@ namespace QDP {
     llvm::Value * r_ordered      = llvm_derefParam( vec[0] );
     llvm::Value * r_th_count     = llvm_derefParam( vec[1] );
     llvm::Value * r_start        = llvm_derefParam( vec[2] );
-                                   llvm_derefParam( vec[3]);     // r_end not used
+    llvm_derefParam( vec[3]);     // r_end not used
     ParamRef      p_member_array = vec[4];
 
     llvm::Value * r_idx_phi0 = llvm_thread_idx();
@@ -2459,6 +2461,22 @@ namespace QDP {
   llvm::Value* jit_ternary( llvm::Value* cond , llvm::Value*    val_true , const JitDefer& val_false )
   {
     return jit_ternary( cond , JitDeferValue(val_true) , val_false );
+  }
+
+
+
+  std::string jit_util_get_static_dynamic_string( const std::string& pretty )
+  {
+    std::ostringstream oss;
+    
+    oss << gpu_get_arch() << "_";
+
+    for ( int i = 0 ; i < Nd ; ++i )
+      oss << Layout::subgridLattSize()[i] << "_";
+
+    oss << pretty;
+
+    return oss.str();
   }
 
   
