@@ -254,12 +254,6 @@ namespace QDP {
   llvm::Value* llvm_atan2_f64( llvm::Value* lhs, llvm::Value* rhs );
 
 
-  void jit_build_seedMultiply();
-  std::vector<llvm::Value *> llvm_seedMultiply( llvm::Value* a0 , llvm::Value* a1 , llvm::Value* a2 , llvm::Value* a3 , 
-						llvm::Value* a4 , llvm::Value* a5 , llvm::Value* a6 , llvm::Value* a7 );
-  void jit_build_seedToFloat();
-  llvm::Value * llvm_seedToFloat( llvm::Value* a0 , llvm::Value* a1 , llvm::Value* a2 , llvm::Value* a3 );
-
   llvm::Value *jit_function_preamble_get_idx( const std::vector<ParamRef>& vec );
 
 
