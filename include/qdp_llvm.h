@@ -27,6 +27,7 @@ class ArrayBiDirectionalMap;
 #include "qdp_jit_config.h"
 #include "qdp_precision.h"
 #include "qdp_layout.h"
+#include "qdp_stopwatch.h"
 
 
 //#define __STDC_LIMIT_MACROS

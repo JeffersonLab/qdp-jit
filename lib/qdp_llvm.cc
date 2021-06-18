@@ -96,7 +96,7 @@ namespace QDP
 
   namespace
   {
-    //StopWatch swatch_builder(false);
+    StopWatch swatch_builder(false);
     
     std::string user_libdevice_path;
     std::string user_libdevice_name;
@@ -266,14 +266,14 @@ namespace QDP
 
     if ( it != ptx_db::db.end() )
       {
-	//StopWatch swatch(false);
-	//swatch.start();
+	StopWatch swatch(false);
+	swatch.start();
 
 	// Get jit function
 	get_jitf( f , it->second.second , it->second.first , pretty , str_arch );
 
-	//swatch.stop();
-	//f.time_dynload = swatch.getTimeInMicroseconds();
+	swatch.stop();
+	f.time_dynload = swatch.getTimeInMicroseconds();
       }
   }
 
@@ -855,8 +855,8 @@ namespace QDP
 
   void llvm_start_new_function( const char* ftype , const char* pretty )
   {
-    //swatch_builder.reset();
-    //swatch_builder.start();
+    swatch_builder.reset();
+    swatch_builder.start();
     
     math_declarations.clear();
     
@@ -1612,8 +1612,8 @@ namespace QDP
   {
     addKernelMetadata( mainFunc );
 
-    //StopWatch swatch(false);
-    //swatch.start();
+    StopWatch swatch(false);
+    swatch.start();
     
     if (math_declarations.size() > 0)
       {
@@ -1634,10 +1634,10 @@ namespace QDP
 	}
       }
 
-    //swatch.stop();
-    //func.time_math = swatch.getTimeInMicroseconds();
-    //swatch.reset();
-    //swatch.start();
+    swatch.stop();
+    func.time_math = swatch.getTimeInMicroseconds();
+    swatch.reset();
+    swatch.start();
     
     //QDPIO::cout << "setting module data layout\n";
     Mod->setDataLayout(TargetMachine->createDataLayout());
@@ -1660,8 +1660,8 @@ namespace QDP
       }
     PM2.run(*Mod);
     
-    //swatch.stop();
-    //func.time_passes = swatch.getTimeInMicroseconds();
+    swatch.stop();
+    func.time_passes = swatch.getTimeInMicroseconds();
 
     
     if (jit_config_get_verbose_output())
@@ -1683,18 +1683,18 @@ namespace QDP
       }
 
     
-    //swatch.reset();
-    //swatch.start();
+    swatch.reset();
+    swatch.start();
     std::string ptx_kernel = get_ptx();
-    //swatch.stop();
-    //func.time_codegen = swatch.getTimeInMicroseconds();
+    swatch.stop();
+    func.time_codegen = swatch.getTimeInMicroseconds();
 
     
-    //swatch.reset();
-    //swatch.start();
+    swatch.reset();
+    swatch.start();
     get_jitf( func , ptx_kernel , str_kernel_name , str_pretty , str_arch );
-    //swatch.stop();
-    //func.time_dynload = swatch.getTimeInMicroseconds();
+    swatch.stop();
+    func.time_dynload = swatch.getTimeInMicroseconds();
 
 
     
@@ -1755,8 +1755,8 @@ namespace QDP
     
     Mod->setDataLayout(TargetMachine->createDataLayout());
 
-    //StopWatch swatch(false);
-    //swatch.start();
+    StopWatch swatch(false);
+    swatch.start();
     
     if (math_declarations.size() > 0)
       {
@@ -1780,8 +1780,8 @@ namespace QDP
 	  }
       }
 
-    //swatch.stop();
-    //func.time_math = swatch.getTimeInMicroseconds();
+    swatch.stop();
+    func.time_math = swatch.getTimeInMicroseconds();
     
 #if 0
     {
@@ -1793,8 +1793,8 @@ namespace QDP
     }
 #endif
 
-    //swatch.reset();
-    //swatch.start();
+    swatch.reset();
+    swatch.start();
 
     llvm::legacy::PassManager PM2;
     
@@ -1809,8 +1809,8 @@ namespace QDP
     
     //llvm_module_dump();
 
-    //swatch.stop();
-    //func.time_passes = swatch.getTimeInMicroseconds();
+    swatch.stop();
+    func.time_passes = swatch.getTimeInMicroseconds();
 
 #if 0
     {
@@ -1822,8 +1822,8 @@ namespace QDP
     }
 #endif
     
-    //swatch.reset();
-    //swatch.start();
+    swatch.reset();
+    swatch.start();
     
     std::string clang_name;
     if (clang_codegen)
@@ -1935,8 +1935,8 @@ namespace QDP
 	}
       }
 
-    //swatch.stop();
-    //func.time_codegen = swatch.getTimeInMicroseconds();
+    swatch.stop();
+    func.time_codegen = swatch.getTimeInMicroseconds();
     
     std::string lld_path = std::string(ROCM_DIR) + "/llvm/bin/ld.lld";
     std::string command = lld_path + " -shared " + isabin_path + " -o " + shared_path;
@@ -1946,13 +1946,13 @@ namespace QDP
 	QDPIO::cout << "System: " << command.c_str() << "\n";
       }
 
-    //swatch.reset();
-    //swatch.start();
+    swatch.reset();
+    swatch.start();
 
     system( command.c_str() );
 
-    //swatch.stop();
-    //func.time_linking = swatch.getTimeInMicroseconds();
+    swatch.stop();
+    func.time_linking = swatch.getTimeInMicroseconds();
   }
 
   
@@ -1990,8 +1990,8 @@ namespace QDP
 	QDPIO::cout << "shared object file read back in. size = " << shared.size() << "\n";
       }
 
-    //StopWatch swatch(false);
-    //swatch.start();
+    StopWatch swatch(false);
+    swatch.start();
 
     if (!get_jitf( func , shared , str_kernel_name , str_pretty , str_arch ))
       {
@@ -2010,8 +2010,8 @@ namespace QDP
 	sleep(1);
       }
 
-    //swatch.stop();
-    //func.time_dynload = swatch.getTimeInMicroseconds();
+    swatch.stop();
+    func.time_dynload = swatch.getTimeInMicroseconds();
   }
 #endif
 
@@ -2023,8 +2023,8 @@ namespace QDP
     builder->SetInsertPoint(bb_stack,it_stack);
     builder->CreateBr( bb_afterstack );
 
-    //swatch_builder.stop();
-    //func.time_builder = swatch_builder.getTimeInMicroseconds();
+    swatch_builder.stop();
+    func.time_builder = swatch_builder.getTimeInMicroseconds();
     
 #ifdef QDP_BACKEND_ROCM
     llvm_build_function_rocm(func);
