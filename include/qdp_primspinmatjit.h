@@ -1919,6 +1919,33 @@ quarkContract34(const PSpinMatrixJIT<T1,4>& s1, const PSpinMatrixJIT<T2,4>& s2)
   return d;
 }
 
+
+#if 0
+//! dest  = random  
+template<class T, int N, class T1, class T2, class T3>
+inline void
+fill_random(PSpinMatrixJIT<T,N> d, T1 seed, T2 skewed_seed, const T3& seed_mult)
+{
+  // The skewed_seed is the starting seed to use
+#if 1
+  for(int i=0; i < N; ++i)
+    for(int j=0; j < N; ++j)
+      fill_random(d.elem(i,j), seed, skewed_seed, seed_mult);
+#else
+  JitForLoop i(0,N);
+  {
+    JitForLoop j(0,N);
+    {
+      fill_random(d.getJitElem(i.index(),j.index()), seed, skewed_seed, seed_mult);
+    }
+    j.end();
+  }
+  i.end();
+#endif  
+}
+#endif
+
+
 /*! @} */   // end of group primspinmatrix
 
 } // namespace QDP

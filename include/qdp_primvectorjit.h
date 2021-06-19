@@ -654,7 +654,7 @@ gather_sites(PVectorJIT<T,N,C>& d,
 //! dest  = random  
   template<class T, int N, template<class,int> class C, class T1, class T2, class T3>
 inline void
-fill_random(PVectorJIT<T,N,C>& d, T1& seed, T2& skewed_seed, const T3& seed_mult)
+fill_random(PVectorJIT<T,N,C>& d, T1 seed, T2 skewed_seed, const T3& seed_mult)
 {
   // Loop over rows the slowest
   for(int i=0; i < N; ++i)

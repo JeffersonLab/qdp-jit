@@ -2407,7 +2407,7 @@ void zero_rep(RComplexJIT<T> dest)
 //! dest  = random  
 template<class T, class T1, class T2, class T3>
 inline void
-fill_random(RScalarJIT<T> d, T1& seed, T2& skewed_seed, const T3& seed_mult)
+fill_random(RScalarJIT<T> d, T1 seed, T2 skewed_seed, const T3& seed_mult)
 {
   fill_random(d.elem(), seed, skewed_seed, seed_mult);
 }
@@ -2415,7 +2415,7 @@ fill_random(RScalarJIT<T> d, T1& seed, T2& skewed_seed, const T3& seed_mult)
 
 template<class T, class T1, class T2, class T3>
 inline void
-fill_random(RComplexJIT<T> d, T1& seed, T2& skewed_seed, const T3& seed_mult)
+fill_random(RComplexJIT<T> d, T1 seed, T2 skewed_seed, const T3& seed_mult)
 {
   fill_random(d.real(), seed, skewed_seed, seed_mult);
   fill_random(d.imag(), seed, skewed_seed, seed_mult);
