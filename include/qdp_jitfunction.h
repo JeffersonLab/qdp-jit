@@ -403,85 +403,70 @@ struct ForEach<BinaryNode<OpMultiply, A, B>, ViewSpinLeaf, CTag >
   Type_t apply(const BinaryNode<OpMultiply, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
   {
     QDPIO::cout << "mul(matrix,matrix) " << EvalToSpinMatrix<A>::value << std::endl;
-    
-    print_type<TypeA_t>();
-    print_type<TypeB_t>();
-    print_type<Type_t>();
 
     JitStackArray< Type_t , 1 > stack;
     zero_rep( stack.elemJITint(0) );
 
-    JitForLoop loop(0,4);
+    JitForLoop index_k(0,4);
     {
-      ViewSpinLeaf f_left(f);
-      ViewSpinLeaf f_right(f);
-    
-      f_left. loops[1] = loop;
-      f_right.loops[0] = loop;
-
       stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), f_left, c),
-		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), f_right, c),
+	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first() , index_k ) , c),
+		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , index_k , f.index_second() ) , c),
 		expr.operation(), c);
     }
-    loop.end();
-    
+    index_k.end();
     return stack.elemREGint(0);
   }
-
 };
 
-#if 0
-template<class Op, class A, class B, class CTag>
-struct ForEach<BinaryNode<Op, A, B>, ViewSpinLeaf, CTag , enable_if_t< EvalToSpinMatrix<A>::value > >
+
+
+
+template<class A,class B>
+struct Combine2<PColorMatrixREG<A,3>, PColorMatrixREG<B,3>, FnQuarkContract13, OpCombine>
+{
+  typedef typename BinaryReturn<PColorMatrixREG<A,3>, PColorMatrixREG<B,3>, FnQuarkContract13>::Type_t Type_t;
+  inline static
+  Type_t combine(const PColorMatrixREG<A,3>& a, const PColorMatrixREG<B,3>& b, const FnQuarkContract13& op, OpCombine)
+  {
+    return quarkContractXX(a, b);
+  }
+};
+
+
+
+
+template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
+struct ForEach<BinaryNode<FnQuarkContract13, A, B>, ViewSpinLeaf, CTag >
 {
   typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
   typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
-  typedef typename Combine2<TypeA_t, TypeB_t, Op, CTag>::Type_t Type_t;
+  typedef typename Combine2<TypeA_t, TypeB_t, FnQuarkContract13, CTag>::Type_t Type_t;
 
   inline static
-  Type_t apply(const BinaryNode<OpMultiply, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
+  Type_t apply(const BinaryNode<FnQuarkContract13, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
   {
-    QDPIO::cout << "mul(matrix,matrix) " << EvalToSpinMatrix<A>::value << std::endl;
+    QDPIO::cout << "quarkContract13(prop,prop) " << EvalToSpinMatrix<A>::value << std::endl;
     
-    print_type<TypeA_t>();
-    print_type<TypeB_t>();
-    print_type<Type_t>();
-
     JitStackArray< Type_t , 1 > stack;
-    zero_rep( stack.elemJIT(0) );
+    zero_rep( stack.elemJITint(0) );
 
-    JitForLoop loop(0,4);
+    // f=(i,j)
+    // (A o B)^{i,j} = A^{k,i} o B^{k,j}
+      
+    JitForLoop index_k(0,4);
     {
-      ViewSpinLeaf f_left(f);
-      ViewSpinLeaf f_right(f);
-    
-      f_left. loops[1] = loop;
-      f_right.loops[0] = loop;
-
-      stack.elemJIT(0) += Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), f_left, c),
-		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), f_right, c),
+      stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnQuarkContract13, CTag>::
+	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , index_k , f.index_first() ) , c),
+		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , index_k , f.index_second() ) , c),
 		expr.operation(), c);
     }
-    loop.end();
-    
-    return stack.elemREG(0);
+    index_k.end();
+    return stack.elemREGint(0);
   }
-
-  
-  inline static
-  Type_t apply(const BinaryNode<Op, A, B> &expr, const ViewSpinLeaf &f,
-	       const CTag &c)
-  {
-    return Combine2<TypeA_t, TypeB_t, Op, CTag>::
-      combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), f, c),
-              ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), f, c),
-	      expr.operation(), c);
-  }
-
 };
-#endif
+
+
 
 
 
@@ -724,7 +709,8 @@ function_build(JitFunction& function, const DynKey& key, OLattice<T>& dest, cons
 	  View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
 	  print_type<View_t>();
-	  
+
+
 	  llvm::Value * r_th_count     = llvm_derefParam( p_th_count );
 	  llvm::Value * r_start        = llvm_derefParam( p_start );
 
@@ -748,7 +734,7 @@ function_build(JitFunction& function, const DynKey& key, OLattice<T>& dest, cons
 
 	  ViewSpinLeaf viewSpin( JitDeviceLayout::Coalesced , r_idx );
 	  viewSpin.loops = jitCreateLoopsLeaf.loops;
-	    
+
 	  //stack.elemJIT(0) = forEach( rhs_view , viewSpin , OpCombine() );
 	  op_jit( viewSpinJit( dest_jit , viewSpin ) , forEach( rhs_view , viewSpin , OpCombine() ) );
  

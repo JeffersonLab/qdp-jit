@@ -38,8 +38,12 @@ struct ViewSpinLeaf
   llvm::Value * index_m;
   mutable std::vector< JitForLoop > loops;
   ViewSpinLeaf( JitDeviceLayout layout , llvm::Value * index  ) : layout_m(layout), index_m(index) {}
+  ViewSpinLeaf( const ViewSpinLeaf& rhs, JitForLoop l1 )                 : layout_m(rhs.layout_m), index_m(rhs.index_m), loops({l1}) {}
+  ViewSpinLeaf( const ViewSpinLeaf& rhs, JitForLoop l1 , JitForLoop l2 ) : layout_m(rhs.layout_m), index_m(rhs.index_m), loops({l1,l2}) {}
   JitDeviceLayout getLayout() const { return layout_m; }
   llvm::Value    *getIndex() const  { return index_m; }
+  JitForLoop index_first() const { return loops.at(0); }
+  JitForLoop index_second() const { return loops.at(1); }
 };
 
 
