@@ -287,7 +287,14 @@ namespace QDP {
 #if 1
     d = seedToFloat( sk ).elem().elem().elem();
 
-    seed        = se * seed_mult;
+    llvm::Value* r_idx_thread = llvm_thread_idx();
+
+    JitIf save( llvm_eq( r_idx_thread , llvm_create_value(0) ) );
+    {
+      seed        = se * seed_mult;
+    }
+    save.end();
+
     skewed_seed = sk * seed_mult;
 #else
     d = seedToFloat( skewed_seed ).elem().elem().elem();

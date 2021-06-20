@@ -1220,7 +1220,6 @@ function_random_build( JitFunction& function, OLattice<T>& dest , Seed& seed_tmp
   llvm::Value * r_idx = llvm_add( r_lo , r_idx_thread );
 
   PSeedREG seed_reg;
-  //PSeedREG skewed_seed_reg;
   PSeedREG ran_mult_n_reg;
   PSeedREG lattice_ran_mult_reg;
 
@@ -1232,14 +1231,11 @@ function_random_build( JitFunction& function, OLattice<T>& dest , Seed& seed_tmp
 
   ran_mult_n_reg.setup( ran_mult_n_jit.elem() );
 
-  //fill_random( dest_jit.elem(JitDeviceLayout::Coalesced,r_idx) , seed_reg , skewed_seed_reg , ran_mult_n_reg );
   fill_random( dest_jit.elem(JitDeviceLayout::Coalesced,r_idx) , ran_seed_jit.elem() , skewedSeed_jit.elem( JitDeviceLayout::Coalesced , r_idx ) , ran_mult_n_reg );
-
-  llvm::Value * r_save = llvm_eq( r_idx_thread , llvm_create_value(0) );
 
   PSeedREG tmp;                     //
   tmp.setup( ran_seed_jit.elem() ); //
-  JitIf save(r_save);
+  JitIf save( llvm_eq( r_idx_thread , llvm_create_value(0) ) );
   {
     seed_tmp_jit.elem() = tmp;      // seed_reg
   }
