@@ -276,12 +276,32 @@ namespace QDP {
   
   template<class T, class T1, class T2, class T3>
   inline void
-  fill_random(WordJIT<T> d, T1& seed, T2& skewed_seed, const T3& seed_mult)
+  fill_random(WordJIT<T> d, T1 seed, T2 skewed_seed, const T3& seed_mult)
   {
+    typedef typename REGType<typename BASEType< T2 >::Type_t >::Type_t T2REG;
+    typedef typename REGType<typename BASEType< T1 >::Type_t >::Type_t T1REG;
+    T2REG sk;
+    T1REG se;
+    sk.setup(skewed_seed);
+    se.setup(seed);
+#if 1
+    d = seedToFloat( sk ).elem().elem().elem();
+
+    llvm::Value* r_idx_thread = llvm_thread_idx();
+
+    JitIf save( llvm_eq( r_idx_thread , llvm_create_value(0) ) );
+    {
+      seed        = se * seed_mult;
+    }
+    save.end();
+
+    skewed_seed = sk * seed_mult;
+#else
     d = seedToFloat( skewed_seed ).elem().elem().elem();
 
-    seed        = seed        * seed_mult;
-    skewed_seed = skewed_seed * seed_mult;
+    seed        = se * seed_mult;
+    skewed_seed = sk * seed_mult;
+#endif
   }
 
 

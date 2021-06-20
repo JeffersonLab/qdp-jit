@@ -1543,49 +1543,6 @@ gather_sites(PMatrix<T,N,C>& d,
 }
 
 
-//! dest  = random  
-template<class T, int N, template<class,int> class C, class T1, class T2>
-inline void
-fill_random(PMatrix<T,N,C>& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
-{
-  // The skewed_seed is the starting seed to use
-  for(int i=0; i < N; ++i)
-    for(int j=0; j < N; ++j)
-      fill_random(d.elem(i,j), seed, skewed_seed, seed_mult);
-}
-
-//! dest  = gaussian
-template<class T, int N, template<class,int> class C>
-inline void
-fill_gaussian(PMatrix<T,N,C>& d, PMatrix<T,N,C>& r1, PMatrix<T,N,C>& r2)
-{
-  for(int i=0; i < N; ++i)
-    for(int j=0; j < N; ++j)
-      fill_gaussian(d.elem(i,j), r1.elem(i,j), r2.elem(i,j));
-}
-
-
-
-#if 0
-// Global sum over site indices only
-template<class T, int N, template<class,int> class C>
-struct UnaryReturn<PMatrix<T,N,C>, FnSum> {
-  typedef C<typename UnaryReturn<T, FnSum>::Type_t, N>  Type_t;
-};
-
-template<class T, int N, template<class,int> class C>
-inline typename UnaryReturn<PMatrix<T,N,C>, FnSum>::Type_t
-sum(const PMatrix<T,N,C>& s1)
-{
-  typename UnaryReturn<PMatrix<T,N,C>, FnSum>::Type_t  d;
-
-  for(int i=0; i < N; ++i)
-    for(int j=0; j < N; ++j)
-      d.elem(i,j) = sum(s1.elem(i,j));
-
-  return d;
-}
-#endif
 
 
 // InnerProduct (norm-seq) global sum = sum(tr(adj(s1)*s1))

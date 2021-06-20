@@ -204,11 +204,13 @@ namespace QDP {
     static JitFunction function;
 
     Seed seed_tmp;
-
+    LatticeSeed skewedSeed;
+    //zero_rep(skewedSeed);
+    
     if (function.empty())
-      function_random_build(function, d , seed_tmp );
+      function_random_build(function, d , seed_tmp , skewedSeed );
 
-    function_random_exec(function, d, s , seed_tmp );
+    function_random_exec(function, d, s , seed_tmp , skewedSeed );
 
     RNG::get_RNG_Internals()->ran_seed = seed_tmp;
 
