@@ -19,22 +19,24 @@ namespace QDP
   //! dest  = random
   template<class T1, class T2>
   inline void
-  fill_random(float& d, T1 seed, T2 skewed_seed, const T1& seed_mult);
+  fill_random(float& d, T1& seed, T2& skewed_seed, const T1& seed_mult);
 
   //! dest  = random
   template<class T1, class T2>
   inline void
-  fill_random(double& d, T1 seed, T2 skewed_seed, const T1& seed_mult);
+  fill_random(double& d, T1& seed, T2& skewed_seed, const T1& seed_mult);
 
   //! dest  = random
   template<class T1, class T2, int N>
   inline void
-  fill_random(float* d, T1 seed, T2 skewed_seed, const T1& seed_mult);
+  fill_random(float* d, T1& seed, T2& skewed_seed, const T1& seed_mult);
 
   //! dest  = random
   template<class T1, class T2, int N>
   inline void
-  fill_random(double* d, T1 seed, T2 skewed_seed, const T1& seed_mult);
+  fill_random(double* d, T1& seed, T2& skewed_seed, const T1& seed_mult);
+
+
 
 
   template<class T> class FirstWord;

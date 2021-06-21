@@ -1217,7 +1217,7 @@ function_random_build( JitFunction& function, OLattice<T>& dest , Seed& seed_tmp
 
   ran_mult_n_reg.setup( ran_mult_n_jit.elem() );
 
-  fill_random( dest_jit.elem(JitDeviceLayout::Coalesced,r_idx) , ran_seed_jit.elem() , skewedSeed_jit.elem( JitDeviceLayout::Coalesced , r_idx ) , ran_mult_n_reg );
+  fill_random_jit( dest_jit.elem(JitDeviceLayout::Coalesced,r_idx) , ran_seed_jit.elem() , skewedSeed_jit.elem( JitDeviceLayout::Coalesced , r_idx ) , ran_mult_n_reg );
 
   PSeedREG tmp;                     //
   tmp.setup( ran_seed_jit.elem() ); //

@@ -1793,11 +1793,11 @@ chiralProjectMinus(const PSpinVectorJIT<T,4>& s1)
 //! dest  = random  
 template<class T, int N,  class T1, class T2, class T3>
 inline void
-fill_random(PSpinVectorJIT<T,N> d, T1 seed, T2 skewed_seed, const T3& seed_mult)
+fill_random_jit(PSpinVectorJIT<T,N> d, T1 seed, T2 skewed_seed, const T3& seed_mult)
 {
   // Loop over rows the slowest
   for(int i=0; i < N; ++i)
-    fill_random(d.elem(i), seed, skewed_seed, seed_mult);
+    fill_random_jit(d.elem(i), seed, skewed_seed, seed_mult);
 }
 
 //! dest  = gaussian

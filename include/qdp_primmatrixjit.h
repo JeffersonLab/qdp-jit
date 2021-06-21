@@ -1492,33 +1492,23 @@ gather_sites(PMatrixJIT<T,N,C> d,
 }
 
 
-// This is deativated as random(LatProp) had problems with repeated invocations
-// Using jit loops on spin but not on color level solved the problem. That's
-// why fill_random is active implemented on general matrix level.
-#if 1
+
 //! dest  = random  
 template<class T, int N, template<class,int> class C, class T1, class T2, class T3>
 inline void
-fill_random(PMatrixJIT<T,N,C> d, T1 seed, T2 skewed_seed, const T3& seed_mult)
+fill_random_jit(PMatrixJIT<T,N,C> d, T1 seed, T2 skewed_seed, const T3& seed_mult)
 {
-  // The skewed_seed is the starting seed to use
-#if 0
-  for(int i=0; i < N; ++i)
-    for(int j=0; j < N; ++j)
-      fill_random(d.elem(i,j), seed, skewed_seed, seed_mult);
-#else
   JitForLoop i(0,N);
   {
     JitForLoop j(0,N);
     {
-      fill_random(d.getJitElem(i.index(),j.index()), seed, skewed_seed, seed_mult);
+      fill_random_jit(d.getJitElem(i.index(),j.index()), seed, skewed_seed, seed_mult);
     }
     j.end();
   }
   i.end();
-#endif  
 }
-#endif
+
 
 
 

@@ -276,7 +276,7 @@ namespace QDP {
   
   template<class T, class T1, class T2, class T3>
   inline void
-  fill_random(WordJIT<T> d, T1 seed, T2 skewed_seed, const T3& seed_mult)
+  fill_random_jit(WordJIT<T> d, T1 seed, T2 skewed_seed, const T3& seed_mult)
   {
     typedef typename REGType<typename BASEType< T2 >::Type_t >::Type_t T2REG;
     typedef typename REGType<typename BASEType< T1 >::Type_t >::Type_t T1REG;

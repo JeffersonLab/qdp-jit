@@ -2493,9 +2493,9 @@ void zero_rep(RComplex<T>& dest)
 
 
 //! dest  = random  
-template<class T, class T1, class T2>
+template<class T>
 inline void
-fill_random(RComplex<T>& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
+fill_random(RComplex<T>& d, Seed& seed, Seed& skewed_seed, const Seed& seed_mult)
 {
   fill_random(d.real(), seed, skewed_seed, seed_mult);
   fill_random(d.imag(), seed, skewed_seed, seed_mult);

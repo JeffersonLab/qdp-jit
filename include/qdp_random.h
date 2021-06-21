@@ -72,7 +72,43 @@ namespace RNG
   void sranf(float* d, int N, Seed& seed, ILatticeSeed&, const Seed&);
 }
 
-  
+//! dest  = random
+template<class T1, class T2>
+inline void
+fill_random( float& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
+{
+  const_cast<float&>(d) = float(RNG::sranf(seed, skewed_seed, seed_mult));
+}
+
+//! dest  = random
+template<class T1, class T2>
+inline void
+fill_random( double& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
+{
+  const_cast<double&>(d) = double(RNG::sranf(seed, skewed_seed, seed_mult));
+}
+
+
+//! dest  = random
+template<class T1, class T2, int N>
+inline void
+fill_random(float* d, T1& seed, T2& skewed_seed, const T1& seed_mult)
+{
+  RNG::sranf(d, N, seed, skewed_seed, seed_mult);
+}
+
+
+//! dest  = random
+template<class T1, class T2, int N>
+inline void
+fill_random(double* d, T1& seed, T2& skewed_seed, const T1& seed_mult)
+{
+  float dd[N];
+  RNG::sranf(dd, N, seed, skewed_seed, seed_mult);
+  for(int i=0; i < N; ++i)
+    d[i] = float(dd[i]);
+}
+
 } // namespace QDP
 
 #endif

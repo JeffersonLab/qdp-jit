@@ -241,6 +241,24 @@ struct LeafFunctor<OScalarJIT< PScalarJIT<T> >, ViewSpinLeaf>
 };
 
 
+template<class T,int N>
+struct LeafFunctor<OScalarJIT<PSpinMatrixJIT<T,N> >, ViewSpinLeaf>
+{
+  typedef typename REGType<T>::Type_t Type_t;
+  inline static
+  Type_t apply(const OScalarJIT<PSpinMatrixJIT<T,N> > & s, const ViewSpinLeaf& v)
+  {
+    if (v.loops.size() != 2)
+      {
+	QDPIO::cout << "at OSca<spinmat> leaf but not 2 indices provided" << std::endl;
+	QDP_abort(1);
+      }
+
+    QDPIO::cout << "leaf OSca<spinmat> " << std::endl;
+    
+    return s.elem().getRegElem( v.loops[ 0 ].index() , v.loops[ 1 ].index() );
+  }
+};
 
 
 

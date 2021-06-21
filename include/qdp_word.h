@@ -1034,9 +1034,9 @@ peekSpin(const Word<T>& l, int row, int col)
 
 
 
-template<class T, class T1, class T2>
+template<class T>
 inline void
-fill_random(Word<T>& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
+fill_random(Word<T>& d, Seed& seed, Seed& skewed_seed, const Seed& seed_mult)
 {
   fill_random(d.elem(), seed, skewed_seed, seed_mult);
 }
