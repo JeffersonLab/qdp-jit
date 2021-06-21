@@ -196,7 +196,7 @@ struct LeafFunctor<OLatticeJIT<PSpinMatrixJIT<T,N> >, ViewSpinLeaf>
   {
     if (v.loops.size() != 2)
       {
-	QDPIO::cout << "at spinmat leaf but not 2 indices provided" << std::endl;
+	QDPIO::cout << "at spinmat leaf but not 2 indices provided, instead = " << v.loops.size() << std::endl;
 	QDP_abort(1);
       }
 
