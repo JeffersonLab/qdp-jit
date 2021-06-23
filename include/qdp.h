@@ -195,7 +195,6 @@ namespace QDP {
 #include "qdp_realityjit.h"
 #include "qdp_realityreg.h"
 #include "qdp_reality.h"
-#include "qdp_inner.h"
 #include "qdp_primitive.h"
 #include "qdp_outerjit.h"
 #include "qdp_outersubjit.h"

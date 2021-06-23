@@ -93,7 +93,6 @@ set( QDP_HDRS
   qdp_forward.h
   qdp_globalfuncs.h
   qdp_globalfuncs_subtype.h
-  qdp_inner.h
   qdp_init.h
   qdp_io.h
   qdp_stdio.h
@@ -110,7 +109,6 @@ set( QDP_HDRS
   qdp_precision.h
   qdp_primcolormat.h
   qdp_primcolorvec.h
-  qdp_primgamma.h
   qdp_primitive.h
   qdp_primmatrix.h
   qdp_primscalar.h

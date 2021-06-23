@@ -1115,49 +1115,6 @@ struct BinaryReturn<OScalar<T1>, OScalar<T2>, FnLocalInnerProductReal > {
 };
 
 
-// Gamma algebra
-template<int N, int m, class T2, class OpGammaConstMultiply>
-struct BinaryReturn<GammaConst<N,m>, OScalar<T2>, OpGammaConstMultiply> {
-  typedef OScalar<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, int m, class OpMultiplyGammaConst>
-struct BinaryReturn<OScalar<T2>, GammaConst<N,m>, OpMultiplyGammaConst> {
-  typedef OScalar<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpGammaTypeMultiply>
-struct BinaryReturn<GammaType<N>, OScalar<T2>, OpGammaTypeMultiply> {
-  typedef OScalar<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpMultiplyGammaType>
-struct BinaryReturn<OScalar<T2>, GammaType<N>, OpMultiplyGammaType> {
-  typedef OScalar<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-// Gamma algebra
-template<int N, int m, class T2, class OpGammaConstDPMultiply>
-struct BinaryReturn<GammaConstDP<N,m>, OScalar<T2>, OpGammaConstDPMultiply> {
-  typedef OScalar<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, int m, class OpMultiplyGammaConstDP>
-struct BinaryReturn<OScalar<T2>, GammaConstDP<N,m>, OpMultiplyGammaConstDP> {
-  typedef OScalar<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpGammaTypeDPMultiply>
-struct BinaryReturn<GammaTypeDP<N>, OScalar<T2>, OpGammaTypeDPMultiply> {
-  typedef OScalar<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpMultiplyGammaTypeDP>
-struct BinaryReturn<OScalar<T2>, GammaTypeDP<N>, OpMultiplyGammaTypeDP> {
-  typedef OScalar<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-
 
 // Local operations
 template<class T>
@@ -1348,65 +1305,12 @@ struct BinaryReturn<OLattice<T1>, OLattice<T2>, FnLocalInnerProductReal > {
 };
 
 
-// Gamma algebra
-template<int N, int m, class T2, class OpGammaConstMultiply>
-struct BinaryReturn<GammaConst<N,m>, OLattice<T2>, OpGammaConstMultiply> {
-  typedef OLattice<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, int m, class OpMultiplyGammaConst>
-struct BinaryReturn<OLattice<T2>, GammaConst<N,m>, OpMultiplyGammaConst> {
-  typedef OLattice<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpGammaTypeMultiply>
-struct BinaryReturn<GammaType<N>, OLattice<T2>, OpGammaTypeMultiply> {
-  typedef OLattice<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpMultiplyGammaType>
-struct BinaryReturn<OLattice<T2>, GammaType<N>, OpMultiplyGammaType> {
-  typedef OLattice<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-
-// Gamma algebra
-template<int N, int m, class T2, class OpGammaConstDPMultiply>
-struct BinaryReturn<GammaConstDP<N,m>, OLattice<T2>, OpGammaConstDPMultiply> {
-  typedef OLattice<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, int m, class OpMultiplyGammaConstDP>
-struct BinaryReturn<OLattice<T2>, GammaConstDP<N,m>, OpMultiplyGammaConstDP> {
-  typedef OLattice<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpGammaTypeDPMultiply>
-struct BinaryReturn<GammaTypeDP<N>, OLattice<T2>, OpGammaTypeDPMultiply> {
-  typedef OLattice<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpMultiplyGammaTypeDP>
-struct BinaryReturn<OLattice<T2>, GammaTypeDP<N>, OpMultiplyGammaTypeDP> {
-  typedef OLattice<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-
-
 // Local operations
 template<class T>
 struct UnaryReturn<OLattice<T>, OpNot > {
   typedef OLattice<typename UnaryReturn<T, OpNot>::Type_t>  Type_t;
 };
 
-
-#if 0
-template<class T1, class T2>
-struct UnaryReturn<OLattice<T2>, OpCast<T1> > {
-  typedef OLattice<typename UnaryReturn<T, OpCast>::Type_t>  Type_t;
-//  typedef T1 Type_t;
-};
-#endif
 
 template<class T1, class T2 >
 struct BinaryReturn<OLattice<T1>, OLattice<T2>, OpLT > {

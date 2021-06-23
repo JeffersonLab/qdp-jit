@@ -1114,25 +1114,7 @@ pokeSpin(PScalarJIT<T1>& l, const PScalarJIT<T2>& r, int row, int col)
 
 
 
-
 #if 0
-//-----------------------------------------------------------------------------
-//! PScalarJIT = Gamma<N,m> * PScalarJIT
-template<class T2, int N, int m>
-inline typename BinaryReturn<GammaConst<N,m>, PScalarJIT<T2>, OpGammaConstMultiply>::Type_t
-operator*(const GammaConst<N,m>& l, const PScalarJIT<T2>& r)
-{
-  return l * r.elem();
-}
-
-//! PScalarJIT = PScalarJIT * Gamma<N,m>
-template<class T2, int N, int m>
-inline typename BinaryReturn<PScalarJIT<T2>, GammaConst<N,m>, OpGammaConstMultiply>::Type_t
-operator*(const PScalarJIT<T2>& l, const GammaConst<N,m>& r)
-{
-  return l.elem() * r;
-}
-
 //-----------------------------------------------------------------------------
 //! PScalarJIT = SpinProject(PScalarJIT)
 template<class T>

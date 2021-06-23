@@ -300,7 +300,6 @@ struct HasProp< UnaryNode<Op,A> >
   constexpr static bool value = HasProp<A>::value;
 };
 
-
 template<>
 struct HasProp< Reference<QDPType<PSpinMatrix<PColorMatrix<RComplex<Word<float> >, Nc >, Ns >, OLattice<PSpinMatrix<PColorMatrix<RComplex<Word<float> >, Nc >, Ns > > > > >
 {
@@ -369,24 +368,6 @@ struct EvalToSpinMatrix
 
 //enable_if_t< ! EvalToSpinMatrix<A>::value >
 
-#if 0
-template<class A, class B, class CTag>
-struct ForEach<BinaryNode<OpMultiply, A, B>, ViewSpinLeaf, CTag , enable_if_t< ! EvalToSpinMatrix<A>::value > >
-{
-  typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-  typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
-  typedef typename Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::Type_t Type_t;
-  inline static
-  Type_t apply(const BinaryNode<OpMultiply, A, B> &expr, const ViewSpinLeaf &f,
-	       const CTag &c)
-  {
-    return Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::
-      combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), f, c),
-              ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), f, c),
-	      expr.operation(), c);
-  }
-};
-#endif
 
 template<typename T>
 concept ConceptEvalToSpinMatrix = EvalToSpinMatrix<T>::value;
@@ -623,40 +604,8 @@ struct ForEach<BinaryNode<FnTraceSpinMultiply, A, B>, ViewSpinLeaf, CTag >
 };
 
 
-FnTraceSpinOuterProduct
 
-template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
-struct ForEach<BinaryNode<FnTraceSpinMultiply, A, B>, ViewSpinLeaf, CTag >
-{
-  typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-  typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
-  typedef typename Combine2<TypeA_t, TypeB_t, FnTraceSpinMultiply, CTag>::Type_t Type_t;
 
-  inline static
-  Type_t apply(const BinaryNode<FnTraceSpinMultiply, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c)
-  {
-    QDPIO::cout << "traceSpinMultiply(spinmat,spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
-    
-    JitStackArray< Type_t , 1 > stack;
-    zero_rep( stack.elemJITint(0) );
-
-    // tr(AB) = A^ik B^ki
-      
-    JitForLoop index_i(0,4);
-    {
-      JitForLoop index_k(0,4);
-      {
-	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , index_i , index_k ) , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , index_k , index_i ) , c),
-		  OpMultiply(), c);
-      }
-      index_k.end();
-    }
-    index_i.end();
-    return stack.elemREGint(0);
-  }
-};
 
 
 template<ConceptEvalToSpinMatrix A, class CTag>
@@ -766,6 +715,25 @@ struct ForEach<UnaryNode<FnTransposeSpin, A>, ViewSpinLeaf, CTag >
 };
 
 
+
+
+template<class A,class CTag>
+struct ForEach<UnaryNode<FnPeekSpinMatrixREG, A>, ViewSpinLeaf, CTag >
+{
+  typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+  typedef typename Combine1<TypeA_t, FnPeekSpinMatrixREG, CTag>::Type_t Type_t;
+
+  inline static
+  Type_t apply(const UnaryNode<FnPeekSpinMatrixREG, A> &expr, const ViewSpinLeaf &f, const CTag &c)
+  {
+    QDPIO::cout << "peekSpinMatrix(spinmat) " << std::endl;
+    print_type<TypeA_t>();
+    
+    return expr.child().
+      elem( f.getLayout() , f.getIndex() ).
+      getRegElem( expr.operation().get_row_jit() , expr.operation().get_col_jit() );
+  }
+};
 
 
 
@@ -903,6 +871,8 @@ function_build(JitFunction& function, const DynKey& key, OLattice<T>& dest, cons
 
 	  QDPIO::cout << "using vanilla route" << std::endl;
 
+	  print_type<View_t>();
+	  
 	  op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ), 
 		  forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , r_idx ), OpCombine()));
 	}
