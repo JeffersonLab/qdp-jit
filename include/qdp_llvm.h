@@ -12,11 +12,14 @@
 
 using namespace std;
 
-class JitFunction;
-class DynKey;
-class ArrayBiDirectionalMap;
 
 #define QDP_CONST
+
+namespace QDP {
+  class JitFunction;
+  class DynKey;
+  class ArrayBiDirectionalMap;
+}
 
 #include "qdp_init.h"
 #include "qdp_multi.h"
@@ -40,6 +43,8 @@ namespace llvm
   struct Type;
   struct PHINode;
   struct Function;
+  struct SwitchInst;
+  //struct ConstantInt;
 }
 
 namespace QDP {
@@ -118,6 +123,10 @@ namespace QDP {
   llvm::Value* llvm_cast( llvm::Type *dest_type , llvm::Value *src );
 
 
+  llvm::SwitchInst* llvm_switch_create( llvm::Value* val , llvm::BasicBlock* bb_default );
+  void llvm_switch_add_case( llvm::SwitchInst * SI , int val , llvm::BasicBlock* bb );
+  
+
   llvm::Value* llvm_shl( llvm::Value* lhs , llvm::Value* rhs );
   llvm::Value* llvm_shr( llvm::Value* lhs , llvm::Value* rhs );
   llvm::Value* llvm_rem( llvm::Value* lhs , llvm::Value* rhs );
@@ -177,6 +186,8 @@ namespace QDP {
   llvm::BasicBlock * llvm_get_insert_point();
   void llvm_exit();
   llvm::BasicBlock * llvm_cond_exit( llvm::Value * cond );
+
+  //llvm::ConstantInt * llvm_create_const_int(int i);
 
   llvm::Value * llvm_create_value( double v );
   llvm::Value * llvm_create_value(int v );

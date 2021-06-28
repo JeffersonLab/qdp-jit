@@ -294,6 +294,24 @@ struct Strip<PScalar<T> >
 
 
 
+template<class T>
+struct IsPokeSpin
+{
+  constexpr static bool value = false;
+};
+
+template<>
+struct IsPokeSpin<FnPokeSpinMatrix>
+{
+  constexpr static bool value = true;
+};
+
+template<>
+struct IsPokeSpin<FnPokeSpinVector>
+{
+  constexpr static bool value = true;
+};
+
 
 
 template<class T>
@@ -405,9 +423,13 @@ struct ForEach<BinaryNode<OpMultiply, A, B>, ViewSpinLeaf, CTag >
   {
     QDPIO::cout << "mul(spinmat,spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
 
+    print_type<A>();
+    print_type<TypeA_t>();
+    print_type<Type_t>();
+    
     JitStackArray< Type_t , 1 > stack;
     zero_rep( stack.elemJITint(0) );
-
+    
     JitForLoop index_k(0,4);
     {
       stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::
@@ -1100,6 +1122,7 @@ struct ForEach<UnaryNode<FnTransposeSpin, A>, ViewSpinLeaf, CTag >
 
 
 
+//template<ConceptEvalToSpinMatrix A,class CTag>
 template<class A,class CTag>
 struct ForEach<UnaryNode<FnPeekSpinMatrixREG, A>, ViewSpinLeaf, CTag >
 {
@@ -1206,6 +1229,7 @@ T viewSpinJit( OLatticeJIT< PScalarJIT<T> >& dest , const ViewSpinLeaf& v )
   
 template<class T, class T1, class Op, class RHS>
 typename std::enable_if_t< ! HasProp<RHS>::value >
+//typename std::enable_if_t< ( ! HasProp<RHS>::value ) || IsPokeSpin<Op>::value >
 function_build(JitFunction& function, const DynKey& key, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
 {
   std::ostringstream expr;
@@ -1321,9 +1345,10 @@ function_build(JitFunction& function, const DynKey& key, OLattice<T>& dest, cons
   jit_get_function( function );
 }
 
-
+#if 1
 template<class T, class T1, class Op, class RHS>
 typename std::enable_if_t< HasProp<RHS>::value >
+//typename std::enable_if_t< !( ( ! HasProp<RHS>::value ) || IsPokeSpin<Op>::value ) >
 function_build(JitFunction& function, const DynKey& key, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
 {
   std::ostringstream expr;
@@ -1465,6 +1490,11 @@ function_build(JitFunction& function, const DynKey& key, OLattice<T>& dest, cons
   
   jit_get_function( function );
 }
+#endif
+
+
+
+
 
 
 

@@ -941,12 +941,22 @@ namespace QDP
     return llvm_load( gep );
   }
 
+  
+  // llvm::ConstantInt * llvm_create_const_int(int i) {
+  //   return llvm::ConstantInt::getSigned( llvm::Type::getIntNTy(TheContext,32) , i );
+  // }
 
-  llvm::SwitchInst * llvm_switch( llvm::Value* val , llvm::BasicBlock* bb_default ) 
+
+  llvm::SwitchInst * llvm_switch_create( llvm::Value* val , llvm::BasicBlock* bb_default ) 
   {
     return builder->CreateSwitch( val , bb_default );
   }
 
+  void llvm_switch_add_case( llvm::SwitchInst * SI , int val , llvm::BasicBlock* bb )
+  {
+    SI->addCase( builder->getInt32(val) , bb );
+  }
+  
 
   llvm::PHINode * llvm_phi( llvm::Type* type, unsigned num )
   {

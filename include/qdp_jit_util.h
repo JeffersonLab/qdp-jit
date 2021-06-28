@@ -55,7 +55,6 @@ namespace QDP {
   public:
     JitIf( llvm::Value* cond )
     {
-      //block_outer = llvm_get_insert_point();
       block_exit  = llvm_new_basic_block();
       block_true  = llvm_new_basic_block();
       block_false = llvm_new_basic_block();
@@ -86,6 +85,45 @@ namespace QDP {
   
 
 
+  class JitSwitch
+  {
+    std::vector<llvm::BasicBlock*> BB;
+    llvm::BasicBlock* BBcont;
+    llvm::SwitchInst *SI;
+
+  public:
+    JitSwitch( llvm::Value* value )
+    {
+      BB.resize(1);
+      BB[0]  = llvm_new_basic_block();
+      BBcont = llvm_new_basic_block();
+      
+      SI = llvm_switch_create(value, BB[0]);
+      llvm_set_insert_point( BBcont );
+    }
+
+    void case_begin( int val )
+    {
+      BB.push_back( llvm_new_basic_block() );
+
+      //SI->addCase( llvm_create_const_int(val) , BB.back() );
+      llvm_switch_add_case( SI , val , BB.back() );
+      
+      llvm_set_insert_point( BB.back() );
+    }
+
+    void case_end()
+    {
+      llvm_branch( BBcont );
+      llvm_set_insert_point( BBcont );
+    }
+
+    void case_default()
+    {
+      llvm_set_insert_point(BB[0]);
+    }
+
+  };
 
 
 

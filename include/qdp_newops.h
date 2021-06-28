@@ -531,6 +531,7 @@ pokeSpin(QDPType<T1,C1> & l, const QDPType<T2,C2>& r, int row, int col)
   return ll;
 }
 
+
 template<class T1,class C1,class T2,class C2>
 inline C1& 
 pokeSpin(QDPType<T1,C1> & l, const QDPExpr<T2,C2>& r, int row, int col)
