@@ -150,6 +150,9 @@ namespace QDP {
   llvm::Module* llvm_get_module();
   llvm::LLVMContext& llvm_get_context();
 
+  llvm::SwitchInst* llvm_switch_create( llvm::Value* val , llvm::BasicBlock* bb_default );
+  void llvm_switch_add_case( llvm::SwitchInst * SI , int val , llvm::BasicBlock* bb );
+
 
   void llvm_backend_init();
   llvm::PHINode * llvm_phi( llvm::Type* type, unsigned num = 0 );

@@ -197,6 +197,15 @@ namespace QDP {
   }
 
   
+  llvm::SwitchInst * llvm_switch_create( llvm::Value* val , llvm::BasicBlock* bb_default ) 
+  {
+    return builder->CreateSwitch( val , bb_default );
+  }
+
+  void llvm_switch_add_case( llvm::SwitchInst * SI , int val , llvm::BasicBlock* bb )
+  {
+    SI->addCase( builder->getInt32(val) , bb );
+  }
 
 
 
