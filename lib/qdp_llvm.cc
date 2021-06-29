@@ -1589,6 +1589,9 @@ namespace QDP {
 	    QDPIO::cout << "link modules ...\n";
 	  }
 	std::string ErrorMsg;
+
+	Mod->setDataLayout("");
+	
 	if (llvm::Linker::linkModules( *Mod , std::move( module_libdevice ) )) {  // llvm::Linker::PreserveSource
 	  QDPIO::cerr << "Linking libdevice failed: " << ErrorMsg.c_str() << "\n";
 	  QDP_abort(1);
