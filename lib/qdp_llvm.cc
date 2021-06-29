@@ -873,6 +873,13 @@ namespace QDP
 
     builder.reset( new llvm::IRBuilder<>( TheContext ) );
 
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "setting module data layout\n";
+      }
+    
+    Mod->setDataLayout(TargetMachine->createDataLayout());
+
     vecParamType.clear();
     vecArgument.clear();
     function_created = false;
@@ -1638,6 +1645,9 @@ namespace QDP
 	    QDPIO::cout << "link modules ...\n";
 	  }
 	std::string ErrorMsg;
+
+	Mod->setDataLayout("");
+	
 	if (llvm::Linker::linkModules( *Mod , std::move( module_libdevice ) )) {  // llvm::Linker::PreserveSource
 	  QDPIO::cerr << "Linking libdevice failed: " << ErrorMsg.c_str() << "\n";
 	  QDP_abort(1);
@@ -1758,12 +1768,7 @@ namespace QDP
     }
 #endif
 
-    if (jit_config_get_verbose_output())
-      {
-	QDPIO::cout << "setting module data layout\n";
-      }
-    
-    Mod->setDataLayout(TargetMachine->createDataLayout());
+    // previous location for setting the datalayout
 
     StopWatch swatch(false);
     swatch.start();
