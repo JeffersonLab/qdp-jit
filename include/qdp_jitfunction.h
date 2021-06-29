@@ -596,17 +596,15 @@ struct ForEach<BinaryNode<OpAdjMultiplyAdj, A, B>, ViewSpinLeaf, CTag >
 
 
 template<class A,class B>
-struct Combine2<PColorMatrixREG<A,3>, PColorMatrixREG<B,3>, FnQuarkContract13, OpCombine>
+struct Combine2<PColorMatrixREG<A,3>, PColorMatrixREG<B,3>, FnQuarkContractXX, OpCombine>
 {
-  typedef typename BinaryReturn<PColorMatrixREG<A,3>, PColorMatrixREG<B,3>, FnQuarkContract13>::Type_t Type_t;
+  typedef typename BinaryReturn<PColorMatrixREG<A,3>, PColorMatrixREG<B,3>, FnQuarkContractXX>::Type_t Type_t;
   inline static
-  Type_t combine(const PColorMatrixREG<A,3>& a, const PColorMatrixREG<B,3>& b, const FnQuarkContract13& op, OpCombine)
+  Type_t combine(const PColorMatrixREG<A,3>& a, const PColorMatrixREG<B,3>& b, const FnQuarkContractXX& op, OpCombine)
   {
     return quarkContractXX(a, b);
   }
 };
-
-
 
 
 template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
@@ -614,7 +612,7 @@ struct ForEach<BinaryNode<FnQuarkContract13, A, B>, ViewSpinLeaf, CTag >
 {
   typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
   typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
-  typedef typename Combine2<TypeA_t, TypeB_t, FnQuarkContract13, CTag>::Type_t Type_t;
+  typedef typename Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::Type_t Type_t;
 
   inline static
   Type_t apply(const BinaryNode<FnQuarkContract13, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
@@ -629,15 +627,166 @@ struct ForEach<BinaryNode<FnQuarkContract13, A, B>, ViewSpinLeaf, CTag >
       
     JitForLoop index_k(0,4);
     {
-      stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnQuarkContract13, CTag>::
+      stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
 	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , index_k , f.index_first() ) , c),
 		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , index_k , f.index_second() ) , c),
-		expr.operation(), c);
+		FnQuarkContractXX() , c);
     }
     index_k.end();
     return stack.elemREGint(0);
   }
 };
+
+template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
+struct ForEach<BinaryNode<FnQuarkContract14, A, B>, ViewSpinLeaf, CTag >
+{
+  typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+  typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
+  typedef typename Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::Type_t Type_t;
+
+  inline static
+  Type_t apply(const BinaryNode<FnQuarkContract14, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
+  {
+    QDPIO::cout << "quarkContract14(prop,prop) " << EvalToSpinMatrix<A>::value << std::endl;
+    
+    JitStackArray< Type_t , 1 > stack;
+    zero_rep( stack.elemJITint(0) );
+
+    // f=(i,j)
+    // (A o B)^{i,j} = A^{k,i} o B^{k,j}
+      
+    JitForLoop index_k(0,4);
+    {
+      stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
+	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , index_k , f.index_first() ) , c),
+		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , index_k ) , c),
+		FnQuarkContractXX() , c);
+    }
+    index_k.end();
+    return stack.elemREGint(0);
+  }
+};
+
+template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
+struct ForEach<BinaryNode<FnQuarkContract23, A, B>, ViewSpinLeaf, CTag >
+{
+  typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+  typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
+  typedef typename Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::Type_t Type_t;
+
+  inline static
+  Type_t apply(const BinaryNode<FnQuarkContract23, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
+  {
+    QDPIO::cout << "quarkContract23(prop,prop) " << EvalToSpinMatrix<A>::value << std::endl;
+    
+    JitStackArray< Type_t , 1 > stack;
+    zero_rep( stack.elemJITint(0) );
+
+    // f=(i,j)
+    // (A o B)^{i,j} = A^{k,i} o B^{k,j}
+      
+    JitForLoop index_k(0,4);
+    {
+      stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
+	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first() , index_k ) , c),
+		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , index_k , f.index_second() ) , c),
+		FnQuarkContractXX() , c);
+    }
+    index_k.end();
+    return stack.elemREGint(0);
+  }
+};
+
+template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
+struct ForEach<BinaryNode<FnQuarkContract24, A, B>, ViewSpinLeaf, CTag >
+{
+  typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+  typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
+  typedef typename Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::Type_t Type_t;
+
+  inline static
+  Type_t apply(const BinaryNode<FnQuarkContract24, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
+  {
+    QDPIO::cout << "quarkContract24(prop,prop) " << EvalToSpinMatrix<A>::value << std::endl;
+    
+    JitStackArray< Type_t , 1 > stack;
+    zero_rep( stack.elemJITint(0) );
+
+    // f=(i,j)
+    // (A o B)^{i,j} = A^{k,i} o B^{k,j}
+      
+    JitForLoop index_k(0,4);
+    {
+      stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
+	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first()  , index_k ) , c),
+		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , index_k ) , c),
+		FnQuarkContractXX() , c);
+    }
+    index_k.end();
+    return stack.elemREGint(0);
+  }
+};
+
+template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
+struct ForEach<BinaryNode<FnQuarkContract12, A, B>, ViewSpinLeaf, CTag >
+{
+  typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+  typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
+  typedef typename Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::Type_t Type_t;
+
+  inline static
+  Type_t apply(const BinaryNode<FnQuarkContract12, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
+  {
+    QDPIO::cout << "quarkContract12(prop,prop) " << EvalToSpinMatrix<A>::value << std::endl;
+    
+    JitStackArray< Type_t , 1 > stack;
+    zero_rep( stack.elemJITint(0) );
+
+    // f=(i,j)
+    // (A o B)^{i,j} = A^{k,i} o B^{k,j}
+      
+    JitForLoop index_k(0,4);
+    {
+      stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
+	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , index_k         , index_k          ) , c),
+		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c),
+		FnQuarkContractXX() , c);
+    }
+    index_k.end();
+    return stack.elemREGint(0);
+  }
+};
+
+template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
+struct ForEach<BinaryNode<FnQuarkContract34, A, B>, ViewSpinLeaf, CTag >
+{
+  typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+  typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
+  typedef typename Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::Type_t Type_t;
+
+  inline static
+  Type_t apply(const BinaryNode<FnQuarkContract34, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
+  {
+    QDPIO::cout << "quarkContract34(prop,prop) " << EvalToSpinMatrix<A>::value << std::endl;
+    
+    JitStackArray< Type_t , 1 > stack;
+    zero_rep( stack.elemJITint(0) );
+
+    // f=(i,j)
+    // (A o B)^{i,j} = A^{k,i} o B^{k,j}
+      
+    JitForLoop index_k(0,4);
+    {
+      stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
+	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c),
+		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , index_k         , index_k          ) , c),
+		FnQuarkContractXX() , c);
+    }
+    index_k.end();
+    return stack.elemREGint(0);
+  }
+};
+
 
 
 
