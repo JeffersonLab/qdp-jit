@@ -141,6 +141,19 @@ struct FnPokeSpinMatrixREG
     return const_cast<T1&>(a);
   }
 
+
+  template<class T1R, class T2R, int N1, int N2>
+  inline typename BinaryReturn<PColorMatrixJIT<T1R,N1>, PColorMatrixREG<T2R,N2>, FnPokeSpinMatrixREG>::Type_t
+  operator()(const PColorMatrixJIT<T1R,N1> &a, const PColorMatrixREG<T2R,N2> &b) const
+  {
+    //OpIdentity()(const_cast<PColorMatrixJIT<T1R,N1>&>(a),b);
+    const_cast<PColorMatrixJIT<T1R,N1>&>(a) = b;
+    return const_cast<PColorMatrixJIT<T1R,N1>&>(a);
+  }
+
+  llvm::Value* jitRow() const { return llvm_derefParam(row); }
+  llvm::Value* jitCol() const { return llvm_derefParam(col); }
+
 private:
   ParamRef  row;
   ParamRef  col;

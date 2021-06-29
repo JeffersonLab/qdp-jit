@@ -295,26 +295,6 @@ struct Strip<PScalar<T> >
 
 
 template<class T>
-struct IsPokeSpin
-{
-  constexpr static bool value = false;
-};
-
-template<>
-struct IsPokeSpin<FnPokeSpinMatrix>
-{
-  constexpr static bool value = true;
-};
-
-template<>
-struct IsPokeSpin<FnPokeSpinVector>
-{
-  constexpr static bool value = true;
-};
-
-
-
-template<class T>
 struct HasProp
 {
   constexpr static bool value = false;
@@ -1221,6 +1201,37 @@ T viewSpinJit( OLatticeJIT< PScalarJIT<T> >& dest , const ViewSpinLeaf& v )
 
 
 
+template<class T, class Op>
+void create_dest_loops( std::vector< JitForLoop >& loops , const OLattice<T>& dest , const Op& op )
+{
+  QDPIO::cout << "dest: no spin loops created\n";
+}
+
+template<class T, int N, class Op>
+void create_dest_loops( std::vector< JitForLoop >& loops , const OLattice< PSpinMatrix<T,N> >& dest , const Op& op )
+{
+  QDPIO::cout << "create spin mat\n";
+	
+  QDPIO::cout << "loop(0,N)\n";
+  loops.push_back( JitForLoop(0,N) );
+  
+  QDPIO::cout << "loop(0,N)\n";
+  loops.push_back( JitForLoop(0,N) );
+}
+
+
+template<class T, int N>
+void create_dest_loops( std::vector< JitForLoop >& loops , const OLattice< PSpinMatrix<T,N> >& dest , const FnPokeSpinMatrixREG& op )
+{
+  QDPIO::cout << "pokeSpinMat with two 1-loops\n";
+
+  llvm::Value* row = op.jitRow();
+  llvm::Value* col = op.jitCol();
+  
+  loops.push_back( JitForLoop( row , llvm_add( row , llvm_create_value( 1 ) ) ) );
+  loops.push_back( JitForLoop( col , llvm_add( col , llvm_create_value( 1 ) ) ) );
+}
+
 
 
 
@@ -1430,32 +1441,19 @@ function_build(JitFunction& function, const DynKey& key, OLattice<T>& dest, cons
 	  llvm::Value* r_idx = llvm_add( r_idx_thread , r_start );
 
 	  QDPIO::cout << "using prop route" << std::endl;
+
+	  std::vector< JitForLoop > loops;
+	  create_dest_loops( loops , dest , op_jit );
 	  
-	  JitCreateLoopsLeaf jitCreateLoopsLeaf;
-	  forEach( dest , jitCreateLoopsLeaf , NullCombine() );
-
-	  int dest_rank = jitCreateLoopsLeaf.loops.size();
-	  
-	  // typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, EvalLeaf1, OpCombine>::Type_t RHS_result_t;
-	  // JitStackArray< typename REGType< typename RHS_result_t::Sub_t >::Type_t , 1 > stack;
-
-	  // // zero-out accumulation object on stack
-	  // zero_rep( stack.elemJIT(0) );
-
 	  ViewSpinLeaf viewSpin( JitDeviceLayout::Coalesced , r_idx );
-	  viewSpin.loops = jitCreateLoopsLeaf.loops;
+	  viewSpin.loops = loops;
 
-	  //stack.elemJIT(0) = forEach( rhs_view , viewSpin , OpCombine() );
 	  op_jit( viewSpinJit( dest_jit , viewSpin ) , forEach( rhs_view , viewSpin , OpCombine() ) );
  
-	  //QDPIO::cout << "copy stack to dest, viewSpin.ind=" << std::endl;
-
-	  //op_jit( viewSpinJit( dest_jit , viewSpin ) , stack.elemREG(0) );
-
-	  for( int i = dest_rank-1 ; 0 <= i ; --i )
+	  for( int i = loops.size() - 1 ; 0 <= i ; --i )
 	    {
 	      QDPIO::cout << "loop[" << i << "].end();" << std::endl;
-	      jitCreateLoopsLeaf.loops[i].end();
+	      loops[i].end();
 	    }
 	    
 	  
