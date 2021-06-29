@@ -824,6 +824,13 @@ namespace QDP {
 
     builder.reset( new llvm::IRBuilder<>( TheContext ) );
 
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "setting module data layout\n";
+      }
+    
+    Mod->setDataLayout(TargetMachine->createDataLayout());
+
     jit_build_seedToFloat();
     jit_build_seedMultiply();
 
@@ -1592,9 +1599,9 @@ namespace QDP {
     func.time_math = swatch.getTimeInMicroseconds();
     swatch.reset();
     swatch.start();
-    
+
     //QDPIO::cout << "setting module data layout\n";
-    Mod->setDataLayout(TargetMachine->createDataLayout());
+    //Mod->setDataLayout(TargetMachine->createDataLayout());
 
     uint32_t NVPTX_CUDA_FTZ = jit_config_get_CUDA_FTZ();
     Mod->addModuleFlag( llvm::Module::ModFlagBehavior::Override, "nvvm-reflect-ftz" , NVPTX_CUDA_FTZ );
@@ -1702,13 +1709,8 @@ namespace QDP {
     }
 #endif
 
-    if (jit_config_get_verbose_output())
-      {
-	QDPIO::cout << "setting module data layout\n";
-      }
+    // previous location for setting the datalayout
     
-    Mod->setDataLayout(TargetMachine->createDataLayout());
-
     StopWatch swatch(false);
     swatch.start();
     
