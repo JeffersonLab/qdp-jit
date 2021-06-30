@@ -198,6 +198,63 @@ struct LeafFunctor<OScalarJIT<PSpinMatrixJIT<T,N> >, ViewSpinLeaf>
 
 
 
+template<>
+struct LeafFunctor<OScalarJIT< PScalarJIT< PScalarJIT < RScalarJIT< WordJIT< float > > > > >, ViewSpinLeaf>
+{
+  typedef typename REGType< PScalarJIT < RScalarJIT< WordJIT< float > > > >::Type_t Type_t;
+  inline static
+  Type_t apply(const OScalarJIT< PScalarJIT< PScalarJIT < RScalarJIT< WordJIT< float > > > > > & s, const ViewSpinLeaf& v)
+  {
+    Type_t reg;
+    reg.setup_value( s.elem().elem() );
+    return reg;
+  }
+};
+
+template<>
+struct LeafFunctor<OScalarJIT< PScalarJIT< PScalarJIT < RScalarJIT< WordJIT< double > > > > >, ViewSpinLeaf>
+{
+  typedef typename REGType< PScalarJIT < RScalarJIT< WordJIT< double > > > >::Type_t Type_t;
+  inline static
+  Type_t apply(const OScalarJIT< PScalarJIT< PScalarJIT < RScalarJIT< WordJIT< double > > > > > & s, const ViewSpinLeaf& v)
+  {
+    Type_t reg;
+    reg.setup_value( s.elem().elem() );
+    return reg;
+  }
+};
+
+template<>
+struct LeafFunctor<OScalarJIT< PScalarJIT< PScalarJIT < RScalarJIT< WordJIT< int > > > > >, ViewSpinLeaf>
+{
+  typedef typename REGType< PScalarJIT < RScalarJIT< WordJIT< int > > > >::Type_t Type_t;
+  inline static
+  Type_t apply(const OScalarJIT< PScalarJIT< PScalarJIT < RScalarJIT< WordJIT< int > > > > > & s, const ViewSpinLeaf& v)
+  {
+    Type_t reg;
+    reg.setup_value( s.elem().elem() );
+    return reg;
+  }
+};
+
+template<>
+struct LeafFunctor<OScalarJIT< PScalarJIT< PScalarJIT < RScalarJIT< WordJIT< bool > > > > >, ViewSpinLeaf>
+{
+  typedef typename REGType< PScalarJIT < RScalarJIT< WordJIT< bool > > > >::Type_t Type_t;
+  inline static
+  Type_t apply(const OScalarJIT< PScalarJIT< PScalarJIT < RScalarJIT< WordJIT< bool > > > > > & s, const ViewSpinLeaf& v)
+  {
+    Type_t reg;
+    reg.setup_value( s.elem().elem() );
+    return reg;
+  }
+};
+
+
+
+
+  
+
 /// JIT2BASE
 
 template<class T>
