@@ -306,6 +306,12 @@ struct HasProp< BinaryNode<Op,A,B> >
   constexpr static bool value = HasProp<A>::value || HasProp<B>::value;
 };
 
+template<class Op, class A, class B, class C>
+struct HasProp< TrinaryNode<Op,A,B,C> >
+{
+  constexpr static bool value = HasProp<B>::value || HasProp<C>::value;
+};
+
 template<class Op, class A>
 struct HasProp< UnaryNode<Op,A> >
 {
