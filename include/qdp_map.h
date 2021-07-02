@@ -386,6 +386,137 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
   };
 
 
+  namespace
+  {
+    template <class T> void print_type();
+  }
+
+
+template<class T,int N>
+T viewSpinJit( PSpinMatrixJIT<T,N>& dest , const ViewSpinLeaf& v )
+{
+  if (v.loops.size() != 2)
+    {
+      QDPIO::cout << "at viewSpinJit(spinmat) but not 2 indices provided" << std::endl;
+      QDP_abort(1);
+    }
+  
+  return dest.getJitElem( v.loops[0].index() , v.loops[1].index() );
+}
+
+template<class T,int N>
+T viewSpinJit( PSpinVectorJIT<T,N>& dest , const ViewSpinLeaf& v )
+{
+  if (v.loops.size() != 1)
+    {
+      QDPIO::cout << "at viewSpinJit(spinvec) but not 1 index provided" << std::endl;
+      QDP_abort(1);
+    }
+  
+  return dest.getJitElem( v.loops[0].index() );
+}
+
+template<class T>
+T viewSpinJit( PScalarJIT<T>& dest , const ViewSpinLeaf& v )
+{
+  if (v.loops.size() != 0)
+    {
+      QDPIO::cout << "at viewSpinJit(spinscalar) but not 0 indices provided" << std::endl;
+      QDP_abort(1);
+    }
+  
+  return dest.getJitElem();
+}
+
+
+
+
+template<class A>
+struct ForEach<UnaryNode<FnMapJIT, A>, ViewSpinLeaf, OpCombine>
+  {
+    typedef typename ForEach<A, ViewSpinLeaf, OpCombine>::Type_t TypeA_t;
+    typedef typename Combine1<TypeA_t, FnMapJIT , OpCombine>::Type_t Type_t; // This is a REG container
+    inline
+    static Type_t apply(const UnaryNode<FnMapJIT, A>& expr, const ViewSpinLeaf &v, const OpCombine &o)
+    {
+      if (expr.operation().map.hasOffnode())
+	{
+	  Type_t ret;
+
+	  typedef typename ForEach<A, ViewLeaf, OpCombine>::Type_t FullSpinTypeA_t;
+
+	  QDPIO::cout << "FullSpinTypeA_t : ";
+	  print_type<FullSpinTypeA_t>();
+#if 1
+	  //
+	  // Setup an object (of return type) on the stack
+	  //
+	  auto ret_stack = stack_alloc<Type_t>();
+      
+	  IndexRet index = expr.operation().index;
+
+	  llvm::Value * r_multi_index = llvm_array_type_indirection( index.p_multi_index , v.getIndex() );
+
+	  JitIf inRecvBuffer( llvm_lt( r_multi_index , llvm_create_value(0) ) );
+	  {
+	    llvm::Value *idx_buf = llvm_sub ( llvm_neg ( r_multi_index ) , llvm_create_value(1) );
+
+	    IndexDomainVector args;
+	    args.push_back( make_pair( Layout::sitesOnNode() , idx_buf ) );
+	    args.push_back( make_pair( 1 , llvm_create_value(0) ) );
+
+	    typename JITType<FullSpinTypeA_t>::Type_t t_jit_recv;
+	    t_jit_recv.setup( llvm_derefParam(index.p_recv_buf) ,
+			      JitDeviceLayout::Scalar ,
+			      args );
+
+	    Type_t tmp;
+	    tmp.setup( viewSpinJit( t_jit_recv , v ) );
+
+	    ret_stack = tmp;
+	  }
+	  inRecvBuffer.els();
+	  {
+	    ViewSpinLeaf vv( JitDeviceLayout::Coalesced , v.getLoops() , r_multi_index );
+	    Type_t tmp = Combine1<TypeA_t, 
+				  FnMapJIT , 
+				  OpCombine>::combine(ForEach<A, ViewSpinLeaf, OpCombine>::apply(expr.child(), vv, o) , 
+						      expr.operation(), o);
+
+
+	    ret_stack = tmp;
+	  }
+	  inRecvBuffer.end();
+      
+	  //
+	  // Now read the object from the stack into a REG container
+	  //
+	  ret.setup( ret_stack );
+#endif
+      
+	  return ret;
+	}
+      else
+	{
+	  QDPIO::cout << __PRETTY_FUNCTION__ << std::endl;
+	  
+	  IndexRet index = expr.operation().index;
+
+	  llvm::Value * r_new_index = llvm_array_type_indirection( index.p_multi_index , v.getIndex() );
+
+	  ViewSpinLeaf vv( JitDeviceLayout::Coalesced , v.getLoops() ,  r_new_index );
+
+	  return Combine1<TypeA_t, 
+			  FnMapJIT , 
+			  OpCombine>::combine(ForEach<A, ViewSpinLeaf, OpCombine>::apply(expr.child(), vv, o) , 
+					      expr.operation(), o);
+
+	}
+    }
+  };
+
+
+
 
 template<class A>
 struct ForEach<UnaryNode<FnMap, A>, DynKeyTag , OrCombine>

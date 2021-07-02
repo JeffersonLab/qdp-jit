@@ -1386,39 +1386,46 @@ T viewSpinJit( OLatticeJIT< PScalarJIT<T> >& dest , const ViewSpinLeaf& v )
 
   
 
-
-
 template<class T, class Op>
-void create_dest_loops( std::vector< JitForLoop >& loops , const OLattice<T>& dest , const Op& op )
+struct CreateLoops
 {
-  QDPIO::cout << "dest: no spin loops created\n";
-}
+  static void apply( std::vector< JitForLoop >& loops , const Op& op )
+  {
+    QDPIO::cout << "dest: no spin loops created\n";
+  }
+};
+
 
 template<class T, int N, class Op>
-void create_dest_loops( std::vector< JitForLoop >& loops , const OLattice< PSpinMatrix<T,N> >& dest , const Op& op )
+struct CreateLoops< PSpinMatrix<T,N> , Op >
 {
-  QDPIO::cout << "create spin mat\n";
+  static void apply( std::vector< JitForLoop >& loops , const Op& op )
+  {
+    QDPIO::cout << "create spin mat\n";
 	
-  QDPIO::cout << "loop(0,N)\n";
-  loops.push_back( JitForLoop(0,N) );
+    QDPIO::cout << "loop(0,N)\n";
+    loops.push_back( JitForLoop(0,N) );
   
-  QDPIO::cout << "loop(0,N)\n";
-  loops.push_back( JitForLoop(0,N) );
-}
+    QDPIO::cout << "loop(0,N)\n";
+    loops.push_back( JitForLoop(0,N) );
+  }
+};
 
 
 template<class T, int N>
-void create_dest_loops( std::vector< JitForLoop >& loops , const OLattice< PSpinMatrix<T,N> >& dest , const FnPokeSpinMatrixREG& op )
+struct CreateLoops< PSpinMatrix<T,N> , FnPokeSpinMatrixREG >
 {
-  QDPIO::cout << "pokeSpinMat with two 1-loops\n";
+  static void apply( std::vector< JitForLoop >& loops , const FnPokeSpinMatrixREG& op )
+  {
+    QDPIO::cout << "pokeSpinMat with two 1-loops\n";
 
-  llvm::Value* row = op.jitRow();
-  llvm::Value* col = op.jitCol();
+    llvm::Value* row = op.jitRow();
+    llvm::Value* col = op.jitCol();
   
-  loops.push_back( JitForLoop( row , llvm_add( row , llvm_create_value( 1 ) ) ) );
-  loops.push_back( JitForLoop( col , llvm_add( col , llvm_create_value( 1 ) ) ) );
-}
-
+    loops.push_back( JitForLoop( row , llvm_add( row , llvm_create_value( 1 ) ) ) );
+    loops.push_back( JitForLoop( col , llvm_add( col , llvm_create_value( 1 ) ) ) );
+  }
+};
 
 
 
@@ -1575,8 +1582,9 @@ function_build(JitFunction& function, const DynKey& key, OLattice<T>& dest, cons
 
 	  typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
 	  FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
-	  
-	  auto op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
+
+	  typedef typename AddOpParam<Op,ParamLeaf>::Type_t OpJit_t;
+	  OpJit_t op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
 
 	  typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
 	  View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
@@ -1589,8 +1597,23 @@ function_build(JitFunction& function, const DynKey& key, OLattice<T>& dest, cons
 
 	  llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
 
-	  op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ), 
-		  forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , r_idx ), OpCombine()));	  
+	  std::vector< JitForLoop > loops;
+	  CreateLoops<T,OpJit_t>::apply( loops , op_jit );
+	  //create_dest_loops<T>( loops , op_jit );
+	  
+	  ViewSpinLeaf viewSpin( JitDeviceLayout::Coalesced , r_idx );
+	  viewSpin.loops = loops;
+
+	  op_jit( viewSpinJit( dest_jit , viewSpin ) , forEach( rhs_view , viewSpin , OpCombine() ) );
+ 
+	  for( int i = loops.size() - 1 ; 0 <= i ; --i )
+	    {
+	      QDPIO::cout << "loop[" << i << "].end();" << std::endl;
+	      loops[i].end();
+	    }
+	  
+	  // op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ), 
+	  // 	  forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , r_idx ), OpCombine()));	  
 	}
       else
 	{
@@ -1609,8 +1632,9 @@ function_build(JitFunction& function, const DynKey& key, OLattice<T>& dest, cons
 
 	  typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
 	  FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
-	  
-	  auto op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
+
+	  typedef typename AddOpParam<Op,ParamLeaf>::Type_t OpJit_t;
+	  OpJit_t op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
 
 	  typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
 	  View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
@@ -1630,7 +1654,8 @@ function_build(JitFunction& function, const DynKey& key, OLattice<T>& dest, cons
 	  QDPIO::cout << "using prop route" << std::endl;
 
 	  std::vector< JitForLoop > loops;
-	  create_dest_loops( loops , dest , op_jit );
+	  CreateLoops<T,OpJit_t>::apply( loops , op_jit );
+	  //create_dest_loops<T>( loops , op_jit );
 	  
 	  ViewSpinLeaf viewSpin( JitDeviceLayout::Coalesced , r_idx );
 	  viewSpin.loops = loops;
@@ -2136,7 +2161,7 @@ function_random_build( JitFunction& function, OLattice<T>& dest , Seed& seed_tmp
 
 
 template<class T, class T1, class RHS>
-void
+typename std::enable_if_t< ! HasProp<RHS>::value >
 function_gather_build( JitFunction& function, const QDPExpr<RHS,OLattice<T1> >& rhs )
 {
   if (ptx_db::db_enabled)
@@ -2174,6 +2199,70 @@ function_gather_build( JitFunction& function, const QDPExpr<RHS,OLattice<T1> >& 
   
   OpAssign()( dest_jit.elem( JitDeviceLayout::Scalar , r_idx ) , 
 	      forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , r_idx_site ) , OpCombine() ) );
+
+  jit_get_function( function );
+}
+
+
+template<class T, class T1, class RHS>
+typename std::enable_if_t< HasProp<RHS>::value >
+function_gather_build( JitFunction& function, const QDPExpr<RHS,OLattice<T1> >& rhs )
+{
+  if (ptx_db::db_enabled)
+    {
+      llvm_ptx_db( function , __PRETTY_FUNCTION__ );
+      if (!function.empty())
+	return;
+    }
+
+
+  typedef typename WordType<T1>::Type_t WT;
+
+  llvm_start_new_function("gather_prop",__PRETTY_FUNCTION__);
+
+  ParamRef p_lo      = llvm_add_param<int>();
+  ParamRef p_hi      = llvm_add_param<int>();
+  ParamRef p_soffset = llvm_add_param<int*>();
+  ParamRef p_sndbuf  = llvm_add_param<WT*>();
+
+  ParamLeaf param_leaf;
+
+  typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
+  View_t rhs_view( forEach( rhs , param_leaf , TreeCombine() ) );
+
+  typedef typename JITType< OLattice<T> >::Type_t DestView_t;
+  DestView_t dest_jit( p_sndbuf );
+
+  llvm_derefParam( p_lo );  // r_lo not used
+  llvm::Value * r_hi      = llvm_derefParam( p_hi );
+  llvm::Value * r_idx     = llvm_thread_idx();  
+
+  llvm_cond_exit( llvm_ge( r_idx , r_hi ) );
+
+  llvm::Value * r_idx_site = llvm_array_type_indirection( p_soffset , r_idx );
+
+  
+  std::vector< JitForLoop > loops;
+  CreateLoops<T,OpAssign>::apply( loops , OpAssign() );
+  //create_dest_loops<T>( loops ,  );
+	  
+  ViewSpinLeaf viewSpin( JitDeviceLayout::Coalesced , r_idx_site );
+  viewSpin.loops = loops;
+
+  ViewSpinLeaf viewSpinDest( JitDeviceLayout::Scalar , r_idx );
+  viewSpinDest.loops = loops;
+
+  OpAssign()( viewSpinJit( dest_jit , viewSpinDest ) , forEach( rhs_view , viewSpin , OpCombine() ) );
+ 
+  for( int i = loops.size() - 1 ; 0 <= i ; --i )
+    {
+      QDPIO::cout << "loop[" << i << "].end();" << std::endl;
+      loops[i].end();
+    }
+
+  
+  // OpAssign()( dest_jit.elem( JitDeviceLayout::Scalar , r_idx ) , 
+  // 	      forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , r_idx_site ) , OpCombine() ) );
 
   jit_get_function( function );
 }
