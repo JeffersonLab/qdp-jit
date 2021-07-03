@@ -2091,7 +2091,7 @@ function_zero_rep_subtype_build( JitFunction& function, OSubLattice<T>& dest)
 
 template<class T>
 void
-function_random_build( JitFunction& function, OLattice<T>& dest , Seed& seed_tmp, LatticeSeed& skewedSeed)
+function_random_build( JitFunction& function, OLattice<T>& dest , Seed& seed_tmp, LatticeSeed& latSeed, LatticeSeed& skewedSeed)
 {
   if (ptx_db::db_enabled)
     {
@@ -2120,11 +2120,12 @@ function_random_build( JitFunction& function, OLattice<T>& dest , Seed& seed_tmp
   typedef typename LeafFunctor<LatticeSeed, ParamLeaf>::Type_t  LatticeSeedJIT;
   typedef typename REGType<typename SeedJIT::Subtype_t>::Type_t PSeedREG;
 
-  SeedJIT ran_seed_jit(forEach(RNG::get_RNG_Internals()->ran_seed, param_leaf, TreeCombine()));
+  //SeedJIT ran_seed_jit(forEach(RNG::get_RNG_Internals()->ran_seed, param_leaf, TreeCombine()));
   SeedJIT seed_tmp_jit(forEach(seed_tmp, param_leaf, TreeCombine()));
   SeedJIT ran_mult_n_jit(forEach(RNG::get_RNG_Internals()->ran_mult_n, param_leaf, TreeCombine()));
   LatticeSeedJIT lattice_ran_mult_jit(forEach( RNG::get_RNG_Internals()->lattice_ran_mult , param_leaf, TreeCombine()));
   LatticeSeedJIT skewedSeed_jit(forEach( skewedSeed , param_leaf, TreeCombine()));
+  LatticeSeedJIT latSeed_jit(forEach( latSeed , param_leaf, TreeCombine()));
   
   llvm::Value * r_lo     = llvm_derefParam( p_lo );
   llvm::Value * r_hi     = llvm_derefParam( p_hi );
@@ -2140,7 +2141,7 @@ function_random_build( JitFunction& function, OLattice<T>& dest , Seed& seed_tmp
   PSeedREG ran_mult_n_reg;
   PSeedREG lattice_ran_mult_reg;
 
-  seed_reg.setup( ran_seed_jit.elem() );
+  seed_reg.setup( latSeed_jit.elem( JitDeviceLayout::Coalesced , r_idx ) );
 
   lattice_ran_mult_reg.setup( lattice_ran_mult_jit.elem( JitDeviceLayout::Coalesced , r_idx ) );
 
@@ -2148,10 +2149,10 @@ function_random_build( JitFunction& function, OLattice<T>& dest , Seed& seed_tmp
 
   ran_mult_n_reg.setup( ran_mult_n_jit.elem() );
 
-  fill_random_jit( dest_jit.elem(JitDeviceLayout::Coalesced,r_idx) , ran_seed_jit.elem() , skewedSeed_jit.elem( JitDeviceLayout::Coalesced , r_idx ) , ran_mult_n_reg );
+  fill_random_jit( dest_jit.elem(JitDeviceLayout::Coalesced,r_idx) , latSeed_jit.elem( JitDeviceLayout::Coalesced , r_idx ) , skewedSeed_jit.elem( JitDeviceLayout::Coalesced , r_idx ) , ran_mult_n_reg );
 
   PSeedREG tmp;                     //
-  tmp.setup( ran_seed_jit.elem() ); //
+  tmp.setup( latSeed_jit.elem( JitDeviceLayout::Coalesced , r_idx ) ); //
   JitIf save( llvm_eq( r_idx_thread , llvm_create_value(0) ) );
   {
     seed_tmp_jit.elem() = tmp;      // seed_reg
@@ -2623,7 +2624,7 @@ void function_zero_rep_subtype_exec(JitFunction& function, OSubLattice<T>& dest,
 
 template<class T>
 void 
-function_random_exec(JitFunction& function, OLattice<T>& dest, const Subset& s , Seed& seed_tmp, LatticeSeed& skewedSeed)
+function_random_exec(JitFunction& function, OLattice<T>& dest, const Subset& s , Seed& seed_tmp, LatticeSeed& ranSeed, LatticeSeed& skewedSeed)
 {
   if (!s.hasOrderedRep())
     QDP_error_exit("random on subset with unordered representation not implemented");
@@ -2645,12 +2646,13 @@ function_random_exec(JitFunction& function, OLattice<T>& dest, const Subset& s ,
 
   forEach(dest, addr_leaf, NullCombine());
 
-  forEach(RNG::get_RNG_Internals()->ran_seed, addr_leaf, NullCombine());
+  //forEach(RNG::get_RNG_Internals()->ran_seed, addr_leaf, NullCombine());
   //forEach(seed_tmp, addr_leaf, NullCombine()); // Caution: ParamLeaf treats OScalar as read-only
   addr_leaf.setId( seed_tmp_id );
   forEach(RNG::get_RNG_Internals()->ran_mult_n, addr_leaf, NullCombine());
   forEach(RNG::get_RNG_Internals()->lattice_ran_mult, addr_leaf, NullCombine());
   forEach(skewedSeed, addr_leaf, NullCombine());
+  forEach(ranSeed, addr_leaf, NullCombine());
 
   JitParam jit_lo( QDP_get_global_cache().addJitParamInt( s.start() ) );
   JitParam jit_hi( QDP_get_global_cache().addJitParamInt( s.end() ) );
