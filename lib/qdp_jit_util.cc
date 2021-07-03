@@ -434,10 +434,139 @@ namespace QDP {
 
 
 
+  llvm::Value* jit_ternary( llvm::Value* cond , llvm::Value* val_true , llvm::Value* val_false )
+  {
+    llvm::Value* stack = llvm_alloca( llvm_val_type( val_true ) , 1 );
+    
+    JitIf ifCond(cond);
+    {
+      llvm_store_ptr_idx( val_true , stack , llvm_create_value(0) );
+    }
+    ifCond.els();
+    {
+      llvm_store_ptr_idx( val_false , stack , llvm_create_value(0) );
+    }
+    ifCond.end();
+    
+    return llvm_load_ptr_idx( stack , llvm_create_value(0) );
+  }
   
   
 
+  JitForLoop::JitForLoop( llvm::Value* start , llvm::Value* end )
+  {
+    block_outer = llvm_get_insert_point();
+    block_loop_cond = llvm_new_basic_block();
+    block_loop_body = llvm_new_basic_block();
+    block_loop_exit = llvm_new_basic_block();
 
+    llvm_branch( block_loop_cond );
+    llvm_set_insert_point(block_loop_cond);
+  
+    r_i = llvm_phi( llvm_get_type<int>() , 2 );
+
+    llvm_add_incoming( r_i , start , block_outer );
+
+    llvm_cond_branch( llvm_lt( r_i , end ) , block_loop_body , block_loop_exit );
+
+    llvm_set_insert_point( block_loop_body );
+  }
+  llvm::Value * JitForLoop::index()
+  {
+    return r_i;
+  }
+  void JitForLoop::end()
+  {
+    llvm::Value * r_i_plus = llvm_add( r_i , llvm_create_value(1) );
+
+    llvm_add_incoming( r_i , r_i_plus , llvm_get_insert_point() );
+  
+    llvm_branch( block_loop_cond );
+
+    llvm_set_insert_point(block_loop_exit);
+  }
+
+
+
+
+  JitForLoopPower::JitForLoopPower( llvm::Value* i_start  )
+  {
+    block_outer = llvm_get_insert_point();
+    block_loop_cond = llvm_new_basic_block();
+    block_loop_body = llvm_new_basic_block();
+    block_loop_exit = llvm_new_basic_block();
+
+    llvm_branch( block_loop_cond );
+    llvm_set_insert_point(block_loop_cond);
+  
+    r_i = llvm_phi( llvm_get_type<int>() , 2 );
+
+    llvm_add_incoming( r_i , i_start , block_outer );
+
+    llvm_cond_branch( llvm_gt( r_i , llvm_create_value( 0 ) ) , block_loop_body , block_loop_exit );
+
+    llvm_set_insert_point( block_loop_body );
+  }
+  llvm::Value * JitForLoopPower::index()
+  {
+    return r_i;
+  }
+  void JitForLoopPower::end()
+  {
+    llvm::Value * r_i_plus = llvm_shr( r_i , llvm_create_value(1) );
+    llvm_add_incoming( r_i , r_i_plus , llvm_get_insert_point() );
+  
+    llvm_branch( block_loop_cond );
+
+    llvm_set_insert_point(block_loop_exit);
+  }
+
+
+
+  llvm::Value *jit_function_preamble_get_idx( const std::vector<ParamRef>& vec )
+  {
+    llvm::Value * r_ordered      = llvm_derefParam( vec[0] );
+    llvm::Value * r_th_count     = llvm_derefParam( vec[1] );
+    llvm::Value * r_start        = llvm_derefParam( vec[2] );
+    llvm_derefParam( vec[3]);     // r_end not used
+    ParamRef      p_member_array = vec[4];
+
+    llvm::Value * r_idx_phi0 = llvm_thread_idx();
+
+    llvm::Value * r_idx_phi1;
+
+    llvm_cond_exit( llvm_ge( r_idx_phi0 , r_th_count ) );
+
+    llvm::BasicBlock * block_ordered = llvm_new_basic_block();
+    llvm::BasicBlock * block_not_ordered = llvm_new_basic_block();
+    llvm::BasicBlock * block_ordered_exit = llvm_new_basic_block();
+    llvm::BasicBlock * cond_exit;
+    llvm_cond_branch( r_ordered , block_ordered , block_not_ordered );
+    {
+      llvm_set_insert_point(block_not_ordered);
+      llvm::Value* r_ismember     = llvm_array_type_indirection( p_member_array , r_idx_phi0 );
+      llvm::Value* r_ismember_not = llvm_not( r_ismember );
+      cond_exit = llvm_cond_exit( r_ismember_not ); 
+      llvm_branch( block_ordered_exit );
+    }
+    {
+      llvm_set_insert_point(block_ordered);
+      r_idx_phi1 = llvm_add( r_idx_phi0 , r_start );
+      llvm_branch( block_ordered_exit );
+    }
+    llvm_set_insert_point(block_ordered_exit);
+
+    llvm::Value* r_idx = llvm_phi( llvm_val_type( r_idx_phi0 ) , 2 );
+
+    llvm_add_incoming( r_idx , r_idx_phi0 , cond_exit );
+    llvm_add_incoming( r_idx , r_idx_phi1 , block_ordered );
+    // r_idx->addIncoming( r_idx_phi0 , cond_exit );
+    // r_idx->addIncoming( r_idx_phi1 , block_ordered );
+
+    return r_idx;
+  }
+
+  
   
 
 } //namespace

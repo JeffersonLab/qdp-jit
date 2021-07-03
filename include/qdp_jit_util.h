@@ -43,7 +43,38 @@ namespace QDP {
 
 
 
-  
+  class JitForLoop
+  {
+  public:
+    JitForLoop( int start          , int end ):           JitForLoop( llvm_create_value(start) , llvm_create_value(end) ) {}
+    JitForLoop( int start          , llvm::Value*  end ): JitForLoop( llvm_create_value(start) , end ) {}
+    JitForLoop( llvm::Value* start , int  end ):          JitForLoop( start , llvm_create_value(end) ) {}
+    JitForLoop( llvm::Value* start , llvm::Value*  end );
+    llvm::Value * index();
+    void end();
+  private:
+    llvm::BasicBlock * block_outer;
+    llvm::BasicBlock * block_loop_cond;
+    llvm::BasicBlock * block_loop_body;
+    llvm::BasicBlock * block_loop_exit;
+    llvm::Value * r_i;
+  };
+
+
+  class JitForLoopPower
+  {
+  public:
+    JitForLoopPower( llvm::Value* start );
+    llvm::Value * index();
+    void end();
+  private:
+    llvm::BasicBlock * block_outer;
+    llvm::BasicBlock * block_loop_cond;
+    llvm::BasicBlock * block_loop_body;
+    llvm::BasicBlock * block_loop_exit;
+    llvm::Value * r_i;
+  };
+
 
   
   class JitIf
@@ -392,6 +423,13 @@ namespace QDP {
     
   };
 
+
+  llvm::Value *jit_function_preamble_get_idx( const std::vector<ParamRef>& vec );
+
+
+  llvm::Value* jit_ternary( llvm::Value* cond , llvm::Value* val_true , llvm::Value* val_false );
+
+  
 
   
   llvm::Value* llvm_epsilon_1st( int p1 , llvm::Value* j );

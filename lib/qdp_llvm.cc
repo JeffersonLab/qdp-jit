@@ -965,7 +965,7 @@ namespace QDP
   }
   
 
-  llvm::PHINode * llvm_phi( llvm::Type* type, unsigned num )
+  llvm::Value * llvm_phi( llvm::Type* type, unsigned num )
   {
     return builder->CreatePHI( type , num );
   }
@@ -1366,6 +1366,12 @@ namespace QDP
   }
 
 
+  llvm::Type* llvm_val_type( llvm::Value* l )
+  {
+    return l->getType();
+  }
+
+
   llvm::BasicBlock * llvm_cond_exit( llvm::Value * cond )
   {
     llvm::BasicBlock * thenBB = llvm_new_basic_block();
@@ -1425,14 +1431,15 @@ namespace QDP
 
   void llvm_store_ptr_idx( llvm::Value * val , llvm::Value * ptr , llvm::Value * idx )
   {
-    // llvm::outs() << "\nstore_ptr: val->getType  = "; val->getType()->dump();
-    // llvm::outs() << "\nstore_ptr: ptr->getType  = "; ptr->getType()->dump();
-    // llvm::outs() << "\nstore_ptr: idx->getType  = "; idx->getType()->dump();
-
     llvm_store( val , llvm_createGEP( ptr , idx ) );
   }
 
 
+  void llvm_add_incoming( llvm::Value* phi , llvm::Value* val , llvm::BasicBlock* bb )
+  {
+    dyn_cast<llvm::PHINode>(phi)->addIncoming( val , bb );
+  }
+  
 
   void llvm_bar_sync()
   {
@@ -2125,167 +2132,16 @@ namespace QDP
 
 
 
-  llvm::Value *jit_function_preamble_get_idx( const std::vector<ParamRef>& vec )
-  {
-    llvm::Value * r_ordered      = llvm_derefParam( vec[0] );
-    llvm::Value * r_th_count     = llvm_derefParam( vec[1] );
-    llvm::Value * r_start        = llvm_derefParam( vec[2] );
-    llvm_derefParam( vec[3]);     // r_end not used
-    ParamRef      p_member_array = vec[4];
-
-    llvm::Value * r_idx_phi0 = llvm_thread_idx();
-
-    llvm::Value * r_idx_phi1;
-
-    llvm_cond_exit( llvm_ge( r_idx_phi0 , r_th_count ) );
-
-    llvm::BasicBlock * block_ordered = llvm_new_basic_block();
-    llvm::BasicBlock * block_not_ordered = llvm_new_basic_block();
-    llvm::BasicBlock * block_ordered_exit = llvm_new_basic_block();
-    llvm::BasicBlock * cond_exit;
-    llvm_cond_branch( r_ordered , block_ordered , block_not_ordered );
-    {
-      llvm_set_insert_point(block_not_ordered);
-      llvm::Value* r_ismember     = llvm_array_type_indirection( p_member_array , r_idx_phi0 );
-      llvm::Value* r_ismember_not = llvm_not( r_ismember );
-      cond_exit = llvm_cond_exit( r_ismember_not ); 
-      llvm_branch( block_ordered_exit );
-    }
-    {
-      llvm_set_insert_point(block_ordered);
-      r_idx_phi1 = llvm_add( r_idx_phi0 , r_start );
-      llvm_branch( block_ordered_exit );
-    }
-    llvm_set_insert_point(block_ordered_exit);
-
-    llvm::PHINode* r_idx = llvm_phi( r_idx_phi0->getType() , 2 );
-
-    r_idx->addIncoming( r_idx_phi0 , cond_exit );
-    r_idx->addIncoming( r_idx_phi1 , block_ordered );
-
-    return r_idx;
-  }
 
 
 
-  JitForLoop::JitForLoop( llvm::Value* start , llvm::Value* end )
-  {
-    block_outer = llvm_get_insert_point();
-    block_loop_cond = llvm_new_basic_block();
-    block_loop_body = llvm_new_basic_block();
-    block_loop_exit = llvm_new_basic_block();
-
-    llvm_branch( block_loop_cond );
-    llvm_set_insert_point(block_loop_cond);
-  
-    r_i = llvm_phi( llvm_get_type<int>() , 2 );
-
-    r_i->addIncoming( start , block_outer );
-
-    llvm_cond_branch( llvm_lt( r_i , end ) , block_loop_body , block_loop_exit );
-
-    llvm_set_insert_point( block_loop_body );
-  }
-  llvm::Value * JitForLoop::index()
-  {
-    return r_i;
-  }
-  void JitForLoop::end()
-  {
-    llvm::Value * r_i_plus = llvm_add( r_i , llvm_create_value(1) );
-    r_i->addIncoming( r_i_plus , llvm_get_insert_point() );
-  
-    llvm_branch( block_loop_cond );
-
-    llvm_set_insert_point(block_loop_exit);
-  }
 
 
 
 
 
  
-  JitForLoopPower::JitForLoopPower( llvm::Value* i_start  )
-  {
-    block_outer = llvm_get_insert_point();
-    block_loop_cond = llvm_new_basic_block();
-    block_loop_body = llvm_new_basic_block();
-    block_loop_exit = llvm_new_basic_block();
 
-    llvm_branch( block_loop_cond );
-    llvm_set_insert_point(block_loop_cond);
-  
-    r_i = llvm_phi( llvm_get_type<int>() , 2 );
-
-    r_i->addIncoming( i_start , block_outer );
-
-    llvm_cond_branch( llvm_gt( r_i , llvm_create_value( 0 ) ) , block_loop_body , block_loop_exit );
-
-    llvm_set_insert_point( block_loop_body );
-  }
-  llvm::Value * JitForLoopPower::index()
-  {
-    return r_i;
-  }
-  void JitForLoopPower::end()
-  {
-    llvm::Value * r_i_plus = llvm_shr( r_i , llvm_create_value(1) );
-    r_i->addIncoming( r_i_plus , llvm_get_insert_point() );
-  
-    llvm_branch( block_loop_cond );
-
-    llvm_set_insert_point(block_loop_exit);
-  }
-
-
-
-  llvm::Value* jit_ternary( llvm::Value* cond , const JitDefer& def_true , const JitDefer& def_false )
-  {
-    llvm::BasicBlock * block_exit  = llvm_new_basic_block();
-    llvm::BasicBlock * block_true  = llvm_new_basic_block();
-    llvm::BasicBlock * block_false = llvm_new_basic_block();
-
-    llvm::Value* r_true;
-    llvm::Value* r_false;
-    
-    llvm_cond_branch( cond , block_true , block_false );
-    {
-      llvm_set_insert_point(block_true);
-      r_true = def_true.val();
-      llvm_branch( block_exit );
-    }
-    {
-      llvm_set_insert_point(block_false);
-      r_false = def_false.val();
-      llvm_branch( block_exit );
-    }
-    llvm_set_insert_point(block_exit);
-
-    llvm::PHINode* r = llvm_phi( r_true->getType() , 2 );
-    
-    r->addIncoming( r_true , block_true );
-    r->addIncoming( r_false , block_false );
-
-    return r;
-  }
-
-  
-  llvm::Value* jit_ternary( llvm::Value* cond , llvm::Value*    val_true , llvm::Value*    val_false )
-  {
-    return jit_ternary( cond , JitDeferValue(val_true) , JitDeferValue(val_false) );
-  }
-
-  
-  llvm::Value* jit_ternary( llvm::Value* cond , const JitDefer& val_true , llvm::Value*    val_false )
-  {
-    return jit_ternary( cond , val_true , JitDeferValue(val_false) );
-  }
-
-  
-  llvm::Value* jit_ternary( llvm::Value* cond , llvm::Value*    val_true , const JitDefer& val_false )
-  {
-    return jit_ternary( cond , JitDeferValue(val_true) , val_false );
-  }
 
 
 

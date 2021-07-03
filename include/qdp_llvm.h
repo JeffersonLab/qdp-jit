@@ -41,10 +41,9 @@ namespace llvm
   struct Value;
   struct BasicBlock;
   struct Type;
-  struct PHINode;
+  //struct PHINode;
   struct Function;
   struct SwitchInst;
-  //struct ConstantInt;
 }
 
 namespace QDP {
@@ -96,6 +95,8 @@ namespace QDP {
   
   template<class T> llvm::Type* llvm_get_type();
 
+  llvm::Type* llvm_val_type( llvm::Value* l );
+
 
   struct IndexRet {
     IndexRet(){}
@@ -118,7 +119,7 @@ namespace QDP {
 
 
   void llvm_backend_init();
-  llvm::PHINode * llvm_phi( llvm::Type* type, unsigned num = 0 );
+  llvm::Value * llvm_phi( llvm::Type* type, unsigned num = 0 );
   llvm::Type* promote( llvm::Type* t0 , llvm::Type* t1 );
   llvm::Value* llvm_cast( llvm::Type *dest_type , llvm::Value *src );
 
@@ -202,6 +203,8 @@ namespace QDP {
   llvm::Value * llvm_load_ptr_idx( llvm::Value * ptr , llvm::Value * idx );
   void          llvm_store_ptr_idx( llvm::Value * val , llvm::Value * ptr , llvm::Value * idx );
 
+  void          llvm_add_incoming( llvm::Value * phi , llvm::Value* val , llvm::BasicBlock* bb );
+
   llvm::Value * llvm_array_type_indirection( ParamRef p        , llvm::Value* idx );
   llvm::Value * llvm_array_type_indirection( llvm::Value* base , llvm::Value* idx );
 
@@ -266,91 +269,10 @@ namespace QDP {
   llvm::Value* llvm_atan2_f64( llvm::Value* lhs, llvm::Value* rhs );
 
 
-  llvm::Value *jit_function_preamble_get_idx( const std::vector<ParamRef>& vec );
 
 
-  class JitDefer
-  {
-  public:
-    virtual llvm::Value* val() const = 0;
-  };
 
 
-  class JitDeferValue: public JitDefer
-  {
-    llvm::Value* r;
-  public:
-    JitDeferValue( llvm::Value* r ): r(r) {}
-    virtual llvm::Value* val() const
-    {
-      return r;
-    }
-  };
-
-
-  class JitDeferAdd: public JitDefer
-  {
-    llvm::Value* r;
-    llvm::Value* l;
-  public:
-    JitDeferAdd( llvm::Value* l , llvm::Value* r ): l(l), r(r) {}
-    virtual llvm::Value* val() const
-    {
-      return llvm_add( l , r );
-    }
-  };
-
-
-  class JitDeferArrayTypeIndirection: public JitDefer
-  {
-    const ParamRef& p;
-    llvm::Value* r;
-  public:
-    JitDeferArrayTypeIndirection( const ParamRef& p , llvm::Value* r ): p(p), r(r) {}
-    virtual llvm::Value* val() const
-    {
-      return llvm_array_type_indirection( p , r );
-    }
-  };
-
-  
-  llvm::Value* jit_ternary( llvm::Value* cond , llvm::Value*    val_true , llvm::Value*    val_false );
-  llvm::Value* jit_ternary( llvm::Value* cond , const JitDefer& val_true , llvm::Value*    val_false );
-  llvm::Value* jit_ternary( llvm::Value* cond , llvm::Value*    val_true , const JitDefer& val_false );
-  llvm::Value* jit_ternary( llvm::Value* cond , const JitDefer& val_true , const JitDefer& val_false );
-
-
-  class JitForLoop
-  {
-  public:
-    JitForLoop( int start          , int end ):           JitForLoop( llvm_create_value(start) , llvm_create_value(end) ) {}
-    JitForLoop( int start          , llvm::Value*  end ): JitForLoop( llvm_create_value(start) , end ) {}
-    JitForLoop( llvm::Value* start , int  end ):          JitForLoop( start , llvm_create_value(end) ) {}
-    JitForLoop( llvm::Value* start , llvm::Value*  end );
-    llvm::Value * index();
-    void end();
-  private:
-    llvm::BasicBlock * block_outer;
-    llvm::BasicBlock * block_loop_cond;
-    llvm::BasicBlock * block_loop_body;
-    llvm::BasicBlock * block_loop_exit;
-    llvm::PHINode * r_i;
-  };
-
-
-  class JitForLoopPower
-  {
-  public:
-    JitForLoopPower( llvm::Value* start );
-    llvm::Value * index();
-    void end();
-  private:
-    llvm::BasicBlock * block_outer;
-    llvm::BasicBlock * block_loop_cond;
-    llvm::BasicBlock * block_loop_body;
-    llvm::BasicBlock * block_loop_exit;
-    llvm::PHINode * r_i;
-  };
 
 
   void jit_stats_lattice2dev();
