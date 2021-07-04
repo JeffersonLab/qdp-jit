@@ -24,7 +24,18 @@ CUDA_HDRS = qdp_gpu.h \
 	    qdp_cuda_allocator.h \
 	    qdp_llvm.h qdp_viewleaf.h \
 	    qdp_word.h qdp_wordjit.h qdp_wordreg.h \
-	    qdp_jitfunction.h qdp_jit_util.h qdp_pete_visitors.h qdp_qdpsubtypejit.h \
+	    qdp_jitfunction.h \
+            qdp_jitf_op.h \
+            qdp_jitf_extract.h \
+            qdp_jitf_spinloop.h \
+            qdp_jitf_eval.h \
+            qdp_jitf_subtype.h \
+            qdp_jitf_latsca.h \
+            qdp_jitf_pokesite.h \
+            qdp_jitf_zerorep.h \
+            qdp_jitf_random.h \
+            qdp_jitf_gather.h \
+            qdp_jit_util.h qdp_pete_visitors.h qdp_qdpsubtypejit.h \
 	    qdp_outerjit.h qdp_realityjit.h qdp_realityreg.h qdp_primscalarjit.h qdp_primscalarreg.h \
             qdp_basejit.h qdp_basereg.h \
 	    qdp_primmatrixjit.h qdp_primcolormatjit.h qdp_primspinmatjit.h \
