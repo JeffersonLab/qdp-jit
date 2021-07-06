@@ -12,7 +12,7 @@ set(QDP_PRECISION @QDP_PRECISION@)
 set(QDP_LAYOUT @QDP_LAYOUT@)
 # NC, ND, NS
 set(QDP_ND @QDP_ND@)
-set(QDP_NC @QDP_NS@)
+set(QDP_NC @QDP_NC@)
 set(QDP_NS @QDP_NS@)
 set(QDP_ALIGNMENT_SIZE @QDP_ALIGNMENT_SIZE@)
 message(STATUS "QDP++:  Configuring System")

@@ -30,8 +30,8 @@ option(QDP_ENABLE_DEEP_LOG "Enable Deep logging" OFF)
 set(QDP_DEEP_LOG ${QDP_ENABLE_DEEP_LOG})
 
 
-set(QDP_ENABLE_CUDA_NVCC "nvcc" CACHE STRING "Path to cuda NVCC")
-set(CUDA_NVCC ${QDP_ENABLE_CUDA_NVCCC})
+#set(QDP_ENABLE_CUDA_NVCC "nvcc" CACHE STRING "Path to cuda NVCC")
+#set(CUDA_NVCC ${QDP_ENABLE_CUDA_NVCCC})
 
 option(QDP_ENABLE_LLVM12 "Enable changes to compile with LLVM12 release" ON)
 
@@ -55,9 +55,9 @@ endif()
 ##
 if( ${QDP_ENABLE_BACKEND} STREQUAL "CUDA")
   message(STATUS "Building For CUDA")
-  enable_language(CUDA)
+#  enable_language(CUDA)
   find_package(CUDAToolkit REQUIRED)
-  set(CUDA_GCC ${CMAKE_CXX_COMPILER})
+#  set(CUDA_GCC ${CMAKE_CXX_COMPILER})
   set(QDP_BACKEND_CUDA  "1")
   set(GPU_LIBS "CUDA::cuda_driver")
   if( QDP_ENABLE_CUDA_SPECIAL )

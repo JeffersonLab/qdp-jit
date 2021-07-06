@@ -88,8 +88,8 @@ namespace QDP {
     constexpr static bool value = HasProp<A>::value;
   };
 
-  template<>
-  struct HasProp< Reference<QDPType<PSpinMatrix<PColorMatrix<RComplex<Word<float> >, Nc >, Ns >, OLattice<PSpinMatrix<PColorMatrix<RComplex<Word<float> >, Nc >, Ns > > > > >
+  template<class T>
+  struct HasProp< Reference<QDPType<PSpinMatrix<PColorMatrix<RComplex<Word<T> >, Nc >, Ns >, OLattice<PSpinMatrix<PColorMatrix<RComplex<Word<T> >, Nc >, Ns > > > > >
   {
     constexpr static bool value = true;
   };
