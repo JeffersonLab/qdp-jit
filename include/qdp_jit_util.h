@@ -111,6 +111,9 @@ namespace QDP {
       llvm_branch( block_exit );
       llvm_set_insert_point(block_exit);
     }
+
+    llvm::BasicBlock* get_block_true() { return block_true; }
+    llvm::BasicBlock* get_block_false() { return block_false; }
   };
 
   

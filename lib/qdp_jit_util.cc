@@ -41,7 +41,7 @@ namespace QDP {
       }
     
     buf_elem = QDP_get_global_cache().registrateOwnHostMemNoPage( size, hstPtr );
-    //QDPIO::cout << "ringBuffer: allocated " << buf_elem << std::endl;
+    //QDPIO::cout << "ringBuffer: allocated " << buf_elem << " (" << size << ")" << std::endl;
 
     ringBufferNext = ( ringBufferNext + 1 ) % ringBufferOScalar.size();
     //QDPIO::cout << "ringBufferNext = " << ringBufferNext << std::endl;
@@ -436,19 +436,21 @@ namespace QDP {
 
   llvm::Value* jit_ternary( llvm::Value* cond , llvm::Value* val_true , llvm::Value* val_false )
   {
-    llvm::Value* stack = llvm_alloca( llvm_val_type( val_true ) , 1 );
-    
     JitIf ifCond(cond);
     {
-      llvm_store_ptr_idx( val_true , stack , llvm_create_value(0) );
+      // empty
     }
     ifCond.els();
     {
-      llvm_store_ptr_idx( val_false , stack , llvm_create_value(0) );
+      // empty
     }
     ifCond.end();
     
-    return llvm_load_ptr_idx( stack , llvm_create_value(0) );
+    llvm::Value* r = llvm_phi( llvm_val_type( val_true ) , 2 );
+    llvm_add_incoming( r , val_true  , ifCond.get_block_true()  );
+    llvm_add_incoming( r , val_false , ifCond.get_block_false() );
+
+    return r;
   }
   
   
