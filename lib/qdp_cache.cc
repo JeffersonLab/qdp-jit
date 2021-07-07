@@ -715,11 +715,8 @@ namespace QDP
     while ( !found  &&  it_key != lstTracker.end() ) {
       e = &vecEntry[ *it_key ];
 
-      found = ( (e->devPtr != NULL) &&
-		(e->flags != Flags::JitParam) &&
-		(e->flags != Flags::Static) &&
-		(e->flags != Flags::Multi) &&
-		( ! (e->flags & Flags::OwnDeviceMemory) ) );
+      found = ( ( e->devPtr != NULL) &&
+		( ! ( e->flags & ( Flags::JitParam | Flags::Static | Flags::Multi | Flags::OwnDeviceMemory | Flags::NoPage ) ) ) );
     
       if (!found)
 	it_key++;
