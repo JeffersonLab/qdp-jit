@@ -395,31 +395,31 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
 template<class T,int N>
 T viewSpinJit( PSpinMatrixJIT<T,N>& dest , const ViewSpinLeaf& v )
 {
-  if (v.loops.size() != 2)
+  if (v.indices.size() != 2)
     {
       QDPIO::cout << "at viewSpinJit(spinmat) but not 2 indices provided" << std::endl;
       QDP_abort(1);
     }
   
-  return dest.getJitElem( v.loops[0].index() , v.loops[1].index() );
+  return dest.getJitElem( v.indices[0] , v.indices[1] );
 }
 
 template<class T,int N>
 T viewSpinJit( PSpinVectorJIT<T,N>& dest , const ViewSpinLeaf& v )
 {
-  if (v.loops.size() != 1)
+  if (v.indices.size() != 1)
     {
       QDPIO::cout << "at viewSpinJit(spinvec) but not 1 index provided" << std::endl;
       QDP_abort(1);
     }
   
-  return dest.getJitElem( v.loops[0].index() );
+  return dest.getJitElem( v.indices[0] );
 }
 
 template<class T>
 T viewSpinJit( PScalarJIT<T>& dest , const ViewSpinLeaf& v )
 {
-  if (v.loops.size() != 0)
+  if (v.indices.size() != 0)
     {
       QDPIO::cout << "at viewSpinJit(spinscalar) but not 0 indices provided" << std::endl;
       QDP_abort(1);
@@ -477,7 +477,7 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewSpinLeaf, OpCombine>
 	  }
 	  inRecvBuffer.els();
 	  {
-	    ViewSpinLeaf vv( JitDeviceLayout::Coalesced , v.getLoops() , r_multi_index );
+	    ViewSpinLeaf vv( JitDeviceLayout::Coalesced , r_multi_index , v.getIndices() );
 	    Type_t tmp = Combine1<TypeA_t, 
 				  FnMapJIT , 
 				  OpCombine>::combine(ForEach<A, ViewSpinLeaf, OpCombine>::apply(expr.child(), vv, o) , 
@@ -504,7 +504,7 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewSpinLeaf, OpCombine>
 
 	  llvm::Value * r_new_index = llvm_array_type_indirection( index.p_multi_index , v.getIndex() );
 
-	  ViewSpinLeaf vv( JitDeviceLayout::Coalesced , v.getLoops() ,  r_new_index );
+	  ViewSpinLeaf vv( JitDeviceLayout::Coalesced , r_new_index , v.getIndices() );
 
 	  return Combine1<TypeA_t, 
 			  FnMapJIT , 

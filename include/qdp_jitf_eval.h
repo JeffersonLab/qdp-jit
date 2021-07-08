@@ -174,7 +174,9 @@ namespace QDP {
 	    CreateLoops<T,OpJit_t>::apply( loops , op_jit );
 	  
 	    ViewSpinLeaf viewSpin( JitDeviceLayout::Coalesced , r_idx );
-	    viewSpin.loops = loops;
+
+	    for( int i = 0 ; i < loops.size() ; ++i )
+	      viewSpin.indices.push_back( loops.at(i).index() );
 
 	    op_jit( viewSpinJit( dest_jit , viewSpin ) , forEach( rhs_view , viewSpin , OpCombine() ) );
  
@@ -227,7 +229,9 @@ namespace QDP {
 	    CreateLoops<T,OpJit_t>::apply( loops , op_jit );
 	  
 	    ViewSpinLeaf viewSpin( JitDeviceLayout::Coalesced , r_idx );
-	    viewSpin.loops = loops;
+
+	    for( int i = 0 ; i < loops.size() ; ++i )
+	      viewSpin.indices.push_back( loops.at(i).index() );
 
 	    op_jit( viewSpinJit( dest_jit , viewSpin ) , forEach( rhs_view , viewSpin , OpCombine() ) );
  

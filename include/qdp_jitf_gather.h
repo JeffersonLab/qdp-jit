@@ -91,11 +91,14 @@ namespace QDP {
     //create_dest_loops<T>( loops ,  );
 	  
     ViewSpinLeaf viewSpin( JitDeviceLayout::Coalesced , r_idx_site );
-    viewSpin.loops = loops;
+    for( int i = 0 ; i < loops.size() ; ++i )
+      viewSpin.indices.push_back( loops.at(i).index() );
 
     ViewSpinLeaf viewSpinDest( JitDeviceLayout::Scalar , r_idx );
-    viewSpinDest.loops = loops;
+    for( int i = 0 ; i < loops.size() ; ++i )
+      viewSpinDest.indices.push_back( loops.at(i).index() );
 
+    
     OpAssign()( viewSpinJit( dest_jit , viewSpinDest ) , forEach( rhs_view , viewSpin , OpCombine() ) );
  
     for( int i = loops.size() - 1 ; 0 <= i ; --i )

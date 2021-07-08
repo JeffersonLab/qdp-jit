@@ -133,16 +133,20 @@ namespace QDP {
       print_type<Type_t>();
     
       JitStackArray< Type_t , 1 > stack;
-      zero_rep( stack.elemJITint(0) );
     
-      JitForLoop index_k(0,4);
+      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::
+	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c),
+		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c),
+		expr.operation(), c);
+
+      JitForLoop loop_k(1,4);
       {
 	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first() , index_k ) , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , index_k , f.index_second() ) , c),
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first() , loop_k.index() ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index() , f.index_second() ) , c),
 		  expr.operation(), c);
       }
-      index_k.end();
+      loop_k.end();
       return stack.elemREGint(0);
     }
   };
@@ -162,16 +166,20 @@ namespace QDP {
       QDPIO::cout << "adjMul(spinmat,spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
 
       JitStackArray< Type_t , 1 > stack;
-      zero_rep( stack.elemJITint(0) );
 
-      JitForLoop index_k(0,4);
+      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, OpAdjMultiply, CTag>::
+	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , f.index_first()  ) , c),
+		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c),
+		expr.operation(), c);
+
+      JitForLoop loop_k(1,4);
       {
 	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, OpAdjMultiply, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , index_k , f.index_first()  ) , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , index_k , f.index_second() ) , c),
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_k.index() , f.index_first()  ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index() , f.index_second() ) , c),
 		  expr.operation(), c);
       }
-      index_k.end();
+      loop_k.end();
       return stack.elemREGint(0);
     }
   };
@@ -212,16 +220,20 @@ namespace QDP {
       QDPIO::cout << "mulAdj(spinmat,spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
 
       JitStackArray< Type_t , 1 > stack;
-      zero_rep( stack.elemJITint(0) );
 
-      JitForLoop index_k(0,4);
+      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, OpMultiplyAdj, CTag>::
+	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first()  , llvm_create_value(0) ) , c),
+		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , llvm_create_value(0) ) , c),
+		expr.operation(), c);
+
+      JitForLoop loop_k(1,4);
       {
 	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, OpMultiplyAdj, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first() , index_k ) , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , index_k ) , c),
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first()  , loop_k.index() ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , loop_k.index() ) , c),
 		  expr.operation(), c);
       }
-      index_k.end();
+      loop_k.end();
       return stack.elemREGint(0);
     }
   };
@@ -303,16 +315,20 @@ namespace QDP {
       QDPIO::cout << "adjMulAdj(spinmat,spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
 
       JitStackArray< Type_t , 1 > stack;
-      zero_rep( stack.elemJITint(0) );
 
-      JitForLoop index_k(0,4);
+      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, OpAdjMultiplyAdj, CTag>::
+	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , f.index_first() ) , c),
+		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , llvm_create_value(0) ) , c),
+		expr.operation(), c);
+
+      JitForLoop loop_k(1,4);
       {
 	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, OpAdjMultiplyAdj, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , index_k , f.index_first() ) , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , index_k ) , c),
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_k.index() , f.index_first() ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , loop_k.index() ) , c),
 		  expr.operation(), c);
       }
-      index_k.end();
+      loop_k.end();
       return stack.elemREGint(0);
     }
   };
@@ -345,19 +361,23 @@ namespace QDP {
       QDPIO::cout << "quarkContract13(prop,prop) " << EvalToSpinMatrix<A>::value << std::endl;
     
       JitStackArray< Type_t , 1 > stack;
-      zero_rep( stack.elemJITint(0) );
 
       // f=(i,j)
       // (A o B)^{i,j} = A^{k,i} o B^{k,j}
-      
-      JitForLoop index_k(0,4);
+
+      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
+	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , f.index_first() ) , c),
+		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c),
+		FnQuarkContractXX() , c);
+ 
+      JitForLoop loop_k(1,4);
       {
 	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , index_k , f.index_first() ) , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , index_k , f.index_second() ) , c),
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_k.index() , f.index_first() ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index() , f.index_second() ) , c),
 		  FnQuarkContractXX() , c);
       }
-      index_k.end();
+      loop_k.end();
       return stack.elemREGint(0);
     }
   };
@@ -375,19 +395,23 @@ namespace QDP {
       QDPIO::cout << "quarkContract14(prop,prop) " << EvalToSpinMatrix<A>::value << std::endl;
     
       JitStackArray< Type_t , 1 > stack;
-      zero_rep( stack.elemJITint(0) );
 
       // f=(i,j)
       // (A o B)^{i,j} = A^{k,i} o B^{k,j}
+
+      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
+	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , f.index_first() ) , c),
+		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , llvm_create_value(0) ) , c),
+		FnQuarkContractXX() , c);
       
-      JitForLoop index_k(0,4);
+      JitForLoop loop_k(1,4);
       {
 	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , index_k , f.index_first() ) , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , index_k ) , c),
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_k.index() , f.index_first() ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , loop_k.index() ) , c),
 		  FnQuarkContractXX() , c);
       }
-      index_k.end();
+      loop_k.end();
       return stack.elemREGint(0);
     }
   };
@@ -405,19 +429,23 @@ namespace QDP {
       QDPIO::cout << "quarkContract23(prop,prop) " << EvalToSpinMatrix<A>::value << std::endl;
     
       JitStackArray< Type_t , 1 > stack;
-      zero_rep( stack.elemJITint(0) );
 
       // f=(i,j)
       // (A o B)^{i,j} = A^{k,i} o B^{k,j}
+
+      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
+	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c),
+		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c),
+		FnQuarkContractXX() , c);
       
-      JitForLoop index_k(0,4);
+      JitForLoop loop_k(1,4);
       {
 	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first() , index_k ) , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , index_k , f.index_second() ) , c),
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first() , loop_k.index() ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index() , f.index_second() ) , c),
 		  FnQuarkContractXX() , c);
       }
-      index_k.end();
+      loop_k.end();
       return stack.elemREGint(0);
     }
   };
@@ -435,19 +463,23 @@ namespace QDP {
       QDPIO::cout << "quarkContract24(prop,prop) " << EvalToSpinMatrix<A>::value << std::endl;
     
       JitStackArray< Type_t , 1 > stack;
-      zero_rep( stack.elemJITint(0) );
 
       // f=(i,j)
       // (A o B)^{i,j} = A^{k,i} o B^{k,j}
-      
-      JitForLoop index_k(0,4);
+
+      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
+	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first()  , llvm_create_value(0) ) , c),
+		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , llvm_create_value(0) ) , c),
+		FnQuarkContractXX() , c);
+
+      JitForLoop loop_k(1,4);
       {
 	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first()  , index_k ) , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , index_k ) , c),
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first()  , loop_k.index() ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , loop_k.index() ) , c),
 		  FnQuarkContractXX() , c);
       }
-      index_k.end();
+      loop_k.end();
       return stack.elemREGint(0);
     }
   };
@@ -465,19 +497,23 @@ namespace QDP {
       QDPIO::cout << "quarkContract12(prop,prop) " << EvalToSpinMatrix<A>::value << std::endl;
     
       JitStackArray< Type_t , 1 > stack;
-      zero_rep( stack.elemJITint(0) );
 
       // f=(i,j)
       // (A o B)^{i,j} = A^{k,i} o B^{k,j}
       
-      JitForLoop index_k(0,4);
+      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
+	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
+		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first()      , f.index_second()     ) , c),
+		FnQuarkContractXX() , c);
+      
+      JitForLoop loop_k(1,4);
       {
 	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , index_k         , index_k          ) , c),
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_k.index()  , loop_k.index()   ) , c),
 		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c),
 		  FnQuarkContractXX() , c);
       }
-      index_k.end();
+      loop_k.end();
       return stack.elemREGint(0);
     }
   };
@@ -495,19 +531,23 @@ namespace QDP {
       QDPIO::cout << "quarkContract34(prop,prop) " << EvalToSpinMatrix<A>::value << std::endl;
     
       JitStackArray< Type_t , 1 > stack;
-      zero_rep( stack.elemJITint(0) );
 
       // f=(i,j)
       // (A o B)^{i,j} = A^{k,i} o B^{k,j}
-      
-      JitForLoop index_k(0,4);
+
+      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
+	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first()      , f.index_second()     ) , c),
+		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
+		FnQuarkContractXX() , c);
+        
+      JitForLoop loop_k(1,4);
       {
 	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
 	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , index_k         , index_k          ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index()         , loop_k.index()          ) , c),
 		  FnQuarkContractXX() , c);
       }
-      index_k.end();
+      loop_k.end();
       return stack.elemREGint(0);
     }
   };
@@ -530,18 +570,18 @@ namespace QDP {
       // f=(i,j)
       // (A o B)^{i,j} = A^{k,i} o B^{k,j}
 
-      JitForLoop index_i(0,4);
+      JitForLoop loop_i(0,4);
       {
-	JitForLoop index_k(0,4);
+	JitForLoop loop_k(0,4);
 	{
 	  stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
-	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , index_k , index_i ) , c),
-		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , index_k , index_i ) , c),
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_k.index() , loop_i.index() ) , c),
+		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index() , loop_i.index() ) , c),
 		    FnQuarkContractXX() , c);
 	}
-	index_k.end();
+	loop_k.end();
       }
-      index_i.end();
+      loop_i.end();
     
       return stack.elemREGint(0);
     }
@@ -570,18 +610,18 @@ namespace QDP {
 
       // tr(AB) = A^ik B^ki
       
-      JitForLoop index_i(0,4);
+      JitForLoop loop_i(0,4);
       {
-	JitForLoop index_k(0,4);
+	JitForLoop loop_k(0,4);
 	{
 	  stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnTraceMultiply, CTag>::
-	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , index_i , index_k ) , c),
-		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , index_k , index_i ) , c),
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_i.index() , loop_k.index() ) , c),
+		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index() , loop_i.index() ) , c),
 		    expr.operation(), c);
 	}
-	index_k.end();
+	loop_k.end();
       }
-      index_i.end();
+      loop_i.end();
       return stack.elemREGint(0);
     }
   };
@@ -605,18 +645,18 @@ namespace QDP {
 
       // tr(AB) = A^ik B^ki
       
-      JitForLoop index_i(0,4);
+      JitForLoop loop_i(0,4);
       {
-	JitForLoop index_k(0,4);
+	JitForLoop loop_k(0,4);
 	{
 	  stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::
-	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , index_i , index_k ) , c),
-		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , index_k , index_i ) , c),
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_i.index() , loop_k.index() ) , c),
+		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index() , loop_i.index() ) , c),
 		    OpMultiply(), c);
 	}
-	index_k.end();
+	loop_k.end();
       }
-      index_i.end();
+      loop_i.end();
       return stack.elemREGint(0);
     }
   };
@@ -637,18 +677,22 @@ namespace QDP {
       QDPIO::cout << "traceColorMultiply(spinmat,spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
     
       JitStackArray< Type_t , 1 > stack;
-      zero_rep( stack.elemJITint(0) );
 
       // AB = A^ik B^kj
-      
-      JitForLoop index_k(0,4);
+
+      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnTraceColorMultiply, CTag>::
+	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first()      , llvm_create_value(0) ) , c),
+		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second()     ) , c),
+		  FnTraceColorMultiply(), c);
+        
+      JitForLoop loop_k(1,4);
       {
 	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnTraceColorMultiply, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first() , index_k )          , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , index_k         , f.index_second() ) , c),
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first() , loop_k.index() )          , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index()         , f.index_second() ) , c),
 		  FnTraceColorMultiply(), c);
       }
-      index_k.end();
+      loop_k.end();
 
       return stack.elemREGint(0);
     }
@@ -673,18 +717,18 @@ namespace QDP {
 
       // AB = A^ik B^kj
       
-      JitForLoop index_i(0,4);
+      JitForLoop loop_i(0,4);
       {
-	JitForLoop index_j(0,4);
+	JitForLoop loop_j(0,4);
 	{
 	  stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnLocalInnerProduct, CTag>::
-	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , index_i , index_j ) , c),
-		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , index_i , index_j ) , c),
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_i.index() , loop_j.index() ) , c),
+		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_i.index() , loop_j.index() ) , c),
 		    FnLocalInnerProduct(), c);
 	}
-	index_j.end();
+	loop_j.end();
       }
-      index_i.end();
+      loop_i.end();
 
       return stack.elemREGint(0);
     }
@@ -704,18 +748,22 @@ namespace QDP {
       QDPIO::cout << "localInnerProduct(spinmat,spinscalar) " << EvalToSpinMatrix<A>::value << std::endl;
     
       JitStackArray< Type_t , 1 > stack;
-      zero_rep( stack.elemJITint(0) );
 
       // AB = A^ii B
-      
-      JitForLoop index_i(0,4);
+
+      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnLocalInnerProduct, CTag>::
+	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
+		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f ) , c),
+		FnLocalInnerProduct(), c);
+  
+      JitForLoop loop_i(1,4);
       {
 	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnLocalInnerProduct, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , index_i , index_i ) , c),
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_i.index() , loop_i.index() ) , c),
 		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f ) , c),
 		  FnLocalInnerProduct(), c);
       }
-      index_i.end();
+      loop_i.end();
 
       return stack.elemREGint(0);
     }
@@ -735,18 +783,22 @@ namespace QDP {
       QDPIO::cout << "localInnerProduct(spinscalar,spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
     
       JitStackArray< Type_t , 1 > stack;
-      zero_rep( stack.elemJITint(0) );
 
       // AB = A^ii B
-      
-      JitForLoop index_i(0,4);
+
+      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnLocalInnerProduct, CTag>::
+	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f ) , c),
+		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
+		FnLocalInnerProduct(), c);
+  
+      JitForLoop loop_i(1,4);
       {
 	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnLocalInnerProduct, CTag>::
 	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f ) , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , index_i , index_i ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_i.index() , loop_i.index() ) , c),
 		  FnLocalInnerProduct(), c);
       }
-      index_i.end();
+      loop_i.end();
 
       return stack.elemREGint(0);
     }
@@ -770,18 +822,18 @@ namespace QDP {
 
       // AB = A^ik B^kj
       
-      JitForLoop index_i(0,4);
+      JitForLoop loop_i(0,4);
       {
-	JitForLoop index_j(0,4);
+	JitForLoop loop_j(0,4);
 	{
 	  stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnLocalInnerProductReal, CTag>::
-	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , index_i , index_j ) , c),
-		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , index_i , index_j ) , c),
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_i.index() , loop_j.index() ) , c),
+		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_i.index() , loop_j.index() ) , c),
 		    FnLocalInnerProductReal(), c);
 	}
-	index_j.end();
+	loop_j.end();
       }
-      index_i.end();
+      loop_i.end();
 
       return stack.elemREGint(0);
     }
@@ -801,18 +853,22 @@ namespace QDP {
       QDPIO::cout << "localInnerProduct(spinmat,spinscalar) " << EvalToSpinMatrix<A>::value << std::endl;
     
       JitStackArray< Type_t , 1 > stack;
-      zero_rep( stack.elemJITint(0) );
 
       // AB = A^ii B
-      
-      JitForLoop index_i(0,4);
+
+      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnLocalInnerProductReal, CTag>::
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f ) , c),
+		  FnLocalInnerProductReal(), c);
+  
+      JitForLoop loop_i(1,4);
       {
 	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnLocalInnerProductReal, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , index_i , index_i ) , c),
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_i.index() , loop_i.index() ) , c),
 		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f ) , c),
 		  FnLocalInnerProductReal(), c);
       }
-      index_i.end();
+      loop_i.end();
 
       return stack.elemREGint(0);
     }
@@ -832,18 +888,22 @@ namespace QDP {
       QDPIO::cout << "localInnerProduct(spinscalar,spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
     
       JitStackArray< Type_t , 1 > stack;
-      zero_rep( stack.elemJITint(0) );
 
       // AB = A^ii B
-      
-      JitForLoop index_i(0,4);
+
+      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnLocalInnerProductReal, CTag>::
+	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f ) , c),
+		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
+		FnLocalInnerProductReal(), c);
+  
+      JitForLoop loop_i(1,4);
       {
 	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnLocalInnerProductReal, CTag>::
 	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f ) , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , index_i , index_i ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_i.index() , loop_i.index() ) , c),
 		  FnLocalInnerProductReal(), c);
       }
-      index_i.end();
+      loop_i.end();
 
       return stack.elemREGint(0);
     }
@@ -867,17 +927,20 @@ namespace QDP {
       QDPIO::cout << "realTrace(spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
     
       JitStackArray< Type_t , 1 > stack;
-      zero_rep( stack.elemJITint(0) );
 
       // tr(A) = A^ii
-      
-      JitForLoop index_i(0,4);
+
+      stack.elemJITint(0) = Combine1<TypeA_t, FnRealTrace, CTag>::
+	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
+		expr.operation(), c);
+
+      JitForLoop loop_i(1,4);
       {
 	stack.elemJITint(0) += Combine1<TypeA_t, FnRealTrace, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , index_i , index_i ) , c),
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , loop_i.index() , loop_i.index() ) , c),
 		  expr.operation(), c);
       }
-      index_i.end();
+      loop_i.end();
       return stack.elemREGint(0);
     }
   };
@@ -897,17 +960,20 @@ namespace QDP {
       QDPIO::cout << "trace(spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
     
       JitStackArray< Type_t , 1 > stack;
-      zero_rep( stack.elemJITint(0) );
 
       // tr(A) = A^ii
-      
-      JitForLoop index_i(0,4);
+
+      stack.elemJITint(0) = Combine1<TypeA_t, FnTrace, CTag>::
+	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
+		expr.operation(), c);
+  
+      JitForLoop loop_i(1,4);
       {
 	stack.elemJITint(0) += Combine1<TypeA_t, FnTrace, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , index_i , index_i ) , c),
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , loop_i.index() , loop_i.index() ) , c),
 		  expr.operation(), c);
       }
-      index_i.end();
+      loop_i.end();
       return stack.elemREGint(0);
     }
   };
@@ -945,17 +1011,20 @@ namespace QDP {
       QDPIO::cout << "imagTrace(spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
     
       JitStackArray< Type_t , 1 > stack;
-      zero_rep( stack.elemJITint(0) );
 
       // tr(A) = A^ii
-      
-      JitForLoop index_i(0,4);
+
+      stack.elemJITint(0) = Combine1<TypeA_t, FnImagTrace, CTag>::
+	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
+		expr.operation(), c);
+  
+      JitForLoop loop_i(1,4);
       {
 	stack.elemJITint(0) += Combine1<TypeA_t, FnImagTrace, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , index_i , index_i ) , c),
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , loop_i.index() , loop_i.index() ) , c),
 		  expr.operation(), c);
       }
-      index_i.end();
+      loop_i.end();
       return stack.elemREGint(0);
     }
   };
@@ -973,17 +1042,20 @@ namespace QDP {
       QDPIO::cout << "traceSpin(spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
     
       JitStackArray< Type_t , 1 > stack;
-      zero_rep( stack.elemJITint(0) );
 
       // tr(A) = A^ii
       
-      JitForLoop index_i(0,4);
+      stack.elemJITint(0) = Combine1<TypeA_t, OpIdentity, CTag>::
+	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
+		OpIdentity(), c);
+      
+      JitForLoop loop_i(1,4);
       {
 	stack.elemJITint(0) += Combine1<TypeA_t, OpIdentity, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , index_i , index_i ) , c),
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , loop_i.index() , loop_i.index() ) , c),
 		  OpIdentity(), c);
       }
-      index_i.end();
+      loop_i.end();
       return stack.elemREGint(0);
     }
   };
@@ -1051,17 +1123,17 @@ namespace QDP {
 
       // localNorm2(A) = sum_ij A^ij
       
-      JitForLoop index_i(0,4);
+      JitForLoop loop_i(0,4);
       {
-	JitForLoop index_j(0,4);
+	JitForLoop loop_j(0,4);
 	{
 	  stack.elemJITint(0) += Combine1<TypeA_t, FnLocalNorm2, CTag>::
-	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , index_i , index_j ) , c),
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , loop_i.index() , loop_j.index() ) , c),
 		    expr.operation(), c);
 	}
-	index_j.end();
+	loop_j.end();
       }
-      index_i.end();
+      loop_i.end();
       return stack.elemREGint(0);
     }
   };
@@ -1072,33 +1144,33 @@ namespace QDP {
   template<class T,int N>
   T viewSpinJit( OLatticeJIT< PSpinMatrixJIT<T,N> >& dest , const ViewSpinLeaf& v )
   {
-    if (v.loops.size() != 2)
+    if (v.indices.size() != 2)
       {
 	QDPIO::cout << "at viewSpinJit(spinmat) but not 2 indices provided" << std::endl;
 	QDP_abort(1);
       }
   
-    return dest.elem( v.getLayout() , v.getIndex() ).getJitElem( v.loops[0].index() , v.loops[1].index() );
+    return dest.elem( v.getLayout() , v.getIndex() ).getJitElem( v.indices[0] , v.indices[1] );
   }
 
 
   template<class T,int N>
   T viewSpinJit( OLatticeJIT< PSpinVectorJIT<T,N> >& dest , const ViewSpinLeaf& v )
   {
-    if (v.loops.size() != 1)
+    if (v.indices.size() != 1)
       {
 	QDPIO::cout << "at viewSpinJit(spinvec) but not 1 index provided" << std::endl;
 	QDP_abort(1);
       }
   
-    return dest.elem( v.getLayout() , v.getIndex() ).getJitElem( v.loops[0].index() );
+    return dest.elem( v.getLayout() , v.getIndex() ).getJitElem( v.indices[0] );
   }
 
 
   template<class T>
   T viewSpinJit( OLatticeJIT< PScalarJIT<T> >& dest , const ViewSpinLeaf& v )
   {
-    if (v.loops.size() != 0)
+    if (v.indices.size() != 0)
       {
 	QDPIO::cout << "at viewSpinJit(pscalar) but not 0 indices provided " << std::endl;
 	QDP_abort(1);

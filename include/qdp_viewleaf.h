@@ -130,15 +130,15 @@ struct LeafFunctor<OLatticeJIT<PSpinMatrixJIT<T,N> >, ViewSpinLeaf>
   inline static
   Type_t apply(const OLatticeJIT<PSpinMatrixJIT<T,N> > & s, const ViewSpinLeaf& v)
   {
-    if (v.loops.size() != 2)
+    if (v.indices.size() != 2)
       {
-	QDPIO::cout << "at spinmat leaf but not 2 indices provided, instead = " << v.loops.size() << std::endl;
+	QDPIO::cout << "at spinmat leaf but not 2 indices provided, instead = " << v.indices.size() << std::endl;
 	QDP_abort(1);
       }
 
     QDPIO::cout << "leaf spinmat " << std::endl;
     
-    return s.elem( v.getLayout() , v.getIndex() ).getRegElem( v.loops[ 0 ].index() , v.loops[ 1 ].index() );
+    return s.elem( v.getLayout() , v.getIndex() ).getRegElem( v.indices[ 0 ] , v.indices[ 1 ] );
   }
 };
 
@@ -150,7 +150,7 @@ struct LeafFunctor<OLatticeJIT<PSpinVectorJIT<T,N> >, ViewSpinLeaf>
   inline static
   Type_t apply(const OLatticeJIT<PSpinVectorJIT<T,N> > & s, const ViewSpinLeaf& v)
   {
-    if (v.loops.size() != 1)
+    if (v.indices.size() != 1)
       {
 	QDPIO::cout << "at spinvec leaf but not 1 index provided" << std::endl;
 	QDP_abort(1);
@@ -158,7 +158,7 @@ struct LeafFunctor<OLatticeJIT<PSpinVectorJIT<T,N> >, ViewSpinLeaf>
 
     QDPIO::cout << "leaf spinvec " << std::endl;
     
-    return s.elem( v.getLayout() , v.getIndex() ).getRegElem( v.loops[ 0 ].index() );
+    return s.elem( v.getLayout() , v.getIndex() ).getRegElem( v.indices[ 0 ] );
   }
 };
 
@@ -184,7 +184,7 @@ struct LeafFunctor<OScalarJIT<PSpinMatrixJIT<T,N> >, ViewSpinLeaf>
   inline static
   Type_t apply(const OScalarJIT<PSpinMatrixJIT<T,N> > & s, const ViewSpinLeaf& v)
   {
-    if (v.loops.size() != 2)
+    if (v.indices.size() != 2)
       {
 	QDPIO::cout << "at OSca<spinmat> leaf but not 2 indices provided" << std::endl;
 	QDP_abort(1);
@@ -192,7 +192,7 @@ struct LeafFunctor<OScalarJIT<PSpinMatrixJIT<T,N> >, ViewSpinLeaf>
 
     QDPIO::cout << "leaf OSca<spinmat> " << std::endl;
     
-    return s.elem().getRegElem( v.loops[ 0 ].index() , v.loops[ 1 ].index() );
+    return s.elem().getRegElem( v.indices[ 0 ] , v.indices[ 1 ] );
   }
 };
 
