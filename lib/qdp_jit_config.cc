@@ -50,6 +50,8 @@ namespace QDP
     
 #ifdef QDP_BACKEND_ROCM
     int  codegen_opt = 1;
+
+    std::vector<std::string> extra_libs;
 #endif
 
 #ifdef QDP_BACKEND_CUDA
@@ -130,6 +132,15 @@ namespace QDP
 #ifdef QDP_BACKEND_ROCM
   int jit_config_get_codegen_opt() { return codegen_opt; }
   void jit_config_set_codegen_opt(int opt) { codegen_opt = opt; }
+
+  void jit_config_add_extra_lib( std::string l )
+  {
+    extra_libs.push_back( l );
+  }
+  std::vector<std::string>& jit_config_get_extra_lib()
+  {
+    return extra_libs;
+  }
 #endif
   
   size_t jit_config_get_pool_alignment() { return pool_alignment; }

@@ -373,6 +373,12 @@ namespace QDP {
 	    sscanf((*argv)[++i],"%u",&val);
 	    jit_config_set_codegen_opt( val );
 	  }
+	else if (strcmp((*argv)[i], "-libdevice-extra")==0) 
+	  {
+	    char tmp[2048];
+	    sscanf((*argv)[++i], "%s", &tmp[0]);
+	    jit_config_add_extra_lib(tmp);
+	  }
 #endif
 #ifdef QDP_BACKEND_CUDA
 	else if (strcmp((*argv)[i], "-cuda-ftz")==0)
