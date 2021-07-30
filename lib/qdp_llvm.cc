@@ -342,6 +342,8 @@ namespace QDP {
     libs.push_back("/amdgcn/bitcode/oclc_unsafe_math_on.bc");
     libs.push_back("/amdgcn/bitcode/oclc_daz_opt_on.bc");
 
+    libs.insert( libs.end() , jit_config_get_extra_lib().begin() , jit_config_get_extra_lib().end() );
+    
     module_ocml.clear();
     
     for( int i = 0 ; i < libs.size() ; ++i )

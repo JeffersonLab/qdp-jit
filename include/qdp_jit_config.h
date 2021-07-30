@@ -39,6 +39,8 @@ namespace QDP
 #ifdef QDP_BACKEND_ROCM
   int jit_config_get_codegen_opt();
   void jit_config_set_codegen_opt(int opt);
+  void jit_config_add_extra_lib( std::string l );
+  std::vector<std::string>& jit_config_get_extra_lib();
 #endif
 
 #ifdef QDP_BACKEND_CUDA
