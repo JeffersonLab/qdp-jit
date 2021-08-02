@@ -424,6 +424,10 @@ namespace QDP {
 	    size_t val = (size_t)((double)(f) * mul);
 	    jit_config_set_pool_size(val);
 	  }
+	else if (strcmp((*argv)[i], "-gpudirect")==0) 
+	  {
+	    jit_config_set_gpu_direct(true);
+	  }
 	else if (strcmp((*argv)[i], "-threadstack")==0)
 	  {
 	    int stack;

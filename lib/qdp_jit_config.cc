@@ -63,6 +63,8 @@ namespace QDP
     bool deep_log_create = false;
     std::string deep_log_name = "qdp-jit-log.dat";
 #endif
+
+    bool gpu_direct = false;
   }
 
 
@@ -109,7 +111,8 @@ namespace QDP
 #ifdef QDP_BACKEND_CUDA
     QDPIO::cout << "Code generation:\n";
     QDPIO::cout << "  CUDA flush denormals to zero        : " << jit_config_get_CUDA_FTZ() << std::endl;
-#endif      
+#endif
+    QDPIO::cout << "Using GPU direct                      : " << (int)gpu_direct << "\n";
   }
 
   
@@ -274,4 +277,16 @@ namespace QDP
   }
 #endif
 
+
+  void jit_config_set_gpu_direct(bool g)
+  {
+    gpu_direct = g;
+  }
+  
+  bool jit_config_get_gpu_direct()
+  {
+    return gpu_direct;
+  }
+
+  
 }
