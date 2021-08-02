@@ -82,6 +82,10 @@ namespace QDP
   std::map<std::string,int>& qdp_jit_CPU_getall();
 #endif
 
+  void jit_config_set_gpu_direct(bool g);
+  bool jit_config_get_gpu_direct();
+
+
 }
 
 

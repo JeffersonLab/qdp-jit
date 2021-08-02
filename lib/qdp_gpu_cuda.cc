@@ -606,6 +606,13 @@ if (size == 0) *mem = nullptr;
   }
 
 
+  
+  void gpu_sync()
+  {
+    CUresult ret = cuCtxSynchronize();
+    CudaRes("cuCtxSynchronize",ret);
+  }
+
 
 
 
@@ -768,7 +775,6 @@ if (size == 0) *mem = nullptr;
     geom_host.Nblock_y = Nblock_y;
     return geom_host;
   }
-
 
 
 
