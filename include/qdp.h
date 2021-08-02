@@ -110,6 +110,7 @@ namespace QDP {
 
 
 #include "qdp_cache.h"
+#include "qdp_deep_log.h"
 #include "qdp_gpu.h"
 #include "qdp_cuda_allocator.h"
 

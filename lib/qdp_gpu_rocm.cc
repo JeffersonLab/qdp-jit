@@ -8,9 +8,8 @@
 #include <iostream>
 #include <string>
 
-#include <hip/hiprtc.h>
+#define __HIP_PLATFORM_AMD__
 #include <hip/hip_runtime.h>
-#include <hip/hip_runtime_api.h>
 
 #include <unistd.h>
 
@@ -18,9 +17,6 @@
 #ifdef QDP_USE_ROCM_STATS
 #include "amd_comgr.h"
 #endif
-
-
-//#include "cudaProfiler.h"
 
 
 namespace QDP {
@@ -551,6 +547,44 @@ namespace QDP {
     default:
       ret = JitResult::JitError;
     }
+
+#ifdef QDP_DEEP_LOG
+    if (jit_config_deep_log())
+      {
+	//size_t field_size = f.count * f.size_T;
+
+	size_t field_size = QDP_get_global_cache().getSize( f.get_dest_id() );
+
+	if (f.count > 0)
+	  {
+	    void* host_ptr;
+
+	    if ( ! (host_ptr = malloc( field_size )) )
+	      {
+		QDPIO::cout << "Cannot allocate host memory!" << endl;
+		QDP_abort(1);
+	      }
+
+	    
+	    std::vector<QDPCache::ArgKey> vec_id;
+	    vec_id.push_back( f.get_dest_id() );
+	    std::vector<void*> vec_ptrs = QDP_get_global_cache().get_dev_ptrs( vec_id );
+	    void* dev_ptr = vec_ptrs.at(0);
+
+	    //std::cout << "d2h: start = " << f.start << "  count = " << f.count << "  size_T = " << f.size_T << "   \t";
+    
+	    gpu_memcpy_d2h( host_ptr , dev_ptr , field_size );
+
+	    gpu_deep_logger( host_ptr , f.type_W , f.size_T , f.start , f.count , f.get_pretty() );
+
+	    free( host_ptr );
+	  }
+	else
+	  {
+	    QDPIO::cout << "zero count. " << f.get_pretty() << std::endl;
+	  }
+      }
+#endif
 
     return ret;
   }

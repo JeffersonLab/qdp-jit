@@ -80,6 +80,7 @@ set( CUDA_HDRS qdp_gpu.h
   qdp_jit_function.h
   qdp_expr_writer.h
   qdp_jit_config.h
+  qdp_deep_log.h
   )
 
 install(FILES ${CUDA_HDRS} DESTINATION include)
