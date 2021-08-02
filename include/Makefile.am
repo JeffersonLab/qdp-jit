@@ -35,7 +35,7 @@ CUDA_HDRS = qdp_gpu.h \
             qdp_primvectorreg.h qdp_primspinvecreg.h qdp_primcolorvecreg.h \
             qdp_handle.h qdp_mastermap.h qdp_masterset.h qdp_sum.h qdp_datalayout.h \
             qdp_jitf_copymask.h qdp_jitf_sum.h qdp_jitf_summulti.h qdp_jitf_globalmax.h qdp_jitf_gaussian.h qdp_internal.h qdp_newopsreg.h \
-            qdp_jit_function.h qdp_expr_writer.h qdp_jit_config.h
+            qdp_jit_function.h qdp_expr_writer.h qdp_jit_config.h qdp_deep_log.h
 
 
 if QDP_CUSTOM_KERNELS
