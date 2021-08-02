@@ -844,6 +844,17 @@ namespace QDP {
 
 
 
+  void gpu_sync()
+  {
+    hipError_t ret;
+    ret = hipCtxSynchronize();
+    
+    if (ret != hipSuccess)
+      {
+	std::cout << "error on hipCtxSynchronize\n";
+	QDP_abort(1);
+      }
+  }
 
 
 

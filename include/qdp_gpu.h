@@ -70,6 +70,7 @@ namespace QDP {
   std::string getPTXfromCUFunc(JitFunction& f);
 
 
+  void gpu_sync();
 
 
   struct kernel_geom_t {

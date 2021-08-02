@@ -620,6 +620,11 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
 
 	function_gather_exec(function, rRSrc.getSendBufId() , map , subexpr , f.subset );
 
+	if ( jit_config_get_gpu_direct() )
+	  {
+	    gpu_sync();
+	  }
+
 	rRSrc.send_receive();
 	
 	returnVal = maps_involved | map.getId();
