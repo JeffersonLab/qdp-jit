@@ -72,9 +72,9 @@ if( ${QDP_ENABLE_BACKEND} STREQUAL "ROCM")
 
   if( NOT DEFINED ROCM_PATH )
     if( NOT DEFINED ENV{ROCM_PATH})
-      set(ROCM_PATH "/opt/rocm" CACHE_PATH "ROCm PATH")
+      set(ROCM_PATH "/opt/rocm")
     else()
-      set(ROCM_PATH $ENV{ROCM_PATH} CACHE PATH "ROCm PATH")
+      set(ROCM_PATH $ENV{ROCM_PATH})
     endif()
   endif()
 

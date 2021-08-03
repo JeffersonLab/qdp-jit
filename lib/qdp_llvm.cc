@@ -2,12 +2,9 @@
 #include "qdp_config.h"
 #include "qdp_params.h"
 
-
-namespace QDP {
-  namespace QDPInternal {
-    void barrier();
-  }
-}
+#if defined(ARCH_PARSCALAR)
+#include "qmp.h"
+#endif
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/Statistic.h"
@@ -2007,7 +2004,9 @@ namespace QDP
 
     //
     // All nodes wait until primary node has finished LLVM codegen
-    QDPInternal::barrier();
+#if defined(ARCH_PARSCALAR)
+    QMP_barrier();
+#endif
     
     std::ostringstream sstream;
     std::ifstream fin(shared_path, ios::binary);
