@@ -3,6 +3,11 @@
 #include "qdp_params.h"
 
 
+namespace QDP {
+  namespace QDPInternal {
+    void barrier();
+  }
+}
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/Statistic.h"
