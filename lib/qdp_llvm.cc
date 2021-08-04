@@ -337,10 +337,10 @@ namespace QDP {
 
     std::vector<std::string> libs;
     libs.push_back("/amdgcn/bitcode/ocml.bc");
-    libs.push_back("/amdgcn/bitcode/oclc_finite_only_on.bc");
+    libs.push_back("/amdgcn/bitcode/oclc_finite_only_off.bc");
     libs.push_back("/amdgcn/bitcode/oclc_isa_version_" + arch + ".bc");
     libs.push_back("/amdgcn/bitcode/oclc_unsafe_math_off.bc");
-    libs.push_back("/amdgcn/bitcode/oclc_daz_opt_on.bc");
+    libs.push_back("/amdgcn/bitcode/oclc_daz_opt_off.bc");
 
     libs.insert( libs.end() , jit_config_get_extra_lib().begin() , jit_config_get_extra_lib().end() );
     
