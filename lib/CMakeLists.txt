@@ -26,6 +26,7 @@ add_library(qdp qdp_map.cc
 	qdp_jit_config.cc
 	qdp_pete_visitors.cc
 	qdp_default_allocator.cc
+	qdp_deep_log.cc
 )
 
 if( QDP_ENABLE_BACKEND STREQUAL "CUDA" )

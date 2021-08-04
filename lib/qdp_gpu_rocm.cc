@@ -881,7 +881,7 @@ namespace QDP {
   void gpu_sync()
   {
     hipError_t ret;
-    ret = hipCtxSynchronize();
+    ret = hipStreamSynchronize(NULL);
     
     if (ret != hipSuccess)
       {
