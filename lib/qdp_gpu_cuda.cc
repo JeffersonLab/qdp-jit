@@ -614,6 +614,19 @@ if (size == 0) *mem = nullptr;
   }
 
 
+  int cuda_get_attribute( CUfunction_attribute a , CUfunction f )
+  {
+    CUresult ret;
+
+    int tmp;
+    ret = cuFuncGetAttribute ( &tmp , a , f );
+    if (ret != CUDA_SUCCESS)
+    {
+      QDPIO::cerr << "Error getting function attribute: num regs.";
+      QDP_abort(1);
+    }
+    return tmp;
+  }
 
 
   bool get_jitf( JitFunction& func, const std::string& kernel_ptx , const std::string& kernel_name , const std::string& pretty , const std::string& str_compute )
@@ -648,106 +661,9 @@ if (size == 0) *mem = nullptr;
 
     if ( gpu_get_record_stats() && Layout::primaryNode() )
       {
-	std::string ptxpath  = "kernel_n" + std::to_string( Layout::nodeNumber() ) + "_p" + std::to_string( ::getpid() ) + ".ptx";
-	std::string sasspath = "kernel_n" + std::to_string( Layout::nodeNumber() ) + "_p" + std::to_string( ::getpid() ) + ".sass";
-      
-	std::ofstream f(ptxpath);
-	f << kernel_ptx;
-	f.close();
-
-	FILE *fp;
-	char buf[1024];
-
-	string cmd = "ptxas -v --gpu-name " + str_compute + " " + ptxpath + " -o " + sasspath + " 2>&1";
-      
-	fp = popen( cmd.c_str() , "r" );
-      
-	if (fp == NULL)
-	  {
-	    QDPIO::cerr << "Stats error: Failed to run command via popen\n";
-	    return false;
-	  }
-	
-	std::ostringstream output;
-	while (fgets(buf, sizeof(buf), fp) != NULL) {
-	  output << buf;
-	}
-      
-	pclose(fp);
-
-	std::istringstream iss(output.str());
-
-	std::vector<std::string> words;
-	std::copy(istream_iterator<string>(iss),
-		  istream_iterator<string>(),
-		  std::back_inserter(words));
-
-	if ( words.size() < 32 )
-	  {
-	    std::cerr << "Couldn't read all tokens (output of ptxas has changed?)\n";
-	    std::cerr << "----- Output -------\n";
-	    std::cerr << output.str() << "\n";
-	    std::cerr << "--------------------\n";
-	    return false;
-	  }
-
-	//
-	// Usually the output of ptxas -v looks like
-	//
-	// ptxas info    : 0 bytes gmem
-	// ptxas info    : Compiling entry function 'sum0' for 'sm_50'
-	// ptxas info    : Function properties for sum0
-	//     0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
-	// ptxas info    : Used 12 registers, 344 bytes cmem[0]
-	//
-	// But for functions that use calls to other functions like
-	// into the libdevice the first line might like more like
-	//
-	// ptxas info    : 0 bytes gmem, 24 bytes cmem[3]
-
-	int pos_add = 0;
-	if (words[5] == "gmem,")
-	  {
-	    pos_add = 3;
-	  }
-	
-	const int pos_stack = 22 + pos_add;
-	const int pos_store = 26 + pos_add;
-	const int pos_loads = 30 + pos_add;
-	const int pos_regs = 38 + pos_add;
-	const int pos_cmem = 40 + pos_add;
-
-	func.set_stack( std::atoi( words[ pos_stack ].c_str() ) );
-	func.set_spill_store( std::atoi( words[ pos_store ].c_str() ) );
-	func.set_spill_loads( std::atoi( words[ pos_loads ].c_str() ) );
-	func.set_regs( std::atoi( words[ pos_regs ].c_str() ) );
-	func.set_cmem( std::atoi( words[ pos_cmem ].c_str() ) );
-
-#if 1
-	// Zero encountered ??
-	if (func.get_regs() == 0)
-	  {
-	    std::cerr << "----- zero regs encountered -----\n";
-	    std::cerr << output.str() << "\n";
-	    std::cerr << "----------------------------\n";
-	  }
-#endif
-	
-	// QDPIO::cout << "----- Kernel stats ------\n";
-	// QDPIO::cout << "kernel_stack       = "<< kernel_stack << "\n";
-	// QDPIO::cout << "kernel_spill_store = "<< kernel_spill_store << "\n";
-	// QDPIO::cout << "kernel_spill_loads = "<< kernel_spill_loads << "\n";
-	// QDPIO::cout << "kernel_regs        = "<< kernel_regs << "\n";
-	// QDPIO::cout << "kernel_cmem        = "<< kernel_cmem << "\n";
-      
-#if 0      
-	string cmd = "ptxas --gpu-name " + compute + " " + ptxpath + " -o " + sasspath;
-	if (system(cmd.c_str()) == 0) {
-	  cmd = "nvdisasm " + sasspath;
-	  int ret = system(cmd.c_str());
-	  (void)ret;  // Don't care if it fails
-	}
-#endif
+	func.set_regs ( cuda_get_attribute( CU_FUNC_ATTRIBUTE_NUM_REGS , cuf ) );
+	func.set_stack( cuda_get_attribute( CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES , cuf ) );
+	func.set_cmem ( cuda_get_attribute( CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES , cuf ) );
       }
     return true;
   }

@@ -733,8 +733,6 @@ namespace QDP {
 		    QDPIO::cout << "grpseg" << "\t";
 #else
 		    QDPIO::cout << "stack" << "\t";
-		    QDPIO::cout << "sspill" << "\t";
-		    QDPIO::cout << "lspill" << "\t";
 		    QDPIO::cout << "regs" << "\t";
 		    QDPIO::cout << "cmem" << "\t";
 #endif
@@ -774,8 +772,6 @@ namespace QDP {
 			QDPIO::cout << all.at(i)->get_group_segment() << "\t";
 #else
 			QDPIO::cout << all.at(i)->get_stack() << "\t";
-			QDPIO::cout << all.at(i)->get_spill_store() << "\t";
-			QDPIO::cout << all.at(i)->get_spill_loads() << "\t";
 			QDPIO::cout << all.at(i)->get_regs() << "\t";
 			QDPIO::cout << all.at(i)->get_cmem() << "\t";
 #endif
