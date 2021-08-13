@@ -17,8 +17,6 @@
 #include "llvm/Bitcode/BitcodeWriter.h"
 
 #include "llvm/CodeGen/CommandFlags.h"
-using namespace llvm;
-using namespace llvm::codegen;
 
 #include "llvm/Support/CommandLine.h"
 
@@ -31,6 +29,17 @@ using namespace llvm::codegen;
 
 #include <memory>
 #include <unistd.h>
+
+
+#if 1
+#include "lld/Common/Driver.h"
+#include "lld/Common/ErrorHandler.h"
+#include "lld/Common/Memory.h"
+#endif
+
+using namespace llvm;
+using namespace llvm::codegen;
+
 
 namespace QDP {
 
@@ -131,6 +140,17 @@ namespace QDP {
     DBType db;
   }
 
+
+#if 1
+  int lldMain(int argc, const char **argv, llvm::raw_ostream &stdoutOS,
+	      llvm::raw_ostream &stderrOS, bool exitEarly = true)
+  {
+    std::vector<const char *> args(argv, argv + argc);
+    
+    return !lld::elf::link(args, exitEarly, stdoutOS, stderrOS);
+  }
+#endif
+  
   
   void llvm_set_clang_codegen()
   {
@@ -955,12 +975,6 @@ namespace QDP {
       if ( dest_type->getArrayElementType() == src->getType() )
 	return src;
 
-#if defined (QDP_LLVM12)
-#else
-    if (!llvm::CastInst::isCastable( src->getType() , dest_type ))
-      QDP_error_exit("not castable");
-#endif
-
     //llvm::outs() << "cast instruction: dest type = " << dest_type << "   from " << src->getType() << "\n";
     
     llvm::Value* ret = builder->CreateCast( llvm::CastInst::getCastOpcode( src , true , dest_type , true ) , 
@@ -1471,19 +1485,8 @@ namespace QDP {
   }
 
 
-  void llvm_print_module( llvm::Module* m , const char * fname ) {
-    std::error_code EC;
-    llvm::raw_fd_ostream outfd( fname , EC, llvm::sys::fs::OpenFlags::F_Text);
-
-    std::string banner;
-    {
-      llvm::outs() << "llvm_print_module ni\n";
-#if 0
-      llvm::PassManager PM;
-      PM.add( llvm::createPrintModulePass( &outfd, false, banner ) ); 
-      PM.run( *m );
-#endif
-    }
+  void llvm_print_module( llvm::Module* m , const char * fname )
+  {
   }
 
 
@@ -1792,7 +1795,11 @@ namespace QDP {
 	clang_name = "module_" + str_kernel_name + ".bc";
 	QDPIO::cout << "write code to " << clang_name << "\n";
 	std::error_code EC;
+#if defined(QDP_LLVM12)
 	llvm::raw_fd_ostream OS(clang_name, EC, llvm::sys::fs::F_None);
+#else
+	llvm::raw_fd_ostream OS(clang_name, EC, llvm::sys::fs::OF_None);
+#endif
 	llvm::WriteBitcodeToFile(*Mod, OS);
 	OS.flush();
       }
@@ -1873,8 +1880,12 @@ namespace QDP {
 	std::error_code ec;
 
 	{
+#if defined(QDP_LLVM12)
 	  std::unique_ptr<llvm::raw_fd_ostream> isabin_fs( new llvm::raw_fd_ostream(isabin_path, ec, llvm::sys::fs::F_Text));
-
+#else
+	  std::unique_ptr<llvm::raw_fd_ostream> isabin_fs( new llvm::raw_fd_ostream(isabin_path, ec, llvm::sys::fs::OF_Text));
+#endif
+	  
 	  if (TargetMachine->addPassesToEmitFile(CodeGenPasses, 
 						 *isabin_fs,
 						 nullptr,
@@ -1889,16 +1900,15 @@ namespace QDP {
 	    {
 	      QDPIO::cout << "running code gen ...\n";
 	    }
-	  
+	    
 	  CodeGenPasses.run(*Mod);
-
-	  isabin_fs->flush();
 	}
       }
 
     swatch.stop();
     func.time_codegen = swatch.getTimeInMicroseconds();
-    
+
+#if 0
     std::string lld_path = std::string(ROCM_DIR) + "/llvm/bin/ld.lld";
     std::string command = lld_path + " -shared " + isabin_path + " -o " + shared_path;
 
@@ -1911,7 +1921,30 @@ namespace QDP {
     swatch.start();
 
     system( command.c_str() );
+#else
+    int argc=5;
+    const char *argv[] = { "ld" , "-shared" , isabin_path.c_str() , "-o" , shared_path.c_str() };
 
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "Library call to ld.lld: ";
+	for ( int i = 0 ; i < argc ; ++i )
+	  QDPIO::cout << argv[i] << " ";
+	QDPIO::cout << std::endl;
+      }
+
+    if (lldMain(argc, argv, llvm::outs(), llvm::errs(), false))
+      {
+	QDPIO::cout << "Linker invocation unsuccessful" << std::endl;
+	QDP_error_exit("calling ld.lld failed");
+      }
+    
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "Linker invocation successful" << std::endl;
+      }
+#endif
+    
     swatch.stop();
     func.time_linking = swatch.getTimeInMicroseconds();
   }

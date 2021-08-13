@@ -90,8 +90,14 @@ target_include_directories( qdp PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../include>
         $<INSTALL_INTERFACE:include> )
+
 target_include_directories(qdp PUBLIC ${LLVM_INCLUDE_DIRS} )
 target_link_libraries( qdp PUBLIC ${GPU_LIBS} ${LLVM_AVAILABLE_LIBS} )
+
+target_include_directories(qdp PUBLIC ${LLD_INCLUDE_DIRS} )
+target_link_libraries( qdp PUBLIC ${LLD_EXPORTED_TARGETS} )
+
+
 set_target_properties( qdp PROPERTIES 
 	CXX_STANDARD 14
 	CXX_EXTENSIONS OFF

@@ -12,7 +12,7 @@ set(QDP_PRECISION @QDP_PRECISION@)
 set(QDP_LAYOUT @QDP_LAYOUT@)
 # NC, ND, NS
 set(QDP_ND @QDP_ND@)
-set(QDP_NC @QDP_NS@)
+set(QDP_NC @QDP_NC@)
 set(QDP_NS @QDP_NS@)
 set(QDP_ALIGNMENT_SIZE @QDP_ALIGNMENT_SIZE@)
 message(STATUS "QDP++:  Configuring System")
@@ -66,6 +66,7 @@ if(QDP_ENABLE_LLVM12)
   set(QDP_LLVM12 "1")
 endif()
 
+
 set(QDP_IS_QDPJIT 1)
 
 # This is just in case we want to rebuild the examples as 
@@ -96,6 +97,7 @@ endif()
 
 # Now find the dependencies 
 find_dependency(LLVM "12.0" REQUIRED CONFIG)
+find_dependency(LLD REQUIRED)
 find_dependency(XPathReader REQUIRED)
 find_dependency(FileDB REQUIRED)
 find_dependency(QIO REQUIRED)
