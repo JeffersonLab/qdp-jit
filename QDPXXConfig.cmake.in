@@ -66,6 +66,7 @@ if(QDP_ENABLE_LLVM12)
   set(QDP_LLVM12 "1")
 endif()
 
+
 set(QDP_IS_QDPJIT 1)
 
 # This is just in case we want to rebuild the examples as 
@@ -96,6 +97,7 @@ endif()
 
 # Now find the dependencies 
 find_dependency(LLVM "12.0" REQUIRED CONFIG)
+find_dependency(LLD REQUIRED)
 find_dependency(XPathReader REQUIRED)
 find_dependency(FileDB REQUIRED)
 find_dependency(QIO REQUIRED)

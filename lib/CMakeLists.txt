@@ -15,6 +15,7 @@ add_library(qdp qdp_map.cc
  	qdp_stopwatch.cc
 	qdp_rannyu.cc
 	qdp_mapresource.cc
+	qdp_llvm.cc
 	qdp_cache.cc
 	qdp_mastermap.cc
 	qdp_masterset.cc
@@ -94,6 +95,10 @@ target_include_directories( jit PUBLIC
         $<INSTALL_INTERFACE:include> )
 target_include_directories(jit PUBLIC ${LLVM_INCLUDE_DIRS} )
 target_link_libraries( jit PUBLIC ${GPU_LIBS} ${LLVM_AVAILABLE_LIBS} )
+
+target_include_directories(jit PUBLIC ${LLD_INCLUDE_DIRS} )
+target_link_libraries( jit PUBLIC ${LLD_EXPORTED_TARGETS} )
+
 set_target_properties( jit PROPERTIES 
 	CXX_STANDARD 14
 	CXX_EXTENSIONS OFF
@@ -147,8 +152,6 @@ install(TARGETS qdp jit
   RUNTIME DESTINATION bin
   INCLUDES DESTINATION include
 )
-
-
 #install the export description of the targets
 install(EXPORT QDPXXTargets
 	FILE QDPXXTargets.cmake

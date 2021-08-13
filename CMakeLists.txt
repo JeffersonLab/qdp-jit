@@ -78,7 +78,8 @@ if( ${QDP_ENABLE_BACKEND} STREQUAL "ROCM")
     endif()
   endif()
 
-  set(CMAKE_MODULE_PATH "${ROCM_PATH}/lib/cmake" ${CMAKE_MODULE_PATH})
+  #set(CMAKE_MODULE_PATH "${ROCM_PATH}/lib/cmake" ${CMAKE_MODULE_PATH})
+  find_package(LLD REQUIRED)
   find_package(hip REQUIRED)
 
   set(GPU_LIBS hip::amdhip64)
@@ -234,6 +235,8 @@ check_function_exists("strnlen" HAVE_STRNLEN)
 find_package(LLVM "12.0" REQUIRED CONFIG)
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in ${LLVM_DIR}")
+
+
 
 # If we are parallel we need QMP
 if ( QDP_ARCH_PARSCALAR  OR  QDP_ARCH_PARSCALARVEC )
