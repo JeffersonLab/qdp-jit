@@ -41,6 +41,20 @@ using namespace llvm;
 using namespace llvm::codegen;
 
 
+
+namespace {
+  int lldMain(int argc, const char **argv, llvm::raw_ostream &stdoutOS,
+	      llvm::raw_ostream &stderrOS, bool exitEarly = true)
+  {
+    std::vector<const char *> args(argv, argv + argc);
+    
+    return !lld::elf::link(args, exitEarly, stdoutOS, stderrOS);
+  }
+}
+  
+
+
+
 namespace QDP {
 
   enum jitprec { i32 , f32 , f64 };
@@ -141,16 +155,6 @@ namespace QDP {
   }
 
 
-#if 1
-  int lldMain(int argc, const char **argv, llvm::raw_ostream &stdoutOS,
-	      llvm::raw_ostream &stderrOS, bool exitEarly = true)
-  {
-    std::vector<const char *> args(argv, argv + argc);
-    
-    return !lld::elf::link(args, exitEarly, stdoutOS, stderrOS);
-  }
-#endif
-  
   
   void llvm_set_clang_codegen()
   {
@@ -1908,20 +1912,9 @@ namespace QDP {
     swatch.stop();
     func.time_codegen = swatch.getTimeInMicroseconds();
 
-#if 0
-    std::string lld_path = std::string(ROCM_DIR) + "/llvm/bin/ld.lld";
-    std::string command = lld_path + " -shared " + isabin_path + " -o " + shared_path;
-
-    if (jit_config_get_verbose_output())
-      {
-	QDPIO::cout << "System: " << command.c_str() << "\n";
-      }
-
-    swatch.reset();
-    swatch.start();
-
-    system( command.c_str() );
-#else
+    //
+    // Call linker as a library
+    //    
     int argc=5;
     const char *argv[] = { "ld" , "-shared" , isabin_path.c_str() , "-o" , shared_path.c_str() };
 
@@ -1943,7 +1936,6 @@ namespace QDP {
       {
 	QDPIO::cout << "Linker invocation successful" << std::endl;
       }
-#endif
     
     swatch.stop();
     func.time_linking = swatch.getTimeInMicroseconds();
