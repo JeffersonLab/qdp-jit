@@ -34,10 +34,6 @@
 #include "llvm/IR/DataLayout.h"
 #include "llvm/Support/SourceMgr.h"
 
-//#if defined (QDP_LLVM12)
-//#else
-//#include "llvm/IR/TypeBuilder.h"
-//#endif
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/StringSet.h"
@@ -69,11 +65,7 @@
 
 
 namespace llvm {
-  //#if defined (QDP_LLVM12)
   ModulePass *createNVVMReflectPass(unsigned int);
-  //#else
-  //ModulePass *createNVVMReflectPass(void);
-  //#endif
 }
 
 

@@ -1799,10 +1799,10 @@ namespace QDP {
 	clang_name = "module_" + str_kernel_name + ".bc";
 	QDPIO::cout << "write code to " << clang_name << "\n";
 	std::error_code EC;
-#if defined(QDP_LLVM12)
-	llvm::raw_fd_ostream OS(clang_name, EC, llvm::sys::fs::F_None);
-#else
+#if defined(QDP_LLVM13)
 	llvm::raw_fd_ostream OS(clang_name, EC, llvm::sys::fs::OF_None);
+#else
+	llvm::raw_fd_ostream OS(clang_name, EC, llvm::sys::fs::F_None);
 #endif
 	llvm::WriteBitcodeToFile(*Mod, OS);
 	OS.flush();
@@ -1884,10 +1884,10 @@ namespace QDP {
 	std::error_code ec;
 
 	{
-#if defined(QDP_LLVM12)
-	  std::unique_ptr<llvm::raw_fd_ostream> isabin_fs( new llvm::raw_fd_ostream(isabin_path, ec, llvm::sys::fs::F_Text));
-#else
+#if defined(QDP_LLVM13)
 	  std::unique_ptr<llvm::raw_fd_ostream> isabin_fs( new llvm::raw_fd_ostream(isabin_path, ec, llvm::sys::fs::OF_Text));
+#else
+	  std::unique_ptr<llvm::raw_fd_ostream> isabin_fs( new llvm::raw_fd_ostream(isabin_path, ec, llvm::sys::fs::F_Text));
 #endif
 	  
 	  if (TargetMachine->addPassesToEmitFile(CodeGenPasses, 
