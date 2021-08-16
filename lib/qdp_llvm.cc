@@ -58,13 +58,11 @@
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Utils/Cloning.h"
 
-#include "llvm/CodeGen/CommandFlags.h"
-
 #include <system_error>
 #include <memory>
 #include <unistd.h>
 
-#if 1
+#ifdef QDP_BACKEND_ROCM
 #include "lld/Common/Driver.h"
 #include "lld/Common/ErrorHandler.h"
 #include "lld/Common/Memory.h"
@@ -80,6 +78,8 @@ namespace llvm {
 }
 
 
+
+#ifdef QDP_BACKEND_ROCM
 namespace {
   int lldMain(int argc, const char **argv, llvm::raw_ostream &stdoutOS,
 	      llvm::raw_ostream &stderrOS, bool exitEarly = true)
@@ -89,7 +89,8 @@ namespace {
     return !lld::elf::link(args, exitEarly, stdoutOS, stderrOS);
   }
 }
-  
+#endif
+
 
 namespace QDP
 {
