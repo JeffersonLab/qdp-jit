@@ -15,7 +15,7 @@ namespace QDP {
 
   public:
     enum { ThisSize = N };                 // Size in T's
-    enum { Size_t = ThisSize * T::Size_t}; // Size in registers
+    enum { Size_t = static_cast<int>(ThisSize) * static_cast<int>(T::Size_t)}; // Size in registers
 
     
     //Default constructor
