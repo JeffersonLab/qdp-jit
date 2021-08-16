@@ -39,16 +39,6 @@ if( QDP_ENABLE_BACKEND STREQUAL "ROCM" )
 	target_sources(qdp PRIVATE qdp_gpu_rocm.cc)
 endif()
 
-if( QDP_ENABLE_CUDA_SPECIAL )
-	target_sources(qdp PRIVATE
-		qdp_functions_special.cc
-		cuda_special.cc
-    cuda_special_quarkContract13.cu
-		cuda_special_quarkContract14.cu
-		cuda_special_quarkContract23.cu
-		cuda_special_quarkContract24.cu
-	)
-endif()
 
 if(QDP_USE_LIBXML2)
 	target_sources(qdp PRIVATE
@@ -94,7 +84,8 @@ target_include_directories( jit PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../include>
         $<INSTALL_INTERFACE:include> )
 target_include_directories(jit PUBLIC ${LLVM_INCLUDE_DIRS} )
-target_link_libraries( jit PUBLIC ${GPU_LIBS} ${LLVM_AVAILABLE_LIBS} )
+target_link_libraries( jit PUBLIC ${LLVM_AVAILABLE_LIBS} )
+target_link_libraries( jit PUBLIC QMP::qmp)
 
 target_include_directories(jit PUBLIC ${LLD_INCLUDE_DIRS} )
 target_link_libraries( jit PUBLIC ${LLD_EXPORTED_TARGETS} )
@@ -111,8 +102,7 @@ target_include_directories( qdp PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../include>
         $<INSTALL_INTERFACE:include> )
-target_include_directories(qdp PUBLIC ${LLVM_INCLUDE_DIRS} )
-target_link_libraries( qdp PUBLIC ${GPU_LIBS} ${LLVM_AVAILABLE_LIBS} jit )
+target_link_libraries( qdp PUBLIC ${GPU_LIBS} )
 set_target_properties( qdp PROPERTIES 
 	CXX_STANDARD 20
 	CXX_EXTENSIONS OFF
@@ -122,22 +112,17 @@ set_target_properties( qdp PROPERTIES
 
 
 
-
-
 # Link QIO from subtree
 target_link_libraries( qdp PUBLIC jit QIO::qio )
-target_link_libraries( jit PUBLIC qdp QIO::qio )
 
 # If using libxml link the XPathReader and xmlWriter libraries
 if( QDP_USE_LIBXML2 )
         target_link_libraries( qdp PUBLIC XPathReader::XPathReader XPathReader::xmlWriter )
-        target_link_libraries( jit PUBLIC XPathReader::XPathReader XPathReader::xmlWriter )
 endif()
 
 # If we want filedb (always?) link that
 if( QDP_USE_FILEDB )
         target_link_libraries( qdp PUBLIC FileDB::filedb )
-        target_link_libraries( jit PUBLIC FileDB::filedb )
 endif()
 
 if( QDP_SANITIZER_OPTS )
@@ -159,3 +144,4 @@ install(EXPORT QDPXXTargets
         DESTINATION lib/cmake/QDPXX)
 
 add_library(QDPXX::qdp ALIAS qdp)
+add_library(QDPXX::jit ALIAS jit)

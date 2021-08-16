@@ -388,15 +388,6 @@ namespace QDP {
 	    jit_config_set_CUDA_FTZ( val );
 	  }
 #endif
-#ifdef QDP_CUDA_SPECIAL
-	else if (strcmp((*argv)[i], "-cudaspecial")==0)
-	  {
-	    unsigned func,bsize;
-	    sscanf((*argv)[++i],"%u",&func);
-	    sscanf((*argv)[++i],"%u",&bsize);
-	    cuda_special_set_function_blocksize(func, bsize );
-	  }
-#endif
 	else if (strcmp((*argv)[i], "-poolsize")==0) 
 	  {
 	    float f;

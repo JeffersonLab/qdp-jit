@@ -13,7 +13,7 @@ add_library(examples mesplq.cc reunit.cc dslashm_w.cc rgauge.cc taproj.cc
 			
 target_link_libraries(examples PUBLIC QDPXX::qdp)
 set_target_properties(examples PROPERTIES 
-	CXX_STANDARD 14
+	CXX_STANDARD 20
 	CXX_EXTENSIONS OFF
 	C_STANDARD 99
 	C_EXTENSIONS OFF)
@@ -46,9 +46,9 @@ set(TESTS ${TESTS} nersc2ildg test_ildglat lhpc2ildg)
 
 foreach(TEST ${TESTS})
  add_executable(${TEST} ${TEST}.cc)
- target_link_libraries(${TEST} examples)
+ target_link_libraries(${TEST} examples QDPXX::jit)
  set_target_properties(${TEST} PROPERTIES 
-	CXX_STANDARD 14
+	CXX_STANDARD 20
  	CXX_EXTENSIONS OFF)
 endforeach()
 

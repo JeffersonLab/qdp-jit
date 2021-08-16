@@ -92,11 +92,6 @@ set( QDP_CUSTOM_HDRS
 
 install(FILES ${QDP_CUSTOM_HDRS} DESTINATION include/)
 
-set( QDP_SPECIAL_HDRS
-  qdp_functions_special.h
-  cuda_special.h
-  )
-
 install(FILES ${QDP_SPECIAL_HDRS} DESTINATION include/)
 
 set( QDP_HDRS

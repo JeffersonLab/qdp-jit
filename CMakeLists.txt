@@ -25,7 +25,6 @@ option(QDP_ENABLE_ROCM_STATS "Enable ROCM statistics" OFF)
 option(QDP_ENABLE_CUDA_MANAGED_MEMORY "Enable CUDA Managed Memory" OFF)
 
 option(QDP_ENABLE_CUSTOM_KERNELS "Enable Custom Kernels" OFF)
-option(QDP_ENABLE_CUDA_SPECIAL "Enable CUDA Special" OFF)
 option(QDP_ENABLE_DEEP_LOG "Enable Deep logging" OFF)
 set(QDP_DEEP_LOG ${QDP_ENABLE_DEEP_LOG})
 
@@ -55,15 +54,9 @@ endif()
 ##
 if( ${QDP_ENABLE_BACKEND} STREQUAL "CUDA")
   message(STATUS "Building For CUDA")
-#  enable_language(CUDA)
   find_package(CUDAToolkit REQUIRED)
-#  set(CUDA_GCC ${CMAKE_CXX_COMPILER})
   set(QDP_BACKEND_CUDA  "1")
   set(GPU_LIBS "CUDA::cuda_driver")
-  if( QDP_ENABLE_CUDA_SPECIAL )
-    set( QDP_CUDA_SPECIAL "yes" )
-    set( GPU_LIBS ${GPU_LIBS} "CUDA::cudart")
-  endif()
 endif()
 
 if( ${QDP_ENABLE_BACKEND} STREQUAL "ROCM")

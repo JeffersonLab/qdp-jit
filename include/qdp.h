@@ -227,12 +227,6 @@ namespace QDP {
 #include "qdp_sum.h"
 #include "qdp_functions.h"
 
-#ifdef QDP_CUDA_SPECIAL
-#warning "Using CUDA specializations"
-#include "qdp_functions_special.h"
-#include "cuda_special.h"
-#endif
-
 #if defined(ARCH_SCALAR)
 #include "qdp_scalar_specific.h"
 #elif defined(ARCH_PARSCALAR)
