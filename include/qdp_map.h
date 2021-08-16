@@ -445,9 +445,6 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewSpinLeaf, OpCombine>
 
 	  typedef typename ForEach<A, ViewLeaf, OpCombine>::Type_t FullSpinTypeA_t;
 
-	  QDPIO::cout << "FullSpinTypeA_t : ";
-	  print_type<FullSpinTypeA_t>();
-#if 1
 	  //
 	  // Setup an object (of return type) on the stack
 	  //
@@ -492,14 +489,11 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewSpinLeaf, OpCombine>
 	  // Now read the object from the stack into a REG container
 	  //
 	  ret.setup( ret_stack );
-#endif
       
 	  return ret;
 	}
       else
 	{
-	  QDPIO::cout << __PRETTY_FUNCTION__ << std::endl;
-	  
 	  IndexRet index = expr.operation().index;
 
 	  llvm::Value * r_new_index = llvm_array_type_indirection( index.p_multi_index , v.getIndex() );
@@ -530,13 +524,6 @@ struct ForEach<UnaryNode<FnMap, A>, DynKeyTag , OrCombine>
 
     a.key.add( map.hasOffnode() ? 1 : 0 );
 
-#if 0
-    if (map.hasOffnode())
-      QDPIO::cout << "PETE: offnode\n";
-    else
-      QDPIO::cout << "PETE: local\n";
-#endif
-    
     return map.hasOffnode() || ForEach<A, DynKeyTag , OrCombine>::apply( expr.child() , a , n );
   }
 };
@@ -554,10 +541,6 @@ struct ForEach<UnaryNode<FnMap, A>, AddressLeaf, NullCombine>
       const Map& map = expr.operation().map;
       FnMap& fnmap = const_cast<FnMap&>(expr.operation());
 
-      // int goffsetsId = expr.operation().map.getGoffsetsId(a.subset);
-      // void * goffsetsDev = QDP_get_global_cache().getDevicePtr( goffsetsId );
-      // a.setAddr( goffsetsDev );
-      
       a.setId( expr.operation().map.getGoffsetsId(a.subset) );
 
       if (map.hasOffnode())
@@ -586,7 +569,6 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
     const Map& map = expr.operation().map;
     FnMap& fnmap = const_cast<FnMap&>(expr.operation());
 
-    //const int nodeSites = Layout::sitesOnNode();
     int returnVal=0;
 
     Expr subexpr(expr.child());

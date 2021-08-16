@@ -7,7 +7,6 @@ namespace QDP {
 
   template<class T, class T1, class Op, class RHS>
   typename std::enable_if_t< ! HasProp<RHS>::value >
-  //typename std::enable_if_t< ( ! HasProp<RHS>::value ) || IsPokeSpin<Op>::value >
   function_build(JitFunction& function, const DynKey& key, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
   {
     std::ostringstream expr;
@@ -85,10 +84,6 @@ namespace QDP {
 
 	    llvm::Value* r_idx = llvm_add( r_idx_thread , r_start );
 
-	    QDPIO::cout << "using vanilla route" << std::endl;
-
-	    print_type<View_t>();
-	  
 	    op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ), 
 		    forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , r_idx ), OpCombine()));
 	  }
@@ -126,15 +121,11 @@ namespace QDP {
 
   template<class T, class T1, class Op, class RHS>
   typename std::enable_if_t< HasProp<RHS>::value >
-  //typename std::enable_if_t< !( ( ! HasProp<RHS>::value ) || IsPokeSpin<Op>::value ) >
   function_build(JitFunction& function, const DynKey& key, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
   {
     std::ostringstream expr;
-#if 0
-    printExprTreeSubset( expr , dest, op, rhs , s , key );
-#else
-    expr << std::string(__PRETTY_FUNCTION__) << "_key=" << key;
-#endif
+
+    //expr << std::string(__PRETTY_FUNCTION__) << "_key=" << key;
   
     if (ptx_db::db_enabled)
       {
@@ -142,7 +133,7 @@ namespace QDP {
 	if (!function.empty())
 	  return;
       }
-    llvm_start_new_function("eval",expr.str().c_str() );
+    llvm_start_new_function("evalp",expr.str().c_str() );
   
     if ( key.get_offnode_comms() )
       {
@@ -182,7 +173,6 @@ namespace QDP {
  
 	    for( int i = loops.size() - 1 ; 0 <= i ; --i )
 	      {
-		QDPIO::cout << "loop[" << i << "].end();" << std::endl;
 		loops[i].end();
 	      }
 	  
@@ -211,9 +201,6 @@ namespace QDP {
 	    typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
 	    View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
-	    print_type<View_t>();
-
-
 	    llvm::Value * r_th_count     = llvm_derefParam( p_th_count );
 	    llvm::Value * r_start        = llvm_derefParam( p_start );
 
@@ -222,8 +209,6 @@ namespace QDP {
 	    llvm_cond_exit( llvm_ge( r_idx_thread , r_th_count ) );
 
 	    llvm::Value* r_idx = llvm_add( r_idx_thread , r_start );
-
-	    QDPIO::cout << "using prop route" << std::endl;
 
 	    std::vector< JitForLoop > loops;
 	    CreateLoops<T,OpJit_t>::apply( loops , op_jit );
@@ -237,11 +222,8 @@ namespace QDP {
  
 	    for( int i = loops.size() - 1 ; 0 <= i ; --i )
 	      {
-		QDPIO::cout << "loop[" << i << "].end();" << std::endl;
 		loops[i].end();
 	      }
-	    
-	  
 	  }
 	else // unordered Subset
 	  {
@@ -279,13 +261,6 @@ namespace QDP {
   void 
   function_exec(JitFunction& function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
   {
-    //QDPIO::cout << __PRETTY_FUNCTION__ << "\n";
-    //  if (!s.hasOrderedRep())
-    //    {
-    //      QDPIO::cout << "no ordered rep " << __PRETTY_FUNCTION__ << std::endl;
-    //      QDP_abort(1);
-    //    }
-
 #ifdef QDP_DEEP_LOG
     function.start = s.start();
     function.count = s.hasOrderedRep() ? s.numSiteTable() : Layout::sitesOnNode();

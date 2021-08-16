@@ -136,8 +136,6 @@ struct LeafFunctor<OLatticeJIT<PSpinMatrixJIT<T,N> >, ViewSpinLeaf>
 	QDP_abort(1);
       }
 
-    QDPIO::cout << "leaf spinmat " << std::endl;
-    
     return s.elem( v.getLayout() , v.getIndex() ).getRegElem( v.indices[ 0 ] , v.indices[ 1 ] );
   }
 };
@@ -156,8 +154,6 @@ struct LeafFunctor<OLatticeJIT<PSpinVectorJIT<T,N> >, ViewSpinLeaf>
 	QDP_abort(1);
       }
 
-    QDPIO::cout << "leaf spinvec " << std::endl;
-    
     return s.elem( v.getLayout() , v.getIndex() ).getRegElem( v.indices[ 0 ] );
   }
 };
@@ -190,8 +186,6 @@ struct LeafFunctor<OScalarJIT<PSpinMatrixJIT<T,N> >, ViewSpinLeaf>
 	QDP_abort(1);
       }
 
-    QDPIO::cout << "leaf OSca<spinmat> " << std::endl;
-    
     return s.elem().getRegElem( v.indices[ 0 ] , v.indices[ 1 ] );
   }
 };

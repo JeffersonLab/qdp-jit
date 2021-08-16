@@ -6,7 +6,7 @@
 
 namespace QDP {
 
-
+#if 0
   namespace
   {
     template <class T>
@@ -15,7 +15,7 @@ namespace QDP {
       QDPIO::cout << __PRETTY_FUNCTION__ << std::endl;
     }
   }
-
+#endif
 
 
 
@@ -126,12 +126,6 @@ namespace QDP {
     inline static
     Type_t apply(const BinaryNode<OpMultiply, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
     {
-      QDPIO::cout << "mul(spinmat,spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
-
-      print_type<A>();
-      print_type<TypeA_t>();
-      print_type<Type_t>();
-    
       JitStackArray< Type_t , 1 > stack;
     
       stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::
@@ -163,8 +157,6 @@ namespace QDP {
     inline static
     Type_t apply(const BinaryNode<OpAdjMultiply, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
     {
-      QDPIO::cout << "adjMul(spinmat,spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
-
       JitStackArray< Type_t , 1 > stack;
 
       stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, OpAdjMultiply, CTag>::
@@ -196,8 +188,6 @@ namespace QDP {
     inline static
     Type_t apply(const BinaryNode<OpAdjMultiply, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
     {
-      QDPIO::cout << "adjMul(spinmat,spinscalar) " << EvalToSpinMatrix<A>::value << std::endl;
-
       return Combine2<TypeA_t, TypeB_t, OpAdjMultiply, CTag>::
 	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_second() , f.index_first()  ) , c),
 		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f ) , c),
@@ -217,8 +207,6 @@ namespace QDP {
     inline static
     Type_t apply(const BinaryNode<OpMultiplyAdj, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
     {
-      QDPIO::cout << "mulAdj(spinmat,spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
-
       JitStackArray< Type_t , 1 > stack;
 
       stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, OpMultiplyAdj, CTag>::
@@ -249,8 +237,6 @@ namespace QDP {
     inline static
     Type_t apply(const BinaryNode<OpMultiplyAdj, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
     {
-      QDPIO::cout << "mulAdj(spinscalar,spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
-
       return Combine2<TypeA_t, TypeB_t, OpMultiplyAdj, CTag>::
 	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f ) , c),
 		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , f.index_first() ) , c),
@@ -269,8 +255,6 @@ namespace QDP {
     inline static
     Type_t apply(const BinaryNode<OpAdjMultiplyAdj, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
     {
-      QDPIO::cout << "adjMulAdj(spinscalar,spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
-
       return Combine2<TypeA_t, TypeB_t, OpAdjMultiplyAdj, CTag>::
 	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f ) , c),
 		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , f.index_first() ) , c),
@@ -289,8 +273,6 @@ namespace QDP {
     inline static
     Type_t apply(const BinaryNode<OpAdjMultiplyAdj, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
     {
-      QDPIO::cout << "adjMulAdj(spinmat,spinscalar) " << EvalToSpinMatrix<A>::value << std::endl;
-
       return Combine2<TypeA_t, TypeB_t, OpAdjMultiplyAdj, CTag>::
 	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_second() , f.index_first() ) , c),
 		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f ) , c),
@@ -312,8 +294,6 @@ namespace QDP {
     inline static
     Type_t apply(const BinaryNode<OpAdjMultiplyAdj, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
     {
-      QDPIO::cout << "adjMulAdj(spinmat,spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
-
       JitStackArray< Type_t , 1 > stack;
 
       stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, OpAdjMultiplyAdj, CTag>::
@@ -358,8 +338,6 @@ namespace QDP {
     inline static
     Type_t apply(const BinaryNode<FnQuarkContract13, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
     {
-      QDPIO::cout << "quarkContract13(prop,prop) " << EvalToSpinMatrix<A>::value << std::endl;
-    
       JitStackArray< Type_t , 1 > stack;
 
       // f=(i,j)
@@ -392,12 +370,7 @@ namespace QDP {
     inline static
     Type_t apply(const BinaryNode<FnQuarkContract14, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
     {
-      QDPIO::cout << "quarkContract14(prop,prop) " << EvalToSpinMatrix<A>::value << std::endl;
-    
       JitStackArray< Type_t , 1 > stack;
-
-      // f=(i,j)
-      // (A o B)^{i,j} = A^{k,i} o B^{k,j}
 
       stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
 	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , f.index_first() ) , c),
@@ -426,8 +399,6 @@ namespace QDP {
     inline static
     Type_t apply(const BinaryNode<FnQuarkContract23, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
     {
-      QDPIO::cout << "quarkContract23(prop,prop) " << EvalToSpinMatrix<A>::value << std::endl;
-    
       JitStackArray< Type_t , 1 > stack;
 
       // f=(i,j)
@@ -460,12 +431,7 @@ namespace QDP {
     inline static
     Type_t apply(const BinaryNode<FnQuarkContract24, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
     {
-      QDPIO::cout << "quarkContract24(prop,prop) " << EvalToSpinMatrix<A>::value << std::endl;
-    
       JitStackArray< Type_t , 1 > stack;
-
-      // f=(i,j)
-      // (A o B)^{i,j} = A^{k,i} o B^{k,j}
 
       stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
 	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first()  , llvm_create_value(0) ) , c),
@@ -494,13 +460,8 @@ namespace QDP {
     inline static
     Type_t apply(const BinaryNode<FnQuarkContract12, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
     {
-      QDPIO::cout << "quarkContract12(prop,prop) " << EvalToSpinMatrix<A>::value << std::endl;
-    
       JitStackArray< Type_t , 1 > stack;
 
-      // f=(i,j)
-      // (A o B)^{i,j} = A^{k,i} o B^{k,j}
-      
       stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
 	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
 		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first()      , f.index_second()     ) , c),
@@ -528,12 +489,7 @@ namespace QDP {
     inline static
     Type_t apply(const BinaryNode<FnQuarkContract34, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
     {
-      QDPIO::cout << "quarkContract34(prop,prop) " << EvalToSpinMatrix<A>::value << std::endl;
-    
       JitStackArray< Type_t , 1 > stack;
-
-      // f=(i,j)
-      // (A o B)^{i,j} = A^{k,i} o B^{k,j}
 
       stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
 	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first()      , f.index_second()     ) , c),
@@ -562,14 +518,8 @@ namespace QDP {
     inline static
     Type_t apply(const BinaryNode<FnTraceSpinQuarkContract13, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
     {
-      QDPIO::cout << "traceSpinQuarkContract13(prop,prop) " << EvalToSpinMatrix<A>::value << std::endl;
-    
       JitStackArray< Type_t , 1 > stack;
 
-      // f=(i,j)
-      // (A o B)^{i,j} = A^{k,i} o B^{k,j}
-
-      
       stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
 	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
 		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
@@ -617,11 +567,7 @@ namespace QDP {
     inline static
     Type_t apply(const BinaryNode<FnTraceMultiply, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c)
     {
-      QDPIO::cout << "traceMultiply(spinmat,spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
-    
       JitStackArray< Type_t , 1 > stack;
-
-      // tr(AB) = A^ik B^ki
 
       stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnTraceMultiply, CTag>::
 	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
@@ -665,11 +611,7 @@ namespace QDP {
     inline static
     Type_t apply(const BinaryNode<FnTraceSpinMultiply, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c)
     {
-      QDPIO::cout << "traceSpinMultiply(spinmat,spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
-    
       JitStackArray< Type_t , 1 > stack;
-
-      // tr(AB) = A^ik B^ki
 
       stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::
 	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
@@ -714,11 +656,7 @@ namespace QDP {
     inline static
     Type_t apply(const BinaryNode<FnTraceColorMultiply, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c)
     {
-      QDPIO::cout << "traceColorMultiply(spinmat,spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
-    
       JitStackArray< Type_t , 1 > stack;
-
-      // AB = A^ik B^kj
 
       stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnTraceColorMultiply, CTag>::
 	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first()      , llvm_create_value(0) ) , c),
@@ -750,12 +688,7 @@ namespace QDP {
     inline static
     Type_t apply(const BinaryNode<FnLocalInnerProduct, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c)
     {
-      QDPIO::cout << "localInnerProduct(spinmat,spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
-    
       JitStackArray< Type_t , 1 > stack;
-
-
-      // AB = A^ik B^kj
 
       stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnLocalInnerProduct, CTag>::
 	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
@@ -799,11 +732,7 @@ namespace QDP {
     inline static
     Type_t apply(const BinaryNode<FnLocalInnerProduct, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c)
     {
-      QDPIO::cout << "localInnerProduct(spinmat,spinscalar) " << EvalToSpinMatrix<A>::value << std::endl;
-    
       JitStackArray< Type_t , 1 > stack;
-
-      // AB = A^ii B
 
       stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnLocalInnerProduct, CTag>::
 	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
@@ -834,11 +763,7 @@ namespace QDP {
     inline static
     Type_t apply(const BinaryNode<FnLocalInnerProduct, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c)
     {
-      QDPIO::cout << "localInnerProduct(spinscalar,spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
-    
       JitStackArray< Type_t , 1 > stack;
-
-      // AB = A^ii B
 
       stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnLocalInnerProduct, CTag>::
 	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f ) , c),
@@ -869,8 +794,6 @@ namespace QDP {
     inline static
     Type_t apply(const BinaryNode<FnLocalInnerProductReal, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c)
     {
-      QDPIO::cout << "localInnerProduct(spinmat,spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
-    
       JitStackArray< Type_t , 1 > stack;
 
       stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnLocalInnerProductReal, CTag>::
@@ -915,11 +838,7 @@ namespace QDP {
     inline static
     Type_t apply(const BinaryNode<FnLocalInnerProductReal, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c)
     {
-      QDPIO::cout << "localInnerProduct(spinmat,spinscalar) " << EvalToSpinMatrix<A>::value << std::endl;
-    
       JitStackArray< Type_t , 1 > stack;
-
-      // AB = A^ii B
 
       stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnLocalInnerProductReal, CTag>::
 	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
@@ -950,11 +869,7 @@ namespace QDP {
     inline static
     Type_t apply(const BinaryNode<FnLocalInnerProductReal, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c)
     {
-      QDPIO::cout << "localInnerProduct(spinscalar,spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
-    
       JitStackArray< Type_t , 1 > stack;
-
-      // AB = A^ii B
 
       stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnLocalInnerProductReal, CTag>::
 	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f ) , c),
@@ -989,11 +904,7 @@ namespace QDP {
     inline static
     Type_t apply(const UnaryNode<FnRealTrace, A> &expr, const ViewSpinLeaf &f,	const CTag &c)
     {
-      QDPIO::cout << "realTrace(spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
-    
       JitStackArray< Type_t , 1 > stack;
-
-      // tr(A) = A^ii
 
       stack.elemJITint(0) = Combine1<TypeA_t, FnRealTrace, CTag>::
 	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
@@ -1022,11 +933,7 @@ namespace QDP {
     inline static
     Type_t apply(const UnaryNode<FnTrace, A> &expr, const ViewSpinLeaf &f,	const CTag &c)
     {
-      QDPIO::cout << "trace(spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
-    
       JitStackArray< Type_t , 1 > stack;
-
-      // tr(A) = A^ii
 
       stack.elemJITint(0) = Combine1<TypeA_t, FnTrace, CTag>::
 	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
@@ -1054,8 +961,6 @@ namespace QDP {
     inline static
     Type_t apply(const UnaryNode<FnAdjoint, A> &expr, const ViewSpinLeaf &f,	const CTag &c)
     {
-      QDPIO::cout << "adj(spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
-    
       return Combine1<TypeA_t, FnAdjoint, CTag>::
 	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , f.index_second() , f.index_first() ) , c),
 		expr.operation(), c);
@@ -1073,11 +978,7 @@ namespace QDP {
     inline static
     Type_t apply(const UnaryNode<FnImagTrace, A> &expr, const ViewSpinLeaf &f,	const CTag &c)
     {
-      QDPIO::cout << "imagTrace(spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
-    
       JitStackArray< Type_t , 1 > stack;
-
-      // tr(A) = A^ii
 
       stack.elemJITint(0) = Combine1<TypeA_t, FnImagTrace, CTag>::
 	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
@@ -1104,12 +1005,8 @@ namespace QDP {
     inline static
     Type_t apply(const UnaryNode<FnTraceSpin, A> &expr, const ViewSpinLeaf &f,	const CTag &c)
     {
-      QDPIO::cout << "traceSpin(spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
-    
       JitStackArray< Type_t , 1 > stack;
 
-      // tr(A) = A^ii
-      
       stack.elemJITint(0) = Combine1<TypeA_t, OpIdentity, CTag>::
 	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
 		OpIdentity(), c);
@@ -1136,10 +1033,6 @@ namespace QDP {
     inline static
     Type_t apply(const UnaryNode<FnTransposeSpin, A> &expr, const ViewSpinLeaf &f,	const CTag &c)
     {
-      QDPIO::cout << "transposeSpin(spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
-    
-      // A^ij = A^ji
-      
       return Combine1<TypeA_t, OpIdentity, CTag>::
 	combine(ForEach<A, ViewSpinLeaf, CTag>::
 		apply(expr.child(),  ViewSpinLeaf( f , f.index_second() , f.index_first() ) , c),
@@ -1161,9 +1054,6 @@ namespace QDP {
     inline static
     Type_t apply(const UnaryNode<FnPeekSpinMatrixREG, A> &expr, const ViewSpinLeaf &f, const CTag &c)
     {
-      QDPIO::cout << "peekSpinMatrix(spinmat) " << std::endl;
-      print_type<TypeA_t>();
-    
       return expr.child().
 	elem( f.getLayout() , f.getIndex() ).
 	getRegElem( expr.operation().get_row_jit() , expr.operation().get_col_jit() );
@@ -1181,8 +1071,6 @@ namespace QDP {
     inline static
     Type_t apply(const UnaryNode<FnLocalNorm2, A> &expr, const ViewSpinLeaf &f,	const CTag &c)
     {
-      QDPIO::cout << "localNorm2(spinmat) " << EvalToSpinMatrix<A>::value << std::endl;
-    
       JitStackArray< Type_t , 1 > stack;
 
       stack.elemJITint(0) = Combine1<TypeA_t, FnLocalNorm2, CTag>::
@@ -1261,7 +1149,7 @@ namespace QDP {
   {
     static void apply( std::vector< JitForLoop >& loops , const Op& op )
     {
-      QDPIO::cout << "dest: no spin loops created\n";
+      //QDPIO::cout << "dest: no spin loops created\n";
     }
   };
 
@@ -1271,12 +1159,12 @@ namespace QDP {
   {
     static void apply( std::vector< JitForLoop >& loops , const Op& op )
     {
-      QDPIO::cout << "create spin mat\n";
+      //QDPIO::cout << "create spin mat\n";
 	
-      QDPIO::cout << "loop(0,N)\n";
+      //QDPIO::cout << "loop(0,N)\n";
       loops.push_back( JitForLoop(0,N) );
   
-      QDPIO::cout << "loop(0,N)\n";
+      //QDPIO::cout << "loop(0,N)\n";
       loops.push_back( JitForLoop(0,N) );
     }
   };
@@ -1287,7 +1175,7 @@ namespace QDP {
   {
     static void apply( std::vector< JitForLoop >& loops , const FnPokeSpinMatrixREG& op )
     {
-      QDPIO::cout << "pokeSpinMat with two 1-loops\n";
+      //QDPIO::cout << "pokeSpinMat with two 1-loops\n";
 
       llvm::Value* row = op.jitRow();
       llvm::Value* col = op.jitCol();

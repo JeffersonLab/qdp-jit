@@ -417,7 +417,10 @@ namespace QDP
       {
 	std::string FileName = std::string(ROCM_DIR) + libs[i];
 
-	QDPIO::cout << "Reading bitcode from " << FileName << "\n";
+	if (jit_config_get_verbose_output())
+	  {
+	    QDPIO::cout << "Reading bitcode from " << FileName << "\n";
+	  }
 	
 	std::ifstream ftmp(FileName.c_str());
 	if (!ftmp.good())
@@ -523,16 +526,19 @@ namespace QDP
 
 	for( auto fname = all.begin() ; fname != all.end() ; ++fname )
 	  {
-#ifdef QDP_BACKEND_ROCM
-	    QDPIO::cout << "trying: " << *fname << std::endl;
-#endif
+	    if (jit_config_get_verbose_output())
+	      {
+		QDPIO::cout << "trying: " << *fname << std::endl;
+	      }
 	    
 	    std::ifstream ftmp(fname->c_str());
 	    if (ftmp.good())
 	      {
-#ifdef QDP_BACKEND_ROCM
-		QDPIO::cout << "libdevice found.\n";
-#endif
+		if (jit_config_get_verbose_output())
+		  {
+		    QDPIO::cout << "libdevice found.\n";
+		  }
+
 		FileName = *fname;
 		break;
 	      }
@@ -1797,7 +1803,10 @@ namespace QDP
 
 	for ( int i = 0 ; i < module_ocml.size() ; ++i )
 	  {
-	    QDPIO::cout << "linking in additional library " << i << "\n";
+	    if (jit_config_get_verbose_output())
+	      {
+		QDPIO::cout << "linking in additional library " << i << "\n";
+	      }
 	    if (llvm::Linker::linkModules( *Mod , std::move( module_ocml[i] ) )) {  // llvm::Linker::PreserveSource
 	      QDPIO::cerr << "Linking additional library failed: " << ErrorMsg.c_str() << "\n";
 	      QDP_abort(1);
