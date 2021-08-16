@@ -391,6 +391,35 @@ colorCrossProduct(const PColorVectorJIT<T1,3>& s1, const PColorVectorJIT<T2,3>& 
  return d;
 }
 
+//! dest  = random
+template<class T, int N,  class T1, class T2, class T3>
+inline void
+fill_random_jit(PColorVectorJIT<T,N> d, T1 seed, T2 skewed_seed, const T3& seed_mult)
+{
+  // Loop over rows the slowest
+  for(int i=0; i < N; ++i)
+    fill_random_jit(d.elem(i), seed, skewed_seed, seed_mult);
+}
+
+//! dest  = gaussian
+template<class T,class T2, int N>
+inline void
+fill_gaussian(PColorVectorJIT<T,N> d, PColorVectorREG<T2,N>& r1, PColorVectorREG<T2,N>& r2)
+{
+  for(int i=0; i < N; ++i)
+    fill_gaussian(d.elem(i), r1.elem(i), r2.elem(i));
+}
+
+
+//! dest = (mask) ? s1 : dest
+template<class T, class T1, class T2, int N>
+inline void
+copymask(PColorVectorJIT<T,N> d, const PScalarREG<T1>& mask, const PColorVectorREG<T2,N>& s1)
+{
+  for(int i=0; i < N; ++i)
+    copymask(d.elem(i),mask.elem(),s1.elem(i));
+}
+
 
 
 } // namespace QDP
