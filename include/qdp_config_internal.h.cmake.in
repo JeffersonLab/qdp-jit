@@ -88,6 +88,9 @@
 /* Compile for LLVM 12.0 release */
 #cmakedefine QDP_LLVM12				@QDP_LLVM12@
 
+/* Compile for LLVM 13.0 series */	
+#cmakedefine QDP_LLVM13				@QDP_LLVM13@
+
 /* Number of color components */
 #cmakedefine QDP_NC				@QDP_NC@
 

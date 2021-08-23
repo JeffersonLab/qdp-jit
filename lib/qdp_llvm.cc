@@ -1714,7 +1714,11 @@ namespace QDP
 	std::string module_name = "module_" + str_kernel_name + ".bc";
 	QDPIO::cout << "write code to " << module_name << "\n";
 	std::error_code EC;
+#if QDP_LLVM13
+	llvm::raw_fd_ostream OS(module_name, EC, llvm::sys::fs::OF_None);
+#else
 	llvm::raw_fd_ostream OS(module_name, EC, llvm::sys::fs::F_None);
+#endif
 	llvm::WriteBitcodeToFile(*Mod, OS);
 	OS.flush();
       }
