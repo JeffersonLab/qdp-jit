@@ -39,6 +39,10 @@ if( QDP_ENABLE_BACKEND STREQUAL "ROCM" )
 	target_sources(qdp PRIVATE qdp_gpu_rocm.cc)
 endif()
 
+if( QDP_ENABLE_BACKEND STREQUAL "AVX" )
+	target_sources(qdp PRIVATE qdp_gpu_avx.cc)
+endif()
+
 
 if(QDP_USE_LIBXML2)
 	target_sources(qdp PRIVATE
@@ -102,7 +106,9 @@ target_include_directories( qdp PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../include>
         $<INSTALL_INTERFACE:include> )
+
 target_link_libraries( qdp PUBLIC ${GPU_LIBS} )
+
 set_target_properties( qdp PROPERTIES 
 	CXX_STANDARD 20
 	CXX_EXTENSIONS OFF

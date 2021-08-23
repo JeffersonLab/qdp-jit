@@ -32,11 +32,10 @@ namespace QDP {
     static QDPProfile_t prof(dest, op, rhs);
     prof.start_time();
 #endif
-	
+
     static JitFunction function;
     if (function.empty())
       function_lat_sca_build(function ,dest, op, rhs);
-
     function_lat_sca_exec(function, dest, op, rhs, s);
 
 #if defined(QDP_USE_PROFILING)

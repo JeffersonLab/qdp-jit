@@ -18,8 +18,8 @@ namespace QDP {
 
     llvm_start_new_function("random",__PRETTY_FUNCTION__);
 
-    ParamRef p_lo     = llvm_add_param<int>();
-    ParamRef p_hi     = llvm_add_param<int>();
+    WorkgroupGuard workgroupGuard;
+    ParamRef p_site_table = llvm_add_param<int*>();
 
     ParamLeaf param_leaf;
 
@@ -38,15 +38,10 @@ namespace QDP {
     LatticeSeedJIT skewedSeed_jit(forEach( skewedSeed , param_leaf, TreeCombine()));
     LatticeSeedJIT latSeed_jit(forEach( latSeed , param_leaf, TreeCombine()));
   
-    llvm::Value * r_lo     = llvm_derefParam( p_lo );
-    llvm::Value * r_hi     = llvm_derefParam( p_hi );
-
     llvm::Value * r_idx_thread = llvm_thread_idx();
+    workgroupGuard.check(r_idx_thread);
 
-    llvm::Value * r_out_of_range       = llvm_gt( r_idx_thread , llvm_sub( r_hi , r_lo ) );
-    llvm_cond_exit(  r_out_of_range );
-
-    llvm::Value * r_idx = llvm_add( r_lo , r_idx_thread );
+    llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
 
     PSeedREG seed_reg;
     PSeedREG ran_mult_n_reg;
@@ -79,9 +74,6 @@ namespace QDP {
   void 
   function_random_exec(JitFunction& function, OLattice<T>& dest, const Subset& s , Seed& seed_tmp, LatticeSeed& ranSeed, LatticeSeed& skewedSeed)
   {
-    if (!s.hasOrderedRep())
-      QDP_error_exit("random on subset with unordered representation not implemented");
-
     //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
 #ifdef QDP_DEEP_LOG
@@ -107,12 +99,12 @@ namespace QDP {
     forEach(skewedSeed, addr_leaf, NullCombine());
     forEach(ranSeed, addr_leaf, NullCombine());
 
-    JitParam jit_lo( QDP_get_global_cache().addJitParamInt( s.start() ) );
-    JitParam jit_hi( QDP_get_global_cache().addJitParamInt( s.end() ) );
+    int th_count = s.numSiteTable();
+    WorkgroupGuardExec workgroupGuardExec(th_count);
   
     std::vector<QDPCache::ArgKey> ids;
-    ids.push_back( jit_lo.get_id() );
-    ids.push_back( jit_hi.get_id() );
+    workgroupGuardExec.check(ids);
+    ids.push_back( s.getIdSiteTable() );
     for(unsigned i=0; i < addr_leaf.ids.size(); ++i)
       ids.push_back( addr_leaf.ids[i] );
  

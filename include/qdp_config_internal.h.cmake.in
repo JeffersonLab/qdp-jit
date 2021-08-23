@@ -70,6 +70,9 @@
 /* ROCM */
 #cmakedefine QDP_BACKEND_ROCM			@QDP_BACKEND_ROCM@
 
+/* AVX */
+#cmakedefine QDP_BACKEND_AVX			@QDP_BACKEND_AVX@
+
 /* Include CUDA special kernels */
 #cmakedefine QDP_CUDA_SPECIAL			@QDP_CUDA_SPECIAL@
 

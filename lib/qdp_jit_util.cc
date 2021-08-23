@@ -1,5 +1,9 @@
 #include "qdp.h"
 
+#if defined(QDP_BACKEND_AVX)
+#include <omp.h>
+#endif
+
 namespace QDP {
 
 
@@ -187,28 +191,6 @@ namespace QDP {
 
   
 
-  std::vector<ParamRef> jit_function_preamble_param( const char* ftype , const char* pretty )
-  {
-    llvm_start_new_function( ftype , pretty );
-
-    ParamRef p_ordered      = llvm_add_param<bool>();
-    ParamRef p_th_count     = llvm_add_param<int>();
-    ParamRef p_start        = llvm_add_param<int>();
-    ParamRef p_end          = llvm_add_param<int>();
-    ParamRef p_member_array = llvm_add_param<bool*>();
-
-    return { p_ordered , p_th_count , p_start , p_end , p_member_array };
-  }
-
-
-
-
- 
-
-
-
-  
-
   llvm::Value* llvm_epsilon_1st( int p1 , llvm::Value* j )
   {
     return llvm_rem( llvm_add( j , llvm_create_value( p1 ) ) , llvm_create_value( 3 ) );
@@ -236,7 +218,7 @@ namespace QDP {
   
   
 
-
+#if defined(QDP_BACKEND_CUDA) || defined(QDP_BACKEND_ROCM)
   void jit_tune( JitFunction& function , int th_count , QDPCache::KernelArgs_t& args)
   {
     if ( ! function.get_enable_tuning() )
@@ -351,9 +333,10 @@ namespace QDP {
     
     free( host_ptr );
   }
-  
+#endif  
 
 
+#if defined(QDP_BACKEND_CUDA) || defined(QDP_BACKEND_ROCM)
   void jit_launch(JitFunction& function,int th_count,std::vector<QDPCache::ArgKey>& ids)
   {
     // For ROCm we add the __threads_per_group and 
@@ -371,12 +354,11 @@ namespace QDP {
     // Increment the call counter
     function.inc_call_counter();
 
-
+    
     if (  jit_config_get_tuning()  &&  function.get_threads_per_block() == -1  )
       {
 	jit_tune( function , th_count , args );
       }
-
     
     int threads_per_block;
     
@@ -405,8 +387,79 @@ namespace QDP {
       QDP_abort(1);
     }
   }
+#elif defined(QDP_BACKEND_AVX)
+  void jit_launch(JitFunction& function,int th_count,std::vector<QDPCache::ArgKey>& ids)
+  {
+    QDPCache::KernelArgs_t args( QDP_get_global_cache().get_kernel_args(ids) );
+
+    if ( th_count == 0 )
+      return;
+
+    void (*FP)(int,void*) = (void (*)(int,void*))(intptr_t)function.get_function();
+    //void (*FP)(int,int,float*,float*,float*) = (void (*)(int,int,float*,float*,float*))(intptr_t)function.get_function();
+
+    //define private void @eval0_intern(i32 %arg0, i32 %arg1, float* %arg2, float* %arg3, float* %arg4) {
+
+    
+    std::cerr << "jit_launch: th_count = " << th_count << "\n";
+    std::cerr << "arg count = " << args.size() << "\n";
+
+    // std::cerr << "jit_launch: a[0] = " << args.at(0).i32 << "\n";
+    // std::cerr << "jit_launch: a[1] = " << args.at(1).ptr << "\n";
+    // std::cerr << "jit_launch: a[2] = " << args.at(2).ptr << "\n";
+
+#if 0
+    float* dest = new float[256];
+    float* xx = new float[256];
+
+    for ( int i = 0 ; i < th_count ; i++ )
+      {
+	dest[i] = 0.0;
+	xx[i] = 2.0;
+      }
+
+    args.at(0).i32 = 0;
+    args.at(1).ptr = dest;
+    args.at(2).ptr = xx;
+    args.at(3).ptr = xx;
+#endif
+    
+    
+#if 1
+    //#pragma omp parallel
+    //#pragma omp for
+    for ( int i = 0 ; i < th_count ; i++ )
+      {
+	FP( i , args.data() );
+	//FP( i , 0 , dest , xx , xx );
+	//FP( i , 0 , dest , xx , xx );
+      }
+#endif
+
+#if 0
+    QDPIO::cout << "out from util using trampoline:\n";
+    for ( int i = 0 ; i < th_count ; i++ )
+      {
+	QDPIO::cout << dest[i] << " ";
+	if ((i+1)%10 == 0)
+	  QDPIO::cout << "\n";
+      }
+    QDPIO::cout << "\n";
+    
+    delete[] dest;
+    delete[] xx;
+#endif
+    
+    // Increment the call counter
+    function.inc_call_counter();
+  }
+#else
+#error "No LLVM backend specified."
+#endif
 
 
+
+  
   void jit_launch_explicit_geom( JitFunction& function , std::vector<QDPCache::ArgKey>& ids , const kernel_geom_t& geom , unsigned int shared )
   {
     // For ROCm we add the __threads_per_group and 
@@ -524,49 +577,6 @@ namespace QDP {
   }
 
 
-
-  llvm::Value *jit_function_preamble_get_idx( const std::vector<ParamRef>& vec )
-  {
-    llvm::Value * r_ordered      = llvm_derefParam( vec[0] );
-    llvm::Value * r_th_count     = llvm_derefParam( vec[1] );
-    llvm::Value * r_start        = llvm_derefParam( vec[2] );
-    llvm_derefParam( vec[3]);     // r_end not used
-    ParamRef      p_member_array = vec[4];
-
-    llvm::Value * r_idx_phi0 = llvm_thread_idx();
-
-    llvm::Value * r_idx_phi1;
-
-    llvm_cond_exit( llvm_ge( r_idx_phi0 , r_th_count ) );
-
-    llvm::BasicBlock * block_ordered = llvm_new_basic_block();
-    llvm::BasicBlock * block_not_ordered = llvm_new_basic_block();
-    llvm::BasicBlock * block_ordered_exit = llvm_new_basic_block();
-    llvm::BasicBlock * cond_exit;
-    llvm_cond_branch( r_ordered , block_ordered , block_not_ordered );
-    {
-      llvm_set_insert_point(block_not_ordered);
-      llvm::Value* r_ismember     = llvm_array_type_indirection( p_member_array , r_idx_phi0 );
-      llvm::Value* r_ismember_not = llvm_not( r_ismember );
-      cond_exit = llvm_cond_exit( r_ismember_not ); 
-      llvm_branch( block_ordered_exit );
-    }
-    {
-      llvm_set_insert_point(block_ordered);
-      r_idx_phi1 = llvm_add( r_idx_phi0 , r_start );
-      llvm_branch( block_ordered_exit );
-    }
-    llvm_set_insert_point(block_ordered_exit);
-
-    llvm::Value* r_idx = llvm_phi( llvm_val_type( r_idx_phi0 ) , 2 );
-
-    llvm_add_incoming( r_idx , r_idx_phi0 , cond_exit );
-    llvm_add_incoming( r_idx , r_idx_phi1 , block_ordered );
-    // r_idx->addIncoming( r_idx_phi0 , cond_exit );
-    // r_idx->addIncoming( r_idx_phi1 , block_ordered );
-
-    return r_idx;
-  }
 
   
   

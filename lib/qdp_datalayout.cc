@@ -52,15 +52,17 @@ namespace QDP {
     assert(a.size() > 0);
 
     // In case of a coalesced layout (OLattice)
-    // We reverse the data layout given by the natural nesting order
+    // We reverse the data layout given by the nesting order
     // of aggregates, i.e. reality slowest, lattice fastest
     // In case of a scalar layout (sums,comms buffers,OScalar)
     // We actually use the index order/data layout given by the
     // nesting order of aggregates
+#if defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_ROCM)
     if ( lay == JitDeviceLayout::Coalesced ) {
       std::reverse( a.begin() , a.end() );
     }
-
+#endif
+    
     llvm::Value * offset = llvm_create_value(0);
     for( auto x = a.begin() ; x != a.end() ; x++ ) {
       int         Index;

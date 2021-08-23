@@ -58,15 +58,30 @@
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Utils/Cloning.h"
 
-#include <system_error>
-#include <memory>
-#include <unistd.h>
+#ifdef QDP_BACKEND_AVX
+#include "llvm/ADT/StringRef.h"
+#include "llvm/ExecutionEngine/JITSymbol.h"
+#include "llvm/ExecutionEngine/Orc/CompileUtils.h"
+#include "llvm/ExecutionEngine/Orc/Core.h"
+#include "llvm/ExecutionEngine/Orc/ExecutionUtils.h"
+#include "llvm/ExecutionEngine/Orc/IRCompileLayer.h"
+#include "llvm/ExecutionEngine/Orc/JITTargetMachineBuilder.h"
+#include "llvm/ExecutionEngine/Orc/RTDyldObjectLinkingLayer.h"
+#include "llvm/ExecutionEngine/Orc/TargetProcessControl.h"
+#include "llvm/ExecutionEngine/SectionMemoryManager.h"
+using namespace llvm::orc;
+#endif
 
 #ifdef QDP_BACKEND_ROCM
 #include "lld/Common/Driver.h"
 #include "lld/Common/ErrorHandler.h"
 #include "lld/Common/Memory.h"
 #endif
+
+#include <system_error>
+#include <memory>
+#include <unistd.h>
+
 
 using namespace llvm;
 using namespace llvm::codegen;
@@ -76,6 +91,83 @@ using namespace llvm::codegen;
 namespace llvm {
   ModulePass *createNVVMReflectPass(unsigned int);
 }
+
+
+#ifdef QDP_BACKEND_AVX
+class KaleidoscopeJIT {
+private:
+  std::unique_ptr<TargetProcessControl> TPC;
+  std::unique_ptr<ExecutionSession> ES;
+
+  DataLayout DL;
+  MangleAndInterner Mangle;
+
+  RTDyldObjectLinkingLayer ObjectLayer;
+  IRCompileLayer CompileLayer;
+
+  JITDylib &MainJD;
+
+public:
+  KaleidoscopeJIT(std::unique_ptr<TargetProcessControl> TPC,
+                  std::unique_ptr<ExecutionSession> ES,
+                  JITTargetMachineBuilder JTMB, DataLayout DL)
+      : TPC(std::move(TPC)), ES(std::move(ES)), DL(std::move(DL)),
+        Mangle(*this->ES, this->DL),
+        ObjectLayer(*this->ES,
+                    []() { return std::make_unique<SectionMemoryManager>(); }),
+        CompileLayer(*this->ES, ObjectLayer,
+                     std::make_unique<ConcurrentIRCompiler>(std::move(JTMB))),
+        MainJD(this->ES->createBareJITDylib("<main>")) {
+    MainJD.addGenerator(
+        cantFail(DynamicLibrarySearchGenerator::GetForCurrentProcess(
+            DL.getGlobalPrefix())));
+  }
+
+  ~KaleidoscopeJIT() {
+    if (auto Err = ES->endSession())
+      ES->reportError(std::move(Err));
+  }
+
+  static Expected<std::unique_ptr<KaleidoscopeJIT>> Create() {
+    auto SSP = std::make_shared<SymbolStringPool>();
+    auto TPC = SelfTargetProcessControl::Create(SSP);
+    if (!TPC)
+      return TPC.takeError();
+
+    auto ES = std::make_unique<ExecutionSession>(std::move(SSP));
+
+    JITTargetMachineBuilder JTMB((*TPC)->getTargetTriple());
+
+    auto DL = JTMB.getDefaultDataLayoutForTarget();
+    if (!DL)
+      return DL.takeError();
+
+    return std::make_unique<KaleidoscopeJIT>(std::move(*TPC), std::move(ES),
+                                             std::move(JTMB), std::move(*DL));
+  }
+
+  const DataLayout &getDataLayout() const { return DL; }
+
+  JITDylib &getMainJITDylib() { return MainJD; }
+
+  Error addModule(ThreadSafeModule TSM, ResourceTrackerSP RT = nullptr) {
+    if (!RT)
+      RT = MainJD.getDefaultResourceTracker();
+    return CompileLayer.add(RT, std::move(TSM));
+  }
+
+  Expected<JITEvaluatedSymbol> lookup(StringRef Name) {
+    return ES->lookup({&MainJD}, Mangle(Name.str()));
+  }
+};
+
+namespace QDP
+{
+  ExitOnError ExitOnErr;
+
+  std::unique_ptr<KaleidoscopeJIT> TheJIT;
+}
+#endif
 
 
 
@@ -130,15 +222,13 @@ namespace QDP
     std::vector<std::string> vec_str_libdevice_path = { ROCM_DIR };
     std::vector<std::string> vec_str_libdevice_path_append = { "llvm/lib/libdevice/" };
     std::vector<std::string> vec_str_libdevice_name = { "libm-amdgcn-ARCH.bc" };
-#else
+#elif QDP_BACKEND_CUDA
     std::vector<std::string> vec_str_libdevice_path = { "CUDAPATH" , "/usr/local/cuda/" , "/usr/lib/nvidia-cuda-toolkit/" };
     std::vector<std::string> vec_str_libdevice_path_append = { "nvvm/libdevice/" , "libdevice/" };
     std::vector<std::string> vec_str_libdevice_name = { "libdevice.10.bc" , "libdevice.compute_ARCH.10.bc" };
+#else
 #endif
     
-    
-    llvm::LLVMContext TheContext;
-
     llvm::Triple TheTriple;
     std::unique_ptr<llvm::TargetMachine> TargetMachine;
     
@@ -149,6 +239,7 @@ namespace QDP
     
     llvm::Function    *mainFunc;
 
+    std::unique_ptr< llvm::LLVMContext > TheContext;
     std::unique_ptr< llvm::Module >      Mod;
     std::unique_ptr< llvm::Module >      module_libdevice;
 #ifdef QDP_BACKEND_ROCM
@@ -178,11 +269,16 @@ namespace QDP
     std::map< jitprec , std::map< std::string , int > > math_declarations;
   }
 
-  namespace AMDspecific {
+#ifdef QDP_BACKEND_ROCM
+  namespace AMDspecific  {
     ParamRef __threads_per_group;
     ParamRef __grid_size_x;
   }
-
+#elif QDP_BACKEND_AVX
+  namespace AVXspecific  {
+    ParamRef thread_num;
+  }
+#endif
 
   namespace llvm_counters {
     int label_counter;
@@ -234,7 +330,7 @@ namespace QDP
 
   llvm::LLVMContext& llvm_get_context()
   {
-    return TheContext;
+    return *TheContext;
   }
 
   
@@ -249,17 +345,17 @@ namespace QDP
   }
 
 
-  template<> llvm::Type* llvm_get_type<jit_half_t>()  { return llvm::Type::getHalfTy(TheContext); }
-  template<> llvm::Type* llvm_get_type<float>()  { return llvm::Type::getFloatTy(TheContext); }
-  template<> llvm::Type* llvm_get_type<double>() { return llvm::Type::getDoubleTy(TheContext); }
-  template<> llvm::Type* llvm_get_type<int>()    { return llvm::Type::getIntNTy(TheContext,32); }
-  template<> llvm::Type* llvm_get_type<bool>()   { return llvm::Type::getIntNTy(TheContext,1); }
+  template<> llvm::Type* llvm_get_type<jit_half_t>()  { return llvm::Type::getHalfTy(*TheContext); }
+  template<> llvm::Type* llvm_get_type<float>()  { return llvm::Type::getFloatTy(*TheContext); }
+  template<> llvm::Type* llvm_get_type<double>() { return llvm::Type::getDoubleTy(*TheContext); }
+  template<> llvm::Type* llvm_get_type<int>()    { return llvm::Type::getIntNTy(*TheContext,32); }
+  template<> llvm::Type* llvm_get_type<bool>()   { return llvm::Type::getIntNTy(*TheContext,1); }
 
-  template<> llvm::Type* llvm_get_type<jit_half_t*>()  { return llvm::Type::getHalfPtrTy(TheContext); }
-  template<> llvm::Type* llvm_get_type<float*>()  { return llvm::Type::getFloatPtrTy(TheContext); }
-  template<> llvm::Type* llvm_get_type<double*>() { return llvm::Type::getDoublePtrTy(TheContext); }
-  template<> llvm::Type* llvm_get_type<int*>()    { return llvm::Type::getIntNPtrTy(TheContext,32); }
-  template<> llvm::Type* llvm_get_type<bool*>()   { return llvm::Type::getIntNPtrTy(TheContext,1); }
+  template<> llvm::Type* llvm_get_type<jit_half_t*>()  { return llvm::Type::getHalfPtrTy(*TheContext); }
+  template<> llvm::Type* llvm_get_type<float*>()  { return llvm::Type::getFloatPtrTy(*TheContext); }
+  template<> llvm::Type* llvm_get_type<double*>() { return llvm::Type::getDoublePtrTy(*TheContext); }
+  template<> llvm::Type* llvm_get_type<int*>()    { return llvm::Type::getIntNPtrTy(*TheContext,32); }
+  template<> llvm::Type* llvm_get_type<bool*>()   { return llvm::Type::getIntNPtrTy(*TheContext,1); }
 
 
   
@@ -350,13 +446,13 @@ namespace QDP
 	switch(p_in)
 	  {
 	  case jitprec::i32:
-	    type_in = llvm::Type::getInt32Ty(TheContext);
+	    type_in = llvm::Type::getInt32Ty(*TheContext);
 	    break;
 	  case jitprec::f32:
-	    type_in = llvm::Type::getFloatTy(TheContext);
+	    type_in = llvm::Type::getFloatTy(*TheContext);
 	    break;
 	  case jitprec::f64:
-	    type_in = llvm::Type::getDoubleTy(TheContext);
+	    type_in = llvm::Type::getDoubleTy(*TheContext);
 	    break;
 	  }
 
@@ -364,13 +460,13 @@ namespace QDP
 	switch(p_out)
 	  {
 	  case jitprec::i32:
-	    type_out = llvm::Type::getInt32Ty(TheContext);
+	    type_out = llvm::Type::getInt32Ty(*TheContext);
 	    break;
 	  case jitprec::f32:
-	    type_out = llvm::Type::getFloatTy(TheContext);
+	    type_out = llvm::Type::getFloatTy(*TheContext);
 	    break;
 	  case jitprec::f64:
-	    type_out = llvm::Type::getDoubleTy(TheContext);
+	    type_out = llvm::Type::getDoubleTy(*TheContext);
 	    break;
 	  }
 	
@@ -436,7 +532,7 @@ namespace QDP
 	  QDP_abort(1);
 	}
   
-	llvm::Expected<std::unique_ptr<llvm::Module>> m = llvm::parseBitcodeFile(mb->get()->getMemBufferRef(), TheContext);
+	llvm::Expected<std::unique_ptr<llvm::Module>> m = llvm::parseBitcodeFile(mb->get()->getMemBufferRef(), *TheContext);
 	if (std::error_code ec = errorToErrorCode(m.takeError()))
 	  {
 	    errs() << "Error reading bitcode from " << FileName << ": " << ec.message() << "\n";
@@ -449,7 +545,7 @@ namespace QDP
 #endif
 
 
-  
+#if defined(QDP_BACKEND_CUDA) || defined(QDP_BACKEND_ROCM)
   void llvm_init_libdevice()
   {
     static std::string FileName;
@@ -560,7 +656,7 @@ namespace QDP
       QDP_abort(1);
     }
   
-    llvm::Expected<std::unique_ptr<llvm::Module>> m = llvm::parseBitcodeFile(mb->get()->getMemBufferRef(), TheContext);
+    llvm::Expected<std::unique_ptr<llvm::Module>> m = llvm::parseBitcodeFile(mb->get()->getMemBufferRef(), *TheContext);
     if (std::error_code ec = errorToErrorCode(m.takeError()))
       {
 	errs() << "Error reading bitcode: " << ec.message() << "\n";
@@ -573,13 +669,12 @@ namespace QDP
       QDPIO::cerr << "libdevice bitcode didn't read correctly.\n";
       QDP_abort(1);
     }
-
   }
-
+#endif
 
 
   
-
+#if defined (QDP_BACKEND_ROCM)
   void llvm_backend_init_rocm() {
     function_created = false;
 
@@ -686,16 +781,16 @@ namespace QDP
     
     mapMath["pow_f64"]="pow";
     mapMath["atan2_f64"]="atan2";
-
     
     //
     // libdevice is initialized in math_setup
     //
     //llvm_init_libdevice();
   }  
+#endif
+  
 
-
-
+#if defined (QDP_BACKEND_CUDA)
   void llvm_backend_init_cuda() {
     function_created = false;
 
@@ -861,15 +956,53 @@ namespace QDP
     mapMath["pow_f64"]="__nv_pow";
     mapMath["atan2_f64"]="__nv_atan2";
   }  
+#endif
 
+
+#if defined (QDP_BACKEND_AVX)
+  void llvm_backend_init_avx() {
+    function_created = false;
+
+    llvm::InitializeAllTargets();
+    llvm::InitializeAllTargetMCs();
+    llvm::InitializeAllAsmPrinters();
+    llvm::InitializeAllAsmParsers();
+
+    llvm::PassRegistry *Registry = llvm::PassRegistry::getPassRegistry();
+    llvm::initializeCore(*Registry);
+    llvm::initializeCodeGen(*Registry);
+    llvm::initializeLoopStrengthReducePass(*Registry);
+    llvm::initializeLowerIntrinsicsPass(*Registry);
+    //    llvm::initializeCountingFunctionInserterPass(*Registry);
+    llvm::initializeUnreachableBlockElimLegacyPassPass(*Registry);
+    llvm::initializeConstantHoistingLegacyPassPass(*Registry);
+
+
+    QDPIO::cout << "Creating JIT" << std::endl;
+    TheJIT = ExitOnErr(KaleidoscopeJIT::Create());
+    QDPIO::cout << "Creating JIT successful" << std::endl;
+    //InitializeModule();
+
+    // QDPIO::cout << "LLVM initialization" << std::endl;
+    // QDPIO::cout << "  Target machine CPU                  : " << TargetMachine->getTargetCPU().str() << "\n";
+    // QDPIO::cout << "  Target triple                       : " << TargetMachine->getTargetTriple().str() << "\n";
+  }
+#endif
+  
 
 
   void llvm_backend_init()
   {
+    TheContext = std::make_unique<LLVMContext>();
+
 #ifdef QDP_BACKEND_ROCM
     llvm_backend_init_rocm();
-#else
+#elif QDP_BACKEND_CUDA
     llvm_backend_init_cuda();
+#elif QDP_BACKEND_AVX
+    llvm_backend_init_avx();
+#else
+#error "No LLVM backend specified."
 #endif
   }
 
@@ -882,6 +1015,9 @@ namespace QDP
 
   void llvm_start_new_function( const char* ftype , const char* pretty )
   {
+    std::cout << ftype << "\n";
+    std::cout << pretty << "\n";
+    
     swatch_builder.reset();
     swatch_builder.start();
     
@@ -895,25 +1031,49 @@ namespace QDP
     jit_stats_jitted();
     
     //QDPIO::cout << "Starting new LLVM function..\n";
+#if defined(QDP_BACKEND_AVX)
+    QDPIO::cout << "0 (new context)\n";
+    TheContext.reset();
+    TheContext = std::make_unique<LLVMContext>();
+#endif
+    
+    QDPIO::cout << "1\n";
+    
+    Mod.reset();
+    
+    QDPIO::cout << "2\n";
+    
+    Mod = std::make_unique<llvm::Module>("module", *TheContext);
 
-    Mod.reset( new llvm::Module( "module", TheContext) );
+    QDPIO::cout << "3\n";
 
-    builder.reset( new llvm::IRBuilder<>( TheContext ) );
+    builder.reset( new llvm::IRBuilder<>( *TheContext ) );
+
+    QDPIO::cout << "4\n";
 
     if (jit_config_get_verbose_output())
       {
 	QDPIO::cout << "setting module data layout\n";
       }
-    
-    Mod->setDataLayout(TargetMachine->createDataLayout());
 
+#if defined(QDP_BACKEND_CUDA) || defined(QDP_BACKEND_ROCM)
+    Mod->setDataLayout(TargetMachine->createDataLayout());
+#elif defined(QDP_BACKEND_AVX)
+    //QDPIO::cout << "setting module data layout\n";
+    Mod->setDataLayout(TheJIT->getDataLayout());
+#else
+#error "No LLVM backend set"
+#endif
+    
     vecParamType.clear();
     vecArgument.clear();
     function_created = false;
 
-#ifdef QDP_BACKEND_ROCM
+#if defined (QDP_BACKEND_ROCM)
     AMDspecific::__threads_per_group = llvm_add_param<int>();
     AMDspecific::__grid_size_x       = llvm_add_param<int>();
+#elif defined (QDP_BACKEND_AVX)
+    AVXspecific::thread_num = llvm_add_param<int>();
 #endif
   }
 
@@ -926,8 +1086,13 @@ namespace QDP
       llvm::FunctionType::get( builder->getVoidTy() , 
 			       llvm::ArrayRef<llvm::Type*>( vecParamType.data() , vecParamType.size() ) , 
 			       false); // no vararg
-    mainFunc = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, str_kernel_name , Mod.get());
-
+#if defined QDP_BACKEND_AVX
+    mainFunc = llvm::Function::Create(funcType, llvm::Function::PrivateLinkage, str_kernel_name + "_intern" , Mod.get());
+    //mainFunc = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, str_kernel_name , Mod.get());
+#else
+    mainFunc = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, str_kernel_name             , Mod.get());
+#endif
+    
 #ifdef QDP_BACKEND_ROCM
     mainFunc->setCallingConv( llvm::CallingConv::AMDGPU_KERNEL );
 #endif
@@ -938,11 +1103,11 @@ namespace QDP
       vecArgument.push_back( &*AI );
     }
 
-    bb_stack = llvm::BasicBlock::Create(TheContext, "stack", mainFunc);
+    bb_stack = llvm::BasicBlock::Create(*TheContext, "stack", mainFunc);
     builder->SetInsertPoint(bb_stack);
     it_stack = builder->GetInsertPoint(); // probly bb_stack.begin()
     
-    bb_afterstack = llvm::BasicBlock::Create(TheContext, "afterstack" );
+    bb_afterstack = llvm::BasicBlock::Create(*TheContext, "afterstack" );
     mainFunc->getBasicBlockList().push_back(bb_afterstack);
     
     builder->SetInsertPoint(bb_afterstack);
@@ -977,7 +1142,7 @@ namespace QDP
 
   
   // llvm::ConstantInt * llvm_create_const_int(int i) {
-  //   return llvm::ConstantInt::getSigned( llvm::Type::getIntNTy(TheContext,32) , i );
+  //   return llvm::ConstantInt::getSigned( llvm::Type::getIntNTy(*TheContext,32) , i );
   // }
 
 
@@ -1003,14 +1168,14 @@ namespace QDP
     if ( t0->isFloatingPointTy() || t1->isFloatingPointTy() ) {
       //llvm::outs() << "promote floating " << t0->isFloatingPointTy() << " " << t1->isFloatingPointTy() << "\n";
       if ( t0->isDoubleTy() || t1->isDoubleTy() ) {
-	return llvm::Type::getDoubleTy(TheContext);
+	return llvm::Type::getDoubleTy(*TheContext);
       } else {
-	return llvm::Type::getFloatTy(TheContext);
+	return llvm::Type::getFloatTy(*TheContext);
       }
     } else {
       //llvm::outs() << "promote int " << t0->getScalarSizeInBits() << " " << t1->getScalarSizeInBits() << "\n";
       unsigned upper = std::max( t0->getScalarSizeInBits() , t1->getScalarSizeInBits() );
-      return llvm::Type::getIntNTy(TheContext , upper );
+      return llvm::Type::getIntNTy(*TheContext , upper );
     }
   }
 
@@ -1285,63 +1450,63 @@ namespace QDP
   }
 
   template<> ParamRef llvm_add_param<bool>() { 
-    vecParamType.push_back( llvm::Type::getInt1Ty(TheContext) );
+    vecParamType.push_back( llvm::Type::getInt1Ty(*TheContext) );
     return vecParamType.size()-1;
-    // llvm::Argument * u8 = new llvm::Argument( llvm::Type::getInt8Ty(TheContext) , param_next() , mainFunc );
+    // llvm::Argument * u8 = new llvm::Argument( llvm::Type::getInt8Ty(*TheContext) , param_next() , mainFunc );
     // return llvm_cast( llvm_type<bool>::value , u8 );
   }
   template<> ParamRef llvm_add_param<bool*>() { 
-    vecParamType.push_back( llvm::Type::getInt1PtrTy(TheContext) );
+    vecParamType.push_back( llvm::Type::getInt1PtrTy(*TheContext) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<int64_t>() { 
-    vecParamType.push_back( llvm::Type::getInt64Ty(TheContext) );
+    vecParamType.push_back( llvm::Type::getInt64Ty(*TheContext) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<int>() { 
-    vecParamType.push_back( llvm::Type::getInt32Ty(TheContext) );
+    vecParamType.push_back( llvm::Type::getInt32Ty(*TheContext) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<int*>() { 
-    vecParamType.push_back( llvm::Type::getInt32PtrTy(TheContext) );
+    vecParamType.push_back( llvm::Type::getInt32PtrTy(*TheContext) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<jit_half_t>() { 
-    vecParamType.push_back( llvm::Type::getHalfTy(TheContext) );
+    vecParamType.push_back( llvm::Type::getHalfTy(*TheContext) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<float>() { 
-    vecParamType.push_back( llvm::Type::getFloatTy(TheContext) );
+    vecParamType.push_back( llvm::Type::getFloatTy(*TheContext) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<jit_half_t*>() { 
-    vecParamType.push_back( llvm::Type::getHalfPtrTy(TheContext) );
+    vecParamType.push_back( llvm::Type::getHalfPtrTy(*TheContext) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<float*>() { 
-    vecParamType.push_back( llvm::Type::getFloatPtrTy(TheContext) );
+    vecParamType.push_back( llvm::Type::getFloatPtrTy(*TheContext) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<double>() { 
-    vecParamType.push_back( llvm::Type::getDoubleTy(TheContext) );
+    vecParamType.push_back( llvm::Type::getDoubleTy(*TheContext) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<double*>() { 
-    vecParamType.push_back( llvm::Type::getDoublePtrTy(TheContext) );
+    vecParamType.push_back( llvm::Type::getDoublePtrTy(*TheContext) );
     return vecParamType.size()-1;
   }
 
 
   template<> ParamRef llvm_add_param<int**>() {
-    vecParamType.push_back( llvm::PointerType::get( llvm::Type::getInt32PtrTy(TheContext) , 0 ) );  // AddressSpace = 0 ??
+    vecParamType.push_back( llvm::PointerType::get( llvm::Type::getInt32PtrTy(*TheContext) , 0 ) );  // AddressSpace = 0 ??
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<float**>() {
-    vecParamType.push_back( llvm::PointerType::get( llvm::Type::getFloatPtrTy(TheContext) , 0 ) );  // AddressSpace = 0 ??
+    vecParamType.push_back( llvm::PointerType::get( llvm::Type::getFloatPtrTy(*TheContext) , 0 ) );  // AddressSpace = 0 ??
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<double**>() {
-    vecParamType.push_back( llvm::PointerType::get( llvm::Type::getDoublePtrTy(TheContext) , 0 ) );  // AddressSpace = 0 ??
+    vecParamType.push_back( llvm::PointerType::get( llvm::Type::getDoublePtrTy(*TheContext) , 0 ) );  // AddressSpace = 0 ??
     return vecParamType.size()-1;
   }
 
@@ -1351,7 +1516,7 @@ namespace QDP
   {
     std::ostringstream oss;
     oss << "L" << llvm_counters::label_counter++;
-    llvm::BasicBlock *BB = llvm::BasicBlock::Create(TheContext, oss.str() );
+    llvm::BasicBlock *BB = llvm::BasicBlock::Create(*TheContext, oss.str() );
     mainFunc->getBasicBlockList().push_back(BB);
     return BB;
   }
@@ -1406,21 +1571,21 @@ namespace QDP
 
 
   llvm::ConstantInt * llvm_create_const_int(int i) {
-    return llvm::ConstantInt::getSigned( llvm::Type::getIntNTy(TheContext,32) , i );
+    return llvm::ConstantInt::getSigned( llvm::Type::getIntNTy(*TheContext,32) , i );
   }
 
   llvm::Value * llvm_create_value( double v )
   {
     if (sizeof(REAL) == 4)
-      return llvm::ConstantFP::get( llvm::Type::getFloatTy(TheContext) , v );
+      return llvm::ConstantFP::get( llvm::Type::getFloatTy(*TheContext) , v );
     else
-      return llvm::ConstantFP::get( llvm::Type::getDoubleTy(TheContext) , v );
+      return llvm::ConstantFP::get( llvm::Type::getDoubleTy(*TheContext) , v );
   }
 
-  llvm::Value * llvm_create_value(int64_t v ) {return llvm::ConstantInt::get( llvm::Type::getInt64Ty(TheContext) , v );}
-  llvm::Value * llvm_create_value(int v )     {return llvm::ConstantInt::get( llvm::Type::getInt32Ty(TheContext) , v );}
-  llvm::Value * llvm_create_value(size_t v)   {return llvm::ConstantInt::get( llvm::Type::getInt32Ty(TheContext) , v );}
-  llvm::Value * llvm_create_value(bool v )    {return llvm::ConstantInt::get( llvm::Type::getInt1Ty(TheContext) , v );}
+  llvm::Value * llvm_create_value(int64_t v ) {return llvm::ConstantInt::get( llvm::Type::getInt64Ty(*TheContext) , v );}
+  llvm::Value * llvm_create_value(int v )     {return llvm::ConstantInt::get( llvm::Type::getInt32Ty(*TheContext) , v );}
+  llvm::Value * llvm_create_value(size_t v)   {return llvm::ConstantInt::get( llvm::Type::getInt32Ty(*TheContext) , v );}
+  llvm::Value * llvm_create_value(bool v )    {return llvm::ConstantInt::get( llvm::Type::getInt1Ty(*TheContext) , v );}
 
 
   llvm::Value * llvm_createGEP( llvm::Value * ptr , llvm::Value * idx )
@@ -1464,7 +1629,7 @@ namespace QDP
 
   void llvm_bar_sync()
   {
-    llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getVoidTy(TheContext), false);
+    llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getVoidTy(*TheContext), false);
 
     llvm::AttrBuilder ABuilder;
     ABuilder.addAttribute(llvm::Attribute::ReadNone);
@@ -1477,7 +1642,7 @@ namespace QDP
     
     auto Bar = Mod->getOrInsertFunction( bar_name.c_str() , 
 					 IntrinFnTy , 
-					 llvm::AttributeList::get(TheContext, 
+					 llvm::AttributeList::get(*TheContext, 
 								  llvm::AttributeList::FunctionIndex, 
 								  ABuilder) );
 
@@ -1490,14 +1655,14 @@ namespace QDP
 
   llvm::Value * llvm_special( const char * name )
   {
-    llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getInt32Ty(TheContext), false);
+    llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getInt32Ty(*TheContext), false);
 
     llvm::AttrBuilder ABuilder;
     ABuilder.addAttribute(llvm::Attribute::ReadNone);
 
     auto ReadTidX = Mod->getOrInsertFunction( name , 
 					      IntrinFnTy , 
-					      llvm::AttributeList::get(TheContext, 
+					      llvm::AttributeList::get(*TheContext, 
 								       llvm::AttributeList::FunctionIndex, 
 								       ABuilder)
 					      );
@@ -1527,8 +1692,10 @@ namespace QDP
 
   
   
-
-  llvm::Value * llvm_thread_idx() { 
+#if defined (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_CUDA)
+  llvm::Value * llvm_thread_idx() {
+    if (!function_created)
+      llvm_create_function();
     llvm::Value * tidx = llvm_call_special_tidx();
     llvm::Value * ntidx = llvm_call_special_ntidx();
     llvm::Value * ctaidx = llvm_call_special_ctaidx();
@@ -1536,18 +1703,22 @@ namespace QDP
     llvm::Value * nctaidx = llvm_call_special_nctaidx();
     return llvm_add( llvm_mul( llvm_add( llvm_mul( ctaidy , nctaidx ) , ctaidx ) , ntidx ) , tidx );
   }
-  
+#else
+  llvm::Value * llvm_thread_idx() { 
+    return llvm_derefParam( AVXspecific::thread_num );
+  }
+#endif
 
 
   void addKernelMetadata(llvm::Function *F) {
-    auto i32_t = llvm::Type::getInt32Ty(TheContext);
+    auto i32_t = llvm::Type::getInt32Ty(*TheContext);
     
     llvm::Metadata *md_args[] = {
 				 llvm::ValueAsMetadata::get(F),
-				 MDString::get(TheContext, "kernel"),
+				 MDString::get(*TheContext, "kernel"),
 				 llvm::ValueAsMetadata::get(ConstantInt::get(i32_t, 1))};
 
-    MDNode *md_node = MDNode::get(TheContext, md_args);
+    MDNode *md_node = MDNode::get(*TheContext, md_args);
 
     Mod->getOrInsertNamedMetadata("nvvm.annotations")->addOperand(md_node);
   }
@@ -1675,11 +1846,12 @@ namespace QDP
     func.time_math = swatch.getTimeInMicroseconds();
     swatch.reset();
     swatch.start();
-    
+
     //QDPIO::cout << "setting module data layout\n";
     Mod->setDataLayout(TargetMachine->createDataLayout());
 
     uint32_t NVPTX_CUDA_FTZ = jit_config_get_CUDA_FTZ();
+
     Mod->addModuleFlag( llvm::Module::ModFlagBehavior::Override, "nvvm-reflect-ftz" , NVPTX_CUDA_FTZ );
 
     llvm::legacy::PassManager PM2;
@@ -1690,7 +1862,26 @@ namespace QDP
 #endif
     PM2.add( llvm::createGlobalDCEPass() );
 
-    
+#if 0
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "\n\n";
+	QDPIO::cout << str_pretty << std::endl;
+	
+	if (Layout::primaryNode())
+	  {
+	    llvm_module_dump();
+	  }
+
+	std::string module_name = "module_" + str_kernel_name + ".bc";
+	QDPIO::cout << "write code to " << module_name << "\n";
+	std::error_code EC;
+	llvm::raw_fd_ostream OS(module_name, EC, llvm::sys::fs::F_None);
+	llvm::WriteBitcodeToFile(*Mod, OS);
+	OS.flush();
+      }
+#endif
+
     if (jit_config_get_verbose_output())
       {
 	QDPIO::cout << "internalize and remove dead code ...\n";
@@ -2071,6 +2262,137 @@ namespace QDP
 #endif
 
 
+
+#ifdef QDP_BACKEND_AVX
+  void llvm_build_function_avx(JitFunction& func)
+  {
+    StopWatch swatch(false);
+    swatch.start();
+
+#if 0
+    if (math_declarations.size() > 0)
+      {
+	if (jit_config_get_verbose_output())
+	  {
+	    QDPIO::cout << "adding math function definitions ...\n";
+	  }
+	llvm_init_libdevice();
+    
+	if (jit_config_get_verbose_output())
+	  {
+	    QDPIO::cout << "link modules ...\n";
+	  }
+	std::string ErrorMsg;
+
+	Mod->setDataLayout("");
+	
+	if (llvm::Linker::linkModules( *Mod , std::move( module_libdevice ) )) {  // llvm::Linker::PreserveSource
+	  QDPIO::cerr << "Linking libdevice failed: " << ErrorMsg.c_str() << "\n";
+	  QDP_abort(1);
+	}
+      }
+#endif
+    
+    swatch.stop();
+    func.time_math = swatch.getTimeInMicroseconds();
+    swatch.reset();
+    swatch.start();
+    
+
+#if 1
+    // Right now a trampoline function which calls the main function
+    // is necessary. For the auto-vectorizer we need the arguments to
+    // to be noalias. Adding this attribute to a pointer is only possible
+    // to function arguments. Since from host code I can only call
+    // functions with a static signature, this cannot be done in one
+    // step.
+
+    // Create the 'trampoline' function
+
+    std::vector< llvm::Type* > vecArgs;
+
+    // omp_num_thread, or thread index
+    vecArgs.push_back( llvm::Type::getInt32Ty( *TheContext ) ); 
+
+    vecArgs.push_back( llvm::PointerType::get( llvm::ArrayType::get( llvm::Type::getInt8Ty(*TheContext) , 8 ) , 0  ) );
+    llvm::FunctionType *funcType = 
+      llvm::FunctionType::get( builder->getVoidTy() , 
+			       llvm::ArrayRef<llvm::Type*>( vecArgs.data() , vecArgs.size() ) , 
+			       false); // no vararg
+
+    llvm::Function *mainFunc_extern = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, str_kernel_name , Mod.get());
+
+    
+    std::vector<llvm::Value*> vecCallArgument;
+    llvm::Function::arg_iterator AI = mainFunc_extern->arg_begin();
+
+    AI->setName( "idx" );
+    vecCallArgument.push_back( &*AI );
+    AI++;
+
+    AI->setName( "arg_ptr" );
+
+    // Create entry basic block
+    llvm::BasicBlock* entry = llvm::BasicBlock::Create( *TheContext, "entrypoint", mainFunc_extern);
+    builder->SetInsertPoint(entry);
+
+    int i=0;
+    for( std::vector< llvm::Type* >::const_iterator param_type = vecParamType.begin()+1 ; 
+    	 param_type != vecParamType.end() ; 
+    	 param_type++,i++ ) {
+      //(*param_type)->dump(); std::cout << "\n";
+      llvm::Value* gep = builder->CreateGEP( &*AI , llvm_create_value(i) );
+      llvm::Type* param_ptr_type = llvm::PointerType::get( *param_type , 0  );
+      llvm::Value* ptr_to_arg = builder->CreatePointerCast( gep , param_ptr_type );
+      llvm::Value* arg = builder->CreateLoad( ptr_to_arg );
+      vecCallArgument.push_back( arg );      
+    }
+
+    builder->CreateCall( mainFunc , llvm::ArrayRef<llvm::Value*>( vecCallArgument.data() , vecCallArgument.size() ) );
+    builder->CreateRetVoid();
+
+    //mainFunc_extern->dump();
+#endif
+
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "\n\n";
+	QDPIO::cout << str_pretty << std::endl;
+	
+	if (Layout::primaryNode())
+	  {
+	    llvm_module_dump();
+	  }
+      }
+
+    swatch.reset();
+    swatch.start();
+
+    QDPIO::cout << "Add module\n";
+    auto RT = TheJIT->getMainJITDylib().createResourceTracker();
+    auto TSM = ThreadSafeModule( std::move(Mod) , std::move(TheContext) );
+    ExitOnErr(TheJIT->addModule(std::move(TSM), RT));
+    QDPIO::cout << "Add module ok\n";
+
+    
+    QDPIO::cout << "Lookup\n";
+    auto Sym = ExitOnErr(TheJIT->lookup( str_kernel_name ));
+    QDPIO::cout << "Lookup ok\n";
+
+    func.set_kernel_name( str_kernel_name );
+    func.set_pretty( str_pretty );
+    func.set_function( (void*)Sym.getAddress() );
+
+    
+    swatch.stop();
+    func.time_codegen = swatch.getTimeInMicroseconds();
+
+    //    
+    func.time_dynload = 0.0;
+  }
+#endif
+
+  
   
 
   void llvm_build_function(JitFunction& func)
@@ -2083,8 +2405,12 @@ namespace QDP
     
 #ifdef QDP_BACKEND_ROCM
     llvm_build_function_rocm(func);
-#else
+#elif QDP_BACKEND_CUDA
     llvm_build_function_cuda(func);
+#elif QDP_BACKEND_AVX
+    llvm_build_function_avx(func);
+#else
+#error "No LLVM backend specified."
 #endif
   }
 

@@ -33,10 +33,22 @@ namespace QDP
     enum class JitParamType { float_, int_ , int64_, double_, bool_ };
     typedef void (* LayoutFptr)(bool toDev,void * outPtr,void * inPtr);
 
-#ifdef QDP_BACKEND_ROCM
+#if defined QDP_BACKEND_ROCM
     typedef std::vector<unsigned char> KernelArgs_t;
-#else
+#elif defined QDP_BACKEND_CUDA
     typedef std::vector<void*> KernelArgs_t;
+#elif defined QDP_BACKEND_AVX
+    union ArgTypes {
+      void *  ptr;
+      float   f32;
+      int     i32;
+      int64_t i64;
+      double  f64;
+      bool    i1;
+    };
+    typedef std::vector<ArgTypes> KernelArgs_t;
+#else
+#error "No backend specified"
 #endif
 
     

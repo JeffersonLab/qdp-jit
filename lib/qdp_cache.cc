@@ -42,7 +42,7 @@ namespace QDP
   }
 
 
-
+#if defined(QDP_BACKEND_CUDA) || defined(QDP_BACKEND_ROCM)
   bool QDPCache::gpu_allocate_base( void ** ptr , size_t n_bytes , int id )
   {
     if ( jit_config_get_max_allocation() < 0   ||  (int)n_bytes <= jit_config_get_max_allocation() )
@@ -54,8 +54,6 @@ namespace QDP
 	return gpu_malloc( ptr , n_bytes );
       }
   }
-    
-
   void QDPCache::gpu_free_base( void * ptr , size_t n_bytes )
   {
     if ( jit_config_get_max_allocation() < 0   ||  (int)n_bytes <= jit_config_get_max_allocation() )
@@ -67,6 +65,19 @@ namespace QDP
 	return gpu_free( ptr );
       }
   }
+#else
+  bool QDPCache::gpu_allocate_base( void ** ptr , size_t n_bytes , int id )
+  {
+    gpu_host_alloc( ptr , n_bytes );
+    return true;
+  }
+  void QDPCache::gpu_free_base( void * ptr , size_t n_bytes )
+  {
+    gpu_host_free( ptr );
+  }
+#endif
+
+  
 
   
   
@@ -994,17 +1005,30 @@ namespace QDP
 		  }
 	  
 		assert(for_kernel);
-#ifdef QDP_BACKEND_ROCM
+#if defined (QDP_BACKEND_ROCM)
 		switch(e.param_type)
 		  {
-		  case JitParamType::float_: insert_ret<float>(ret, e.param.float_ ); break;
-		  case JitParamType::double_: insert_ret<double>(ret, e.param.double_ ); break;
-		  case JitParamType::int_: insert_ret<int>(ret, e.param.int_ );break;
-		  case JitParamType::int64_: insert_ret<int64_t>(ret, e.param.int64_ ); break;
-		  case JitParamType::bool_: insert_ret<bool>(ret, e.param.bool_ ); ;break;
+		  case JitParamType::float_ : insert_ret<float>  (ret, e.param.float_ ); break;
+		  case JitParamType::double_: insert_ret<double> (ret, e.param.double_ ); break;
+		  case JitParamType::int_   : insert_ret<int>    (ret, e.param.int_ );break;
+		  case JitParamType::int64_ : insert_ret<int64_t>(ret, e.param.int64_ ); break;
+		  case JitParamType::bool_  : insert_ret<bool>   (ret, e.param.bool_ ); ;break;
 		  }
-#else
+#elif defined (QDP_BACKEND_CUDA)
 		ret.push_back( &e.param );
+#elif defined (QDP_BACKEND_AVX)
+		ArgTypes at;
+		switch(e.param_type)
+		  {
+		  case JitParamType::float_ : at.f32 = e.param.float_; break;
+		  case JitParamType::double_: at.f64 = e.param.double_; break;
+		  case JitParamType::int_   : at.i32 = e.param.int_; break;
+		  case JitParamType::int64_ : at.i64 = e.param.int64_; break;
+		  case JitParamType::bool_  : at.i1  = e.param.bool_; ;break;
+		  }
+		ret.push_back( at );
+#else
+#error "No backend specified"
 #endif
 	      }
 	    else
@@ -1014,10 +1038,16 @@ namespace QDP
 		    QDPIO::cout << (size_t)e.devPtr << ", ";
 		  }
 
-#ifdef QDP_BACKEND_ROCM
+#if defined (QDP_BACKEND_ROCM)
 		insert_ret<void*>( ret , e.devPtr );
-#else
+#elif defined (QDP_BACKEND_CUDA)
 		ret.push_back( for_kernel ? &e.devPtr : e.devPtr );
+#elif defined (QDP_BACKEND_AVX)
+		ArgTypes at;
+		at.ptr  = e.devPtr;
+		ret.push_back( at );
+#else
+#error "No backend specified"
 #endif
 	      }
 	  }
@@ -1030,10 +1060,16 @@ namespace QDP
 	      }
 
 	    assert(for_kernel);
-#ifdef QDP_BACKEND_ROCM
+#if defined (QDP_BACKEND_ROCM)
 	    insert_ret<void*>( ret , &jit_param_null_ptr );
-#else
+#elif defined (QDP_BACKEND_CUDA)
 	    ret.push_back( &jit_param_null_ptr );
+#elif defined (QDP_BACKEND_AVX)
+	    ArgTypes at;
+	    at.ptr  = jit_param_null_ptr;
+	    ret.push_back( at );
+#else
+#error "No backend specified"
 #endif
 	
 	  }

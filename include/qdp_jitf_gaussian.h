@@ -15,7 +15,10 @@ function_gaussian_build( JitFunction& function, OLattice<T>& dest ,OLattice<T>& 
 	return;
     }
 
-  std::vector<ParamRef> params = jit_function_preamble_param("gaussian",__PRETTY_FUNCTION__);
+  llvm_start_new_function("gaussian",__PRETTY_FUNCTION__);
+
+  WorkgroupGuard workgroupGuard;
+  ParamRef p_site_table = llvm_add_param<int*>();
 
   ParamLeaf param_leaf;
 
@@ -24,8 +27,11 @@ function_gaussian_build( JitFunction& function, OLattice<T>& dest ,OLattice<T>& 
   FuncRet_t r1_jit(forEach(r1, param_leaf, TreeCombine()));
   FuncRet_t r2_jit(forEach(r2, param_leaf, TreeCombine()));
 
-  llvm::Value * r_idx = jit_function_preamble_get_idx( params );
+  llvm::Value* r_idx_thread = llvm_thread_idx();
+  workgroupGuard.check(r_idx_thread);
 
+  llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
+  
   typedef typename REGType< typename JITType<T>::Type_t >::Type_t TREG;
   TREG r1_reg;
   TREG r2_reg;
@@ -47,7 +53,7 @@ function_gaussian_exec(JitFunction& function, OLattice<T>& dest,OLattice<T>& r1,
 
 #ifdef QDP_DEEP_LOG
   function.start = s.start();
-  function.count = s.hasOrderedRep() ? s.numSiteTable() : Layout::sitesOnNode();
+  function.count = s.numSiteTable();
   function.size_T = sizeof(T);
   function.type_W = typeid(typename WordType<T>::Type_t).name();
   function.set_dest_id( dest.getId() );
@@ -59,22 +65,12 @@ function_gaussian_exec(JitFunction& function, OLattice<T>& dest,OLattice<T>& r1,
   forEach(r1, addr_leaf, NullCombine());
   forEach(r2, addr_leaf, NullCombine());
 
-  int start = s.start();
-  int end = s.end();
-  bool ordered = s.hasOrderedRep();
-  int th_count = ordered ? s.numSiteTable() : Layout::sitesOnNode();
-
-  JitParam jit_ordered( QDP_get_global_cache().addJitParamBool( s.hasOrderedRep() ) );
-  JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
-  JitParam jit_start( QDP_get_global_cache().addJitParamInt( s.start() ) );
-  JitParam jit_end( QDP_get_global_cache().addJitParamInt( s.end() ) );
+  int th_count = s.numSiteTable();
+  WorkgroupGuardExec workgroupGuardExec(th_count);
 
   std::vector<QDPCache::ArgKey> ids;
-  ids.push_back( jit_ordered.get_id() );
-  ids.push_back( jit_th_count.get_id() );
-  ids.push_back( jit_start.get_id() );
-  ids.push_back( jit_end.get_id() );
-  ids.push_back( s.getIdMemberTable() );
+  workgroupGuardExec.check(ids);
+  ids.push_back( s.getIdSiteTable() );
   for(unsigned i=0; i < addr_leaf.ids.size(); ++i)
     ids.push_back( addr_leaf.ids[i] );
   

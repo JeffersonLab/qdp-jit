@@ -15,16 +15,22 @@ namespace QDP {
 	  return;
       }
 
+    llvm_start_new_function("zero_rep",__PRETTY_FUNCTION__);
 
-    std::vector<ParamRef> params = jit_function_preamble_param("zero_rep",__PRETTY_FUNCTION__);
+    WorkgroupGuard workgroupGuard;
+    ParamRef p_site_table = llvm_add_param<int*>();
 
     ParamLeaf param_leaf;
 
     typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
     FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
 
-    llvm::Value * r_idx = jit_function_preamble_get_idx( params );
+    llvm::Value* r_idx_thread = llvm_thread_idx();
 
+    workgroupGuard.check(r_idx_thread);
+
+    llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
+    
     zero_rep( dest_jit.elem(JitDeviceLayout::Coalesced,r_idx) );
 
     jit_get_function( function );
@@ -72,7 +78,7 @@ namespace QDP {
 
 #ifdef QDP_DEEP_LOG
     function.start = s.start();
-    function.count = s.hasOrderedRep() ? s.numSiteTable() : Layout::sitesOnNode();
+    function.count = s.numSiteTable();
     function.size_T = sizeof(T);
     function.type_W = typeid(typename WordType<T>::Type_t).name();
     function.set_dest_id( dest.getId() );
@@ -81,19 +87,13 @@ namespace QDP {
     AddressLeaf addr_leaf(s);
     forEach(dest, addr_leaf, NullCombine());
 
-    int th_count = s.hasOrderedRep() ? s.numSiteTable() : Layout::sitesOnNode();
+    int th_count = s.numSiteTable();
 
-    JitParam jit_ordered( QDP_get_global_cache().addJitParamBool( s.hasOrderedRep() ) );
-    JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
-    JitParam jit_start( QDP_get_global_cache().addJitParamInt( s.start() ) );
-    JitParam jit_end( QDP_get_global_cache().addJitParamInt( s.end() ) );
+    WorkgroupGuardExec workgroupGuardExec(th_count);
   
     std::vector<QDPCache::ArgKey> ids;
-    ids.push_back( jit_ordered.get_id() );
-    ids.push_back( jit_th_count.get_id() );
-    ids.push_back( jit_start.get_id() );
-    ids.push_back( jit_end.get_id() );
-    ids.push_back( s.getIdMemberTable() );
+    workgroupGuardExec.check(ids);
+    ids.push_back( s.getIdSiteTable() );
     for(unsigned i=0; i < addr_leaf.ids.size(); ++i)
       ids.push_back( addr_leaf.ids[i] );
  

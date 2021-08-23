@@ -19,9 +19,9 @@ namespace QDP {
     typedef typename WordType<T1>::Type_t WT;
 
     llvm_start_new_function("gather",__PRETTY_FUNCTION__);
+    
+    WorkgroupGuard workgroupGuard;
 
-    ParamRef p_lo      = llvm_add_param<int>();
-    ParamRef p_hi      = llvm_add_param<int>();
     ParamRef p_soffset = llvm_add_param<int*>();
     ParamRef p_sndbuf  = llvm_add_param<WT*>();
 
@@ -33,11 +33,9 @@ namespace QDP {
     typedef typename JITType< OLattice<T> >::Type_t DestView_t;
     DestView_t dest_jit( p_sndbuf );
 
-    llvm_derefParam( p_lo );  // r_lo not used
-    llvm::Value * r_hi      = llvm_derefParam( p_hi );
-    llvm::Value * r_idx     = llvm_thread_idx();  
+    llvm::Value * r_idx     = llvm_thread_idx();
 
-    llvm_cond_exit( llvm_ge( r_idx , r_hi ) );
+    workgroupGuard.check(r_idx);
 
     llvm::Value * r_idx_site = llvm_array_type_indirection( p_soffset , r_idx );
   
@@ -64,8 +62,8 @@ namespace QDP {
 
     llvm_start_new_function("gather_prop",__PRETTY_FUNCTION__);
 
-    ParamRef p_lo      = llvm_add_param<int>();
-    ParamRef p_hi      = llvm_add_param<int>();
+    WorkgroupGuard workgroupGuard;
+
     ParamRef p_soffset = llvm_add_param<int*>();
     ParamRef p_sndbuf  = llvm_add_param<WT*>();
 
@@ -77,18 +75,16 @@ namespace QDP {
     typedef typename JITType< OLattice<T> >::Type_t DestView_t;
     DestView_t dest_jit( p_sndbuf );
 
-    llvm_derefParam( p_lo );  // r_lo not used
-    llvm::Value * r_hi      = llvm_derefParam( p_hi );
     llvm::Value * r_idx     = llvm_thread_idx();  
 
-    llvm_cond_exit( llvm_ge( r_idx , r_hi ) );
+    workgroupGuard.check(r_idx);
 
     llvm::Value * r_idx_site = llvm_array_type_indirection( p_soffset , r_idx );
 
   
     std::vector< JitForLoop > loops;
     CreateLoops<T,OpAssign>::apply( loops , OpAssign() );
-    //create_dest_loops<T>( loops ,  );
+
 	  
     ViewSpinLeaf viewSpin( JitDeviceLayout::Coalesced , r_idx_site );
     for( int i = 0 ; i < loops.size() ; ++i )
@@ -123,20 +119,18 @@ namespace QDP {
 
     forEach(rhs, addr_leaf, NullCombine());
 
-    int hi = map.soffset(subset).size();
+    int th_count = map.soffset(subset).size();
 
-    JitParam jit_lo( QDP_get_global_cache().addJitParamInt( 0 ) );        // lo, leave it in
-    JitParam jit_hi( QDP_get_global_cache().addJitParamInt( hi ) );
+    WorkgroupGuardExec workgroupGuardExec(th_count);
 
     std::vector<QDPCache::ArgKey> ids;
-    ids.push_back( jit_lo.get_id() );
-    ids.push_back( jit_hi.get_id() );
+    workgroupGuardExec.check(ids);
     ids.push_back( map.getSoffsetsId(subset) );
     ids.push_back( send_buf_id );
     for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
       ids.push_back( addr_leaf.ids[i] );
  
-    jit_launch(function,hi,ids);
+    jit_launch(function,th_count,ids);
   }
 
 } // QDP

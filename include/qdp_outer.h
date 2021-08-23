@@ -447,16 +447,18 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 		Layout::sitesOnNode() * spin +
 		Layout::sitesOnNode() * lim_spi * color +
 		Layout::sitesOnNode() * lim_spi * lim_col * reality;
+#if 0
 	      if (toDev)
 		out_data[dev_idx] = in_data[hst_idx];
-	      else {
-		//std::cout << hst_idx  << " <= " << dev_idx << "\n";
+	      else
 		out_data[hst_idx] = in_data[dev_idx];
+#else
+	      out_data[hst_idx] = in_data[hst_idx];
+#endif
 	      }
 	    }
 	  }
 	}
-      }
     }
 
     int getId() const {

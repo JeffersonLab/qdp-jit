@@ -7,10 +7,6 @@ namespace QDP {
   void jit_util_ringBuffer_init();
   int  jit_util_ringBuffer_allocate( size_t size , const void *hstPtr );
 
-  
-
-  std::vector<ParamRef> jit_function_preamble_param( const char* ftype , const char* pretty );
-
   int jit_util_get_tune_count();
 
   void jit_get_function(JitFunction&);
@@ -427,7 +423,50 @@ namespace QDP {
   };
 
 
-  llvm::Value *jit_function_preamble_get_idx( const std::vector<ParamRef>& vec );
+  class WorkgroupGuard
+  {
+    ParamRef p_th_count;
+  public:
+    WorkgroupGuard()
+    {
+#if defined (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_CUDA)
+      p_th_count = llvm_add_param<int>();
+#endif
+    }
+    void check( llvm::Value* r_idx )
+    {
+#if defined (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_CUDA)
+      llvm::Value * r_th_count     = llvm_derefParam( p_th_count );
+      llvm_cond_exit( llvm_ge( r_idx , r_th_count ) );
+#endif
+    }
+  };
+
+
+  class WorkgroupGuardExec
+  {
+#if defined (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_CUDA)
+    JitParam jit_th_count;
+#endif
+  public:
+#if defined (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_CUDA)
+    WorkgroupGuardExec( int th_count ): jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) )
+    {
+    }
+#else
+    WorkgroupGuardExec( int th_count )
+    {
+    }
+#endif
+    void check(std::vector<QDPCache::ArgKey>& ids)
+    {
+#if defined (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_CUDA)
+      ids.push_back( jit_th_count.get_id() );
+#endif
+    }
+  };
+  
+
 
 
   llvm::Value* jit_ternary( llvm::Value* cond , llvm::Value* val_true , llvm::Value* val_false );

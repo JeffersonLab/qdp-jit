@@ -28,7 +28,7 @@ namespace QDP {
       {
 	if ( s.hasOrderedRep() )
 	  {
-	    ParamRef p_th_count   = llvm_add_param<int>();
+	    WorkgroupGuard workgroupGuard;
 	    ParamRef p_site_table = llvm_add_param<int*>();
 
 	    ParamLeaf param_leaf;
@@ -41,11 +41,9 @@ namespace QDP {
 	    typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
 	    View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
-	    llvm::Value * r_th_count     = llvm_derefParam( p_th_count );
-
 	    llvm::Value* r_idx_thread = llvm_thread_idx();
        
-	    llvm_cond_exit( llvm_ge( r_idx_thread , r_th_count ) );
+	    workgroupGuard.check(r_idx_thread);
 
 	    llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
 
@@ -62,7 +60,8 @@ namespace QDP {
       {
 	if ( s.hasOrderedRep() )
 	  {
-	    ParamRef p_th_count = llvm_add_param<int>();
+	    WorkgroupGuard workgroupGuard;
+	    
 	    ParamRef p_start    = llvm_add_param<int>();
 
 	    ParamLeaf param_leaf;
@@ -75,21 +74,19 @@ namespace QDP {
 	    typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
 	    View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
-	    llvm::Value * r_th_count     = llvm_derefParam( p_th_count );
-	    llvm::Value * r_start        = llvm_derefParam( p_start );
-
 	    llvm::Value* r_idx_thread = llvm_thread_idx();
 
-	    llvm_cond_exit( llvm_ge( r_idx_thread , r_th_count ) );
+	    workgroupGuard.check(r_idx_thread);
 
-	    llvm::Value* r_idx = llvm_add( r_idx_thread , r_start );
+	    llvm::Value* r_idx = llvm_add( r_idx_thread , llvm_derefParam( p_start ) );
 
 	    op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ), 
 		    forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , r_idx ), OpCombine()));
 	  }
 	else // unordered Subset
 	  {
-	    ParamRef p_th_count   = llvm_add_param<int>();
+	    WorkgroupGuard workgroupGuard;
+	    
 	    ParamRef p_site_table = llvm_add_param<int*>();
 
 	    ParamLeaf param_leaf;
@@ -102,11 +99,9 @@ namespace QDP {
 	    typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
 	    View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
-	    llvm::Value * r_th_count     = llvm_derefParam( p_th_count );
-
 	    llvm::Value* r_idx_thread = llvm_thread_idx();
-       
-	    llvm_cond_exit( llvm_ge( r_idx_thread , r_th_count ) );
+
+	    workgroupGuard.check(r_idx_thread);
 
 	    llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
 
@@ -139,7 +134,8 @@ namespace QDP {
       {
 	if ( s.hasOrderedRep() )
 	  {
-	    ParamRef p_th_count   = llvm_add_param<int>();
+	    WorkgroupGuard workgroupGuard;
+
 	    ParamRef p_site_table = llvm_add_param<int*>();
 
 	    ParamLeaf param_leaf;
@@ -153,11 +149,9 @@ namespace QDP {
 	    typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
 	    View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
-	    llvm::Value * r_th_count     = llvm_derefParam( p_th_count );
-
 	    llvm::Value* r_idx_thread = llvm_thread_idx();
        
-	    llvm_cond_exit( llvm_ge( r_idx_thread , r_th_count ) );
+	    workgroupGuard.check(r_idx_thread);
 
 	    llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
 
@@ -187,7 +181,8 @@ namespace QDP {
       {
 	if ( s.hasOrderedRep() )
 	  {
-	    ParamRef p_th_count = llvm_add_param<int>();
+	    WorkgroupGuard workgroupGuard;
+
 	    ParamRef p_start    = llvm_add_param<int>();
 
 	    ParamLeaf param_leaf;
@@ -201,12 +196,11 @@ namespace QDP {
 	    typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
 	    View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
-	    llvm::Value * r_th_count     = llvm_derefParam( p_th_count );
 	    llvm::Value * r_start        = llvm_derefParam( p_start );
 
 	    llvm::Value* r_idx_thread = llvm_thread_idx();
 
-	    llvm_cond_exit( llvm_ge( r_idx_thread , r_th_count ) );
+	    workgroupGuard.check(r_idx_thread);
 
 	    llvm::Value* r_idx = llvm_add( r_idx_thread , r_start );
 
@@ -227,7 +221,8 @@ namespace QDP {
 	  }
 	else // unordered Subset
 	  {
-	    ParamRef p_th_count   = llvm_add_param<int>();
+	    WorkgroupGuard workgroupGuard;
+
 	    ParamRef p_site_table = llvm_add_param<int*>();
 
 	    ParamLeaf param_leaf;
@@ -240,11 +235,9 @@ namespace QDP {
 	    typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
 	    View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
-	    llvm::Value * r_th_count     = llvm_derefParam( p_th_count );
-
 	    llvm::Value* r_idx_thread = llvm_thread_idx();
        
-	    llvm_cond_exit( llvm_ge( r_idx_thread , r_th_count ) );
+	    workgroupGuard.check(r_idx_thread);
 
 	    llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
 
@@ -289,12 +282,15 @@ namespace QDP {
 	if ( s.hasOrderedRep() )
 	  {
 	    int th_count = s.numSiteTable();
-		
-	    JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
+
+	    WorkgroupGuardExec workgroupGuardExec(th_count);
+	    //JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
+	    
 	    JitParam jit_start( QDP_get_global_cache().addJitParamInt( s.start() ) );
 
 	    std::vector<QDPCache::ArgKey> ids;
-	    ids.push_back( jit_th_count.get_id() );
+	    workgroupGuardExec.check(ids);
+	      //ids.push_back( jit_th_count.get_id() );
 	    ids.push_back( jit_start.get_id() );
 	    for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
 	      ids.push_back( addr_leaf.ids[i] );
@@ -305,10 +301,12 @@ namespace QDP {
 	  {
 	    int th_count = s.numSiteTable();
       
-	    JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
-
+	    WorkgroupGuardExec workgroupGuardExec(th_count);
+	    // JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
+	    
 	    std::vector<QDPCache::ArgKey> ids;
-	    ids.push_back( jit_th_count.get_id() );
+	    workgroupGuardExec.check(ids);
+	    // ids.push_back( jit_th_count.get_id() );
 	    ids.push_back( s.getIdSiteTable() );
 	    for(unsigned i=0; i < addr_leaf.ids.size(); ++i)
 	      ids.push_back( addr_leaf.ids[i] );
@@ -321,11 +319,12 @@ namespace QDP {
 	// 1st. call: inner
 	{
 	  int th_count = MasterMap::Instance().getCountInner(s,offnode_maps);
-      
-	  JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
+	  WorkgroupGuardExec workgroupGuardExec(th_count);
+	  //JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
 
 	  std::vector<QDPCache::ArgKey> ids;
-	  ids.push_back( jit_th_count.get_id() );
+	  workgroupGuardExec.check(ids);
+	  //ids.push_back( jit_th_count.get_id() );
 	  ids.push_back( MasterMap::Instance().getIdInner(s,offnode_maps) );
 	  for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
 	    ids.push_back( addr_leaf.ids[i] );
@@ -339,11 +338,13 @@ namespace QDP {
 	  forEach(rhs, phase2 , NullCombine());
 
 	  int th_count = MasterMap::Instance().getCountFace(s,offnode_maps);
-      
-	  JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
+
+	  WorkgroupGuardExec workgroupGuardExec(th_count);
+	  //JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
 
 	  std::vector<QDPCache::ArgKey> ids;
-	  ids.push_back( jit_th_count.get_id() );
+	  workgroupGuardExec.check(ids);
+	  //ids.push_back( jit_th_count.get_id() );
 	  ids.push_back( MasterMap::Instance().getIdFace(s,offnode_maps) );
 	  for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
 	    ids.push_back( addr_leaf.ids[i] );
