@@ -3,7 +3,7 @@
 
 namespace QDP {
 
-
+#if defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_ROCM)
   template <class T2>
   void qdp_jit_reduce(int size, int threads, int blocks, int shared_mem_usage, int in_id, int out_id )
   {
@@ -189,9 +189,11 @@ namespace QDP {
 
     function_bool_reduction_exec(function, size, threads, blocks, shared_mem_usage, in_id, out_id );
   }
+#endif
 
 
-
+  
+#if defined (QDP_BACKEND_CUDA) || (QDP_BACKEND_ROCM)
   template<class T1>
   typename UnaryReturn<OLattice<T1>, FnSum>::Type_t
   sum(const OLattice<T1>& s1, const Subset& s)
@@ -285,7 +287,32 @@ namespace QDP {
 
     return d;
   }
+#elif defined (QDP_BACKEND_AVX)
+  template<class T1>
+  typename UnaryReturn<OLattice<T1>, FnSum>::Type_t
+  sum(const OLattice<T1>& s1, const Subset& s)
+  {
+    typedef typename UnaryReturn<OLattice<T1>, FnSum>::Type_t::SubType_t T2;
 
+    typename UnaryReturn<OLattice<T1>, FnSum>::Type_t sum;
+	
+    zero_rep(sum);
+    //#pragma omp parallel for reduction(+: sum)
+    for (auto i = 0; i < s.numSiteTable(); i++)
+      {
+	int j = s.siteTable()[i];
+	sum += s1.peekLinearSite(j);
+      }
+
+    // Global sum
+    QDPInternal::globalSum(sum);
+    
+    return sum;
+  }
+#else
+#error "No backend specified"
+#endif
+  
 
   template<class T1, class RHS>
   typename UnaryReturn< OLattice<T1> , FnSum>::Type_t
@@ -304,6 +331,7 @@ namespace QDP {
   }
 
   
+#if defined (QDP_BACKEND_CUDA) || (QDP_BACKEND_ROCM)
   template<class WT>
   typename UnaryReturn< OLattice<PScalar<PScalar<RScalar<Word<double> > > > > , FnSum>::Type_t
   sum(const QDPExpr<UnaryNode<FnLocalNorm2, Reference<QDPType<PSpinVector<PColorVector<RComplex<Word<WT> >, 3>, 4>, OLattice<PSpinVector<PColorVector<RComplex<Word<WT> >, 3>, 4> > > > >,OLattice<PScalar<PScalar<RScalar<Word<double> > > > > >& rhs, const Subset& s)
@@ -406,7 +434,7 @@ namespace QDP {
 
     return d;
   }
-
+#endif
 
   
 
@@ -428,8 +456,8 @@ namespace QDP {
 
 
 
-#if 1
 
+#if defined (QDP_BACKEND_CUDA) || (QDP_BACKEND_ROCM)
   namespace {
     unsigned int nextPowerOf2(unsigned int n)  
     {
@@ -447,9 +475,6 @@ namespace QDP {
       return 1 << count;  
     }
   }
-
-  
-  
   //
   // sumMulti 
   //
@@ -603,13 +628,12 @@ namespace QDP {
 
     return dest;
   }
-#else
-  template<class RHS, class T>
-  typename UnaryReturn<OLattice<T>, FnSumMulti>::Type_t
-  sumMulti(const QDPExpr<RHS,OLattice<T> >& s1, const Set& ss)
+#elif defined (QDP_BACKEND_AVX)
+  template<class T1>
+  typename UnaryReturn<OLattice<T1>, FnSumMulti>::Type_t
+  sumMulti( const OLattice<T1>& s1 , const Set& ss )
   {
-    QDPIO::cout << "using non-jit version of sumMulti\n";
-    typename UnaryReturn<OLattice<T>, FnSumMulti>::Type_t	 dest(ss.numSubsets());
+    typename UnaryReturn<OLattice<T1>, FnSumMulti>::Type_t dest(ss.numSubsets());
 
 #if defined(QDP_USE_PROFILING)	 
     static QDPProfile_t prof(dest[0], OpAssign(), FnSum(), s1);
@@ -627,7 +651,7 @@ namespace QDP {
     for(int i=0; i < nodeSites; ++i) 
       {
 	int j = lat_color[i];
-	dest[j].elem() += forEach(s1, EvalLeaf1(i), OpCombine());
+	dest[j].elem() += s1.peekLinearSite(i).elem();
       }
 
     // Do a global sum on the result
@@ -641,11 +665,12 @@ namespace QDP {
 
     return dest;
   }
-
+#else
+#error "No backend specified"
 #endif
 
 
-
+#if defined (QDP_BACKEND_CUDA) || (QDP_BACKEND_ROCM)
   template<class T>
   typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t
   globalMax(const OLattice<T>& s1)
@@ -728,10 +753,47 @@ namespace QDP {
 
     return d;
   }
+#elif defined (QDP_BACKEND_AVX)
+  template<class T>
+  typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t
+  globalMax(const OLattice<T>& s1)
+  {
+    typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t	d;
+	
+#if defined(QDP_USE_PROFILING)	 
+    static QDPProfile_t prof(d, OpAssign(), FnGlobalMax(), s1);
+    prof.time -= getClockTime();
+#endif
+
+    // Loop always entered so unroll
+    d.elem() = s1.elem(0);
+
+    const int vvol = Layout::sitesOnNode();
+    for(int i=1; i < vvol; ++i) 
+      {
+	auto dd = s1.peekLinearSite(i).elem();
+	
+	if (toBool(dd > d.elem()))
+	  d.elem() = dd;
+      }
+
+    // Do a global max on the result
+    QDPInternal::globalMax(d); 
+
+#if defined(QDP_USE_PROFILING)	 
+    prof.time += getClockTime();
+    prof.count++;
+    prof.print();
+#endif
+
+    return d;
+  }
+#else
+#error "no backend specified"
+#endif
 
 
-
-
+#if defined (QDP_BACKEND_CUDA) || (QDP_BACKEND_ROCM)
   template<class T1>
   bool
   isfinite(const OLattice<T1>& s1)
@@ -819,13 +881,55 @@ namespace QDP {
 
     return ret_;
   }
+#elif defined (QDP_BACKEND_AVX)
+  template<class T1>
+  bool
+  isfinite(const OLattice<T1>& s1)
+  {
+    bool d = true;
 
+#if defined(QDP_USE_PROFILING)   
+    static QDPProfile_t prof(&d, OpAssign(), FnIsFinite(), s1);
+    prof.time -= getClockTime();
+#endif
+
+    const int nodeSites = Layout::sitesOnNode();
+    for(int i=0; i < nodeSites; ++i) 
+      {
+	auto obj = s1.peekLinearSite(i);
+
+	typedef typename WordType<T1>::Type_t WT;
+	
+	WT *ptr = (WT*)obj.getF();
+
+	for (int w = 0 ; w < sizeof(T1)/sizeof(WT) ; ++w )
+	  {
+	    d &= std::isfinite(*ptr);
+	    ptr++;
+	  }
+      }
+
+    QDPInternal::globalAnd(d);
+
+#if defined(QDP_USE_PROFILING)   
+    prof.time += getClockTime();
+    prof.count++;
+    prof.print();
+#endif
+
+    return d;
+  }
+#else
+#error "no backend specified"
+#endif
+
+  
 
   template<class T1> bool isnormal(const OLattice<T1>& s1) { return isfinite(s1); }
   template<class T1> bool isnan(const OLattice<T1>& s1) { return !isfinite(s1); }
   template<class T1> bool isinf(const OLattice<T1>& s1) { return !isfinite(s1); }
 
 
-    }
+} // QDP
 
 #endif

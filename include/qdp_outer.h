@@ -407,8 +407,37 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
     }
 
 
-  inline void moveToFastMemoryHint(bool copy=false) {}
-  inline void revertFromFastMemoryHint(bool copy=false) {}
+#ifdef QDP_BACKEND_AVX
+    OScalar<T> peekLinearSite(int site) const
+    {
+      OScalar<T> ret;
+
+      std::vector<void*> ptrs = QDP_get_global_cache().get_dev_ptrs( { this->getId() } );
+
+      typename WordType<T>::Type_t * in_data  = (typename WordType<T>::Type_t *)ptrs.at(0);
+      typename WordType<T>::Type_t * out_data = (typename WordType<T>::Type_t *)ret.getF();
+      
+      size_t lim_rea = GetLimit<T,2>::Limit_v; //T::ThisSize;
+      size_t lim_col = GetLimit<T,1>::Limit_v; //T::ThisSize;
+      size_t lim_spi = GetLimit<T,0>::Limit_v; //T::ThisSize;
+
+      for ( size_t reality = 0 ; reality < lim_rea ; reality++ ) {
+	for ( size_t color = 0 ; color < lim_col ; color++ ) {
+	  for ( size_t spin = 0 ; spin < lim_spi ; spin++ ) {
+	    size_t hst_idx = (((0)*lim_spi + spin) * lim_col + color ) * lim_rea + reality;
+	    size_t dev_idx = (((site)*lim_spi + spin) * lim_col + color ) * lim_rea + reality;
+	    out_data[hst_idx] = in_data[dev_idx];
+	  }
+	}
+      }
+      return ret;
+    }
+#endif
+    
+
+
+    inline void moveToFastMemoryHint(bool copy=false) {}
+    inline void revertFromFastMemoryHint(bool copy=false) {}
 
 
     void static changeLayout(bool toDev,void * outPtr,void * inPtr)
@@ -437,6 +466,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 	for ( size_t reality = 0 ; reality < lim_rea ; reality++ ) {
 	  for ( size_t color = 0 ; color < lim_col ; color++ ) {
 	    for ( size_t spin = 0 ; spin < lim_spi ; spin++ ) {
+#if defined(QDP_BACKEND_CUDA) || defined(QDP_BACKEND_ROCM)
 	      size_t hst_idx = 
 		reality + 
 		lim_rea * color +
@@ -447,14 +477,16 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 		Layout::sitesOnNode() * spin +
 		Layout::sitesOnNode() * lim_spi * color +
 		Layout::sitesOnNode() * lim_spi * lim_col * reality;
-#if 0
+#elif defined(QDP_BACKEND_AVX)
+	      size_t hst_idx = (((site)*lim_spi + spin) * lim_col + color ) * lim_rea + reality;
+	      size_t dev_idx = (((site)*lim_spi + spin) * lim_col + color ) * lim_rea + reality;
+#else
+#error "No backend specified"
+#endif
 	      if (toDev)
 		out_data[dev_idx] = in_data[hst_idx];
 	      else
 		out_data[hst_idx] = in_data[dev_idx];
-#else
-	      out_data[hst_idx] = in_data[hst_idx];
-#endif
 	      }
 	    }
 	  }

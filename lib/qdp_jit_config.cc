@@ -93,6 +93,7 @@ namespace QDP
   
   void jit_config_print()
   {
+#if ! defined(QDP_BACKEND_AVX)
     QDPIO::cout << "Memory pool config:\n";
     QDPIO::cout << "  threads per block                   : " << threads_per_block << "\n";
 
@@ -108,11 +109,14 @@ namespace QDP
       QDPIO::cout << "  memory pool size (per fraction)     : " << pool_size/1024/1024 << " MB\n";
       break;
     }
-#ifdef QDP_BACKEND_CUDA
+#endif
+#if defined (QDP_BACKEND_CUDA)
     QDPIO::cout << "Code generation:\n";
     QDPIO::cout << "  CUDA flush denormals to zero        : " << jit_config_get_CUDA_FTZ() << std::endl;
 #endif
+#if defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_ROCM)
     QDPIO::cout << "Using GPU direct                      : " << (int)gpu_direct << "\n";
+#endif
   }
 
   

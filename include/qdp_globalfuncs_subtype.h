@@ -26,6 +26,7 @@ namespace QDP
   }
 #endif
 
+#if defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_ROCM)
   template<class T1,class C1,class T2,class C2>
   typename QDPSubTypeTrait< typename BinaryReturn<C1,C2,FnLocalInnerProduct>::Type_t >::Type_t
   localInnerProduct(const QDPSubType<T1,C1> & l,const QDPType<T2,C2> & r)
@@ -67,58 +68,57 @@ namespace QDP
     
     return ret;
   }
-
-
-
-
-
-#if 0
+#elif defined (QDP_BACKEND_AVX)
   template<class T1,class C1,class T2,class C2>
   typename QDPSubTypeTrait< typename BinaryReturn<C1,C2,FnLocalInnerProduct>::Type_t >::Type_t
-  localInnerProduct(const QDPSubType<T1,C1> & l,const QDPSubType<T2,C2> & r)
+  localInnerProduct(const QDPSubType<T1,C1> & l,const QDPType<T2,C2> & r)
   {
     if (!l.getOwnsMemory())
       QDP_error_exit("localInnerProduct with subtype view called");
-    if (!r.getOwnsMemory())
-      QDP_error_exit("localInnerProduct with subtype view called");
-    if (r.subset().numSiteTable() != l.subset().numSiteTable())
-      QDP_error_exit("localInnerProduct with incompatible subset sizes");
 
     typename QDPSubTypeTrait< typename BinaryReturn<C1,C2,FnLocalInnerProduct>::Type_t >::Type_t ret;
-    ret.setSubset( r.subset() );
+    ret.setSubset( l.subset() );
 
-    for(int j=0; j < r.subset().numSiteTable(); ++j)
+    //QDP_info("localInnerProduct %d sites",l.subset().numSiteTable());
+
+    const int *tab = l.subset().siteTable().slice();
+    for(int j=0; j < l.subset().numSiteTable(); ++j)
       {
+	int i = tab[j];
 	FnLocalInnerProduct op;
-	ret.getF()[j] = op( l.getF()[j] , r.getF()[j] );
+	ret.getF()[j] = op( l.getF()[j] , r.elem(i) );
       }
 
     return ret;
   }
+
+  template<class T1,class C1,class T2,class C2>
+  typename QDPSubTypeTrait< typename BinaryReturn<C1,C2,FnLocalInnerProduct>::Type_t >::Type_t
+  localInnerProduct(const QDPType<T1,C1> & l,const QDPSubType<T2,C2> & r)
+  {
+    if (!r.getOwnsMemory())
+      QDP_error_exit("localInnerProduct with subtype view called");
+
+    typename QDPSubTypeTrait< typename BinaryReturn<C1,C2,FnLocalInnerProduct>::Type_t >::Type_t ret;
+    ret.setSubset( r.subset() );
+
+    const int *tab = r.subset().siteTable().slice();
+    for(int j=0; j < r.subset().numSiteTable(); ++j)
+      {
+	int i = tab[j];
+	FnLocalInnerProduct op;
+	ret.getF()[j] = op( l.elem(i) , r.getF()[j] );
+      }
+
+    return ret;
+  }
+#else
+#error "No backend specified"  
 #endif
 
 
-#if 0
-template<class T>
-typename UnaryReturn<OLattice<T>, FnSum>::Type_t
-sum( const OSubLattice<T>& s1 )
-{
-  typename UnaryReturn<OLattice<T>, FnSum>::Type_t  d;
 
-  // Must initialize to zero since we do not know if the loop will be entered
-  zero_rep(d.elem());
-
-  for(int j=0; j < s1.subset().numSiteTable(); ++j) 
-    {
-      d.elem() += s1.getF()[j];
-    }
-
-  // Do a global sum on the result
-  QDPInternal::globalSum(d);
-
-  return d;
- }
-#else
+#if defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_ROCM)
 template<class T>
 typename UnaryReturn<OLattice<T>, FnSum>::Type_t
 sum( const OSubLattice<T>& s1 )
@@ -229,6 +229,28 @@ sum( const OSubLattice<T>& s1 )
 
   return d;
 }
+#elif defined (QDP_BACKEND_AVX)
+template<class T>
+typename UnaryReturn<OLattice<T>, FnSum>::Type_t
+sum( const OSubLattice<T>& s1 )
+{
+  typename UnaryReturn<OLattice<T>, FnSum>::Type_t  d;
+
+  // Must initialize to zero since we do not know if the loop will be entered
+  zero_rep(d.elem());
+
+  for(int j=0; j < s1.subset().numSiteTable(); ++j) 
+    {
+      d.elem() += s1.getF()[j];
+    }
+
+  // Do a global sum on the result
+  QDPInternal::globalSum(d);
+
+  return d;
+ }
+#else
+#error "no backend specified"
 #endif
   
 

@@ -986,6 +986,46 @@ namespace QDP
     // QDPIO::cout << "LLVM initialization" << std::endl;
     // QDPIO::cout << "  Target machine CPU                  : " << TargetMachine->getTargetCPU().str() << "\n";
     // QDPIO::cout << "  Target triple                       : " << TargetMachine->getTargetTriple().str() << "\n";
+
+    mapMath["sin_f32"]="sinf";
+    mapMath["acos_f32"]="acosf";
+    mapMath["asin_f32"]="asinf";
+    mapMath["atan_f32"]="atanf";
+    mapMath["ceil_f32"]="ceilf";
+    mapMath["floor_f32"]="floorf";
+    mapMath["cos_f32"]="cosf";
+    mapMath["cosh_f32"]="coshf";
+    mapMath["exp_f32"]="expf";
+    mapMath["log_f32"]="logf";
+    mapMath["log10_f32"]="log10f";
+    mapMath["sinh_f32"]="sinhf";
+    mapMath["tan_f32"]="tanf";
+    mapMath["tanh_f32"]="tanhf";
+    mapMath["fabs_f32"]="fabsf";
+    mapMath["sqrt_f32"]="sqrtf";
+    
+    mapMath["pow_f32"]="powf";
+    mapMath["atan2_f32"]="atan2f";
+    
+    mapMath["sin_f64"]="sin";
+    mapMath["acos_f64"]="acos";
+    mapMath["asin_f64"]="asin";
+    mapMath["atan_f64"]="atan";
+    mapMath["ceil_f64"]="ceil";
+    mapMath["floor_f64"]="floor";
+    mapMath["cos_f64"]="cos";
+    mapMath["cosh_f64"]="cosh";
+    mapMath["exp_f64"]="exp";
+    mapMath["log_f64"]="log";
+    mapMath["log10_f64"]="log10";
+    mapMath["sinh_f64"]="sinh";
+    mapMath["tan_f64"]="tan";
+    mapMath["tanh_f64"]="tanh";
+    mapMath["fabs_f64"]="fabs";
+    mapMath["sqrt_f64"]="sqrt";
+    
+    mapMath["pow_f64"]="pow";
+    mapMath["atan2_f64"]="atan2";
   }
 #endif
   
@@ -1015,8 +1055,8 @@ namespace QDP
 
   void llvm_start_new_function( const char* ftype , const char* pretty )
   {
-    std::cout << ftype << "\n";
-    std::cout << pretty << "\n";
+    // std::cout << ftype << "\n";
+    // std::cout << pretty << "\n";
     
     swatch_builder.reset();
     swatch_builder.start();
@@ -1032,24 +1072,15 @@ namespace QDP
     
     //QDPIO::cout << "Starting new LLVM function..\n";
 #if defined(QDP_BACKEND_AVX)
-    QDPIO::cout << "0 (new context)\n";
     TheContext.reset();
     TheContext = std::make_unique<LLVMContext>();
 #endif
     
-    QDPIO::cout << "1\n";
-    
     Mod.reset();
-    
-    QDPIO::cout << "2\n";
     
     Mod = std::make_unique<llvm::Module>("module", *TheContext);
 
-    QDPIO::cout << "3\n";
-
     builder.reset( new llvm::IRBuilder<>( *TheContext ) );
-
-    QDPIO::cout << "4\n";
 
     if (jit_config_get_verbose_output())
       {
@@ -2368,16 +2399,13 @@ namespace QDP
     swatch.reset();
     swatch.start();
 
-    QDPIO::cout << "Add module\n";
+    // Add module
     auto RT = TheJIT->getMainJITDylib().createResourceTracker();
     auto TSM = ThreadSafeModule( std::move(Mod) , std::move(TheContext) );
     ExitOnErr(TheJIT->addModule(std::move(TSM), RT));
-    QDPIO::cout << "Add module ok\n";
 
-    
-    QDPIO::cout << "Lookup\n";
+    // Lookup 
     auto Sym = ExitOnErr(TheJIT->lookup( str_kernel_name ));
-    QDPIO::cout << "Lookup ok\n";
 
     func.set_kernel_name( str_kernel_name );
     func.set_pretty( str_pretty );

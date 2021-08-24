@@ -84,7 +84,7 @@ namespace QDP
 
     KernelArgs_t get_kernel_args(std::vector<int>& ids , bool for_kernel = true );
     
-    std::vector<void*> get_dev_ptrs(std::vector<int>& ids );
+    std::vector<void*> get_dev_ptrs( const std::vector<int>& ids );
     
     void printInfo(int id);
 

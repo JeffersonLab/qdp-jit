@@ -1081,7 +1081,7 @@ namespace QDP
   }
 
 
-  std::vector<void*> QDPCache::get_dev_ptrs( std::vector<int>& ids )
+  std::vector<void*> QDPCache::get_dev_ptrs( const std::vector<int>& ids )
   {
     // Here we do two cycles through the ids:
     // 1) cache all objects

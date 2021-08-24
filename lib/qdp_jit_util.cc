@@ -396,60 +396,17 @@ namespace QDP {
       return;
 
     void (*FP)(int,void*) = (void (*)(int,void*))(intptr_t)function.get_function();
-    //void (*FP)(int,int,float*,float*,float*) = (void (*)(int,int,float*,float*,float*))(intptr_t)function.get_function();
-
-    //define private void @eval0_intern(i32 %arg0, i32 %arg1, float* %arg2, float* %arg3, float* %arg4) {
-
-    
-    std::cerr << "jit_launch: th_count = " << th_count << "\n";
-    std::cerr << "arg count = " << args.size() << "\n";
-
-    // std::cerr << "jit_launch: a[0] = " << args.at(0).i32 << "\n";
-    // std::cerr << "jit_launch: a[1] = " << args.at(1).ptr << "\n";
-    // std::cerr << "jit_launch: a[2] = " << args.at(2).ptr << "\n";
-
-#if 0
-    float* dest = new float[256];
-    float* xx = new float[256];
-
-    for ( int i = 0 ; i < th_count ; i++ )
-      {
-	dest[i] = 0.0;
-	xx[i] = 2.0;
-      }
-
-    args.at(0).i32 = 0;
-    args.at(1).ptr = dest;
-    args.at(2).ptr = xx;
-    args.at(3).ptr = xx;
-#endif
     
     
 #if 1
     //#pragma omp parallel
-    //#pragma omp for
+#pragma omp for
     for ( int i = 0 ; i < th_count ; i++ )
       {
 	FP( i , args.data() );
-	//FP( i , 0 , dest , xx , xx );
-	//FP( i , 0 , dest , xx , xx );
       }
 #endif
 
-#if 0
-    QDPIO::cout << "out from util using trampoline:\n";
-    for ( int i = 0 ; i < th_count ; i++ )
-      {
-	QDPIO::cout << dest[i] << " ";
-	if ((i+1)%10 == 0)
-	  QDPIO::cout << "\n";
-      }
-    QDPIO::cout << "\n";
-    
-    delete[] dest;
-    delete[] xx;
-#endif
-    
     // Increment the call counter
     function.inc_call_counter();
   }

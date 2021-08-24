@@ -3,6 +3,7 @@
 
 namespace QDP {
 
+#if defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_ROCM)
   void
   function_sum_convert_ind_exec( JitFunction& function, 
 				 int size, int threads, int blocks, int shared_mem_usage,
@@ -283,7 +284,7 @@ namespace QDP {
 
     jit_launch_explicit_geom( function , ids , getGeom( size , threads ) , shared_mem_usage );
   }
-
+#endif
   
 }
 
