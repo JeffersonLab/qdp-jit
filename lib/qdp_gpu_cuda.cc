@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <string>
+#include <iterator>
 
 #include "cuda.h"
 
@@ -437,11 +438,6 @@ namespace QDP {
     max_blocky = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y ) );
     max_blockz = roundDown2pow( CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Z ) );
 
-#ifdef QDP_CUDA_SPECIAL
-    QDPIO::cout << "Setting max gridx for CUDA special functions\n";
-    cuda_special_set_maxgridx( max_gridx );
-#endif
-    
     int ma,mi;
     CudaGetSM(&ma,&mi);
     

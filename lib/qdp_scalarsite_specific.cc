@@ -11,6 +11,156 @@
 
 namespace QDP {
 
+
+  namespace {
+
+    std::pair<float,float> gamma_data[16][4][4] =
+    {  {  {  { 1 , 0 } , { 0 , 0 } , { 0 , 0 } , { 0 , 0 }  },
+	  {  { 0 , 0 } , { 1 , 0 } , { 0 , 0 } , { 0 , 0 }  },
+	  {  { 0 , 0 } , { 0 , 0 } , { 1 , 0 } , { 0 , 0 }  },
+	  {  { 0 , 0 } , { 0 , 0 } , { 0 , 0 } , { 1 , 0 }  } },
+       {  {  { 0 , 0 } , { 0 , 0 } , { 0 , 0 } , { 0 , 1 }  },
+	  {  { 0 , 0 } , { 0 , 0 } , { 0 , 1 } , { 0 , 0 }  },
+	  {  { 0 , 0 } , { 0 , -1 } , { 0 , 0 } , { 0 , 0 }  },
+	  {  { 0 , -1 } , { 0 , 0 } , { 0 , 0 } , { 0 , 0 }  } },
+       {  {  { 0 , 0 } , { 0 , 0 } , { 0 , 0 } , { -1 , 0 }  },
+	  {  { 0 , 0 } , { 0 , 0 } , { 1 , 0 } , { 0 , 0 }  },
+	  {  { 0 , 0 } , { 1 , 0 } , { 0 , 0 } , { 0 , 0 }  },
+	  {  { -1 , 0 } , { 0 , 0 } , { 0 , 0 } , { 0 , 0 }  } },
+       {  {  { 0 , -1 } , { 0 , 0 } , { 0 , 0 } , { 0 , 0 }  },
+	  {  { 0 , 0 } , { 0 , 1 } , { 0 , 0 } , { 0 , 0 }  },
+	  {  { 0 , 0 } , { 0 , 0 } , { 0 , -1 } , { 0 , 0 }  },
+	  {  { 0 , 0 } , { 0 , 0 } , { 0 , 0 } , { 0 , 1 }  } },
+       {  {  { 0 , 0 } , { 0 , 0 } , { 0 , 1 } , { 0 , 0 }  },
+	  {  { 0 , 0 } , { 0 , 0 } , { 0 , 0 } , { 0 , -1 }  },
+	  {  { 0 , -1 } , { 0 , 0 } , { 0 , 0 } , { 0 , 0 }  },
+	  {  { 0 , 0 } , { 0 , 1 } , { 0 , 0 } , { 0 , 0 }  } },
+       {  {  { 0 , 0 } , { -1 , 0 } , { 0 , 0 } , { 0 , 0 }  },
+	  {  { 1 , 0 } , { 0 , 0 } , { 0 , 0 } , { 0 , 0 }  },
+	  {  { 0 , 0 } , { 0 , 0 } , { 0 , 0 } , { -1 , 0 }  },
+	  {  { 0 , 0 } , { 0 , 0 } , { 1 , 0 } , { 0 , 0 }  } },
+       {  {  { 0 , 0 } , { 0 , -1 } , { 0 , 0 } , { 0 , 0 }  },
+	  {  { 0 , -1 } , { 0 , 0 } , { 0 , 0 } , { 0 , 0 }  },
+	  {  { 0 , 0 } , { 0 , 0 } , { 0 , 0 } , { 0 , -1 }  },
+	  {  { 0 , 0 } , { 0 , 0 } , { 0 , -1 } , { 0 , 0 }  } },
+       {  {  { 0 , 0 } , { 0 , 0 } , { 1 , 0 } , { 0 , 0 }  },
+	  {  { 0 , 0 } , { 0 , 0 } , { 0 , 0 } , { 1 , 0 }  },
+	  {  { -1 , 0 } , { 0 , 0 } , { 0 , 0 } , { 0 , 0 }  },
+	  {  { 0 , 0 } , { -1 , 0 } , { 0 , 0 } , { 0 , 0 }  } },
+       {  {  { 0 , 0 } , { 0 , 0 } , { 1 , 0 } , { 0 , 0 }  },
+	  {  { 0 , 0 } , { 0 , 0 } , { 0 , 0 } , { 1 , 0 }  },
+	  {  { 1 , 0 } , { 0 , 0 } , { 0 , 0 } , { 0 , 0 }  },
+	  {  { 0 , 0 } , { 1 , 0 } , { 0 , 0 } , { 0 , 0 }  } },
+       {  {  { 0 , 0 } , { 0 , 1 } , { 0 , 0 } , { 0 , 0 }  },
+	  {  { 0 , 1 } , { 0 , 0 } , { 0 , 0 } , { 0 , 0 }  },
+	  {  { 0 , 0 } , { 0 , 0 } , { 0 , 0 } , { 0 , -1 }  },
+	  {  { 0 , 0 } , { 0 , 0 } , { 0 , -1 } , { 0 , 0 }  } },
+       {  {  { 0 , 0 } , { -1 , 0 } , { 0 , 0 } , { 0 , 0 }  },
+	  {  { 1 , 0 } , { 0 , 0 } , { 0 , 0 } , { 0 , 0 }  },
+	  {  { 0 , 0 } , { 0 , 0 } , { 0 , 0 } , { 1 , 0 }  },
+	  {  { 0 , 0 } , { 0 , 0 } , { -1 , 0 } , { 0 , 0 }  } },
+       {  {  { 0 , 0 } , { 0 , 0 } , { 0 , -1 } , { 0 , 0 }  },
+	  {  { 0 , 0 } , { 0 , 0 } , { 0 , 0 } , { 0 , 1 }  },
+	  {  { 0 , -1 } , { 0 , 0 } , { 0 , 0 } , { 0 , 0 }  },
+	  {  { 0 , 0 } , { 0 , 1 } , { 0 , 0 } , { 0 , 0 }  } },
+       {  {  { 0 , 1 } , { 0 , 0 } , { 0 , 0 } , { 0 , 0 }  },
+	  {  { 0 , 0 } , { 0 , -1 } , { 0 , 0 } , { 0 , 0 }  },
+	  {  { 0 , 0 } , { 0 , 0 } , { 0 , -1 } , { 0 , 0 }  },
+	  {  { 0 , 0 } , { 0 , 0 } , { 0 , 0 } , { 0 , 1 }  } },
+       {  {  { 0 , 0 } , { 0 , 0 } , { 0 , 0 } , { -1 , 0 }  },
+	  {  { 0 , 0 } , { 0 , 0 } , { 1 , 0 } , { 0 , 0 }  },
+	  {  { 0 , 0 } , { -1 , 0 } , { 0 , 0 } , { 0 , 0 }  },
+	  {  { 1 , 0 } , { 0 , 0 } , { 0 , 0 } , { 0 , 0 }  } },
+       {  {  { 0 , 0 } , { 0 , 0 } , { 0 , 0 } , { 0 , -1 }  },
+	  {  { 0 , 0 } , { 0 , 0 } , { 0 , -1 } , { 0 , 0 }  },
+	  {  { 0 , 0 } , { 0 , -1 } , { 0 , 0 } , { 0 , 0 }  },
+	  {  { 0 , -1 } , { 0 , 0 } , { 0 , 0 } , { 0 , 0 }  } },
+       {  {  { 1 , 0 } , { 0 , 0 } , { 0 , 0 } , { 0 , 0 }  },
+	  {  { 0 , 0 } , { 1 , 0 } , { 0 , 0 } , { 0 , 0 }  },
+	  {  { 0 , 0 } , { 0 , 0 } , { -1 , 0 } , { 0 , 0 }  },
+	  {  { 0 , 0 } , { 0 , 0 } , { 0 , 0 } , { -1 , 0 }  } } };
+
+    
+  }
+
+  
+SpinMatrix Gamma(int num)
+{
+  if ( Ns != 4 )
+    {
+      QDPIO::cerr << "Gamma algebra requires Ns == 4" << std::endl;
+      QDP_abort(1);
+    }
+  
+  SpinMatrix g;
+  
+  for ( int i = 0 ; i < 4 ; ++i )
+    for ( int j = 0 ; j < 4 ; ++j )
+      {
+	g.elem().elem(i,j).elem().real() = gamma_data[num][i][j].first;
+	g.elem().elem(i,j).elem().imag() = gamma_data[num][i][j].second;
+      }
+  
+  return g;
+}
+
+  
+SpinMatrixD GammaDP(int num)
+{
+  if ( Ns != 4 )
+    {
+      QDPIO::cerr << "Gamma algebra requires Ns == 4" << std::endl;
+      QDP_abort(1);
+    }
+
+  SpinMatrixD g;
+  
+  for ( int i = 0 ; i < 4 ; ++i )
+    for ( int j = 0 ; j < 4 ; ++j )
+      {
+	g.elem().elem(i,j).elem().real() = gamma_data[num][i][j].first;
+	g.elem().elem(i,j).elem().imag() = gamma_data[num][i][j].second;
+      }
+  
+  return g;
+}
+
+
+  template<> SpinMatrix  GammaConst<4,0>() { return Gamma(0); }
+  template<> SpinMatrix  GammaConst<4,1>() { return Gamma(1); }
+  template<> SpinMatrix  GammaConst<4,2>() { return Gamma(2); }
+  template<> SpinMatrix  GammaConst<4,3>() { return Gamma(3); }
+  template<> SpinMatrix  GammaConst<4,4>() { return Gamma(4); }
+  template<> SpinMatrix  GammaConst<4,5>() { return Gamma(5); }
+  template<> SpinMatrix  GammaConst<4,6>() { return Gamma(6); }
+  template<> SpinMatrix  GammaConst<4,7>() { return Gamma(7); }
+  template<> SpinMatrix  GammaConst<4,8>() { return Gamma(8); }
+  template<> SpinMatrix  GammaConst<4,9>() { return Gamma(9); }
+  template<> SpinMatrix  GammaConst<4,10>() { return Gamma(10); }
+  template<> SpinMatrix  GammaConst<4,11>() { return Gamma(11); }
+  template<> SpinMatrix  GammaConst<4,12>() { return Gamma(12); }
+  template<> SpinMatrix  GammaConst<4,13>() { return Gamma(13); }
+  template<> SpinMatrix  GammaConst<4,14>() { return Gamma(14); }
+  template<> SpinMatrix  GammaConst<4,15>() { return Gamma(15); }
+
+  template<> SpinMatrixD  GammaConstDP<4,0>() { return GammaDP(0); }
+  template<> SpinMatrixD  GammaConstDP<4,1>() { return GammaDP(1); }
+  template<> SpinMatrixD  GammaConstDP<4,2>() { return GammaDP(2); }
+  template<> SpinMatrixD  GammaConstDP<4,3>() { return GammaDP(3); }
+  template<> SpinMatrixD  GammaConstDP<4,4>() { return GammaDP(4); }
+  template<> SpinMatrixD  GammaConstDP<4,5>() { return GammaDP(5); }
+  template<> SpinMatrixD  GammaConstDP<4,6>() { return GammaDP(6); }
+  template<> SpinMatrixD  GammaConstDP<4,7>() { return GammaDP(7); }
+  template<> SpinMatrixD  GammaConstDP<4,8>() { return GammaDP(8); }
+  template<> SpinMatrixD  GammaConstDP<4,9>() { return GammaDP(9); }
+  template<> SpinMatrixD  GammaConstDP<4,10>() { return GammaDP(10); }
+  template<> SpinMatrixD  GammaConstDP<4,11>() { return GammaDP(11); }
+  template<> SpinMatrixD  GammaConstDP<4,12>() { return GammaDP(12); }
+  template<> SpinMatrixD  GammaConstDP<4,13>() { return GammaDP(13); }
+  template<> SpinMatrixD  GammaConstDP<4,14>() { return GammaDP(14); }
+  template<> SpinMatrixD  GammaConstDP<4,15>() { return GammaDP(15); }
+
+  
 //-----------------------------------------------------------------------------
 namespace Layout
 {

@@ -3,71 +3,48 @@
 
 #include "qdp_config.h"
 
+#include<string>
+#include<vector>
+#include<iostream>
+#include<fstream>
+#include<sstream>
+#include<map>
+
+using namespace std;
+
+
+#define QDP_CONST
+
+namespace QDP {
+  class JitFunction;
+  class DynKey;
+  class ArrayBiDirectionalMap;
+}
+
+#include "qdp_init.h"
+#include "qdp_multi.h"
+#include "qdp_stdio.h"
+#include "qdp_jit_function.h"
+#include "qdp_cache.h"
+#include "qdp_gpu.h"
+#include "qdp_jit_config.h"
+#include "qdp_precision.h"
+#include "qdp_layout.h"
+#include "qdp_stopwatch.h"
+
+
 //#define __STDC_LIMIT_MACROS
 //#define __STDC_CONSTANT_MACROS
 
-#include "llvm/IRReader/IRReader.h"
-#include "llvm/IR/Module.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/Bitcode/BitcodeReader.h"
-#include "llvm/IR/LegacyPassManager.h"
-#include "llvm/Analysis/BasicAliasAnalysis.h"
-#include "llvm/Pass.h"
-#include "llvm/Analysis/Passes.h"
-#include "llvm/Transforms/Scalar.h"
-#include "llvm/Transforms/IPO.h"
-#include "llvm/Support/TargetRegistry.h"
-#include "llvm/Support/TargetSelect.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/Support/CommandLine.h"
-#include "llvm/Target/TargetMachine.h"
-
-
-#include "llvm/CodeGen/TargetLowering.h"
-
-
-#include "llvm/Analysis/TargetTransformInfo.h"
-#include "llvm/Analysis/TargetLibraryInfo.h"
-#include "llvm/Support/ToolOutputFile.h"
-#include "llvm/Support/FormattedStream.h"
-#include "llvm/IR/DataLayout.h"
-#include "llvm/Support/SourceMgr.h"
-
-
-#include "llvm/ADT/ArrayRef.h"
-#include "llvm/ADT/StringSet.h"
-#include "llvm/IR/Function.h"
-#include "llvm/IR/BasicBlock.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/Constants.h"
-#include "llvm/IR/Attributes.h"
-#include "llvm/IR/DerivedTypes.h"
-#include "llvm/IR/Attributes.h"
-
-#include "llvm/Support/raw_os_ostream.h"
-
-#include "llvm/ADT/Statistic.h"
-#include "llvm/Support/Program.h"
-
-#include "llvm/Support/MemoryBuffer.h"
-#include "llvm/Support/Debug.h"
-#include "llvm/Support/Host.h"
-
-#include <system_error>
-
-#include "llvm/IR/GlobalVariable.h"
-
-#include "llvm/ExecutionEngine/ExecutionEngine.h"
-#include "llvm/ExecutionEngine/MCJIT.h"
-#include "llvm/IR/Verifier.h"
-#include "llvm/IR/AssemblyAnnotationWriter.h"
-
-
-namespace llvm {
-  ModulePass *createNVVMReflectPass(unsigned int);
+namespace llvm
+{
+  struct Value;
+  struct BasicBlock;
+  struct Type;
+  //struct PHINode;
+  struct Function;
+  struct SwitchInst;
 }
-
 
 namespace QDP {
 
@@ -118,6 +95,8 @@ namespace QDP {
   
   template<class T> llvm::Type* llvm_get_type();
 
+  llvm::Type* llvm_val_type( llvm::Value* l );
+
 
   struct IndexRet {
     IndexRet(){}
@@ -138,32 +117,16 @@ namespace QDP {
 
   void llvm_start_new_function( const char* ftype , const char* pretty );
 
-  llvm::IRBuilder<>* llvm_get_builder();
-  llvm::Module* llvm_get_module();
-  llvm::LLVMContext& llvm_get_context();
-
-  llvm::SwitchInst* llvm_switch_create( llvm::Value* val , llvm::BasicBlock* bb_default );
-  void llvm_switch_add_case( llvm::SwitchInst * SI , int val , llvm::BasicBlock* bb );
-
 
   void llvm_backend_init();
-  llvm::PHINode * llvm_phi( llvm::Type* type, unsigned num = 0 );
+  llvm::Value * llvm_phi( llvm::Type* type, unsigned num = 0 );
   llvm::Type* promote( llvm::Type* t0 , llvm::Type* t1 );
   llvm::Value* llvm_cast( llvm::Type *dest_type , llvm::Value *src );
 
-  llvm::SwitchInst * llvm_switch( llvm::Value* val , llvm::BasicBlock* bb_default );
 
-  //llvm::Type* llvm_normalize_values(llvm::Value* lhs , llvm::Value* rhs);
-
-#if 0
-  llvm::Value* llvm_b_op( llvm::Value *(*)(llvm::Value *, llvm::Value *) func_float,
-			  llvm::Value *(*)(llvm::Value *, llvm::Value *) func_int,
-			  llvm::Value* lhs , llvm::Value* rhs );
-
-  llvm::Value* llvm_u_op( llvm::Value *(*)(llvm::Value *) func_float,
-			  llvm::Value *(*)(llvm::Value *) func_int,
-			  llvm::Value* lhs );
-#endif
+  llvm::SwitchInst* llvm_switch_create( llvm::Value* val , llvm::BasicBlock* bb_default );
+  void llvm_switch_add_case( llvm::SwitchInst * SI , int val , llvm::BasicBlock* bb );
+  
 
   llvm::Value* llvm_shl( llvm::Value* lhs , llvm::Value* rhs );
   llvm::Value* llvm_shr( llvm::Value* lhs , llvm::Value* rhs );
@@ -217,6 +180,7 @@ namespace QDP {
   llvm::BasicBlock * llvm_get_insert_block();
 
   llvm::BasicBlock * llvm_new_basic_block();
+
   void llvm_cond_branch(llvm::Value * cond, llvm::BasicBlock * thenBB, llvm::BasicBlock * elseBB);
   void llvm_branch(llvm::BasicBlock * BB);
   void llvm_set_insert_point( llvm::BasicBlock * BB );
@@ -224,7 +188,7 @@ namespace QDP {
   void llvm_exit();
   llvm::BasicBlock * llvm_cond_exit( llvm::Value * cond );
 
-  llvm::ConstantInt * llvm_create_const_int(int i);
+  //llvm::ConstantInt * llvm_create_const_int(int i);
 
   llvm::Value * llvm_create_value( double v );
   llvm::Value * llvm_create_value(int v );
@@ -238,6 +202,8 @@ namespace QDP {
 
   llvm::Value * llvm_load_ptr_idx( llvm::Value * ptr , llvm::Value * idx );
   void          llvm_store_ptr_idx( llvm::Value * val , llvm::Value * ptr , llvm::Value * idx );
+
+  void          llvm_add_incoming( llvm::Value * phi , llvm::Value* val , llvm::BasicBlock* bb );
 
   llvm::Value * llvm_array_type_indirection( ParamRef p        , llvm::Value* idx );
   llvm::Value * llvm_array_type_indirection( llvm::Value* base , llvm::Value* idx );
@@ -256,7 +222,6 @@ namespace QDP {
 
   llvm::Value * llvm_thread_idx();
 
-  void addKernelMetadata(llvm::Function *F);
 
   void llvm_build_function(JitFunction&);
 
@@ -303,6 +268,27 @@ namespace QDP {
   llvm::Value* llvm_pow_f64( llvm::Value* lhs, llvm::Value* rhs );
   llvm::Value* llvm_atan2_f64( llvm::Value* lhs, llvm::Value* rhs );
 
+
+
+
+
+
+
+
+  void jit_stats_lattice2dev();
+  void jit_stats_lattice2host();
+  void jit_stats_jitted();
+  void jit_stats_special(int i);
+
+  long get_jit_stats_lattice2dev();
+  long get_jit_stats_lattice2host();
+  long get_jit_stats_jitted();
+  long get_jit_stats_special(int i);
+  std::map<int,std::string>& get_jit_stats_special_names();
+
+  std::string jit_util_get_static_dynamic_string( const std::string& pretty );
+
+  
 
 } // namespace QDP
 

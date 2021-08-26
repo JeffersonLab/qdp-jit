@@ -214,7 +214,14 @@ namespace QDP {
     typedef WordREG<typename REGType<T>::Type_t>  Type_t;
   };
 
+  
+  template<class T>
+  struct BASEType< WordJIT<T> >
+  {
+    typedef Word<typename BASEType<T>::Type_t>  Type_t;
+  };
 
+  
   template<class T> 
   struct WordType<WordJIT<T> >
   {
@@ -243,63 +250,45 @@ namespace QDP {
 
 
   inline void 
-  zero_rep(WordJIT<double>& dest)
+  zero_rep(WordJIT<double> dest)
   {
     llvm_store_ptr_idx( llvm_create_value( 0.0 ) , dest.getBaseReg() , dest.getOffset() );
   }
 
   inline void 
-  zero_rep(WordJIT<jit_half_t>& dest)
+  zero_rep(WordJIT<jit_half_t> dest)
   {
     llvm_store_ptr_idx( llvm_create_value( 0.0 ) , dest.getBaseReg() , dest.getOffset() );
   }
 
   inline void 
-  zero_rep(WordJIT<float>& dest)
+  zero_rep(WordJIT<float> dest)
   {
     llvm_store_ptr_idx( llvm_create_value( 0.0 ) , dest.getBaseReg() , dest.getOffset() );
   }
 
   inline void 
-  zero_rep(WordJIT<int>& dest)
+  zero_rep(WordJIT<int> dest)
   {
     llvm_store_ptr_idx( llvm_create_value( 0 ) , dest.getBaseReg() , dest.getOffset() );
   }
 
-
-  template<class T1, class T3>
-  void random_seed_mul(T1& seed, const T3& seed_mult)
-  {
-    llvm::Value* s0 = seed.elem().elem(0).elem().get_val();
-    llvm::Value* s1 = seed.elem().elem(1).elem().get_val();
-    llvm::Value* s2 = seed.elem().elem(2).elem().get_val();
-    llvm::Value* s3 = seed.elem().elem(3).elem().get_val();
-
-    llvm::Value* m0 = seed_mult.elem().elem(0).elem().get_val();
-    llvm::Value* m1 = seed_mult.elem().elem(1).elem().get_val();
-    llvm::Value* m2 = seed_mult.elem().elem(2).elem().get_val();
-    llvm::Value* m3 = seed_mult.elem().elem(3).elem().get_val();
-
-    std::vector<llvm::Value*> ret = llvm_seedMultiply(s0,s1,s2,s3, m0,m1,m2,m3);
-
-    seed.elem().elem(0).elem().setup( ret.at(0) );
-    seed.elem().elem(1).elem().setup( ret.at(1) );
-    seed.elem().elem(2).elem().setup( ret.at(2) );
-    seed.elem().elem(3).elem().setup( ret.at(3) );
-  }
-
-  //! dest  = random  
+  
   template<class T, class T1, class T2, class T3>
   inline void
-  fill_random(WordJIT<T>& d, T1& seed, T2& skewed_seed, const T3& seed_mult)
+  fill_random_jit(WordJIT<T> d, T1 seed, T2 skewed_seed, const T3& seed_mult)
   {
-    d = seedToFloat( skewed_seed ).elem().elem().elem();
+    typedef typename REGType<typename BASEType< T2 >::Type_t >::Type_t T2REG;
+    typedef typename REGType<typename BASEType< T1 >::Type_t >::Type_t T1REG;
+    T2REG sk;
+    T1REG se;
+    sk.setup(skewed_seed);
+    se.setup(seed);
 
-    random_seed_mul( seed        , seed_mult );
-    random_seed_mul( skewed_seed , seed_mult );
+    d = seedToFloat( sk ).elem().elem().elem();
 
-    // seed        = seed        * seed_mult;
-    // skewed_seed = skewed_seed * seed_mult;
+    seed        = se * seed_mult;
+    skewed_seed = sk * seed_mult;
   }
 
 

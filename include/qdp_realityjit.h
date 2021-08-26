@@ -450,6 +450,19 @@ struct REGType< RComplexJIT<T> >
 };
 
 
+template<class T>
+struct BASEType< RScalarJIT<T> >
+{
+  typedef RScalar<typename BASEType<T>::Type_t>  Type_t;
+};
+
+template<class T>
+struct BASEType< RComplexJIT<T> >
+{
+  typedef RComplex<typename BASEType<T>::Type_t>  Type_t;
+};
+
+
 // Underlying word type
 template<class T>
 struct WordType<RScalarJIT<T> > 
@@ -644,96 +657,6 @@ struct TrinaryReturn<RScalarJIT<T1>, RScalarJIT<T2>, RScalarJIT<T3>, FnColorCont
   typedef RScalarJIT<typename TrinaryReturn<T1, T2, T3, FnColorContract>::Type_t>  Type_t;
 };
 
-// RScalarJIT
-// Gamma algebra
-template<int N, int m, class T2, class OpGammaConstMultiply>
-struct BinaryReturn<GammaConst<N,m>, RScalarJIT<T2>, OpGammaConstMultiply> {
-  typedef RScalarJIT<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, int m, class OpMultiplyGammaConst>
-struct BinaryReturn<RScalarJIT<T2>, GammaConst<N,m>, OpMultiplyGammaConst> {
-  typedef RScalarJIT<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpGammaTypeMultiply>
-struct BinaryReturn<GammaType<N>, RScalarJIT<T2>, OpGammaTypeMultiply> {
-  typedef RScalarJIT<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpMultiplyGammaType>
-struct BinaryReturn<RScalarJIT<T2>, GammaType<N>, OpMultiplyGammaType> {
-  typedef RScalarJIT<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-
-// RScalarJIT
-// Gamma algebra
-template<int N, int m, class T2, class OpGammaConstDPMultiply>
-struct BinaryReturn<GammaConstDP<N,m>, RScalarJIT<T2>, OpGammaConstDPMultiply> {
-  typedef RScalarJIT<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, int m, class OpMultiplyGammaConstDP>
-struct BinaryReturn<RScalarJIT<T2>, GammaConstDP<N,m>, OpMultiplyGammaConstDP> {
-  typedef RScalarJIT<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpGammaTypeDPMultiply>
-struct BinaryReturn<GammaTypeDP<N>, RScalarJIT<T2>, OpGammaTypeDPMultiply> {
-  typedef RScalarJIT<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpMultiplyGammaTypeDP>
-struct BinaryReturn<RScalarJIT<T2>, GammaTypeDP<N>, OpMultiplyGammaTypeDP> {
-  typedef RScalarJIT<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-
-
-// RComplexJIT
-// Gamma algebra
-template<int N, int m, class T2, class OpGammaConstMultiply>
-struct BinaryReturn<GammaConst<N,m>, RComplexJIT<T2>, OpGammaConstMultiply> {
-  typedef RComplexJIT<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, int m, class OpMultiplyGammaConst>
-struct BinaryReturn<RComplexJIT<T2>, GammaConst<N,m>, OpMultiplyGammaConst> {
-  typedef RComplexJIT<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpGammaTypeMultiply>
-struct BinaryReturn<GammaType<N>, RComplexJIT<T2>, OpGammaTypeMultiply> {
-  typedef RComplexJIT<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpMultiplyGammaType>
-struct BinaryReturn<RComplexJIT<T2>, GammaType<N>, OpMultiplyGammaType> {
-  typedef RComplexJIT<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-
-// Gamma algebra
-template<int N, int m, class T2, class OpGammaConstDPMultiply>
-struct BinaryReturn<GammaConstDP<N,m>, RComplexJIT<T2>, OpGammaConstDPMultiply> {
-  typedef RComplexJIT<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, int m, class OpMultiplyGammaConstDP>
-struct BinaryReturn<RComplexJIT<T2>, GammaConstDP<N,m>, OpMultiplyGammaConstDP> {
-  typedef RComplexJIT<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpGammaTypeDPMultiply>
-struct BinaryReturn<GammaTypeDP<N>, RComplexJIT<T2>, OpGammaTypeDPMultiply> {
-  typedef RComplexJIT<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpMultiplyGammaTypeDP>
-struct BinaryReturn<RComplexJIT<T2>, GammaTypeDP<N>, OpMultiplyGammaTypeDP> {
-  typedef RComplexJIT<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
 
 
 // Assignment is different
@@ -2128,7 +2051,7 @@ getSite(const RComplexJIT<T>& s1, int innersite)
 //! dest = (mask) ? s1 : dest
 template<class T, class T1> 
 inline
-void copymask(RComplexJIT<T>& d, const RScalarJIT<T1>& mask, const RComplexJIT<T>& s1) 
+void copymask(RComplexJIT<T> d, const RScalarJIT<T1>& mask, const RComplexJIT<T>& s1) 
 {
   copymask(d.real(),mask.elem(),s1.real());
   copymask(d.imag(),mask.elem(),s1.imag());
@@ -2287,12 +2210,12 @@ where(const RScalarJIT<T1>& a, const RScalarJIT<T2>& b, const RComplexJIT<T3>& c
 
 
 
-template<class T>
-inline void
-get_pred(int& pred, const RScalarJIT<T>& d)
-{
-  get_pred(pred , d.elem() );
-}
+// template<class T>
+// inline void
+// get_pred(int& pred, const RScalarJIT<T>& d)
+// {
+//   get_pred(pred , d.elem() );
+// }
 
 
 
@@ -2300,7 +2223,7 @@ get_pred(int& pred, const RScalarJIT<T>& d)
 /*! RComplexJIT polar method */
 template<class T>
 inline void
-fill_gaussian(RComplexJIT<T>& d, RComplexJIT<T>& r1, RComplexJIT<T>& r2)
+fill_gaussian(RComplexJIT<T> d, RComplexJIT<T>& r1, RComplexJIT<T>& r2)
 {
   T w_2pi(d.func());
   T w_2(d.func());
@@ -2356,7 +2279,7 @@ fill_gaussian(RComplexJIT<T>& d, RComplexJIT<T>& r1, RComplexJIT<T>& r2)
 //! dest = (mask) ? s1 : dest
 template<class T, class T1, class T2> 
 inline
-void copymask(RScalarJIT<T>& d, const RScalarREG<T1>& mask, const RScalarREG<T2>& s1)
+void copymask(RScalarJIT<T> d, const RScalarREG<T1>& mask, const RScalarREG<T2>& s1)
 {
   copymask(d.elem(),mask.elem(),s1.elem());
 }
@@ -2365,7 +2288,7 @@ void copymask(RScalarJIT<T>& d, const RScalarREG<T1>& mask, const RScalarREG<T2>
 //! dest = (mask) ? s1 : dest
 template<class T, class T1, class T2> 
 inline
-void copymask(RComplexJIT<T>& d, const RScalarREG<T1>& mask, const RComplexREG<T2>& s1)
+void copymask(RComplexJIT<T> d, const RScalarREG<T1>& mask, const RComplexREG<T2>& s1)
 {
   copymask(d.real(),mask.elem(),s1.real());
   copymask(d.imag(),mask.elem(),s1.imag());
@@ -2376,7 +2299,7 @@ void copymask(RComplexJIT<T>& d, const RScalarREG<T1>& mask, const RComplexREG<T
 
 template<class T> 
 inline
-void zero_rep(RScalarJIT<T>& dest) 
+void zero_rep(RScalarJIT<T> dest) 
 {
   zero_rep(dest.elem());
 }
@@ -2384,7 +2307,7 @@ void zero_rep(RScalarJIT<T>& dest)
 
 template<class T> 
 inline
-void zero_rep(RComplexJIT<T>& dest) 
+void zero_rep(RComplexJIT<T> dest) 
 {
   zero_rep(dest.real());
   zero_rep(dest.imag());
@@ -2394,24 +2317,24 @@ void zero_rep(RComplexJIT<T>& dest)
 //! dest  = random  
 template<class T, class T1, class T2, class T3>
 inline void
-fill_random(RScalarJIT<T>& d, T1& seed, T2& skewed_seed, const T3& seed_mult)
+fill_random_jit(RScalarJIT<T> d, T1 seed, T2 skewed_seed, const T3& seed_mult)
 {
-  fill_random(d.elem(), seed, skewed_seed, seed_mult);
+  fill_random_jit(d.elem(), seed, skewed_seed, seed_mult);
 }
 
 
 template<class T, class T1, class T2, class T3>
 inline void
-fill_random(RComplexJIT<T>& d, T1& seed, T2& skewed_seed, const T3& seed_mult)
+fill_random_jit(RComplexJIT<T> d, T1 seed, T2 skewed_seed, const T3& seed_mult)
 {
-  fill_random(d.real(), seed, skewed_seed, seed_mult);
-  fill_random(d.imag(), seed, skewed_seed, seed_mult);
+  fill_random_jit(d.real(), seed, skewed_seed, seed_mult);
+  fill_random_jit(d.imag(), seed, skewed_seed, seed_mult);
 }
 
 
 template<class T,class T2>
 inline void
-fill_gaussian(RScalarJIT<T>& d, RScalarREG<T2>& r1, RScalarREG<T2>& r2)
+fill_gaussian(RScalarJIT<T> d, RScalarREG<T2>& r1, RScalarREG<T2>& r2)
 {
   typedef typename InternalScalar<T2>::Type_t  S;
 
@@ -2434,7 +2357,7 @@ fill_gaussian(RScalarJIT<T>& d, RScalarREG<T2>& r1, RScalarREG<T2>& r2)
 
 template<class T,class T2>
 inline void
-fill_gaussian(RComplexJIT<T>& d, RComplexREG<T2>& r1, RComplexREG<T2>& r2)
+fill_gaussian(RComplexJIT<T> d, RComplexREG<T2>& r1, RComplexREG<T2>& r2)
 {
   typedef typename InternalScalar<T2>::Type_t  S;
 

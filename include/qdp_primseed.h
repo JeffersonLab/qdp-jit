@@ -124,6 +124,13 @@ struct JITType<PSeed<T> >
 };
 
 
+template<class T> 
+struct REGType<PSeed<T> >
+{
+  typedef PSeedREG<typename REGType<T>::Type_t>  Type_t;
+};
+
+
 
 //! Text input
 template<class T>

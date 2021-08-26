@@ -14,6 +14,9 @@ struct FnPeekColorMatrixREG
   {
     return (peekColor(a,llvm_derefParam(row),llvm_derefParam(col)));
   }
+  
+  llvm::Value* get_row_jit() const { return llvm_derefParam(row); }
+  llvm::Value* get_col_jit() const { return llvm_derefParam(col); }
 
 private:
   ParamRef row;
@@ -58,7 +61,7 @@ struct ForEach<UnaryNode<FnPeekColorMatrix, A>, ParamLeaf, TreeCombine>
 };
   
   
-  
+
   template<>  
   struct AddOpParam< FnPokeColorMatrix, ParamLeaf> {
     typedef FnPokeColorMatrixREG Type_t;
@@ -69,6 +72,7 @@ struct ForEach<UnaryNode<FnPeekColorMatrix, A>, ParamLeaf, TreeCombine>
       return FnPokeColorMatrixREG( pa , pb );
     }
   };
+
 
   template<>  
   struct AddOpAddress< FnPokeColorMatrix, AddressLeaf> {
@@ -112,9 +116,13 @@ struct FnPeekSpinMatrixREG
   inline typename UnaryReturn<T, FnPeekSpinMatrixREG>::Type_t
   operator()(const T &a) const
   {
+    QDPIO::cout << __PRETTY_FUNCTION__ << std::endl;
     return (peekSpin(a,llvm_derefParam(row),llvm_derefParam(col)));
   }
 
+  llvm::Value* get_row_jit() const { return llvm_derefParam(row); }
+  llvm::Value* get_col_jit() const { return llvm_derefParam(col); }
+  
 private:
   ParamRef  row;
   ParamRef  col;
@@ -132,6 +140,19 @@ struct FnPokeSpinMatrixREG
     pokeSpin(const_cast<T1&>(a),b,llvm_derefParam(row),llvm_derefParam(col));
     return const_cast<T1&>(a);
   }
+
+
+  template<class T1R, class T2R, int N1, int N2>
+  inline typename BinaryReturn<PColorMatrixJIT<T1R,N1>, PColorMatrixREG<T2R,N2>, FnPokeSpinMatrixREG>::Type_t
+  operator()(const PColorMatrixJIT<T1R,N1> &a, const PColorMatrixREG<T2R,N2> &b) const
+  {
+    //OpIdentity()(const_cast<PColorMatrixJIT<T1R,N1>&>(a),b);
+    const_cast<PColorMatrixJIT<T1R,N1>&>(a) = b;
+    return const_cast<PColorMatrixJIT<T1R,N1>&>(a);
+  }
+
+  llvm::Value* jitRow() const { return llvm_derefParam(row); }
+  llvm::Value* jitCol() const { return llvm_derefParam(col); }
 
 private:
   ParamRef  row;
@@ -170,6 +191,7 @@ struct ForEach<UnaryNode<FnPeekSpinMatrix, A>, ParamLeaf, TreeCombine>
       return FnPokeSpinMatrixREG( pa , pb );
     }
   };
+
 
   template<>  
   struct AddOpAddress< FnPokeSpinMatrix, AddressLeaf> {
@@ -219,6 +241,8 @@ struct FnPeekColorVectorREG
   {
     return (peekColor(a,llvm_derefParam(row)));
   }
+  
+  llvm::Value* get_row_jit() const { return llvm_derefParam(row); }
 
 private:
   ParamRef  row;   // these are registers
@@ -271,6 +295,7 @@ struct ForEach<UnaryNode<FnPeekColorVector, A>, ParamLeaf, TreeCombine>
     }
   };
 
+
   template<>  
   struct AddOpAddress< FnPokeColorVector, AddressLeaf> {
     static void apply( const FnPokeColorVector& p, const AddressLeaf& a) {
@@ -280,6 +305,7 @@ struct ForEach<UnaryNode<FnPeekColorVector, A>, ParamLeaf, TreeCombine>
       a.setLit( (int)row );
     }
   };
+
 
 
 
@@ -311,6 +337,8 @@ struct FnPeekSpinVectorREG
   {
     return (peekSpin(a,llvm_derefParam(row)));
   }
+
+  llvm::Value* get_row_jit() const { return llvm_derefParam(row); }
 
 private:
   ParamRef  row;   // these are registers
@@ -362,6 +390,7 @@ struct ForEach<UnaryNode<FnPeekSpinVector, A>, ParamLeaf, TreeCombine>
       return FnPokeSpinVectorREG( llvm_add_param<int>() );
     }
   };
+
 
   template<>  
   struct AddOpAddress< FnPokeSpinVector, AddressLeaf> {

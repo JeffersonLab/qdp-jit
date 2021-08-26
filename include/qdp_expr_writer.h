@@ -563,53 +563,6 @@ struct LeafFunctor<multi2d<T>, PrintTag>
 
 
 
-template<int N>
-struct LeafFunctor<GammaType<N>, PrintTag>
-{
-  typedef int Type_t;
-  static int apply(const PrintTag &f)
-    { 
-      f.os_m << "GammaType";
-      return 0;
-    }
-};
-
-template<int N, int m>
-struct LeafFunctor<GammaConst<N,m>, PrintTag>
-{
-  typedef int Type_t;
-  static int apply(const PrintTag &f)
-    { 
-      f.os_m << "GammaConst";
-      return 0;
-    }
-};
-
-template<int N>
-struct LeafFunctor<GammaTypeDP<N>, PrintTag>
-{
-  typedef int Type_t;
-  static int apply(const PrintTag &f)
-    { 
-      f.os_m << "GammaTypeDP";
-      return 0;
-    }
-};
-
-template<int N, int m>
-struct LeafFunctor<GammaConstDP<N,m>, PrintTag>
-{
-  typedef int Type_t;
-  static int apply(const PrintTag &f)
-    { 
-      f.os_m << "GammaConstDP";
-      return 0;
-    }
-};
-
-
-
-
 //
 // struct ParenPrinter
 //
@@ -1545,62 +1498,6 @@ struct TagVisitor<FnNorm2, PrintTag> : public ParenPrinter<FnNorm2>
     { t.os_m << "norm2"; }
 };
 
-template <>
-struct TagVisitor<OpGammaConstMultiply, PrintTag> : public ParenPrinter<OpGammaConstMultiply>
-{ 
-  static void visit( PrintTag t) 
-    { t.os_m << "*"; }
-};
-
-template <>
-struct TagVisitor<OpMultiplyGammaConst, PrintTag> : public ParenPrinter<OpMultiplyGammaConst>
-{ 
-  static void visit( PrintTag t) 
-    { t.os_m << "*"; }
-};
-
-template <>
-struct TagVisitor<OpGammaConstDPMultiply, PrintTag> : public ParenPrinter<OpGammaConstDPMultiply>
-{ 
-  static void visit( PrintTag t) 
-    { t.os_m << "*"; }
-};
-
-template <>
-struct TagVisitor<OpMultiplyGammaConstDP, PrintTag> : public ParenPrinter<OpMultiplyGammaConstDP>
-{ 
-  static void visit( PrintTag t) 
-    { t.os_m << "*"; }
-};
-
-
-template <>
-struct TagVisitor<OpGammaTypeMultiply, PrintTag> : public ParenPrinter<OpGammaTypeMultiply>
-{ 
-  static void visit( PrintTag t) 
-    { t.os_m << "*"; }
-};
-
-template <>
-struct TagVisitor<OpMultiplyGammaType, PrintTag> : public ParenPrinter<OpMultiplyGammaType>
-{ 
-  static void visit( PrintTag t) 
-    { t.os_m << "*"; }
-};
-
-template <>
-struct TagVisitor<OpGammaTypeDPMultiply, PrintTag> : public ParenPrinter<OpGammaTypeDPMultiply>
-{ 
-  static void visit( PrintTag t) 
-    { t.os_m << "*"; }
-};
-
-template <>
-struct TagVisitor<OpMultiplyGammaTypeDP, PrintTag> : public ParenPrinter<OpMultiplyGammaTypeDP>
-{ 
-  static void visit( PrintTag t) 
-    { t.os_m << "*"; }
-};
 
 
 //------------------------------------------------------------------------

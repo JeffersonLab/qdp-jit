@@ -29,6 +29,8 @@ add_library(qdp qdp_map.cc
 	qdp_deep_log.cc
 )
 
+add_library(jit qdp_llvm.cc)
+
 if( QDP_ENABLE_BACKEND STREQUAL "CUDA" )
 	target_sources(qdp PRIVATE qdp_gpu_cuda.cc)
 endif()
@@ -37,16 +39,6 @@ if( QDP_ENABLE_BACKEND STREQUAL "ROCM" )
 	target_sources(qdp PRIVATE qdp_gpu_rocm.cc)
 endif()
 
-if( QDP_ENABLE_CUDA_SPECIAL )
-	target_sources(qdp PRIVATE
-		qdp_functions_special.cc
-		cuda_special.cc
-    cuda_special_quarkContract13.cu
-		cuda_special_quarkContract14.cu
-		cuda_special_quarkContract23.cu
-		cuda_special_quarkContract24.cu
-	)
-endif()
 
 if(QDP_USE_LIBXML2)
 	target_sources(qdp PRIVATE
@@ -86,27 +78,42 @@ if( QDP_ARCH_PARSCALAR )
 	)	
 endif()
 
-target_include_directories( qdp PUBLIC
+
+target_include_directories( jit PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../include>
         $<INSTALL_INTERFACE:include> )
+target_include_directories(jit PUBLIC ${LLVM_INCLUDE_DIRS} )
+target_link_libraries( jit PUBLIC ${LLVM_AVAILABLE_LIBS} )
+target_link_libraries( jit PUBLIC QMP::qmp)
 
-target_include_directories(qdp PUBLIC ${LLVM_INCLUDE_DIRS} )
-target_link_libraries( qdp PUBLIC ${GPU_LIBS} ${LLVM_AVAILABLE_LIBS} )
+target_include_directories(jit PUBLIC ${LLD_INCLUDE_DIRS} )
+target_link_libraries( jit PUBLIC ${LLD_EXPORTED_TARGETS} )
 
-target_include_directories(qdp PUBLIC ${LLD_INCLUDE_DIRS} )
-target_link_libraries( qdp PUBLIC ${LLD_EXPORTED_TARGETS} )
-
-
-set_target_properties( qdp PROPERTIES 
+set_target_properties( jit PROPERTIES 
 	CXX_STANDARD 14
 	CXX_EXTENSIONS OFF
 	PROPERTIES C_STANDARD 99 
 	PROPERTIES CXX_EXTENSIONS OFF
 )
 
+
+target_include_directories( qdp PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../include>
+        $<INSTALL_INTERFACE:include> )
+target_link_libraries( qdp PUBLIC ${GPU_LIBS} )
+set_target_properties( qdp PROPERTIES 
+	CXX_STANDARD 20
+	CXX_EXTENSIONS OFF
+	PROPERTIES C_STANDARD 99 
+	PROPERTIES CXX_EXTENSIONS OFF
+)
+
+
+
 # Link QIO from subtree
-target_link_libraries( qdp PUBLIC QIO::qio )
+target_link_libraries( qdp PUBLIC jit QIO::qio )
 
 # If using libxml link the XPathReader and xmlWriter libraries
 if( QDP_USE_LIBXML2 )
@@ -123,7 +130,8 @@ if( QDP_SANITIZER_OPTS )
   target_link_options(qdp PUBLIC ${QDP_SANITIZER_OPTS})
 endif()
 
-install(TARGETS qdp EXPORT QDPXXTargets
+install(TARGETS qdp jit
+  EXPORT QDPXXTargets
   ARCHIVE DESTINATION lib
   LIBRARY  DESTINATION lib
   RUNTIME DESTINATION bin
@@ -136,3 +144,4 @@ install(EXPORT QDPXXTargets
         DESTINATION lib/cmake/QDPXX)
 
 add_library(QDPXX::qdp ALIAS qdp)
+add_library(QDPXX::jit ALIAS jit)

@@ -708,11 +708,6 @@ namespace QDP {
     max_blockz = roundDown2pow( prop.maxThreadsDim[2] );
     gcnArch = prop.gcnArch;
     
-#ifdef QDP_CUDA_SPECIAL
-    QDPIO::cout << "Setting max gridx for CUDA special functions\n";
-    cuda_special_set_maxgridx( max_gridx );
-#endif
-    
     QDPIO::cout << "GPU autodetect\n";
     QDPIO::cout << "  Device name                         : " << std::string( prop.name ) << "\n";
     QDPIO::cout << "  GCN architecture                    : gfx" << prop.gcnArch << "\n";

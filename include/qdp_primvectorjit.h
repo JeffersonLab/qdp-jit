@@ -654,11 +654,11 @@ gather_sites(PVectorJIT<T,N,C>& d,
 //! dest  = random  
   template<class T, int N, template<class,int> class C, class T1, class T2, class T3>
 inline void
-fill_random(PVectorJIT<T,N,C>& d, T1& seed, T2& skewed_seed, const T3& seed_mult)
+fill_random_jit(PVectorJIT<T,N,C>& d, T1 seed, T2 skewed_seed, const T3& seed_mult)
 {
   // Loop over rows the slowest
   for(int i=0; i < N; ++i)
-    fill_random(d.elem(i), seed, skewed_seed, seed_mult);
+    fill_random_jit(d.elem(i), seed, skewed_seed, seed_mult);
 }
 
 
@@ -845,7 +845,7 @@ where(const PScalarJIT<T1>& a, const PVectorJIT<T2,N,C>& b, const PVectorJIT<T3,
 //! dest = (mask) ? s1 : dest
 template<class T, class T1, class T2, int N, template<class,int> class C, template<class,int> class C2> 
 inline void 
-copymask(PVectorJIT<T,N,C>& d, const PScalarREG<T1>& mask, const PVectorREG<T2,N,C2>& s1) 
+copymask(PVectorJIT<T,N,C> d, const PScalarREG<T1>& mask, const PVectorREG<T2,N,C2>& s1) 
 {
   for(int i=0; i < N; ++i)
     copymask(d.elem(i),mask.elem(),s1.elem(i));

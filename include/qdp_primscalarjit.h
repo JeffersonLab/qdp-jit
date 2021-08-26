@@ -256,6 +256,12 @@ struct REGType< PScalarJIT<T> >
   typedef PScalarREG<typename REGType<T>::Type_t>  Type_t;
 };
 
+template<class T> 
+struct BASEType< PScalarJIT<T> >
+{
+  typedef PScalar<typename BASEType<T>::Type_t>  Type_t;
+};
+
 
 // Underlying word type
 template<class T>
@@ -1108,25 +1114,7 @@ pokeSpin(PScalarJIT<T1>& l, const PScalarJIT<T2>& r, int row, int col)
 
 
 
-
 #if 0
-//-----------------------------------------------------------------------------
-//! PScalarJIT = Gamma<N,m> * PScalarJIT
-template<class T2, int N, int m>
-inline typename BinaryReturn<GammaConst<N,m>, PScalarJIT<T2>, OpGammaConstMultiply>::Type_t
-operator*(const GammaConst<N,m>& l, const PScalarJIT<T2>& r)
-{
-  return l * r.elem();
-}
-
-//! PScalarJIT = PScalarJIT * Gamma<N,m>
-template<class T2, int N, int m>
-inline typename BinaryReturn<PScalarJIT<T2>, GammaConst<N,m>, OpGammaConstMultiply>::Type_t
-operator*(const PScalarJIT<T2>& l, const GammaConst<N,m>& r)
-{
-  return l.elem() * r;
-}
-
 //-----------------------------------------------------------------------------
 //! PScalarJIT = SpinProject(PScalarJIT)
 template<class T>
@@ -1573,7 +1561,7 @@ gather_sites(PScalarJIT<T>& d,
 //! dest = (mask) ? s1 : dest
 template<class T, class T1, class T2> 
 inline void 
-copymask(PScalarJIT<T>& d, const PScalarREG<T1>& mask, const PScalarREG<T2>& s1) 
+copymask(PScalarJIT<T> d, const PScalarREG<T1>& mask, const PScalarREG<T2>& s1) 
 {
   copymask(d.elem(),mask.elem(),s1.elem());
 }
@@ -1582,7 +1570,7 @@ copymask(PScalarJIT<T>& d, const PScalarREG<T1>& mask, const PScalarREG<T2>& s1)
 //! dest = 0
 template<class T> 
 inline void 
-zero_rep(PScalarJIT<T>& dest) 
+zero_rep(PScalarJIT<T> dest) 
 {
   zero_rep(dest.elem());
 }
@@ -1591,16 +1579,16 @@ zero_rep(PScalarJIT<T>& dest)
 //! dest  = random  
 template<class T, class T1, class T2,class T3>
 inline void
-fill_random( PScalarJIT<T>& d, T1& seed, T2& skewed_seed, const T3& seed_mult)
+fill_random_jit( PScalarJIT<T> d, T1 seed, T2 skewed_seed, const T3& seed_mult)
 {
-  fill_random(d.elem(), seed, skewed_seed, seed_mult);
+  fill_random_jit(d.elem(), seed, skewed_seed, seed_mult);
 }
 
 
 //! dest  = gaussian  
 template<class T,class T2>
 inline void
-fill_gaussian(PScalarJIT<T>& d, PScalarREG<T2>& r1, PScalarREG<T2>& r2)
+fill_gaussian(PScalarJIT<T> d, PScalarREG<T2>& r1, PScalarREG<T2>& r2)
 {
   fill_gaussian(d.elem(), r1.elem(), r2.elem());
 }

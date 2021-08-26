@@ -82,13 +82,14 @@ namespace Chroma
     // Part of Serializable
     unsigned short serialID (void) const {return 456;}
 
-    void writeObject (std::string& output) const throw (SerializeException) {
+    void writeObject (std::string& output) const noexcept(false) {
+
       BinaryBufferWriter bin;
       write(bin, key());
       output = bin.str();
     }
 
-    void readObject (const std::string& input) throw (SerializeException) {
+    void readObject (const std::string& input) noexcept(false) {
       BinaryBufferReader bin(input);
       read(bin, key());
     }
@@ -129,13 +130,13 @@ namespace Chroma
     // Part of Serializable
     unsigned short serialID (void) const {return 123;}
 
-    void writeObject (std::string& output) const throw (SerializeException) {
+    void writeObject (std::string& output) const noexcept (false) {
       BinaryBufferWriter bin;
       write(bin, data());
       output = bin.str();
     }
 
-    void readObject (const std::string& input) throw (SerializeException) {
+    void readObject (const std::string& input) noexcept(false) {
       BinaryBufferReader bin(input);
       read(bin, data());
     }

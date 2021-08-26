@@ -7,10 +7,6 @@ namespace QDP {
 
   void gpu_set_record_stats();
   bool gpu_get_record_stats();
-  std::vector<JitFunction*>& gpu_get_functions();
-
-  
-  typedef std::map< DynKey , JitFunction >  JitFunctionMap;
 
   
   class DynKey
@@ -176,6 +172,10 @@ namespace QDP {
 
   };
 
+
+  std::vector<JitFunction*>& gpu_get_functions();
+  
+  typedef std::map< DynKey , JitFunction >  JitFunctionMap;
 
   
 } // namespace

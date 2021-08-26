@@ -26,17 +26,41 @@ struct ViewLeaf
 {
   JitDeviceLayout layout_m;
   llvm::Value * index_m;
-  ViewLeaf( JitDeviceLayout layout , llvm::Value * index ) : layout_m(layout), index_m(index) { }
+  ViewLeaf( JitDeviceLayout layout , llvm::Value * index ) : layout_m(layout), index_m(index) {}
   JitDeviceLayout getLayout() const { return layout_m; }
   llvm::Value    *getIndex() const  { return index_m; }
+};
+
+
+struct ViewSpinLeaf
+{
+  JitDeviceLayout layout_m;
+  llvm::Value * index_m;
+  mutable std::vector< llvm::Value* > indices;
+
+  ViewSpinLeaf( JitDeviceLayout layout , llvm::Value* index , const std::vector< llvm::Value* >& i ) : layout_m(layout), index_m(index), indices(i) {}
+  ViewSpinLeaf( JitDeviceLayout layout , llvm::Value* index                                        ) : layout_m(layout), index_m(index) {}
+  ViewSpinLeaf( const ViewSpinLeaf& rhs, llvm::Value* l1                                           ) : layout_m(rhs.layout_m), index_m(rhs.index_m), indices({l1}) {}
+  ViewSpinLeaf( const ViewSpinLeaf& rhs, llvm::Value* l1 , llvm::Value* l2                         ) : layout_m(rhs.layout_m), index_m(rhs.index_m), indices({l1,l2}) {}
+
+  const std::vector< llvm::Value* >& getIndices() const { return indices; }
+  JitDeviceLayout getLayout() const { return layout_m; }
+  llvm::Value*    getIndex() const  { return index_m; }
+  llvm::Value*    index_first() const  { return indices.at(0); }
+  llvm::Value*    index_second() const { return indices.at(1); }
 };
 
 
 
 struct ParamLeaf {};
 
+struct JIT2BASE {};
 
 
+struct JitCreateLoopsLeaf
+{
+  mutable std::vector< JitForLoop > loops;
+};
 
 
 struct AddressLeaf

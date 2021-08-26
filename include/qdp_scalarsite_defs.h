@@ -22,8 +22,9 @@ namespace QDP {
 #include "qdp_precision.h"
 
 
-typedef GammaType<Ns> Gamma;
-typedef GammaTypeDP<Ns> GammaDP;
+
+// typedef GammaType<Ns> Gamma;
+// typedef GammaTypeDP<Ns> GammaDP;
 
 
 
@@ -605,6 +606,11 @@ typedef OSubLattice< PScalar< PScalar< RComplex<Word<REAL64> > > > > SubLatticeC
 typedef OSubLattice< PScalar< PScalar< RScalar<Word<REAL64> > > > > SubLatticeRealD;
 
 
+SpinMatrix  Gamma(int i);
+SpinMatrixD GammaDP(int i);
+
+template<int N,int i> SpinMatrix  GammaConst();
+template<int N,int i> SpinMatrixD GammaConstDP();
 
 
 /*! @} */   // end of group defs

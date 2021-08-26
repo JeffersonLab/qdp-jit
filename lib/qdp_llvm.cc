@@ -1,37 +1,68 @@
-#include "qdp.h"
+#include "qdp_llvm.h"
 #include "qdp_config.h"
-#include "qdp_internal.h"
-#include "llvm/InitializePasses.h"
-#include "llvm/IR/DataLayout.h"
-#include "llvm/IR/LegacyPassManager.h"
+#include "qdp_params.h"
 
-#include "llvm/Support/FileSystem.h"
-#include "llvm/Support/MemoryBuffer.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/Linker/Linker.h"
+#if defined(ARCH_PARSCALAR)
+#include "qmp.h"
+#endif
 
-#include "llvm/Support/TargetRegistry.h"
-#include "llvm/PassRegistry.h"
-
-#include "llvm/IR/InstrTypes.h"
+#include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/Statistic.h"
+#include "llvm/ADT/StringSet.h"
+#include "llvm/Analysis/BasicAliasAnalysis.h"
+#include "llvm/Analysis/Passes.h"
+#include "llvm/Analysis/TargetLibraryInfo.h"
+#include "llvm/Analysis/TargetTransformInfo.h"
+#include "llvm/Bitcode/BitcodeReader.h"
 #include "llvm/Bitcode/BitcodeWriter.h"
-
 #include "llvm/CodeGen/CommandFlags.h"
-
+#include "llvm/CodeGen/TargetLowering.h"
+#include "llvm/ExecutionEngine/ExecutionEngine.h"
+#include "llvm/ExecutionEngine/MCJIT.h"
+#include "llvm/InitializePasses.h"
+#include "llvm/IR/AssemblyAnnotationWriter.h"
+#include "llvm/IR/Attributes.h"
+#include "llvm/IR/BasicBlock.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/DataLayout.h"
+#include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/Function.h"
+#include "llvm/IR/GlobalVariable.h"
+#include "llvm/IR/InstrTypes.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/Module.h"
+#include "llvm/IRReader/IRReader.h"
+#include "llvm/IR/Verifier.h"
+#include "llvm/Linker/Linker.h"
+#include "llvm/Pass.h"
+#include "llvm/PassRegistry.h"
 #include "llvm/Support/CommandLine.h"
-
-#include "llvm/Transforms/IPO/PassManagerBuilder.h"
+#include "llvm/Support/Debug.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/FormattedStream.h"
+#include "llvm/Support/Host.h"
+#include "llvm/Support/MemoryBuffer.h"
+#include "llvm/Support/Program.h"
+#include "llvm/Support/raw_os_ostream.h"
+#include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/SourceMgr.h"
+#include "llvm/Support/TargetRegistry.h"
+#include "llvm/Support/TargetSelect.h"
+#include "llvm/Support/ToolOutputFile.h"
+#include "llvm/Target/TargetMachine.h"
 #include "llvm/Transforms/IPO/AlwaysInliner.h"
-
+#include "llvm/Transforms/IPO.h"
+#include "llvm/Transforms/IPO/PassManagerBuilder.h"
+#include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Utils/Cloning.h"
 
-#include "llvm/Target/TargetMachine.h"
-
+#include <system_error>
 #include <memory>
 #include <unistd.h>
 
-
-#if 1
+#ifdef QDP_BACKEND_ROCM
 #include "lld/Common/Driver.h"
 #include "lld/Common/ErrorHandler.h"
 #include "lld/Common/Memory.h"
@@ -42,6 +73,13 @@ using namespace llvm::codegen;
 
 
 
+namespace llvm {
+  ModulePass *createNVVMReflectPass(unsigned int);
+}
+
+
+
+#ifdef QDP_BACKEND_ROCM
 namespace {
   int lldMain(int argc, const char **argv, llvm::raw_ostream &stdoutOS,
 	      llvm::raw_ostream &stderrOS, bool exitEarly = true)
@@ -51,11 +89,25 @@ namespace {
     return !lld::elf::link(args, exitEarly, stdoutOS, stderrOS);
   }
 }
+#endif
+
+
+namespace QDP
+{
+
+  namespace JITSTATS {
+    long lattice2dev  = 0;   // changing lattice data layout to device format
+    long lattice2host = 0;   // changing lattice data layout to host format
+    long jitted       = 0;   // functions not in DB, thus jit-built
+  }
   
-
-
-
-namespace QDP {
+  void jit_stats_lattice2dev()  { ++JITSTATS::lattice2dev; }
+  void jit_stats_lattice2host() { ++JITSTATS::lattice2host; }
+  void jit_stats_jitted()       { ++JITSTATS::jitted; }
+  
+  long get_jit_stats_lattice2dev()  { return JITSTATS::lattice2dev; }
+  long get_jit_stats_lattice2host() { return JITSTATS::lattice2host; }
+  long get_jit_stats_jitted()       { return JITSTATS::jitted; }
 
   enum jitprec { i32 , f32 , f64 };
 
@@ -156,6 +208,7 @@ namespace QDP {
 
 
   
+
   void llvm_set_clang_codegen()
   {
     clang_codegen = true;
@@ -221,15 +274,6 @@ namespace QDP {
   }
 
   
-  llvm::SwitchInst * llvm_switch_create( llvm::Value* val , llvm::BasicBlock* bb_default ) 
-  {
-    return builder->CreateSwitch( val , bb_default );
-  }
-
-  void llvm_switch_add_case( llvm::SwitchInst * SI , int val , llvm::BasicBlock* bb )
-  {
-    SI->addCase( builder->getInt32(val) , bb );
-  }
 
 
 
@@ -374,7 +418,10 @@ namespace QDP {
       {
 	std::string FileName = std::string(ROCM_DIR) + libs[i];
 
-	QDPIO::cout << "Reading bitcode from " << FileName << "\n";
+	if (jit_config_get_verbose_output())
+	  {
+	    QDPIO::cout << "Reading bitcode from " << FileName << "\n";
+	  }
 	
 	std::ifstream ftmp(FileName.c_str());
 	if (!ftmp.good())
@@ -480,16 +527,19 @@ namespace QDP {
 
 	for( auto fname = all.begin() ; fname != all.end() ; ++fname )
 	  {
-#ifdef QDP_BACKEND_ROCM
-	    QDPIO::cout << "trying: " << *fname << std::endl;
-#endif
+	    if (jit_config_get_verbose_output())
+	      {
+		QDPIO::cout << "trying: " << *fname << std::endl;
+	      }
 	    
 	    std::ifstream ftmp(fname->c_str());
 	    if (ftmp.good())
 	      {
-#ifdef QDP_BACKEND_ROCM
-		QDPIO::cout << "libdevice found.\n";
-#endif
+		if (jit_config_get_verbose_output())
+		  {
+		    QDPIO::cout << "libdevice found.\n";
+		  }
+
 		FileName = *fname;
 		break;
 	      }
@@ -543,7 +593,7 @@ namespace QDP {
     llvm::initializeCodeGen(*Registry);
     llvm::initializeLoopStrengthReducePass(*Registry);
     llvm::initializeLowerIntrinsicsPass(*Registry);
-//    llvm::initializeCountingFunctionInserterPass(*Registry);
+    //    llvm::initializeCountingFunctionInserterPass(*Registry);
     llvm::initializeUnreachableBlockElimLegacyPassPass(*Registry);
     llvm::initializeConstantHoistingLegacyPassPass(*Registry);
 
@@ -659,7 +709,7 @@ namespace QDP {
     llvm::initializeCodeGen(*Registry);
     llvm::initializeLoopStrengthReducePass(*Registry);
     llvm::initializeLowerIntrinsicsPass(*Registry);
-//    llvm::initializeCountingFunctionInserterPass(*Registry);
+    //    llvm::initializeCountingFunctionInserterPass(*Registry);
     llvm::initializeUnreachableBlockElimLegacyPassPass(*Registry);
     llvm::initializeConstantHoistingLegacyPassPass(*Registry);
 
@@ -857,9 +907,6 @@ namespace QDP {
     
     Mod->setDataLayout(TargetMachine->createDataLayout());
 
-    jit_build_seedToFloat();
-    jit_build_seedMultiply();
-
     vecParamType.clear();
     vecArgument.clear();
     function_created = false;
@@ -928,14 +975,24 @@ namespace QDP {
     return llvm_load( gep );
   }
 
+  
+  // llvm::ConstantInt * llvm_create_const_int(int i) {
+  //   return llvm::ConstantInt::getSigned( llvm::Type::getIntNTy(TheContext,32) , i );
+  // }
 
-  llvm::SwitchInst * llvm_switch( llvm::Value* val , llvm::BasicBlock* bb_default ) 
+
+  llvm::SwitchInst * llvm_switch_create( llvm::Value* val , llvm::BasicBlock* bb_default ) 
   {
     return builder->CreateSwitch( val , bb_default );
   }
 
+  void llvm_switch_add_case( llvm::SwitchInst * SI , int val , llvm::BasicBlock* bb )
+  {
+    SI->addCase( builder->getInt32(val) , bb );
+  }
+  
 
-  llvm::PHINode * llvm_phi( llvm::Type* type, unsigned num )
+  llvm::Value * llvm_phi( llvm::Type* type, unsigned num )
   {
     return builder->CreatePHI( type , num );
   }
@@ -982,7 +1039,7 @@ namespace QDP {
     //llvm::outs() << "cast instruction: dest type = " << dest_type << "   from " << src->getType() << "\n";
     
     llvm::Value* ret = builder->CreateCast( llvm::CastInst::getCastOpcode( src , true , dest_type , true ) , 
-				src , dest_type , "" );
+					    src , dest_type , "" );
     return ret;
   }
 
@@ -1031,8 +1088,8 @@ namespace QDP {
 
   llvm::Value* llvm_shr( llvm::Value* lhs , llvm::Value* rhs ) {  
     auto vals = llvm_normalize_values(lhs,rhs);
- //   llvm::Type* args_type = vals.first->getType();
- //   assert( !args_type->isFloatingPointTy() );
+    //   llvm::Type* args_type = vals.first->getType();
+    //   assert( !args_type->isFloatingPointTy() );
 
     assert( ! ( vals.first->getType()->isFloatingPointTy() ) );
     return builder->CreateAShr( vals.first , vals.second );
@@ -1041,8 +1098,8 @@ namespace QDP {
 
   llvm::Value* llvm_shl( llvm::Value* lhs , llvm::Value* rhs ) {  
     auto vals = llvm_normalize_values(lhs,rhs);
-  //  llvm::Type* args_type = vals.first->getType();
-  //  assert( !args_type->isFloatingPointTy() );
+    //  llvm::Type* args_type = vals.first->getType();
+    //  assert( !args_type->isFloatingPointTy() );
 
     assert( ! ( vals.first->getType()->isFloatingPointTy()  ) );
     return builder->CreateShl( vals.first , vals.second );
@@ -1060,8 +1117,8 @@ namespace QDP {
 
   llvm::Value* llvm_or( llvm::Value* lhs , llvm::Value* rhs ) {  
     auto vals = llvm_normalize_values(lhs,rhs);
-  //  llvm::Type* args_type = vals.first->getType();
-   // assert( !args_type->isFloatingPointTy() );
+    //  llvm::Type* args_type = vals.first->getType();
+    // assert( !args_type->isFloatingPointTy() );
     assert( ! ( vals.first->getType()->isFloatingPointTy()  ) );
 
     return builder->CreateOr( vals.first , vals.second );
@@ -1070,8 +1127,8 @@ namespace QDP {
 
   llvm::Value* llvm_xor( llvm::Value* lhs , llvm::Value* rhs ) {  
     auto vals = llvm_normalize_values(lhs,rhs);
-//    llvm::Type* args_type = vals.first->getType();
-//    assert( !args_type->isFloatingPointTy() );
+    //    llvm::Type* args_type = vals.first->getType();
+    //    assert( !args_type->isFloatingPointTy() );
 
     assert( ! ( vals.first->getType()->isFloatingPointTy()  ) );
 
@@ -1330,6 +1387,12 @@ namespace QDP {
   }
 
 
+  llvm::Type* llvm_val_type( llvm::Value* l )
+  {
+    return l->getType();
+  }
+
+
   llvm::BasicBlock * llvm_cond_exit( llvm::Value * cond )
   {
     llvm::BasicBlock * thenBB = llvm_new_basic_block();
@@ -1389,14 +1452,15 @@ namespace QDP {
 
   void llvm_store_ptr_idx( llvm::Value * val , llvm::Value * ptr , llvm::Value * idx )
   {
-    // llvm::outs() << "\nstore_ptr: val->getType  = "; val->getType()->dump();
-    // llvm::outs() << "\nstore_ptr: ptr->getType  = "; ptr->getType()->dump();
-    // llvm::outs() << "\nstore_ptr: idx->getType  = "; idx->getType()->dump();
-
     llvm_store( val , llvm_createGEP( ptr , idx ) );
   }
 
 
+  void llvm_add_incoming( llvm::Value* phi , llvm::Value* val , llvm::BasicBlock* bb )
+  {
+    dyn_cast<llvm::PHINode>(phi)->addIncoming( val , bb );
+  }
+  
 
   void llvm_bar_sync()
   {
@@ -1479,9 +1543,9 @@ namespace QDP {
     auto i32_t = llvm::Type::getInt32Ty(TheContext);
     
     llvm::Metadata *md_args[] = {
-      llvm::ValueAsMetadata::get(F),
-      MDString::get(TheContext, "kernel"),
-      llvm::ValueAsMetadata::get(ConstantInt::get(i32_t, 1))};
+				 llvm::ValueAsMetadata::get(F),
+				 MDString::get(TheContext, "kernel"),
+				 llvm::ValueAsMetadata::get(ConstantInt::get(i32_t, 1))};
 
     MDNode *md_node = MDNode::get(TheContext, md_args);
 
@@ -1545,20 +1609,20 @@ namespace QDP {
     mapAttr.clear();
     size_t pos = 0;
     while((pos = str.find("attributes #", pos)) != std::string::npos)
-    {
-	  size_t pos_space = str.find(" ", pos+12);
-	  std::string num = str.substr(pos+12,pos_space-pos-12);
-	  num = " #"+num;
-	  //QDPIO::cout << "# num found = " << num << "()\n";
-	  size_t pos_open = str.find("{", pos_space);
-	  size_t pos_close = str.find("}", pos_open);
-	  std::string val = str.substr(pos_open+1,pos_close-pos_open-1);
-	  //QDPIO::cout << "# val found = " << val << "\n";
-	  str.replace(pos, pos_close-pos+1, "");
-	  if (mapAttr.count(num) > 0)
-	    QDP_error_exit("unexp.");
-	  mapAttr[num]=val;
-    }
+      {
+	size_t pos_space = str.find(" ", pos+12);
+	std::string num = str.substr(pos+12,pos_space-pos-12);
+	num = " #"+num;
+	//QDPIO::cout << "# num found = " << num << "()\n";
+	size_t pos_open = str.find("{", pos_space);
+	size_t pos_close = str.find("}", pos_open);
+	std::string val = str.substr(pos_open+1,pos_close-pos_open-1);
+	//QDPIO::cout << "# val found = " << val << "\n";
+	str.replace(pos, pos_close-pos+1, "");
+	if (mapAttr.count(num) > 0)
+	  QDP_error_exit("unexp.");
+	mapAttr[num]=val;
+      }
   }
 
 
@@ -1611,9 +1675,9 @@ namespace QDP {
     func.time_math = swatch.getTimeInMicroseconds();
     swatch.reset();
     swatch.start();
-
+    
     //QDPIO::cout << "setting module data layout\n";
-    //Mod->setDataLayout(TargetMachine->createDataLayout());
+    Mod->setDataLayout(TargetMachine->createDataLayout());
 
     uint32_t NVPTX_CUDA_FTZ = jit_config_get_CUDA_FTZ();
     Mod->addModuleFlag( llvm::Module::ModFlagBehavior::Override, "nvvm-reflect-ftz" , NVPTX_CUDA_FTZ );
@@ -1650,7 +1714,11 @@ namespace QDP {
 	std::string module_name = "module_" + str_kernel_name + ".bc";
 	QDPIO::cout << "write code to " << module_name << "\n";
 	std::error_code EC;
+#if QDP_LLVM13
+	llvm::raw_fd_ostream OS(module_name, EC, llvm::sys::fs::OF_None);
+#else
 	llvm::raw_fd_ostream OS(module_name, EC, llvm::sys::fs::F_None);
+#endif
 	llvm::WriteBitcodeToFile(*Mod, OS);
 	OS.flush();
       }
@@ -1711,7 +1779,7 @@ namespace QDP {
 #ifdef QDP_BACKEND_ROCM
   void build_function_rocm_codegen( JitFunction& func , const std::string& shared_path)
   {
-  #if 0
+#if 0
     {
       QDPIO::cout << "write code to module.bc ...\n";
       std::error_code EC;
@@ -1722,7 +1790,7 @@ namespace QDP {
 #endif
 
     // previous location for setting the datalayout
-    
+
     StopWatch swatch(false);
     swatch.start();
     
@@ -1740,7 +1808,10 @@ namespace QDP {
 
 	for ( int i = 0 ; i < module_ocml.size() ; ++i )
 	  {
-	    QDPIO::cout << "linking in additional library " << i << "\n";
+	    if (jit_config_get_verbose_output())
+	      {
+		QDPIO::cout << "linking in additional library " << i << "\n";
+	      }
 	    if (llvm::Linker::linkModules( *Mod , std::move( module_ocml[i] ) )) {  // llvm::Linker::PreserveSource
 	      QDPIO::cerr << "Linking additional library failed: " << ErrorMsg.c_str() << "\n";
 	      QDP_abort(1);
@@ -1792,7 +1863,7 @@ namespace QDP {
     
     swatch.reset();
     swatch.start();
-
+    
     std::string clang_name;
     if (clang_codegen)
       {
@@ -1964,7 +2035,9 @@ namespace QDP {
 
     //
     // All nodes wait until primary node has finished LLVM codegen
-    QDPInternal::barrier();
+#if defined(ARCH_PARSCALAR)
+    QMP_barrier();
+#endif
     
     std::ostringstream sstream;
     std::ifstream fin(shared_path, ios::binary);
@@ -2093,6 +2166,38 @@ namespace QDP {
   llvm::Value* llvm_pow_f64( llvm::Value* lhs, llvm::Value* rhs )   { return llvm_call_f64( llvm_get_func( mapMath.at("pow_f64")   , jitprec::f64 , jitprec::f64 , 2 )  , lhs , rhs ); }
   llvm::Value* llvm_atan2_f64( llvm::Value* lhs, llvm::Value* rhs ) { return llvm_call_f64( llvm_get_func( mapMath.at("atan2_f64") , jitprec::f64 , jitprec::f64 , 2 )  , lhs , rhs ); }
 
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+  std::string jit_util_get_static_dynamic_string( const std::string& pretty )
+  {
+    std::ostringstream oss;
+    
+    oss << gpu_get_arch() << "_";
+
+    for ( int i = 0 ; i < Nd ; ++i )
+      oss << Layout::subgridLattSize()[i] << "_";
+
+    oss << pretty;
+
+    return oss.str();
+  }
+
+  
+  
   
 } // namespace QDP
 

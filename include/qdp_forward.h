@@ -37,6 +37,8 @@ namespace QDP
   fill_random(double* d, T1& seed, T2& skewed_seed, const T1& seed_mult);
 
 
+
+
   template<class T> class FirstWord;
   
 
@@ -91,11 +93,6 @@ namespace QDP
   template <class T, int N> class PSpinMatrixREG;
   template <class T> class PSeedREG;
 
-  template<int N> class GammaType;
-  template<int N, int m> class GammaConst;
-
-  template<int N> class GammaTypeDP;
-  template<int N, int m> class GammaConstDP;
 
   // Outer
   template<class T> class OScalar;

@@ -237,17 +237,6 @@ namespace QDP {
   };
 
 
-  template<class T>
-  inline typename UnaryReturn<WordREG<T>, FnSeedToFloat>::Type_t
-  seedToFloat(const WordREG<T>& s1)
-  {
-    printme<typename UnaryReturn<WordREG<T>, FnSeedToFloat>::Type_t>();
-    typename UnaryReturn<WordREG<T>, FnSeedToFloat>::Type_t d;
-    assert(!"ni");
-    return d;
-  }
-
-  
 
   // Default binary(WordREG,WordREG) -> WordREG
 #if 1

@@ -31,6 +31,16 @@ set( CUDA_HDRS qdp_gpu.h
   qdp_wordjit.h
   qdp_wordreg.h
   qdp_jitfunction.h
+  qdp_jitf_op.h
+  qdp_jitf_extract.h
+  qdp_jitf_spinloop.h
+  qdp_jitf_eval.h
+  qdp_jitf_subtype.h
+  qdp_jitf_latsca.h
+  qdp_jitf_pokesite.h
+  qdp_jitf_zerorep.h
+  qdp_jitf_random.h
+  qdp_jitf_gather.h
   qdp_jit_util.h
   qdp_pete_visitors.h
   qdp_qdpsubtypejit.h
@@ -82,11 +92,6 @@ set( QDP_CUSTOM_HDRS
 
 install(FILES ${QDP_CUSTOM_HDRS} DESTINATION include/)
 
-set( QDP_SPECIAL_HDRS
-  qdp_functions_special.h
-  cuda_special.h
-  )
-
 install(FILES ${QDP_SPECIAL_HDRS} DESTINATION include/)
 
 set( QDP_HDRS
@@ -94,7 +99,6 @@ set( QDP_HDRS
   qdp_forward.h
   qdp_globalfuncs.h
   qdp_globalfuncs_subtype.h
-  qdp_inner.h
   qdp_init.h
   qdp_io.h
   qdp_stdio.h
@@ -111,7 +115,6 @@ set( QDP_HDRS
   qdp_precision.h
   qdp_primcolormat.h
   qdp_primcolorvec.h
-  qdp_primgamma.h
   qdp_primitive.h
   qdp_primmatrix.h
   qdp_primscalar.h

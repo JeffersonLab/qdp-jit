@@ -196,7 +196,6 @@ namespace QDP {
 #include "qdp_realityjit.h"
 #include "qdp_realityreg.h"
 #include "qdp_reality.h"
-#include "qdp_inner.h"
 #include "qdp_primitive.h"
 #include "qdp_outerjit.h"
 #include "qdp_outersubjit.h"
@@ -223,21 +222,10 @@ namespace QDP {
 
 #include "qdp_internal.h"
 #include "qdp_jitfunction.h"
-#include "qdp_jitf_copymask.h"
-#include "qdp_jitf_sum.h"
-#include "qdp_jitf_summulti.h"
-#include "qdp_jitf_globalmax.h"
-#include "qdp_jitf_gaussian.h"
 
 #include "qdp_dyn_functions.h"
 #include "qdp_sum.h"
 #include "qdp_functions.h"
-
-#ifdef QDP_CUDA_SPECIAL
-#warning "Using CUDA specializations"
-#include "qdp_functions_special.h"
-#include "cuda_special.h"
-#endif
 
 #if defined(ARCH_SCALAR)
 #include "qdp_scalar_specific.h"

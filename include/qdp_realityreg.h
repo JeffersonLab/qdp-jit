@@ -838,96 +838,6 @@ struct TrinaryReturn<RScalarREG<T1>, RScalarREG<T2>, RScalarREG<T3>, FnColorCont
   typedef RScalarREG<typename TrinaryReturn<T1, T2, T3, FnColorContract>::Type_t>  Type_t;
 };
 
-// RScalarREG
-// Gamma algebra
-template<int N, int m, class T2, class OpGammaConstMultiply>
-struct BinaryReturn<GammaConst<N,m>, RScalarREG<T2>, OpGammaConstMultiply> {
-  typedef RScalarREG<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, int m, class OpMultiplyGammaConst>
-struct BinaryReturn<RScalarREG<T2>, GammaConst<N,m>, OpMultiplyGammaConst> {
-  typedef RScalarREG<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpGammaTypeMultiply>
-struct BinaryReturn<GammaType<N>, RScalarREG<T2>, OpGammaTypeMultiply> {
-  typedef RScalarREG<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpMultiplyGammaType>
-struct BinaryReturn<RScalarREG<T2>, GammaType<N>, OpMultiplyGammaType> {
-  typedef RScalarREG<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-
-// RScalarREG
-// Gamma algebra
-template<int N, int m, class T2, class OpGammaConstDPMultiply>
-struct BinaryReturn<GammaConstDP<N,m>, RScalarREG<T2>, OpGammaConstDPMultiply> {
-  typedef RScalarREG<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, int m, class OpMultiplyGammaConstDP>
-struct BinaryReturn<RScalarREG<T2>, GammaConstDP<N,m>, OpMultiplyGammaConstDP> {
-  typedef RScalarREG<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpGammaTypeDPMultiply>
-struct BinaryReturn<GammaTypeDP<N>, RScalarREG<T2>, OpGammaTypeDPMultiply> {
-  typedef RScalarREG<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpMultiplyGammaTypeDP>
-struct BinaryReturn<RScalarREG<T2>, GammaTypeDP<N>, OpMultiplyGammaTypeDP> {
-  typedef RScalarREG<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-
-
-// RComplexREG
-// Gamma algebra
-template<int N, int m, class T2, class OpGammaConstMultiply>
-struct BinaryReturn<GammaConst<N,m>, RComplexREG<T2>, OpGammaConstMultiply> {
-  typedef RComplexREG<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, int m, class OpMultiplyGammaConst>
-struct BinaryReturn<RComplexREG<T2>, GammaConst<N,m>, OpMultiplyGammaConst> {
-  typedef RComplexREG<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpGammaTypeMultiply>
-struct BinaryReturn<GammaType<N>, RComplexREG<T2>, OpGammaTypeMultiply> {
-  typedef RComplexREG<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpMultiplyGammaType>
-struct BinaryReturn<RComplexREG<T2>, GammaType<N>, OpMultiplyGammaType> {
-  typedef RComplexREG<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-
-// Gamma algebra
-template<int N, int m, class T2, class OpGammaConstDPMultiply>
-struct BinaryReturn<GammaConstDP<N,m>, RComplexREG<T2>, OpGammaConstDPMultiply> {
-  typedef RComplexREG<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, int m, class OpMultiplyGammaConstDP>
-struct BinaryReturn<RComplexREG<T2>, GammaConstDP<N,m>, OpMultiplyGammaConstDP> {
-  typedef RComplexREG<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpGammaTypeDPMultiply>
-struct BinaryReturn<GammaTypeDP<N>, RComplexREG<T2>, OpGammaTypeDPMultiply> {
-  typedef RComplexREG<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpMultiplyGammaTypeDP>
-struct BinaryReturn<RComplexREG<T2>, GammaTypeDP<N>, OpMultiplyGammaTypeDP> {
-  typedef RComplexREG<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
 
 
 // Assignment is different
@@ -1554,18 +1464,6 @@ outerProduct(const RScalarREG<T1>& l, const RScalarREG<T2>& r)
 }
 
 
-template<class T>
-struct UnaryReturn<RScalarREG<T>, FnSeedToFloat> {
-  typedef RScalarREG<typename UnaryReturn<T, FnSeedToFloat>::Type_t>  Type_t;
-};
-
-//! dest [float type] = source [seed type]
-template<class T1>
-inline typename UnaryReturn<RScalarREG<T1>, FnSeedToFloat>::Type_t
-seedToFloat(const RScalarREG<T1>& s1)
-{
-  return seedToFloat(s1.elem());
-}
 
 //! dest [some type] = source [some type]
 /*! Portable (internal) way of returning a single site */

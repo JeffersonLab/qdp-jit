@@ -398,76 +398,32 @@ template<class T>
 inline typename UnaryReturn<PSeedREG<T>, FnSeedToFloat>::Type_t
 seedToFloat(const PSeedREG<T>& s1)
 {
-  typename UnaryReturn<PSeedREG<T>, FnSeedToFloat>::Type_t  d; // QDP::PScalarREG<QDP::RScalarREG<QDP::WordREG<float> > >
-
-  llvm::Value *i0 = s1.elem(0).elem().get_val();
-  llvm::Value *i1 = s1.elem(1).elem().get_val();
-  llvm::Value *i2 = s1.elem(2).elem().get_val();
-  llvm::Value *i3 = s1.elem(3).elem().get_val();
-
-  llvm::Value *fl = llvm_seedToFloat(i0,i1,i2,i3);
-
-  d.elem().elem().setup( fl );
-
-  return d;
-#if 0
-  typedef typename RealScalar<T>::Type_t  S;                                   // QDP::RScalarREG<QDP::WordREG<float> >
-
-  S  twom11(1.0 / 2048.0);
-  S  twom12(1.0 / 4096.0);
-  S  fs1, fs2;
-
-//  recast_rep(fs1, s1.elem(0));
-  fs1 = S(s1.elem(0));
-  d.elem() = twom12 * S(s1.elem(0));
-
-//  recast_rep(fs1, s1.elem(1));
-  fs1 = S(s1.elem(1));
-  fs2 = fs1 + d.elem();
-  d.elem() = twom12 * fs2;
-
-//  recast_rep(fs1, s1.elem(2));
-  fs1 = S(s1.elem(2));
-  fs2 = fs1 + d.elem();
-  d.elem() = twom12 * fs2;
-
-//  recast_rep(fs1, s1.elem(3));
-  fs1 = S(s1.elem(3));
-  fs2 = fs1 + d.elem();
-  d.elem() = twom11 * fs2;
-
-  return d;
-#endif
-
-#if 0
   typename UnaryReturn<PSeedREG<T>, FnSeedToFloat>::Type_t  d;
-  typedef typename RealScalar<T>::Type_t  S;
+  
+  llvm::Value *twom11 = llvm_create_value(1.0 / 2048.0);
+  llvm::Value *twom12 = llvm_create_value(1.0 / 4096.0);
+  llvm::Value *fs1;
+  llvm::Value *fs2;
+  llvm::Value *dval;
 
-  S  twom11(s1.func(),1.0 / 2048.0);
-  S  twom12(s1.func(),1.0 / 4096.0);
-  S  fs1, fs2;
+  fs1 = s1.elem(0).elem().get_val();
+  dval = llvm_mul( twom12 , s1.elem(0).elem().get_val() );
 
-//  recast_rep(fs1, s1.elem(0));
-  fs1 = S(s1.elem(0));
-  d.elem() = twom12 * S(s1.elem(0));
+  fs1 = s1.elem(1).elem().get_val();
+  fs2 = llvm_add( fs1 , dval );
+  dval = llvm_mul( twom12 , fs2 );
 
-//  recast_rep(fs1, s1.elem(1));
-  fs1 = S(s1.elem(1));
-  fs2 = fs1 + d.elem();
-  d.elem() = twom12 * fs2;
+  fs1 = s1.elem(2).elem().get_val();
+  fs2 = llvm_add( fs1 , dval );
+  dval = llvm_mul( twom12 , fs2 );
 
-//  recast_rep(fs1, s1.elem(2));
-  fs1 = S(s1.elem(2));
-  fs2 = fs1 + d.elem();
-  d.elem() = twom12 * fs2;
+  fs1 = s1.elem(3).elem().get_val();
+  fs2 = llvm_add( fs1 , dval );
+  dval = llvm_mul( twom11 , fs2 );
 
-//  recast_rep(fs1, s1.elem(3));
-  fs1 = S(s1.elem(3));
-  fs2 = fs1 + d.elem();
-  d.elem() = twom11 * fs2;
+  d.elem().elem().setup( dval );
 
   return d;
-#endif
 }
 
 

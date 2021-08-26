@@ -1696,7 +1696,7 @@ localInnerProductReal(const PMatrixREG<T1,N,C>& s1, const PScalarREG<T2>& s2)
 
   d.elem() = localInnerProductReal(s1.elem(0,0), s2.elem());
   for(int k=1; k < N; ++k)
-    d.elem() += localInnerProductReal(s1.elem(k,0), s2.elem(k,k));
+    d.elem() += localInnerProductReal(s1.elem(k,0), s2.elem());
 
   return d;
 }

@@ -446,12 +446,6 @@ namespace QDP {
       
       return 1 << count;  
     }
-
-    template <class T>
-    void print_type()
-    {
-      QDPIO::cout << __PRETTY_FUNCTION__ << std::endl;
-    }
   }
 
   

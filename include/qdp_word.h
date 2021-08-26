@@ -179,7 +179,15 @@ struct FirstWord<Word<T> >
 template<class T> 
 struct JITType<Word<T> >
 {
-  typedef WordJIT<typename JITType<T>::Type_t>  Type_t;
+  typedef WordJIT<T>  Type_t;
+};
+
+
+
+template<class T> 
+struct REGType<Word<T> >
+{
+  typedef WordREG<T>  Type_t;
 };
 
 
@@ -385,53 +393,6 @@ template<class T1, class T2, class T3>
 struct TrinaryReturn<Word<T1>, Word<T2>, Word<T3>, FnColorContract> {
   typedef Word<typename TrinaryReturn<T1, T2, T3, FnColorContract>::Type_t>  Type_t;
 };
-
-// Word
-// Gamma algebra
-template<int N, int m, class T2, class OpGammaConstMultiply>
-struct BinaryReturn<GammaConst<N,m>, Word<T2>, OpGammaConstMultiply> {
-  typedef Word<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, int m, class OpMultiplyGammaConst>
-struct BinaryReturn<Word<T2>, GammaConst<N,m>, OpMultiplyGammaConst> {
-  typedef Word<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpGammaTypeMultiply>
-struct BinaryReturn<GammaType<N>, Word<T2>, OpGammaTypeMultiply> {
-  typedef Word<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpMultiplyGammaType>
-struct BinaryReturn<Word<T2>, GammaType<N>, OpMultiplyGammaType> {
-  typedef Word<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-
-// Word
-// Gamma algebra
-template<int N, int m, class T2, class OpGammaConstDPMultiply>
-struct BinaryReturn<GammaConstDP<N,m>, Word<T2>, OpGammaConstDPMultiply> {
-  typedef Word<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, int m, class OpMultiplyGammaConstDP>
-struct BinaryReturn<Word<T2>, GammaConstDP<N,m>, OpMultiplyGammaConstDP> {
-  typedef Word<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpGammaTypeDPMultiply>
-struct BinaryReturn<GammaTypeDP<N>, Word<T2>, OpGammaTypeDPMultiply> {
-  typedef Word<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpMultiplyGammaTypeDP>
-struct BinaryReturn<Word<T2>, GammaTypeDP<N>, OpMultiplyGammaTypeDP> {
-  typedef Word<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-
 
 
 
@@ -1026,9 +987,9 @@ peekSpin(const Word<T>& l, int row, int col)
 
 
 
-template<class T, class T1, class T2>
+template<class T>
 inline void
-fill_random(Word<T>& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
+fill_random(Word<T>& d, Seed& seed, Seed& skewed_seed, const Seed& seed_mult)
 {
   fill_random(d.elem(), seed, skewed_seed, seed_mult);
 }

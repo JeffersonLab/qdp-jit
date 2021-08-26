@@ -449,6 +449,20 @@ struct JITType<RComplex<T> >
 };
 
 
+template<class T> 
+struct REGType<RScalar<T> >
+{
+  typedef RScalarREG<typename REGType<T>::Type_t>  Type_t;
+};
+
+
+template<class T> 
+struct REGType<RComplex<T> >
+{
+  typedef RComplexREG<typename REGType<T>::Type_t>  Type_t;
+};
+
+
 
 
 //! Stream output
@@ -738,96 +752,6 @@ struct TrinaryReturn<RScalar<T1>, RScalar<T2>, RScalar<T3>, FnColorContract> {
   typedef RScalar<typename TrinaryReturn<T1, T2, T3, FnColorContract>::Type_t>  Type_t;
 };
 
-// RScalar
-// Gamma algebra
-template<int N, int m, class T2, class OpGammaConstMultiply>
-struct BinaryReturn<GammaConst<N,m>, RScalar<T2>, OpGammaConstMultiply> {
-  typedef RScalar<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, int m, class OpMultiplyGammaConst>
-struct BinaryReturn<RScalar<T2>, GammaConst<N,m>, OpMultiplyGammaConst> {
-  typedef RScalar<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpGammaTypeMultiply>
-struct BinaryReturn<GammaType<N>, RScalar<T2>, OpGammaTypeMultiply> {
-  typedef RScalar<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpMultiplyGammaType>
-struct BinaryReturn<RScalar<T2>, GammaType<N>, OpMultiplyGammaType> {
-  typedef RScalar<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-
-// RScalar
-// Gamma algebra
-template<int N, int m, class T2, class OpGammaConstDPMultiply>
-struct BinaryReturn<GammaConstDP<N,m>, RScalar<T2>, OpGammaConstDPMultiply> {
-  typedef RScalar<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, int m, class OpMultiplyGammaConstDP>
-struct BinaryReturn<RScalar<T2>, GammaConstDP<N,m>, OpMultiplyGammaConstDP> {
-  typedef RScalar<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpGammaTypeDPMultiply>
-struct BinaryReturn<GammaTypeDP<N>, RScalar<T2>, OpGammaTypeDPMultiply> {
-  typedef RScalar<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpMultiplyGammaTypeDP>
-struct BinaryReturn<RScalar<T2>, GammaTypeDP<N>, OpMultiplyGammaTypeDP> {
-  typedef RScalar<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-
-
-// RComplex
-// Gamma algebra
-template<int N, int m, class T2, class OpGammaConstMultiply>
-struct BinaryReturn<GammaConst<N,m>, RComplex<T2>, OpGammaConstMultiply> {
-  typedef RComplex<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, int m, class OpMultiplyGammaConst>
-struct BinaryReturn<RComplex<T2>, GammaConst<N,m>, OpMultiplyGammaConst> {
-  typedef RComplex<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpGammaTypeMultiply>
-struct BinaryReturn<GammaType<N>, RComplex<T2>, OpGammaTypeMultiply> {
-  typedef RComplex<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpMultiplyGammaType>
-struct BinaryReturn<RComplex<T2>, GammaType<N>, OpMultiplyGammaType> {
-  typedef RComplex<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-
-// Gamma algebra
-template<int N, int m, class T2, class OpGammaConstDPMultiply>
-struct BinaryReturn<GammaConstDP<N,m>, RComplex<T2>, OpGammaConstDPMultiply> {
-  typedef RComplex<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, int m, class OpMultiplyGammaConstDP>
-struct BinaryReturn<RComplex<T2>, GammaConstDP<N,m>, OpMultiplyGammaConstDP> {
-  typedef RComplex<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpGammaTypeDPMultiply>
-struct BinaryReturn<GammaTypeDP<N>, RComplex<T2>, OpGammaTypeDPMultiply> {
-  typedef RComplex<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
-
-template<class T2, int N, class OpMultiplyGammaTypeDP>
-struct BinaryReturn<RComplex<T2>, GammaTypeDP<N>, OpMultiplyGammaTypeDP> {
-  typedef RComplex<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
-};
 
 
 // Assignment is different
@@ -2479,9 +2403,9 @@ void zero_rep(RComplex<T>& dest)
 
 
 //! dest  = random  
-template<class T, class T1, class T2>
+template<class T>
 inline void
-fill_random(RComplex<T>& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
+fill_random(RComplex<T>& d, Seed& seed, Seed& skewed_seed, const Seed& seed_mult)
 {
   fill_random(d.real(), seed, skewed_seed, seed_mult);
   fill_random(d.imag(), seed, skewed_seed, seed_mult);
