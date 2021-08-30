@@ -15,7 +15,6 @@ add_library(qdp qdp_map.cc
  	qdp_stopwatch.cc
 	qdp_rannyu.cc
 	qdp_mapresource.cc
-	qdp_llvm.cc
 	qdp_cache.cc
 	qdp_mastermap.cc
 	qdp_masterset.cc
