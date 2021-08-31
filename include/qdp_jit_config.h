@@ -3,6 +3,12 @@
 
 namespace QDP
 {
+  bool jit_config_get_instcombine();
+  bool jit_config_get_inline();
+
+  void jit_config_set_instcombine(bool b);
+  void jit_config_set_inline(bool b);
+
   bool jit_config_get_timing_run();
   void jit_config_set_timing_run(bool v);
 

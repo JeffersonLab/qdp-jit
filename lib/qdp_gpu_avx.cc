@@ -98,11 +98,20 @@ namespace QDP {
     return 1;
   }
 
+  
+  int roundUp(int numToRound, int multiple) 
+  {
+    assert(multiple && ((multiple & (multiple - 1)) == 0));
+    return (numToRound + multiple - 1) & -multiple;
+  }
 
-
+  
   void gpu_host_alloc(void **mem , const size_t size)
   {
-    *mem = malloc( size );
+    
+    
+    *mem = aligned_alloc( 64 , roundUp( size , 64 ) );
+    //*mem = malloc( size );
 
     if (*mem == NULL)
       {

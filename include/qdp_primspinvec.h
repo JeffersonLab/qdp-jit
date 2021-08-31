@@ -726,6 +726,13 @@ struct WordType<PSpinVector<T1,N> >
   typedef typename WordType<T1>::Type_t  Type_t;
 };
 
+template<class T1, int N>
+struct ScalarType< PSpinVector<T1, N> > 
+{
+  typedef PSpinVector< typename ScalarType<T1>::Type_t, N> Type_t;
+};
+
+
 // Fixed Precision
 template<class T1, int N>
 struct SinglePrecType< PSpinVector<T1, N> > 

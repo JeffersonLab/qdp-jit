@@ -25,11 +25,6 @@ namespace QDP {
 
     typename REGType<T>::Type_t elemREG( JitDeviceLayout lay , llvm::Value * index ) const
     {
-      T F;
-      IndexDomainVector args;
-      args.push_back( make_pair( Layout::sitesOnNode() , index ) );
-      F.setup( llvm_derefParam(base_m) , lay , args );
-
       typename REGType<T>::Type_t ret;
       ret.setup( elem( lay , index ) );
       return ret;

@@ -62,6 +62,8 @@ namespace QDP {
       std::reverse( a.begin() , a.end() );
     }
 #endif
+
+    // TODO: need to handle JitDeviceLayout::Coalesced_scalar_idx
     
     llvm::Value * offset = llvm_create_value(0);
     for( auto x = a.begin() ; x != a.end() ; x++ ) {
@@ -74,6 +76,18 @@ namespace QDP {
     return offset;
   }
 
+  /*
+    Latt: Sites, idx
+    Spin: 1, sp
+    Colr: 1, co
+    Cmpl: 2, z
+
+    offset = (( idx * 1 + sp ) * 1 + co ) * 2 + z
+
+    re im re im re im
+  */
+
+  
 
 
 } // namespace

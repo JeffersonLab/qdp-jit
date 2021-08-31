@@ -282,7 +282,10 @@ namespace QDP {
 	if ( s.hasOrderedRep() )
 	  {
 	    int th_count = s.numSiteTable();
-
+#if defined(QDP_BACKEND_AVX)
+	    th_count /= 8;
+#endif
+	    
 	    WorkgroupGuardExec workgroupGuardExec(th_count);
 	    //JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
 	    

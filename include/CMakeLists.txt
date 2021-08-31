@@ -43,7 +43,6 @@ set( CUDA_HDRS qdp_gpu.h
   qdp_jitf_gather.h
   qdp_jit_util.h
   qdp_pete_visitors.h
-  qdp_qdpsubtypejit.h
   qdp_outerjit.h
   qdp_realityjit.h
   qdp_realityreg.h

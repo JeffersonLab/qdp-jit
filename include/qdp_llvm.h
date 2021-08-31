@@ -85,7 +85,10 @@ namespace QDP {
   std::string get_ptx_db_fname();
   bool        get_ptx_db_enabled();
   int         get_ptx_db_size();
-    
+
+  llvm::Value* llvm_insert_element( llvm::Value* vec , llvm::Value* val , llvm::Value* pos );
+  llvm::Value* llvm_fill_vector( llvm::Value* val );
+  
   llvm::Value * llvm_create_value( double v );
   llvm::Value * llvm_create_value( int v );
   llvm::Value * llvm_create_value( int64_t v );
@@ -173,6 +176,11 @@ namespace QDP {
   template<> ParamRef llvm_add_param<int**>();
   template<> ParamRef llvm_add_param<float**>();
   template<> ParamRef llvm_add_param<double**>();
+
+
+  template<class T> ParamRef llvm_add_vecparam();
+  template<> ParamRef llvm_add_vecparam<float*>();
+  
 
   
   llvm::Value * llvm_derefParam( ParamRef r );

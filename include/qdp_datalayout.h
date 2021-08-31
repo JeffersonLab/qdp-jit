@@ -11,8 +11,8 @@ namespace QDP {
 
 
   llvm::Value * datalayout( JitDeviceLayout lay , IndexDomainVector a );
-  //llvm::Value * datalayout_stack(IndexDomainVector a);
+  llvm::Value * datalayout_vec( JitDeviceLayout lay , IndexDomainVector a );
 
-} // namespace QDP
+} // QDP
 
 #endif

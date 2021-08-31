@@ -57,6 +57,7 @@
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Utils/Cloning.h"
+#include "llvm/Transforms/InstCombine/InstCombine.h"
 
 #ifdef QDP_BACKEND_AVX
 #include "llvm/ADT/StringRef.h"
@@ -138,6 +139,15 @@ public:
 
     JITTargetMachineBuilder JTMB((*TPC)->getTargetTriple());
 
+    llvm::outs() << "feature string: " << JTMB.getFeatures().getString() << "\n";
+	
+    llvm::outs() << "adding features...\n";
+    JTMB.addFeatures({"+avx2"});
+    
+    llvm::outs() << "feature string: " << JTMB.getFeatures().getString() << "\n";
+    
+
+    
     auto DL = JTMB.getDefaultDataLayoutForTarget();
     if (!DL)
       return DL.takeError();
@@ -983,6 +993,49 @@ namespace QDP
     QDPIO::cout << "Creating JIT successful" << std::endl;
     //InitializeModule();
 
+
+#if 1
+    // TheTriple.setArch (llvm::Triple::ArchType::amdgcn);
+    // TheTriple.setVendor (llvm::Triple::VendorType::AMD);
+    // TheTriple.setOS (llvm::Triple::OSType::AMDHSA);
+
+    TheTriple.setTriple(sys::getDefaultTargetTriple());
+
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "TheTriple: " << TheTriple.str() << std::endl;
+      }
+
+    std::string Error;
+    const llvm::Target *TheTarget = llvm::TargetRegistry::lookupTarget( TheTriple.str() , Error );
+    if (!TheTarget) {
+      std::cout << Error;
+      QDPIO::cerr << "Something went wrong setting the target\n";
+      QDP_abort(1);
+    }
+
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "Target lookup successful: " << TheTarget->getName() << std::endl;
+      }
+
+    llvm::TargetOptions Options;
+
+    std::string FeaturesStr;
+    
+    TargetMachine.reset(TheTarget->createTargetMachine(
+						       TheTriple.getTriple(), 
+						       str_arch,
+						       FeaturesStr, 
+						       Options,
+						       llvm::Reloc::PIC_
+						       )
+			);
+
+    
+    QDPIO::cout << "LLVM initialized" << std::endl;
+#endif
+
     // QDPIO::cout << "LLVM initialization" << std::endl;
     // QDPIO::cout << "  Target machine CPU                  : " << TargetMachine->getTargetCPU().str() << "\n";
     // QDPIO::cout << "  Target triple                       : " << TargetMachine->getTargetTriple().str() << "\n";
@@ -1194,8 +1247,9 @@ namespace QDP
   }
 
 
-  llvm::Type* promote( llvm::Type* t0 , llvm::Type* t1 )
+  llvm::Type* promote_scalar( llvm::Type* t0 , llvm::Type* t1 )
   {
+    llvm::outs() << "promote_scalar " << *t0 << " " << *t1 << "\n";
     if ( t0->isFloatingPointTy() || t1->isFloatingPointTy() ) {
       //llvm::outs() << "promote floating " << t0->isFloatingPointTy() << " " << t1->isFloatingPointTy() << "\n";
       if ( t0->isDoubleTy() || t1->isDoubleTy() ) {
@@ -1211,8 +1265,48 @@ namespace QDP
   }
 
 
+  llvm::Type* promote( llvm::Type* t0 , llvm::Type* t1 )
+  {
+    //isFPOrFPVectorTy () const
+    //isIntOrIntVectorTy () const
+    //
+    //getScalarType ()
+    //getElementCount () const
+  
+    llvm::outs() << "promote " << *t0 << " " << *t1 << "\n";
+
+    if (t0->isVectorTy() != t1->isVectorTy())
+      {
+	llvm::outs() << "promote error: trying to promote a vector and a scalar" << "\n";
+	QDP_error_exit("interal error");
+      }
+
+    if (t0->isVectorTy() && t1->isVectorTy())
+      {
+	if (cast<llvm::VectorType>(t0)->getElementCount() != cast<llvm::VectorType>(t1)->getElementCount() )
+	  {
+	    llvm::outs() << "promote error: trying to promote vectors with not matching lengths." << "\n";
+	    QDP_error_exit("interal error");
+	  }
+      }
+    
+    if (t0->isVectorTy())
+      {
+	return llvm::VectorType::get( promote_scalar( t0->getScalarType() , t1->getScalarType() ) , cast<llvm::VectorType>(t0)->getElementCount() );
+      }
+    else
+      {
+	return promote_scalar(t0,t1);
+      }
+  }
+
+  
+
   llvm::Value* llvm_cast( llvm::Type *dest_type , llvm::Value *src )
   {
+    llvm::outs() << "llvm_cast " << *dest_type << " " << *src  << "\n";
+
+    
     assert( dest_type && "llvm_cast" );
     assert( src       && "llvm_cast" );
 
@@ -1244,15 +1338,16 @@ namespace QDP
 
   std::pair<llvm::Value*,llvm::Value*> llvm_normalize_values(llvm::Value* lhs , llvm::Value* rhs)
   {
+    llvm::outs() << "normalize " << *lhs << " " << *rhs << "\n";
     llvm::Value* lhs_new = lhs;
     llvm::Value* rhs_new = rhs;
     llvm::Type* args_type = promote( lhs->getType() , rhs->getType() );
     if ( args_type != lhs->getType() ) {
-      //llvm::outs() << "lhs needs conversion\n";
+      llvm::outs() << "lhs needs conversion\n";
       lhs_new = llvm_cast( args_type , lhs );
     }
     if ( args_type != rhs->getType() ) {
-      //llvm::outs() << "rhs needs conversion\n";
+      llvm::outs() << "rhs needs conversion\n";
       rhs_new = llvm_cast( args_type , rhs );
     }
     return std::make_pair(lhs_new,rhs_new);
@@ -1265,7 +1360,7 @@ namespace QDP
     llvm::Value* lhs = llvm_create_value(0);
     auto vals = llvm_normalize_values(lhs,rhs);
     llvm::Type* args_type = vals.first->getType();
-    if ( args_type->isFloatingPointTy() )
+    if ( args_type->getScalarType()->isFloatingPointTy() )
       return builder->CreateFSub( vals.first , vals.second );
     else
       return builder->CreateSub( vals.first , vals.second );
@@ -1275,7 +1370,7 @@ namespace QDP
   llvm::Value* llvm_rem( llvm::Value* lhs , llvm::Value* rhs ) {
     auto vals = llvm_normalize_values(lhs,rhs);
     llvm::Type* args_type = vals.first->getType();
-    if ( args_type->isFloatingPointTy() )
+    if ( args_type->getScalarType()->isFloatingPointTy() )
       return builder->CreateFRem( vals.first , vals.second );
     else
       return builder->CreateSRem( vals.first , vals.second );
@@ -1287,7 +1382,7 @@ namespace QDP
     //   llvm::Type* args_type = vals.first->getType();
     //   assert( !args_type->isFloatingPointTy() );
 
-    assert( ! ( vals.first->getType()->isFloatingPointTy() ) );
+    assert( ! ( vals.first->getType()->getScalarType()->isFloatingPointTy() ) );
     return builder->CreateAShr( vals.first , vals.second );
   }
 
@@ -1297,7 +1392,7 @@ namespace QDP
     //  llvm::Type* args_type = vals.first->getType();
     //  assert( !args_type->isFloatingPointTy() );
 
-    assert( ! ( vals.first->getType()->isFloatingPointTy()  ) );
+    assert( ! ( vals.first->getType()->getScalarType()->isFloatingPointTy()  ) );
     return builder->CreateShl( vals.first , vals.second );
   }
 
@@ -1306,7 +1401,7 @@ namespace QDP
     auto vals = llvm_normalize_values(lhs,rhs);
     // llvm::Type* args_type = vals.first->getType();
     // assert( !args_type->isFloatingPointTy() );
-    assert( ! ( vals.first->getType()->isFloatingPointTy()  ) );
+    assert( ! ( vals.first->getType()->getScalarType()->isFloatingPointTy()  ) );
     return builder->CreateAnd( vals.first , vals.second );
   }
 
@@ -1315,7 +1410,7 @@ namespace QDP
     auto vals = llvm_normalize_values(lhs,rhs);
     //  llvm::Type* args_type = vals.first->getType();
     // assert( !args_type->isFloatingPointTy() );
-    assert( ! ( vals.first->getType()->isFloatingPointTy()  ) );
+    assert( ! ( vals.first->getType()->getScalarType()->isFloatingPointTy()  ) );
 
     return builder->CreateOr( vals.first , vals.second );
   }
@@ -1326,15 +1421,17 @@ namespace QDP
     //    llvm::Type* args_type = vals.first->getType();
     //    assert( !args_type->isFloatingPointTy() );
 
-    assert( ! ( vals.first->getType()->isFloatingPointTy()  ) );
+    assert( ! ( vals.first->getType()->getScalarType()->isFloatingPointTy()  ) );
 
     return builder->CreateXor( vals.first , vals.second );
   }
 
 
   llvm::Value* llvm_mul( llvm::Value* lhs , llvm::Value* rhs ) {
+    llvm::outs() << "llvm_mul " << *lhs << " " << *rhs << "\n";
+
     auto vals = llvm_normalize_values(lhs,rhs);
-    if ( vals.first->getType()->isFloatingPointTy() )
+    if ( vals.first->getType()->getScalarType()->isFloatingPointTy() )
       return builder->CreateFMul( vals.first , vals.second );
     else
       return builder->CreateMul( vals.first , vals.second );
@@ -1344,7 +1441,7 @@ namespace QDP
   llvm::Value* llvm_add( llvm::Value* lhs , llvm::Value* rhs ) {
     auto vals = llvm_normalize_values(lhs,rhs);
     llvm::Type* args_type = vals.first->getType();
-    if ( args_type->isFloatingPointTy() )
+    if ( args_type->getScalarType()->isFloatingPointTy() )
       return builder->CreateFAdd( vals.first , vals.second );
     else
       return builder->CreateNSWAdd( vals.first , vals.second );
@@ -1354,7 +1451,7 @@ namespace QDP
   llvm::Value* llvm_sub( llvm::Value* lhs , llvm::Value* rhs ) {
     auto vals = llvm_normalize_values(lhs,rhs);
     llvm::Type* args_type = vals.first->getType();
-    if ( args_type->isFloatingPointTy() )
+    if ( args_type->getScalarType()->isFloatingPointTy() )
       return builder->CreateFSub( vals.first , vals.second );
     else
       return builder->CreateSub( vals.first , vals.second );
@@ -1364,7 +1461,7 @@ namespace QDP
   llvm::Value* llvm_div( llvm::Value* lhs , llvm::Value* rhs ) {
     auto vals = llvm_normalize_values(lhs,rhs);
     llvm::Type* args_type = vals.first->getType();
-    if ( args_type->isFloatingPointTy() )
+    if ( args_type->getScalarType()->isFloatingPointTy() )
       return builder->CreateFDiv( vals.first , vals.second );
     else 
       return builder->CreateSDiv( vals.first , vals.second );
@@ -1374,7 +1471,7 @@ namespace QDP
   llvm::Value* llvm_eq( llvm::Value* lhs , llvm::Value* rhs ) {
     auto vals = llvm_normalize_values(lhs,rhs);
     llvm::Type* args_type = vals.first->getType();
-    if ( args_type->isFloatingPointTy() )
+    if ( args_type->getScalarType()->isFloatingPointTy() )
       return builder->CreateFCmpOEQ( vals.first , vals.second );
     else
       return builder->CreateICmpEQ( vals.first , vals.second );
@@ -1384,7 +1481,7 @@ namespace QDP
   llvm::Value* llvm_ge( llvm::Value* lhs , llvm::Value* rhs ) {
     auto vals = llvm_normalize_values(lhs,rhs);
     llvm::Type* args_type = vals.first->getType();
-    if ( args_type->isFloatingPointTy() )
+    if ( args_type->getScalarType()->isFloatingPointTy() )
       return builder->CreateFCmpOGE( vals.first , vals.second );
     else
       return builder->CreateICmpSGE( vals.first , vals.second );
@@ -1394,7 +1491,7 @@ namespace QDP
   llvm::Value* llvm_gt( llvm::Value* lhs , llvm::Value* rhs ) {
     auto vals = llvm_normalize_values(lhs,rhs);
     llvm::Type* args_type = vals.first->getType();
-    if ( args_type->isFloatingPointTy() )
+    if ( args_type->getScalarType()->isFloatingPointTy() )
       return builder->CreateFCmpOGT( vals.first , vals.second );
     else
       return builder->CreateICmpSGT( vals.first , vals.second );
@@ -1404,7 +1501,7 @@ namespace QDP
   llvm::Value* llvm_le( llvm::Value* lhs , llvm::Value* rhs ) {
     auto vals = llvm_normalize_values(lhs,rhs);
     llvm::Type* args_type = vals.first->getType();
-    if ( args_type->isFloatingPointTy() )
+    if ( args_type->getScalarType()->isFloatingPointTy() )
       return builder->CreateFCmpOLE( vals.first , vals.second );
     else
       return builder->CreateICmpSLE( vals.first , vals.second );
@@ -1414,7 +1511,7 @@ namespace QDP
   llvm::Value* llvm_lt( llvm::Value* lhs , llvm::Value* rhs ) {
     auto vals = llvm_normalize_values(lhs,rhs);
     llvm::Type* args_type = vals.first->getType();
-    if ( args_type->isFloatingPointTy() )
+    if ( args_type->getScalarType()->isFloatingPointTy() )
       return builder->CreateFCmpOLT( vals.first , vals.second );
     else 
       return builder->CreateICmpSLT( vals.first , vals.second );
@@ -1447,6 +1544,27 @@ namespace QDP
   }
 
 
+  llvm::Value* llvm_insert_element( llvm::Value* vec , llvm::Value* val , llvm::Value* pos )
+  {
+    return builder->CreateInsertElement ( vec, val , pos );
+  }
+  
+
+  llvm::Value* llvm_fill_vector( llvm::Value* val )
+  {
+    //llvm::PointerType::get( llvm::FixedVectorType::get( val->getType() , 8 ) , 0 ) );
+    
+    llvm::Type * vec_type =  llvm::FixedVectorType::get( val->getType() , 8 );
+
+    llvm::Value *vec = Constant::getNullValue(vec_type);
+
+    
+    for ( int i = 0 ; i < 8 ; ++i )
+      vec = llvm_insert_element( vec, val , builder->getInt32(i) );
+ 
+    return vec;
+  }
+  
 
   llvm::Value * llvm_alloca( llvm::Type* type , int elements )
   {
@@ -1527,7 +1645,6 @@ namespace QDP
     return vecParamType.size()-1;
   }
 
-
   template<> ParamRef llvm_add_param<int**>() {
     vecParamType.push_back( llvm::PointerType::get( llvm::Type::getInt32PtrTy(*TheContext) , 0 ) );  // AddressSpace = 0 ??
     return vecParamType.size()-1;
@@ -1542,6 +1659,23 @@ namespace QDP
   }
 
 
+  template<> ParamRef llvm_add_vecparam<float*>() {
+    vecParamType.push_back( llvm::PointerType::get( llvm::FixedVectorType::get( llvm::Type::getFloatTy(*TheContext) , 8 ) , 0 ) );
+    return vecParamType.size()-1;
+  }
+
+  template<> ParamRef llvm_add_vecparam<int*>() {
+    vecParamType.push_back( llvm::PointerType::get( llvm::FixedVectorType::get( llvm::Type::getInt32Ty(*TheContext) , 8 ) , 0 ) );
+    return vecParamType.size()-1;
+  }
+  
+  template<> ParamRef llvm_add_vecparam<bool*>() {
+    vecParamType.push_back( llvm::PointerType::get( llvm::FixedVectorType::get( llvm::Type::getInt1Ty(*TheContext) , 8 ) , 0 ) );
+    return vecParamType.size()-1;
+  }
+
+
+  
 
   llvm::BasicBlock * llvm_new_basic_block()
   {
@@ -1621,13 +1755,17 @@ namespace QDP
 
   llvm::Value * llvm_createGEP( llvm::Value * ptr , llvm::Value * idx )
   {
-    return builder->CreateGEP( ptr , idx );
+    ptr = builder->CreateGEP( ptr , idx );
+    llvm::outs() << "llvm_createGEP " << *ptr << "\n";
+    return ptr;
   }
 
 
   llvm::Value * llvm_load( llvm::Value * ptr )
   {
-    return builder->CreateLoad( ptr );
+    ptr = builder->CreateLoad( ptr );
+    llvm::outs() << "llvm_load " << *ptr << "\n";
+    return ptr;
   }
 
   void llvm_store( llvm::Value * val , llvm::Value * ptr )
@@ -1642,6 +1780,8 @@ namespace QDP
 
   llvm::Value * llvm_load_ptr_idx( llvm::Value * ptr , llvm::Value * idx )
   {
+    llvm::outs() << "llvm_load_ptr_idx " << *ptr << " " << *idx << "\n";
+
     return llvm_load( llvm_createGEP( ptr , idx ) );
   }
 
@@ -1841,6 +1981,40 @@ namespace QDP
   }
 
 
+
+  
+  void llvm_opt(JitFunction& func)
+  {
+    StopWatch swatch(false);
+
+    swatch.reset();
+    swatch.start();
+
+    llvm::legacy::PassManager PM2;
+
+    if ( jit_config_get_instcombine() )
+      PM2.add( llvm::createInstructionCombiningPass() );
+    if ( jit_config_get_inline() )
+    PM2.add( llvm::createFunctionInliningPass() );
+
+  
+    if (jit_config_get_verbose_output())
+      {
+	if ( jit_config_get_instcombine() )
+	  QDPIO::cout << "LLVM opt instcombine\n";
+	if ( jit_config_get_inline() )
+	  QDPIO::cout << "LLVM opt inline\n";
+      }
+
+    PM2.run(*Mod);
+    
+    //llvm_module_dump();
+
+    swatch.stop();
+    func.time_passes = swatch.getTimeInMicroseconds();
+  }
+
+  
   
 
 #ifdef QDP_BACKEND_CUDA
@@ -2302,36 +2476,9 @@ namespace QDP
   void llvm_build_function_avx(JitFunction& func)
   {
     StopWatch swatch(false);
-    swatch.start();
 
-#if 0
-    if (math_declarations.size() > 0)
-      {
-	if (jit_config_get_verbose_output())
-	  {
-	    QDPIO::cout << "adding math function definitions ...\n";
-	  }
-	llvm_init_libdevice();
-    
-	if (jit_config_get_verbose_output())
-	  {
-	    QDPIO::cout << "link modules ...\n";
-	  }
-	std::string ErrorMsg;
+    func.time_math = 0;
 
-	Mod->setDataLayout("");
-	
-	if (llvm::Linker::linkModules( *Mod , std::move( module_libdevice ) )) {  // llvm::Linker::PreserveSource
-	  QDPIO::cerr << "Linking libdevice failed: " << ErrorMsg.c_str() << "\n";
-	  QDP_abort(1);
-	}
-      }
-#endif
-    
-    swatch.stop();
-    func.time_math = swatch.getTimeInMicroseconds();
-    swatch.reset();
-    swatch.start();
     
 
 #if 1
@@ -2400,13 +2547,66 @@ namespace QDP
 	  }
       }
 
+    
+    // passes
+    llvm_opt(func);
+
+    
+    if (1)
+    {
+      std::string module_name = "module_" + str_kernel_name + ".bc";
+      QDPIO::cout << "write code to " << module_name << "\n";
+      std::error_code EC;
+      llvm::raw_fd_ostream OS(module_name, EC, llvm::sys::fs::F_None);
+      llvm::WriteBitcodeToFile(*Mod, OS);
+    }
+
+#if 1
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "\n\n";
+	QDPIO::cout << str_pretty << std::endl;
+	
+	if (Layout::primaryNode())
+	  {
+	    llvm_module_dump();
+	  }
+      }
+#endif
+    
     swatch.reset();
     swatch.start();
 
+#if 1
+    QDPIO::cout << "Print asm\n";
+    {
+      llvm::legacy::PassManager PM;
+
+      std::string str;
+      llvm::raw_string_ostream rss(str);
+      llvm::buffer_ostream bos(rss);
+    
+      if (TargetMachine->addPassesToEmitFile(PM, bos , nullptr ,  llvm::CGFT_AssemblyFile )) {
+	llvm::errs() << ": target does not support generation of this"
+		     << " file type!\n";
+	QDP_abort(1);
+      }
+    
+      PM.run(*Mod);
+
+      std::cout << bos.str().str() << std::endl;
+    }
+#endif
+
+    QDPIO::cout << "Add module\n";
+
+    
     // Add module
     auto RT = TheJIT->getMainJITDylib().createResourceTracker();
     auto TSM = ThreadSafeModule( std::move(Mod) , std::move(TheContext) );
     ExitOnErr(TheJIT->addModule(std::move(TSM), RT));
+    
+    QDPIO::cout << "Lookup\n";
 
     // Lookup 
     auto Sym = ExitOnErr(TheJIT->lookup( str_kernel_name ));

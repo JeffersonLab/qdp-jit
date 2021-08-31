@@ -87,6 +87,14 @@ struct WordType<PColorMatrix<T1,N> >
   typedef typename WordType<T1>::Type_t  Type_t;
 };
 
+
+template<class T1, int N>
+struct ScalarType<PColorMatrix<T1,N> >
+{
+  typedef PColorMatrix<typename ScalarType<T1>::Type_t, N> Type_t;
+};
+
+
 // Fixed Precisions
 template<class T1, int N>
 struct SinglePrecType<PColorMatrix<T1,N> >

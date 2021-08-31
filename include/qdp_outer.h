@@ -397,11 +397,12 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
       return F; 
     }
 
-    inline T& elem(int i) { 
+    inline typename ScalarType<T>::Type_t& elem(int i) { 
       assert_on_host(); 
       return F[i]; 
     }
-    inline const T& elem(int i) const { 
+
+    inline const typename ScalarType<T>::Type_t& elem(int i) const { 
       assert_on_host(); 
       return F[i]; 
     }
@@ -519,7 +520,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
     }
 
 
-    mutable T *F;
+    mutable typename ScalarType<T>::Type_t *F;
     mutable int myId = -2;
     mutable bool mem = false;       // did this class register the memory?
   };
@@ -693,7 +694,11 @@ struct LeafFunctor<OLattice<T>, ParamLeaf>
   inline static
   Type_t apply(const OLattice<T>& do_not_use, const ParamLeaf& p) 
   {
+#if defined (QDP_BACKEND_AVX)
+    ParamRef    base_addr = llvm_add_vecparam< typename WordType<T>::Type_t * >();
+#else
     ParamRef    base_addr = llvm_add_param< typename WordType<T>::Type_t * >();
+#endif
     return Type_t( base_addr );
   }
 };

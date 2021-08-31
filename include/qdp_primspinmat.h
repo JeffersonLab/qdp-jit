@@ -83,6 +83,13 @@ struct WordType<PSpinMatrix<T1,N> >
 };
 
 template<class T1, int N>
+struct ScalarType<PSpinMatrix<T1, N> >
+{
+  typedef PSpinMatrix< typename ScalarType<T1>::Type_t , N > Type_t;
+};
+
+  
+template<class T1, int N>
 struct SinglePrecType<PSpinMatrix<T1, N> >
 {
   typedef PSpinMatrix< typename SinglePrecType<T1>::Type_t , N > Type_t;

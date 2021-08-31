@@ -33,6 +33,7 @@ namespace
   // Grrh, I do not want to expose the plaquette code.
   void mesplq(Double& w_plaq, Double& link, const multi1d<LatticeColorMatrix>& u)
   {
+#if 0
     w_plaq = link = 0.0;
 
     // Compute the average plaquettes
@@ -61,6 +62,7 @@ namespace
       link += sum(real(trace(u[mu])));
 
     link /= double(Layout::vol()*Nd*Nc);
+#endif
   }
 
 } // end anonymous namespace

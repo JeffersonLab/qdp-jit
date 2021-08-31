@@ -34,7 +34,10 @@ public:
     setup( rhs.elem() );
   }
 
-  RScalarREG(const typename WordType<T>::Type_t& rhs): F(rhs) {}
+  RScalarREG(const typename WordType<T>::Type_t& rhs)
+  {
+    F.setup( llvm_create_value(rhs) );
+  }
 
   
   // RScalarREG& operator=( const RScalarJIT< typename JITType<T>::Type_t >& rhs) {

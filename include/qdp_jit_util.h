@@ -4,6 +4,9 @@
 namespace QDP {
 
 
+  //template<class T> ParamRef jit_add_param();
+
+  
   void jit_util_ringBuffer_init();
   int  jit_util_ringBuffer_allocate( size_t size , const void *hstPtr );
 
@@ -28,7 +31,7 @@ namespace QDP {
   template<class T>
   typename JITType<T>::Type_t stack_alloc()
   {
-    int type_size = JITType<T>::Type_t::Size_t;
+    int type_size = JITType<T>::Type_t::ScalarSize_t;
     llvm::Value * ptr = llvm_alloca( llvm_get_type< typename WordType< T >::Type_t >() , type_size );
       
     typename JITType<T>::Type_t t_jit_stack;
@@ -174,10 +177,10 @@ namespace QDP {
     template<class C>
     JitStackArray( const C& c )
     {
-      // QDPIO::cout << "Size = " << T_jit::Size_t << "\n";
+      // QDPIO::cout << "Size = " << T_jit::ScalarSize_t << "\n";
       // QDPIO::cout << "N    = " << N << "\n";
 
-      ptr = llvm_alloca( llvm_get_type<W>() , N * T_jit::Size_t );
+      ptr = llvm_alloca( llvm_get_type<W>() , N * T_jit::ScalarSize_t );
 
       array.setup( ptr , JitDeviceLayout::Scalar );
 
@@ -188,10 +191,10 @@ namespace QDP {
 
     JitStackArray()
     {
-      // QDPIO::cout << "Size = " << T_jit::Size_t << "\n";
+      // QDPIO::cout << "Size = " << T_jit::ScalarSize_t << "\n";
       // QDPIO::cout << "N    = " << N << "\n";
 
-      ptr = llvm_alloca( llvm_get_type<W>() , N * T_jit::Size_t );
+      ptr = llvm_alloca( llvm_get_type<W>() , N * T_jit::ScalarSize_t );
 
       array.setup( ptr , JitDeviceLayout::Scalar );
     }
@@ -238,10 +241,10 @@ namespace QDP {
     template<class C>
     JitStackMatrix( const C& c )
     {
-      // QDPIO::cout << "Size = " << T_jit::Size_t << "\n";
+      // QDPIO::cout << "Size = " << T_jit::ScalarSize_t << "\n";
       // QDPIO::cout << "N    = " << N << "\n";
 
-      ptr = llvm_alloca( llvm_get_type<W>() , N * N * T_jit::Size_t );
+      ptr = llvm_alloca( llvm_get_type<W>() , N * N * T_jit::ScalarSize_t );
 
       array.setup( ptr , JitDeviceLayout::Scalar );
 
@@ -253,10 +256,10 @@ namespace QDP {
 
     JitStackMatrix()
     {
-      // QDPIO::cout << "Size = " << T_jit::Size_t << "\n";
+      // QDPIO::cout << "Size = " << T_jit::ScalarSize_t << "\n";
       // QDPIO::cout << "N    = " << N << "\n";
 
-      ptr = llvm_alloca( llvm_get_type<W>() , N * N * T_jit::Size_t );
+      ptr = llvm_alloca( llvm_get_type<W>() , N * N * T_jit::ScalarSize_t );
 
       array.setup( ptr , JitDeviceLayout::Scalar );
     }
@@ -293,14 +296,14 @@ namespace QDP {
     template<class C>
     JitSharedArray( const C& c )
     {
-      // QDPIO::cout << "Size = " << T_jit::Size_t << "\n";
+      // QDPIO::cout << "Size = " << T_jit::ScalarSize_t << "\n";
       // QDPIO::cout << "N    = " << N << "\n";
 
 #if 1
       llvm::Value * ptr_base = llvm_get_shared_ptr( llvm_get_type<W>() );
       llvm::Value * ptr_adv = llvm_createGEP( ptr_base ,
 					      llvm_mul( llvm_call_special_tidx() ,
-							llvm_create_value( N * T_jit::Size_t )
+							llvm_create_value( N * T_jit::ScalarSize_t )
 							)
 					      );
       array.setup( ptr_adv , JitDeviceLayout::Scalar );
@@ -318,14 +321,14 @@ namespace QDP {
 
     JitSharedArray()
     {
-      // QDPIO::cout << "Size = " << T_jit::Size_t << "\n";
+      // QDPIO::cout << "Size = " << T_jit::ScalarSize_t << "\n";
       // QDPIO::cout << "N    = " << N << "\n";
 
 #if 1
       llvm::Value * ptr_base = llvm_get_shared_ptr( llvm_get_type<W>() );
       llvm::Value * ptr_adv = llvm_createGEP( ptr_base ,
 					      llvm_mul( llvm_call_special_tidx() ,
-							llvm_create_value( N * T_jit::Size_t )
+							llvm_create_value( N * T_jit::ScalarSize_t )
 							)
 					      );
       array.setup( ptr_adv , JitDeviceLayout::Scalar );
@@ -368,14 +371,14 @@ namespace QDP {
     template<class C>
     JitSharedMatrix( const C& c )
     {
-      // QDPIO::cout << "Size = " << T_jit::Size_t << "\n";
+      // QDPIO::cout << "Size = " << T_jit::ScalarSize_t << "\n";
       // QDPIO::cout << "N    = " << N << "\n";
 
       llvm::Value * ptr_base = llvm_get_shared_ptr( llvm_get_type<W>() );
 
       llvm::Value * ptr_adv = llvm_createGEP( ptr_base ,
 					      llvm_mul( llvm_call_special_tidx() ,
-							llvm_create_value( N * N * T_jit::Size_t )
+							llvm_create_value( N * N * T_jit::ScalarSize_t )
 							)
 					      );
       
@@ -389,14 +392,14 @@ namespace QDP {
 
     JitSharedMatrix()
     {
-      // QDPIO::cout << "Size = " << T_jit::Size_t << "\n";
+      // QDPIO::cout << "Size = " << T_jit::ScalarSize_t << "\n";
       // QDPIO::cout << "N    = " << N << "\n";
 
       llvm::Value * ptr_base = llvm_get_shared_ptr( llvm_get_type<W>() );
       
       llvm::Value * ptr_adv = llvm_createGEP( ptr_base ,
 					      llvm_mul( llvm_call_special_tidx() ,
-							llvm_create_value( N * N * T_jit::Size_t )
+							llvm_create_value( N * N * T_jit::ScalarSize_t )
 							)
 					      );
       

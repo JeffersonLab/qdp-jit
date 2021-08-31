@@ -245,6 +245,14 @@ struct WordType<PSeed<T1> >
   typedef typename WordType<T1>::Type_t  Type_t;
 };
 
+
+template<class T1>
+struct ScalarType<PSeed<T1> >
+{
+  typedef PSeed< typename ScalarType<T1>::Type_t > Type_t;
+};
+
+  
 // Fixed Precision versions (do these even make sense? )
 
 template<class T1>

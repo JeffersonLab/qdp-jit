@@ -544,7 +544,7 @@ public:
 
 
 
-  
+#if 0  
 template<class T>
 struct LeafFunctor<QDPSubType<T,OLattice<T> >, ParamLeaf>
 {
@@ -559,7 +559,6 @@ struct LeafFunctor<QDPSubType<T,OLattice<T> >, ParamLeaf>
 };
 
 
-#if 0
 template<class T>
 struct LeafFunctor<QDPSubType<T,OScalar<T> >, ParamLeaf>
 {

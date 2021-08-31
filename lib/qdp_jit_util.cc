@@ -178,8 +178,6 @@ namespace QDP {
 
 
 
-
-
   void jit_get_function(JitFunction& f)
   {
     llvm_exit();
@@ -396,12 +394,22 @@ namespace QDP {
       return;
 
     void (*FP)(int,void*) = (void (*)(int,void*))(intptr_t)function.get_function();
+
+    // std::cout << args.size() << std::endl;
+    // std::cout << args[0].i32 << std::endl;
+    // std::cout << args[1].ptr << " " << ((size_t)args[1].ptr)%64 << std::endl;
+    // std::cout << args[2].ptr << " " << ((size_t)args[2].ptr)%64 << std::endl;
+    // std::cout << args[3].ptr << " " << ((size_t)args[3].ptr)%64 << std::endl;
+
+    QDPIO::cout << "dispatch th_count = " << th_count << std::endl;
     
+    for ( int i = 0 ; i < th_count ; i++ )
+      FP( i , args.data() );
     
-#if 1
+#if 0
     //#pragma omp parallel
 #pragma omp for
-    for ( int i = 0 ; i < th_count ; i++ )
+    for ( int i = 0 ; i < th_count/8 ; i++ )
       {
 	FP( i , args.data() );
       }

@@ -29,13 +29,13 @@ namespace QDP {
     // // For tuning
     // function.set_dest_id( dest.getId() );
     // function.set_enable_tuning();
-  
+
     int th_count = s.numSiteTable();
-		
-    JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
-  
+
+    WorkgroupGuardExec workgroupGuardExec(th_count);
+
     std::vector<QDPCache::ArgKey> ids;
-    ids.push_back( jit_th_count.get_id() );
+    workgroupGuardExec.check(ids);
     ids.push_back( s.getIdSiteTable() );
     ids.push_back( d_id );
     for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
@@ -68,35 +68,38 @@ namespace QDP {
       }
     
     llvm_start_new_function("extract", __PRETTY_FUNCTION__ );
-
-    ParamRef p_th_count   = llvm_add_param<int>();
+    WorkgroupGuard workgroupGuard;
     ParamRef p_site_table = llvm_add_param<int*>();
 
-    typedef typename WordType<T>::Type_t TWT;
-    ParamRef p_odata      = llvm_add_param< TWT* >();  // output array
 
-    ParamLeaf param_leaf;
+    OLatticeJIT< typename JITType<T >::Type_t > odata  ( llvm_add_param< typename WordType<T >::Type_t* >());
 
-    typedef typename LeafFunctor<OLattice<T2>, ParamLeaf>::Type_t  FuncRet_t;
-    FuncRet_t src_jit(forEach(src, param_leaf, TreeCombine()));
+    OLatticeJIT< typename JITType< typename ScalarType<T2>::Type_t >::Type_t > src_jit( llvm_add_param< typename WordType<T2>::Type_t* >());
 
-    OLatticeJIT<typename JITType<T>::Type_t> odata( p_odata );   // want scalar access later
-
-    llvm::Value * r_th_count     = llvm_derefParam( p_th_count );
-
+    
     llvm::Value* r_idx_thread = llvm_thread_idx();
 
-    llvm_cond_exit( llvm_ge( r_idx_thread , r_th_count ) );
+    workgroupGuard.check(r_idx_thread);
 
     llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
 
-    typename REGType< typename JITType<T>::Type_t >::Type_t in_data_reg;   
-    in_data_reg.setup( src_jit.elem( JitDeviceLayout::Coalesced , r_idx ) );
-      
+    typename REGType< typename JITType<T>::Type_t >::Type_t in_data_reg;
+
+#if defined(QDP_BACKEND_CUDA) || defined(QDP_BACKEND_ROCM)
+    in_data_reg.setup( src_jit.elem( JitDeviceLayout::Coalesced            , r_idx ) );
+#elif defined(QDP_BACKEND_AVX)
+    in_data_reg.setup( src_jit.elem( JitDeviceLayout::Coalesced_scalar_idx , r_idx ) );
+#else
+#error "no backend specified"
+#endif
+    
     odata.elem( JitDeviceLayout::Scalar , r_idx_thread ) = in_data_reg;
 
     jit_get_function( function );
   }
 
+
+
+  
 } // QDP
 #endif

@@ -8,6 +8,8 @@ namespace QDP {
   void
   function_random_build( JitFunction& function, OLattice<T>& dest , Seed& seed_tmp, LatticeSeed& latSeed, LatticeSeed& skewedSeed)
   {
+    QDPIO::cout << "n.i.: function_random_build\n";
+#if 0
     if (ptx_db::db_enabled)
       {
 	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
@@ -66,6 +68,7 @@ namespace QDP {
     save.end();
   
     jit_get_function( function );
+#endif
   }
 
 

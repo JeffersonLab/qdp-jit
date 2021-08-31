@@ -165,6 +165,169 @@ private:
 };
 
 
+
+
+
+
+
+
+
+template<class T> class WordVec
+{
+public:
+  //  enum { Size = 1 };
+  
+  WordVec() {}
+
+  
+  ~WordVec() {}
+
+  //---------------------------------------------------------
+  //! construct dest = const
+  
+  WordVec(const typename WordType<T>::Type_t& rhs) : F(rhs) {}
+
+  //! construct dest = rhs
+  template<class T1>
+  WordVec(const WordVec<T1>& rhs) : F(rhs.elem()) {}
+
+  //! construct dest = rhs
+  // template<class T1>
+  // WordVec(const T1& rhs) : F(rhs) {}
+
+  //---------------------------------------------------------
+#if 0
+  //! dest = const
+  /*! Fill with a constant. Will be promoted to underlying word type */
+  inline
+  WordVec& operator=(const typename WordVecType<T>::Type_t& rhs)
+    {
+      elem() = rhs;
+      return *this;
+    }
+#endif
+
+  //! WordVec = WordVec
+  /*! Set equal to another WordVec */
+  template<class T1>
+   inline
+  WordVec& operator=(const WordVec<T1>& rhs) 
+    {
+      elem() = rhs.elem();
+      return *this;
+    }
+
+  //! WordVec += WordVec
+  template<class T1>
+   inline
+  WordVec& operator+=(const WordVec<T1>& rhs) 
+    {
+      elem() += rhs.elem();
+      return *this;
+    }
+
+  //! WordVec -= WordVec
+  template<class T1>
+   inline
+  WordVec& operator-=(const WordVec<T1>& rhs) 
+    {
+      elem() -= rhs.elem();
+      return *this;
+    }
+
+  //! WordVec *= WordVec
+  template<class T1>
+   inline
+  WordVec& operator*=(const WordVec<T1>& rhs) 
+    {
+      elem() *= rhs.elem();
+      return *this;
+    }
+
+  //! WordVec /= WordVec
+  template<class T1>
+   inline
+  WordVec& operator/=(const WordVec<T1>& rhs) 
+    {
+      elem() /= rhs.elem();
+      return *this;
+    }
+
+  //! WordVec %= WordVec
+  template<class T1>
+   inline
+  WordVec& operator%=(const WordVec<T1>& rhs) 
+    {
+      elem() %= rhs.elem();
+      return *this;
+    }
+
+  //! WordVec |= WordVec
+  template<class T1>
+   inline
+  WordVec& operator|=(const WordVec<T1>& rhs) 
+    {
+      elem() |= rhs.elem();
+      return *this;
+    }
+
+  //! WordVec &= WordVec
+  template<class T1>
+   inline
+  WordVec& operator&=(const WordVec<T1>& rhs) 
+    {
+      elem() &= rhs.elem();
+      return *this;
+    }
+
+  //! WordVec ^= WordVec
+  template<class T1>
+   inline
+  WordVec& operator^=(const WordVec<T1>& rhs) 
+    {
+      elem() ^= rhs.elem();
+      return *this;
+    }
+
+  //! WordVec <<= WordVec
+  template<class T1>
+   inline
+  WordVec& operator<<=(const WordVec<T1>& rhs) 
+    {
+      elem() <<= rhs.elem();
+      return *this;
+    }
+
+  //! WordVec >>= WordVec
+  template<class T1>
+   inline
+  WordVec& operator>>=(const WordVec<T1>& rhs) 
+    {
+      elem() >>= rhs.elem();
+      return *this;
+    }
+
+
+  //! Do deep copies here
+   WordVec(const WordVec& a): F(a.F) {}
+
+public:
+   T& elem() {return F;}
+   const T& elem() const {return F;}
+
+private:
+  T F;
+};
+
+
+
+
+
+
+
+
+  
+
 template<class T>
 struct FirstWord<Word<T> >
 {
@@ -180,6 +343,13 @@ template<class T>
 struct JITType<Word<T> >
 {
   typedef WordJIT<T>  Type_t;
+};
+
+
+template<class T>
+struct JITType<WordVec<T> >
+{
+  typedef WordVecJIT<T>  Type_t;
 };
 
 
@@ -269,6 +439,28 @@ struct WordType<Word<T> >
 {
   typedef typename WordType<T>::Type_t  Type_t;
 };
+
+template<class T>
+struct WordType<WordVec<T> > 
+{
+  typedef typename WordType<T>::Type_t  Type_t;
+};
+
+
+
+template<class T>
+struct ScalarType<Word<T> > 
+{
+  typedef Word<T> Type_t;
+};
+
+template<class T>
+struct ScalarType<WordVec<T> > 
+{
+  typedef Word<T> Type_t;
+};
+
+
 
 // Fixed types
 template<class T> 

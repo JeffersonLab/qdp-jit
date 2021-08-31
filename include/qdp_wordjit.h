@@ -16,7 +16,7 @@ namespace QDP {
   class WordJIT 
   {
   public:
-    enum {Size_t = 1};
+    enum {ScalarSize_t = 1};
 
     // Default constructing should be possible
     // then there is no need for MPL index when
@@ -32,17 +32,6 @@ namespace QDP {
     }
 
     
-    llvm::Value* get_base() const
-    {
-      if (!setup_m)
-	{
-	  QDPIO::cerr << "internal error: WordJIT not setup but requesting base" << std::endl;
-	  QDP_abort(1);
-	}
-      return r_base;
-    }
-    
-
 
     template<class T1>
     void operator=(const WordREG<T1>& s1) {
@@ -180,9 +169,183 @@ namespace QDP {
   };
 
 
+
+
+  template<class T>
+  class WordVecJIT 
+  {
+  public:
+    enum {ScalarSize_t = 1};
+
+    // Default constructing should be possible
+    // then there is no need for MPL index when
+    // construction a PMatrix<T,N>
+    WordVecJIT(): setup_m(false)
+    {
+    }
+
+    void setup( llvm::Value * base_m , JitDeviceLayout lay , IndexDomainVector args ) {
+      r_base = base_m;
+      offset = datalayout( lay , args );
+      setup_m = true;
+    }
+
+    
+
+    template<class T1>
+    void operator=(const WordREG<T1>& s1) {
+      assert(setup_m);
+      llvm_store_ptr_idx( llvm_fill_vector( s1.get_val() ) , r_base , offset );
+    }
+
+
+    template<class T1>
+    void operator=(const WordVecREG<T1>& s1) {
+      assert(setup_m);
+      llvm_store_ptr_idx( s1.get_val() , r_base , offset );
+    }
+
+    
+
+    //! WordVecJIT += WordVecJIT
+    template<class T1>
+    inline
+    WordVecJIT& operator+=(const WordVecREG<T1>& rhs) 
+    {
+      llvm::Value * tmp = llvm_load_ptr_idx( r_base , offset );
+      llvm::Value * tmp2 = llvm_add( tmp , rhs.get_val() );
+      llvm_store_ptr_idx( tmp2 , r_base , offset );
+      return *this;
+    }
+
+    //! WordVecJIT -= WordVecJIT
+    template<class T1>
+    inline
+    WordVecJIT& operator-=(const WordVecREG<T1>& rhs) 
+    {
+      llvm::Value * tmp = llvm_load_ptr_idx( r_base , offset );
+      llvm::Value * tmp2 = llvm_sub( tmp , rhs.get_val() );
+      llvm_store_ptr_idx( tmp2 , r_base , offset );
+      return *this;
+    }
+
+    //! WordVecJIT *= WordVecJIT
+    template<class T1>
+    inline
+    WordVecJIT& operator*=(const WordVecREG<T1>& rhs) 
+    {
+      llvm::Value * tmp = llvm_load_ptr_idx( r_base , offset );
+      llvm::Value * tmp2 = llvm_mul( tmp , rhs.get_val() );
+      llvm_store_ptr_idx( tmp2 , r_base , offset );
+      return *this;
+    }
+
+    //! WordVecJIT /= WordVecJIT
+    template<class T1>
+    inline
+    WordVecJIT& operator/=(const WordVecREG<T1>& rhs) 
+    {
+      llvm::Value * tmp = llvm_load_ptr_idx( r_base , offset );
+      llvm::Value * tmp2 = llvm_div( tmp , rhs.get_val() );
+      llvm_store_ptr_idx( tmp2 , r_base , offset );
+      return *this;
+    }
+
+    //! WordVecJIT %= WordVecJIT
+    template<class T1>
+    inline
+    WordVecJIT& operator%=(const WordVecREG<T1>& rhs) 
+    {
+      llvm::Value * tmp = llvm_load_ptr_idx( r_base , offset );
+      llvm::Value * tmp2 = llvm_rem( tmp , rhs.get_val() );
+      llvm_store_ptr_idx( tmp2 , r_base , offset );
+      return *this;
+    }
+
+    //! WordVecJIT |= WordVecJIT
+    template<class T1>
+    inline
+    WordVecJIT& operator|=(const WordVecREG<T1>& rhs) 
+    {
+      llvm::Value * tmp = llvm_load_ptr_idx( r_base , offset );
+      llvm::Value * tmp2 = llvm_or( tmp , rhs.get_val() );
+      llvm_store_ptr_idx( tmp2 , r_base , offset );
+      return *this;
+    }
+
+    //! WordVecJIT &= WordVecJIT
+    template<class T1>
+    inline
+    WordVecJIT& operator&=(const WordVecREG<T1>& rhs) 
+    {
+      llvm::Value * tmp = llvm_load_ptr_idx( r_base , offset );
+      llvm::Value * tmp2 = llvm_and( tmp , rhs.get_val() );
+      llvm_store_ptr_idx( tmp2 , r_base , offset );
+      return *this;
+    }
+
+    //! WordVecJIT ^= WordVecJIT
+    template<class T1>
+    inline
+    WordVecJIT& operator^=(const WordVecREG<T1>& rhs) 
+    {
+      llvm::Value * tmp = llvm_load_ptr_idx( r_base , offset );
+      llvm::Value * tmp2 = llvm_xor( tmp , rhs.get_val() );
+      llvm_store_ptr_idx( tmp2 , r_base , offset );
+      return *this;
+    }
+
+    //! WordVecJIT <<= WordVecJIT
+    template<class T1>
+    inline
+    WordVecJIT& operator<<=(const WordVecREG<T1>& rhs) 
+    {
+      llvm::Value * tmp = llvm_load_ptr_idx( r_base , offset );
+      llvm::Value * tmp2 = llvm_shl( tmp , rhs.get_val() );
+      llvm_store_ptr_idx( tmp2 , r_base , offset );
+      return *this;
+    }
+
+    //! WordVecJIT >>= WordVecJIT
+    template<class T1>
+    inline
+    WordVecJIT& operator>>=(const WordVecREG<T1>& rhs) 
+    {
+      llvm::Value * tmp = llvm_load_ptr_idx( r_base , offset );
+      llvm::Value * tmp2 = llvm_shr( tmp , rhs.get_val() );
+      llvm_store_ptr_idx( tmp2 , r_base , offset );
+      return *this;
+    }
+
+
+    llvm::Value * getBaseReg() const { assert(setup_m); return r_base; }
+    llvm::Value * getOffset() const { assert(setup_m); return offset; }
+
+  private:
+    //template<class T1>
+    //void operator=(const WordVecJIT<T1>& s1);
+    //void operator=(const WordVecJIT& s1);
+
+    llvm::Value *     r_base;
+    llvm::Value *     offset;
+    // llvm::Value *    offset_full;
+    // llvm::Value *    offset_level;
+    bool setup_m;
+  };
+
+
+
+
+  
+
   template<class T, class Op>
   struct UnaryReturn<WordJIT<T>, Op> {
     typedef WordJIT<typename UnaryReturn<T, Op>::Type_t>  Type_t;
+  };
+
+  template<class T, class Op>
+  struct UnaryReturn<WordVecJIT<T>, Op> {
+    typedef WordVecJIT<typename UnaryReturn<T, Op>::Type_t>  Type_t;
   };
 
 
@@ -207,13 +370,33 @@ namespace QDP {
     return -ret.elem();
   }
 
+  
+  template<class T1>
+  inline typename UnaryReturn<WordVecREG<T1>, OpUnaryMinus>::Type_t
+  operator-(const WordVecJIT<T1>& l)
+  {
+    typename UnaryReturn<WordVecREG<T1>, OpUnaryMinus>::Type_t ret;
+    ret.setup(l);
+    return -ret.elem();
+  }
 
+  
+  // ***********
+  
   template<class T>
   struct REGType< WordJIT<T> >
   {
     typedef WordREG<typename REGType<T>::Type_t>  Type_t;
   };
 
+  template<class T>
+  struct REGType< WordVecJIT<T> >
+  {
+    typedef WordVecREG<typename REGType<T>::Type_t>  Type_t;
+  };
+
+  
+  // ***********
   
   template<class T>
   struct BASEType< WordJIT<T> >
@@ -221,6 +404,14 @@ namespace QDP {
     typedef Word<typename BASEType<T>::Type_t>  Type_t;
   };
 
+  template<class T>
+  struct BASEType< WordVecJIT<T> >
+  {
+    typedef WordVec<typename BASEType<T>::Type_t>  Type_t;
+  };
+  
+
+  // **********  
   
   template<class T> 
   struct WordType<WordJIT<T> >
@@ -228,6 +419,14 @@ namespace QDP {
     typedef T  Type_t;
   };
 
+  template<class T> 
+  struct WordType<WordVecJIT<T> >
+  {
+    typedef T  Type_t;
+  };
+
+
+  
 
   // Default binary(WordJIT,WordJIT) -> WordJIT
   template<class T1, class T2, class Op>
@@ -235,6 +434,13 @@ namespace QDP {
     typedef WordJIT<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
   };
 
+  template<class T1, class T2, class Op>
+  struct BinaryReturn<WordVecJIT<T1>, WordVecJIT<T2>, Op> {
+    typedef WordVecJIT<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
+  };
+
+
+  
 
   template<class T, class T1, class T2> 
   inline
@@ -247,6 +453,14 @@ namespace QDP {
     ifCopy.end();
   }
 
+  template<class T, class T1, class T2> 
+  inline
+  void copymask(WordVecJIT<T>& d, const WordVecREG<T1>& mask, const WordVecREG<T2>& s1)
+  {
+    QDPIO::cout << "copymask not yet implemented\n";
+  }
+
+  
 
 
   inline void 
@@ -273,6 +487,35 @@ namespace QDP {
     llvm_store_ptr_idx( llvm_create_value( 0 ) , dest.getBaseReg() , dest.getOffset() );
   }
 
+
+  // *****************
+
+  inline void 
+  zero_rep(WordVecJIT<double> dest)
+  {
+    llvm_store_ptr_idx( llvm_fill_vector( llvm_create_value( 0.0 ) ) , dest.getBaseReg() , dest.getOffset() );
+  }
+
+  inline void 
+  zero_rep(WordVecJIT<jit_half_t> dest)
+  {
+    llvm_store_ptr_idx( llvm_fill_vector( llvm_create_value( 0.0 ) ) , dest.getBaseReg() , dest.getOffset() );
+  }
+
+  inline void 
+  zero_rep(WordVecJIT<float> dest)
+  {
+    llvm_store_ptr_idx( llvm_fill_vector( llvm_create_value( 0.0 ) ) , dest.getBaseReg() , dest.getOffset() );
+  }
+
+  inline void 
+  zero_rep(WordVecJIT<int> dest)
+  {
+    llvm_store_ptr_idx( llvm_fill_vector( llvm_create_value( 0.0 ) ) , dest.getBaseReg() , dest.getOffset() );
+  }
+
+
+  
   
   template<class T, class T1, class T2, class T3>
   inline void
@@ -291,6 +534,15 @@ namespace QDP {
     skewed_seed = sk * seed_mult;
   }
 
+
+  template<class T, class T1, class T2, class T3>
+  inline void
+  fill_random_jit(WordVecJIT<T> d, T1 seed, T2 skewed_seed, const T3& seed_mult)
+  {
+    QDPIO::cout << "fill_random_jit not yet implemented\n";
+  }
+
+  
 
 
 } // namespace QDP

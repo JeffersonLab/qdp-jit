@@ -285,12 +285,23 @@ XMLWriter& operator<<(XMLWriter& xml, const PMatrix<T,N,C>& d)
 // Traits classes 
 //-----------------------------------------------------------------------------
 
+
 // Underlying word type
 template<class T1, int N, template<class,int> class C>
 struct WordType<PMatrix<T1,N,C> > 
 {
   typedef typename WordType<T1>::Type_t  Type_t;
 };
+
+
+
+template<class T1, int N, template<class,int> class C>
+struct ScalarType< PMatrix<T1, N, C> >
+{
+  typedef PMatrix< typename ScalarType<T1>::Type_t, N, C > Type_t;
+};
+
+
 
 // Fixed Precision
 template<class T1, int N, template<class,int> class C>

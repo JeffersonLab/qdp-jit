@@ -558,6 +558,7 @@ void read(XMLReader& xml, const string& xpath, RComplex<T>& d)
 // Traits classes 
 //-----------------------------------------------------------------------------
 
+
 // Underlying word type
 template<class T>
 struct WordType<RScalar<T> > 
@@ -570,6 +571,20 @@ struct WordType<RComplex<T> >
 {
   typedef typename WordType<T>::Type_t  Type_t;
 };
+
+
+template<class T> 
+struct ScalarType<RScalar<T> >
+{
+  typedef RScalar<typename ScalarType<T>::Type_t>  Type_t;
+};
+
+template<class T> 
+struct ScalarType<RComplex<T> >
+{
+  typedef RComplex<typename ScalarType<T>::Type_t>  Type_t;
+};
+
 
 // Fixed types
 template<class T> 

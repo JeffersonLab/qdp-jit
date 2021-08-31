@@ -415,6 +415,18 @@ namespace QDP {
 	    size_t val = (size_t)((double)(f) * mul);
 	    jit_config_set_pool_size(val);
 	  }
+	else if (strcmp((*argv)[i], "-opt-inline")==0) 
+	  {
+	    int active;
+	    sscanf((*argv)[++i], "%d", &active);
+	    jit_config_set_inline( active != 0 );
+	  }
+	else if (strcmp((*argv)[i], "-opt-instcombine")==0) 
+	  {
+	    int active;
+	    sscanf((*argv)[++i], "%d", &active);
+	    jit_config_set_instcombine( active != 0 );
+	  }
 	else if (strcmp((*argv)[i], "-gpudirect")==0) 
 	  {
 	    jit_config_set_gpu_direct(true);

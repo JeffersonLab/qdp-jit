@@ -482,7 +482,14 @@ struct LeafFunctor<QDPType<T,OLattice<T> >, ParamLeaf>
   typedef TypeA_t  Type_t;
   inline static Type_t apply(const QDPType<T,OLattice<T> > &a, const ParamLeaf& p)
   {
+    //ParamRef base_addr = jit_add_param< typename InnerType<T>::Type_t >();
+
+#if defined (QDP_BACKEND_AVX)
+    ParamRef    base_addr = llvm_add_vecparam< typename WordType<T>::Type_t * >();
+#else
     ParamRef    base_addr = llvm_add_param< typename WordType<T>::Type_t * >();
+#endif
+    
     return Type_t( base_addr );
   }
 };

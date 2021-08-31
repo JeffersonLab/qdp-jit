@@ -243,12 +243,22 @@ XMLWriter& operator<<(XMLWriter& xml, const PVector<T,N,C>& d)
 // Traits classes 
 //-----------------------------------------------------------------------------
 
+
+  
 // Underlying word type
 template<class T1, int N, template<class,int> class C>
 struct WordType<PVector<T1,N,C> > 
 {
   typedef typename WordType<T1>::Type_t  Type_t;
 };
+
+
+template<class T1, int N, template<class, int> class C> 
+struct ScalarType< PVector<T1,N,C> >
+{
+  typedef PVector< typename ScalarType<T1>::Type_t, N, C> Type_t;
+};
+
 
 template<class T1, int N, template<class, int> class C> 
 struct SinglePrecType< PVector<T1,N,C> >

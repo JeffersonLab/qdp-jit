@@ -3,19 +3,6 @@
 
 namespace QDP {
 
-template<class T>
-struct LeafFunctor<QDPTypeJIT<T,OLatticeJIT<T> >, ViewLeaf>
-{
-  typedef typename REGType<T>::Type_t Type_t;
-  inline static
-  Type_t apply(const QDPTypeJIT<T,OLatticeJIT<T> > & s, const ViewLeaf& v)
-  {
-    Type_t reg;
-    reg.setup( s.elem( v.getLayout() , v.getIndex() ) );
-    return reg;
-  }
-};
-
 
 template<class T>
 struct LeafFunctor<OScalarJIT<T>, ViewLeaf>

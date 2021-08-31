@@ -5,6 +5,10 @@ namespace QDP
 {
   namespace
   {
+    // LLVM opt
+    bool llvm_opt_instcombine = true;
+    bool llvm_opt_inline = false;
+    
     // Memory Pool
     size_t thread_stack = 512 * sizeof(REAL);
     bool use_total_pool_size = false;
@@ -68,6 +72,13 @@ namespace QDP
   }
 
 
+  bool jit_config_get_instcombine() { return llvm_opt_instcombine; }
+  bool jit_config_get_inline()      { return llvm_opt_inline; }
+
+  void jit_config_set_instcombine(bool b) { llvm_opt_instcombine = b; }
+  void jit_config_set_inline(bool b)      { llvm_opt_inline = b; }
+
+  
 #ifdef QDP_BACKEND_CUDA
   int  jit_config_get_CUDA_FTZ()   { return CUDA_FTZ; }
   void jit_config_set_CUDA_FTZ(int i)   { CUDA_FTZ = i; }

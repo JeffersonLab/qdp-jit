@@ -4,7 +4,7 @@
 namespace QDP
 {
 
-  enum class JitDeviceLayout { Coalesced , Scalar };
+  enum class JitDeviceLayout { Coalesced , Scalar , Coalesced_scalar_idx };
 
   class FnMapRsrc;
 
@@ -54,9 +54,13 @@ namespace QDP
   template<class T> class Word;
   template<class T> class WordJIT;
   template<class T> class WordREG;
-  class BASEWordJIT;
-  class BASEWordREG;
 
+  // WordVec
+  template<class T> class WordVec;
+  template<class T> class WordVecJIT;
+  template<class T> class WordVecREG;
+
+  
   // Reality
   template<class T> class RScalar;
   template<class T> class RComplex;
@@ -125,7 +129,8 @@ namespace QDP
   template<class T> struct WordType;
   template<class T> struct SinglePrecType;
   template<class T> struct DoublePrecType;
-
+  template<class T> struct ScalarType;
+  
   // Empty leaf functor tag
   struct ElemLeaf;
 

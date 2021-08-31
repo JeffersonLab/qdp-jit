@@ -70,6 +70,13 @@ struct WordType<PColorVector<T1,N> >
 };
 
 
+template<class T1, int N>
+struct ScalarType< PColorVector<T1,N> >
+{
+  typedef PColorVector< typename ScalarType<T1>::Type_t, N> Type_t;
+};
+
+
 
 template<class T1, int N>
 struct SinglePrecType< PColorVector<T1,N> >

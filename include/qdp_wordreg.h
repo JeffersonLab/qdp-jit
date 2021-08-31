@@ -8,7 +8,6 @@
 #define QDP_WORDREG_H
 
 
-
 namespace QDP {
 
 
@@ -22,13 +21,10 @@ namespace QDP {
     // construction a PMatrix<T,N>
     WordREG() {}
 
-    WordREG(int i): val(llvm_create_value(i)) {}
-    WordREG(double f): val(llvm_create_value(f)) {}
 
-    WordREG(const WordREG& rhs) {
-      //assert(rhs.get_val()->get_ever_assigned());      
+    WordREG(const WordREG& rhs)
+    {
       val = rhs.get_val();
-      //      setup_m=true;
     }
 
 
@@ -40,7 +36,6 @@ namespace QDP {
 
     void setup(llvm::Value * v) {
       val = llvm_cast( llvm_get_type<T>() , v );
-      //setup_m=true;
     }
 
     void setup(const WordJIT<T>& wj) {
@@ -49,7 +44,7 @@ namespace QDP {
     }
 
     void setup_value(const WordJIT<T>& wj) {
-      llvm::Value *val_j = wj.get_base();
+      llvm::Value *val_j = wj.getBaseReg();
       setup( val_j );
     }
 
@@ -188,10 +183,185 @@ namespace QDP {
     }
 
   private:
-    //    bool setup_m;
     llvm::Value *    val;
   };
 
+
+
+
+  template<class T>
+  class WordVecREG 
+  {
+  public:
+
+    // Default constructing should be possible
+    // then there is no need for MPL index when
+    // construction a PMatrix<T,N>
+    WordVecREG() {}
+
+
+    WordVecREG(const WordVecREG& rhs)
+    {
+      val = rhs.get_val();
+    }
+
+
+    explicit WordVecREG(llvm::Value * rhs)
+    {
+      setup(rhs);
+    }
+
+
+    void setup(llvm::Value * v) {
+      //val = llvm_cast( llvm_get_type<T>() , v );
+      QDPIO::cout << "not doing cast in WordVecREG::setup\n";
+      val = v;
+    }
+
+    void setup(const WordVecJIT<T>& wj) {
+      llvm::Value *val_j = llvm_load_ptr_idx( wj.getBaseReg() , wj.getOffset() );
+      setup( val_j );
+    }
+
+    
+    llvm::Value *get_val() const { return val; }
+
+
+    WordVecREG& operator=(const WordVecREG& rhs) {
+      val = rhs.get_val();      
+      return *this;
+    }
+
+    template<class T1>
+    WordVecREG(const WordVecREG<T1>& rhs)
+    {
+      setup(rhs.get_val());
+    }
+
+    template<class T1>
+    inline
+    WordVecREG& operator=(const WordVecREG<T1>& rhs) 
+    {
+      setup(rhs.get_val());
+      return *this;
+    }
+
+
+    //! WordVecREG += WordVecREG
+    template<class T1>
+    inline
+    WordVecREG& operator+=(const WordVecREG<T1>& rhs) 
+    {
+      val = llvm_add( val , rhs.get_val() );
+      return *this;
+    }
+
+    //! WordVecREG -= WordVecREG
+    template<class T1>
+    inline
+    WordVecREG& operator-=(const WordVecREG<T1>& rhs) 
+    {
+      val = llvm_sub( val , rhs.get_val() );
+      return *this;
+    }
+
+    //! WordVecREG *= WordVecREG
+    template<class T1>
+    inline
+    WordVecREG& operator*=(const WordVecREG<T1>& rhs) 
+    {
+      val = llvm_mul( val , rhs.get_val() );
+      return *this;
+    }
+
+    //! WordVecREG /= WordVecREG
+    template<class T1>
+    inline
+    WordVecREG& operator/=(const WordVecREG<T1>& rhs) 
+    {
+      val = llvm_div( val , rhs.get_val() );
+      return *this;
+    }
+
+    //! WordVecREG %= WordVecREG
+    template<class T1>
+    inline
+    WordVecREG& operator%=(const WordVecREG<T1>& rhs) 
+    {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
+      val = llvm_mod( val , rhs.get_val() );
+      return *this;
+#endif
+    }
+
+    //! WordVecREG |= WordVecREG
+    template<class T1>
+    inline
+    WordVecREG& operator|=(const WordVecREG<T1>& rhs) 
+    {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
+      val = llvm_or( val , rhs.get_val() );
+      return *this;
+#endif
+    }
+
+    //! WordVecREG &= WordVecREG
+    template<class T1>
+    inline
+    WordVecREG& operator&=(const WordVecREG<T1>& rhs) 
+    {
+      val = llvm_and( val , rhs.get_val() );
+      return *this;
+    }
+
+    //! WordVecREG ^= WordVecREG
+    template<class T1>
+    inline
+    WordVecREG& operator^=(const WordVecREG<T1>& rhs) 
+    {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
+      val = llvm_xor( val , rhs.get_val() );
+      return *this;
+#endif
+    }
+
+    //! WordVecREG <<= WordVecREG
+    template<class T1>
+    inline
+    WordVecREG& operator<<=(const WordVecREG<T1>& rhs) 
+    {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
+      val = llvm_shl( val , rhs.get_val() );
+      return *this;
+#endif
+    }
+
+    //! WordVecREG >>= WordVecREG
+    template<class T1>
+    inline
+    WordVecREG& operator>>=(const WordVecREG<T1>& rhs) 
+    {
+  std::cout << __PRETTY_FUNCTION__ << ": entering\n";
+  QDP_error_exit("ni");
+#if 0
+      val = llvm_shr( val , rhs.get_val() );
+      return *this;
+#endif
+    }
+
+  private:
+    llvm::Value *    val;
+  };
+
+  
 
 
 
@@ -204,6 +374,12 @@ namespace QDP {
     typedef WordREG<T>  Type_t;
   };
 
+  // template<class T>
+  // struct InternalScalar<WordVecREG<T> > {
+  //   typedef WordREG<T>  Type_t;
+  // };
+
+  
   template<class T>
   struct RealScalar<WordREG<T> > {
     typedef WordREG<typename RealScalar<T>::Type_t>  Type_t;
@@ -216,10 +392,22 @@ namespace QDP {
     typedef WordJIT<T>  Type_t;
   };
   
+  template<class T> 
+  struct JITType< WordVecREG<T> >
+  {
+    typedef WordVecJIT<T>  Type_t;
+  };
 
+  
 
   template<class T> 
   struct WordType<WordREG<T> >
+  {
+    typedef T  Type_t;
+  };
+
+  template<class T> 
+  struct WordType<WordVecREG<T> >
   {
     typedef T  Type_t;
   };
@@ -392,6 +580,152 @@ operator|(const WordREG<T1>& l, const WordREG<T2>& r)
   ret.setup( llvm_or( l.get_val() , r.get_val() ) );
   return ret;
 }
+
+
+
+
+// *************************************************
+
+
+
+  template<class T1, class T2>
+  inline typename BinaryReturn<WordVecREG<T1>, WordVecREG<T2>, OpAdd>::Type_t
+  operator+(const WordVecREG<T1>& l, const WordVecREG<T2>& r)
+  {
+    typename BinaryReturn<WordVecREG<T1>, WordVecREG<T2>, OpAdd>::Type_t ret;
+    ret.setup( llvm_add( l.get_val() , r.get_val() ) );
+    return ret;
+  }
+
+
+  template<class T1, class T2>
+  inline typename BinaryReturn<WordVecREG<T1>, WordVecREG<T2>, OpSubtract>::Type_t
+  operator-(const WordVecREG<T1>& l, const WordVecREG<T2>& r)
+  {
+    typename BinaryReturn<WordVecREG<T1>, WordVecREG<T2>, OpSubtract>::Type_t ret;
+    ret.setup( llvm_sub( l.get_val() , r.get_val() ) );
+    return ret;
+  }
+
+
+  template<class T1, class T2>
+  inline typename BinaryReturn<WordVecREG<T1>, WordVecREG<T2>, OpMultiply>::Type_t
+  operator*(const WordVecREG<T1>& l, const WordVecREG<T2>& r)
+  {
+    typename BinaryReturn<WordVecREG<T1>, WordVecREG<T2>, OpMultiply>::Type_t ret;
+    ret.setup( llvm_mul( l.get_val() , r.get_val() ) );
+    return ret;
+  }
+
+
+  template<class T1, class T2>
+  inline typename BinaryReturn<WordVecREG<T1>, WordVecREG<T2>, OpDivide>::Type_t
+  operator/(const WordVecREG<T1>& l, const WordVecREG<T2>& r)
+  {
+    typename BinaryReturn<WordVecREG<T1>, WordVecREG<T2>, OpDivide>::Type_t ret;
+    ret.setup( llvm_div( l.get_val() , r.get_val() ) );
+    return ret;
+  }
+
+
+  template<class T1>
+  inline typename UnaryReturn<WordVecREG<T1>, OpUnaryMinus>::Type_t
+  operator-(const WordVecREG<T1>& l)
+  {
+    typename UnaryReturn<WordVecREG<T1>, OpUnaryMinus>::Type_t ret;
+    ret.setup( llvm_neg( l.get_val() ) );
+    return ret;
+  }
+
+
+
+
+
+ template<class T1, class T2 >
+ struct BinaryReturn<WordVecREG<T1>, WordVecREG<T2>, OpLeftShift > {
+   typedef WordVecREG<typename BinaryReturn<T1, T2, OpLeftShift>::Type_t>  Type_t;
+ };
+ 
+
+template<class T1, class T2>
+inline typename BinaryReturn<WordVecREG<T1>, WordVecREG<T2>, OpLeftShift>::Type_t
+operator<<(const WordVecREG<T1>& l, const WordVecREG<T2>& r)
+{
+  typename BinaryReturn<WordVecREG<T1>, WordVecREG<T2>, OpLeftShift>::Type_t ret;
+  ret.setup( llvm_shl( l.get_val() , r.get_val() ) );
+  return ret;
+}
+
+
+
+ template<class T1, class T2 >
+ struct BinaryReturn<WordVecREG<T1>, WordVecREG<T2>, OpRightShift > {
+   typedef WordVecREG<typename BinaryReturn<T1, T2, OpRightShift>::Type_t>  Type_t;
+ };
+ 
+
+template<class T1, class T2>
+inline typename BinaryReturn<WordVecREG<T1>, WordVecREG<T2>, OpRightShift>::Type_t
+operator>>(const WordVecREG<T1>& l, const WordVecREG<T2>& r)
+{
+  typename BinaryReturn<WordVecREG<T1>, WordVecREG<T2>, OpRightShift>::Type_t ret;
+  ret.setup( llvm_shr( l.get_val() , r.get_val() ) );
+  return ret;
+}
+
+
+
+template<class T1, class T2 >
+inline typename BinaryReturn<WordVecREG<T1>, WordVecREG<T2>, OpMod>::Type_t
+operator%(const WordVecREG<T1>& l, const WordVecREG<T2>& r)
+{
+  typename BinaryReturn<WordVecREG<T1>, WordVecREG<T2>, OpMod>::Type_t ret;
+  ret.setup( llvm_rem( l.get_val() , r.get_val() ) );
+  return ret;
+}
+
+
+
+
+template<class T1, class T2 >
+inline typename BinaryReturn<WordVecREG<T1>, WordVecREG<T2>, OpBitwiseXor>::Type_t
+operator^(const WordVecREG<T1>& l, const WordVecREG<T2>& r)
+{
+  typename BinaryReturn<WordVecREG<T1>, WordVecREG<T2>, OpBitwiseXor>::Type_t ret;
+  ret.setup( llvm_xor( l.get_val() , r.get_val() ) );
+  return ret;
+}
+
+
+template<class T1, class T2 >
+inline typename BinaryReturn<WordVecREG<T1>, WordVecREG<T2>, OpBitwiseAnd>::Type_t
+operator&(const WordVecREG<T1>& l, const WordVecREG<T2>& r)
+{
+  typename BinaryReturn<WordVecREG<T1>, WordVecREG<T2>, OpBitwiseAnd>::Type_t ret;
+  ret.setup( llvm_and( l.get_val() , r.get_val() ) );
+  return ret;
+}
+
+
+
+
+
+template<class T1, class T2>
+inline typename BinaryReturn<WordVecREG<T1>, WordVecREG<T2>, OpBitwiseOr>::Type_t
+operator|(const WordVecREG<T1>& l, const WordVecREG<T2>& r)
+{
+  typename BinaryReturn<WordVecREG<T1>, WordVecREG<T2>, OpBitwiseOr>::Type_t ret;
+  ret.setup( llvm_or( l.get_val() , r.get_val() ) );
+  return ret;
+}
+
+
+
+
+
+// *************************************************
+
+
 
 
 

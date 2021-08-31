@@ -270,6 +270,15 @@ void read(XMLReader& xml, const string& path, PScalar<T>& d)
 // Traits classes 
 //-----------------------------------------------------------------------------
 
+
+template<class T>
+struct ScalarType<PScalar<T> >
+{
+  typedef PScalar< typename ScalarType<T>::Type_t > Type_t;
+};
+
+
+  
 // Underlying word type
 template<class T>
 struct WordType<PScalar<T> > 
