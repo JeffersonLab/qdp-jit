@@ -409,9 +409,9 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 
 
 #ifdef QDP_BACKEND_AVX
-    OScalar<T> peekLinearSite(int site) const
+    OScalar< typename ScalarType<T>::Type_t > peekLinearSite(int site) const
     {
-      OScalar<T> ret;
+      OScalar< typename ScalarType<T>::Type_t > ret;
 
       std::vector<void*> ptrs = QDP_get_global_cache().get_dev_ptrs( { this->getId() } );
 
@@ -1290,37 +1290,37 @@ struct UnaryReturn<OLattice<T>, FnPeekSite> {
 
 template<class T>
 struct UnaryReturn<OLattice<T>, FnSum > {
-  typedef OScalar<typename UnaryReturn<T, FnSum>::Type_t>  Type_t;
+  typedef OScalar<typename ScalarType< typename UnaryReturn<T, FnSum>::Type_t >::Type_t >  Type_t;
 };
 
 template<class T>
 struct UnaryReturn<OLattice<T>, FnGlobalMax> {
-  typedef OScalar<typename UnaryReturn<T, FnGlobalMax>::Type_t>  Type_t;
+  typedef OScalar<typename ScalarType< typename UnaryReturn<T, FnGlobalMax>::Type_t >::Type_t >  Type_t;
 };
 
 template<class T>
 struct UnaryReturn<OLattice<T>, FnGlobalMin> {
-  typedef OScalar<typename UnaryReturn<T, FnGlobalMin>::Type_t>  Type_t;
+  typedef OScalar<typename ScalarType< typename UnaryReturn<T, FnGlobalMin>::Type_t >::Type_t >  Type_t;
 };
 
 template<class T>
 struct UnaryReturn<OLattice<T>, FnSumMulti > {
-  typedef multi1d<OScalar<typename UnaryReturn<T, FnSumMulti>::Type_t> >  Type_t;
+  typedef multi1d<OScalar<typename ScalarType< typename UnaryReturn<T, FnSumMulti>::Type_t>::Type_t > >  Type_t;
 };
 
 template<class T>
 struct UnaryReturn<OLattice<T>, FnNorm2 > {
-  typedef OScalar<typename UnaryReturn<T, FnNorm2>::Type_t>  Type_t;
+  typedef OScalar<typename ScalarType< typename UnaryReturn<T, FnNorm2>::Type_t>::Type_t >  Type_t;
 };
 
 template<class T1, class T2>
 struct BinaryReturn<OLattice<T1>, OLattice<T2>, FnInnerProduct > {
-  typedef OScalar<typename BinaryReturn<T1, T2, FnInnerProduct>::Type_t>  Type_t;
+  typedef OScalar<typename ScalarType< typename BinaryReturn<T1, T2, FnInnerProduct>::Type_t>::Type_t >  Type_t;
 };
 
 template<class T1, class T2>
 struct BinaryReturn<OLattice<T1>, OLattice<T2>, FnInnerProductReal > {
-  typedef OScalar<typename BinaryReturn<T1, T2, FnInnerProductReal>::Type_t>  Type_t;
+  typedef OScalar<typename ScalarType< typename BinaryReturn<T1, T2, FnInnerProductReal>::Type_t>::Type_t >  Type_t;
 };
 
 template<class T>
@@ -1462,22 +1462,22 @@ struct TrinaryReturn<OLattice<T1>, OLattice<T2>, OLattice<T3>, FnColorContract> 
 // Global operations
 template<class T1, class T2>
 struct BinaryReturn<OLattice<T1>, OScalar<T2>, FnInnerProduct > {
-  typedef OScalar<typename BinaryReturn<T1, T2, FnInnerProduct>::Type_t>  Type_t;
+  typedef OScalar<typename ScalarType<typename BinaryReturn<T1, T2, FnInnerProduct>::Type_t>::Type_t>  Type_t;
 };
 
 template<class T1, class T2>
 struct BinaryReturn<OLattice<T1>, OScalar<T2>, FnInnerProductReal > {
-  typedef OScalar<typename BinaryReturn<T1, T2, FnInnerProductReal>::Type_t>  Type_t;
+  typedef OScalar<typename ScalarType<typename BinaryReturn<T1, T2, FnInnerProductReal>::Type_t>::Type_t>  Type_t;
 };
 
 template<class T1, class T2>
 struct BinaryReturn<OScalar<T1>, OLattice<T2>, FnInnerProduct > {
-  typedef OScalar<typename BinaryReturn<T1, T2, FnInnerProduct>::Type_t>  Type_t;
+  typedef OScalar<typename ScalarType<typename BinaryReturn<T1, T2, FnInnerProduct>::Type_t>::Type_t>  Type_t;
 };
 
 template<class T1, class T2>
 struct BinaryReturn<OScalar<T1>, OLattice<T2>, FnInnerProductReal > {
-  typedef OScalar<typename BinaryReturn<T1, T2, FnInnerProductReal>::Type_t>  Type_t;
+  typedef OScalar<typename ScalarType<typename BinaryReturn<T1, T2, FnInnerProductReal>::Type_t>::Type_t>  Type_t;
 };
 
 
