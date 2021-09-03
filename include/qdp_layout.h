@@ -128,7 +128,16 @@ namespace Layout
   const multi1d<int>& getIONodeGrid() QDP_CONST;
 
 
-
+#if QDP_USE_VNODE_LAYOUT == 1
+  multi1d<int> virtualNodeGeom();
+  multi1d<int> virtualNodeSubgridLattSize();
+  int virtualNodeSites();
+  int virtualNodeNumber();
+  void printVirtualNodeInfo();
+  void setVirtualNodeGeom(const multi1d<int>&);
+  void initVirtualNode();
+#endif
+  
 }
 
 //! Declaration of shift function object

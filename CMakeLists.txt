@@ -107,9 +107,9 @@ set(QDP_PRECISION "double" CACHE STRING "THe Base Precision: single or double (d
 set_property(CACHE QDP_PRECISION PROPERTY
 		   STRINGS single double) # For GUIs
 
-set(QDP_LAYOUT "cb2" CACHE STRING "The QDP layout: lexico, cb2, cb32, cb3d (default is cb2)")
+set(QDP_LAYOUT "cb2" CACHE STRING "The QDP layout: lexico, cb2, cb32, cb3d, vnode (default is cb2)")
 set_property(CACHE QDP_LAYOUT PROPERTY 
-		  STRINGS  lexico cb2 cb32 cb3d) # For GUIs
+		  STRINGS  lexico cb2 cb32 cb3d vnode) # For GUIs
 
 # NC, ND, NS
 set(QDP_ND 4 CACHE STRING "Number of Spacetime Dimension (default 4)")
@@ -202,8 +202,12 @@ elseif( ${qdpLayout} STREQUAL "cb3d")
   message( STATUS "QDP++: Enabling CB3D (3D checkerboarded ) Layout" )
   set(QDP_USE_CB3D_LAYOUT 1)
 
+elseif( ${qdpLayout} STREQUAL "vnode")
+  message( STATUS "QDP++: Enabling vnode (virtual node) Layout" )
+  set(QDP_USE_VNODE_LAYOUT 1)
+
 else()
-  message( ERROR "QDP++: Unknown layout. Please set either QDP_LAYOUT_LEXICO, QDP_LAYOUT_CB2, QDP_LAYOUT_CB3D or QDP_LAYOUT_CB32")
+  message( ERROR "QDP++: Unknown layout. Please set either QDP_LAYOUT_LEXICO, QDP_LAYOUT_CB2, QDP_LAYOUT_CB3D, QDP_LAYOUT_CB32 or QDP_LAYOUT_VNODE")
 endif()
 
 if( ${qdpPrecision} STREQUAL "single")

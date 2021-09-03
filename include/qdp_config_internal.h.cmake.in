@@ -104,6 +104,9 @@
 #cmakedefine QDP_NS				@QDP_NS@
 
 /* Use checkerboarded layout */
+#cmakedefine QDP_USE_VNODE_LAYOUT		@QDP_USE_VNODE_LAYOUT@
+
+/* Use checkerboarded layout */
 #cmakedefine QDP_USE_CB2_LAYOUT			@QDP_USE_CB2_LAYOUT@
 
 /* Use hypercube checkerboard layout */

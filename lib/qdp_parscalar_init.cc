@@ -476,6 +476,19 @@ namespace QDP {
 	    gpu_set_default_GPU(ngpu);
 	    std::cout << "Default GPU set to " << ngpu << "\n";
 	  }
+#if QDP_USE_VNODE_LAYOUT == 1
+	else if (strcmp((*argv)[i], "-vnodegeom")==0) 
+	  {
+	    multi1d<int> nrow(Nd);
+	    for(int j=0; j < Nd; j++) 
+	      {
+		int uu;
+		sscanf((*argv)[++i], "%d", &uu);
+		nrow[j] = uu;
+	      }
+	    Layout::setVirtualNodeGeom(nrow);
+	  }
+#endif
 	else if (strcmp((*argv)[i], "-geom")==0) 
 	  {
 	    setGeomP = true;

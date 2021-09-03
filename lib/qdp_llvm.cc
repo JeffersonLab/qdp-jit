@@ -1554,12 +1554,12 @@ namespace QDP
   {
     //llvm::PointerType::get( llvm::FixedVectorType::get( val->getType() , 8 ) , 0 ) );
     
-    llvm::Type * vec_type =  llvm::FixedVectorType::get( val->getType() , 8 );
+    llvm::Type * vec_type =  llvm::FixedVectorType::get( val->getType() , Layout::virtualNodeNumber() );
 
     llvm::Value *vec = Constant::getNullValue(vec_type);
 
     
-    for ( int i = 0 ; i < 8 ; ++i )
+    for ( int i = 0 ; i < Layout::virtualNodeNumber() ; ++i )
       vec = llvm_insert_element( vec, val , builder->getInt32(i) );
  
     return vec;
@@ -1660,17 +1660,17 @@ namespace QDP
 
 
   template<> ParamRef llvm_add_vecparam<float*>() {
-    vecParamType.push_back( llvm::PointerType::get( llvm::FixedVectorType::get( llvm::Type::getFloatTy(*TheContext) , 8 ) , 0 ) );
+    vecParamType.push_back( llvm::PointerType::get( llvm::FixedVectorType::get( llvm::Type::getFloatTy(*TheContext) , Layout::virtualNodeNumber() ) , 0 ) );
     return vecParamType.size()-1;
   }
 
   template<> ParamRef llvm_add_vecparam<int*>() {
-    vecParamType.push_back( llvm::PointerType::get( llvm::FixedVectorType::get( llvm::Type::getInt32Ty(*TheContext) , 8 ) , 0 ) );
+    vecParamType.push_back( llvm::PointerType::get( llvm::FixedVectorType::get( llvm::Type::getInt32Ty(*TheContext) , Layout::virtualNodeNumber() ) , 0 ) );
     return vecParamType.size()-1;
   }
   
   template<> ParamRef llvm_add_vecparam<bool*>() {
-    vecParamType.push_back( llvm::PointerType::get( llvm::FixedVectorType::get( llvm::Type::getInt1Ty(*TheContext) , 8 ) , 0 ) );
+    vecParamType.push_back( llvm::PointerType::get( llvm::FixedVectorType::get( llvm::Type::getInt1Ty(*TheContext) , Layout::virtualNodeNumber() ) , 0 ) );
     return vecParamType.size()-1;
   }
 

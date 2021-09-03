@@ -283,7 +283,7 @@ namespace QDP {
 	  {
 	    int th_count = s.numSiteTable();
 #if defined(QDP_BACKEND_AVX)
-	    th_count /= 8;
+	    th_count /= Layout::virtualNodeNumber();
 #endif
 	    
 	    WorkgroupGuardExec workgroupGuardExec(th_count);

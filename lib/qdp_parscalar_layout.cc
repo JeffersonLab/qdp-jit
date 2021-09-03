@@ -225,6 +225,13 @@ namespace QDP
 #if QDP_DEBUG >= 2
       QDP_info("Create default subsets");
 #endif
+
+#if QDP_USE_VNODE_LAYOUT == 1
+      // Set vnode default
+      initVirtualNode();
+      printVirtualNodeInfo();
+#endif
+
       // Default set and subsets
       initDefaultSets();
 
@@ -758,6 +765,81 @@ namespace QDP
     }
   }
 
+#elif QDP_USE_VNODE_LAYOUT == 1
+
+#warning "Using a virtual node layout"
+
+  namespace Layout
+  {
+    int linearSiteIndex(const multi1d<int>& coord)
+    {
+      multi1d<int> local_coord(Nd);
+      multi1d<int> vnode_coord(Nd);
+      multi1d<int> vnode_site_coord(Nd);
+
+      for(int i=0; i < coord.size(); ++i)
+	local_coord[i] = coord[i] % Layout::subgridLattSize()[i];
+
+      for(int i=0; i < coord.size(); ++i)
+	vnode_coord[i] = local_coord[i] / Layout::virtualNodeSubgridLattSize()[i];
+
+      for(int i=0; i < coord.size(); ++i)
+	vnode_site_coord[i] = local_coord[i] % Layout::virtualNodeSubgridLattSize()[i];
+    
+      int inner_vnode = local_site(vnode_coord, Layout::virtualNodeGeom());
+
+      int outer_vnode = local_site(vnode_site_coord, Layout::virtualNodeSubgridLattSize());
+
+      return outer_vnode * Layout::virtualNodeNumber() + inner_vnode;
+    }
+
+
+    multi1d<int> siteCoords(int node, int linear)
+    {
+      multi1d<int> coord = Layout::getLogicalCoordFrom(node);
+
+      coord *= Layout::subgridLattSize();
+    
+      int outer_vnode  = linear / Layout::virtualNodeNumber();
+      int inner_vnode  = linear % Layout::virtualNodeNumber();
+
+      multi1d<int> vnode_coord(Nd);
+      multi1d<int> vnode_site_coord(Nd);
+
+      vnode_coord = crtesn( inner_vnode , Layout::virtualNodeGeom() );
+
+      vnode_site_coord = crtesn( outer_vnode , Layout::virtualNodeSubgridLattSize() );
+
+      coord += vnode_coord * Layout::virtualNodeSubgridLattSize();
+  
+      coord += vnode_site_coord;
+  
+      return coord;
+    }
+
+
+
+    multi1d<int> minimalLayoutMapping()
+    {
+      multi1d<int> dim(Nd);
+      dim = 1;
+      //dim[0] = 2;
+
+      return dim;
+    }
+
+
+    int nodeNumber(const multi1d<int>& coord)
+    {
+      multi1d<int> tmp_coord(Nd);
+
+      for(int i=0; i < coord.size(); ++i)
+	tmp_coord[i] = coord[i] / Layout::subgridLattSize()[i];
+    
+      return Layout::getNodeNumberFrom(tmp_coord);
+    }
+  }
+  
 #else
 
 #error "no appropriate layout defined"

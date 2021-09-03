@@ -409,7 +409,7 @@ namespace QDP {
 #if 0
     //#pragma omp parallel
 #pragma omp for
-    for ( int i = 0 ; i < th_count/8 ; i++ )
+    for ( int i = 0 ; i < th_count ; i++ )
       {
 	FP( i , args.data() );
       }

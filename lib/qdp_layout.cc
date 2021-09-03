@@ -12,6 +12,18 @@
 
 namespace QDP {
 
+namespace
+{
+  template<class T>
+  inline
+  StandardOutputStream& operator<<(StandardOutputStream& s, const multi1d<T>& d)
+  {
+    for(int i=0; i < d.size(); ++i)
+      s << d[i] << " ";
+    return s;
+  }
+}
+
 namespace Layout
 {
   //! Returns the logical node coordinates for the corresponding lattice coordinate
@@ -152,6 +164,81 @@ int local_site(const multi1d<int>& coord, const multi1d<int>& latt_size)
 
 #endif
 
+
+
+#if QDP_USE_VNODE_LAYOUT == 1
+namespace Layout
+{
+  multi1d<int> m_vn_geom;
+  multi1d<int> m_vn_subgrid;
+
+  void printVirtualNodeInfo()
+  {
+    if (m_vn_geom.size() != Nd)
+      {
+	QDPIO::cout << "Virtual node size not set!" << std::endl;
+	QDP_abort(1);
+      }
+
+    QDPIO::cout << "Virtual node setup:" << std::endl;
+    QDPIO::cout << "  virtual node geometry     = " << Layout::virtualNodeGeom() << std::endl;
+    QDPIO::cout << "  virtual node subgrid      = " << Layout::virtualNodeSubgridLattSize() << std::endl;
+    QDPIO::cout << "  sites within virtual node = " << Layout::virtualNodeSites() << std::endl;
+    QDPIO::cout << "  number of virtual nodes   = " << Layout::virtualNodeNumber() << std::endl;
+  
+#if 0  
+    QDPIO::cout << "using default vnode geometry of ";
+    for(int i=0; i < Nd; i++) 
+      QDPIO::cout << n[i] << " ";
+    QDPIO::cout << std::endl;
+#endif
+  }
+  
+  void setVirtualNodeGeom(const multi1d<int>& g)
+  {
+    if (g.size() != Nd)
+      {
+	std::cerr << "virtual node geometry not " << Nd << " dimensional." << std::endl;
+	QDP_abort(1);
+      }
+    m_vn_geom = g;
+  }
+
+  void initVirtualNode()
+  {
+    m_vn_subgrid.resize(Nd);
+    for( int i = 0 ; i < m_vn_geom.size() ; ++i )
+      m_vn_subgrid[i] = Layout::subgridLattSize()[i] / m_vn_geom[i];
+  }
+  
+  multi1d<int> virtualNodeGeom()
+  {
+    return m_vn_geom;
+  }
+  
+  multi1d<int> virtualNodeSubgridLattSize()
+  {
+    return m_vn_subgrid;
+  }
+
+  int virtualNodeSites()
+  {
+    int tmp = virtualNodeSubgridLattSize()[0];
+    for( int i = 1 ; i < virtualNodeSubgridLattSize().size() ; ++i )
+      tmp *= virtualNodeSubgridLattSize()[i];
+    return tmp;
+  }
+
+  int virtualNodeNumber()
+  {
+    int tmp = virtualNodeGeom()[0];
+    for( int i = 1 ; i < virtualNodeGeom().size() ; ++i )
+      tmp *= virtualNodeGeom()[i];
+    return tmp;
+  }
+} // Layout
+#endif  // VNODE layout
+  
 
 
 } // namespace QDP;
