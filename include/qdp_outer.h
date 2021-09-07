@@ -694,11 +694,7 @@ struct LeafFunctor<OLattice<T>, ParamLeaf>
   inline static
   Type_t apply(const OLattice<T>& do_not_use, const ParamLeaf& p) 
   {
-#if defined (QDP_BACKEND_AVX)
-    ParamRef    base_addr = llvm_add_vecparam< typename WordType<T>::Type_t * >();
-#else
     ParamRef    base_addr = llvm_add_param< typename WordType<T>::Type_t * >();
-#endif
     return Type_t( base_addr );
   }
 };

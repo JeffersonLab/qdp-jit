@@ -88,7 +88,8 @@ namespace QDP {
 
   llvm::Value* llvm_insert_element( llvm::Value* vec , llvm::Value* val , llvm::Value* pos );
   llvm::Value* llvm_fill_vector( llvm::Value* val );
-  
+  llvm::Value* llvm_cast_to_vector( llvm::Value* val );
+
   llvm::Value * llvm_create_value( double v );
   llvm::Value * llvm_create_value( int v );
   llvm::Value * llvm_create_value( int64_t v );
@@ -178,11 +179,6 @@ namespace QDP {
   template<> ParamRef llvm_add_param<double**>();
 
 
-  template<class T> ParamRef llvm_add_vecparam();
-  template<> ParamRef llvm_add_vecparam<float*>();
-  
-
-  
   llvm::Value * llvm_derefParam( ParamRef r );
 
   llvm::BasicBlock * llvm_get_insert_block();

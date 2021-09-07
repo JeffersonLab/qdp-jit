@@ -36,7 +36,19 @@ namespace QDP {
       T F;
       IndexDomainVector args;
       args.push_back( make_pair( Layout::sitesOnNode() , index ) );
+#if defined (QDP_BACKEND_AVX)
+      if ( lay == JitDeviceLayout::Coalesced )
+	{
+	  llvm::Value* vecptr = llvm_cast_to_vector( llvm_derefParam(base_m) );
+	  F.setup( vecptr , lay , args );
+	}
+      else
+	{
+	  F.setup( llvm_derefParam(base_m) , lay , args );
+	}
+#else
       F.setup( llvm_derefParam(base_m) , lay , args );
+#endif
       return F;
     }
 

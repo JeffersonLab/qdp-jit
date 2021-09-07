@@ -851,6 +851,173 @@ operator||(const Word<T1>& l, const Word<T2>& r)
 
 
 
+// *************************************
+// vec traits: vec, vec
+
+template<class T1, class T2 >
+struct BinaryReturn<WordVec<T1>, WordVec<T2>, OpLeftShift > {
+  typedef WordVec<typename BinaryReturn<T1, T2, OpLeftShift>::Type_t>  Type_t;
+};
+ 
+
+template<class T1, class T2 >
+struct BinaryReturn<WordVec<T1>, WordVec<T2>, OpRightShift > {
+  typedef WordVec<typename BinaryReturn<T1, T2, OpRightShift>::Type_t>  Type_t;
+};
+ 
+template<class T1, class T2 >
+struct BinaryReturn<WordVec<T1>, WordVec<T2>, OpLT > {
+  typedef WordVec<typename BinaryReturn<T1, T2, OpLT>::Type_t>  Type_t;
+};
+
+template<class T1, class T2 >
+struct BinaryReturn<WordVec<T1>, WordVec<T2>, OpLE > {
+  typedef WordVec<typename BinaryReturn<T1, T2, OpLE>::Type_t>  Type_t;
+};
+
+template<class T1, class T2 >
+struct BinaryReturn<WordVec<T1>, WordVec<T2>, OpGT > {
+  typedef WordVec<typename BinaryReturn<T1, T2, OpGT>::Type_t>  Type_t;
+};
+
+template<class T1, class T2 >
+struct BinaryReturn<WordVec<T1>, WordVec<T2>, OpGE > {
+  typedef WordVec<typename BinaryReturn<T1, T2, OpGE>::Type_t>  Type_t;
+};
+
+template<class T1, class T2 >
+struct BinaryReturn<WordVec<T1>, WordVec<T2>, OpEQ > {
+  typedef WordVec<typename BinaryReturn<T1, T2, OpEQ>::Type_t>  Type_t;
+};
+
+template<class T1, class T2 >
+struct BinaryReturn<WordVec<T1>, WordVec<T2>, OpNE > {
+  typedef WordVec<typename BinaryReturn<T1, T2, OpNE>::Type_t>  Type_t;
+};
+
+template<class T1, class T2>
+struct BinaryReturn<WordVec<T1>, WordVec<T2>, OpAnd > {
+  typedef WordVec<typename BinaryReturn<T1, T2, OpAnd>::Type_t>  Type_t;
+};
+
+template<class T1, class T2>
+struct BinaryReturn<WordVec<T1>, WordVec<T2>, OpOr > {
+  typedef WordVec<typename BinaryReturn<T1, T2, OpOr>::Type_t>  Type_t;
+};
+
+
+
+// *************************************
+// mixed traits: vec, scalar
+
+template<class T1, class T2 >
+struct BinaryReturn<WordVec<T1>, Word<T2>, OpLeftShift > {
+  typedef WordVec<typename BinaryReturn<T1, T2, OpLeftShift>::Type_t>  Type_t;
+};
+ 
+
+template<class T1, class T2 >
+struct BinaryReturn<WordVec<T1>, Word<T2>, OpRightShift > {
+  typedef WordVec<typename BinaryReturn<T1, T2, OpRightShift>::Type_t>  Type_t;
+};
+ 
+template<class T1, class T2 >
+struct BinaryReturn<WordVec<T1>, Word<T2>, OpLT > {
+  typedef WordVec<typename BinaryReturn<T1, T2, OpLT>::Type_t>  Type_t;
+};
+
+template<class T1, class T2 >
+struct BinaryReturn<WordVec<T1>, Word<T2>, OpLE > {
+  typedef WordVec<typename BinaryReturn<T1, T2, OpLE>::Type_t>  Type_t;
+};
+
+template<class T1, class T2 >
+struct BinaryReturn<WordVec<T1>, Word<T2>, OpGT > {
+  typedef WordVec<typename BinaryReturn<T1, T2, OpGT>::Type_t>  Type_t;
+};
+
+template<class T1, class T2 >
+struct BinaryReturn<WordVec<T1>, Word<T2>, OpGE > {
+  typedef WordVec<typename BinaryReturn<T1, T2, OpGE>::Type_t>  Type_t;
+};
+
+template<class T1, class T2 >
+struct BinaryReturn<WordVec<T1>, Word<T2>, OpEQ > {
+  typedef WordVec<typename BinaryReturn<T1, T2, OpEQ>::Type_t>  Type_t;
+};
+
+template<class T1, class T2 >
+struct BinaryReturn<WordVec<T1>, Word<T2>, OpNE > {
+  typedef WordVec<typename BinaryReturn<T1, T2, OpNE>::Type_t>  Type_t;
+};
+
+template<class T1, class T2>
+struct BinaryReturn<WordVec<T1>, Word<T2>, OpAnd > {
+  typedef WordVec<typename BinaryReturn<T1, T2, OpAnd>::Type_t>  Type_t;
+};
+
+template<class T1, class T2>
+struct BinaryReturn<WordVec<T1>, Word<T2>, OpOr > {
+  typedef WordVec<typename BinaryReturn<T1, T2, OpOr>::Type_t>  Type_t;
+};
+
+
+// *************************************
+// mixed traits: scalar, vec
+
+template<class T1, class T2 >
+struct BinaryReturn<Word<T1>, WordVec<T2>, OpLeftShift > {
+  typedef WordVec<typename BinaryReturn<T1, T2, OpLeftShift>::Type_t>  Type_t;
+};
+ 
+
+template<class T1, class T2 >
+struct BinaryReturn<Word<T1>, WordVec<T2>, OpRightShift > {
+  typedef WordVec<typename BinaryReturn<T1, T2, OpRightShift>::Type_t>  Type_t;
+};
+ 
+template<class T1, class T2 >
+struct BinaryReturn<Word<T1>, WordVec<T2>, OpLT > {
+  typedef WordVec<typename BinaryReturn<T1, T2, OpLT>::Type_t>  Type_t;
+};
+
+template<class T1, class T2 >
+struct BinaryReturn<Word<T1>, WordVec<T2>, OpLE > {
+  typedef WordVec<typename BinaryReturn<T1, T2, OpLE>::Type_t>  Type_t;
+};
+
+template<class T1, class T2 >
+struct BinaryReturn<Word<T1>, WordVec<T2>, OpGT > {
+  typedef WordVec<typename BinaryReturn<T1, T2, OpGT>::Type_t>  Type_t;
+};
+
+template<class T1, class T2 >
+struct BinaryReturn<Word<T1>, WordVec<T2>, OpGE > {
+  typedef WordVec<typename BinaryReturn<T1, T2, OpGE>::Type_t>  Type_t;
+};
+
+template<class T1, class T2 >
+struct BinaryReturn<Word<T1>, WordVec<T2>, OpEQ > {
+  typedef WordVec<typename BinaryReturn<T1, T2, OpEQ>::Type_t>  Type_t;
+};
+
+template<class T1, class T2 >
+struct BinaryReturn<Word<T1>, WordVec<T2>, OpNE > {
+  typedef WordVec<typename BinaryReturn<T1, T2, OpNE>::Type_t>  Type_t;
+};
+
+template<class T1, class T2>
+struct BinaryReturn<Word<T1>, WordVec<T2>, OpAnd > {
+  typedef WordVec<typename BinaryReturn<T1, T2, OpAnd>::Type_t>  Type_t;
+};
+
+template<class T1, class T2>
+struct BinaryReturn<Word<T1>, WordVec<T2>, OpOr > {
+  typedef WordVec<typename BinaryReturn<T1, T2, OpOr>::Type_t>  Type_t;
+};
+
+
+
 
 //-----------------------------------------------------------------------------
 // Functions

@@ -54,7 +54,6 @@ namespace QDP {
     static QDPProfile_t prof(dest, op, rhs);
     prof.start_time();
 #endif
-
     static JitFunctionMap function_map;
 
     auto key = get_dyn_key( op , rhs , s );
