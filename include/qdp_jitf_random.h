@@ -8,8 +8,6 @@ namespace QDP {
   void
   function_random_build( JitFunction& function, OLattice<T>& dest , Seed& seed_tmp, LatticeSeed& latSeed, LatticeSeed& skewedSeed)
   {
-    QDPIO::cout << "n.i.: function_random_build\n";
-#if 0
     if (ptx_db::db_enabled)
       {
 	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
@@ -49,18 +47,18 @@ namespace QDP {
     PSeedREG ran_mult_n_reg;
     PSeedREG lattice_ran_mult_reg;
 
-    seed_reg.setup( latSeed_jit.elem( JitDeviceLayout::Coalesced , r_idx ) );
+    seed_reg.setup( latSeed_jit.elemScalar( JitDeviceLayout::Coalesced , r_idx ) );
 
-    lattice_ran_mult_reg.setup( lattice_ran_mult_jit.elem( JitDeviceLayout::Coalesced , r_idx ) );
+    lattice_ran_mult_reg.setup( lattice_ran_mult_jit.elemScalar( JitDeviceLayout::Coalesced , r_idx ) );
 
-    skewedSeed_jit.elem( JitDeviceLayout::Coalesced , r_idx ) = seed_reg * lattice_ran_mult_reg;
+    skewedSeed_jit.elemScalar( JitDeviceLayout::Coalesced , r_idx ) = seed_reg * lattice_ran_mult_reg;
 
     ran_mult_n_reg.setup( ran_mult_n_jit.elem() );
 
-    fill_random_jit( dest_jit.elem(JitDeviceLayout::Coalesced,r_idx) , latSeed_jit.elem( JitDeviceLayout::Coalesced , r_idx ) , skewedSeed_jit.elem( JitDeviceLayout::Coalesced , r_idx ) , ran_mult_n_reg );
+    fill_random_jit( dest_jit.elemScalar(JitDeviceLayout::Coalesced,r_idx) , latSeed_jit.elemScalar( JitDeviceLayout::Coalesced , r_idx ) , skewedSeed_jit.elemScalar( JitDeviceLayout::Coalesced , r_idx ) , ran_mult_n_reg );
 
     PSeedREG tmp;                     //
-    tmp.setup( latSeed_jit.elem( JitDeviceLayout::Coalesced , r_idx ) ); //
+    tmp.setup( latSeed_jit.elemScalar( JitDeviceLayout::Coalesced , r_idx ) ); //
     JitIf save( llvm_eq( r_idx_thread , llvm_create_value(0) ) );
     {
       seed_tmp_jit.elem() = tmp;      // seed_reg
@@ -68,7 +66,6 @@ namespace QDP {
     save.end();
   
     jit_get_function( function );
-#endif
   }
 
 

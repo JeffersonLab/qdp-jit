@@ -1477,14 +1477,6 @@ toWordType(const RScalar<T>& s)
 
 
 
-//------------------------------------------
-//! dest = (mask) ? s1 : dest
-template<class T, class T1> 
-inline
-void copymask(RScalar<T>& d, const RScalar<T1>& mask, const RScalar<T>& s1) 
-{
-  copymask(d.elem(),mask.elem(),s1.elem());
-}
 
 //! dest [float type] = source [int type]
 template<class T, class T1>
@@ -2248,15 +2240,6 @@ getSite(const RComplex<T>& s1, int innersite)
 	       getSite(s1.imag(), innersite));
 }
 
-
-//! dest = (mask) ? s1 : dest
-template<class T, class T1> 
-inline
-void copymask(RComplex<T>& d, const RScalar<T1>& mask, const RComplex<T>& s1) 
-{
-  copymask(d.real(),mask.elem(),s1.real());
-  copymask(d.imag(),mask.elem(),s1.imag());
-}
 
 
 #if 1

@@ -447,13 +447,6 @@ void zero_rep(OSubScalar<T> dest)
   zero_rep(dest.field().elem());
 }
 
-//! dest = (mask) ? s1 : dest
-template<class T1, class T2> 
-void copymask(OSubScalar<T2> dest, const OScalar<T1>& mask, 
-	      const OScalar<T2>& s1) 
-{
-  copymask(dest.field().elem(), mask.elem(), s1.elem());
-}
 
 
 //-----------------------------------------------------------------------------

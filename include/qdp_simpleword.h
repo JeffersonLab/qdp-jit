@@ -82,30 +82,6 @@ void zero_rep(bool& dest)
 #endif
 
 
-//! d = (mask) ? s1 : d;
-inline
-void copymask(int& d, bool mask, int s1) 
-{
-  if (mask)
-    d = s1;
-}
-
-//! d = (mask) ? s1 : d;
-inline
-void copymask(float& d, bool mask, float s1) 
-{
-  if (mask)
-    d = s1;
-}
-
-//! d = (mask) ? s1 : d;
-inline
-void copymask(double& d, bool mask, double s1) 
-{
-  if (mask)
-    d = s1;
-}
-
 
 //---------------------------
 //! dest [float type] = source [int type]

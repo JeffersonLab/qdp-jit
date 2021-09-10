@@ -411,15 +411,6 @@ fill_gaussian(PColorVectorJIT<T,N> d, PColorVectorREG<T2,N>& r1, PColorVectorREG
 }
 
 
-//! dest = (mask) ? s1 : dest
-template<class T, class T1, class T2, int N>
-inline void
-copymask(PColorVectorJIT<T,N> d, const PScalarREG<T1>& mask, const PColorVectorREG<T2,N>& s1)
-{
-  for(int i=0; i < N; ++i)
-    copymask(d.elem(i),mask.elem(),s1.elem(i));
-}
-
 
 
 } // namespace QDP

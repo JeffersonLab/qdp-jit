@@ -52,6 +52,17 @@ namespace QDP {
       return F;
     }
 
+
+    typename ScalarType<T>::Type_t elemScalar( JitDeviceLayout lay , llvm::Value * index ) const
+    {
+      typename ScalarType<T>::Type_t F;
+      IndexDomainVector args;
+      args.push_back( make_pair( Layout::sitesOnNode() , index ) );
+      F.setup( llvm_derefParam(base_m) , lay , args );
+      return F;
+    }
+
+    
     // const T& elem( JitDeviceLayout lay , llvm::Value * index ) const
     // {
     //   IndexDomainVector args;

@@ -132,7 +132,7 @@ namespace QDP {
   template<class T>	 
   XMLWriter& operator<<(XMLWriter& xml, const OLattice<T>& d)
   {
-    T recv_buf;
+    typename ScalarType<T>::Type_t recv_buf;
 
     xml.openTag("OLattice");
     XMLWriterAPI::AttributeList alist;
@@ -148,7 +148,7 @@ namespace QDP {
 	// Copy to buffer: be really careful since max(linear) could vary among nodes
 	if (Layout::nodeNumber() == node)
 	  recv_buf = d.elem(linear);
-
+	
 	// Send result to primary node. Avoid sending prim-node sending to itself
 	if (node != 0)
 	  {

@@ -128,6 +128,12 @@ public:
 // Traits classes 
 //-----------------------------------------------------------------------------
 
+  template<class T, int N>
+  struct ScalarType<PColorMatrixJIT<T,N> >
+  {
+    typedef PColorMatrixJIT< typename ScalarType<T>::Type_t,N > Type_t;
+  };
+
 
   template<class T, int N> 
   struct REGType<PColorMatrixJIT<T,N> >

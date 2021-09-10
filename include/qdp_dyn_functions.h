@@ -25,7 +25,6 @@ namespace QDP {
     return ret;
   }
 
-  
 
 } //
 #endif

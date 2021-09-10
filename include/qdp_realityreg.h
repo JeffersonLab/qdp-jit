@@ -1514,14 +1514,6 @@ peekSpin(const RScalarREG<T>& l, int row, int col)
 }
 
 
-//------------------------------------------
-//! dest = (mask) ? s1 : dest
-template<class T, class T1> 
-inline
-void copymask(RScalarREG<T>& d, const RScalarREG<T1>& mask, const RScalarREG<T>& s1) 
-{
-  copymask(d.elem(),mask.elem(),s1.elem());
-}
 
 //! dest [float type] = source [int type]
 template<class T, class T1>
@@ -2297,15 +2289,6 @@ getSite(const RComplexREG<T>& s1, int innersite)
 	       getSite(s1.imag(), innersite));
 }
 
-
-//! dest = (mask) ? s1 : dest
-template<class T, class T1> 
-inline
-void copymask(RComplexREG<T>& d, const RScalarREG<T1>& mask, const RComplexREG<T>& s1) 
-{
-  copymask(d.real(),mask.elem(),s1.real());
-  copymask(d.imag(),mask.elem(),s1.imag());
-}
 
 
 #if 1

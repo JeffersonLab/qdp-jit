@@ -604,15 +604,6 @@ zero_rep(PSpinVector<T,N>& dest)
     zero_rep(dest.elem(i));
 }
 
-//! dest = (mask) ? s1 : dest
-template<class T, class T1, int N> 
-inline void 
-copymask(PSpinVector<T,N>& d, const PScalar<T1>& mask, const PSpinVector<T,N>& s1) 
-{
-  for(int i=0; i < N; ++i)
-    copymask(d.elem(i),mask.elem(),s1.elem(i));
-}
-
 
 //! dest [some type] = source [some type]
 template<class T, class T1, int N>

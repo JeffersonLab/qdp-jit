@@ -386,14 +386,14 @@ namespace QDP {
     }
   }
 #elif defined(QDP_BACKEND_AVX)
-  void jit_launch(JitFunction& function,int th_count,std::vector<QDPCache::ArgKey>& ids)
+  void jit_launch(JitFunction& f,int th_count,std::vector<QDPCache::ArgKey>& ids)
   {
     QDPCache::KernelArgs_t args( QDP_get_global_cache().get_kernel_args(ids) );
 
     if ( th_count == 0 )
       return;
 
-    void (*FP)(int,void*) = (void (*)(int,void*))(intptr_t)function.get_function();
+    void (*FP)(int,void*) = (void (*)(int,void*))(intptr_t)f.get_function();
 
     // std::cout << args.size() << std::endl;
     // std::cout << args[0].i32 << std::endl;
@@ -415,8 +415,48 @@ namespace QDP {
       }
 #endif
 
+#ifdef QDP_DEEP_LOG
+    if (jit_config_deep_log())
+      {
+	//size_t field_size = f.count * f.size_T;
+
+	size_t field_size = QDP_get_global_cache().getSize( f.get_dest_id() );
+
+	if (f.count > 0)
+	  {
+	    void* host_ptr;
+
+	    if ( ! (host_ptr = malloc( field_size )) )
+	      {
+		QDPIO::cout << "Cannot allocate host memory!" << endl;
+		QDP_abort(1);
+	      }
+
+	    
+	    std::vector<QDPCache::ArgKey> vec_id;
+	    vec_id.push_back( f.get_dest_id() );
+	    std::vector<void*> vec_ptrs = QDP_get_global_cache().get_dev_ptrs( vec_id );
+	    void* dev_ptr = vec_ptrs.at(0);
+
+	    //std::cout << "d2h: start = " << f.start << "  count = " << f.count << "  size_T = " << f.size_T << "   \t";
+    
+	    gpu_memcpy_d2h( host_ptr , dev_ptr , field_size );
+
+	    gpu_deep_logger( host_ptr , f.type_W , f.size_T , f.start , f.count , f.get_pretty() );
+
+	    free( host_ptr );
+	  }
+	else
+	  {
+	    QDPIO::cout << "zero count. " << f.get_pretty() << std::endl;
+	  }
+      }
+#endif
+
+
+    
     // Increment the call counter
-    function.inc_call_counter();
+    f.inc_call_counter();
   }
 #else
 #error "No LLVM backend specified."

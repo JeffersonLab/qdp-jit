@@ -170,7 +170,7 @@ namespace QDP {
 
 
 
-
+#if defined (QDP_BACKEND_AVX)
   template<class T>
   class WordVecJIT 
   {
@@ -428,7 +428,7 @@ namespace QDP {
     // llvm::Value *    offset_level;
     bool setup_m;
   };
-
+#endif
 
 
 
@@ -439,11 +439,12 @@ namespace QDP {
     typedef WordJIT<typename UnaryReturn<T, Op>::Type_t>  Type_t;
   };
 
+#if defined (QDP_BACKEND_AVX)  
   template<class T, class Op>
   struct UnaryReturn<WordVecJIT<T>, Op> {
     typedef WordVecJIT<typename UnaryReturn<T, Op>::Type_t>  Type_t;
   };
-
+#endif
 
   template<>
   struct UnaryReturn<float, FnIsFinite> {
@@ -466,7 +467,8 @@ namespace QDP {
     return -ret.elem();
   }
 
-  
+
+#if defined (QDP_BACKEND_AVX)  
   template<class T1>
   inline typename UnaryReturn<WordVecREG<T1>, OpUnaryMinus>::Type_t
   operator-(const WordVecJIT<T1>& l)
@@ -475,9 +477,24 @@ namespace QDP {
     ret.setup(l);
     return -ret.elem();
   }
-
+#endif
   
   // ***********
+
+
+#if defined (QDP_BACKEND_AVX)  
+  template<class T>
+  struct ScalarType<WordVecJIT<T> >
+  {
+    typedef WordJIT< T > Type_t;
+  };
+#endif
+  
+  template<class T>
+  struct ScalarType<WordJIT<T> >
+  {
+    typedef WordJIT< T > Type_t;
+  };
   
   template<class T>
   struct REGType< WordJIT<T> >
@@ -485,12 +502,13 @@ namespace QDP {
     typedef WordREG<typename REGType<T>::Type_t>  Type_t;
   };
 
+#if defined (QDP_BACKEND_AVX)  
   template<class T>
   struct REGType< WordVecJIT<T> >
   {
     typedef WordVecREG<typename REGType<T>::Type_t>  Type_t;
   };
-
+#endif
   
   // ***********
   
@@ -500,12 +518,13 @@ namespace QDP {
     typedef Word<typename BASEType<T>::Type_t>  Type_t;
   };
 
+#if defined (QDP_BACKEND_AVX)  
   template<class T>
   struct BASEType< WordVecJIT<T> >
   {
     typedef WordVec<typename BASEType<T>::Type_t>  Type_t;
   };
-  
+#endif  
 
   // **********  
   
@@ -515,12 +534,13 @@ namespace QDP {
     typedef T  Type_t;
   };
 
+#if defined (QDP_BACKEND_AVX)  
   template<class T> 
   struct WordType<WordVecJIT<T> >
   {
     typedef T  Type_t;
   };
-
+#endif
 
   
 
@@ -530,34 +550,14 @@ namespace QDP {
     typedef WordJIT<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
   };
 
+#if defined (QDP_BACKEND_AVX)  
   template<class T1, class T2, class Op>
   struct BinaryReturn<WordVecJIT<T1>, WordVecJIT<T2>, Op> {
     typedef WordVecJIT<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
   };
-
-
-  
-
-  template<class T, class T1, class T2> 
-  inline
-  void copymask(WordJIT<T>& d, const WordREG<T1>& mask, const WordREG<T2>& s1)
-  {
-    JitIf ifCopy( mask.get_val() );
-    {
-      d = s1;
-    }
-    ifCopy.end();
-  }
-
-  template<class T, class T1, class T2> 
-  inline
-  void copymask(WordVecJIT<T>& d, const WordVecREG<T1>& mask, const WordVecREG<T2>& s1)
-  {
-    QDPIO::cout << "copymask not yet implemented\n";
-  }
+#endif
 
   
-
 
   inline void 
   zero_rep(WordJIT<double> dest)
@@ -586,6 +586,7 @@ namespace QDP {
 
   // *****************
 
+#if defined (QDP_BACKEND_AVX)  
   inline void 
   zero_rep(WordVecJIT<double> dest)
   {
@@ -609,7 +610,7 @@ namespace QDP {
   {
     llvm_store_ptr_idx( llvm_fill_vector( llvm_create_value( 0.0 ) ) , dest.getBaseReg() , dest.getOffset() );
   }
-
+#endif
 
   
   
@@ -631,13 +632,14 @@ namespace QDP {
   }
 
 
+#if defined (QDP_BACKEND_AVX)  
   template<class T, class T1, class T2, class T3>
   inline void
   fill_random_jit(WordVecJIT<T> d, T1 seed, T2 skewed_seed, const T3& seed_mult)
   {
     QDPIO::cout << "fill_random_jit not yet implemented\n";
   }
-
+#endif
   
 
 

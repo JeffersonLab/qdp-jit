@@ -171,7 +171,7 @@ private:
 
 
 
-
+#if defined (QDP_BACKEND_AVX)  
 template<class T> class WordVec
 {
 public:
@@ -318,7 +318,7 @@ public:
 private:
   T F;
 };
-
+#endif
 
 
 
@@ -346,12 +346,13 @@ struct JITType<Word<T> >
 };
 
 
+#if defined (QDP_BACKEND_AVX)  
 template<class T>
 struct JITType<WordVec<T> >
 {
   typedef WordVecJIT<T>  Type_t;
 };
-
+#endif
 
 
 template<class T> 
@@ -440,12 +441,13 @@ struct WordType<Word<T> >
   typedef typename WordType<T>::Type_t  Type_t;
 };
 
+#if defined (QDP_BACKEND_AVX)  
 template<class T>
 struct WordType<WordVec<T> > 
 {
   typedef typename WordType<T>::Type_t  Type_t;
 };
-
+#endif
 
 
 template<class T>
@@ -454,12 +456,13 @@ struct ScalarType<Word<T> >
   typedef Word<T> Type_t;
 };
 
+#if defined (QDP_BACKEND_AVX)  
 template<class T>
 struct ScalarType<WordVec<T> > 
 {
   typedef Word<T> Type_t;
 };
-
+#endif
 
 
 // Fixed types
@@ -854,6 +857,7 @@ operator||(const Word<T1>& l, const Word<T2>& r)
 // *************************************
 // vec traits: vec, vec
 
+#if defined (QDP_BACKEND_AVX)  
 template<class T1, class T2 >
 struct BinaryReturn<WordVec<T1>, WordVec<T2>, OpLeftShift > {
   typedef WordVec<typename BinaryReturn<T1, T2, OpLeftShift>::Type_t>  Type_t;
@@ -1015,7 +1019,7 @@ template<class T1, class T2>
 struct BinaryReturn<Word<T1>, WordVec<T2>, OpOr > {
   typedef WordVec<typename BinaryReturn<T1, T2, OpOr>::Type_t>  Type_t;
 };
-
+#endif
 
 
 
@@ -1400,15 +1404,6 @@ toWordType(const Word<T>& s)
 }
 
 
-
-//------------------------------------------
-//! dest = (mask) ? s1 : dest
-template<class T, class T1> 
- inline
-void copymask(Word<T>& d, const Word<T1>& mask, const Word<T>& s1) 
-{
-  copymask(d.elem(),mask.elem(),s1.elem());
-}
 
 //! dest [float type] = source [int type]
 template<class T, class T1>

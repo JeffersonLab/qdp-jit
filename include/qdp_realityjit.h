@@ -438,6 +438,21 @@ public:
 //-----------------------------------------------------------------------------
 
 template<class T>
+struct ScalarType<RScalarJIT<T> >
+{
+  typedef RScalarJIT< typename ScalarType<T>::Type_t > Type_t;
+};
+
+
+template<class T>
+struct ScalarType<RComplexJIT<T> >
+{
+  typedef RComplexJIT< typename ScalarType<T>::Type_t > Type_t;
+};
+
+
+  
+template<class T>
 struct REGType< RScalarJIT<T> >
 {
   typedef RScalarREG<typename REGType<T>::Type_t>  Type_t;
@@ -2048,15 +2063,6 @@ getSite(const RComplexJIT<T>& s1, int innersite)
 }
 
 
-//! dest = (mask) ? s1 : dest
-template<class T, class T1> 
-inline
-void copymask(RComplexJIT<T> d, const RScalarJIT<T1>& mask, const RComplexJIT<T>& s1) 
-{
-  copymask(d.real(),mask.elem(),s1.real());
-  copymask(d.imag(),mask.elem(),s1.imag());
-}
-
 
 #if 1
 // Global sum over site indices only
@@ -2274,25 +2280,6 @@ fill_gaussian(RComplexJIT<T> d, RComplexJIT<T>& r1, RComplexJIT<T>& r2)
 }
 
 #endif
-
-
-//! dest = (mask) ? s1 : dest
-template<class T, class T1, class T2> 
-inline
-void copymask(RScalarJIT<T> d, const RScalarREG<T1>& mask, const RScalarREG<T2>& s1)
-{
-  copymask(d.elem(),mask.elem(),s1.elem());
-}
-
-
-//! dest = (mask) ? s1 : dest
-template<class T, class T1, class T2> 
-inline
-void copymask(RComplexJIT<T> d, const RScalarREG<T1>& mask, const RComplexREG<T2>& s1)
-{
-  copymask(d.real(),mask.elem(),s1.real());
-  copymask(d.imag(),mask.elem(),s1.imag());
-}
 
 
 

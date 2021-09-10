@@ -1544,13 +1544,12 @@ namespace QDP
   }
 
 
+#if defined (QDP_BACKEND_AVX)  
   llvm::Value* llvm_insert_element( llvm::Value* vec , llvm::Value* val , llvm::Value* pos )
   {
     return builder->CreateInsertElement ( vec, val , pos );
   }
 
-
-  
   llvm::Value* llvm_cast_to_vector( llvm::Value* val )
   {
     if (!isa<PointerType>(val->getType()))
@@ -1564,12 +1563,8 @@ namespace QDP
     return builder->CreatePointerCast( val , llvm::PointerType::get( vec_type , 0 ) );
   }
 
-  
-
   llvm::Value* llvm_fill_vector( llvm::Value* val )
   {
-    //llvm::PointerType::get( llvm::FixedVectorType::get( val->getType() , 8 ) , 0 ) );
-    
     llvm::Type * vec_type =  llvm::FixedVectorType::get( val->getType() , Layout::virtualNodeNumber() );
 
     llvm::Value *vec = Constant::getNullValue(vec_type);
@@ -1580,6 +1575,8 @@ namespace QDP
  
     return vec;
   }
+#endif
+  
   
 
   llvm::Value * llvm_alloca( llvm::Type* type , int elements )
@@ -2561,7 +2558,7 @@ namespace QDP
       llvm::WriteBitcodeToFile(*Mod, OS);
     }
 
-#if 1
+#if 0
     if (jit_config_get_verbose_output())
       {
 	QDPIO::cout << "\n\n";
@@ -2577,7 +2574,7 @@ namespace QDP
     swatch.reset();
     swatch.start();
 
-#if 1
+#if 0
     QDPIO::cout << "Print asm\n";
     {
       llvm::legacy::PassManager PM;

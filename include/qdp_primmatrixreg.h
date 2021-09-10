@@ -1457,15 +1457,6 @@ zero_rep(PMatrixREG<T,N,C>& dest)
 }
 
 
-//! dest = (mask) ? s1 : dest
-template<class T, class T1, int N, template<class,int> class C> 
-inline void 
-copymask(PMatrixREG<T,N,C>& d, const PScalarREG<T1>& mask, const PMatrixREG<T,N,C>& s1) 
-{
-  for(int i=0; i < N; ++i)
-    for(int j=0; j < N; ++j)
-      copymask(d.elem(i,j),mask.elem(),s1.elem(i,j));
-}
 
 
 //! dest [some type] = source [some type]

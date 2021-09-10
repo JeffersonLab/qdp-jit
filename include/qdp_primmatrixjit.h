@@ -1743,15 +1743,6 @@ where(const PScalarJIT<T1>& a, const PMatrixJIT<T2,N,C>& b, const PMatrixJIT<T3,
   return d;
 }
 
-//! dest = (mask) ? s1 : dest
-template<class T, class T1, class T2, int N, template<class,int> class C, template<class,int> class C2> 
-inline void 
-copymask(PMatrixJIT<T,N,C> d, const PScalarREG<T1>& mask, const PMatrixREG<T2,N,C2>& s1) 
-{
-  for(int i=0; i < N; ++i)
-    for(int j=0; j < N; ++j)
-      copymask(d.elem(i,j),mask.elem(),s1.elem(i,j));
-}
 
 
 

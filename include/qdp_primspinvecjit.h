@@ -1317,17 +1317,6 @@ fill_gaussian(PSpinVectorJIT<T,N> d, PSpinVectorREG<T2,N>& r1, PSpinVectorREG<T2
 
 
 
-//! dest = (mask) ? s1 : dest
-template<class T, class T1, class T2, int N> 
-inline void 
-copymask(PSpinVectorJIT<T,N> d, const PScalarREG<T1>& mask, const PSpinVectorREG<T2,N>& s1) 
-{
-  for(int i=0; i < N; ++i)
-    copymask(d.elem(i),mask.elem(),s1.elem(i));
-}
-
-
-
 
 
 /*! @} */   // end of group primspinvector

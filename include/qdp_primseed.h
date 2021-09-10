@@ -571,14 +571,6 @@ zero_rep(PSeed<T>& dest)
 }
 
 
-//! dest = (mask) ? s1 : dest
-template<class T, class T1> 
-inline void 
-copymask(PSeed<T>& d, const PScalar<T1>& mask, const PSeed<T>& s1) 
-{
-  for(int i=0; i < 4; ++i)
-    copymask(d.elem(i),mask.elem(),s1.elem(i));
-}
 
 /*! @} */
 

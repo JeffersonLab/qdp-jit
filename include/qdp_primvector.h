@@ -731,15 +731,6 @@ zero_rep(PVector<T,N,C>& dest)
     zero_rep(dest.elem(i));
 }
 
-//! dest = (mask) ? s1 : dest
-template<class T, class T1, int N, template<class,int> class C> 
-inline void 
-copymask(PVector<T,N,C>& d, const PScalar<T1>& mask, const PVector<T,N,C>& s1) 
-{
-  for(int i=0; i < N; ++i)
-    copymask(d.elem(i),mask.elem(),s1.elem(i));
-}
-
 
 //! dest [some type] = source [some type]
 template<class T, class T1, int N, template<class,int> class C>

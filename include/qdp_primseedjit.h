@@ -103,6 +103,12 @@ public:
 // Traits classes 
 //-----------------------------------------------------------------------------
 
+template<class T>
+struct ScalarType<PSeedJIT<T> >
+{
+  typedef PSeedJIT< typename ScalarType<T>::Type_t > Type_t;
+};
+  
 template<class T> 
 struct REGType< PSeedJIT<T> >
 {
@@ -274,14 +280,6 @@ zero_rep(PSeedJIT<T> dest)
 }
 
 
-//! dest = (mask) ? s1 : dest
-  template<class T, class T1, class T2> 
-inline void 
-copymask(PSeedJIT<T> d, const PScalarREG<T1>& mask, const PSeedREG<T2>& s1) 
-{
-  for(int i=0; i < 4; ++i)
-    copymask(d.elem(i),mask.elem(),s1.elem(i));
-}
 
 /*! @} */
 

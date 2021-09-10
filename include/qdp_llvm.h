@@ -86,10 +86,12 @@ namespace QDP {
   bool        get_ptx_db_enabled();
   int         get_ptx_db_size();
 
+#if defined (QDP_BACKEND_AVX)
   llvm::Value* llvm_insert_element( llvm::Value* vec , llvm::Value* val , llvm::Value* pos );
   llvm::Value* llvm_fill_vector( llvm::Value* val );
   llvm::Value* llvm_cast_to_vector( llvm::Value* val );
-
+#endif
+  
   llvm::Value * llvm_create_value( double v );
   llvm::Value * llvm_create_value( int v );
   llvm::Value * llvm_create_value( int64_t v );

@@ -249,6 +249,12 @@ void read(XMLReader& xml, const string& path, PScalarJIT<T>& d)
 //-----------------------------------------------------------------------------
 
 
+template<class T>
+struct ScalarType<PScalarJIT<T> >
+{
+  typedef PScalarJIT< typename ScalarType<T>::Type_t > Type_t;
+};
+
 
 template<class T> 
 struct REGType< PScalarJIT<T> >
@@ -1558,13 +1564,6 @@ gather_sites(PScalarJIT<T>& d,
 #endif
 
 
-//! dest = (mask) ? s1 : dest
-template<class T, class T1, class T2> 
-inline void 
-copymask(PScalarJIT<T> d, const PScalarREG<T1>& mask, const PScalarREG<T2>& s1) 
-{
-  copymask(d.elem(),mask.elem(),s1.elem());
-}
 
 
 //! dest = 0

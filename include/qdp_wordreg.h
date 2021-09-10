@@ -189,6 +189,7 @@ namespace QDP {
 
 
 
+#if defined (QDP_BACKEND_AVX)  
   template<class T>
   class WordVecREG 
   {
@@ -360,7 +361,7 @@ namespace QDP {
   private:
     llvm::Value *    val;
   };
-
+#endif
   
 
 
@@ -374,11 +375,12 @@ namespace QDP {
     typedef WordREG<T>  Type_t;
   };
 
+#if defined (QDP_BACKEND_AVX)  
   template<class T>
   struct InternalScalar<WordVecREG<T> > {
     typedef WordREG<T>  Type_t;
   };
-
+#endif
   
   template<class T>
   struct RealScalar<WordREG<T> > {
@@ -392,12 +394,13 @@ namespace QDP {
     typedef WordJIT<T>  Type_t;
   };
   
+#if defined (QDP_BACKEND_AVX)  
   template<class T> 
   struct JITType< WordVecREG<T> >
   {
     typedef WordVecJIT<T>  Type_t;
   };
-
+#endif
   
 
   template<class T> 
@@ -406,12 +409,13 @@ namespace QDP {
     typedef T  Type_t;
   };
 
+#if defined (QDP_BACKEND_AVX)  
   template<class T> 
   struct WordType<WordVecREG<T> >
   {
     typedef T  Type_t;
   };
-
+#endif
 
   template<class T>
   struct UnaryReturn<WordREG<T>, FnSeedToFloat> {
@@ -434,11 +438,12 @@ namespace QDP {
   };
 #endif
 
+#if defined (QDP_BACKEND_AVX)  
   template<class T1, class T2, class Op>
   struct BinaryReturn<WordVecREG<T1>, WordREG<T2>, Op> {
     typedef WordVecREG<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
   };
-
+#endif
 
 
   template<class T>
@@ -589,6 +594,7 @@ operator|(const WordREG<T1>& l, const WordREG<T2>& r)
 
 // *************************************************
 
+#if defined (QDP_BACKEND_AVX)  
   template<class T1>
   inline typename UnaryReturn<WordVecREG<T1>, OpUnaryMinus>::Type_t
   operator-(const WordVecREG<T1>& l)
@@ -597,13 +603,14 @@ operator|(const WordREG<T1>& l, const WordREG<T2>& r)
     ret.setup( llvm_neg( l.get_val() ) );
     return ret;
   }
-
+#endif
 
 
 // *************************************************
 // Binary operators: vec, vec
 
 
+#if defined (QDP_BACKEND_AVX)  
   template<class T1, class T2>
   inline typename BinaryReturn<WordVecREG<T1>, WordVecREG<T2>, OpAdd>::Type_t
   operator+(const WordVecREG<T1>& l, const WordVecREG<T2>& r)
@@ -920,7 +927,7 @@ operator|(const WordVecREG<T1>& l, const WordREG<T2>& r)
   ret.setup( llvm_or( l.get_val() , llvm_fill_vector( r.get_val() ) ) );
   return ret;
 }
-
+#endif
 
 
 
@@ -1056,6 +1063,7 @@ operator||(const WordREG<T1>& l, const WordREG<T2>& r)
 // **************************************************
 // Comparison, mixed; vec, scalar
 
+#if defined (QDP_BACKEND_AVX)  
 template<class T1, class T2 >
 struct BinaryReturn<WordVecREG<T1>, WordREG<T2>, OpLT > {
   typedef WordVecREG<typename BinaryReturn<T1, T2, OpLT>::Type_t>  Type_t;
@@ -1422,7 +1430,7 @@ operator||(const WordREG<T1>& l, const WordVecREG<T2>& r)
   ret.setup( llvm_or( llvm_fill_vector( l.get_val() ) , r.get_val() ) );
   return ret;
 }
-
+#endif
 
 
 

@@ -1316,14 +1316,6 @@ colorCrossProduct(const PScalarREG<T1>& s1, const PScalarREG<T2>& s2)
 
 
 
-//-----------------------------------------------------------------------------
-//! dest = (mask) ? s1 : dest
-template<class T, class T1> 
-inline void 
-copymask(PScalarREG<T>& d, const PScalarREG<T1>& mask, const PScalarREG<T>& s1) 
-{
-  copymask(d.elem(),mask.elem(),s1.elem());
-}
 
 //! dest  = random  
 template<class T, class T1, class T2,class T3>
