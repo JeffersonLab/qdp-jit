@@ -2,10 +2,6 @@
 #include "qdp_config.h"
 #include "qdp_params.h"
 
-#if defined(ARCH_PARSCALAR)
-#include "qmp.h"
-#endif
-
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/Statistic.h"
 #include "llvm/ADT/StringSet.h"
@@ -1879,7 +1875,7 @@ namespace QDP
 	OS.flush();
       }
 
-    std::string isabin_path = "module_" + str_kernel_name + ".o";
+    std::string isabin_path = "module_" + str_kernel_name + "_node_" + std::to_string(Layout::nodeNumber()) + ".o";
 
     if (clang_codegen)
       {	
@@ -2007,10 +2003,21 @@ namespace QDP
       {
 	QDPIO::cout << "Linker invocation successful" << std::endl;
       }
+
+    if (! jit_config_get_keepfiles() )
+      {
+	if (std::remove(isabin_path.c_str()))
+	  {
+	    QDPIO::cout << "Error removing file: " << shared_path << std::endl;
+	    QDP_abort(1);
+	  }
+      }
     
     swatch.stop();
     func.time_linking = swatch.getTimeInMicroseconds();
   }
+
+
 
   
   void llvm_build_function_rocm(JitFunction& func)
@@ -2026,23 +2033,25 @@ namespace QDP
 	  }
       }
     
-    std::string shared_path = "module_" + str_kernel_name + ".so";
+    std::string shared_path = "module_" + str_kernel_name + "_node_" + std::to_string(Layout::nodeNumber()) + ".so";
 
-    if (Layout::primaryNode())
-      {
-	build_function_rocm_codegen( func , shared_path );
-      }
-
-    //
-    // All nodes wait until primary node has finished LLVM codegen
-#if defined(ARCH_PARSCALAR)
-    QMP_barrier();
-#endif
+    // call codegen
+    build_function_rocm_codegen( func , shared_path );
     
     std::ostringstream sstream;
     std::ifstream fin(shared_path, ios::binary);
     sstream << fin.rdbuf();
     std::string shared(sstream.str());
+
+    if (! jit_config_get_keepfiles() )
+      {
+	if (std::remove(shared_path.c_str()))
+	  {
+	    QDPIO::cout << "Error removing file: " << shared_path << std::endl;
+	    QDP_abort(1);
+	  }
+      }
+
     
     if (jit_config_get_verbose_output())
       {
