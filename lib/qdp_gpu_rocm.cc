@@ -433,8 +433,6 @@ namespace QDP {
 
   void gpu_create_events()
   {
-    std::cout << "creating HIP events\n";
-
     hipError_t res = hipEventCreate ( &evStart );
     if (res != hipSuccess)
       {

@@ -54,7 +54,8 @@ namespace QDP
     
 #ifdef QDP_BACKEND_ROCM
     int  codegen_opt = 1;
-
+    bool codegen_keepfiles = false;
+    
     std::vector<std::string> extra_libs;
 #endif
 
@@ -130,7 +131,7 @@ namespace QDP
 #endif
   }
 
-  
+
   std::string jit_config_get_tuning_file() { return tuning_file; }
   void jit_config_set_tuning_file( std::string v) { tuning_file = v; }
   
@@ -148,6 +149,9 @@ namespace QDP
 
   
 #ifdef QDP_BACKEND_ROCM
+  bool jit_config_get_keepfiles() { return codegen_keepfiles; }
+  void jit_config_set_keepfiles(bool v) { codegen_keepfiles = v; }
+  
   int jit_config_get_codegen_opt() { return codegen_opt; }
   void jit_config_set_codegen_opt(int opt) { codegen_opt = opt; }
 

@@ -367,6 +367,10 @@ namespace QDP {
 	  }
 #endif
 #ifdef QDP_BACKEND_ROCM
+	else if (strcmp((*argv)[i], "-keep-files")==0) 
+	  {
+	    jit_config_set_keepfiles(true);
+	  }
 	else if (strcmp((*argv)[i], "-opt")==0)
 	  {
 	    unsigned val;

@@ -99,7 +99,6 @@ namespace QDP {
  
     for( int i = loops.size() - 1 ; 0 <= i ; --i )
       {
-	QDPIO::cout << "loop[" << i << "].end();" << std::endl;
 	loops[i].end();
       }
 
