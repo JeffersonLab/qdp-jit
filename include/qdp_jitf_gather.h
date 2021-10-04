@@ -5,7 +5,11 @@ namespace QDP {
 
 
   template<class T, class T1, class RHS>
+#if defined (QDP_PROP_OPT)
   typename std::enable_if_t< ! HasProp<RHS>::value >
+#else
+  void
+#endif  
   function_gather_build( JitFunction& function, const QDPExpr<RHS,OLattice<T1> >& rhs )
   {
     if (ptx_db::db_enabled)
@@ -48,6 +52,7 @@ namespace QDP {
   }
 
 
+#if defined (QDP_PROP_OPT)
   template<class T, class T1, class RHS>
   typename std::enable_if_t< HasProp<RHS>::value >
   function_gather_build( JitFunction& function, const QDPExpr<RHS,OLattice<T1> >& rhs )
@@ -108,7 +113,7 @@ namespace QDP {
 
     jit_get_function( function );
   }
-
+#endif
 
 
   template<class T1, class RHS>

@@ -6,7 +6,11 @@
 namespace QDP {
 
   template<class T, class T1, class Op, class RHS>
+#if defined (QDP_PROP_OPT)
   typename std::enable_if_t< ! HasProp<RHS>::value >
+#else
+  void
+#endif  
   function_build(JitFunction& function, const DynKey& key, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
   {
     std::ostringstream expr;
@@ -119,6 +123,8 @@ namespace QDP {
   }
 
 
+  
+#if defined (QDP_PROP_OPT)
   template<class T, class T1, class Op, class RHS>
   typename std::enable_if_t< HasProp<RHS>::value >
   function_build(JitFunction& function, const DynKey& key, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
@@ -255,7 +261,8 @@ namespace QDP {
   
     jit_get_function( function );
   }
-
+#endif
+  
 
   template<class T, class T1, class Op, class RHS>
   void 

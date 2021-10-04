@@ -36,6 +36,8 @@ option(QDP_ENABLE_LLVM13 "Enable changes to compile with LLVM13 release" OFF)
 
 option(QDP_BUILD_EXAMPLES "Build examples" ON)
 
+option(QDP_PROP_OPT "Propagator optimizations" ON)
+
 if( QDP_ENABLE_LLVM13 )
   set(QDP_LLVM13 "1")
 endif()
