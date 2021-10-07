@@ -274,7 +274,7 @@ if( QDP_ENABLE_SANITIZERS )
   if( ( CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 3.1)
      OR ( CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 4.8) )
       message(STATUS "QDPXX: Setting Sanitizer options")
-      set(QDP_SANITIZER_OPTS "-fsanitize=address,undefined")
+      set(QDP_SANITIZER_OPTS "-fsanitize=undefined")
       
       # Turn on sanitizers for module below me
       set(XPathReader_ENABLE_SANITIZERS ON)
