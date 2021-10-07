@@ -128,7 +128,7 @@ if( QDP_USE_FILEDB )
 endif()
 
 if( QDP_SANITIZER_OPTS )
-  target_compile_options(qdp PUBLIC ${QDP_SANITIZER_OPTS})
+  target_compile_options(qdp PRIVATE ${QDP_SANITIZER_OPTS})
   target_link_options(qdp PUBLIC ${QDP_SANITIZER_OPTS})
 endif()
 
