@@ -1,5 +1,8 @@
 #include <qdp.h>
+#if 0
 #include <xmmintrin.h>
+#endif
+
 #define TESTING 1
 
 namespace QDP {
@@ -127,7 +130,7 @@ using namespace QDP;
 
       int operator() (const multi1d<int>& coordinate) const ;
 
-      int numSubsets() const ;
+      size_t numSubsets() const ;
 
     private:
       TimeSliceFunc() {}  // hide default constructor
