@@ -273,19 +273,12 @@ INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/qdp_config_internal.h
 
 # Deal with Sanitizer
 if( QDP_ENABLE_SANITIZERS )
-  if( ( CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 3.1)
-     OR ( CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 4.8) )
-      message(STATUS "QDPXX: Setting Sanitizer options")
-      set(QDP_SANITIZER_OPTS "-fsanitize=undefined")
-      
-      # Turn on sanitizers for module below me
-      set(XPathReader_ENABLE_SANITIZERS ON)
-      set(LibIntrin_ENABLE_SANITIZERS ON)
-      set(QIO_ENABLE_SANITIZERS ON)
-      set(FileDB_ENABLE_SANITIZERS ON)
-  else()
-    message(STATUS "Don't know how to enable sanitizers for ${CMAKE_CXX_COMPILER_ID}... Ignoring")
-  endif()
+  include(cmake/CheckSanitizeOpts.cmake)
+  check_sanitizer_options( "${QDP_ENABLE_SANITIZERS}" QDP_SANITIZER_OPTS )
+  message(STATUS "QDPXX: Setting Sanitizer options: ${QDP_SANITIZER_OPTS}")
+  set(XPathReader_ENABLE_SANITIZERS ${QDP_ENABLE_SANITIZERS} )
+  set(QIO_ENABLE_SANITIZERS ${QDP_ENABLE_SANITIZERS})
+  set(FileDB_ENABLE_SANITIZERS ${QDP_ENABLE_SANITIZERS} )
 endif()  
 
 
