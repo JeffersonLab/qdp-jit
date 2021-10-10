@@ -34,7 +34,6 @@ set(TESTS t_skeleton
 	t_partfile
 	t_map_obj_disk
 	t_map_obj_memory
-	t_iprod	
 	)
 
 if( BUILD_WILSON_EXAMPLES )

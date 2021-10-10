@@ -18,6 +18,9 @@
 /* Build filedb */
 #cmakedefine BUILD_FILEDB	@BUILD_FILEDB@
 
+/* Propagator optimizations */
+#cmakedefine QDP_PROP_OPT	@QDP_PROP_OPT@
+
 /* CUDA install path */
 #cmakedefine CUDA_DIR		@CUDA_DIR@
 

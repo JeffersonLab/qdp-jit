@@ -3,7 +3,7 @@
 
 #include<type_traits>
 
-
+#if defined (QDP_PROP_OPT)
 namespace QDP {
 
 #if 0
@@ -1186,4 +1186,5 @@ namespace QDP {
   };
 
 } // QDP
+#endif
 #endif
