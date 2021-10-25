@@ -84,8 +84,11 @@ namespace QDP {
 #endif
       QDP_get_global_cache().signoff( send_buf_id );
       QDP_get_global_cache().signoff( recv_buf_id );
-      gpu_host_free(send_buf);
-      gpu_host_free(recv_buf);
+     
+      if (!jit_config_get_gpu_direct()) {
+        gpu_host_free(send_buf);
+        gpu_host_free(recv_buf);
+      }
     }
   }
 
