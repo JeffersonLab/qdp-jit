@@ -139,6 +139,7 @@ namespace QDP {
   llvm::Value* llvm_sub( llvm::Value* lhs , llvm::Value* rhs );
   llvm::Value* llvm_div( llvm::Value* lhs , llvm::Value* rhs );
   llvm::Value* llvm_eq( llvm::Value* lhs , llvm::Value* rhs );
+  llvm::Value* llvm_ne( llvm::Value* lhs , llvm::Value* rhs );
   llvm::Value* llvm_ge( llvm::Value* lhs , llvm::Value* rhs );
   llvm::Value* llvm_gt( llvm::Value* lhs , llvm::Value* rhs );
   llvm::Value* llvm_le( llvm::Value* lhs , llvm::Value* rhs );
