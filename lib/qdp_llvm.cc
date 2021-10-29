@@ -445,6 +445,31 @@ namespace QDP
 #endif
 
 
+  std::string get_ptx();
+
+  void llvm_load_external( JitFunction& func , const char* FileName , const char* ftype , const char* pretty )
+  {
+    str_func_type = ftype;
+    str_pretty = pretty;
+    str_kernel_name = str_func_type + std::to_string( map_func_counter[str_func_type]++ );
+
+    llvm::outs() << "getFile..\n";
+    ErrorOr<std::unique_ptr<MemoryBuffer>> mb = MemoryBuffer::getFile(FileName);
+    if (std::error_code ec = mb.getError()) {
+      errs() << ec.message();
+      QDP_abort(1);
+    }
+    llvm::outs() << "parseBitcodeFile..\n";
+
+    llvm::Expected<std::unique_ptr<llvm::Module>> m = llvm::parseBitcodeFile(mb->get()->getMemBufferRef(), TheContext);
+
+    Mod.reset( m.get().release() );
+
+    std::string ptx_kernel = get_ptx();
+    
+    get_jitf( func , ptx_kernel , str_kernel_name , pretty , str_arch );
+  }
+  
   
   void llvm_init_libdevice()
   {

@@ -1381,6 +1381,17 @@ chiralProjectMinus(const PSpinVectorREG<T,4>& s1)
   return d;
 }
 
+template<class T, int N>
+inline void 
+qdpPHI(PSpinVectorREG<T,N>& d, 
+       const PSpinVectorREG<T,N>& phi0, llvm::BasicBlock* bb0 ,
+       const PSpinVectorREG<T,N>& phi1, llvm::BasicBlock* bb1 )
+{
+  for(int i=0; i < N; ++i)
+    qdpPHI(d.elem(i),
+	   phi0.elem(i),bb0,
+	   phi1.elem(i),bb1);
+}
 
 
 

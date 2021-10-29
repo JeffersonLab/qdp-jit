@@ -620,6 +620,17 @@ inline void
 
 
 
+  template<class T>
+  inline void 
+  qdpPHI(WordREG<T>& d, 
+	 const WordREG<T>& phi0, llvm::BasicBlock* bb0 ,
+	 const WordREG<T>& phi1, llvm::BasicBlock* bb1 )
+  {
+    d.setup( llvm_phi( llvm_get_type<T>() , 2 ) );
+    llvm_add_incoming( d.get_val() , phi0.get_val() , bb0 );
+    llvm_add_incoming( d.get_val() , phi1.get_val() , bb1 );
+  }
+
 
 
 typename UnaryReturn<WordREG<float>, FnCeil>::Type_t ceil(const WordREG<float>& s1);

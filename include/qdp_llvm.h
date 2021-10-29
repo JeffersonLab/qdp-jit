@@ -225,6 +225,7 @@ namespace QDP {
 
 
   void llvm_build_function(JitFunction&);
+  void llvm_load_external( JitFunction& func , const char* FileName , const char* ftype , const char* pretty );
 
 
   llvm::Value* llvm_sin_f32( llvm::Value* lhs );
