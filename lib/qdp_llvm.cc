@@ -172,6 +172,8 @@ namespace QDP
     std::map< std::string , std::string > mapMath;
 
     std::map< jitprec , std::map< std::string , int > > math_declarations;
+
+    std::map< llvm::Type* , std::map<llvm::Type*,llvm::Type*> > ty_prom;
   }
 
   namespace AMDspecific {
@@ -892,6 +894,22 @@ namespace QDP
 #else
     llvm_backend_init_cuda();
 #endif
+
+    llvm::Type* F64 = llvm::Type::getDoubleTy(TheContext);
+    llvm::Type* F32 = llvm::Type::getFloatTy(TheContext);
+    llvm::Type* F16 = llvm::Type::getHalfTy(TheContext);
+  
+    ty_prom[F64][F64]=F64;
+    ty_prom[F64][F32]=F64;
+    ty_prom[F64][F16]=F64;
+    
+    ty_prom[F32][F64]=F64;
+    ty_prom[F32][F32]=F32;
+    ty_prom[F32][F16]=F32;
+    
+    ty_prom[F16][F64]=F64;
+    ty_prom[F16][F32]=F32;
+    ty_prom[F16][F16]=F16;
   }
 
 
@@ -1018,22 +1036,33 @@ namespace QDP
     return builder->CreatePHI( type , num );
   }
 
+  
+  
 
   llvm::Type* promote( llvm::Type* t0 , llvm::Type* t1 )
   {
-    if ( t0->isFloatingPointTy() || t1->isFloatingPointTy() ) {
-      //llvm::outs() << "promote floating " << t0->isFloatingPointTy() << " " << t1->isFloatingPointTy() << "\n";
-      if ( t0->isDoubleTy() || t1->isDoubleTy() ) {
-	return llvm::Type::getDoubleTy(TheContext);
-      } else {
-	return llvm::Type::getFloatTy(TheContext);
+    // llvm::outs() << "promote "
+    // 	   << *t0 << " (" << t0->getFPMantissaWidth() << ") "
+    // 	   << *t1 << " (" << t1->getFPMantissaWidth() << ")\n";
+    
+    if ( t0->isFloatingPointTy() && t1->isFloatingPointTy() )
+      {
+	return ty_prom.at(t0).at(t1);
       }
-    } else {
-      //llvm::outs() << "promote int " << t0->getScalarSizeInBits() << " " << t1->getScalarSizeInBits() << "\n";
-      unsigned upper = std::max( t0->getScalarSizeInBits() , t1->getScalarSizeInBits() );
-      return llvm::Type::getIntNTy(TheContext , upper );
-    }
+    else if (t0->isFloatingPointTy())
+      {
+	return t0;
+      }
+    else if (t1->isFloatingPointTy())
+      {
+	return t1;
+      }
+    else
+      {
+	return llvm::Type::getIntNTy(TheContext , std::max( t0->getScalarSizeInBits() , t1->getScalarSizeInBits() ) );
+      }
   }
+  
 
 
   llvm::Value* llvm_cast( llvm::Type *dest_type , llvm::Value *src )
