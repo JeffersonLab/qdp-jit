@@ -314,6 +314,10 @@ namespace QDP {
 	  {
 	    jit_config_set_timing_run(true);
 	  }
+	else if (strcmp((*argv)[i], "-opt-shift")==0) 
+	  {
+	    qdp_jit_config_set_opt_shifts(true); 
+	  }
 	else if (strcmp((*argv)[i], "-tuneverbose")==0) 
 	  {
 	    jit_config_set_tuning(true);

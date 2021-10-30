@@ -3,6 +3,9 @@
 
 namespace QDP
 {
+  bool qdp_jit_config_get_opt_shifts();
+  void qdp_jit_config_set_opt_shifts(bool v);
+
   bool jit_config_get_timing_run();
   void jit_config_set_timing_run(bool v);
 
