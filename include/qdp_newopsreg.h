@@ -116,7 +116,6 @@ struct FnPeekSpinMatrixREG
   inline typename UnaryReturn<T, FnPeekSpinMatrixREG>::Type_t
   operator()(const T &a) const
   {
-    QDPIO::cout << __PRETTY_FUNCTION__ << std::endl;
     return (peekSpin(a,llvm_derefParam(row),llvm_derefParam(col)));
   }
 

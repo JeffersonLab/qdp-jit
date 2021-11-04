@@ -114,7 +114,7 @@ namespace QDP
       QDPIO::cout << "  memory pool size (per fraction)     : " << pool_size/1024/1024 << " MB\n";
       break;
     }
-    QDPIO::cout << "Acurate timing                        : " << (int)jit_config_get_timing_run() << "\n";
+    QDPIO::cout << "Accurate timing                       : " << (int)jit_config_get_timing_run() << "\n";
     QDPIO::cout << "Code generation:\n";
 #ifdef QDP_BACKEND_CUDA
     QDPIO::cout << "  CUDA flush denormals to zero        : " << jit_config_get_CUDA_FTZ() << std::endl;
