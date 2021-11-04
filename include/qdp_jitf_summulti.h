@@ -28,13 +28,6 @@ namespace QDP {
   void
   function_summulti_convert_ind_build(JitFunction& function)
   {
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
-	if (!function.empty())
-	  return;
-      }
-
     llvm_start_new_function("summulti_convert_ind",__PRETTY_FUNCTION__ );
 
     typedef typename WordType<T1>::Type_t T1WT;
@@ -158,14 +151,6 @@ namespace QDP {
   void
   function_summulti_build(JitFunction& function)
   {
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
-	if (!function.empty())
-	  return;
-      }
-
-
     llvm_start_new_function("summulti",__PRETTY_FUNCTION__ );
 
     typedef typename WordType<T>::Type_t TWT;

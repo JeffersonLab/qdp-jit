@@ -47,13 +47,6 @@ namespace QDP {
     typedef typename QDPType<T1,C1>::Subtype_t    LT;
     typedef typename QDPSubType<T2,C2>::Subtype_t RT;
     
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
-	if (!function.empty())
-	  return;
-      }
-    
     llvm_start_new_function("localInnerProduct_type_subtype",__PRETTY_FUNCTION__ );
 
     ParamRef p_th_count     = llvm_add_param<int>();
@@ -96,14 +89,6 @@ namespace QDP {
     typedef typename QDPSubType<T1,C1>::Subtype_t LT;
     typedef typename QDPType<T2,C2>::Subtype_t    RT;
     
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
-	if (!function.empty())
-	  return;
-      }
-
-
     llvm_start_new_function("localInnerProduct_subtype_type",__PRETTY_FUNCTION__ );
 
     

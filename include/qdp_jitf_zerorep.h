@@ -8,14 +8,6 @@ namespace QDP {
   void
   function_zero_rep_build( JitFunction& function, OLattice<T>& dest)
   {
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
-	if (!function.empty())
-	  return;
-      }
-
-
     std::vector<ParamRef> params = jit_function_preamble_param("zero_rep",__PRETTY_FUNCTION__);
 
     ParamLeaf param_leaf;
@@ -36,14 +28,6 @@ namespace QDP {
   void
   function_zero_rep_subtype_build( JitFunction& function, OSubLattice<T>& dest)
   {
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
-	if (!function.empty())
-	  return;
-      }
-
-
     llvm_start_new_function("zero_rep_subtype",__PRETTY_FUNCTION__);
 
     ParamRef p_th_count     = llvm_add_param<int>();

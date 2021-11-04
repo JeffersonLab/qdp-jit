@@ -74,13 +74,6 @@ namespace QDP {
   void
   function_sum_convert_ind_build(JitFunction& function)
   {
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
-	if (!function.empty())
-	  return;
-      }
-
 #ifdef QDP_DEEP_LOG
     function.size_T = sizeof(T2);
     function.type_W = typeid(typename WordType<T2>::Type_t).name();
@@ -191,13 +184,6 @@ namespace QDP {
   function_sum_convert_ind_expr_build( JitFunction& function , const QDPExpr<RHS,OLattice<T1> >& rhs )
   {
     typedef typename UnaryReturn< OLattice<T1> , FnSum>::Type_t::SubType_t T2;
-
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
-	if (!function.empty())
-	  return;
-      }
 
 #ifdef QDP_DEEP_LOG
     function.size_T = sizeof(T2);
@@ -319,14 +305,6 @@ namespace QDP {
   void
   function_sum_convert_build(JitFunction& function)
   {
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
-	if (!function.empty())
-	  return;
-      }
-
-    
 #ifdef QDP_DEEP_LOG
     function.size_T = sizeof(T2);
     function.type_W = typeid(typename WordType<T2>::Type_t).name();
@@ -433,14 +411,6 @@ namespace QDP {
   void
   function_sum_build(JitFunction& function)
   {
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
-	if (!function.empty())
-	  return;
-      }
-
-    
 #ifdef QDP_DEEP_LOG
     function.size_T = sizeof(T1);
     function.type_W = typeid(typename WordType<T1>::Type_t).name();
@@ -549,13 +519,6 @@ namespace QDP {
   void
   function_bool_reduction_convert_build(JitFunction& function)
   {
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
-	if (!function.empty())
-	  return;
-      }
-
 #ifdef QDP_DEEP_LOG
     function.size_T = sizeof(T2);
     function.type_W = typeid(typename WordType<T2>::Type_t).name();
@@ -663,13 +626,6 @@ namespace QDP {
   void 
   function_bool_reduction_build(JitFunction& function)
   {
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
-	if (!function.empty())
-	  return;
-      }
-
 #ifdef QDP_DEEP_LOG
     function.size_T = sizeof(T1);
     function.type_W = typeid(typename WordType<T1>::Type_t).name();

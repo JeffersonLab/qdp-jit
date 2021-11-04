@@ -459,12 +459,6 @@ namespace QDP {
 	  {
 	    jit_config_set_verbose_output(true);
 	  }
-	else if (strcmp((*argv)[i], "-ptxdb")==0) 
-	  {
-	    char tmp[1024];
-	    sscanf((*argv)[++i], "%s", &tmp[0]);
-	    llvm_set_ptxdb(tmp);
-	  }
 	else if (strcmp((*argv)[i], "-defaultgpu")==0) 
 	  {
 	    int ngpu;
@@ -703,17 +697,6 @@ namespace QDP {
 		  QDPIO::cout << "  total time for dynamic loading:          " << time_dynload/1.e6 << " s\n";
 		}
 
-#ifndef QDP_BACKEND_ROCM
-		if (get_ptx_db_enabled())
-		  {
-		QDPIO::cout << "  ptx db file:                             " << get_ptx_db_fname() << "\n";
-		QDPIO::cout << "  ptx db size (number of functions):       " << get_ptx_db_size() << "\n";
-		  }
-		else
-		  {
-		QDPIO::cout << "  ptx db: (not used)\n";
-		  }
-#endif		
 #ifdef QDP_CUDA_SPECIAL
 		for ( auto it = get_jit_stats_special_names().begin() ; it != get_jit_stats_special_names().end(); it++ )
 		  {

@@ -197,15 +197,6 @@ namespace QDP
 
 
 
-  namespace ptx_db {
-    bool db_enabled = false;
-    std::string dbname = "dummy.dat";
-    typedef std::map< std::string , std::pair< std::string , std::string > > DBType; // pretty+other stuff --> function name , PTX string
-    DBType db;
-  }
-
-
-  
 
   void llvm_set_clang_codegen()
   {
@@ -261,47 +252,6 @@ namespace QDP
 
 
   
-  std::string get_ptx_db_fname() {
-    return ptx_db::dbname;
-  }
-  bool get_ptx_db_enabled() {
-    return ptx_db::db_enabled;
-  }
-  int get_ptx_db_size() {
-    return ptx_db::db.size();
-  }
-
-  
-
-
-
-  void llvm_ptx_db( JitFunction& f , const char * pretty )
-  {
-    std::string id = jit_util_get_static_dynamic_string( pretty );
-    
-    ptx_db::DBType::iterator it = ptx_db::db.find( id );
-
-    if ( it != ptx_db::db.end() )
-      {
-	StopWatch swatch(false);
-	swatch.start();
-
-	// Get jit function
-	get_jitf( f , it->second.second , it->second.first , pretty , str_arch );
-
-	swatch.stop();
-	f.time_dynload = swatch.getTimeInMicroseconds();
-      }
-  }
-
-
-
-  void llvm_set_ptxdb( const char * c_str ) {
-    ptx_db::db_enabled = true;
-    ptx_db::dbname = std::string( c_str );
-  }
-  
-
 
   void llvm_set_debug( const char * c_str ) {
     std::string str(c_str);
@@ -777,65 +727,6 @@ namespace QDP
     QDPIO::cout << "  Target machine CPU                  : " << TargetMachine->getTargetCPU().str() << "\n";
     QDPIO::cout << "  Target triple                       : " << TargetMachine->getTargetTriple().str() << "\n";
     
-
-    if (ptx_db::db_enabled) {
-      // Load DB
-      QDPIO::cout << "PTX DB" << std::endl;
-      QDPIO::cout << "  database file name                  : " << ptx_db::dbname << "\n";
-      std::ifstream f(ptx_db::dbname , ios::in | ios::binary );
-      if (f.good())
-	{
-	  int count = 0;
-	  while ( ! f.eof() )
-	    {
-	      int size1;
-	      f >> size1;
-	      if (f.eof())
-		break;
-	      char* buf1 = new char[size1];
-	      f.read( buf1 , size1 );
-	      if (f.eof())
-		break;
-
-	      int size2;
-	      f >> size2;
-	      if (f.eof())
-		break;
-	      char* buf2 = new char[size2];
-	      f.read( buf2 , size2 );
-	      if (f.eof())
-		break;
-
-	      int size3;
-	      f >> size3;
-	      if (f.eof())
-		break;
-	      char* buf3 = new char[size3];
-	      f.read( buf3 , size3 );
-	      if (f.eof())
-		break;
-
-	      // QDPIO::cout << "ptx_db: read "
-	      // 		  << " key_size=" << size1
-	      // 		  << " name_size=" << size2
-	      // 		  << " ptx_size=" << size3 << "\n";
-
-	      std::string key(buf1,size1);
-	      std::string name(buf2,size2);
-	      std::string ptx(buf3,size3);
-	      ptx_db::db.insert( std::make_pair( key , std::make_pair( name , ptx ) ) );
-	      
-	      ++count;
-	      
-	      delete[] buf1;
-	      delete[] buf2;
-	      delete[] buf3;
-	    }
-	  QDPIO::cout << "  number of records read in           : " << count << "\n";
-	}
-
-    } // ptx db
-
 
     mapMath["sin_f32"]="__nv_sinf";
     mapMath["acos_f32"]="__nv_acosf";
@@ -1797,41 +1688,6 @@ namespace QDP
     get_jitf( func , ptx_kernel , str_kernel_name , str_pretty , str_arch );
     swatch.stop();
     func.time_dynload = swatch.getTimeInMicroseconds();
-
-
-    
-    if ( ptx_db::db_enabled ) {
-
-      if (Layout::primaryNode())
-	{
-	  std::string id = jit_util_get_static_dynamic_string( str_pretty );
-
-	  if ( ptx_db::db.find( id ) != ptx_db::db.end() ) {
-	    QDPIO::cout << "internal error: key already exists in DB but wasn't found earlier\n" << id << "\n";
-	    QDP_abort(1);
-	  }
-
-	  ptx_db::db[ id ] = std::make_pair( str_kernel_name , ptx_kernel );
-
-	  std::ofstream db;
-	  db.open ( ptx_db::dbname , ios::out | ios::binary );
-	  for ( ptx_db::DBType::iterator it = ptx_db::db.begin() ; it != ptx_db::db.end() ; ++it ) 
-	    {
-	      int size1 = it->first.size();
-	      db << size1;
-	      db.write( it->first.c_str() , size1 );
-
-	      int size2 = it->second.first.size();
-	      db << size2;
-	      db.write( it->second.first.c_str() , size2 );
-
-	      int size3 = it->second.second.size();
-	      db << size3;
-	      db.write( it->second.second.c_str() , size3 );
-	    }
-	  db.close();
-	}
-    } // ptx db
   }
 #endif
 

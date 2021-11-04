@@ -9,14 +9,6 @@ namespace QDP {
   void
   function_pokeSite_build( JitFunction& function, const OLattice<T>& dest , const OScalar<T1>& r  )
   {
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
-	if (!function.empty())
-	  return;
-      }
-
-
     llvm_start_new_function("eval_pokeSite",__PRETTY_FUNCTION__);
 
     ParamRef p_siteindex    = llvm_add_param<int>();
