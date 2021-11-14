@@ -352,19 +352,20 @@ namespace QDP
       }
 
     std::vector<std::string> libs;
-    libs.push_back("/amdgcn/bitcode/ocml.bc");
-    libs.push_back("/amdgcn/bitcode/oclc_finite_only_off.bc");
-    libs.push_back("/amdgcn/bitcode/oclc_isa_version_" + arch + ".bc");
-    libs.push_back("/amdgcn/bitcode/oclc_unsafe_math_off.bc");
-    libs.push_back("/amdgcn/bitcode/oclc_daz_opt_off.bc");
-
+    libs.push_back(std::string(ROCM_DIR) + "/amdgcn/bitcode/ocml.bc");
+    libs.push_back(std::string(ROCM_DIR) + "/amdgcn/bitcode/oclc_finite_only_off.bc");
+    libs.push_back(std::string(ROCM_DIR) + "/amdgcn/bitcode/oclc_isa_version_" + arch + ".bc");
+    libs.push_back(std::string(ROCM_DIR) + "/amdgcn/bitcode/oclc_unsafe_math_off.bc");
+    libs.push_back(std::string(ROCM_DIR) + "/amdgcn/bitcode/oclc_daz_opt_off.bc");
+    libs.push_back(std::string(ROCM_DIR) + "/amdgcn/bitcode/oclc_correctly_rounded_sqrt_on.bc");
+  
     libs.insert( libs.end() , jit_config_get_extra_lib().begin() , jit_config_get_extra_lib().end() );
     
     module_ocml.clear();
     
     for( int i = 0 ; i < libs.size() ; ++i )
       {
-	std::string FileName = std::string(ROCM_DIR) + libs[i];
+	std::string FileName = libs[i];
 
 	if (jit_config_get_verbose_output())
 	  {
@@ -374,24 +375,25 @@ namespace QDP
 	std::ifstream ftmp(FileName.c_str());
 	if (!ftmp.good())
 	  {
-	    QDPIO::cerr << "file not found:" << FileName << "\n";
-	    QDP_abort(1);
+	    QDPIO::cerr << "file not found:" << FileName << ". Skipping instead of aborting\n";
 	  }
-    
-	ErrorOr<std::unique_ptr<MemoryBuffer>> mb = MemoryBuffer::getFile(FileName);
-	if (std::error_code ec = mb.getError()) {
-	  errs() << ec.message();
-	  QDP_abort(1);
-	}
-  
-	llvm::Expected<std::unique_ptr<llvm::Module>> m = llvm::parseBitcodeFile(mb->get()->getMemBufferRef(), TheContext);
-	if (std::error_code ec = errorToErrorCode(m.takeError()))
+	else
 	  {
-	    errs() << "Error reading bitcode from " << FileName << ": " << ec.message() << "\n";
-	    QDP_abort(1);
-	  }
+	    ErrorOr<std::unique_ptr<MemoryBuffer>> mb = MemoryBuffer::getFile(FileName);
+	    if (std::error_code ec = mb.getError()) {
+	      errs() << ec.message();
+	      QDP_abort(1);
+	    }
+  
+	    llvm::Expected<std::unique_ptr<llvm::Module>> m = llvm::parseBitcodeFile(mb->get()->getMemBufferRef(), TheContext);
+	    if (std::error_code ec = errorToErrorCode(m.takeError()))
+	      {
+		errs() << "Error reading bitcode from " << FileName << ": " << ec.message() << "\n";
+		QDP_abort(1);
+	      }
 
-	module_ocml.push_back( std::move( m.get() ) );
+	    module_ocml.push_back( std::move( m.get() ) );
+	  }
       }
   }
 #endif
