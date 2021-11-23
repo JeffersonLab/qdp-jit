@@ -57,14 +57,6 @@ namespace QDP {
   }
 
 
-  namespace ptx_db {
-    extern bool db_enabled;
-    extern std::string dbname;
-  }
-
-  void llvm_ptx_db( JitFunction& f, const char * pretty );
-
-  
   typedef int ParamRef;
 
 
@@ -79,13 +71,8 @@ namespace QDP {
 
 
   void llvm_set_debug( const char * str );
-  void llvm_set_ptxdb( const char * c_str );
   void llvm_debug_write_set_name( const char* pretty, const char* additional );
 
-  std::string get_ptx_db_fname();
-  bool        get_ptx_db_enabled();
-  int         get_ptx_db_size();
-    
   llvm::Value * llvm_create_value( double v );
   llvm::Value * llvm_create_value( int v );
   llvm::Value * llvm_create_value( int64_t v );
@@ -139,6 +126,7 @@ namespace QDP {
   llvm::Value* llvm_sub( llvm::Value* lhs , llvm::Value* rhs );
   llvm::Value* llvm_div( llvm::Value* lhs , llvm::Value* rhs );
   llvm::Value* llvm_eq( llvm::Value* lhs , llvm::Value* rhs );
+  llvm::Value* llvm_ne( llvm::Value* lhs , llvm::Value* rhs );
   llvm::Value* llvm_ge( llvm::Value* lhs , llvm::Value* rhs );
   llvm::Value* llvm_gt( llvm::Value* lhs , llvm::Value* rhs );
   llvm::Value* llvm_le( llvm::Value* lhs , llvm::Value* rhs );
@@ -224,6 +212,7 @@ namespace QDP {
 
 
   void llvm_build_function(JitFunction&);
+  void llvm_load_external( JitFunction& func , const char* FileName , const char* ftype , const char* pretty );
 
 
   llvm::Value* llvm_sin_f32( llvm::Value* lhs );

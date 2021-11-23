@@ -291,13 +291,20 @@ struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
     {
       const Map& map = expr.operation().map;
       FnMap& fnmap = const_cast<FnMap&>(expr.operation());
+      typedef typename WordType<InnerType_t>::Type_t AWordType_t;
 
       IndexRet index_pack;
       index_pack.p_multi_index = llvm_add_param<int*>();
 
-      if (map.hasOffnode())
-	{      
-	  typedef typename WordType<InnerType_t>::Type_t AWordType_t;
+      if (qdp_jit_config_get_opt_shifts())
+	{
+	  if (map.hasOffnode())
+	    {      
+	      index_pack.p_recv_buf    = llvm_add_param<AWordType_t*>(); // This deduces it's type from A
+	    }
+	}
+      else
+	{
 	  index_pack.p_recv_buf    = llvm_add_param<AWordType_t*>(); // This deduces it's type from A
 	}
       
@@ -317,14 +324,87 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
     inline
     static Type_t apply(const UnaryNode<FnMapJIT, A>& expr, const ViewLeaf &v, const OpCombine &o)
     {
-      if (expr.operation().map.hasOffnode())
+      if (qdp_jit_config_get_opt_shifts())
 	{
-	  Type_t ret;
+	  //
+	  // Optimized code:
+	  // Add the conditional index < 0 only in the offnode case
+	  //
+	  if (expr.operation().map.hasOffnode())
+	    {
+	      Type_t ret;
 
+	      //
+	      // Setup an object (of return type) on the stack
+	      //
+	      auto ret_stack = stack_alloc<Type_t>();
+      
+	      IndexRet index = expr.operation().index;
+
+	      llvm::Value * r_multi_index = llvm_array_type_indirection( index.p_multi_index , v.getIndex() );
+
+	      JitIf inRecvBuffer( llvm_lt( r_multi_index , llvm_create_value(0) ) );
+	      {
+		llvm::Value *idx_buf = llvm_sub ( llvm_neg ( r_multi_index ) , llvm_create_value(1) );
+
+		IndexDomainVector args;
+		args.push_back( make_pair( Layout::sitesOnNode() , idx_buf ) );
+		args.push_back( make_pair( 1 , llvm_create_value(0) ) );
+
+		typename JITType<Type_t>::Type_t t_jit_recv;
+		t_jit_recv.setup( llvm_derefParam(index.p_recv_buf) ,
+				  JitDeviceLayout::Scalar ,
+				  args );
+
+		Type_t tmp;
+		tmp.setup( t_jit_recv );
+
+		ret_stack = tmp;
+	      }
+	      inRecvBuffer.els();
+	      {
+		ViewLeaf vv( JitDeviceLayout::Coalesced , r_multi_index );
+		Type_t tmp = Combine1<TypeA_t, 
+				      FnMapJIT , 
+				      OpCombine>::combine(ForEach<A, ViewLeaf, OpCombine>::apply(expr.child(), vv, o) , 
+							  expr.operation(), o);
+
+
+		ret_stack = tmp;
+	      }
+	      inRecvBuffer.end();
+      
+	      //
+	      // Now read the object from the stack into a REG container
+	      //
+	      ret.setup( ret_stack );
+      
+	      return ret;
+	    }
+	  else
+	    {
+	      IndexRet index = expr.operation().index;
+
+	      llvm::Value * r_multi_index = llvm_array_type_indirection( index.p_multi_index , v.getIndex() );
+
+	      ViewLeaf vv( JitDeviceLayout::Coalesced , r_multi_index );
+
+	      return Combine1<TypeA_t, 
+			      FnMapJIT , 
+			      OpCombine>::combine(ForEach<A, ViewLeaf, OpCombine>::apply(expr.child(), vv, o) , 
+						  expr.operation(), o);
+
+	    }
+	}
+      else
+	{
+	  //      
+	  // Unoptimized code:
+	  // Add the conditional index < 0 even in the non-offnode case
 	  //
-	  // Setup an object (of return type) on the stack
-	  //
-	  auto ret_stack = stack_alloc<Type_t>();
+	  Type_t ret;
+	  Type_t ret_phi0;
+	  Type_t ret_phi1;
       
 	  IndexRet index = expr.operation().index;
 
@@ -343,44 +423,23 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
 			      JitDeviceLayout::Scalar ,
 			      args );
 
-	    Type_t tmp;
-	    tmp.setup( t_jit_recv );
-
-	    ret_stack = tmp;
+	    ret_phi0.setup( t_jit_recv );
 	  }
 	  inRecvBuffer.els();
 	  {
 	    ViewLeaf vv( JitDeviceLayout::Coalesced , r_multi_index );
-	    Type_t tmp = Combine1<TypeA_t, 
-				  FnMapJIT , 
-				  OpCombine>::combine(ForEach<A, ViewLeaf, OpCombine>::apply(expr.child(), vv, o) , 
-						      expr.operation(), o);
-
-
-	    ret_stack = tmp;
+	    ret_phi1 = Combine1<TypeA_t, 
+				FnMapJIT , 
+				OpCombine>::combine(ForEach<A, ViewLeaf, OpCombine>::apply(expr.child(), vv, o) , 
+						    expr.operation(), o);
 	  }
 	  inRecvBuffer.end();
-      
-	  //
-	  // Now read the object from the stack into a REG container
-	  //
-	  ret.setup( ret_stack );
+
+	  qdpPHI( ret , 
+		  ret_phi0 , inRecvBuffer.get_block_true() ,
+		  ret_phi1 , inRecvBuffer.get_block_false() );
       
 	  return ret;
-	}
-      else
-	{
-	  IndexRet index = expr.operation().index;
-
-	  llvm::Value * r_multi_index = llvm_array_type_indirection( index.p_multi_index , v.getIndex() );
-
-	  ViewLeaf vv( JitDeviceLayout::Coalesced , r_multi_index );
-
-	  return Combine1<TypeA_t, 
-			  FnMapJIT , 
-			  OpCombine>::combine(ForEach<A, ViewLeaf, OpCombine>::apply(expr.child(), vv, o) , 
-					      expr.operation(), o);
-
 	}
     }
   };
@@ -538,17 +597,30 @@ struct ForEach<UnaryNode<FnMap, A>, AddressLeaf, NullCombine>
     inline
     static Type_t apply(const UnaryNode<FnMap, A>& expr, const AddressLeaf &a, const NullCombine &n)
     {
-      const Map& map = expr.operation().map;
-      FnMap& fnmap = const_cast<FnMap&>(expr.operation());
-
-      a.setId( expr.operation().map.getGoffsetsId(a.subset) );
-
-      if (map.hasOffnode())
+      if (qdp_jit_config_get_opt_shifts())
 	{
-	  a.setId( fnmap.getCached().getRecvBufId() );
-	}
+	  const Map& map = expr.operation().map;
+	  FnMap& fnmap = const_cast<FnMap&>(expr.operation());
+
+	  a.setId( expr.operation().map.getGoffsetsId(a.subset) );
+
+	  if (map.hasOffnode())
+	    {
+	      a.setId( fnmap.getCached().getRecvBufId() );
+	    }
       
-      return Type_t( ForEach<A, AddressLeaf, NullCombine>::apply( expr.child() , a , n ) );
+	  return Type_t( ForEach<A, AddressLeaf, NullCombine>::apply( expr.child() , a , n ) );
+	}
+      else
+	{
+	  const Map& map = expr.operation().map;
+	  FnMap& fnmap = const_cast<FnMap&>(expr.operation());
+
+	  a.setId( expr.operation().map.getGoffsetsId(a.subset) );
+	  a.setId( map.hasOffnode() ? fnmap.getCached().getRecvBufId() : -1 );
+      
+	  return Type_t( ForEach<A, AddressLeaf, NullCombine>::apply( expr.child() , a , n ) );
+	}
     }
   };
 

@@ -172,6 +172,8 @@ namespace QDP
     std::map< std::string , std::string > mapMath;
 
     std::map< jitprec , std::map< std::string , int > > math_declarations;
+
+    std::map< llvm::Type* , std::map<llvm::Type*,llvm::Type*> > ty_prom;
   }
 
   namespace AMDspecific {
@@ -195,15 +197,6 @@ namespace QDP
 
 
 
-  namespace ptx_db {
-    bool db_enabled = false;
-    std::string dbname = "dummy.dat";
-    typedef std::map< std::string , std::pair< std::string , std::string > > DBType; // pretty+other stuff --> function name , PTX string
-    DBType db;
-  }
-
-
-  
 
   void llvm_set_clang_codegen()
   {
@@ -259,47 +252,6 @@ namespace QDP
 
 
   
-  std::string get_ptx_db_fname() {
-    return ptx_db::dbname;
-  }
-  bool get_ptx_db_enabled() {
-    return ptx_db::db_enabled;
-  }
-  int get_ptx_db_size() {
-    return ptx_db::db.size();
-  }
-
-  
-
-
-
-  void llvm_ptx_db( JitFunction& f , const char * pretty )
-  {
-    std::string id = jit_util_get_static_dynamic_string( pretty );
-    
-    ptx_db::DBType::iterator it = ptx_db::db.find( id );
-
-    if ( it != ptx_db::db.end() )
-      {
-	StopWatch swatch(false);
-	swatch.start();
-
-	// Get jit function
-	get_jitf( f , it->second.second , it->second.first , pretty , str_arch );
-
-	swatch.stop();
-	f.time_dynload = swatch.getTimeInMicroseconds();
-      }
-  }
-
-
-
-  void llvm_set_ptxdb( const char * c_str ) {
-    ptx_db::db_enabled = true;
-    ptx_db::dbname = std::string( c_str );
-  }
-  
-
 
   void llvm_set_debug( const char * c_str ) {
     std::string str(c_str);
@@ -400,19 +352,20 @@ namespace QDP
       }
 
     std::vector<std::string> libs;
-    libs.push_back("/amdgcn/bitcode/ocml.bc");
-    libs.push_back("/amdgcn/bitcode/oclc_finite_only_off.bc");
-    libs.push_back("/amdgcn/bitcode/oclc_isa_version_" + arch + ".bc");
-    libs.push_back("/amdgcn/bitcode/oclc_unsafe_math_off.bc");
-    libs.push_back("/amdgcn/bitcode/oclc_daz_opt_off.bc");
-
+    libs.push_back(std::string(ROCM_DIR) + "/amdgcn/bitcode/ocml.bc");
+    libs.push_back(std::string(ROCM_DIR) + "/amdgcn/bitcode/oclc_finite_only_off.bc");
+    libs.push_back(std::string(ROCM_DIR) + "/amdgcn/bitcode/oclc_isa_version_" + arch + ".bc");
+    libs.push_back(std::string(ROCM_DIR) + "/amdgcn/bitcode/oclc_unsafe_math_off.bc");
+    libs.push_back(std::string(ROCM_DIR) + "/amdgcn/bitcode/oclc_daz_opt_off.bc");
+    libs.push_back(std::string(ROCM_DIR) + "/amdgcn/bitcode/oclc_correctly_rounded_sqrt_on.bc");
+  
     libs.insert( libs.end() , jit_config_get_extra_lib().begin() , jit_config_get_extra_lib().end() );
     
     module_ocml.clear();
     
     for( int i = 0 ; i < libs.size() ; ++i )
       {
-	std::string FileName = std::string(ROCM_DIR) + libs[i];
+	std::string FileName = libs[i];
 
 	if (jit_config_get_verbose_output())
 	  {
@@ -422,29 +375,55 @@ namespace QDP
 	std::ifstream ftmp(FileName.c_str());
 	if (!ftmp.good())
 	  {
-	    QDPIO::cerr << "file not found:" << FileName << "\n";
-	    QDP_abort(1);
+	    QDPIO::cerr << "file not found:" << FileName << ". Skipping instead of aborting\n";
 	  }
-    
-	ErrorOr<std::unique_ptr<MemoryBuffer>> mb = MemoryBuffer::getFile(FileName);
-	if (std::error_code ec = mb.getError()) {
-	  errs() << ec.message();
-	  QDP_abort(1);
-	}
-  
-	llvm::Expected<std::unique_ptr<llvm::Module>> m = llvm::parseBitcodeFile(mb->get()->getMemBufferRef(), TheContext);
-	if (std::error_code ec = errorToErrorCode(m.takeError()))
+	else
 	  {
-	    errs() << "Error reading bitcode from " << FileName << ": " << ec.message() << "\n";
-	    QDP_abort(1);
-	  }
+	    ErrorOr<std::unique_ptr<MemoryBuffer>> mb = MemoryBuffer::getFile(FileName);
+	    if (std::error_code ec = mb.getError()) {
+	      errs() << ec.message();
+	      QDP_abort(1);
+	    }
+  
+	    llvm::Expected<std::unique_ptr<llvm::Module>> m = llvm::parseBitcodeFile(mb->get()->getMemBufferRef(), TheContext);
+	    if (std::error_code ec = errorToErrorCode(m.takeError()))
+	      {
+		errs() << "Error reading bitcode from " << FileName << ": " << ec.message() << "\n";
+		QDP_abort(1);
+	      }
 
-	module_ocml.push_back( std::move( m.get() ) );
+	    module_ocml.push_back( std::move( m.get() ) );
+	  }
       }
   }
 #endif
 
 
+  std::string get_ptx();
+
+  void llvm_load_external( JitFunction& func , const char* FileName , const char* ftype , const char* pretty )
+  {
+    str_func_type = ftype;
+    str_pretty = pretty;
+    str_kernel_name = str_func_type + std::to_string( map_func_counter[str_func_type]++ );
+
+    llvm::outs() << "getFile..\n";
+    ErrorOr<std::unique_ptr<MemoryBuffer>> mb = MemoryBuffer::getFile(FileName);
+    if (std::error_code ec = mb.getError()) {
+      errs() << ec.message();
+      QDP_abort(1);
+    }
+    llvm::outs() << "parseBitcodeFile..\n";
+
+    llvm::Expected<std::unique_ptr<llvm::Module>> m = llvm::parseBitcodeFile(mb->get()->getMemBufferRef(), TheContext);
+
+    Mod.reset( m.get().release() );
+
+    std::string ptx_kernel = get_ptx();
+    
+    get_jitf( func , ptx_kernel , str_kernel_name , pretty , str_arch );
+  }
+  
   
   void llvm_init_libdevice()
   {
@@ -751,65 +730,6 @@ namespace QDP
     QDPIO::cout << "  Target triple                       : " << TargetMachine->getTargetTriple().str() << "\n";
     
 
-    if (ptx_db::db_enabled) {
-      // Load DB
-      QDPIO::cout << "PTX DB" << std::endl;
-      QDPIO::cout << "  database file name                  : " << ptx_db::dbname << "\n";
-      std::ifstream f(ptx_db::dbname , ios::in | ios::binary );
-      if (f.good())
-	{
-	  int count = 0;
-	  while ( ! f.eof() )
-	    {
-	      int size1;
-	      f >> size1;
-	      if (f.eof())
-		break;
-	      char* buf1 = new char[size1];
-	      f.read( buf1 , size1 );
-	      if (f.eof())
-		break;
-
-	      int size2;
-	      f >> size2;
-	      if (f.eof())
-		break;
-	      char* buf2 = new char[size2];
-	      f.read( buf2 , size2 );
-	      if (f.eof())
-		break;
-
-	      int size3;
-	      f >> size3;
-	      if (f.eof())
-		break;
-	      char* buf3 = new char[size3];
-	      f.read( buf3 , size3 );
-	      if (f.eof())
-		break;
-
-	      // QDPIO::cout << "ptx_db: read "
-	      // 		  << " key_size=" << size1
-	      // 		  << " name_size=" << size2
-	      // 		  << " ptx_size=" << size3 << "\n";
-
-	      std::string key(buf1,size1);
-	      std::string name(buf2,size2);
-	      std::string ptx(buf3,size3);
-	      ptx_db::db.insert( std::make_pair( key , std::make_pair( name , ptx ) ) );
-	      
-	      ++count;
-	      
-	      delete[] buf1;
-	      delete[] buf2;
-	      delete[] buf3;
-	    }
-	  QDPIO::cout << "  number of records read in           : " << count << "\n";
-	}
-
-    } // ptx db
-
-
     mapMath["sin_f32"]="__nv_sinf";
     mapMath["acos_f32"]="__nv_acosf";
     mapMath["asin_f32"]="__nv_asinf";
@@ -867,6 +787,22 @@ namespace QDP
 #else
     llvm_backend_init_cuda();
 #endif
+
+    llvm::Type* F64 = llvm::Type::getDoubleTy(TheContext);
+    llvm::Type* F32 = llvm::Type::getFloatTy(TheContext);
+    llvm::Type* F16 = llvm::Type::getHalfTy(TheContext);
+  
+    ty_prom[F64][F64]=F64;
+    ty_prom[F64][F32]=F64;
+    ty_prom[F64][F16]=F64;
+    
+    ty_prom[F32][F64]=F64;
+    ty_prom[F32][F32]=F32;
+    ty_prom[F32][F16]=F32;
+    
+    ty_prom[F16][F64]=F64;
+    ty_prom[F16][F32]=F32;
+    ty_prom[F16][F16]=F16;
   }
 
 
@@ -993,22 +929,33 @@ namespace QDP
     return builder->CreatePHI( type , num );
   }
 
+  
+  
 
   llvm::Type* promote( llvm::Type* t0 , llvm::Type* t1 )
   {
-    if ( t0->isFloatingPointTy() || t1->isFloatingPointTy() ) {
-      //llvm::outs() << "promote floating " << t0->isFloatingPointTy() << " " << t1->isFloatingPointTy() << "\n";
-      if ( t0->isDoubleTy() || t1->isDoubleTy() ) {
-	return llvm::Type::getDoubleTy(TheContext);
-      } else {
-	return llvm::Type::getFloatTy(TheContext);
+    // llvm::outs() << "promote "
+    // 	   << *t0 << " (" << t0->getFPMantissaWidth() << ") "
+    // 	   << *t1 << " (" << t1->getFPMantissaWidth() << ")\n";
+    
+    if ( t0->isFloatingPointTy() && t1->isFloatingPointTy() )
+      {
+	return ty_prom.at(t0).at(t1);
       }
-    } else {
-      //llvm::outs() << "promote int " << t0->getScalarSizeInBits() << " " << t1->getScalarSizeInBits() << "\n";
-      unsigned upper = std::max( t0->getScalarSizeInBits() , t1->getScalarSizeInBits() );
-      return llvm::Type::getIntNTy(TheContext , upper );
-    }
+    else if (t0->isFloatingPointTy())
+      {
+	return t0;
+      }
+    else if (t1->isFloatingPointTy())
+      {
+	return t1;
+      }
+    else
+      {
+	return llvm::Type::getIntNTy(TheContext , std::max( t0->getScalarSizeInBits() , t1->getScalarSizeInBits() ) );
+      }
   }
+  
 
 
   llvm::Value* llvm_cast( llvm::Type *dest_type , llvm::Value *src )
@@ -1180,6 +1127,17 @@ namespace QDP
       return builder->CreateICmpEQ( vals.first , vals.second );
   }
 
+  
+  llvm::Value* llvm_ne( llvm::Value* lhs , llvm::Value* rhs ) {
+    auto vals = llvm_normalize_values(lhs,rhs);
+    llvm::Type* args_type = vals.first->getType();
+    if ( args_type->isFloatingPointTy() )
+      return builder->CreateFCmpONE( vals.first , vals.second );
+    else
+      return builder->CreateICmpNE( vals.first , vals.second );
+  }
+
+  
 
   llvm::Value* llvm_ge( llvm::Value* lhs , llvm::Value* rhs ) {
     auto vals = llvm_normalize_values(lhs,rhs);
@@ -1732,41 +1690,6 @@ namespace QDP
     get_jitf( func , ptx_kernel , str_kernel_name , str_pretty , str_arch );
     swatch.stop();
     func.time_dynload = swatch.getTimeInMicroseconds();
-
-
-    
-    if ( ptx_db::db_enabled ) {
-
-      if (Layout::primaryNode())
-	{
-	  std::string id = jit_util_get_static_dynamic_string( str_pretty );
-
-	  if ( ptx_db::db.find( id ) != ptx_db::db.end() ) {
-	    QDPIO::cout << "internal error: key already exists in DB but wasn't found earlier\n" << id << "\n";
-	    QDP_abort(1);
-	  }
-
-	  ptx_db::db[ id ] = std::make_pair( str_kernel_name , ptx_kernel );
-
-	  std::ofstream db;
-	  db.open ( ptx_db::dbname , ios::out | ios::binary );
-	  for ( ptx_db::DBType::iterator it = ptx_db::db.begin() ; it != ptx_db::db.end() ; ++it ) 
-	    {
-	      int size1 = it->first.size();
-	      db << size1;
-	      db.write( it->first.c_str() , size1 );
-
-	      int size2 = it->second.first.size();
-	      db << size2;
-	      db.write( it->second.first.c_str() , size2 );
-
-	      int size3 = it->second.second.size();
-	      db << size3;
-	      db.write( it->second.second.c_str() , size3 );
-	    }
-	  db.close();
-	}
-    } // ptx db
   }
 #endif
 

@@ -8,13 +8,6 @@ template<class T>
 void
 function_gaussian_build( JitFunction& function, OLattice<T>& dest ,OLattice<T>& r1 ,OLattice<T>& r2 )
 {
-  if (ptx_db::db_enabled)
-    {
-      llvm_ptx_db( function , __PRETTY_FUNCTION__ );
-      if (!function.empty())
-	return;
-    }
-
   std::vector<ParamRef> params = jit_function_preamble_param("gaussian",__PRETTY_FUNCTION__);
 
   ParamLeaf param_leaf;

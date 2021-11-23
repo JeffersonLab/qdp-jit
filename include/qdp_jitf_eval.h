@@ -20,12 +20,6 @@ namespace QDP {
     expr << std::string(__PRETTY_FUNCTION__) << "_key=" << key;
 #endif
   
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , expr.str().c_str() );
-	if (!function.empty())
-	  return;
-      }
     llvm_start_new_function("eval",expr.str().c_str() );
   
     if ( key.get_offnode_comms() )
@@ -133,12 +127,6 @@ namespace QDP {
 
     //expr << std::string(__PRETTY_FUNCTION__) << "_key=" << key;
   
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , expr.str().c_str() );
-	if (!function.empty())
-	  return;
-      }
     llvm_start_new_function("evalp",expr.str().c_str() );
   
     if ( key.get_offnode_comms() )

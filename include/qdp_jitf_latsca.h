@@ -53,14 +53,6 @@ namespace QDP {
   {
     //std::cout << __PRETTY_FUNCTION__ << std::endl;
   
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
-	if (!function.empty())
-	  return;
-      }
-
-
     std::vector<ParamRef> params = jit_function_preamble_param("eval_lat_sca",__PRETTY_FUNCTION__);
 
     ParamLeaf param_leaf;
@@ -87,14 +79,6 @@ namespace QDP {
   void
   function_lat_sca_subtype_build(JitFunction& function, OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
   {
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
-	if (!function.empty())
-	  return;
-      }
-
-
     llvm_start_new_function("eval_lat_sca_subtype",__PRETTY_FUNCTION__);
 
     ParamRef p_th_count     = llvm_add_param<int>();

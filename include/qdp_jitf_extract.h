@@ -60,13 +60,6 @@ namespace QDP {
   inline void 
   function_extract_build(JitFunction& function, multi1d<OScalar<T> >& dest, const OLattice<T2>& src)
   {
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
-	if (!function.empty())
-	  return;
-      }
-    
     llvm_start_new_function("extract", __PRETTY_FUNCTION__ );
 
     ParamRef p_th_count   = llvm_add_param<int>();

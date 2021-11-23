@@ -12,14 +12,6 @@ namespace QDP {
 #endif  
   function_gather_build( JitFunction& function, const QDPExpr<RHS,OLattice<T1> >& rhs )
   {
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
-	if (!function.empty())
-	  return;
-      }
-
-
     typedef typename WordType<T1>::Type_t WT;
 
     llvm_start_new_function("gather",__PRETTY_FUNCTION__);
@@ -57,14 +49,6 @@ namespace QDP {
   typename std::enable_if_t< HasProp<RHS>::value >
   function_gather_build( JitFunction& function, const QDPExpr<RHS,OLattice<T1> >& rhs )
   {
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
-	if (!function.empty())
-	  return;
-      }
-
-
     typedef typename WordType<T1>::Type_t WT;
 
     llvm_start_new_function("gather_prop",__PRETTY_FUNCTION__);

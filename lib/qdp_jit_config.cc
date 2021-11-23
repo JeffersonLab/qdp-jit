@@ -66,7 +66,12 @@ namespace QDP
 #endif
 
     bool gpu_direct = false;
+    bool opt_shifts = false;
   }
+
+
+  bool qdp_jit_config_get_opt_shifts() {return opt_shifts;}
+  void qdp_jit_config_set_opt_shifts(bool v) { opt_shifts = v; } 
 
 
 #ifdef QDP_BACKEND_CUDA
@@ -109,11 +114,19 @@ namespace QDP
       QDPIO::cout << "  memory pool size (per fraction)     : " << pool_size/1024/1024 << " MB\n";
       break;
     }
-#ifdef QDP_BACKEND_CUDA
+    QDPIO::cout << "Accurate timing                       : " << (int)jit_config_get_timing_run() << "\n";
     QDPIO::cout << "Code generation:\n";
+#ifdef QDP_BACKEND_CUDA
     QDPIO::cout << "  CUDA flush denormals to zero        : " << jit_config_get_CUDA_FTZ() << std::endl;
 #endif
-    QDPIO::cout << "Using GPU direct                      : " << (int)gpu_direct << "\n";
+    QDPIO::cout << "  GPU direct                          : " << (int)jit_config_get_gpu_direct() << "\n";
+    QDPIO::cout << "  Shift optimization                  : " << (int)qdp_jit_config_get_opt_shifts() << "\n";
+    QDPIO::cout << "  Propagator optimization             : ";
+#if defined (QDP_PROP_OPT)
+    QDPIO::cout << "1\n";
+#else
+    QDPIO::cout << "0\n";
+#endif
   }
 
 
