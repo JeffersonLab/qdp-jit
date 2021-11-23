@@ -55,8 +55,6 @@ namespace QDP {
     unsigned major;
     unsigned minor;
 
-    int defaultGPU = -1;
-
     size_t mem_free, mem_total;
 
     
@@ -650,19 +648,6 @@ if (size == 0) *mem = nullptr;
   }
 
 
-
-  
-
-
-
-
-  void gpu_set_default_GPU(int ngpu) {
-    defaultGPU = ngpu;
-  }
-
-
-  int  gpu_get_default_GPU() { return defaultGPU; }
-  
   size_t gpu_getMaxGridX()  {return max_gridx;}
   size_t gpu_getMaxGridY()  {return max_gridy;}
   size_t gpu_getMaxGridZ()  {return max_gridz;}
@@ -676,9 +661,6 @@ if (size == 0) *mem = nullptr;
   unsigned gpu_getMajor() { return major; }
   unsigned gpu_getMinor() { return minor; }
   
-
-
-
   
 }
 

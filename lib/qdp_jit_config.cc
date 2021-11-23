@@ -71,6 +71,8 @@ namespace QDP
     double fuzzfactor = 50;
 #endif
 
+    int use_gpu = -1;
+    
     bool gpu_direct = false;
     bool opt_shifts = false;
   }
@@ -84,7 +86,10 @@ namespace QDP
   void jit_config_set_instcombine(bool b) { llvm_opt_instcombine = b; }
   void jit_config_set_inline(bool b)      { llvm_opt_inline = b; }
 
-  
+  int  qdp_jit_config_get_use_gpu() {return use_gpu;}
+  void qdp_jit_config_set_use_gpu(int v) { use_gpu = v; } 
+
+
 #ifdef QDP_BACKEND_CUDA
   int  jit_config_get_CUDA_FTZ()   { return CUDA_FTZ; }
   void jit_config_set_CUDA_FTZ(int i)   { CUDA_FTZ = i; }
@@ -142,20 +147,6 @@ namespace QDP
 #else
     QDPIO::cout << "0\n";
 #endif
-#ifdef QDP_DEEP_LOG
-    if (jit_config_deep_log())
-      {
-	if ( jit_config_deep_log_create() )
-	  QDPIO::cout << "Deep log run                          : create\n";
-	else
-	  {
-	    QDPIO::cout << "Deep log run                          : compare\n";
-	    QDPIO::cout << "  Tolerance                           : " << jit_config_get_tolerance() << "\n";
-	    QDPIO::cout << "  Fuzzfactor                          : " << jit_config_get_fuzzfactor() << "\n";
-	  }
-      }
-#endif
-    
   }
 
 

@@ -78,49 +78,44 @@ namespace QDP {
   int QDP_setGPU()
   {
     int deviceCount = gpu_get_device_count();
-
-    // Try 
-    char *rank = getenv( "PMI_RANK" );
-
-    // Try MVapich
-    if( ! rank ) {
-	rank = getenv( "MV2_COMM_WORLD_LOCAL_RANK"  );
-    } 
-
-    // Try OpenMPI
-    if( ! rank ) {
-       rank = getenv( "OMPI_COMM_WORLD_LOCAL_RANK" );
-    }
-
-    // Try SLURM
-    if( ! rank ) {
-       rank = getenv( "SLURM_LOCALID" );
-    }
-
-
     int dev=0;
-    if (rank) {
-      int local_rank = atoi(rank);
-      dev = local_rank % deviceCount;
-    } else {
-      if ( gpu_get_default_GPU() == -1 )
-	{
-	  jit_config_delayed_message("Couldnt determine local rank. Selecting device 0. In a multi-GPU per node run this is not what one wants.");
-	  dev = 0;
+    
+    if (qdp_jit_config_get_use_gpu() == -1)
+      {
+	// Try 
+	char *rank = getenv( "PMI_RANK" );
+
+	// Try MVapich
+	if( ! rank ) {
+	  rank = getenv( "MV2_COMM_WORLD_LOCAL_RANK"  );
+	} 
+
+	// Try OpenMPI
+	if( ! rank ) {
+	  rank = getenv( "OMPI_COMM_WORLD_LOCAL_RANK" );
 	}
-      else
-	{
-	  dev = gpu_get_default_GPU();
-	  jit_config_delayed_message("Couldnt determine local rank. Selecting device " + std::to_string(dev) + " as per user request.");
+
+	// Try SLURM
+	if( ! rank ) {
+	  rank = getenv( "SLURM_LOCALID" );
 	}
-#if 0
-      // we don't have an initialized QMP at this point
-       std::cerr << "Couldnt determine local rank. Selecting device based on global rank \n";
-       std::cerr << "Please ensure that ranks increase fastest within the node for this to work \n";
-       int rank_QMP = QMP_get_node_number();
-       dev = rank_QMP % deviceCount;
-#endif
-    }
+
+	if (rank)
+	  {
+	    int local_rank = atoi(rank);
+	    dev = local_rank % deviceCount;
+	  }
+	else
+	  {
+	    jit_config_delayed_message("Couldnt determine local rank. Selecting device 0. In a multi-GPU per node run this is not what one wants.");
+	    dev = 0;
+	  }
+      }
+    else
+      {
+	dev = qdp_jit_config_get_use_gpu();
+	jit_config_delayed_message("Selecting device " + std::to_string(dev) + " as per user request.");
+      }
 
     //std::cout << "Setting GPU device to " << dev << "\n";
     gpu_set_device( dev );
@@ -483,12 +478,12 @@ namespace QDP {
 	  {
 	    jit_config_set_verbose_output(true);
 	  }
-	else if (strcmp((*argv)[i], "-defaultgpu")==0) 
+	else if (strcmp((*argv)[i], "-use-gpu")==0) 
 	  {
 	    int ngpu;
 	    sscanf((*argv)[++i], "%d", &ngpu);
-	    gpu_set_default_GPU(ngpu);
-	    std::cout << "Default GPU set to " << ngpu << "\n";
+	    std::cout << "usegpu " << ngpu << "\n";
+	    qdp_jit_config_set_use_gpu(ngpu);
 	  }
 #if QDP_USE_VNODE_LAYOUT == 1
 	else if (strcmp((*argv)[i], "-vnodegeom")==0) 
