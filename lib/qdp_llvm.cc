@@ -2267,7 +2267,11 @@ namespace QDP
     std::string clang_name;
     if (clang_codegen)
       {
-	clang_name = "module_" + str_kernel_name + ".bc";
+	clang_name =
+	  "module_" + str_kernel_name +
+	  "_node_" + std::to_string(Layout::nodeNumber()) +
+	  "_pid_" + std::to_string(::getpid()) +
+	  ".bc";
 	QDPIO::cout << "write code to " << clang_name << "\n";
 	std::error_code EC;
 #if defined(QDP_LLVM13)
@@ -2279,7 +2283,11 @@ namespace QDP
 	OS.flush();
       }
 
-    std::string isabin_path = "module_" + str_kernel_name + "_node_" + std::to_string(Layout::nodeNumber()) + ".o";
+    std::string isabin_path =
+      "module_" + str_kernel_name +
+      "_node_" + std::to_string(Layout::nodeNumber()) +
+      "_pid_" + std::to_string(::getpid()) +
+      ".o";
 
     if (clang_codegen)
       {	
@@ -2289,6 +2297,15 @@ namespace QDP
 	std::cout << "System: " << command.c_str() << "\n";
     
 	system( command.c_str() );
+
+	if (! jit_config_get_keepfiles() )
+	  {
+	    if (std::remove(clang_name.c_str()))
+	      {
+		QDPIO::cout << "Error removing file: " << clang_name << std::endl;
+		QDP_abort(1);
+	      }
+	  }
       }
     else
       {
@@ -2437,7 +2454,11 @@ namespace QDP
 	  }
       }
     
-    std::string shared_path = "module_" + str_kernel_name + "_node_" + std::to_string(Layout::nodeNumber()) + ".so";
+    std::string shared_path =
+	    "module_" + str_kernel_name +
+	    "_node_" + std::to_string(Layout::nodeNumber()) +
+	    "_pid_" + std::to_string(::getpid()) +
+	    ".so";
 
     // call codegen
     build_function_rocm_codegen( func , shared_path );
