@@ -32,9 +32,6 @@ namespace QDP {
 
   int gpu_get_device_count();
 
-  void gpu_set_default_GPU(int ngpu);
-  int  gpu_get_default_GPU();
-  
   void gpu_set_device(int dev);
 
   void gpu_host_alloc(void **mem , const size_t size);
