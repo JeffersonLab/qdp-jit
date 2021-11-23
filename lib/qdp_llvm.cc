@@ -567,7 +567,7 @@ namespace QDP
 	      QDP_abort(1);
 	    }
   
-	    llvm::Expected<std::unique_ptr<llvm::Module>> m = llvm::parseBitcodeFile(mb->get()->getMemBufferRef(), TheContext);
+	    llvm::Expected<std::unique_ptr<llvm::Module>> m = llvm::parseBitcodeFile(mb->get()->getMemBufferRef(), *TheContext);
 	    if (std::error_code ec = errorToErrorCode(m.takeError()))
 	      {
 		errs() << "Error reading bitcode from " << FileName << ": " << ec.message() << "\n";
