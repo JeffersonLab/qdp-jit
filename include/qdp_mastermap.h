@@ -8,47 +8,169 @@ namespace QDP {
   class MasterMap {
   public:
     static MasterMap& Instance();
-    //int registrate(const Map& map);
-    int  registrate_justid(const Map& map);
-    void registrate_work(const Map& map, const Subset& subset);
-    
-    // const multi1d<int>& getInnerSites(const Subset& s,int bitmask) const;
-    // const multi1d<int>& getFaceSites(const Subset& s,int bitmask) const;
 
-    int getCountInner(const Subset& s,int bitmask) const;
-    int getCountFace(const Subset& s,int bitmask) const;
-    int getIdInner(const Subset& s,int bitmask) const;
-    int getIdFace(const Subset& s,int bitmask) const;
+    int  register_justid(const Map& map);
+    void register_work  (const Map& map, const Subset& subset);
+    
+#ifdef QDP_BACKEND_AVX
+    int getCountVNodeInnerSIMD  (const Subset& s,int bitmask) ;
+    int getCountVNodeInnerScalar(const Subset& s,int bitmask) ;
+#endif
+    int getCountInnerScalar     (const Subset& s,int bitmask) ;
+    int getCountFace            (const Subset& s,int bitmask) ;
+
+#ifdef QDP_BACKEND_AVX
+    int getIdVNodeInnerSIMD  (const Subset& s,int bitmask) ;
+    int getIdVNodeInnerScalar(const Subset& s,int bitmask) ;
+#endif
+    int getIdInnerScalar     (const Subset& s,int bitmask) ;
+    int getIdFace            (const Subset& s,int bitmask) ;
 
   private:
-    void complement(multi1d<int>& out, const multi1d<int>& orig) const;
-    void remove_neg(multi1d<int>& out, const multi1d<int>& orig) const;
-    void remove_neg_in_subset(multi1d<int>& out, const multi1d<int>& orig, int s_no) const;
-    void uniquify_list_inplace(multi1d<int>& out , const multi1d<int>& ll) const;
+    void generate_tables(const Subset& subset, int bitmask);
 
-    MasterMap() {
-      //QDPIO::cout << "constructing master map with " << MasterSet::Instance().numSubsets() << " subsets\n";
+    struct tables
+    {
+#ifdef QDP_BACKEND_AVX
+      std::shared_ptr< std::vector<int> > innerVNodeSIMD;
+      std::shared_ptr< std::vector<int> > innerVNodeScalar;
+#endif
+      std::shared_ptr< std::vector<int> > innerScalar;
+      std::shared_ptr< std::vector<int> > face;
 
-      powerSet.resize( MasterSet::Instance().numSubsets() );
-      powerSetC.resize( MasterSet::Instance().numSubsets() );
-      idInner.resize( MasterSet::Instance().numSubsets() );
-      idFace.resize( MasterSet::Instance().numSubsets() );
+#ifdef QDP_BACKEND_AVX
+      int id_innerVNodeSIMD;
+      int id_innerVNodeScalar;
+#endif
+      int id_innerScalar;
+      int id_face;
 
-      // powerSet.reserve(2048);
-      // powerSetC.reserve(2048);
-
-      for (int s_no = 0 ; s_no < MasterSet::Instance().numSubsets() ; ++s_no ) {
-	powerSet[s_no].resize(1);
-	powerSet[s_no][0] = new multi1d<int>;
+      tables() {
+#ifdef QDP_BACKEND_AVX
+	innerVNodeSIMD   = std::make_shared< std::vector<int> >();
+	innerVNodeScalar = std::make_shared< std::vector<int> >();
+#endif
+	innerScalar      = std::make_shared< std::vector<int> >();
+	face             = std::make_shared< std::vector<int> >();
       }
+    };
+
+    MasterMap()
+    {
+      //QDPIO::cout << "constructing master map with " << MasterSet::Instance().numSubsets() << " subsets\n";
+      const int my_node   = Layout::nodeNumber();
+
+      // QDPIO::cout << "vnode latt size = ("
+      // 		  << Layout::virtualNodeSubgridLattSize()[0] << " "
+      // 		  << Layout::virtualNodeSubgridLattSize()[1] << " "
+      // 		  << Layout::virtualNodeSubgridLattSize()[2] << " "
+      // 		  << Layout::virtualNodeSubgridLattSize()[3] << ")" << std::endl;
+	
+      // Make the subset without any shifts
+      //
+      for (int s_no = 0 ; s_no < MasterSet::Instance().numSubsets() ; ++s_no )
+	{
+	  const Subset& subset( MasterSet::Instance().getSubset(s_no) );
+
+	  tables t;
+
+	  //QDPIO::cout << "******* Subset " << s_no << "  has " << subset.numSiteTable() << std::endl;
+
+	  std::vector<int> coverSIMD;
+	  
+	  for (int i = 0 ; i < subset.numSiteTable() ; ++i )
+	    {
+	      int j = subset.siteTable()[ i ];
+	      multi1d<int> coord = Layout::siteCoords( my_node , j );
+
+	      // Always add this site to the Scalar sitetable
+	      //
+	      t.innerScalar->push_back(j);
+
+	      //QDPIO::cout << i << "  coord (" << coord[0] << " " <<  coord[1] << " " << coord[2] << " " << coord[3] << ")" << std::endl;
+
+#ifdef QDP_BACKEND_AVX
+	      bool isSIMD = false;
+	      
+	      bool firstvnode = true;
+	      for ( int d = 0 ; d < Nd ; ++d )
+		{
+		  if ( coord[d] % Layout::subgridLattSize()[d] >= Layout::virtualNodeSubgridLattSize()[d] )
+		    firstvnode = false;
+		}
+
+	      std::vector<int> tmp;
+	      if (firstvnode)
+		{
+		  //QDPIO::cout << t.innerVNodeSIMD.size() << " = " << j << std::endl;
+
+		  //
+		  // Check that all vector components lie within this subset
+		  bool all_in = true;
+		  
+		  auto& vn_coords = Layout::virtualNodeCoords();
+		  for ( int c = 0 ; c < vn_coords.size() ; c++ )
+		    {
+		      auto vec_coord = coord + vn_coords[c];
+
+		      int lin = Layout::linearSiteIndex( vec_coord );
+		      all_in = all_in && subset.isElement( lin );
+
+		      tmp.push_back(lin);
+		    }
+
+		  if (all_in)
+		    {
+		      isSIMD = true;
+		    }
+		}
+
+	      if (isSIMD)
+		{
+		  t.innerVNodeSIMD->push_back(j);
+		  coverSIMD.insert( coverSIMD.end() , tmp.begin() , tmp.end() );
+		}
+#endif
+	    } // i
+
+
+#ifdef QDP_BACKEND_AVX
+	  // Next round, do the VNodeScalar respecting coverSIMD
+	  //
+	  for (int i = 0 ; i < subset.numSiteTable() ; ++i )
+	    {
+	      int j = subset.siteTable()[ i ];
+
+	      if ( std::find( coverSIMD.begin(), coverSIMD.end(), j) == coverSIMD.end() )
+		{
+		  t.innerVNodeScalar->push_back(j);
+		}
+	    }
+#endif
+	  
+	  //QDPIO::cout << "Scalar    site count = " << t.innerScalar->size() << std::endl;
+#ifdef QDP_BACKEND_AVX
+	  //QDPIO::cout << "VN SIMD   site count = " << t.innerVNodeSIMD->size() << std::endl;
+	  //QDPIO::cout << "VN Scalar site count = " << t.innerVNodeScalar->size() << std::endl;
+#endif
+	  
+	  t.id_face             = -1;
+	  t.id_innerScalar      = QDP_get_global_cache().registrateOwnHostMem( t.innerScalar->size() * sizeof(int)      , t.innerScalar->data()      , NULL );
+#ifdef QDP_BACKEND_AVX
+	  t.id_innerVNodeScalar = QDP_get_global_cache().registrateOwnHostMem( t.innerVNodeScalar->size() * sizeof(int) , t.innerVNodeScalar->data() , NULL );
+	  t.id_innerVNodeSIMD   = QDP_get_global_cache().registrateOwnHostMem( t.innerVNodeSIMD->size() * sizeof(int)   , t.innerVNodeSIMD->data()   , NULL );
+#endif
+	  
+	  // Store in map
+	  //
+	  mapTables[ make_pair(s_no,0) ] = t;
+	}
     }
 
     std::vector<const Map*> vecPMap;
-    std::vector< std::vector< multi1d<int>* > > powerSet;  // Power set of roffsets
-    std::vector< std::vector< multi1d<int>* > > powerSetC; // Power set of complements
-    std::vector< std::vector< int > > idInner;
-    std::vector< std::vector< int > > idFace;
 
+    std::map< std::pair<int,int> , tables > mapTables;
+    
   };
 
 } // namespace QDP

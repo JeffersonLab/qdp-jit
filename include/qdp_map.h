@@ -9,6 +9,8 @@
 #ifndef QDP_MAP_H
 #define QDP_MAP_H
 
+//#include <signal.h>
+
 namespace QDP {
 
 // Helpful for communications
@@ -158,6 +160,14 @@ public:
     assert( s.getId() >= 0 && s.getId() < roffsets.size() && "roffset: subset Id out of range");
     return roffsets[s.getId()];
   }
+#ifdef QDP_BACKEND_AVX
+  const std::vector<int>& loffset(const Subset& s) const {
+    if (!lazy_done_s(s))
+      QDP_error_exit("loffest used before lazy component was called");
+    assert( s.getId() >= 0 && s.getId() < loffsets.size() && "loffset: subset Id out of range");
+    return loffsets[s.getId()];
+  }
+#endif
   int getRoffsetsId(const Subset& s) const { 
     if (!lazy_done_s(s))
       make_lazy(s);
@@ -190,6 +200,7 @@ public:
     if (myId < 0)
       {
 	QDPIO::cout << "internal error. Map::getId called before lazy evaluation for any subset\n";
+	raise(SIGSEGV);
 	QDP_error_exit("giving up");
       }
     return myId;
@@ -204,7 +215,7 @@ public:
   }
   bool lazy_done_s(const Subset& s) const {
     if (lazy_done.size() > 0  &&  lazy_done.size() < s.getId() ) {
-      QDPIO::cout << "subset Id out of range. Did you use shift on a user-defined subset?\n";
+      QDPIO::cout << "subset Id out of range. Shifts on a user-defined subset are not supported.\n";
       QDP_error_exit("giving up");
     }
     if (lazy_done.size() < 1)
@@ -225,10 +236,15 @@ private:
   mutable multi1d< multi1d<int> > goffsets;    // [subset no.][linear index] > 0 local, < 0 receive buffer index
   mutable multi1d< multi1d<int> > soffsets;    // [subset no.][0..N] = linear index   N = destnodes_num
   mutable multi1d< multi1d<int> > roffsets;    // [subset no.][0..N] = linear index   N = srcenodes_num
-
+  
   mutable multi1d<int> roffsetsId; // [subset no.]
   mutable multi1d<int> soffsetsId; // [subset no.]
   mutable multi1d<int> goffsetsId; // [subset no.]
+
+#if defined (QDP_BACKEND_AVX)
+  mutable std::vector< std::vector<int> > loffsets;    // [subset no.][0..N] = linear index   N = srcenodes_num
+  mutable multi1d<int> loffsetsId; // [subset no.]
+#endif
 
   mutable int myId = -1; // master map id
 
@@ -281,30 +297,73 @@ struct FnMapJIT
 
 template<class A>
 struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
+{
+  typedef typename ForEach<A, EvalLeaf1, OpCombine>::Type_t InnerTypeA_t;
+  typedef typename Combine1<InnerTypeA_t, FnMap, OpCombine>::Type_t InnerType_t;
+  typedef typename ForEach< UnaryNode<FnMapJIT, A> , ParamLeaf, TreeCombine>::Type_t Type_t;
+  inline
+  static Type_t apply(const UnaryNode<FnMap, A>& expr, const ParamLeaf &p, const TreeCombine &c)
   {
-    typedef typename ForEach<A, EvalLeaf1, OpCombine>::Type_t InnerTypeA_t;
-    typedef typename Combine1<InnerTypeA_t, FnMap, OpCombine>::Type_t InnerType_t;
-    //typedef typename ForEach<A, ViewLeaf, OpCombine>::Type_t AInnerTypeA_t;
-    typedef typename ForEach< UnaryNode<FnMapJIT, A> , ParamLeaf, TreeCombine>::Type_t Type_t;
-    inline
-    static Type_t apply(const UnaryNode<FnMap, A>& expr, const ParamLeaf &p, const TreeCombine &c)
-    {
-      const Map& map = expr.operation().map;
-      FnMap& fnmap = const_cast<FnMap&>(expr.operation());
+    const Map& map = expr.operation().map;
+    FnMap& fnmap = const_cast<FnMap&>(expr.operation());
+    typedef typename WordType<InnerType_t>::Type_t AWordType_t;
 
-      IndexRet index_pack;
-      index_pack.p_multi_index = llvm_add_param<int*>();
+    IndexRet index_pack;
+    index_pack.p_multi_index = llvm_add_param<int*>();
 
-      if (map.hasOffnode())
-	{      
-	  typedef typename WordType<InnerType_t>::Type_t AWordType_t;
-	  index_pack.p_recv_buf    = llvm_add_param<AWordType_t*>(); // This deduces it's type from A
-	}
-      
-      return Type_t( FnMapJIT( expr.operation() , index_pack ) , 
-		     ForEach< A, ParamLeaf, TreeCombine >::apply( expr.child() , p , c ) );
-    }
-  };
+    if (qdp_jit_config_get_opt_shifts())
+      {
+	if (map.hasOffnode())
+	  {      
+	    index_pack.p_recv_buf    = llvm_add_param<AWordType_t*>();
+	  }
+      }
+    else
+      {
+	index_pack.p_recv_buf    = llvm_add_param<AWordType_t*>();
+      }
+
+    
+    return Type_t( FnMapJIT( expr.operation() , index_pack ) , 
+		   ForEach< A , ParamLeaf , TreeCombine >::apply( expr.child() , p , c ) );
+  }
+};
+
+
+template<class A>
+struct ForEach<UnaryNode<FnMap, A>, ParamLeafScalar, TreeCombine>
+{
+  typedef typename ForEach<A, EvalLeaf1, OpCombine>::Type_t InnerTypeA_t;
+  typedef typename Combine1<InnerTypeA_t, FnMap, OpCombine>::Type_t InnerType_t;
+  typedef typename ForEach< UnaryNode<FnMapJIT, A> , ParamLeafScalar, TreeCombine>::Type_t Type_t;
+  inline
+  static Type_t apply(const UnaryNode<FnMap, A>& expr, const ParamLeafScalar &p, const TreeCombine &c)
+  {
+    const Map& map = expr.operation().map;
+    FnMap& fnmap = const_cast<FnMap&>(expr.operation());
+    typedef typename WordType<InnerType_t>::Type_t AWordType_t;
+
+    IndexRet index_pack;
+    index_pack.p_multi_index = llvm_add_param<int*>();
+
+    if (qdp_jit_config_get_opt_shifts())
+      {
+	if (map.hasOffnode())
+	  {      
+	    index_pack.p_recv_buf    = llvm_add_param<AWordType_t*>();
+	  }
+      }
+    else
+      {
+	index_pack.p_recv_buf    = llvm_add_param<AWordType_t*>();
+      }
+
+    return Type_t( FnMapJIT( expr.operation() , index_pack ) , 
+		   ForEach< A , ParamLeafScalar , TreeCombine >::apply( expr.child() , p , c ) );
+  }
+};
+
+
 
 
 
@@ -317,14 +376,72 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
     inline
     static Type_t apply(const UnaryNode<FnMapJIT, A>& expr, const ViewLeaf &v, const OpCombine &o)
     {
-      if (expr.operation().map.hasOffnode())
+      //
+      // ViewLeaf::handle_multi_index turned off removed the multi-index conditional in the SIMD 'interior' code
+      // even in the case the map has offnode comms. The correctness is given by the sitetable.
+      //
+      if (qdp_jit_config_get_opt_shifts())
+	{
+	  if (v.handle_multi_index && expr.operation().map.hasOffnode())
+	    {
+	      Type_t ret;
+	      Type_t ret_phi0;
+	      Type_t ret_phi1;
+      
+	      IndexRet index = expr.operation().index;
+
+	      llvm::Value * r_multi_index = llvm_array_type_indirection( index.p_multi_index , v.getIndex() );
+
+	      JitIf inRecvBuffer( llvm_lt( r_multi_index , llvm_create_value(0) ) );
+	      {
+		llvm::Value *idx_buf = llvm_sub ( llvm_neg ( r_multi_index ) , llvm_create_value(1) );
+
+		IndexDomainVector args;
+		args.push_back( make_pair( Layout::sitesOnNode() , idx_buf ) );
+		args.push_back( make_pair( 1 , llvm_create_value(0) ) );
+
+		typename JITType<Type_t>::Type_t t_jit_recv;
+		t_jit_recv.setup( llvm_derefParam(index.p_recv_buf) ,
+				  JitDeviceLayout::Scalar ,
+				  args );
+
+		ret_phi0.setup( t_jit_recv );
+	      }
+	      inRecvBuffer.els();
+	      {
+		ViewLeaf vv( JitDeviceLayout::Coalesced , r_multi_index );
+		ret_phi1 = Combine1<TypeA_t, 
+				    FnMapJIT , 
+				    OpCombine>::combine(ForEach<A, ViewLeaf, OpCombine>::apply(expr.child(), vv, o) , 
+							expr.operation(), o);
+	      }
+	      inRecvBuffer.end();
+
+	      qdpPHI( ret , 
+		      ret_phi0 , inRecvBuffer.get_block_true() ,
+		      ret_phi1 , inRecvBuffer.get_block_false() );
+      
+	      return ret;
+	    }
+	  else
+	    {
+	      IndexRet index = expr.operation().index;
+
+	      llvm::Value * r_multi_index = llvm_array_type_indirection( index.p_multi_index , v.getIndex() );
+
+	      ViewLeaf vv( JitDeviceLayout::Coalesced , r_multi_index );
+
+	      return Combine1<TypeA_t, 
+			      FnMapJIT , 
+			      OpCombine>::combine(ForEach<A, ViewLeaf, OpCombine>::apply(expr.child(), vv, o) , 
+						  expr.operation(), o);
+	    }
+	}
+      else
 	{
 	  Type_t ret;
-
-	  //
-	  // Setup an object (of return type) on the stack
-	  //
-	  auto ret_stack = stack_alloc<Type_t>();
+	  Type_t ret_phi0;
+	  Type_t ret_phi1;
       
 	  IndexRet index = expr.operation().index;
 
@@ -343,53 +460,29 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
 			      JitDeviceLayout::Scalar ,
 			      args );
 
-	    Type_t tmp;
-	    tmp.setup( t_jit_recv );
-
-	    ret_stack = tmp;
+	    ret_phi0.setup( t_jit_recv );
 	  }
 	  inRecvBuffer.els();
 	  {
 	    ViewLeaf vv( JitDeviceLayout::Coalesced , r_multi_index );
-	    Type_t tmp = Combine1<TypeA_t, 
-				  FnMapJIT , 
-				  OpCombine>::combine(ForEach<A, ViewLeaf, OpCombine>::apply(expr.child(), vv, o) , 
-						      expr.operation(), o);
-
-
-	    ret_stack = tmp;
+	    ret_phi1 = Combine1<TypeA_t, 
+				FnMapJIT , 
+				OpCombine>::combine(ForEach<A, ViewLeaf, OpCombine>::apply(expr.child(), vv, o) , 
+						    expr.operation(), o);
 	  }
 	  inRecvBuffer.end();
-      
-	  //
-	  // Now read the object from the stack into a REG container
-	  //
-	  ret.setup( ret_stack );
+
+	  qdpPHI( ret , 
+		  ret_phi0 , inRecvBuffer.get_block_true() ,
+		  ret_phi1 , inRecvBuffer.get_block_false() );
       
 	  return ret;
-	}
-      else
-	{
-	  IndexRet index = expr.operation().index;
-
-	  llvm::Value * r_multi_index = llvm_array_type_indirection( index.p_multi_index , v.getIndex() );
-
-	  ViewLeaf vv( JitDeviceLayout::Coalesced , r_multi_index );
-
-	  return Combine1<TypeA_t, 
-			  FnMapJIT , 
-			  OpCombine>::combine(ForEach<A, ViewLeaf, OpCombine>::apply(expr.child(), vv, o) , 
-					      expr.operation(), o);
-
 	}
     }
   };
 
 
-  namespace
-  {
-    template <class T> void print_type();
-  }
+
 
 
 template<class T,int N>
@@ -431,6 +524,9 @@ T viewSpinJit( PScalarJIT<T>& dest , const ViewSpinLeaf& v )
 
 
 
+
+
+
 template<class A>
 struct ForEach<UnaryNode<FnMapJIT, A>, ViewSpinLeaf, OpCombine>
   {
@@ -439,17 +535,76 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewSpinLeaf, OpCombine>
     inline
     static Type_t apply(const UnaryNode<FnMapJIT, A>& expr, const ViewSpinLeaf &v, const OpCombine &o)
     {
-      if (expr.operation().map.hasOffnode())
+      if (qdp_jit_config_get_opt_shifts())
 	{
+	  if (v.handle_multi_index && expr.operation().map.hasOffnode())
+	    {
+	      // multiindex/PHI
+	      Type_t ret;
+	      Type_t ret_phi0;
+	      Type_t ret_phi1;
+
+	      typedef typename ForEach<A, ViewLeaf, OpCombine>::Type_t FullSpinTypeA_t;
+
+	      IndexRet index = expr.operation().index;
+
+	      llvm::Value * r_multi_index = llvm_array_type_indirection( index.p_multi_index , v.getIndex() );
+
+	      JitIf inRecvBuffer( llvm_lt( r_multi_index , llvm_create_value(0) ) );
+	      {
+		llvm::Value *idx_buf = llvm_sub ( llvm_neg ( r_multi_index ) , llvm_create_value(1) );
+
+		IndexDomainVector args;
+		args.push_back( make_pair( Layout::sitesOnNode() , idx_buf ) );
+		args.push_back( make_pair( 1 , llvm_create_value(0) ) );
+
+		typename JITType<FullSpinTypeA_t>::Type_t t_jit_recv;
+		t_jit_recv.setup( llvm_derefParam(index.p_recv_buf) ,
+				  JitDeviceLayout::Scalar ,
+				  args );
+		
+		ret_phi0.setup( viewSpinJit( t_jit_recv , v ) );
+	      }
+	      inRecvBuffer.els();
+	      {
+		ViewSpinLeaf vv( JitDeviceLayout::Coalesced , r_multi_index , v.getIndices() );
+		ret_phi1 = Combine1<TypeA_t, 
+				    FnMapJIT , 
+				    OpCombine>::combine(ForEach<A, ViewSpinLeaf, OpCombine>::apply(expr.child(), vv, o) , 
+							expr.operation(), o);
+	      }
+	      inRecvBuffer.end();
+      
+	      qdpPHI( ret , 
+		      ret_phi0 , inRecvBuffer.get_block_true() ,
+		      ret_phi1 , inRecvBuffer.get_block_false() );
+      
+	      return ret;
+	    }
+	  else
+	    {
+	      // straight return
+	      IndexRet index = expr.operation().index;
+
+	      llvm::Value * r_new_index = llvm_array_type_indirection( index.p_multi_index , v.getIndex() );
+
+	      ViewSpinLeaf vv( JitDeviceLayout::Coalesced , r_new_index , v.getIndices() );
+
+	      return Combine1<TypeA_t, 
+			      FnMapJIT , 
+			      OpCombine>::combine(ForEach<A, ViewSpinLeaf, OpCombine>::apply(expr.child(), vv, o) , 
+						  expr.operation(), o);
+	    }
+	}
+      else
+	{
+	  // multiindex/PHI
 	  Type_t ret;
+	  Type_t ret_phi0;
+	  Type_t ret_phi1;
 
 	  typedef typename ForEach<A, ViewLeaf, OpCombine>::Type_t FullSpinTypeA_t;
 
-	  //
-	  // Setup an object (of return type) on the stack
-	  //
-	  auto ret_stack = stack_alloc<Type_t>();
-      
 	  IndexRet index = expr.operation().index;
 
 	  llvm::Value * r_multi_index = llvm_array_type_indirection( index.p_multi_index , v.getIndex() );
@@ -466,48 +621,29 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewSpinLeaf, OpCombine>
 	    t_jit_recv.setup( llvm_derefParam(index.p_recv_buf) ,
 			      JitDeviceLayout::Scalar ,
 			      args );
-
-	    Type_t tmp;
-	    tmp.setup( viewSpinJit( t_jit_recv , v ) );
-
-	    ret_stack = tmp;
+		
+	    ret_phi0.setup( viewSpinJit( t_jit_recv , v ) );
 	  }
 	  inRecvBuffer.els();
 	  {
 	    ViewSpinLeaf vv( JitDeviceLayout::Coalesced , r_multi_index , v.getIndices() );
-	    Type_t tmp = Combine1<TypeA_t, 
-				  FnMapJIT , 
-				  OpCombine>::combine(ForEach<A, ViewSpinLeaf, OpCombine>::apply(expr.child(), vv, o) , 
-						      expr.operation(), o);
-
-
-	    ret_stack = tmp;
+	    ret_phi1 = Combine1<TypeA_t, 
+				FnMapJIT , 
+				OpCombine>::combine(ForEach<A, ViewSpinLeaf, OpCombine>::apply(expr.child(), vv, o) , 
+						    expr.operation(), o);
 	  }
 	  inRecvBuffer.end();
       
-	  //
-	  // Now read the object from the stack into a REG container
-	  //
-	  ret.setup( ret_stack );
+	  qdpPHI( ret , 
+		  ret_phi0 , inRecvBuffer.get_block_true() ,
+		  ret_phi1 , inRecvBuffer.get_block_false() );
       
 	  return ret;
 	}
-      else
-	{
-	  IndexRet index = expr.operation().index;
-
-	  llvm::Value * r_new_index = llvm_array_type_indirection( index.p_multi_index , v.getIndex() );
-
-	  ViewSpinLeaf vv( JitDeviceLayout::Coalesced , r_new_index , v.getIndices() );
-
-	  return Combine1<TypeA_t, 
-			  FnMapJIT , 
-			  OpCombine>::combine(ForEach<A, ViewSpinLeaf, OpCombine>::apply(expr.child(), vv, o) , 
-					      expr.operation(), o);
-
-	}
     }
-  };
+};
+
+
 
 
 
@@ -538,17 +674,30 @@ struct ForEach<UnaryNode<FnMap, A>, AddressLeaf, NullCombine>
     inline
     static Type_t apply(const UnaryNode<FnMap, A>& expr, const AddressLeaf &a, const NullCombine &n)
     {
-      const Map& map = expr.operation().map;
-      FnMap& fnmap = const_cast<FnMap&>(expr.operation());
-
-      a.setId( expr.operation().map.getGoffsetsId(a.subset) );
-
-      if (map.hasOffnode())
+      if (qdp_jit_config_get_opt_shifts())
 	{
-	  a.setId( fnmap.getCached().getRecvBufId() );
-	}
+	  const Map& map = expr.operation().map;
+	  FnMap& fnmap = const_cast<FnMap&>(expr.operation());
+
+	  a.setId( expr.operation().map.getGoffsetsId(a.subset) );
+
+	  if (map.hasOffnode())
+	    {
+	      a.setId( fnmap.getCached().getRecvBufId() );
+	    }
       
-      return Type_t( ForEach<A, AddressLeaf, NullCombine>::apply( expr.child() , a , n ) );
+	  return Type_t( ForEach<A, AddressLeaf, NullCombine>::apply( expr.child() , a , n ) );
+	}
+      else
+	{
+	  const Map& map = expr.operation().map;
+	  FnMap& fnmap = const_cast<FnMap&>(expr.operation());
+
+	  a.setId( expr.operation().map.getGoffsetsId(a.subset) );
+	  a.setId( map.hasOffnode() ? fnmap.getCached().getRecvBufId() : -1 );
+      
+	  return Type_t( ForEach<A, AddressLeaf, NullCombine>::apply( expr.child() , a , n ) );
+	}
     }
   };
 
@@ -569,9 +718,14 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
     const Map& map = expr.operation().map;
     FnMap& fnmap = const_cast<FnMap&>(expr.operation());
 
-    int returnVal=0;
-
     Expr subexpr(expr.child());
+
+    if (forEach(subexpr, f , BitOrCombine()) > 0)
+      {
+	QDPIO::cerr << "shift of shift is not supported" << std::endl;
+	QDP_abort(1);
+      }
+
 
     if (map.get_offnodeP())
       {
@@ -583,15 +737,6 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
 	int srcnum = map.get_srcenodes_num(f.subset)[0]*sizeof(InnerType_t);
 
 	const FnMapRsrc& rRSrc = fnmap.getResource(srcnum,dstnum);
-
-	// Make sure the inner expression's map function
-	// send and receive before recursing down
-	int maps_involved = forEach(subexpr, f , BitOrCombine());
-	if (maps_involved > 0) {
-	  QDP_error_exit("shift of shift is not supported");
-	  // ShiftPhase2 phase2;
-	  // forEach(subexpr, phase2 , NullCombine());
-	}
 
 	static JitFunction function;
 
@@ -608,14 +753,10 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
 	  }
 
 	rRSrc.send_receive();
-	
-	returnVal = maps_involved | map.getId();
       }
-    else 
-      {
-	returnVal = ForEach<A, ShiftPhase1, BitOrCombine>::apply(expr.child(), f, c);
-      }
-    return returnVal;
+
+    map.make_lazy(f.subset);
+    return map.getId();
   }
 };
 
@@ -846,24 +987,6 @@ private:
   multi2d<Map> bimapsa;
   
 };
-
-
-// // Add this code if you need CPU shifts
-// template<class A, class CTag>
-// struct ForEach<UnaryNode<FnMap, A>, EvalLeaf1, CTag>
-// {
-//   typedef typename ForEach<A, EvalLeaf1, CTag>::Type_t TypeA_t;
-//   typedef typename Combine1<TypeA_t, FnMap, CTag>::Type_t Type_t;
-//   inline static
-//   Type_t apply(const UnaryNode<FnMap, A> &expr, const EvalLeaf1 &f, const CTag &c)
-//   {
-//     const Map& map = expr.operation().map;
-//     FnMap& fnmap = const_cast<FnMap&>(expr.operation());
-    
-//     EvalLeaf1 ff( map.goffsets[f.val1()] );
-//     return Combine1<TypeA_t, FnMap, CTag>::combine(ForEach<A, EvalLeaf1, CTag>::apply(expr.child(), ff, c),expr.operation(), c);
-//   }
-// };
 
 
 

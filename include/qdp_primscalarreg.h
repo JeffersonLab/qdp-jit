@@ -21,7 +21,7 @@ namespace QDP {
 
 //! Primitive Scalar
 /*! Placeholder for no primitive structure */
-  template<class T> class PScalarREG //: public BaseREG<T,1,PScalarREG<T> >
+  template<class T> class PScalarREG
   {
     T F;
   public:
@@ -143,13 +143,17 @@ namespace QDP {
 
     inline       T& elem()       { return F; }
     inline const T& elem() const { return F; }
-
-    // inline       T& elem()       { return this->arrayF(0); }
-    // inline const T& elem() const { return this->arrayF(0); }
   };
 
 
 
+template<class T>
+struct IsWordVec< PScalarREG<T> >
+{
+  constexpr static bool value = IsWordVec<T>::value;
+};
+
+  
 
 template<class T> 
 struct JITType< PScalarREG<T> >
@@ -1001,6 +1005,26 @@ peekColor(const PScalarREG<T>& l, llvm::Value * row, llvm::Value * col)
   return peekColor(l.elem(),row,col);
 }
 
+
+template<class T>
+inline typename UnaryReturn<PScalarREG<T>, FnPeekColorVectorREG>::Type_t
+peekColorScalar(const PScalarREG<T>& l, llvm::Value * row)
+{
+  return peekColorScalar(l.elem(),row);
+}
+
+//! Extract color matrix components 
+/*! Generically, this is an identity operation. Defined differently under color */
+template<class T>
+inline typename UnaryReturn<PScalarREG<T>, FnPeekColorMatrixREG>::Type_t
+peekColorScalar(const PScalarREG<T>& l, llvm::Value * row, llvm::Value * col)
+{
+  return peekColorScalar(l.elem(),row,col);
+}
+
+
+
+
 //! Extract spin vector components 
 /*! Generically, this is an identity operation. Defined differently under spin */
 template<class T>
@@ -1524,6 +1548,16 @@ gather_sites(PScalarREG<T>& d,
 }
 
 
+template<class T>
+inline void 
+qdpPHI(PScalarREG<T>& d, 
+       const PScalarREG<T>& phi0, llvm::BasicBlock* bb0 ,
+       const PScalarREG<T>& phi1, llvm::BasicBlock* bb1 )
+{
+  qdpPHI(d.elem(),
+	 phi0.elem(),bb0,
+	 phi1.elem(),bb1);
+}
 
 
 

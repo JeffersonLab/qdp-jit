@@ -29,24 +29,11 @@ public:
   {    
   }
 
-#if 0
-  QDPExpr(T&& expr) : expr_m( std::move(expr) )
-  {  }
-#endif   
-
   //! Accessor that returns the expression.
   const Expression_t& expression() const
   {
     return expr_m;
   }
-
-#if 0
-  //! Conversion (evaluation) to QDPType
-  operator C() const
-  {
-    return C(*this);
-  }
-#endif
 
 private:
   /*! 
@@ -68,11 +55,6 @@ template<class T, class C>
 struct MakeReturn
 {
   typedef QDPExpr<T, C>  Expression_t;
-#if 0
-  inline static
-  Expression_t make(T &&a) {         
-    return Expression_t(std::move(a)); }
-#endif
   inline static
   Expression_t make(const T &a) {     
     return Expression_t(a); }

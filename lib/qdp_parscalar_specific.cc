@@ -164,6 +164,11 @@ namespace QDP {
 
   void Map::make_lazy(const Subset& s) const
   {
+    if (lazy_done_s(s))
+      return;
+
+    //QDPIO::cout << "Map::make_lazy." << std::endl;
+    
     const int nodeSites = Layout::sitesOnNode();
     const int my_node   = Layout::nodeNumber();
 
@@ -172,11 +177,17 @@ namespace QDP {
 	goffsets.resize( MasterSet::Instance().numSubsets() );
 	soffsets.resize( MasterSet::Instance().numSubsets() );
 	roffsets.resize( MasterSet::Instance().numSubsets() );
-
+#if defined (QDP_BACKEND_AVX)
+	loffsets.resize( MasterSet::Instance().numSubsets() );
+#endif
+	
 	goffsetsId.resize( MasterSet::Instance().numSubsets() );
 	soffsetsId.resize( MasterSet::Instance().numSubsets() );
 	roffsetsId.resize( MasterSet::Instance().numSubsets() );
-
+#if defined (QDP_BACKEND_AVX)
+	loffsetsId.resize( MasterSet::Instance().numSubsets() );
+#endif
+	
 	srcenodes_num.resize( MasterSet::Instance().numSubsets() );
 	destnodes_num.resize( MasterSet::Instance().numSubsets() );
 
@@ -223,119 +234,148 @@ namespace QDP {
     goffsetsId[s_no] = QDP_get_global_cache().registrateOwnHostMem( sizeof(int)*goffsets[s_no].size() , 
 								    goffsets[s_no].slice() , NULL );
 
-    lazy_done[s_no] = true;
-
-    if (! offnodeP)
+    
+#if defined (QDP_BACKEND_AVX)
+    //QDPIO::cout << "doing loffsets." << std::endl;
+    
+    for( int linear = 0 ; linear < nodeSites ; ++linear )
       {
-#if QDP_DEBUG >= 3
-	QDP_info("no off-node communications: exiting Map::make");
+	// Check whether 'fcoor' leaves the local vnode subgrid
+	multi1d<int> coord = Layout::siteCoords(my_node, linear);
+
+	bool leaves = false;
+	for ( int i = 0 ; i < Nd ; ++i )
+	  {
+	    int orig = coord[i]               / Layout::virtualNodeSubgridLattSize()[i];
+	    int dest = lazy_fcoord[linear][i] / Layout::virtualNodeSubgridLattSize()[i];
+
+	    if ( orig != dest )
+	      leaves = true;
+	  }
+	
+	if ( leaves )
+	  {
+	    if ( MasterSet::Instance().getSubset(s_no).isElement( linear ) )
+	      {
+		//QDPIO::cout << "loffset " << linear << std::endl;
+		loffsets[s_no].push_back( linear );
+	      }
+	  }
+      }
 #endif
-	return;
+    
+    if (myId < 0)
+      {
+	myId = MasterMap::Instance().register_justid(*this);
+	//QDPIO::cout << "register this Map with the mastermap. got Id = " << myId << "\n";
       }
 
-    // Run through the lists and find the number of each unique node
-    srcenodes_num[s_no].resize(srcenodes.size());
-    destnodes_num[s_no].resize(destnodes.size());
+    lazy_done[s_no] = true;
 
-    srcenodes_num[s_no] = 0;
-    destnodes_num[s_no] = 0;
+//     if (! offnodeP)
+//       {
+// #if QDP_DEBUG >= 3
+// 	QDP_info("no off-node communications: exiting Map::make");
+// #endif
+// 	return;
+//       }
 
-    // For now assume that we send as many sites as we receive
-      
-    for(int linear=0; linear < nodeSites; ++linear)
+    if (offnodeP)
       {
-	if ( MasterSet::Instance().getSubset(s_no).isElement(linear ) )
+	// Run through the lists and find the number of each unique node
+	srcenodes_num[s_no].resize(srcenodes.size());
+	destnodes_num[s_no].resize(destnodes.size());
+
+	srcenodes_num[s_no] = 0;
+	destnodes_num[s_no] = 0;
+
+	// For now assume that we send as many sites as we receive
+      
+	for(int linear=0; linear < nodeSites; ++linear)
 	  {
-	    int this_node = srcnode[linear];
-	    if (this_node != my_node)
+	    if ( MasterSet::Instance().getSubset(s_no).isElement(linear ) )
 	      {
-		for(int i=0; i < srcenodes_num[s_no].size(); ++i)
+		int this_node = srcnode[linear];
+		if (this_node != my_node)
 		  {
-		    if (srcenodes[i] == this_node)
+		    for(int i=0; i < srcenodes_num[s_no].size(); ++i)
 		      {
-			srcenodes_num[s_no][i]++;
-			destnodes_num[s_no][i]++;
-			break;
+			if (srcenodes[i] == this_node)
+			  {
+			    srcenodes_num[s_no][i]++;
+			    destnodes_num[s_no][i]++;
+			    break;
+			  }
 		      }
 		  }
 	      }
 	  }
-      }
 
-    // Now make a small scatter array for the dest_buf so that when data
-    // is sent, it is put in an order the gather can pick it up
-    // If we allow multiple dest nodes, then soffsets here needs to be
-    // an array of arrays
-    soffsets[s_no].resize(destnodes_num[s_no][0]);
-    roffsets[s_no].resize(srcenodes_num[s_no][0]);
+	// Now make a small scatter array for the dest_buf so that when data
+	// is sent, it is put in an order the gather can pick it up
+	// If we allow multiple dest nodes, then soffsets here needs to be
+	// an array of arrays
+	soffsets[s_no].resize(destnodes_num[s_no][0]);
+	roffsets[s_no].resize(srcenodes_num[s_no][0]);
 
-    // Loop through sites on my *destination* node - here I assume all nodes have
-    // the same number of sites. Mimic the gather pattern needed on that node and
-    // set my scatter array to scatter into the correct site order.
-    // Further assume that the subsets have equal sitetables on all nodes.
+	// Loop through sites on my *destination* node - here I assume all nodes have
+	// the same number of sites. Mimic the gather pattern needed on that node and
+	// set my scatter array to scatter into the correct site order.
+	// Further assume that the subsets have equal sitetables on all nodes.
 
-    int ri=0;
-    int si=0;
-    for(int i=0; i < nodeSites; ++i) 
-      {
-	multi1d<int> fcoord = lazy_destnodes0_fcoord[i];
+	int ri=0;
+	int si=0;
+	for(int i=0; i < nodeSites; ++i) 
+	  {
+	    multi1d<int> fcoord = lazy_destnodes0_fcoord[i];
 	    
-	int fnode = Layout::nodeNumber(fcoord);
-	int fline = Layout::linearSiteIndex(fcoord);
+	    int fnode = Layout::nodeNumber(fcoord);
+	    int fline = Layout::linearSiteIndex(fcoord);
 
-	if ( MasterSet::Instance().getSubset(s_no).isElement(i)  &&  fnode == my_node )
-	  soffsets[s_no][si++] = fline;
+	    if ( MasterSet::Instance().getSubset(s_no).isElement(i)  &&  fnode == my_node )
+	      soffsets[s_no][si++] = fline;
 
-	if ( MasterSet::Instance().getSubset(s_no).isElement(i)  &&  srcnode[i] != my_node )
-	  roffsets[s_no][ri++] = i;
-      }
+	    if ( MasterSet::Instance().getSubset(s_no).isElement(i)  &&  srcnode[i] != my_node )
+	      roffsets[s_no][ri++] = i;
+	  }
 
-    if ( ri != srcenodes_num[s_no][0] )
-      QDP_error_exit("internal error: ri != srcenodes_num[0]");
+	if ( ri != srcenodes_num[s_no][0] )
+	  QDP_error_exit("internal error: ri != srcenodes_num[0]");
 
-    if ( si != destnodes_num[s_no][0] )
-      QDP_error_exit("internal error: si != destnodes_num[0]");
+	if ( si != destnodes_num[s_no][0] )
+	  QDP_error_exit("internal error: si != destnodes_num[0]");
 
 #if 0
-    if (roffsets[s_no].size()==0)
-      QDP_error_exit("rsoffsets empty");
-    if (soffsets[s_no].size()==0)
-      QDP_error_exit("ssoffsets empty");
+	if (roffsets[s_no].size()==0)
+	  QDP_error_exit("rsoffsets empty");
+	if (soffsets[s_no].size()==0)
+	  QDP_error_exit("ssoffsets empty");
 #endif
-    if (goffsets[s_no].size()==0)
-      QDP_error_exit("gsoffsets empty");
+	if (goffsets[s_no].size()==0)
+	  QDP_error_exit("gsoffsets empty");
 
-    roffsetsId[s_no] = QDP_get_global_cache().registrateOwnHostMem( sizeof(int)*roffsets[s_no].size() , roffsets[s_no].slice() , NULL );
-    soffsetsId[s_no] = QDP_get_global_cache().registrateOwnHostMem( sizeof(int)*soffsets[s_no].size() , soffsets[s_no].slice() , NULL );
+	roffsetsId[s_no] = QDP_get_global_cache().registrateOwnHostMem( sizeof(int)*roffsets[s_no].size() , roffsets[s_no].slice() , NULL );
+	soffsetsId[s_no] = QDP_get_global_cache().registrateOwnHostMem( sizeof(int)*soffsets[s_no].size() , soffsets[s_no].slice() , NULL );
 
 #if QDP_DEBUG >= 3
-    for(int i=0; i < destnodes.size(); ++i)
-      {
-	QDP_info("srcenodes(%d) = %d",i,srcenodes(i));
-	QDP_info("destnodes(%d) = %d",i,destnodes(i));
-      }
+	for(int i=0; i < destnodes.size(); ++i)
+	  {
+	    QDP_info("srcenodes(%d) = %d",i,srcenodes(i));
+	    QDP_info("destnodes(%d) = %d",i,destnodes(i));
+	  }
 
-    for(int i=0; i < destnodes_num.size(); ++i)
-      {
-	QDP_info("srcenodes_num(%d) = %d",i,srcenodes_num(i));
-	QDP_info("destnodes_num(%d) = %d",i,destnodes_num(i));
-      }
+	for(int i=0; i < destnodes_num.size(); ++i)
+	  {
+	    QDP_info("srcenodes_num(%d) = %d",i,srcenodes_num(i));
+	    QDP_info("destnodes_num(%d) = %d",i,destnodes_num(i));
+	  }
 #endif
- 
+      } // offnode
+    
 #if QDP_DEBUG >= 3
     QDP_info("exiting Map::make");
 #endif
 
-    //StopWatch t;
-    //t.start();
-    if (myId < 0) {
-      myId = MasterMap::Instance().registrate_justid(*this);
-      //QDPIO::cout << "register this Map with the mastermap. got Id = " << myId << "\n";
-    }
-    MasterMap::Instance().registrate_work(*this,s);
-    //t.stop();
-    //QDPIO::cerr << "Face and inner compute time = " << t.getTimeInSeconds() << " secs\n";
-    
   } // make_lazy
 
   

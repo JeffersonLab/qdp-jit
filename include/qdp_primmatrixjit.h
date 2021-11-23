@@ -50,18 +50,6 @@ public:
       return static_cast<CC&>(*this);
     }
 
-  //! PMatrixJIT = PMatrixJIT
-  /*! Set equal to another PMatrixJIT */
-  // template<class T1>
-  // inline
-  // CC& assign(const typename REGType< C<T1,N> >::Type_t& rhs)
-  //   {
-  //     for(int i=0; i < N; ++i)
-  // 	for(int j=0; j < N; ++j)
-  // 	  elem(i,j) = rhs.elem(i,j);
-
-  //     return static_cast<CC&>(*this);
-  //   }
 
 
   template<class T1,template<class,int> class C1>
@@ -75,86 +63,7 @@ public:
       return static_cast<CC&>(*this);
     }
 
-#if 0
-  PMatrixJIT& assign(const PMatrixJIT& rhs) 
-    {
-      for(int i=0; i < N; ++i)
-	for(int j=0; j < N; ++j)
-	  elem(i,j) = rhs.elem(i,j);
 
-      return static_cast<PMatrixJIT&>(*this);
-    }
-#endif
-
-  // //! PMatrixJIT += PMatrixJIT
-  // template<class T1>
-  // inline
-  // CC& operator+=(const typename REGType< C<T1,N> >::Type_t& rhs) 
-  //   {
-  //     for(int i=0; i < N; ++i)
-  // 	for(int j=0; j < N; ++j)
-  // 	  elem(i,j) += rhs.elem(i,j);
-
-  //     return static_cast<CC&>(*this);
-  //   }
-
-  // //! PMatrixJIT -= PMatrixJIT
-  // template<class T1>
-  // inline
-  // CC& operator-=(const typename REGType< C<T1,N> >::Type_t& rhs) 
-  //   {
-  //     for(int i=0; i < N; ++i)
-  // 	for(int j=0; j < N; ++j)
-  // 	  elem(i,j) -= rhs.elem(i,j);
-
-  //     return static_cast<CC&>(*this);
-  //   }
-
-  // //! PMatrixJIT += PScalarJIT
-  // template<class T1>
-  // inline
-  // CC& operator+=(const PScalarREG<T1>& rhs) 
-  //   {
-  //     for(int i=0; i < N; ++i)
-  // 	elem(i,i) += rhs.elem();
-
-  //     return static_cast<CC&>(*this);
-  //   }
-
-  // //! PMatrixJIT -= PScalarJIT
-  // template<class T1>
-  // inline
-  // CC& operator-=(const PScalarREG<T1>& rhs) 
-  //   {
-  //     for(int i=0; i < N; ++i)
-  // 	elem(i,i) -= rhs.elem();
-
-  //     return static_cast<CC&>(*this);
-  //   }
-
-  // //! PMatrixJIT *= PScalarJIT
-  // template<class T1>
-  // inline
-  // CC& operator*=(const PScalarREG<T1>& rhs) 
-  //   {
-  //     for(int i=0; i < N; ++i)
-  // 	for(int j=0; j < N; ++j)
-  // 	  elem(i,j) *= rhs.elem();
-
-  //     return static_cast<CC&>(*this);
-  //   }
-
-  // //! PMatrixJIT /= PScalarJIT
-  // template<class T1>
-  // inline
-  // CC& operator/=(const PScalarREG<T1>& rhs) 
-  //   {
-  //     for(int i=0; i < N; ++i)
-  // 	for(int j=0; j < N; ++j)
-  // 	  elem(i,j) /= rhs.elem();
-
-  //     return static_cast<CC&>(*this);
-  //   }
 
 
 
@@ -177,9 +86,6 @@ public:
         T& elem(int i, int j)       {return this->arrayF(j+N*i);}
   const T& elem(int i, int j) const {return this->arrayF(j+N*i);}
 
-
-  // T& elem(int i, int j) {return JV<T,N*N>::getF()[j+N*i];}
-  // const T& elem(int i, int j) const {return JV<T,N*N>::getF()[j+N*i];}
 
 };
 
@@ -1302,17 +1208,6 @@ struct UnaryReturn<PMatrixJIT<T,N,C>, FnPeekColorVector> {
   typedef C<typename UnaryReturn<T, FnPeekColorVector>::Type_t, N>  Type_t;
 };
 
-// template<class T, int N, template<class,int> class C>
-// inline typename UnaryReturn<PMatrixJIT<T,N,C>, FnPeekColorVector>::Type_t
-// peekColor(const PMatrixJIT<T,N,C>& l, int row)
-// {
-//   typename UnaryReturn<PMatrixJIT<T,N,C>, FnPeekColorVector>::Type_t  d(l.func());
-
-//   for(int i=0; i < N; ++i)
-//     for(int j=0; j < N; ++j)
-//       d.elem(i,j) = peekColor(l.elem(i,j),row);
-//   return d;
-// }
 
 //! Extract color matrix components 
 /*! Generically, this is an identity operation. Defined differently under color */
@@ -1321,17 +1216,6 @@ struct UnaryReturn<PMatrixJIT<T,N,C>, FnPeekColorMatrix> {
   typedef C<typename UnaryReturn<T, FnPeekColorMatrix>::Type_t, N>  Type_t;
 };
 
-// template<class T, int N, template<class,int> class C>
-// inline typename UnaryReturn<PMatrixJIT<T,N,C>, FnPeekColorMatrix>::Type_t
-// peekColor(const PMatrixJIT<T,N,C>& l, int row, int col)
-// {
-//   typename UnaryReturn<PMatrixJIT<T,N,C>, FnPeekColorMatrix>::Type_t  d(l.func());
-
-//   for(int i=0; i < N; ++i)
-//     for(int j=0; j < N; ++j)
-//       d.elem(i,j) = peekColor(l.elem(i,j),row,col);
-//   return d;
-// }
 
 //! Extract spin vector components 
 /*! Generically, this is an identity operation. Defined differently under spin */
@@ -1340,17 +1224,6 @@ struct UnaryReturn<PMatrixJIT<T,N,C>, FnPeekSpinVector> {
   typedef C<typename UnaryReturn<T, FnPeekSpinVector>::Type_t, N>  Type_t;
 };
 
-// template<class T, int N, template<class,int> class C>
-// inline typename UnaryReturn<PMatrixJIT<T,N,C>, FnPeekSpinVector>::Type_t
-// peekSpin(const PMatrixJIT<T,N,C>& l, int row)
-// {
-//   typename UnaryReturn<PMatrixJIT<T,N,C>, FnPeekSpinVector>::Type_t  d(l.func());
-
-//   for(int i=0; i < N; ++i)
-//     for(int j=0; j < N; ++j)
-//       d.elem(i,j) = peekSpin(l.elem(i,j),row);
-//   return d;
-// }
 
 //! Extract spin matrix components 
 /*! Generically, this is an identity operation. Defined differently under spin */
@@ -1359,17 +1232,6 @@ struct UnaryReturn<PMatrixJIT<T,N,C>, FnPeekSpinMatrix> {
   typedef C<typename UnaryReturn<T, FnPeekSpinMatrix>::Type_t, N>  Type_t;
 };
 
-// template<class T, int N, template<class,int> class C>
-// inline typename UnaryReturn<PMatrixJIT<T,N,C>, FnPeekSpinMatrix>::Type_t
-// peekSpin(const PMatrixJIT<T,N,C>& l, int row, int col)
-// {
-//   typename UnaryReturn<PMatrixJIT<T,N,C>, FnPeekSpinMatrix>::Type_t  d(l.func());
-
-//   for(int i=0; i < N; ++i)
-//     for(int j=0; j < N; ++j)
-//       d.elem(i,j) = peekSpin(l.elem(i,j),row,col);
-//   return d;
-// }
 
 //! Insert color vector components 
 /*! Generically, this is an identity operation. Defined differently under color */
@@ -1378,17 +1240,6 @@ struct UnaryReturn<PMatrixJIT<T,N,C>, FnPokeColorMatrix> {
   typedef C<typename UnaryReturn<T, FnPokeColorMatrix>::Type_t, N>  Type_t;
 };
 
-// template<class T1, class T2, int N, template<class,int> class C>
-// inline typename UnaryReturn<PMatrixJIT<T1,N,C>, FnPokeColorMatrix>::Type_t&
-// pokeColor(PMatrixJIT<T1,N,C>& l, const PMatrixJIT<T2,N,C>& r, int row)
-// {
-//   typedef typename UnaryReturn<PMatrixJIT<T1,N,C>, FnPokeColorMatrix>::Type_t  Return_t;
-
-//   for(int i=0; i < N; ++i)
-//     for(int j=0; j < N; ++j)
-//       pokeColor(l.elem(i,j),r.elem(i,j),row);
-//   return static_cast<Return_t&>(l);
-// }
 
 //! Insert color matrix components 
 /*! Generically, this is an identity operation. Defined differently under color */
@@ -1412,31 +1263,6 @@ struct UnaryReturn<PMatrixJIT<T,N,C>, FnPokeSpinMatrix> {
   typedef C<typename UnaryReturn<T, FnPokeSpinMatrix>::Type_t, N>  Type_t;
 };
 
-// template<class T1, class T2, int N, template<class,int> class C>
-// inline typename UnaryReturn<PMatrixJIT<T1,N,C>, FnPokeSpinMatrix>::Type_t&
-// pokeSpin(PMatrixJIT<T1,N,C>& l, const PMatrixJIT<T2,N,C>& r, int row)
-// {
-//   typedef typename UnaryReturn<PMatrixJIT<T1,N,C>, FnPokeSpinMatrix>::Type_t  Return_t;
-
-//   for(int i=0; i < N; ++i)
-//     for(int j=0; j < N; ++j)
-//       pokeSpin(l.elem(i,j),r.elem(i,j),row);
-//   return static_cast<Return_t&>(l);
-// }
-
-// //! Insert spin matrix components 
-// /*! Generically, this is an identity operation. Defined differently under spin */
-// template<class T1, class T2, int N, template<class,int> class C>
-// inline typename UnaryReturn<PMatrixJIT<T1,N,C>, FnPokeSpinMatrix>::Type_t&
-// pokeSpin(PMatrixJIT<T1,N,C>& l, const PMatrixJIT<T2,N,C>& r, int row, int col)
-// {
-//   typedef typename UnaryReturn<PMatrixJIT<T1,N,C>, FnPokeSpinMatrix>::Type_t  Return_t;
-
-//   for(int i=0; i < N; ++i)
-//     for(int j=0; j < N; ++j)
-//       pokeSpin(l.elem(i,j),r.elem(i,j),row,col);
-//   return static_cast<Return_t&>(l);
-// }
 
 
 
@@ -1529,26 +1355,6 @@ fill_gaussian(PMatrixJIT<T,N,C> d, PMatrixREG<T2,N,C2>& r1, PMatrixREG<T2,N,C2>&
 
 
 
-#if 0
-// Global sum over site indices only
-template<class T, int N, template<class,int> class C>
-struct UnaryReturn<PMatrixJIT<T,N,C>, FnSum> {
-  typedef C<typename UnaryReturn<T, FnSum>::Type_t, N>  Type_t;
-};
-
-template<class T, int N, template<class,int> class C>
-inline typename UnaryReturn<PMatrixJIT<T,N,C>, FnSum>::Type_t
-sum(const PMatrixJIT<T,N,C>& s1)
-{
-  typename UnaryReturn<PMatrixJIT<T,N,C>, FnSum>::Type_t  d(s1.func());
-
-  for(int i=0; i < N; ++i)
-    for(int j=0; j < N; ++j)
-      d.elem(i,j) = sum(s1.elem(i,j));
-
-  return d;
-}
-#endif
 
 
 // InnerProduct (norm-seq) global sum = sum(tr(adj(s1)*s1))

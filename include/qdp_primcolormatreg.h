@@ -85,6 +85,14 @@ public:
 // Traits classes 
 //-----------------------------------------------------------------------------
 
+
+  template <class T, int N>
+  struct IsWordVec< PColorMatrixREG<T,N > >
+  {
+    constexpr static bool value = IsWordVec<T>::value;
+  };
+
+  
   template <class T, int N>
   struct JITType< PColorMatrixREG<T,N> >
   {
@@ -501,8 +509,12 @@ peekColor(const PColorMatrixREG<T,N>& l, llvm::Value* row, llvm::Value* col)
 
   typedef typename JITType< PColorMatrixREG<T,N> >::Type_t TTjit;
 
-  llvm::Value* ptr_local = llvm_alloca( llvm_get_type<typename WordType<T>::Type_t>() , TTjit::ScalarSize_t );
-
+  llvm::Value* ptr_local;
+  if (IsWordVec<T>::value)
+    ptr_local = llvm_alloca( llvm_get_vectype<typename WordType<T>::Type_t>() , TTjit::ScalarSize_t );
+  else
+    ptr_local = llvm_alloca( llvm_get_type<typename WordType<T>::Type_t>() , TTjit::ScalarSize_t );
+  
   TTjit dj;
   dj.setup( ptr_local, JitDeviceLayout::Scalar );
   dj=l;
@@ -510,6 +522,11 @@ peekColor(const PColorMatrixREG<T,N>& l, llvm::Value* row, llvm::Value* col)
   d.elem() = dj.getRegElem(row,col);
   return d;
 }
+
+
+
+
+
 
 //! Insert color matrix components
 template<class T1, class T2, int N>

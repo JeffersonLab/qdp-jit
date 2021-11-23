@@ -8,30 +8,21 @@ namespace QDP {
   void
   function_random_build( JitFunction& function, OLattice<T>& dest , Seed& seed_tmp, LatticeSeed& latSeed, LatticeSeed& skewedSeed)
   {
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
-	if (!function.empty())
-	  return;
-      }
-
-
     llvm_start_new_function("random",__PRETTY_FUNCTION__);
 
     WorkgroupGuard workgroupGuard;
     ParamRef p_site_table = llvm_add_param<int*>();
 
-    ParamLeaf param_leaf;
+    ParamLeafScalar param_leaf;
 
-    typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
+    typedef typename LeafFunctor<OLattice<T>, ParamLeafScalar>::Type_t  FuncRet_t;
     FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
 
     // RNG::ran_seed
-    typedef typename LeafFunctor<Seed, ParamLeaf>::Type_t  SeedJIT;
-    typedef typename LeafFunctor<LatticeSeed, ParamLeaf>::Type_t  LatticeSeedJIT;
+    typedef typename LeafFunctor<Seed, ParamLeafScalar>::Type_t  SeedJIT;
+    typedef typename LeafFunctor<LatticeSeed, ParamLeafScalar>::Type_t  LatticeSeedJIT;
     typedef typename REGType<typename SeedJIT::Subtype_t>::Type_t PSeedREG;
 
-    //SeedJIT ran_seed_jit(forEach(RNG::get_RNG_Internals()->ran_seed, param_leaf, TreeCombine()));
     SeedJIT seed_tmp_jit(forEach(seed_tmp, param_leaf, TreeCombine()));
     SeedJIT ran_mult_n_jit(forEach(RNG::get_RNG_Internals()->ran_mult_n, param_leaf, TreeCombine()));
     LatticeSeedJIT lattice_ran_mult_jit(forEach( RNG::get_RNG_Internals()->lattice_ran_mult , param_leaf, TreeCombine()));
@@ -47,18 +38,21 @@ namespace QDP {
     PSeedREG ran_mult_n_reg;
     PSeedREG lattice_ran_mult_reg;
 
-    seed_reg.setup( latSeed_jit.elemScalar( JitDeviceLayout::Coalesced , r_idx ) );
+    seed_reg.setup( latSeed_jit.elem( JitDeviceLayout::Coalesced , r_idx ) );
 
-    lattice_ran_mult_reg.setup( lattice_ran_mult_jit.elemScalar( JitDeviceLayout::Coalesced , r_idx ) );
+    lattice_ran_mult_reg.setup( lattice_ran_mult_jit.elem( JitDeviceLayout::Coalesced , r_idx ) );
 
-    skewedSeed_jit.elemScalar( JitDeviceLayout::Coalesced , r_idx ) = seed_reg * lattice_ran_mult_reg;
+    skewedSeed_jit.elem( JitDeviceLayout::Coalesced , r_idx ) = seed_reg * lattice_ran_mult_reg;
 
     ran_mult_n_reg.setup( ran_mult_n_jit.elem() );
 
-    fill_random_jit( dest_jit.elemScalar(JitDeviceLayout::Coalesced,r_idx) , latSeed_jit.elemScalar( JitDeviceLayout::Coalesced , r_idx ) , skewedSeed_jit.elemScalar( JitDeviceLayout::Coalesced , r_idx ) , ran_mult_n_reg );
+    fill_random_jit( dest_jit.elem(JitDeviceLayout::Coalesced,r_idx) ,
+		     latSeed_jit.elem( JitDeviceLayout::Coalesced , r_idx ) ,
+		     skewedSeed_jit.elem( JitDeviceLayout::Coalesced , r_idx ) ,
+		     ran_mult_n_reg );
 
     PSeedREG tmp;                     //
-    tmp.setup( latSeed_jit.elemScalar( JitDeviceLayout::Coalesced , r_idx ) ); //
+    tmp.setup( latSeed_jit.elem( JitDeviceLayout::Coalesced , r_idx ) ); //
     JitIf save( llvm_eq( r_idx_thread , llvm_create_value(0) ) );
     {
       seed_tmp_jit.elem() = tmp;      // seed_reg
@@ -77,11 +71,9 @@ namespace QDP {
     //std::cout << __PRETTY_FUNCTION__ << ": entering\n";
 
 #ifdef QDP_DEEP_LOG
-    function.start = s.start();
-    function.count = s.numSiteTable();
-    function.size_T = sizeof(T);
     function.type_W = typeid(typename WordType<T>::Type_t).name();
     function.set_dest_id( dest.getId() );
+    function.set_is_lat(true);
 #endif
 
     // Register the seed_tmp object with the memory cache
@@ -91,8 +83,6 @@ namespace QDP {
 
     forEach(dest, addr_leaf, NullCombine());
 
-    //forEach(RNG::get_RNG_Internals()->ran_seed, addr_leaf, NullCombine());
-    //forEach(seed_tmp, addr_leaf, NullCombine()); // Caution: ParamLeaf treats OScalar as read-only
     addr_leaf.setId( seed_tmp_id );
     forEach(RNG::get_RNG_Internals()->ran_mult_n, addr_leaf, NullCombine());
     forEach(RNG::get_RNG_Internals()->lattice_ran_mult, addr_leaf, NullCombine());
@@ -115,6 +105,10 @@ namespace QDP {
 
     // Sign off seed_tmp
     QDP_get_global_cache().signoff( seed_tmp_id );
+
+#ifdef QDP_DEEP_LOG
+    jit_deep_log(function);
+#endif
   }
 
   

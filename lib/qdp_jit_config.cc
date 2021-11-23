@@ -67,11 +67,16 @@ namespace QDP
     bool deep_log = false;
     bool deep_log_create = false;
     std::string deep_log_name = "qdp-jit-log.dat";
+    double tolerance = 1.0e-5;
+    double fuzzfactor = 50;
 #endif
 
     bool gpu_direct = false;
+    bool opt_shifts = false;
   }
 
+  bool qdp_jit_config_get_opt_shifts() {return opt_shifts;}
+  void qdp_jit_config_set_opt_shifts(bool v) { opt_shifts = v; } 
 
   bool jit_config_get_instcombine() { return llvm_opt_instcombine; }
   bool jit_config_get_inline()      { return llvm_opt_inline; }
@@ -122,13 +127,35 @@ namespace QDP
       break;
     }
 #endif
-#if defined (QDP_BACKEND_CUDA)
+    QDPIO::cout << "Accurate timing                       : " << (int)jit_config_get_timing_run() << "\n";
     QDPIO::cout << "Code generation:\n";
-    QDPIO::cout << "  CUDA flush denormals to zero        : " << jit_config_get_CUDA_FTZ() << std::endl;
+#if defined (QDP_BACKEND_CUDA)
+    QDPIO::cout << "  CUDA flush denormals to zero        : " << (int)jit_config_get_CUDA_FTZ() << "\n";
 #endif
 #if defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_ROCM)
-    QDPIO::cout << "Using GPU direct                      : " << (int)gpu_direct << "\n";
+    QDPIO::cout << "  Using GPU direct                    : " << (int)jit_config_get_gpu_direct() << "\n";
 #endif
+    QDPIO::cout << "  Shift optimization                  : " << (int)qdp_jit_config_get_opt_shifts() << "\n";
+    QDPIO::cout << "  Propagator optimization             : ";
+#if defined (QDP_PROP_OPT)
+    QDPIO::cout << "1\n";
+#else
+    QDPIO::cout << "0\n";
+#endif
+#ifdef QDP_DEEP_LOG
+    if (jit_config_deep_log())
+      {
+	if ( jit_config_deep_log_create() )
+	  QDPIO::cout << "Deep log run                          : create\n";
+	else
+	  {
+	    QDPIO::cout << "Deep log run                          : compare\n";
+	    QDPIO::cout << "  Tolerance                           : " << jit_config_get_tolerance() << "\n";
+	    QDPIO::cout << "  Fuzzfactor                          : " << jit_config_get_fuzzfactor() << "\n";
+	  }
+      }
+#endif
+    
   }
 
 
@@ -177,6 +204,12 @@ namespace QDP
 
 
 #ifdef QDP_DEEP_LOG
+  double jit_config_get_fuzzfactor()           { return fuzzfactor; }
+  void   jit_config_set_fuzzfactor(double i)   { fuzzfactor = i; }
+  
+  double jit_config_get_tolerance()           { return tolerance; }
+  void   jit_config_set_tolerance(double i)   { tolerance = i; }
+
   bool        jit_config_deep_log() { return deep_log; }
   bool        jit_config_deep_log_create() { return deep_log_create; }
   std::string jit_config_deep_log_name() { return deep_log_name; }

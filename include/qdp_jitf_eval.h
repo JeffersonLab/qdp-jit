@@ -2,12 +2,24 @@
 #define QDP_JITFUNC_EVAL_H
 
 #include<type_traits>
+#include<unistd.h>
 
 namespace QDP {
 
   template<class T, class T1, class Op, class RHS>
+#if defined (QDP_PROP_OPT)
   typename std::enable_if_t< ! HasProp<RHS>::value >
-  function_build(JitFunction& function, const DynKey& key, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
+#else
+  void
+#endif
+  function_build(
+#if defined (QDP_BACKEND_AVX)
+		 JitFunction& function,
+		 JitFunction& function_scalar,
+#else
+		 JitFunction& function,
+#endif
+		 const DynKey& key, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
   {
     std::ostringstream expr;
 #if 0
@@ -16,250 +28,221 @@ namespace QDP {
     expr << std::string(__PRETTY_FUNCTION__) << "_key=" << key;
 #endif
   
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , expr.str().c_str() );
-	if (!function.empty())
-	  return;
-      }
-    llvm_start_new_function("eval",expr.str().c_str() );
-  
-    if ( key.get_offnode_comms() )
-      {
-	if ( s.hasOrderedRep() )
-	  {
-	    WorkgroupGuard workgroupGuard;
-	    ParamRef p_site_table = llvm_add_param<int*>();
+    //
+    // SIMD version in AVX
+    // Scalar version for CUDA/ROCM
+    //
+    {
+      llvm_start_new_function("eval",expr.str().c_str() );
 
-	    ParamLeaf param_leaf;
+      WorkgroupGuard workgroupGuard;
+      ParamRef p_site_table = llvm_add_param<int*>();
 
-	    typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
-	    FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
+      ParamLeaf param_leaf;
+
+      typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
+      FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
 	  
-	    auto op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
+      auto op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
 
-	    typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
-	    View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
+      typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
+      View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
-	    llvm::Value* r_idx_thread = llvm_thread_idx();
+      llvm::Value* r_idx_thread = llvm_thread_idx();
        
-	    workgroupGuard.check(r_idx_thread);
+      workgroupGuard.check(r_idx_thread);
 
-	    llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
+      llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
 
-	    op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ), 
-		    forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , r_idx ), OpCombine()));	  
-	  }
-	else
-	  {
-	    QDPIO::cout << "eval with shifts on unordered subsets not supported" << std::endl;
-	    QDP_abort(1);
-	  }
-      }
-    else
-      {
-	if ( s.hasOrderedRep() )
-	  {
-	    WorkgroupGuard workgroupGuard;
-	    
-	    ParamRef p_start    = llvm_add_param<int>();
+      ViewLeaf vl( JitDeviceLayout::Coalesced , r_idx );
+#if defined (QDP_BACKEND_AVX)
+      // The data layout VNode guarantees all receive sites are local
+      vl.handle_multi_index = false;
+#endif
 
-	    ParamLeaf param_leaf;
+      op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ), 
+	      forEach(rhs_view , vl , OpCombine()));
 
-	    typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
-	    FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
+      jit_get_function( function );
+    }
+#if defined (QDP_BACKEND_AVX)
+    //
+    // Scalar version for AVX
+    {
+      llvm_start_new_function("eval_scalar",expr.str().c_str() );
+
+      WorkgroupGuard workgroupGuard;
+      ParamRef p_site_table = llvm_add_param<int*>();
+
+      ParamLeafScalar param_leaf;
+      
+      typedef typename LeafFunctor<OLattice<T>, ParamLeafScalar>::Type_t  FuncRet_t;
+      FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
 	  
-	    auto op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
+      auto op_jit = AddOpParam<Op,ParamLeafScalar>::apply(op,param_leaf);
 
-	    typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
-	    View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
+      typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeafScalar, TreeCombine>::Type_t View_t;
+      View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
-	    llvm::Value* r_idx_thread = llvm_thread_idx();
+      llvm::Value* r_idx_thread = llvm_thread_idx();
+       
+      workgroupGuard.check(r_idx_thread);
 
-	    workgroupGuard.check(r_idx_thread);
+      llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
 
-	    llvm::Value* r_idx = llvm_add( r_idx_thread , llvm_derefParam( p_start ) );
+      // op_jit( dest_jit.elemScalar( JitDeviceLayout::Coalesced , r_idx ),
+      // 	      forEach(rhs_view, ViewLeafScalar( JitDeviceLayout::Coalesced , r_idx ), OpCombine()));
+      op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ),
+	      forEach(rhs_view , ViewLeaf( JitDeviceLayout::Coalesced , r_idx ) , OpCombine()));
 
-	    op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ), 
-		    forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , r_idx ), OpCombine()));
-	  }
-	else // unordered Subset
-	  {
-	    WorkgroupGuard workgroupGuard;
-	    
-	    ParamRef p_site_table = llvm_add_param<int*>();
-
-	    ParamLeaf param_leaf;
-
-	    typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
-	    FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
-	  
-	    auto op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
-
-	    typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
-	    View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
-
-	    llvm::Value* r_idx_thread = llvm_thread_idx();
-
-	    workgroupGuard.check(r_idx_thread);
-
-	    llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
-
-	    op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ), 
-		    forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , r_idx ), OpCombine()));	  
-	  }
-      }
-  
-    jit_get_function( function );
+      jit_get_function( function_scalar );
+    }
+#endif
   }
 
 
+  namespace {
+        template <class T>
+    void print_object(const T& a)
+    {
+      QDPIO::cout << __PRETTY_FUNCTION__ << std::endl;
+    }
+
+  }
+
+#if defined (QDP_PROP_OPT)
   template<class T, class T1, class Op, class RHS>
   typename std::enable_if_t< HasProp<RHS>::value >
-  function_build(JitFunction& function, const DynKey& key, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
+  function_build(
+#if defined (QDP_BACKEND_AVX)
+		 JitFunction& function,
+		 JitFunction& function_scalar,
+#else
+		 JitFunction& function,
+#endif
+		 const DynKey& key, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
   {
     std::ostringstream expr;
 
     //expr << std::string(__PRETTY_FUNCTION__) << "_key=" << key;
-  
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , expr.str().c_str() );
-	if (!function.empty())
-	  return;
-      }
-    llvm_start_new_function("evalp",expr.str().c_str() );
-  
-    if ( key.get_offnode_comms() )
-      {
-	if ( s.hasOrderedRep() )
-	  {
-	    WorkgroupGuard workgroupGuard;
 
-	    ParamRef p_site_table = llvm_add_param<int*>();
+    //
+    // SIMD version in AVX
+    // Scalar version for CUDA/ROCM
+    //
+    {
+      llvm_start_new_function("evalprop",expr.str().c_str() );
 
-	    ParamLeaf param_leaf;
+      WorkgroupGuard workgroupGuard;
 
-	    typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
-	    FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
+      ParamRef p_site_table = llvm_add_param<int*>();
+      ParamLeaf param_leaf;
 
-	    typedef typename AddOpParam<Op,ParamLeaf>::Type_t OpJit_t;
-	    OpJit_t op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
+      typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
+      FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
 
-	    typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
-	    View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
+      typedef typename AddOpParam<Op,ParamLeaf>::Type_t OpJit_t;
+      OpJit_t op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
 
-	    llvm::Value* r_idx_thread = llvm_thread_idx();
+      typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
+      View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
+
+      llvm::Value* r_idx_thread = llvm_thread_idx();
        
-	    workgroupGuard.check(r_idx_thread);
+      workgroupGuard.check(r_idx_thread);
 
-	    llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
+      llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
 
-	    std::vector< JitForLoop > loops;
-	    CreateLoops<T,OpJit_t>::apply( loops , op_jit );
-	  
-	    ViewSpinLeaf viewSpin( JitDeviceLayout::Coalesced , r_idx );
+      std::vector< JitForLoop > loops;
+      CreateLoops<T,OpJit_t>::apply( loops , op_jit );
 
-	    for( int i = 0 ; i < loops.size() ; ++i )
-	      viewSpin.indices.push_back( loops.at(i).index() );
+      ViewSpinLeaf viewSpin( JitDeviceLayout::Coalesced , r_idx );
+#if defined (QDP_BACKEND_AVX)
+      // The data layout VNode guarantees all receive sites are local
+      viewSpin.handle_multi_index = false;
+#endif
 
-	    op_jit( viewSpinJit( dest_jit , viewSpin ) , forEach( rhs_view , viewSpin , OpCombine() ) );
+      for( int i = 0 ; i < loops.size() ; ++i )
+	viewSpin.indices.push_back( loops.at(i).index() );
+
+      op_jit( viewSpinJit( dest_jit , viewSpin ) , forEach( rhs_view , viewSpin , OpCombine() ) );
  
-	    for( int i = loops.size() - 1 ; 0 <= i ; --i )
-	      {
-		loops[i].end();
-	      }
-	  
-	  }
-	else
-	  {
-	    QDPIO::cout << "eval with shifts on unordered subsets not supported" << std::endl;
-	    QDP_abort(1);
-	  }
-      }
-    else
-      {
-	if ( s.hasOrderedRep() )
-	  {
-	    WorkgroupGuard workgroupGuard;
+      for( int i = loops.size() - 1 ; 0 <= i ; --i )
+	{
+	  loops[i].end();
+	}
 
-	    ParamRef p_start    = llvm_add_param<int>();
+      jit_get_function( function );
+    }
 
-	    ParamLeaf param_leaf;
+#if defined (QDP_BACKEND_AVX)
+    //
+    // Scalar version for AVX
+    {
+      llvm_start_new_function("evalprop_scalar",expr.str().c_str() );
 
-	    typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
-	    FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
+      WorkgroupGuard workgroupGuard;
 
-	    typedef typename AddOpParam<Op,ParamLeaf>::Type_t OpJit_t;
-	    OpJit_t op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
+      ParamRef p_site_table = llvm_add_param<int*>();
+      ParamLeafScalar param_leaf;
 
-	    typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
-	    View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
+      typedef typename LeafFunctor<OLattice<T>, ParamLeafScalar>::Type_t  FuncRet_t;
+      FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
 
-	    llvm::Value * r_start        = llvm_derefParam( p_start );
+      typedef typename AddOpParam<Op,ParamLeafScalar>::Type_t OpJit_t;
+      OpJit_t op_jit = AddOpParam<Op,ParamLeafScalar>::apply(op,param_leaf);
 
-	    llvm::Value* r_idx_thread = llvm_thread_idx();
+      typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeafScalar, TreeCombine>::Type_t View_t;
+      View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
-	    workgroupGuard.check(r_idx_thread);
-
-	    llvm::Value* r_idx = llvm_add( r_idx_thread , r_start );
-
-	    std::vector< JitForLoop > loops;
-	    CreateLoops<T,OpJit_t>::apply( loops , op_jit );
-	  
-	    ViewSpinLeaf viewSpin( JitDeviceLayout::Coalesced , r_idx );
-
-	    for( int i = 0 ; i < loops.size() ; ++i )
-	      viewSpin.indices.push_back( loops.at(i).index() );
-
-	    op_jit( viewSpinJit( dest_jit , viewSpin ) , forEach( rhs_view , viewSpin , OpCombine() ) );
- 
-	    for( int i = loops.size() - 1 ; 0 <= i ; --i )
-	      {
-		loops[i].end();
-	      }
-	  }
-	else // unordered Subset
-	  {
-	    WorkgroupGuard workgroupGuard;
-
-	    ParamRef p_site_table = llvm_add_param<int*>();
-
-	    ParamLeaf param_leaf;
-
-	    typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
-	    FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
-	  
-	    auto op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
-
-	    typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
-	    View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
-
-	    llvm::Value* r_idx_thread = llvm_thread_idx();
+      llvm::Value* r_idx_thread = llvm_thread_idx();
        
-	    workgroupGuard.check(r_idx_thread);
+      workgroupGuard.check(r_idx_thread);
 
-	    llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
+      llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
 
-	    op_jit( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ), 
-		    forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , r_idx ), OpCombine()));	  
-	  }
-      }
-  
-    jit_get_function( function );
+      std::vector< JitForLoop > loops;
+      CreateLoops<T,OpJit_t>::apply( loops , op_jit );
+
+      ViewSpinLeaf viewSpin( JitDeviceLayout::Coalesced , r_idx );
+
+      for( int i = 0 ; i < loops.size() ; ++i )
+	viewSpin.indices.push_back( loops.at(i).index() );
+
+      op_jit( viewSpinJit( dest_jit , viewSpin ) , forEach( rhs_view , viewSpin , OpCombine() ) );
+      
+      for( int i = loops.size() - 1 ; 0 <= i ; --i )
+	{
+	  loops[i].end();
+	}
+
+      jit_get_function( function_scalar );
+    }
+#endif
   }
+#endif  
 
 
   template<class T, class T1, class Op, class RHS>
   void 
-  function_exec(JitFunction& function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
+  function_exec(
+#if defined (QDP_BACKEND_AVX)
+		JitFunction& function,
+		JitFunction& function_scalar,
+#else
+		JitFunction& function,
+#endif
+		OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
   {
 #ifdef QDP_DEEP_LOG
-    function.start = s.start();
-    function.count = s.hasOrderedRep() ? s.numSiteTable() : Layout::sitesOnNode();
-    function.size_T = sizeof(T);
     function.type_W = typeid(typename WordType<T>::Type_t).name();
     function.set_dest_id( dest.getId() );
+    function.set_is_lat(true);
+#if defined (QDP_BACKEND_AVX)
+    function_scalar.type_W = typeid(typename WordType<T>::Type_t).name();
+    function_scalar.set_dest_id( dest.getId() );
+    function_scalar.set_is_lat(true);
+#endif
 #endif
     
     if (s.numSiteTable() < 1)
@@ -273,90 +256,78 @@ namespace QDP {
     AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
     forEach(rhs, addr_leaf, NullCombine());
 
+
     // For tuning
     function.set_dest_id( dest.getId() );
     function.set_enable_tuning();
-  
-    if (offnode_maps == 0)
-      {
-	if ( s.hasOrderedRep() )
-	  {
-	    int th_count = s.numSiteTable();
-#if defined(QDP_BACKEND_AVX)
-	    th_count /= Layout::virtualNodeNumber();
+
+    //
+    // 1st part to inner call: scalar for CUDA/ROCM, vector in case of AVX/VNODE
+    if (1)
+    {
+#if defined (QDP_BACKEND_AVX)
+      int th_count = MasterMap::Instance().getCountVNodeInnerSIMD(s,offnode_maps);
+#else
+      int th_count = MasterMap::Instance().getCountInnerScalar(s,offnode_maps);
+#endif      
+      WorkgroupGuardExec workgroupGuardExec(th_count);
+      std::vector<QDPCache::ArgKey> ids;
+      workgroupGuardExec.check(ids);
+#if defined (QDP_BACKEND_AVX)
+      ids.push_back( MasterMap::Instance().getIdVNodeInnerSIMD(s,offnode_maps) );
+#else
+      ids.push_back( MasterMap::Instance().getIdInnerScalar(s,offnode_maps) );
 #endif
-	    
-	    WorkgroupGuardExec workgroupGuardExec(th_count);
-	    //JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
-	    
-	    JitParam jit_start( QDP_get_global_cache().addJitParamInt( s.start() ) );
+      for(unsigned i=0; i < addr_leaf.ids.size(); ++i)
+	ids.push_back( addr_leaf.ids[i] );
 
-	    std::vector<QDPCache::ArgKey> ids;
-	    workgroupGuardExec.check(ids);
-	      //ids.push_back( jit_th_count.get_id() );
-	    ids.push_back( jit_start.get_id() );
-	    for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
-	      ids.push_back( addr_leaf.ids[i] );
-	  
-	    jit_launch(function,th_count,ids);
-	  }
-	else
-	  {
-	    int th_count = s.numSiteTable();
-      
-	    WorkgroupGuardExec workgroupGuardExec(th_count);
-	    // JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
-	    
-	    std::vector<QDPCache::ArgKey> ids;
-	    workgroupGuardExec.check(ids);
-	    // ids.push_back( jit_th_count.get_id() );
-	    ids.push_back( s.getIdSiteTable() );
-	    for(unsigned i=0; i < addr_leaf.ids.size(); ++i)
-	      ids.push_back( addr_leaf.ids[i] );
- 
-	    jit_launch(function,th_count,ids);
-	  }
-      }
-    else
+      jit_launch(function,th_count,ids);
+    }
+#if defined (QDP_BACKEND_AVX)
+    //
+    // 2nd part to inner call: scalar for AVX/VNODE
+    if (1)
+    {
+      int th_count = MasterMap::Instance().getCountVNodeInnerScalar(s,offnode_maps);
+      WorkgroupGuardExec workgroupGuardExec(th_count);
+      std::vector<QDPCache::ArgKey> ids;
+      workgroupGuardExec.check(ids);
+      ids.push_back( MasterMap::Instance().getIdVNodeInnerScalar(s,offnode_maps) );
+      for(unsigned i=0; i < addr_leaf.ids.size(); ++i)
+	ids.push_back( addr_leaf.ids[i] );
+
+      jit_launch(function_scalar,th_count,ids);
+    }
+#endif
+
+    //
+    // in case of offnode comms: Do QMP wait
+    //
+    ShiftPhase2 phase2;
+    forEach(rhs, phase2 , NullCombine());
+
+    // face call: scalar for all targets
+    int th_count_face = MasterMap::Instance().getCountFace(s,offnode_maps);
+    if ( th_count_face > 0 )
       {
-	// 1st. call: inner
-	{
-	  int th_count = MasterMap::Instance().getCountInner(s,offnode_maps);
-	  WorkgroupGuardExec workgroupGuardExec(th_count);
-	  //JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
-
-	  std::vector<QDPCache::ArgKey> ids;
-	  workgroupGuardExec.check(ids);
-	  //ids.push_back( jit_th_count.get_id() );
-	  ids.push_back( MasterMap::Instance().getIdInner(s,offnode_maps) );
-	  for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
-	    ids.push_back( addr_leaf.ids[i] );
- 
-	  jit_launch(function,th_count,ids);
-	}
-      
-	// 2nd call: face
-	{
-	  ShiftPhase2 phase2;
-	  forEach(rhs, phase2 , NullCombine());
-
-	  int th_count = MasterMap::Instance().getCountFace(s,offnode_maps);
-
-	  WorkgroupGuardExec workgroupGuardExec(th_count);
-	  //JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
-
-	  std::vector<QDPCache::ArgKey> ids;
-	  workgroupGuardExec.check(ids);
-	  //ids.push_back( jit_th_count.get_id() );
-	  ids.push_back( MasterMap::Instance().getIdFace(s,offnode_maps) );
-	  for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
-	    ids.push_back( addr_leaf.ids[i] );
- 
-	  jit_launch(function,th_count,ids);
-	}
-      
+	WorkgroupGuardExec workgroupGuardExec(th_count_face);
+	std::vector<QDPCache::ArgKey> ids;
+	workgroupGuardExec.check(ids);
+	ids.push_back( MasterMap::Instance().getIdFace(s,offnode_maps) );
+	for(unsigned i=0; i < addr_leaf.ids.size(); ++i)
+	  ids.push_back( addr_leaf.ids[i] );
+#if defined (QDP_BACKEND_AVX)
+	jit_launch(function_scalar,th_count_face,ids);
+#else
+	jit_launch(function,th_count_face,ids);
+#endif
       }
-  }  
+
+#ifdef QDP_DEEP_LOG
+    jit_deep_log(function);
+#endif
+    
+  }
 
 } // QDP
 #endif

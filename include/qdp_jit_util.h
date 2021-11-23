@@ -21,8 +21,12 @@ namespace QDP {
       
   
 
-  void jit_launch(JitFunction& function,int th_count,std::vector<QDPCache::ArgKey>& ids);
+  void jit_launch       ( JitFunction& function , int th_count , std::vector<QDPCache::ArgKey>& ids );
   void jit_launch_explicit_geom( JitFunction& function , std::vector<QDPCache::ArgKey>& ids , const kernel_geom_t& geom , unsigned int shared );
+
+#ifdef QDP_DEEP_LOG
+  void jit_deep_log(JitFunction& f);
+#endif
 
   void db_tune_write( std::string filename );
   void db_tune_read( std::string filename );
@@ -162,7 +166,7 @@ namespace QDP {
 
 
 
-
+  
 
 
   template<class T, int N>
@@ -177,11 +181,11 @@ namespace QDP {
     template<class C>
     JitStackArray( const C& c )
     {
-      // QDPIO::cout << "Size = " << T_jit::ScalarSize_t << "\n";
-      // QDPIO::cout << "N    = " << N << "\n";
-
-      ptr = llvm_alloca( llvm_get_type<W>() , N * T_jit::ScalarSize_t );
-
+      if (IsWordVec<T>::value)
+	ptr = llvm_alloca( llvm_get_vectype<W>() , N * T_jit::ScalarSize_t );
+      else
+	ptr = llvm_alloca( llvm_get_type<W>() , N * T_jit::ScalarSize_t );
+      
       array.setup( ptr , JitDeviceLayout::Scalar );
 
       for( int i = 0 ; i < N ; ++i )
@@ -191,10 +195,10 @@ namespace QDP {
 
     JitStackArray()
     {
-      // QDPIO::cout << "Size = " << T_jit::ScalarSize_t << "\n";
-      // QDPIO::cout << "N    = " << N << "\n";
-
-      ptr = llvm_alloca( llvm_get_type<W>() , N * T_jit::ScalarSize_t );
+      if (IsWordVec<T>::value)
+	ptr = llvm_alloca( llvm_get_vectype<W>() , N * T_jit::ScalarSize_t );
+      else
+	ptr = llvm_alloca( llvm_get_type<W>() , N * T_jit::ScalarSize_t );
 
       array.setup( ptr , JitDeviceLayout::Scalar );
     }
@@ -221,7 +225,6 @@ namespace QDP {
     }
 
   };
-
 
 
 
@@ -299,7 +302,6 @@ namespace QDP {
       // QDPIO::cout << "Size = " << T_jit::ScalarSize_t << "\n";
       // QDPIO::cout << "N    = " << N << "\n";
 
-#if 1
       llvm::Value * ptr_base = llvm_get_shared_ptr( llvm_get_type<W>() );
       llvm::Value * ptr_adv = llvm_createGEP( ptr_base ,
 					      llvm_mul( llvm_call_special_tidx() ,
@@ -307,12 +309,6 @@ namespace QDP {
 							)
 					      );
       array.setup( ptr_adv , JitDeviceLayout::Scalar );
-#else
-      llvm::Value * ptr_base = llvm_get_shared_ptr( llvm_get_type<W>() );
-      IndexDomainVector args;
-      args.push_back( make_pair( 256 , llvm_call_special_tidx() ) );  // sitesOnNode irrelevant since Scalar access later
-      array.setup( ptr_base , JitDeviceLayout::Scalar , args );
-#endif
 
       for( int i = 0 ; i < N ; ++i )
 	array.arrayF(i) = c.elem( i );
@@ -324,7 +320,6 @@ namespace QDP {
       // QDPIO::cout << "Size = " << T_jit::ScalarSize_t << "\n";
       // QDPIO::cout << "N    = " << N << "\n";
 
-#if 1
       llvm::Value * ptr_base = llvm_get_shared_ptr( llvm_get_type<W>() );
       llvm::Value * ptr_adv = llvm_createGEP( ptr_base ,
 					      llvm_mul( llvm_call_special_tidx() ,
@@ -332,12 +327,6 @@ namespace QDP {
 							)
 					      );
       array.setup( ptr_adv , JitDeviceLayout::Scalar );
-#else
-      llvm::Value * ptr_base = llvm_get_shared_ptr( llvm_get_type<W>() );
-      IndexDomainVector args;
-      args.push_back( make_pair( 256 , llvm_call_special_tidx() ) );  // sitesOnNode irrelevant since Scalar access later
-      array.setup( ptr_base , JitDeviceLayout::Scalar , args );
-#endif
     }
 
     
@@ -470,19 +459,9 @@ namespace QDP {
   };
   
 
-
-
   llvm::Value* jit_ternary( llvm::Value* cond , llvm::Value* val_true , llvm::Value* val_false );
-
-  
-
-  
   llvm::Value* llvm_epsilon_1st( int p1 , llvm::Value* j );
   llvm::Value* llvm_epsilon_2nd( int p2 , llvm::Value* i );
-
-
-
-
   
 
 } // namespace

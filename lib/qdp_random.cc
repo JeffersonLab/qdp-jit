@@ -68,7 +68,6 @@ namespace RNG
   //! Initialize the internals of the random number generator
   void initRNG()
   {
-    QDPIO::cout << "initRNG ni\n";
     int old_profile_level = setProfileLevel(0);
 
     /* Multiplier used. Use big integer arithmetic */

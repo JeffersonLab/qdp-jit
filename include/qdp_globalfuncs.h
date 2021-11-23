@@ -236,25 +236,6 @@ namespace QDP
   }
 
 
-  //-----------------------------------------------------------------------------
-  // Multiple global sums 
-  //! dest  = sumMulti(source1,Set) 
-  /*!
-   * Compute the global sum on multiple subsets specified by Set 
-   *
-   * This is a very simple implementation. There is no need for
-   * anything fancier unless global sums are just so extraordinarily
-   * slow. Otherwise, generalized sums happen so infrequently the slow
-   * version is fine.
-   */
-#if 0
-  template<class T, class C>
-  inline typename UnaryReturn<C, FnSumMulti>::Type_t
-  sumMulti(const QDPType<T,C>& s1, const Set& ss)
-  {
-    return sumMulti(PETE_identity(s1), ss);
-  }
-#endif
 
   //-----------------------------------------------
   // Global max and min

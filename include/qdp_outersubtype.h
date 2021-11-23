@@ -15,88 +15,7 @@ namespace QDP {
  * Only used for lvalues
  */
 
-#if 0
-template<class T>
-class OSubScalar: public QDPSubType<T, OScalar<T> >
-{
-  typedef OScalar<T> C;
-
-public:
-  //OSubScalar(OScalar<T>& a, const Subset& ss): F(a.getF()), s(ss) {}
-  OSubScalar(OScalar<T>& a, const Subset& ss): F(a.getF()), s(&(const_cast<Subset&>(ss))) {}
-  OSubScalar(const OSubScalar& a): F(a.F), s(a.s) {}
-  ~OSubScalar() {}
-
-  //---------------------------------------------------------
-  // Operators
-  // NOTE: all assignment-like operators except operator= are
-  // inherited from QDPSubType
-
-  inline
-  void operator=(const typename WordType<T>::Type_t& rhs)
-    {
-      this->assign(rhs);
-    }
-
-  inline
-  void operator=(const Zero& rhs)
-    {
-      this->assign(rhs);
-    }
-
-  template<class T1,class C1>
-  inline
-  void operator=(const QDPType<T1,C1>& rhs)
-    {
-      this->assign(rhs);
-    }
-
-  template<class T1,class C1>
-  inline
-  void operator=(const QDPExpr<T1,C1>& rhs)
-    {
-      this->assign(rhs);
-    }
-
-
-  inline
-  void operator=(const OSubScalar& rhs)
-    {
-      this->assign(rhs);
-    }
-
-
-private:
-  // Hide default constructor
-  OSubScalar() {}
-
-public:
-  T* getF() {return F;}
-  T* getF() const {return F;}
-  const Subset& subset() const {return *s;}
-  bool getOwnsMemory() const { return ownsMemory; }
-  bool getOwnsMemory() { return ownsMemory; }
-
-private:
-  T* F;
-  bool ownsMemory;
-  Subset* s;
-
-  //const Subset& s;
-};
-#endif
   
-
-
-// not sure about this
-#if 0
-template<class T, class T1, class Op, class RHS>
-void evaluate(OSubScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs, const Subset& s)
-{
-  // Subset is not used at this level. It may be needed, though, within an inner operation
-  op(dest.elem(), forEach(rhs, ElemLeaf(), OpCombine()));
-}
-#endif
 
 
 //-------------------------------------------------------------------------------------
@@ -110,15 +29,12 @@ class OSubLattice: public QDPSubType<T, OLattice<T> >
   typedef OLattice<T> C;
   
 public:
-  //OSubLattice(OLattice<T>& a, const Subset& ss): F(a.getF()), s(ss), ownsMemory(false) {}
-
   OSubLattice(OLattice<T>& a, const Subset& ss): myId(a.getId()), ownsMemory(false), s(&(const_cast<Subset&>(ss))) {}
   
   OSubLattice(const OSubLattice& a): QDPSubType<T, OLattice<T> >() {
     ownsMemory = a.ownsMemory;
     s = a.s;
     if (a.ownsMemory) {
-      //QDPIO::cout << "OSubLattice copy ctor, must copy (now on GPU)  subset size = " << s->numSiteTable() << "\n";
       alloc_mem();
       operator_subtype_subtype(*this,OpAssign(),a,subset());
     } else {
@@ -131,7 +47,6 @@ public:
 
 
   void setSubset( const Subset& ss ) {
-    //std::cout << "OSubLattice::setSubset was id = " << myId << "   subset size = " << ss.numSiteTable() << "\n";
     if (myId >= 0 && !ownsMemory)
       QDP_error_exit("You try to set the subset on an OSubLattice that is a view of an OLattice!");
     if (myId >= 0) {
@@ -140,14 +55,11 @@ public:
     s = &(const_cast<Subset&>(ss));
     alloc_mem();
     ownsMemory = true;
-    //QDPIO::cout << "subset set on OSubLattice\n";
-    //std::cout << "OSubLattice::setSubset now id = " << myId << "\n";
   }
 
 
   OSubLattice(const Subset& ss , OLattice<T>& a): ownsMemory(true), s(&(const_cast<Subset&>(ss)))  {
     alloc_mem();
-#if 1
     if (QDP_get_global_cache().isOnDevice( a.getId() ))
       {
 	evaluate_subtype_type(*this,OpAssign(),PETE_identity(a),subset());
@@ -158,8 +70,8 @@ public:
 
 	if (ss.numSiteTable())
 	  {
-	    T* aF = a.getF();
-	    T* thisF = this->getF();
+	    typename ScalarType<T>::Type_t* aF = a.getF();
+	    typename ScalarType<T>::Type_t* thisF = this->getF();
 
 	    const int *tab = ss.siteTable().slice();
 	    for(int n=0; n < ss.numSiteTable(); ++n)
@@ -168,9 +80,6 @@ public:
 	      }
 	  }
       }
-#else
-    evaluate_subtype_type(*this,OpAssign(),PETE_identity(a),subset());
-#endif
   }
 
 
@@ -181,9 +90,8 @@ public:
 
 
   void alloc_mem() {
-    //QDP_info("OSubLattice alloc for %d sites",s->numSiteTable());
     if (s->numSiteTable() > 0)
-      myId = QDP_get_global_cache().registrate( sizeof(T) * s->numSiteTable() , 1 , NULL ); 
+      myId = QDP_get_global_cache().registrate_no_layout_conversion( sizeof(T) * s->numSiteTable() ); 
   }
 
   ~OSubLattice() {
@@ -237,7 +145,7 @@ public:
     QDP_get_global_cache().getHostPtr( (void**)&F_private , myId );
   }
 
-  inline T* getF() const { 
+  inline typename ScalarType<T>::Type_t* getF() const { 
     assert_on_host(); 
     return F_private; 
   }
@@ -253,16 +161,9 @@ public:
   }
 
 
-private:
-  // Hide default constructor
-  //OSubLattice() {}
-
 public:
   bool getOwnsMemory() const { return ownsMemory; }
   bool getOwnsMemory() { return ownsMemory; }
-  // T* getF() {return F;}
-  // T* getF() const {return F;}
-  //const Subset& subset() const {return s;}
   const Subset& subset() const {return *s;}
 
   int getId() const {
@@ -270,13 +171,10 @@ public:
   }
 
 private:
-  mutable T* F_private;
+  mutable typename ScalarType<T>::Type_t* F_private;
   int myId = -2;
   bool ownsMemory;
   Subset* s;
-
-  //C&      F;
-  //const Subset& s;
 };
 
 
@@ -360,21 +258,12 @@ struct JITType<OSubLattice<T> >
 };
 
 
-#if 0
-template<class T> 
-struct JITType<OSubScalar<T> >
+
+
+template<class T>
+struct LeafFunctor<OSubLattice<T>, ParamLeaf>
 {
-  typedef OSubScalarJIT<typename JITType<T>::Type_t>  Type_t;
-};
-#endif
-
-
-
-  template<class T>
-  struct LeafFunctor<OSubLattice<T>, ParamLeaf>
-{
-  typedef typename JITType< OSubLattice<T> >::Type_t  TypeA_t;
-  typedef TypeA_t  Type_t;
+  typedef typename JITType< OSubLattice<T> >::Type_t  Type_t;
   inline static
   Type_t apply(const OSubLattice<T>& do_not_use, const ParamLeaf& p) 
   {
@@ -383,20 +272,20 @@ struct JITType<OSubScalar<T> >
   }
 };
 
-#if 0  
 template<class T>
-struct LeafFunctor<OScalar<T>, ParamLeaf>
+struct LeafFunctor<OSubLattice<T>, ParamLeafScalar>
 {
-  typedef typename JITType< OScalar<T> >::Type_t  TypeA_t;
-  typedef TypeA_t  Type_t;
+  typedef typename JITType< OSubLattice< typename ScalarType<T>::Type_t > >::Type_t  Type_t;
   inline static
-  Type_t apply(const OScalar<T>& do_not_use, const ParamLeaf& p) 
+  Type_t apply(const OSubLattice<T>& do_not_use, const ParamLeafScalar& p) 
   {
     ParamRef    base_addr = llvm_add_param< typename WordType<T>::Type_t * >();
     return Type_t( base_addr );
   }
 };
-#endif
+
+
+
 
 
 template<class T>
@@ -406,25 +295,10 @@ struct LeafFunctor<OSubLattice<T>, AddressLeaf>
   inline static
   Type_t apply(const OSubLattice<T>& s, const AddressLeaf& p) 
   {
-    //p.setAddr( QDP_get_global_cache().getDevicePtr( s.getId() ) );
     p.setId( s.getId() );
     return 0;
   }
 };
-
-#if 0
-template<class T>
-struct LeafFunctor<OScalar<T>, AddressLeaf>
-{
-  typedef int Type_t;
-  inline static
-  Type_t apply(const OScalar<T>& s, const AddressLeaf& p) 
-  {
-    p.setAddr( QDP_get_global_cache().getDevicePtr( s.getId() ) );
-    return 0;
-  }
-};
-#endif
 
 
   

@@ -63,6 +63,12 @@ public:
 // Traits classes 
 //-----------------------------------------------------------------------------
 
+  template <class T, int N>
+  struct IsWordVec< PColorVectorREG<T,N > >
+  {
+    constexpr static bool value = IsWordVec<T>::value;
+  };
+
 
 template<class T1, int N>
 struct JITType<PColorVectorREG<T1,N> > 
@@ -268,7 +274,11 @@ peekColor(const PColorVectorREG<T,N>& l, llvm::Value * row)
 
   typedef typename JITType< PColorVectorREG<T,N> >::Type_t TTjit;
 
-  llvm::Value * ptr_local = llvm_alloca( llvm_get_type<typename WordType<T>::Type_t>() , TTjit::ScalarSize_t );
+  llvm::Value* ptr_local;
+  if (IsWordVec<T>::value)
+    ptr_local = llvm_alloca( llvm_get_vectype<typename WordType<T>::Type_t>() , TTjit::ScalarSize_t );
+  else
+    ptr_local = llvm_alloca( llvm_get_type<typename WordType<T>::Type_t>() , TTjit::ScalarSize_t );
 
   TTjit dj;
   dj.setup( ptr_local , JitDeviceLayout::Scalar );

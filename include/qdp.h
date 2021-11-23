@@ -30,6 +30,7 @@
 #ifndef QDP_INCLUDE
 #define QDP_INCLUDE
 
+
 //#define NDEBUG
 #include<cassert>
 
@@ -90,6 +91,7 @@ using std::ostream;
 
 
 #include "qdp_jit_config.h"
+
 
 #include "qdp_dispatch.h"
 

@@ -159,19 +159,19 @@ peekColor(const QDPType<T1,C1> & l, int row, int col)
 }
 
 
-#if 0
 template<class T1,class C1>
 inline typename MakeReturn<UnaryNode<FnPeekColorMatrix,
-  typename CreateLeaf<QDPExpr<T1,C1> >::Leaf_t>, C1>::Expression_t
+  typename CreateLeaf<QDPExpr<T1,C1> >::Leaf_t>,
+  typename UnaryReturn<C1,FnPeekColorMatrix >::Type_t>::Expression_t
 peekColor(const QDPExpr<T1,C1> & l, int row, int col)
 {
-  typedef UnaryNode<FnPeekColorMatrix, 
+  typedef UnaryNode<FnPeekColorMatrix,
     typename CreateLeaf<QDPExpr<T1,C1> >::Leaf_t> Tree_t;
   typedef typename UnaryReturn<C1,FnPeekColorMatrix >::Type_t Container_t;
   return MakeReturn<Tree_t,Container_t>::make(Tree_t(FnPeekColorMatrix(row,col),
     CreateLeaf<QDPExpr<T1,C1> >::make(l)));
 }
-#endif
+
   
 
 //! Structure for extracting color vector components
@@ -213,10 +213,11 @@ peekColor(const QDPType<T1,C1> & l, int row)
 }
 
 
-#if 0
+
 template<class T1,class C1>
 inline typename MakeReturn<UnaryNode<FnPeekColorVector,
-  typename CreateLeaf<QDPExpr<T1,C1> >::Leaf_t>, C1>::Expression_t
+  typename CreateLeaf<QDPExpr<T1,C1> >::Leaf_t>,
+  typename UnaryReturn<C1,FnPeekColorVector >::Type_t >::Expression_t
 peekColor(const QDPExpr<T1,C1> & l, int row)
 {
   typedef UnaryNode<FnPeekColorVector,
@@ -225,7 +226,8 @@ peekColor(const QDPExpr<T1,C1> & l, int row)
   return MakeReturn<Tree_t,Container_t>::make(Tree_t(FnPeekColorVector(row),
     CreateLeaf<QDPExpr<T1,C1> >::make(l)));
 }
-#endif
+
+  
 
 //! Structure for extracting spin matrix components
 struct FnPeekSpinMatrix
@@ -264,10 +266,12 @@ peekSpin(const QDPType<T1,C1> & l, int row, int col)
     CreateLeaf<QDPType<T1,C1> >::make(l)));
 }
 
-#if 0
+
+
 template<class T1,class C1>
 inline typename MakeReturn<UnaryNode<FnPeekSpinMatrix,
-  typename CreateLeaf<QDPExpr<T1,C1> >::Leaf_t>, C1>::Expression_t
+  typename CreateLeaf<QDPExpr<T1,C1> >::Leaf_t>,
+  typename UnaryReturn<C1,FnPeekSpinMatrix>::Type_t>::Expression_t
 peekSpin(const QDPExpr<T1,C1> & l, int row, int col)
 {
   typedef UnaryNode<FnPeekSpinMatrix,
@@ -276,7 +280,8 @@ peekSpin(const QDPExpr<T1,C1> & l, int row, int col)
   return MakeReturn<Tree_t,Container_t>::make(Tree_t(FnPeekSpinMatrix(row,col),
     CreateLeaf<QDPExpr<T1,C1> >::make(l)));
 }
-#endif
+
+
 
 //! Structure for extracting spin vector components
 struct FnPeekSpinVector
@@ -317,10 +322,10 @@ peekSpin(const QDPType<T1,C1> & l, int row)
 }
 
 
-#if 0
 template<class T1,class C1>
 inline typename MakeReturn<UnaryNode<FnPeekSpinVector,
-  typename CreateLeaf<QDPExpr<T1,C1> >::Leaf_t>, C1>::Expression_t
+  typename CreateLeaf<QDPExpr<T1,C1> >::Leaf_t>,
+  typename UnaryReturn<C1,FnPeekSpinVector>::Type_t >::Expression_t
 peekSpin(const QDPExpr<T1,C1> & l, int row)
 {
   typedef UnaryNode<FnPeekSpinVector,
@@ -329,7 +334,7 @@ peekSpin(const QDPExpr<T1,C1> & l, int row)
   return MakeReturn<Tree_t,Container_t>::make(Tree_t(FnPeekSpinVector(row),
     CreateLeaf<QDPExpr<T1,C1> >::make(l)));
 }
-#endif
+
 
 
 

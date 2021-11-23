@@ -64,6 +64,7 @@ if(QDP_ENABLE_LLVM13)
   set(QDP_LLVM13 "1")
 endif()
 
+set(QDP_PROP_OPT @QDP_PROP_OPT@)
 
 set(QDP_IS_QDPJIT 1)
 

@@ -4,91 +4,90 @@
 
 namespace QDP {
 
+  struct ShiftPhase1
+  {
+    ShiftPhase1(const Subset& _s):subset(_s) {}
+    const Subset& subset;
+  };
+
+  struct ShiftPhase2
+  {
+  };
 
 
 
+  struct ViewLeaf
+  {
+    JitDeviceLayout layout_m;
+    llvm::Value* index_m;
+    bool handle_multi_index = true;
+    ViewLeaf( JitDeviceLayout layout , llvm::Value * index ) : layout_m(layout), index_m(index) {}
+    JitDeviceLayout getLayout() const { return layout_m; }
+    llvm::Value    *getIndex() const  { return index_m; }
+  };
+
+  
+
+  struct ViewSpinLeaf
+  {
+    JitDeviceLayout layout_m;
+    llvm::Value * index_m;
+    bool handle_multi_index = true;
+    mutable std::vector< llvm::Value* > indices;
+
+    ViewSpinLeaf( JitDeviceLayout layout , llvm::Value* index , const std::vector< llvm::Value* >& i ) : layout_m(layout), index_m(index), indices(i) {}
+    ViewSpinLeaf( JitDeviceLayout layout , llvm::Value* index                                        ) : layout_m(layout), index_m(index) {}
+    ViewSpinLeaf( const ViewSpinLeaf& rhs, llvm::Value* l1                                           ) : layout_m(rhs.layout_m), index_m(rhs.index_m), indices({l1}) {}
+    ViewSpinLeaf( const ViewSpinLeaf& rhs, llvm::Value* l1 , llvm::Value* l2                         ) : layout_m(rhs.layout_m), index_m(rhs.index_m), indices({l1,l2}) {}
+
+    const std::vector< llvm::Value* >& getIndices() const { return indices; }
+    JitDeviceLayout getLayout() const { return layout_m; }
+    llvm::Value*    getIndex() const  { return index_m; }
+    llvm::Value*    index_first() const  { return indices.at(0); }
+    llvm::Value*    index_second() const { return indices.at(1); }
+  };
 
 
 
-struct ShiftPhase1
-{
-  ShiftPhase1(const Subset& _s):subset(_s) {}
-  const Subset& subset;
-};
-
-struct ShiftPhase2
-{
-};
+  struct ParamLeaf {};
+  struct ParamLeafScalar {};
 
 
-
-struct ViewLeaf
-{
-  JitDeviceLayout layout_m;
-  llvm::Value * index_m;
-  ViewLeaf( JitDeviceLayout layout , llvm::Value * index ) : layout_m(layout), index_m(index) {}
-  JitDeviceLayout getLayout() const { return layout_m; }
-  llvm::Value    *getIndex() const  { return index_m; }
-};
+  struct JIT2BASE {};
 
 
-struct ViewSpinLeaf
-{
-  JitDeviceLayout layout_m;
-  llvm::Value * index_m;
-  mutable std::vector< llvm::Value* > indices;
-
-  ViewSpinLeaf( JitDeviceLayout layout , llvm::Value* index , const std::vector< llvm::Value* >& i ) : layout_m(layout), index_m(index), indices(i) {}
-  ViewSpinLeaf( JitDeviceLayout layout , llvm::Value* index                                        ) : layout_m(layout), index_m(index) {}
-  ViewSpinLeaf( const ViewSpinLeaf& rhs, llvm::Value* l1                                           ) : layout_m(rhs.layout_m), index_m(rhs.index_m), indices({l1}) {}
-  ViewSpinLeaf( const ViewSpinLeaf& rhs, llvm::Value* l1 , llvm::Value* l2                         ) : layout_m(rhs.layout_m), index_m(rhs.index_m), indices({l1,l2}) {}
-
-  const std::vector< llvm::Value* >& getIndices() const { return indices; }
-  JitDeviceLayout getLayout() const { return layout_m; }
-  llvm::Value*    getIndex() const  { return index_m; }
-  llvm::Value*    index_first() const  { return indices.at(0); }
-  llvm::Value*    index_second() const { return indices.at(1); }
-};
+  struct JitCreateLoopsLeaf
+  {
+    mutable std::vector< JitForLoop > loops;
+  };
 
 
-
-struct ParamLeaf {};
-
-struct JIT2BASE {};
-
-
-struct JitCreateLoopsLeaf
-{
-  mutable std::vector< JitForLoop > loops;
-};
-
-
-struct AddressLeaf
-{
-  ~AddressLeaf() {
-    for (auto i : ids_signoff) {
-      QDP_get_global_cache().signoff(i);
+  struct AddressLeaf
+  {
+    ~AddressLeaf() {
+      for (auto i : ids_signoff) {
+	QDP_get_global_cache().signoff(i);
+      }
     }
-  }
   
-  AddressLeaf(const Subset& s): subset(s) {}
-  AddressLeaf(const AddressLeaf& cp) = delete;
+    AddressLeaf(const Subset& s): subset(s) {}
+    AddressLeaf(const AddressLeaf& cp) = delete;
 
-  AddressLeaf& operator=(const AddressLeaf& cp) = delete;
-
-  
-  mutable std::vector<int> ids;
-  mutable std::vector<int> ids_signoff;
-  const Subset& subset;
-
-  void setId( int id ) const {
-    ids.push_back( id );
-  }
-  
-  template<class T> void setLit( T f ) const;
+    AddressLeaf& operator=(const AddressLeaf& cp) = delete;
 
   
-};
+    mutable std::vector<int> ids;
+    mutable std::vector<int> ids_signoff;
+    const Subset& subset;
+
+    void setId( int id ) const {
+      ids.push_back( id );
+    }
+  
+    template<class T> void setLit( T f ) const;
+
+  
+  };
 
   template<>
   void AddressLeaf::setLit<float>( float f ) const;
@@ -110,8 +109,7 @@ struct AddressLeaf
   
 
   template<class LeafType, class LeafTag>
-  struct AddOpParam
-  { };
+  struct AddOpParam {};
 
   template<class LeafType>
   struct AddOpParam<LeafType,ParamLeaf>
@@ -120,9 +118,19 @@ struct AddressLeaf
     static LeafType apply(const LeafType&, const ParamLeaf& p) { return LeafType(); }
   };
 
+  template<class LeafType>
+  struct AddOpParam<LeafType,ParamLeafScalar>
+  { 
+    typedef LeafType Type_t;
+    static LeafType apply(const LeafType&, const ParamLeafScalar& p) { return LeafType(); }
+  };
+
+
+
+
+  
   template<class LeafType, class LeafTag>
-  struct AddOpAddress
-  { };
+  struct AddOpAddress {};
 
   template<class LeafType>
   struct AddOpAddress<LeafType,AddressLeaf>

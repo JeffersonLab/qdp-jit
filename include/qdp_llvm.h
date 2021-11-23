@@ -33,15 +33,12 @@ namespace QDP {
 #include "qdp_stopwatch.h"
 
 
-//#define __STDC_LIMIT_MACROS
-//#define __STDC_CONSTANT_MACROS
 
 namespace llvm
 {
   struct Value;
   struct BasicBlock;
   struct Type;
-  //struct PHINode;
   struct Function;
   struct SwitchInst;
 }
@@ -57,14 +54,6 @@ namespace QDP {
   }
 
 
-  namespace ptx_db {
-    extern bool db_enabled;
-    extern std::string dbname;
-  }
-
-  void llvm_ptx_db( JitFunction& f, const char * pretty );
-
-  
   typedef int ParamRef;
 
 
@@ -79,17 +68,17 @@ namespace QDP {
 
 
   void llvm_set_debug( const char * str );
-  void llvm_set_ptxdb( const char * c_str );
   void llvm_debug_write_set_name( const char* pretty, const char* additional );
 
-  std::string get_ptx_db_fname();
-  bool        get_ptx_db_enabled();
-  int         get_ptx_db_size();
-
 #if defined (QDP_BACKEND_AVX)
-  llvm::Value* llvm_insert_element( llvm::Value* vec , llvm::Value* val , llvm::Value* pos );
+  void llvm_vecstore_ptr_idx( llvm::Value * val , llvm::Value * ptr , llvm::Value * idx );
+  llvm::Value* llvm_vecload_ptr_idx( llvm::Value * ptr , llvm::Value * idx );
+  llvm::Value* llvm_insert_element( llvm::Value* vec , llvm::Value* val , int pos );
+  llvm::Value* llvm_extract_element( llvm::Value* vec , int pos );
+  llvm::Value* llvm_get_zero_vector( llvm::Value* type_from_val );
   llvm::Value* llvm_fill_vector( llvm::Value* val );
   llvm::Value* llvm_cast_to_vector( llvm::Value* val );
+  llvm::Value* llvm_veccast( llvm::Type *dest_type , llvm::Value *src );
 #endif
   
   llvm::Value * llvm_create_value( double v );
@@ -100,7 +89,8 @@ namespace QDP {
 
   
   template<class T> llvm::Type* llvm_get_type();
-
+  template<class T> llvm::Type* llvm_get_vectype();
+  
   llvm::Type* llvm_val_type( llvm::Value* l );
 
 
@@ -145,6 +135,7 @@ namespace QDP {
   llvm::Value* llvm_sub( llvm::Value* lhs , llvm::Value* rhs );
   llvm::Value* llvm_div( llvm::Value* lhs , llvm::Value* rhs );
   llvm::Value* llvm_eq( llvm::Value* lhs , llvm::Value* rhs );
+  llvm::Value* llvm_ne( llvm::Value* lhs , llvm::Value* rhs );
   llvm::Value* llvm_ge( llvm::Value* lhs , llvm::Value* rhs );
   llvm::Value* llvm_gt( llvm::Value* lhs , llvm::Value* rhs );
   llvm::Value* llvm_le( llvm::Value* lhs , llvm::Value* rhs );
@@ -201,6 +192,7 @@ namespace QDP {
   llvm::Value * llvm_create_value(size_t v);
   llvm::Value * llvm_create_value(bool v );
 
+  llvm::Value* llvm_trunc_i1( llvm::Value* val );
 
   llvm::Value * llvm_createGEP( llvm::Value * ptr , llvm::Value * idx );
   llvm::Value * llvm_load( llvm::Value * ptr );
@@ -273,12 +265,6 @@ namespace QDP {
 
   llvm::Value* llvm_pow_f64( llvm::Value* lhs, llvm::Value* rhs );
   llvm::Value* llvm_atan2_f64( llvm::Value* lhs, llvm::Value* rhs );
-
-
-
-
-
-
 
 
   void jit_stats_lattice2dev();

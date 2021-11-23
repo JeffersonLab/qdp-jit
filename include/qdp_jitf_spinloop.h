@@ -4,16 +4,19 @@
 #include<type_traits>
 
 
+#if defined (QDP_PROP_OPT)
 namespace QDP {
 
-#if 0
+  
+#if 1
   namespace
   {
     template <class T>
-    void print_type()
+    void print_type(std::string txt)
     {
-      QDPIO::cout << __PRETTY_FUNCTION__ << std::endl;
+      QDPIO::cout << txt << "\n" << __PRETTY_FUNCTION__ << std::endl;
     }
+
   }
 #endif
 
@@ -94,6 +97,15 @@ namespace QDP {
     constexpr static bool value = true;
   };
 
+  
+#if defined (QDP_BACKEND_AVX)
+  template<class T>
+  struct HasProp< Reference<QDPType<PSpinMatrix<PColorMatrix<RComplex<WordVec<T> >, Nc >, Ns >, OLattice<PSpinMatrix<PColorMatrix<RComplex<WordVec<T> >, Nc >, Ns > > > > >
+  {
+    constexpr static bool value = true;
+  };
+#endif
+  
 
   template<class A>
   struct EvalToSpinMatrix
@@ -114,6 +126,27 @@ namespace QDP {
 
   template<typename T> concept ConceptEvalToSpinMatrix = EvalToSpinMatrix<T>::value;
   template<typename T> concept ConceptEvalToSpinScalar = EvalToSpinScalar<T>::value;
+
+
+  template<class A,class B>
+  struct Combine2<PColorMatrixREG<A,3>, PColorMatrixREG<B,3>, FnQuarkContractXX, OpCombine>
+  {
+    typedef typename BinaryReturn<PColorMatrixREG<A,3>, PColorMatrixREG<B,3>, FnQuarkContractXX>::Type_t Type_t;
+    inline static
+    Type_t combine(const PColorMatrixREG<A,3>& a, const PColorMatrixREG<B,3>& b, const FnQuarkContractXX& op, OpCombine)
+    {
+      return quarkContractXX(a, b);
+    }
+  };
+
+  
+
+
+
+  // -------------------------------------------------------------
+  // -------------------------------------------------------------
+  // -------------------------------------------------------------
+  // -------------------------------------------------------------
 
 
   template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
@@ -144,7 +177,7 @@ namespace QDP {
       return stack.elemREGint(0);
     }
   };
-
+  
 
 
   template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
@@ -313,19 +346,6 @@ namespace QDP {
     }
   };
 
-
-
-
-  template<class A,class B>
-  struct Combine2<PColorMatrixREG<A,3>, PColorMatrixREG<B,3>, FnQuarkContractXX, OpCombine>
-  {
-    typedef typename BinaryReturn<PColorMatrixREG<A,3>, PColorMatrixREG<B,3>, FnQuarkContractXX>::Type_t Type_t;
-    inline static
-    Type_t combine(const PColorMatrixREG<A,3>& a, const PColorMatrixREG<B,3>& b, const FnQuarkContractXX& op, OpCombine)
-    {
-      return quarkContractXX(a, b);
-    }
-  };
 
 
   template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
@@ -1100,9 +1120,15 @@ namespace QDP {
     }
   };
 
+  
+  // -------------------------------------------------------------
+  // -------------------------------------------------------------
 
+  
 
-
+  // viewSpinJit 
+  //
+  
   template<class T,int N>
   T viewSpinJit( OLatticeJIT< PSpinMatrixJIT<T,N> >& dest , const ViewSpinLeaf& v )
   {
@@ -1114,7 +1140,6 @@ namespace QDP {
   
     return dest.elem( v.getLayout() , v.getIndex() ).getJitElem( v.indices[0] , v.indices[1] );
   }
-
 
   template<class T,int N>
   T viewSpinJit( OLatticeJIT< PSpinVectorJIT<T,N> >& dest , const ViewSpinLeaf& v )
@@ -1128,7 +1153,6 @@ namespace QDP {
     return dest.elem( v.getLayout() , v.getIndex() ).getJitElem( v.indices[0] );
   }
 
-
   template<class T>
   T viewSpinJit( OLatticeJIT< PScalarJIT<T> >& dest , const ViewSpinLeaf& v )
   {
@@ -1141,6 +1165,9 @@ namespace QDP {
     return dest.elem( v.getLayout() , v.getIndex() ).getJitElem();
   }
 
+
+
+  //////////////////////////////////////  
 
   
 
@@ -1186,4 +1213,5 @@ namespace QDP {
   };
 
 } // QDP
+#endif
 #endif

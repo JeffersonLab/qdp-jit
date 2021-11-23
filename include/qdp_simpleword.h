@@ -548,6 +548,12 @@ struct UnaryReturn<float, FnLocalNorm2> {
 };
 
 template<>
+struct BinaryReturn<double, float, FnPow> {
+  typedef DOUBLE_TYPE  Type_t;
+};
+
+
+template<>
 struct BinaryReturn<float, float, FnLocalInnerProduct> {
   typedef DOUBLE_TYPE  Type_t;
 };

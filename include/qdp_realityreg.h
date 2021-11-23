@@ -16,7 +16,7 @@ namespace QDP {
 
 
 template<class T>
-class RScalarREG //: public BaseREG<T,1,RScalarREG<T> >
+class RScalarREG
 {
   T F;
 public:
@@ -40,12 +40,6 @@ public:
   }
 
   
-  // RScalarREG& operator=( const RScalarJIT< typename JITType<T>::Type_t >& rhs) {
-  //   setup(rhs);
-  //   return *this;
-  // }
-
-
   // Default constructing should be possible
   // then there is no need for MPL index when
   // construction a PMatrix<T,N>
@@ -67,14 +61,6 @@ public:
     elem() = rhs;
     return *this;
   }
-
-
-#if 0
-  //---------------------------------------------------------
-  //! construct dest = const
-#endif
-
-  //RScalarREG(const typename WordType<T>::Type_t& rhs) : JV<T,1>( NULL , rhs ) {}
 
 
   //! construct dest = rhs
@@ -247,9 +233,6 @@ public:
 public:
   inline       T& elem()       { return F; }
   inline const T& elem() const { return F; }
-
-  // inline       T& elem()       { return this->arrayF(0); }
-  // inline const T& elem() const { return this->arrayF(0); }
 };
 
  
@@ -350,11 +333,6 @@ public:
   }
 
   
-  // RComplexREG& operator=( const RComplexJIT< typename JITType<T>::Type_t >& rhs) {
-  //   setup(rhs);
-  //   return *this;
-  // }
-
   RComplexREG( const RComplexJIT< typename JITType<T>::Type_t >& rhs) {
     setup(rhs);
   }
@@ -373,15 +351,40 @@ public:
     imag() = _im.elem();
   }
 
-  //! Construct from two scalars
-  //RComplexREG(Jit& j,const typename WordType<T>::Type_t& re, const typename WordType<T>::Type_t& im): JV<T,2>(j,re,im) {}
-
-
-  RComplexREG(const T& re,const T& im) {
+  
+  RComplexREG(const WordREG<typename WordType<T>::Type_t>& re,
+	      const WordREG<typename WordType<T>::Type_t>& im) {
     real() = re;
     imag() = im;
   }
 
+
+#if defined (QDP_BACKEND_AVX)
+  RComplexREG(const WordVecREG<typename WordType<T>::Type_t>& re,
+	      const WordREG   <typename WordType<T>::Type_t>& im) {
+    real() = re;
+
+    WordVecREG<typename WordType<T>::Type_t> tmp;
+    tmp.setup( llvm_fill_vector( im.get_val() ) );
+    imag() = tmp;
+  }
+
+  RComplexREG(const WordREG   <typename WordType<T>::Type_t>& re,
+	      const WordVecREG<typename WordType<T>::Type_t>& im) {
+    WordVecREG<typename WordType<T>::Type_t> tmp;
+    tmp.setup( llvm_fill_vector( re.get_val() ) );
+    real() = tmp;
+    
+    imag() = im;
+  }
+
+  RComplexREG(const WordVecREG<typename WordType<T>::Type_t>& re,
+	      const WordVecREG<typename WordType<T>::Type_t>& im) {
+    real() = re;
+    imag() = im;
+  }
+#endif
+  
 
   //! RComplexREG += RScalarREG
   template<class T1>
@@ -634,6 +637,22 @@ void read(XMLReader& xml, const string& xpath, RComplexREG<T>& d)
 // Traits classes 
 //-----------------------------------------------------------------------------
 
+
+  template <class T>
+  struct IsWordVec< RScalarREG<T> >
+  {
+    constexpr static bool value = IsWordVec<T>::value;
+  };
+
+
+  template <class T>
+  struct IsWordVec< RComplexREG<T> >
+  {
+    constexpr static bool value = IsWordVec<T>::value;
+  };
+
+
+  
 template<class T> 
 struct JITType< RScalarREG<T> >
 {
@@ -1942,14 +1961,6 @@ adjMultiply(const RComplexREG<T1>& l, const RComplexREG<T2>& r)
 {
   typedef typename BinaryReturn<RComplexREG<T1>, RComplexREG<T2>, OpAdjMultiply>::Type_t  Ret_t;
 
-  // The complex conjugate nature has been eaten here leaving simple multiples
-  // involving transposes - which are probably null
-  
-//  d.real() = transpose(l.real())*r.real() + transpose(l.imag())*r.imag();
-//  d.imag() = transpose(l.real())*r.imag() - transpose(l.imag())*r.real();
-//  return d;
-
-  /*! NOTE: removed transpose here !!!!!  */
   return Ret_t(l.real()*r.real() + l.imag()*r.imag(),
 	       l.real()*r.imag() - l.imag()*r.real());
 }
@@ -1973,13 +1984,6 @@ adjMultiplyAdj(const RComplexREG<T1>& l, const RComplexREG<T2>& r)
 {
   typedef typename BinaryReturn<RComplexREG<T1>, RComplexREG<T2>, OpAdjMultiplyAdj>::Type_t  Ret_t;
 
-  // The complex conjugate nature has been eaten here leaving simple multiples
-  // involving transposes - which are probably null
-//  d.real() = transpose(l.real())*transpose(r.real()) - transpose(l.imag())*transpose(r.imag());
-//  d.imag() = -(transpose(l.real())*transpose(r.imag()) + transpose(l.imag())*transpose(r.real()));
-//  return d;
-
-  /*! NOTE: removed transpose here !!!!!  */
   return Ret_t(l.real()*r.real() - l.imag()*r.imag(),
 	       -(l.real()*r.imag() + l.imag()*r.real()));
 }
@@ -2036,12 +2040,6 @@ adj(const RComplexREG<T1>& l)
 {
   typedef typename UnaryReturn<RComplexREG<T1>, FnAdjoint>::Type_t  Ret_t;
 
-  // The complex conjugate nature has been eaten here leaving transpose
-//  d.real() = transpose(l.real());
-//  d.imag() = -transpose(l.imag());
-//  return d;
-
-  /*! NOTE: removed transpose here !!!!!  */
   return Ret_t(l.real(),
 	       -l.imag());
 }
@@ -2064,11 +2062,6 @@ transpose(const RComplexREG<T1>& l)
 {
   typedef typename UnaryReturn<RComplexREG<T1>, FnTranspose>::Type_t  Ret_t;
 
-//  d.real() = transpose(l.real());
-//  d.imag() = transpose(l.imag());
-//  return d;
-
-  /*! NOTE: removed transpose here !!!!!  */
   return Ret_t(l.real(), 
 	       l.imag());
 }
@@ -2520,27 +2513,6 @@ fill_gaussian(RComplexREG<T>& d, RComplexREG<T>& r1, RComplexREG<T>& r2)
 
   d.real() = w_r1_r * w_g_r;
   d.imag() = w_r1_r * w_g_i;
-
-#if 0
-  typedef typename InternalScalar<T>::Type_t  S;
-
-  // r1 and r2 are the input random numbers needed
-
-  /* Stage 2: get the cos of the second number  */
-  T  g_r, g_i;
-
-  r2.real() *= S(6.283185307);
-  g_r = cos(r2.real());
-  g_i = sin(r2.real());
-    
-  /* Stage 4: get  sqrt(-2.0 * log(u1)) */
-  r1.real() = sqrt(-S(2.0) * log(r1.real()));
-
-  /* Stage 5:   g_r = sqrt(-2*log(u1))*cos(2*pi*u2) */
-  /* Stage 5:   g_i = sqrt(-2*log(u1))*sin(2*pi*u2) */
-  d.real() = r1.real() * g_r;
-  d.imag() = r1.real() * g_i;
-#endif
 }
 
 
@@ -2560,6 +2532,30 @@ isfinite(const RComplexREG<T1>& s1)
 }
 
 
+template<class T>
+inline void 
+qdpPHI(RScalarREG<T>& d, 
+       const RScalarREG<T>& phi0, llvm::BasicBlock* bb0 ,
+       const RScalarREG<T>& phi1, llvm::BasicBlock* bb1 )
+{
+  qdpPHI(d.elem(),
+	 phi0.elem(),bb0,
+	 phi1.elem(),bb1);
+}
+
+template<class T>
+inline void 
+qdpPHI(RComplexREG<T>& d, 
+       const RComplexREG<T>& phi0, llvm::BasicBlock* bb0 ,
+       const RComplexREG<T>& phi1, llvm::BasicBlock* bb1 )
+{
+  qdpPHI(d.real(),
+	 phi0.real(),bb0,
+	 phi1.real(),bb1);
+  qdpPHI(d.imag(),
+	 phi0.imag(),bb0,
+	 phi1.imag(),bb1);
+}
 
 
 /*! @} */  // end of group rcomplex

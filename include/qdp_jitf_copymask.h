@@ -8,20 +8,14 @@ namespace QDP {
   void
   function_copymask_build( JitFunction& function, OLattice<T>& dest , const OLattice<T1>& mask , const OLattice<T>& src )
   {
-    if (ptx_db::db_enabled) {
-      llvm_ptx_db( function , __PRETTY_FUNCTION__ );
-      if (!function.empty())
-	return;
-    }
-
     llvm_start_new_function("copymask",__PRETTY_FUNCTION__ );
 
     WorkgroupGuard workgroupGuard;
 
-    ParamLeaf param_leaf;
+    ParamLeafScalar param_leaf;
 
-    typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  typeJIT;
-    typedef typename LeafFunctor<OLattice<T1>, ParamLeaf>::Type_t  maskJIT;
+    typedef typename LeafFunctor<OLattice<T>, ParamLeafScalar>::Type_t  typeJIT;
+    typedef typename LeafFunctor<OLattice<T1>, ParamLeafScalar>::Type_t  maskJIT;
 
     typeJIT dest_jit(forEach(dest, param_leaf, TreeCombine()));
     typeJIT src_jit (forEach(src , param_leaf, TreeCombine()));
@@ -31,21 +25,13 @@ namespace QDP {
 
     workgroupGuard.check(r_idx);
 
-    typedef typename REGType<typename ScalarType< typename typeJIT::Subtype_t >::Type_t >::Type_t typeREG;
-    typedef typename REGType<typename ScalarType< typename maskJIT::Subtype_t >::Type_t >::Type_t maskREG;
 
-    typeREG src_reg;
-    maskREG mask_reg;
-    src_reg.setup ( src_jit.elemScalar( JitDeviceLayout::Coalesced , r_idx ) );
-    mask_reg.setup( mask_jit.elemScalar( JitDeviceLayout::Coalesced , r_idx ) );
-
-    JitIf ifCopy( mask_reg.elem().elem().elem().get_val() );
+    JitIf ifCopy( mask_jit.elemREG( JitDeviceLayout::Coalesced , r_idx ).elem().elem().elem().get_val() );
     {
-      dest_jit.elemScalar( JitDeviceLayout::Coalesced , r_idx ) = src_reg;
+      dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ) = src_jit.elemREG( JitDeviceLayout::Coalesced , r_idx );
     }
     ifCopy.end();
     
-    //copymask( dest_jit.elem( JitDeviceLayout::Coalesced , r_idx ) , mask_reg , src_reg );
 
     jit_get_function(function);
   }
@@ -59,11 +45,9 @@ namespace QDP {
     AddressLeaf addr_leaf(all);
 
 #ifdef QDP_DEEP_LOG
-    function.start = 0;
-    function.count = Layout::sitesOnNode();
-    function.size_T = sizeof(T);
     function.type_W = typeid(typename WordType<T>::Type_t).name();
     function.set_dest_id( dest.getId() );
+    function.set_is_lat(true);
 #endif
 
     forEach(dest, addr_leaf, NullCombine());
@@ -80,6 +64,10 @@ namespace QDP {
       ids.push_back( addr_leaf.ids[i] );
     
     jit_launch( function , th_count , ids );
+
+#ifdef QDP_DEEP_LOG
+    jit_deep_log(function);
+#endif
   }
 
 }

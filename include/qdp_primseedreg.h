@@ -57,12 +57,6 @@ public:
   }
 
   
-  // template<class T1>
-  // PSeedREG& operator=( const PSeedREG<T1>& rhs) {
-  //   for(int i=0; i < 4; ++i)
-  //     elem(i) = rhs.elem(i);
-  //   return *this;
-  // }
 
   //! PSeedREG = PScalarREG
   /*! Set equal to input scalar (an integer) */
@@ -103,22 +97,9 @@ public:
     }
 
 
-
-  // PSeedREG& operator=(const PSeedREG& rhs) 
-  //   {
-  //     for(int i=0; i < 4; ++i)
-  // 	elem(i) = rhs.elem(i);
-
-  //     return *this;
-  //   }
-
-
 public:
         T& elem(int i)       {return F[i];}
   const T& elem(int i) const {return F[i];}
-
-  // T& elem(int i)             {return JV<T,4>::getF()[i]; }
-  // const T& elem(int i) const {return JV<T,4>::getF()[i]; }
 };
 
 

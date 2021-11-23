@@ -22,7 +22,7 @@ namespace QDP {
 
 //! Primitive spin Vector class
 
-template <class T, int N> class PSpinVectorREG //: public BaseREG<T,N,PSpinVectorREG<T,N> >
+template <class T, int N> class PSpinVectorREG
 {
   T F[N];
 public:
@@ -74,7 +74,7 @@ public:
     return assign(rhs);
   }
 
-  //! PSpinVectorREG += PSpinVectorREG
+
   template<class T1>
   inline
   PSpinVectorREG& operator+=(const PSpinVectorREG<T1,N>& rhs) 
@@ -106,7 +106,7 @@ public:
       return *this;
     }
 
-  //! PSpinVectorREG /= PScalarREG
+
   template<class T1>
   inline
   PSpinVectorREG& operator/=(const PScalarREG<T1>& rhs) 
@@ -120,9 +120,6 @@ public:
 public:
         T& elem(int i)       {return F[i];}
   const T& elem(int i) const {return F[i];}
-
-  // T& elem(int i) {return JV<T,N>::getF()[i];}
-  // const T& elem(int i) const {return JV<T,N>::getF()[i];}
 };
 
 
@@ -460,18 +457,6 @@ peekColor(const PSpinVectorREG<T,N>& l, llvm::Value* row, llvm::Value* col)
 
 //! Extract spin matrix components 
 /*! Generically, this is an identity operation. Defined differently under spin */
-#if 0
-template<class T, int N>
-inline typename UnaryReturn<PSpinVectorREG<T,N>, FnPeekSpinMatrixREG>::Type_t
-peekSpin(const PSpinVectorREG<T,N>& l, llvm::Value* row, llvm::Value* col)
-{
-  typename UnaryReturn<PSpinVectorREG<T,N>, FnPeekSpinMatrixREG>::Type_t  d;
-
-  for(int i=0; i < N; ++i)
-    d.elem(i) = peekSpin(l.elem(i),row,col);
-  return d;
-}
-#endif
 
 
 template<class T, int N>
@@ -482,7 +467,11 @@ peekSpin(const PSpinVectorREG<T,N>& l, llvm::Value* row)
 
   typedef typename JITType< PSpinVectorREG<T,N> >::Type_t TTjit;
 
-  llvm::Value* ptr_local = llvm_alloca( llvm_get_type< typename WordType<T>::Type_t >() , TTjit::ScalarSize_t );
+  llvm::Value* ptr_local;
+  if (IsWordVec<T>::value)
+    ptr_local = llvm_alloca( llvm_get_vectype<typename WordType<T>::Type_t>() , TTjit::ScalarSize_t );
+  else
+    ptr_local = llvm_alloca( llvm_get_type<typename WordType<T>::Type_t>() , TTjit::ScalarSize_t );
 
   TTjit dj;
   dj.setup( ptr_local, JitDeviceLayout::Scalar );
@@ -663,6 +652,14 @@ where(const PScalarREG<T1>& a, const PSpinVectorREG<T2,N>& b, const PSpinVectorR
 //-----------------------------------------------------------------------------
 // Traits classes 
 //-----------------------------------------------------------------------------
+
+
+  template <class T, int N>
+  struct IsWordVec< PSpinVectorREG<T,N > >
+  {
+    constexpr static bool value = IsWordVec<T>::value;
+  };
+
 
 template<class T1, int N>
 struct JITType<PSpinVectorREG<T1,N> > 
@@ -1373,6 +1370,17 @@ chiralProjectMinus(const PSpinVectorREG<T,4>& s1)
 }
 
 
+template<class T, int N>
+inline void 
+qdpPHI(PSpinVectorREG<T,N>& d, 
+       const PSpinVectorREG<T,N>& phi0, llvm::BasicBlock* bb0 ,
+       const PSpinVectorREG<T,N>& phi1, llvm::BasicBlock* bb1 )
+{
+  for(int i=0; i < N; ++i)
+    qdpPHI(d.elem(i),
+	   phi0.elem(i),bb0,
+	   phi1.elem(i),bb1);
+}
 
 
 /*! @} */   // end of group primspinvector

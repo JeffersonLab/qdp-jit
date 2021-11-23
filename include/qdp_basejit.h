@@ -21,7 +21,6 @@ namespace QDP {
     //Default constructor
     BaseJIT(): setup_m(false)
     {
-      //std::cout << "BaseJIT()  " << __PRETTY_FUNCTION__ << "\n";
     }
 
     
@@ -32,7 +31,6 @@ namespace QDP {
 				 layout(rhs.layout),
 				 F(rhs.F)
     {
-      //std::cout << "BaseJIT(const BaseJIT&) " << __PRETTY_FUNCTION__ << "\n";
     }
 
     
@@ -153,22 +151,6 @@ namespace QDP {
       return ret_reg;
     }
 
-
-    // typename REGType<T>::Type_t getRegValue() const
-    // {
-    //   if (!setup_m)
-    // 	{
-    // 	  QDPIO::cerr << "qdp-jit internal error: BaseJIT::getJitElem elem not set up.\n";
-    // 	  QDP_abort(1);
-    // 	}
-    //   T jit;
-    //   IndexDomainVector args = partial_offset;
-    //   args.push_back( make_pair( N , index ) );
-    //   jit.setup( m_base , layout , args );
-    //   typename REGType<T>::Type_t ret_reg;
-    //   ret_reg.setup( jit );
-    //   return ret_reg;
-    // }
 
     
   };

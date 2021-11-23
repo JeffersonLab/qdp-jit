@@ -108,8 +108,6 @@ namespace QDP {
   
   void gpu_host_alloc(void **mem , const size_t size)
   {
-    
-    
     *mem = aligned_alloc( 64 , roundUp( size , 64 ) );
     //*mem = malloc( size );
 
@@ -145,6 +143,7 @@ namespace QDP {
   bool gpu_malloc(void **mem , size_t size )
   {
     gpu_host_alloc( mem , size );
+    return true;
   }
 
   
@@ -155,8 +154,9 @@ namespace QDP {
 
 
 
-  void gpu_memset( void * dest , unsigned val , size_t N )
+  void gpu_memset( void * dest , unsigned char val , size_t N )
   {
+    memset( dest , val , N );
   }
 
 

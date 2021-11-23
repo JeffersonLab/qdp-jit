@@ -419,196 +419,196 @@ typedef LatticeInteger  LatticeInt;
 // Aliases for a scalar architecture
 
 // Fixed fermion type
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL> >, Nc>, 4> > SubLatticeDiracFermion;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL> >, Nc>, 1> > SubLatticeStaggeredFermion;
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL> >, Nc>, 4> > SubLatticeDiracPropagator;
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL> >, Nc>, 1> > SubLatticeStaggeredPropagator;
-typedef OSubLattice< PSpinMatrix< PColorVector< RComplex<Word<REAL> >, Nc>, 4> > SubLatticeColorVectorSpinMatrix;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL> >, Nc>, 4> > SubLatticeDiracFermion;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL> >, Nc>, 1> > SubLatticeStaggeredFermion;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL> >, Nc>, 4> > SubLatticeDiracPropagator;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL> >, Nc>, 1> > SubLatticeStaggeredPropagator;
+typedef OSubLattice< PSpinMatrix< PColorVector< RComplex<WORD<REAL> >, Nc>, 4> > SubLatticeColorVectorSpinMatrix;
 
 // Floating aliases
-typedef OSubLattice< PScalar< PColorVector< RComplex<Word<REAL> >, Nc> > > SubLatticeColorVector;
-typedef OSubLattice< PSpinVector< PScalar< RComplex<Word<REAL> > >, Ns> > SubLatticeSpinVector;
-typedef OSubLattice< PScalar< PColorMatrix< RComplex<Word<REAL> >, Nc> > > SubLatticeColorMatrix;
-typedef OSubLattice< PSpinMatrix< PScalar< RComplex<Word<REAL> > >, Ns> > SubLatticeSpinMatrix;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL> >, Nc>, Ns> > SubLatticeFermion;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL> >, Nc>, (Ns>>1) > > SubLatticeHalfFermion;
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL> >, Nc>, Ns> > SubLatticePropagator;
-typedef OSubLattice< PScalar< PScalar< RComplex<Word<REAL> > > > > SubLatticeComplex;
+typedef OSubLattice< PScalar< PColorVector< RComplex<WORD<REAL> >, Nc> > > SubLatticeColorVector;
+typedef OSubLattice< PSpinVector< PScalar< RComplex<WORD<REAL> > >, Ns> > SubLatticeSpinVector;
+typedef OSubLattice< PScalar< PColorMatrix< RComplex<WORD<REAL> >, Nc> > > SubLatticeColorMatrix;
+typedef OSubLattice< PSpinMatrix< PScalar< RComplex<WORD<REAL> > >, Ns> > SubLatticeSpinMatrix;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL> >, Nc>, Ns> > SubLatticeFermion;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL> >, Nc>, (Ns>>1) > > SubLatticeHalfFermion;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL> >, Nc>, Ns> > SubLatticePropagator;
+typedef OSubLattice< PScalar< PScalar< RComplex<WORD<REAL> > > > > SubLatticeComplex;
 
-typedef OSubLattice< PScalar< PSeed < RScalar<Word<INTEGER32> > > > > SubLatticeSeed;
-typedef OSubLattice< PScalar< PScalar< RScalar<Word<INTEGER32> > > > > SubLatticeInteger;
-typedef OSubLattice< PScalar< PScalar< RScalar<Word<REAL> > > > > SubLatticeReal;
-typedef OSubLattice< PScalar< PScalar< RScalar<Word<DOUBLE> > > > > SubLatticeDouble;
-typedef OSubLattice< PScalar< PScalar< RScalar<Word<LOGICAL> > > > > SubLatticeBoolean;
+typedef OSubLattice< PScalar< PSeed < RScalar<WORD<INTEGER32> > > > > SubLatticeSeed;
+typedef OSubLattice< PScalar< PScalar< RScalar<WORD<INTEGER32> > > > > SubLatticeInteger;
+typedef OSubLattice< PScalar< PScalar< RScalar<WORD<REAL> > > > > SubLatticeReal;
+typedef OSubLattice< PScalar< PScalar< RScalar<WORD<DOUBLE> > > > > SubLatticeDouble;
+typedef OSubLattice< PScalar< PScalar< RScalar<WORD<LOGICAL> > > > > SubLatticeBoolean;
 
 // Floating aliases but (possibly) in a higher precision. 
-// The SINGLE might in fact be the same as Word<DOUBLE> 
+// The SINGLE might in fact be the same as WORD<DOUBLE> 
 // Fixed fermion type
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<DOUBLE> >, Nc>, 4> > SubLatticeDDiracFermion;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<DOUBLE> >, Nc>, 1> > SubLatticeDStaggeredFermion;
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<DOUBLE> >, Nc>, 4> > SubLatticeDDiracPropagator;
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<DOUBLE> >, Nc>, 1> > SubLatticeDStaggeredPropagator;
-typedef OSubLattice< PSpinMatrix< PColorVector< RComplex<Word<DOUBLE> >, Nc>, 4> > SubLatticeDColorVectorSpinMatrix;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<DOUBLE> >, Nc>, 4> > SubLatticeDDiracFermion;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<DOUBLE> >, Nc>, 1> > SubLatticeDStaggeredFermion;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<DOUBLE> >, Nc>, 4> > SubLatticeDDiracPropagator;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<DOUBLE> >, Nc>, 1> > SubLatticeDStaggeredPropagator;
+typedef OSubLattice< PSpinMatrix< PColorVector< RComplex<WORD<DOUBLE> >, Nc>, 4> > SubLatticeDColorVectorSpinMatrix;
 
 // Floating aliases
-typedef OSubLattice< PScalar< PColorVector< RComplex<Word<DOUBLE> >, Nc> > > SubLatticeDColorVector;
-typedef OSubLattice< PSpinVector< PScalar< RComplex<Word<DOUBLE> > >, Ns> > SubLatticeDSpinVector;
-typedef OSubLattice< PScalar< PColorMatrix< RComplex<Word<DOUBLE> >, Nc> > > SubLatticeDColorMatrix;
-typedef OSubLattice< PSpinMatrix< PScalar< RComplex<Word<DOUBLE> > >, Ns> > SubLatticeDSpinMatrix;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<DOUBLE> >, Nc>, Ns> > SubLatticeDFermion;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<DOUBLE> >, Nc>, (Ns>>1) > > SubLatticeDHalfFermion;
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<DOUBLE> >, Nc>, Ns> > SubLatticeDPropagator;
-typedef OSubLattice< PScalar< PScalar< RComplex<Word<DOUBLE> > > > > SubLatticeDComplex;
+typedef OSubLattice< PScalar< PColorVector< RComplex<WORD<DOUBLE> >, Nc> > > SubLatticeDColorVector;
+typedef OSubLattice< PSpinVector< PScalar< RComplex<WORD<DOUBLE> > >, Ns> > SubLatticeDSpinVector;
+typedef OSubLattice< PScalar< PColorMatrix< RComplex<WORD<DOUBLE> >, Nc> > > SubLatticeDColorMatrix;
+typedef OSubLattice< PSpinMatrix< PScalar< RComplex<WORD<DOUBLE> > >, Ns> > SubLatticeDSpinMatrix;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<DOUBLE> >, Nc>, Ns> > SubLatticeDFermion;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<DOUBLE> >, Nc>, (Ns>>1) > > SubLatticeDHalfFermion;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<DOUBLE> >, Nc>, Ns> > SubLatticeDPropagator;
+typedef OSubLattice< PScalar< PScalar< RComplex<WORD<DOUBLE> > > > > SubLatticeDComplex;
 
 // Floating precision, but specific to a fixed color or spin
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL> >, 3>, 4> > SubLatticeDiracFermion3;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL> >, 2>, 4> > SubLatticeDiracFermion2;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL> >, 1>, 4> > SubLatticeDiracFermion1;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL> >, 3>, 4> > SubLatticeDiracFermion3;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL> >, 2>, 4> > SubLatticeDiracFermion2;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL> >, 1>, 4> > SubLatticeDiracFermion1;
 
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL> >, 3>, 1> > SubLatticeStaggeredFermion3;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL> >, 2>, 1> > SubLatticeStaggeredFermion2;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL> >, 1>, 1> > SubLatticeStaggeredFermion1;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL> >, 3>, 1> > SubLatticeStaggeredFermion3;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL> >, 2>, 1> > SubLatticeStaggeredFermion2;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL> >, 1>, 1> > SubLatticeStaggeredFermion1;
 
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL> >, 3>, 4> > SubLatticeDiracPropagator3;
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL> >, 2>, 4> > SubLatticeDiracPropagator2;
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL> >, 1>, 4> > SubLatticeDiracPropagator1;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL> >, 3>, 4> > SubLatticeDiracPropagator3;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL> >, 2>, 4> > SubLatticeDiracPropagator2;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL> >, 1>, 4> > SubLatticeDiracPropagator1;
 
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL> >, 3>, 1> > SubLatticeStaggerdPropagator3;
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL> >, 2>, 1> > SubLatticeStaggerdPropagator2;
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL> >, 1>, 1> > SubLatticeStaggerdPropagator1;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL> >, 3>, 1> > SubLatticeStaggerdPropagator3;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL> >, 2>, 1> > SubLatticeStaggerdPropagator2;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL> >, 1>, 1> > SubLatticeStaggerdPropagator1;
 
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL> >, 3>, Ns> > SubLatticeFermion3;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL> >, 2>, Ns> > SubLatticeFermion2;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL> >, 1>, Ns> > SubLatticeFermion1;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL> >, 3>, Ns> > SubLatticeFermion3;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL> >, 2>, Ns> > SubLatticeFermion2;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL> >, 1>, Ns> > SubLatticeFermion1;
 
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL> >, 3>, (Ns>>1) > > SubLatticeHalfFermion3;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL> >, 2>, (Ns>>1) > > SubLatticeHalfFermion2;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL> >, 1>, (Ns>>1) > > SubLatticeHalfFermion1;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL> >, 3>, (Ns>>1) > > SubLatticeHalfFermion3;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL> >, 2>, (Ns>>1) > > SubLatticeHalfFermion2;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL> >, 1>, (Ns>>1) > > SubLatticeHalfFermion1;
 
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL> >, 3>, Ns> > SubLatticePropagator3;
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL> >, 2>, Ns> > SubLatticePropagator2;
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL> >, 1>, Ns> > SubLatticePropagator1;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL> >, 3>, Ns> > SubLatticePropagator3;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL> >, 2>, Ns> > SubLatticePropagator2;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL> >, 1>, Ns> > SubLatticePropagator1;
 
-typedef OSubLattice< PScalar< PColorMatrix< RComplex<Word<REAL> >, 3> > > SubLatticeColorMatrix3;
-typedef OSubLattice< PScalar< PColorMatrix< RComplex<Word<REAL> >, 2> > > SubLatticeColorMatrix2;
-typedef OSubLattice< PScalar< PColorMatrix< RComplex<Word<REAL> >, 1> > > SubLatticeColorMatrix1;
+typedef OSubLattice< PScalar< PColorMatrix< RComplex<WORD<REAL> >, 3> > > SubLatticeColorMatrix3;
+typedef OSubLattice< PScalar< PColorMatrix< RComplex<WORD<REAL> >, 2> > > SubLatticeColorMatrix2;
+typedef OSubLattice< PScalar< PColorMatrix< RComplex<WORD<REAL> >, 1> > > SubLatticeColorMatrix1;
 
-typedef OSubLattice< PScalar< PColorVector< RComplex<Word<REAL> >, 3> > > SubLatticeColorVector3;
-typedef OSubLattice< PScalar< PColorVector< RComplex<Word<REAL> >, 2> > > SubLatticeColorVector2;
-typedef OSubLattice< PScalar< PColorVector< RComplex<Word<REAL> >, 1> > > SubLatticeColorVector1;
+typedef OSubLattice< PScalar< PColorVector< RComplex<WORD<REAL> >, 3> > > SubLatticeColorVector3;
+typedef OSubLattice< PScalar< PColorVector< RComplex<WORD<REAL> >, 2> > > SubLatticeColorVector2;
+typedef OSubLattice< PScalar< PColorVector< RComplex<WORD<REAL> >, 1> > > SubLatticeColorVector1;
 
 //
 // Fixed precision
 //
-// Word<REAL32 >  types
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL32 > >, Nc>, 4> > SubLatticeDiracFermionF;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL32 > >, 3>, 4> > SubLatticeDiracFermionF3;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL32 > >, 2>, 4> > SubLatticeDiracFermionF2;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL32 > >, 1>, 4> > SubLatticeDiracFermionF1;
+// WORD<REAL32 >  types
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL32 > >, Nc>, 4> > SubLatticeDiracFermionF;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL32 > >, 3>, 4> > SubLatticeDiracFermionF3;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL32 > >, 2>, 4> > SubLatticeDiracFermionF2;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL32 > >, 1>, 4> > SubLatticeDiracFermionF1;
 
-typedef OSubLattice< PSpinMatrix< PColorVector< RComplex<Word<REAL32 > >, Nc>, 4> > SubLatticeColorVectorSpinMatrixF;
+typedef OSubLattice< PSpinMatrix< PColorVector< RComplex<WORD<REAL32 > >, Nc>, 4> > SubLatticeColorVectorSpinMatrixF;
 
   
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL32 > >, Nc>, 1> > SubLatticeStaggeredFermionF;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL32 > >, 3>, 1> > SubLatticeStaggeredFermionF3;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL32 > >, 2>, 1> > SubLatticeStaggeredFermionF2;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL32 > >, 1>, 1> > SubLatticeStaggeredFermionF1;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL32 > >, Nc>, 1> > SubLatticeStaggeredFermionF;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL32 > >, 3>, 1> > SubLatticeStaggeredFermionF3;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL32 > >, 2>, 1> > SubLatticeStaggeredFermionF2;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL32 > >, 1>, 1> > SubLatticeStaggeredFermionF1;
 
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL32 > >, Nc>, 4> > SubLatticeDiracPropagatorF;
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL32 > >, 3>, 4> > SubLatticeDiracPropagatorF3;
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL32 > >, 2>, 4> > SubLatticeDiracPropagatorF2;
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL32 > >, 1>, 4> > SubLatticeDiracPropagatorF1;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL32 > >, Nc>, 4> > SubLatticeDiracPropagatorF;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL32 > >, 3>, 4> > SubLatticeDiracPropagatorF3;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL32 > >, 2>, 4> > SubLatticeDiracPropagatorF2;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL32 > >, 1>, 4> > SubLatticeDiracPropagatorF1;
 
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL32 > >, Nc>, 1> > SubLatticeStaggeredPropagatorF;
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL32 > >, 3>, 1> > SubLatticeStaggeredPropagatorF3;
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL32 > >, 2>, 1> > SubLatticeStaggeredPropagatorF2;
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL32 > >, 1>, 1> > SubLatticeStaggeredPropagatorF1;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL32 > >, Nc>, 1> > SubLatticeStaggeredPropagatorF;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL32 > >, 3>, 1> > SubLatticeStaggeredPropagatorF3;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL32 > >, 2>, 1> > SubLatticeStaggeredPropagatorF2;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL32 > >, 1>, 1> > SubLatticeStaggeredPropagatorF1;
 
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL32 > >, Nc>, Ns> > SubLatticeFermionF;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL32 > >, 3>, Ns> > SubLatticeFermionF3;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL32 > >, 2>, Ns> > SubLatticeFermionF2;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL32 > >, 1>, Ns> > SubLatticeFermionF1;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL32 > >, Nc>, Ns> > SubLatticeFermionF;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL32 > >, 3>, Ns> > SubLatticeFermionF3;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL32 > >, 2>, Ns> > SubLatticeFermionF2;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL32 > >, 1>, Ns> > SubLatticeFermionF1;
 
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL32 > >, Nc>, (Ns>>1) > > SubLatticeHalfFermionF;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL32 > >, 3>, (Ns>>1) > > SubLatticeHalfFermionF3;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL32 > >, 2>, (Ns>>1) > > SubLatticeHalfFermionF2;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL32 > >, 1>, (Ns>>1) > > SubLatticeHalfFermionF1;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL32 > >, Nc>, (Ns>>1) > > SubLatticeHalfFermionF;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL32 > >, 3>, (Ns>>1) > > SubLatticeHalfFermionF3;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL32 > >, 2>, (Ns>>1) > > SubLatticeHalfFermionF2;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL32 > >, 1>, (Ns>>1) > > SubLatticeHalfFermionF1;
 
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL32 > >, Nc>, Ns> > SubLatticePropagatorF;
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL32 > >, 3>, Ns> > SubLatticePropagatorF3;
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL32 > >, 2>, Ns> > SubLatticePropagatorF2;
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL32 > >, 1>, Ns> > SubLatticePropagatorF1;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL32 > >, Nc>, Ns> > SubLatticePropagatorF;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL32 > >, 3>, Ns> > SubLatticePropagatorF3;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL32 > >, 2>, Ns> > SubLatticePropagatorF2;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL32 > >, 1>, Ns> > SubLatticePropagatorF1;
 
-typedef OSubLattice< PSpinMatrix< PScalar< RComplex<Word<REAL32 > > >, Ns> > SubLatticeSpinMatrixF;
-typedef OSubLattice< PSpinVector< PScalar< RComplex<Word<REAL32 > > >, Ns> > SubLatticeSpinVectorF;
+typedef OSubLattice< PSpinMatrix< PScalar< RComplex<WORD<REAL32 > > >, Ns> > SubLatticeSpinMatrixF;
+typedef OSubLattice< PSpinVector< PScalar< RComplex<WORD<REAL32 > > >, Ns> > SubLatticeSpinVectorF;
 
-typedef OSubLattice< PScalar< PColorMatrix< RComplex<Word<REAL32 > >, Nc> > > SubLatticeColorMatrixF;
-typedef OSubLattice< PScalar< PColorMatrix< RComplex<Word<REAL32 > >, 3> > > SubLatticeColorMatrixF3;
-typedef OSubLattice< PScalar< PColorMatrix< RComplex<Word<REAL32 > >, 2> > > SubLatticeColorMatrixF2;
-typedef OSubLattice< PScalar< PColorMatrix< RComplex<Word<REAL32 > >, 1> > > SubLatticeColorMatrixF1;
+typedef OSubLattice< PScalar< PColorMatrix< RComplex<WORD<REAL32 > >, Nc> > > SubLatticeColorMatrixF;
+typedef OSubLattice< PScalar< PColorMatrix< RComplex<WORD<REAL32 > >, 3> > > SubLatticeColorMatrixF3;
+typedef OSubLattice< PScalar< PColorMatrix< RComplex<WORD<REAL32 > >, 2> > > SubLatticeColorMatrixF2;
+typedef OSubLattice< PScalar< PColorMatrix< RComplex<WORD<REAL32 > >, 1> > > SubLatticeColorMatrixF1;
 
-typedef OSubLattice< PScalar< PColorVector< RComplex<Word<REAL32 > >, Nc> > > SubLatticeColorVectorF;
-typedef OSubLattice< PScalar< PColorVector< RComplex<Word<REAL32 > >, 3> > > SubLatticeColorVectorF3;
-typedef OSubLattice< PScalar< PColorVector< RComplex<Word<REAL32 > >, 2> > > SubLatticeColorVectorF2;
-typedef OSubLattice< PScalar< PColorVector< RComplex<Word<REAL32 > >, 1> > > SubLatticeColorVectorF1;
+typedef OSubLattice< PScalar< PColorVector< RComplex<WORD<REAL32 > >, Nc> > > SubLatticeColorVectorF;
+typedef OSubLattice< PScalar< PColorVector< RComplex<WORD<REAL32 > >, 3> > > SubLatticeColorVectorF3;
+typedef OSubLattice< PScalar< PColorVector< RComplex<WORD<REAL32 > >, 2> > > SubLatticeColorVectorF2;
+typedef OSubLattice< PScalar< PColorVector< RComplex<WORD<REAL32 > >, 1> > > SubLatticeColorVectorF1;
 
-typedef OSubLattice< PScalar< PScalar< RComplex<Word<REAL32 > > > > > SubLatticeComplexF;
-typedef OSubLattice< PScalar< PScalar< RScalar<Word<REAL32 > > > > > SubLatticeRealF;
+typedef OSubLattice< PScalar< PScalar< RComplex<WORD<REAL32 > > > > > SubLatticeComplexF;
+typedef OSubLattice< PScalar< PScalar< RScalar<WORD<REAL32 > > > > > SubLatticeRealF;
 
-// Word<REAL64>  types
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL64> >, Nc>, 4> > SubLatticeDiracFermionD;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL64> >, 3>, 4> > SubLatticeDiracFermionD3;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL64> >, 2>, 4> > SubLatticeDiracFermionD2;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL64> >, 1>, 4> > SubLatticeDiracFermionD1;
+// WORD<REAL64>  types
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL64> >, Nc>, 4> > SubLatticeDiracFermionD;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL64> >, 3>, 4> > SubLatticeDiracFermionD3;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL64> >, 2>, 4> > SubLatticeDiracFermionD2;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL64> >, 1>, 4> > SubLatticeDiracFermionD1;
 
-typedef OSubLattice< PSpinMatrix< PColorVector< RComplex<Word<REAL64> >, Nc>, 4> > SubLatticeColorVectorSpinMatrixD;
+typedef OSubLattice< PSpinMatrix< PColorVector< RComplex<WORD<REAL64> >, Nc>, 4> > SubLatticeColorVectorSpinMatrixD;
 
 
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL64> >, Nc>, 1> > SubLatticeStaggeredFermionD;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL64> >, 3>, 1> > SubLatticeStaggeredFermionD3;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL64> >, 2>, 1> > SubLatticeStaggeredFermionD2;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL64> >, 1>, 1> > SubLatticeStaggeredFermionD1;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL64> >, Nc>, 1> > SubLatticeStaggeredFermionD;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL64> >, 3>, 1> > SubLatticeStaggeredFermionD3;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL64> >, 2>, 1> > SubLatticeStaggeredFermionD2;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL64> >, 1>, 1> > SubLatticeStaggeredFermionD1;
 
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL64> >, Nc>, 4> > SubLatticeDiracPropagatorD;
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL64> >, 3>, 4> > SubLatticeDiracPropagatorD3;
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL64> >, 2>, 4> > SubLatticeDiracPropagatorD2;
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL64> >, 1>, 4> > SubLatticeDiracPropagatorD1;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL64> >, Nc>, 4> > SubLatticeDiracPropagatorD;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL64> >, 3>, 4> > SubLatticeDiracPropagatorD3;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL64> >, 2>, 4> > SubLatticeDiracPropagatorD2;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL64> >, 1>, 4> > SubLatticeDiracPropagatorD1;
 
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL64> >, Nc>, 1> > SubLatticeStaggeredPropagatorD;
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL64> >, 3>, 1> > SubLatticeStaggeredPropagatorD3;
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL64> >, 2>, 1> > SubLatticeStaggeredPropagatorD2;
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL64> >, 1>, 1> > SubLatticeStaggeredPropagatorD1;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL64> >, Nc>, 1> > SubLatticeStaggeredPropagatorD;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL64> >, 3>, 1> > SubLatticeStaggeredPropagatorD3;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL64> >, 2>, 1> > SubLatticeStaggeredPropagatorD2;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL64> >, 1>, 1> > SubLatticeStaggeredPropagatorD1;
 
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL64> >, Nc>, Ns> > SubLatticeFermionD;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL64> >, 3>, Ns> > SubLatticeFermionD3;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL64> >, 2>, Ns> > SubLatticeFermionD2;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL64> >, 1>, Ns> > SubLatticeFermionD1;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL64> >, Nc>, Ns> > SubLatticeFermionD;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL64> >, 3>, Ns> > SubLatticeFermionD3;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL64> >, 2>, Ns> > SubLatticeFermionD2;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL64> >, 1>, Ns> > SubLatticeFermionD1;
 
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL64> >, Nc>, (Ns>>1) > > SubLatticeHalfFermionD;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL64> >, 3>, (Ns>>1) > > SubLatticeHalfFermionD3;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL64> >, 2>, (Ns>>1) > > SubLatticeHalfFermionD2;
-typedef OSubLattice< PSpinVector< PColorVector< RComplex<Word<REAL64> >, 1>, (Ns>>1) > > SubLatticeHalfFermionD1;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL64> >, Nc>, (Ns>>1) > > SubLatticeHalfFermionD;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL64> >, 3>, (Ns>>1) > > SubLatticeHalfFermionD3;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL64> >, 2>, (Ns>>1) > > SubLatticeHalfFermionD2;
+typedef OSubLattice< PSpinVector< PColorVector< RComplex<WORD<REAL64> >, 1>, (Ns>>1) > > SubLatticeHalfFermionD1;
 
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL64> >, Nc>, Ns> > SubLatticePropagatorD;
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL64> >, 3>, Ns> > SubLatticePropagatorD3;
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL64> >, 2>, Ns> > SubLatticePropagatorD2;
-typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<Word<REAL64> >, 1>, Ns> > SubLatticePropagatorD1;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL64> >, Nc>, Ns> > SubLatticePropagatorD;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL64> >, 3>, Ns> > SubLatticePropagatorD3;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL64> >, 2>, Ns> > SubLatticePropagatorD2;
+typedef OSubLattice< PSpinMatrix< PColorMatrix< RComplex<WORD<REAL64> >, 1>, Ns> > SubLatticePropagatorD1;
 
-typedef OSubLattice< PSpinMatrix< PScalar< RComplex<Word<REAL64> > >, Ns> > SubLatticeSpinMatrixD;
-typedef OSubLattice< PSpinVector< PScalar< RComplex<Word<REAL64> > >, Ns> > SubLatticeSpinVectorD;
+typedef OSubLattice< PSpinMatrix< PScalar< RComplex<WORD<REAL64> > >, Ns> > SubLatticeSpinMatrixD;
+typedef OSubLattice< PSpinVector< PScalar< RComplex<WORD<REAL64> > >, Ns> > SubLatticeSpinVectorD;
 
-typedef OSubLattice< PScalar< PColorMatrix< RComplex<Word<REAL64> >, Nc> > > SubLatticeColorMatrixD;
-typedef OSubLattice< PScalar< PColorMatrix< RComplex<Word<REAL64> >, 3> > > SubLatticeColorMatrixD3;
-typedef OSubLattice< PScalar< PColorMatrix< RComplex<Word<REAL64> >, 2> > > SubLatticeColorMatrixD2;
-typedef OSubLattice< PScalar< PColorMatrix< RComplex<Word<REAL64> >, 1> > > SubLatticeColorMatrixD1;
+typedef OSubLattice< PScalar< PColorMatrix< RComplex<WORD<REAL64> >, Nc> > > SubLatticeColorMatrixD;
+typedef OSubLattice< PScalar< PColorMatrix< RComplex<WORD<REAL64> >, 3> > > SubLatticeColorMatrixD3;
+typedef OSubLattice< PScalar< PColorMatrix< RComplex<WORD<REAL64> >, 2> > > SubLatticeColorMatrixD2;
+typedef OSubLattice< PScalar< PColorMatrix< RComplex<WORD<REAL64> >, 1> > > SubLatticeColorMatrixD1;
 
-typedef OSubLattice< PScalar< PColorVector< RComplex<Word<REAL64> >, Nc> > > SubLatticeColorVectorD;
-typedef OSubLattice< PScalar< PColorVector< RComplex<Word<REAL64> >, 3> > > SubLatticeColorVectorD3;
-typedef OSubLattice< PScalar< PColorVector< RComplex<Word<REAL64> >, 2> > > SubLatticeColorVectorD2;
-typedef OSubLattice< PScalar< PColorVector< RComplex<Word<REAL64> >, 1> > > SubLatticeColorVectorD1;
+typedef OSubLattice< PScalar< PColorVector< RComplex<WORD<REAL64> >, Nc> > > SubLatticeColorVectorD;
+typedef OSubLattice< PScalar< PColorVector< RComplex<WORD<REAL64> >, 3> > > SubLatticeColorVectorD3;
+typedef OSubLattice< PScalar< PColorVector< RComplex<WORD<REAL64> >, 2> > > SubLatticeColorVectorD2;
+typedef OSubLattice< PScalar< PColorVector< RComplex<WORD<REAL64> >, 1> > > SubLatticeColorVectorD1;
 
-typedef OSubLattice< PScalar< PScalar< RComplex<Word<REAL64> > > > > SubLatticeComplexD;
-typedef OSubLattice< PScalar< PScalar< RScalar<Word<REAL64> > > > > SubLatticeRealD;
+typedef OSubLattice< PScalar< PScalar< RComplex<WORD<REAL64> > > > > SubLatticeComplexD;
+typedef OSubLattice< PScalar< PScalar< RScalar<WORD<REAL64> > > > > SubLatticeRealD;
 
 
 SpinMatrix  Gamma(int i);

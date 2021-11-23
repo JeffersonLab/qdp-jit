@@ -60,11 +60,18 @@ namespace QDP {
 
     //QDPIO::cout << "dyn key = " << key << std::endl;
 
+#if defined (QDP_BACKEND_AVX)
+    if (function_map[key][0].empty())
+      function_build(function_map[key][0], function_map[key][1], key, dest, op, rhs, s);
+
+    function_exec(function_map[key][0], function_map[key][1], dest, op, rhs, s);
+#else
     if (function_map[key].empty())
       function_build(function_map[key], key, dest, op, rhs, s);
-
     function_exec(function_map[key], dest, op, rhs, s);
-
+#endif
+    
+    
 #if defined(QDP_USE_PROFILING)
     prof.end_time();
 #endif

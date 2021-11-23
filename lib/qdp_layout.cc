@@ -171,6 +171,7 @@ namespace Layout
 {
   multi1d<int> m_vn_geom;
   multi1d<int> m_vn_subgrid;
+  std::vector<multi1d<int> > m_vn_coords;
 
   void printVirtualNodeInfo()
   {
@@ -204,12 +205,44 @@ namespace Layout
     m_vn_geom = g;
   }
 
+
+
+  
   void initVirtualNode()
   {
     m_vn_subgrid.resize(Nd);
     for( int i = 0 ; i < m_vn_geom.size() ; ++i )
       m_vn_subgrid[i] = Layout::subgridLattSize()[i] / m_vn_geom[i];
+
+    multi1d<int> geom(Nd);
+    geom = 0;
+    
+    for ( int i = 0 ; i < virtualNodeNumber() ; ++i )
+      {
+	multi1d<int> coord = geom * virtualNodeSubgridLattSize();
+	m_vn_coords.push_back(coord);
+
+	// QDPIO::cout << "coord: ";
+	// for( int pos = 0 ; pos < Nd ; pos++ )
+	//   QDPIO::cout << coord[pos] << " ";
+	// QDPIO::cout << "\n";
+
+	geom[0]++;
+	for( int pos = 0 ; pos < Nd-1 ; pos++ )
+	  if ( geom[pos] >= virtualNodeGeom()[pos] )
+	    {
+	      geom[pos]=0;
+	      geom[pos+1]++;
+	    }
+      }
   }
+
+
+  std::vector<multi1d<int> >& virtualNodeCoords()
+  {
+    return m_vn_coords;
+  }
+
   
   multi1d<int> virtualNodeGeom()
   {

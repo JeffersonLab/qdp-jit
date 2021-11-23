@@ -64,7 +64,7 @@
 #include "llvm/ExecutionEngine/Orc/IRCompileLayer.h"
 #include "llvm/ExecutionEngine/Orc/JITTargetMachineBuilder.h"
 #include "llvm/ExecutionEngine/Orc/RTDyldObjectLinkingLayer.h"
-#include "llvm/ExecutionEngine/Orc/TargetProcessControl.h"
+//#include "llvm/ExecutionEngine/Orc/TargetProcessControl.h"
 #include "llvm/ExecutionEngine/SectionMemoryManager.h"
 using namespace llvm::orc;
 #endif
@@ -79,6 +79,8 @@ using namespace llvm::orc;
 #include <memory>
 #include <unistd.h>
 
+#include <signal.h>
+
 
 using namespace llvm;
 using namespace llvm::codegen;
@@ -91,6 +93,71 @@ namespace llvm {
 
 
 #ifdef QDP_BACKEND_AVX
+#ifdef QDP_LLVM13
+class KaleidoscopeJIT {
+private:
+  std::unique_ptr<ExecutionSession> ES;
+
+  DataLayout DL;
+  MangleAndInterner Mangle;
+
+  RTDyldObjectLinkingLayer ObjectLayer;
+  IRCompileLayer CompileLayer;
+
+  JITDylib &MainJD;
+
+public:
+  KaleidoscopeJIT(std::unique_ptr<ExecutionSession> ES,
+                  JITTargetMachineBuilder JTMB, DataLayout DL)
+      : ES(std::move(ES)), DL(std::move(DL)), Mangle(*this->ES, this->DL),
+        ObjectLayer(*this->ES,
+                    []() { return std::make_unique<SectionMemoryManager>(); }),
+        CompileLayer(*this->ES, ObjectLayer,
+                     std::make_unique<ConcurrentIRCompiler>(std::move(JTMB))),
+        MainJD(this->ES->createBareJITDylib("<main>")) {
+    MainJD.addGenerator(
+        cantFail(DynamicLibrarySearchGenerator::GetForCurrentProcess(
+            DL.getGlobalPrefix())));
+  }
+
+  ~KaleidoscopeJIT() {
+    if (auto Err = ES->endSession())
+      ES->reportError(std::move(Err));
+  }
+
+  static Expected<std::unique_ptr<KaleidoscopeJIT>> Create() {
+    auto EPC = SelfExecutorProcessControl::Create();
+    if (!EPC)
+      return EPC.takeError();
+
+    auto ES = std::make_unique<ExecutionSession>(std::move(*EPC));
+
+    JITTargetMachineBuilder JTMB(
+        ES->getExecutorProcessControl().getTargetTriple());
+
+    auto DL = JTMB.getDefaultDataLayoutForTarget();
+    if (!DL)
+      return DL.takeError();
+
+    return std::make_unique<KaleidoscopeJIT>(std::move(ES), std::move(JTMB),
+                                             std::move(*DL));
+  }
+
+  const DataLayout &getDataLayout() const { return DL; }
+
+  JITDylib &getMainJITDylib() { return MainJD; }
+
+  Error addModule(ThreadSafeModule TSM, ResourceTrackerSP RT = nullptr) {
+    if (!RT)
+      RT = MainJD.getDefaultResourceTracker();
+    return CompileLayer.add(RT, std::move(TSM));
+  }
+
+  Expected<JITEvaluatedSymbol> lookup(StringRef Name) {
+    return ES->lookup({&MainJD}, Mangle(Name.str()));
+  }
+};
+#else
 class KaleidoscopeJIT {
 private:
   std::unique_ptr<TargetProcessControl> TPC;
@@ -166,6 +233,8 @@ public:
     return ES->lookup({&MainJD}, Mangle(Name.str()));
   }
 };
+#endif
+
 
 namespace QDP
 {
@@ -301,14 +370,6 @@ namespace QDP
 
 
 
-  namespace ptx_db {
-    bool db_enabled = false;
-    std::string dbname = "dummy.dat";
-    typedef std::map< std::string , std::pair< std::string , std::string > > DBType; // pretty+other stuff --> function name , PTX string
-    DBType db;
-  }
-
-
   
 
   void llvm_set_clang_codegen()
@@ -355,55 +416,23 @@ namespace QDP
   template<> llvm::Type* llvm_get_type<float>()  { return llvm::Type::getFloatTy(*TheContext); }
   template<> llvm::Type* llvm_get_type<double>() { return llvm::Type::getDoubleTy(*TheContext); }
   template<> llvm::Type* llvm_get_type<int>()    { return llvm::Type::getIntNTy(*TheContext,32); }
-  template<> llvm::Type* llvm_get_type<bool>()   { return llvm::Type::getIntNTy(*TheContext,1); }
+  template<> llvm::Type* llvm_get_type<bool>()   { return llvm::Type::getIntNTy(*TheContext,8); }
 
   template<> llvm::Type* llvm_get_type<jit_half_t*>()  { return llvm::Type::getHalfPtrTy(*TheContext); }
   template<> llvm::Type* llvm_get_type<float*>()  { return llvm::Type::getFloatPtrTy(*TheContext); }
   template<> llvm::Type* llvm_get_type<double*>() { return llvm::Type::getDoublePtrTy(*TheContext); }
   template<> llvm::Type* llvm_get_type<int*>()    { return llvm::Type::getIntNPtrTy(*TheContext,32); }
-  template<> llvm::Type* llvm_get_type<bool*>()   { return llvm::Type::getIntNPtrTy(*TheContext,1); }
+  template<> llvm::Type* llvm_get_type<bool*>()   { return llvm::Type::getIntNPtrTy(*TheContext,8); }
 
-
-  
-  std::string get_ptx_db_fname() {
-    return ptx_db::dbname;
-  }
-  bool get_ptx_db_enabled() {
-    return ptx_db::db_enabled;
-  }
-  int get_ptx_db_size() {
-    return ptx_db::db.size();
-  }
-
-  
-
-
-
-  void llvm_ptx_db( JitFunction& f , const char * pretty )
-  {
-    std::string id = jit_util_get_static_dynamic_string( pretty );
-    
-    ptx_db::DBType::iterator it = ptx_db::db.find( id );
-
-    if ( it != ptx_db::db.end() )
-      {
-	StopWatch swatch(false);
-	swatch.start();
-
-	// Get jit function
-	get_jitf( f , it->second.second , it->second.first , pretty , str_arch );
-
-	swatch.stop();
-	f.time_dynload = swatch.getTimeInMicroseconds();
-      }
-  }
-
-
-
-  void llvm_set_ptxdb( const char * c_str ) {
-    ptx_db::db_enabled = true;
-    ptx_db::dbname = std::string( c_str );
-  }
+#if defined (QDP_BACKEND_AVX)
+  template<> llvm::Type* llvm_get_vectype<float>()   { return llvm::FixedVectorType::get( llvm::Type::getFloatTy(*TheContext) , Layout::virtualNodeNumber() );  }
+  template<> llvm::Type* llvm_get_vectype<double>()  { return llvm::FixedVectorType::get( llvm::Type::getDoubleTy(*TheContext) , Layout::virtualNodeNumber() );  }
+  template<> llvm::Type* llvm_get_vectype<bool>()    { return llvm::FixedVectorType::get( llvm::Type::getIntNTy(*TheContext,8) , Layout::virtualNodeNumber() );  }
+#else
+  template<> llvm::Type* llvm_get_vectype<float>()  { return llvm::Type::getFloatTy(*TheContext); }
+  template<> llvm::Type* llvm_get_vectype<double>() { return llvm::Type::getDoubleTy(*TheContext); }
+  template<> llvm::Type* llvm_get_vectype<bool>()   { return llvm::Type::getIntNTy(*TheContext,8); }
+#endif
   
 
 
@@ -494,7 +523,6 @@ namespace QDP
   }
 
 
-  
 #ifdef QDP_BACKEND_ROCM
   void llvm_init_ocml()
   {
@@ -506,19 +534,20 @@ namespace QDP
       }
 
     std::vector<std::string> libs;
-    libs.push_back("/amdgcn/bitcode/ocml.bc");
-    libs.push_back("/amdgcn/bitcode/oclc_finite_only_off.bc");
-    libs.push_back("/amdgcn/bitcode/oclc_isa_version_" + arch + ".bc");
-    libs.push_back("/amdgcn/bitcode/oclc_unsafe_math_off.bc");
-    libs.push_back("/amdgcn/bitcode/oclc_daz_opt_off.bc");
-
+    libs.push_back(std::string(ROCM_DIR) + "/amdgcn/bitcode/ocml.bc");
+    libs.push_back(std::string(ROCM_DIR) + "/amdgcn/bitcode/oclc_finite_only_off.bc");
+    libs.push_back(std::string(ROCM_DIR) + "/amdgcn/bitcode/oclc_isa_version_" + arch + ".bc");
+    libs.push_back(std::string(ROCM_DIR) + "/amdgcn/bitcode/oclc_unsafe_math_off.bc");
+    libs.push_back(std::string(ROCM_DIR) + "/amdgcn/bitcode/oclc_daz_opt_off.bc");
+    libs.push_back(std::string(ROCM_DIR) + "/amdgcn/bitcode/oclc_correctly_rounded_sqrt_on.bc");
+  
     libs.insert( libs.end() , jit_config_get_extra_lib().begin() , jit_config_get_extra_lib().end() );
     
     module_ocml.clear();
     
     for( int i = 0 ; i < libs.size() ; ++i )
       {
-	std::string FileName = std::string(ROCM_DIR) + libs[i];
+	std::string FileName = libs[i];
 
 	if (jit_config_get_verbose_output())
 	  {
@@ -528,24 +557,25 @@ namespace QDP
 	std::ifstream ftmp(FileName.c_str());
 	if (!ftmp.good())
 	  {
-	    QDPIO::cerr << "file not found:" << FileName << "\n";
-	    QDP_abort(1);
+	    QDPIO::cerr << "file not found:" << FileName << ". Skipping instead of aborting\n";
 	  }
-    
-	ErrorOr<std::unique_ptr<MemoryBuffer>> mb = MemoryBuffer::getFile(FileName);
-	if (std::error_code ec = mb.getError()) {
-	  errs() << ec.message();
-	  QDP_abort(1);
-	}
-  
-	llvm::Expected<std::unique_ptr<llvm::Module>> m = llvm::parseBitcodeFile(mb->get()->getMemBufferRef(), *TheContext);
-	if (std::error_code ec = errorToErrorCode(m.takeError()))
+	else
 	  {
-	    errs() << "Error reading bitcode from " << FileName << ": " << ec.message() << "\n";
-	    QDP_abort(1);
-	  }
+	    ErrorOr<std::unique_ptr<MemoryBuffer>> mb = MemoryBuffer::getFile(FileName);
+	    if (std::error_code ec = mb.getError()) {
+	      errs() << ec.message();
+	      QDP_abort(1);
+	    }
+  
+	    llvm::Expected<std::unique_ptr<llvm::Module>> m = llvm::parseBitcodeFile(mb->get()->getMemBufferRef(), TheContext);
+	    if (std::error_code ec = errorToErrorCode(m.takeError()))
+	      {
+		errs() << "Error reading bitcode from " << FileName << ": " << ec.message() << "\n";
+		QDP_abort(1);
+	      }
 
-	module_ocml.push_back( std::move( m.get() ) );
+	    module_ocml.push_back( std::move( m.get() ) );
+	  }
       }
   }
 #endif
@@ -855,64 +885,6 @@ namespace QDP
     QDPIO::cout << "  Target machine CPU                  : " << TargetMachine->getTargetCPU().str() << "\n";
     QDPIO::cout << "  Target triple                       : " << TargetMachine->getTargetTriple().str() << "\n";
     
-
-    if (ptx_db::db_enabled) {
-      // Load DB
-      QDPIO::cout << "PTX DB" << std::endl;
-      QDPIO::cout << "  database file name                  : " << ptx_db::dbname << "\n";
-      std::ifstream f(ptx_db::dbname , ios::in | ios::binary );
-      if (f.good())
-	{
-	  int count = 0;
-	  while ( ! f.eof() )
-	    {
-	      int size1;
-	      f >> size1;
-	      if (f.eof())
-		break;
-	      char* buf1 = new char[size1];
-	      f.read( buf1 , size1 );
-	      if (f.eof())
-		break;
-
-	      int size2;
-	      f >> size2;
-	      if (f.eof())
-		break;
-	      char* buf2 = new char[size2];
-	      f.read( buf2 , size2 );
-	      if (f.eof())
-		break;
-
-	      int size3;
-	      f >> size3;
-	      if (f.eof())
-		break;
-	      char* buf3 = new char[size3];
-	      f.read( buf3 , size3 );
-	      if (f.eof())
-		break;
-
-	      // QDPIO::cout << "ptx_db: read "
-	      // 		  << " key_size=" << size1
-	      // 		  << " name_size=" << size2
-	      // 		  << " ptx_size=" << size3 << "\n";
-
-	      std::string key(buf1,size1);
-	      std::string name(buf2,size2);
-	      std::string ptx(buf3,size3);
-	      ptx_db::db.insert( std::make_pair( key , std::make_pair( name , ptx ) ) );
-	      
-	      ++count;
-	      
-	      delete[] buf1;
-	      delete[] buf2;
-	      delete[] buf3;
-	    }
-	  QDPIO::cout << "  number of records read in           : " << count << "\n";
-	}
-
-    } // ptx db
 
 
     mapMath["sin_f32"]="__nv_sinf";
@@ -1245,16 +1217,13 @@ namespace QDP
 
   llvm::Type* promote_scalar( llvm::Type* t0 , llvm::Type* t1 )
   {
-    llvm::outs() << "promote_scalar " << *t0 << " " << *t1 << "\n";
     if ( t0->isFloatingPointTy() || t1->isFloatingPointTy() ) {
-      //llvm::outs() << "promote floating " << t0->isFloatingPointTy() << " " << t1->isFloatingPointTy() << "\n";
       if ( t0->isDoubleTy() || t1->isDoubleTy() ) {
 	return llvm::Type::getDoubleTy(*TheContext);
       } else {
 	return llvm::Type::getFloatTy(*TheContext);
       }
     } else {
-      //llvm::outs() << "promote int " << t0->getScalarSizeInBits() << " " << t1->getScalarSizeInBits() << "\n";
       unsigned upper = std::max( t0->getScalarSizeInBits() , t1->getScalarSizeInBits() );
       return llvm::Type::getIntNTy(*TheContext , upper );
     }
@@ -1263,17 +1232,9 @@ namespace QDP
 
   llvm::Type* promote( llvm::Type* t0 , llvm::Type* t1 )
   {
-    //isFPOrFPVectorTy () const
-    //isIntOrIntVectorTy () const
-    //
-    //getScalarType ()
-    //getElementCount () const
-  
-    llvm::outs() << "promote " << *t0 << " " << *t1 << "\n";
-
     if (t0->isVectorTy() != t1->isVectorTy())
       {
-	llvm::outs() << "promote error: trying to promote a vector and a scalar" << "\n";
+	raise(SIGSEGV);
 	QDP_error_exit("interal error");
       }
 
@@ -1300,30 +1261,16 @@ namespace QDP
 
   llvm::Value* llvm_cast( llvm::Type *dest_type , llvm::Value *src )
   {
-    llvm::outs() << "llvm_cast " << *dest_type << " " << *src  << "\n";
-
-    
     assert( dest_type && "llvm_cast" );
     assert( src       && "llvm_cast" );
-
-    // llvm::outs() << "\ncast: dest_type  = "; dest_type->dump();
-    // llvm::outs() << "\ncast: src->getType  = "; src->getType()->dump();
     
     if ( src->getType() == dest_type)
       return src;
-
-    // llvm::outs() << "\ncast: dest_type is array = " << dest_type->isArrayTy() << "\n";
-    // if (dest_type->isArrayTy()) {
-    //   llvm::outs() << "\ncast: dest_type->getArrayElementTy() = "; 
-    //   dest_type->getArrayElementType()->dump();
-    // }
 
     if ( dest_type->isArrayTy() )
       if ( dest_type->getArrayElementType() == src->getType() )
 	return src;
 
-    //llvm::outs() << "cast instruction: dest type = " << dest_type << "   from " << src->getType() << "\n";
-    
     llvm::Value* ret = builder->CreateCast( llvm::CastInst::getCastOpcode( src , true , dest_type , true ) , 
 					    src , dest_type , "" );
     return ret;
@@ -1332,18 +1279,19 @@ namespace QDP
 
 
 
+  
+
+
+
   std::pair<llvm::Value*,llvm::Value*> llvm_normalize_values(llvm::Value* lhs , llvm::Value* rhs)
   {
-    llvm::outs() << "normalize " << *lhs << " " << *rhs << "\n";
     llvm::Value* lhs_new = lhs;
     llvm::Value* rhs_new = rhs;
     llvm::Type* args_type = promote( lhs->getType() , rhs->getType() );
     if ( args_type != lhs->getType() ) {
-      llvm::outs() << "lhs needs conversion\n";
       lhs_new = llvm_cast( args_type , lhs );
     }
     if ( args_type != rhs->getType() ) {
-      llvm::outs() << "rhs needs conversion\n";
       rhs_new = llvm_cast( args_type , rhs );
     }
     return std::make_pair(lhs_new,rhs_new);
@@ -1352,14 +1300,11 @@ namespace QDP
 
 
 
-  llvm::Value* llvm_neg( llvm::Value* rhs ) {
-    llvm::Value* lhs = llvm_create_value(0);
-    auto vals = llvm_normalize_values(lhs,rhs);
-    llvm::Type* args_type = vals.first->getType();
-    if ( args_type->getScalarType()->isFloatingPointTy() )
-      return builder->CreateFSub( vals.first , vals.second );
+  llvm::Value* llvm_neg( llvm::Value* val ) {
+    if ( val->getType()->getScalarType()->isFloatingPointTy() )
+      return builder->CreateFNeg( val );
     else
-      return builder->CreateSub( vals.first , vals.second );
+      return builder->CreateNeg( val );
   }
 
 
@@ -1424,8 +1369,6 @@ namespace QDP
 
 
   llvm::Value* llvm_mul( llvm::Value* lhs , llvm::Value* rhs ) {
-    llvm::outs() << "llvm_mul " << *lhs << " " << *rhs << "\n";
-
     auto vals = llvm_normalize_values(lhs,rhs);
     if ( vals.first->getType()->getScalarType()->isFloatingPointTy() )
       return builder->CreateFMul( vals.first , vals.second );
@@ -1473,6 +1416,16 @@ namespace QDP
       return builder->CreateICmpEQ( vals.first , vals.second );
   }
 
+  
+  llvm::Value* llvm_ne( llvm::Value* lhs , llvm::Value* rhs ) {
+    auto vals = llvm_normalize_values(lhs,rhs);
+    llvm::Type* args_type = vals.first->getType();
+    if ( args_type->isFloatingPointTy() )
+      return builder->CreateFCmpONE( vals.first , vals.second );
+    else
+      return builder->CreateICmpNE( vals.first , vals.second );
+  }
+
 
   llvm::Value* llvm_ge( llvm::Value* lhs , llvm::Value* rhs ) {
     auto vals = llvm_normalize_values(lhs,rhs);
@@ -1518,8 +1471,17 @@ namespace QDP
   // Convenience function definitions
   //
   llvm::Value* llvm_not( llvm::Value* lhs ) {
-    //llvm::outs() << "not\n";
-    return llvm_xor( llvm_create_value(-1) , lhs );
+    llvm::Value* tr = llvm::ConstantInt::getTrue( llvm::Type::getInt1Ty(*TheContext) );
+
+#if defined (QDP_BACKEND_AVX)  
+    if (lhs->getType()->isVectorTy())
+      {
+	llvm::Type* ty = llvm::FixedVectorType::get( llvm::Type::getInt1Ty(*TheContext) , Layout::virtualNodeNumber() );
+	tr = llvm::ConstantInt::getTrue( ty );
+      }
+#endif
+    
+    return llvm_xor( llvm_trunc_i1( lhs ) , tr );
   }
 
 
@@ -1541,11 +1503,17 @@ namespace QDP
 
 
 #if defined (QDP_BACKEND_AVX)  
-  llvm::Value* llvm_insert_element( llvm::Value* vec , llvm::Value* val , llvm::Value* pos )
+  llvm::Value* llvm_insert_element( llvm::Value* vec , llvm::Value* val , int pos )
   {
     return builder->CreateInsertElement ( vec, val , pos );
   }
 
+  llvm::Value* llvm_extract_element( llvm::Value* vec , int pos )
+  {
+    return builder->CreateExtractElement ( vec , pos );
+  }
+
+  
   llvm::Value* llvm_cast_to_vector( llvm::Value* val )
   {
     if (!isa<PointerType>(val->getType()))
@@ -1553,7 +1521,7 @@ namespace QDP
 	QDPIO::cout << "internal error\n";
 	QDP_abort(1);
       }
-    
+
     llvm::Type * vec_type =  llvm::FixedVectorType::get( cast<PointerType>(val->getType())->getElementType() , Layout::virtualNodeNumber() );
 
     return builder->CreatePointerCast( val , llvm::PointerType::get( vec_type , 0 ) );
@@ -1564,13 +1532,72 @@ namespace QDP
     llvm::Type * vec_type =  llvm::FixedVectorType::get( val->getType() , Layout::virtualNodeNumber() );
 
     llvm::Value *vec = Constant::getNullValue(vec_type);
-
     
     for ( int i = 0 ; i < Layout::virtualNodeNumber() ; ++i )
-      vec = llvm_insert_element( vec, val , builder->getInt32(i) );
+      vec = llvm_insert_element( vec, val , i ); // builder->getInt32(i)
  
     return vec;
   }
+
+  llvm::Value* llvm_get_zero_vector( llvm::Value* type_from_val )
+  {
+    llvm::Type* vec_type =  llvm::FixedVectorType::get( type_from_val->getType()->getScalarType() , Layout::virtualNodeNumber() );
+
+    return Constant::getNullValue(vec_type);
+  }
+    
+  
+  
+
+  bool llvm_is_ptr_to_vector( llvm::Value * ptr )
+  {
+    if (ptr->getType()->isPointerTy())
+      {
+	return ptr->getType()->getPointerElementType()->isVectorTy();
+      }
+    else
+      return false;
+  }
+
+  
+  llvm::Value * llvm_vecload_ptr_idx( llvm::Value * ptr , llvm::Value * idx )
+  {
+    if (llvm_is_ptr_to_vector(ptr))
+      return llvm_load( llvm_createGEP( ptr , idx ) );
+    else
+      return llvm_load( llvm_cast_to_vector( llvm_createGEP( ptr , idx ) ) );
+  }
+
+
+  
+  void llvm_vecstore_ptr_idx( llvm::Value * val , llvm::Value * ptr , llvm::Value * idx )
+  {
+    if (llvm_is_ptr_to_vector(ptr))
+      llvm_store( val , llvm_createGEP( ptr , idx ) );
+    else
+      llvm_store( val , llvm_cast_to_vector( llvm_createGEP( ptr , idx ) ) );
+  }
+
+
+  llvm::Value* llvm_veccast( llvm::Type *dest_type , llvm::Value *src )
+  {
+    if (! src->getType()->isVectorTy())
+      {
+	llvm::outs() << "llvm_veccast: src value not a vector " << *src << "\n";
+	QDP_abort(1);
+      }
+    
+    if ( src->getType()->getScalarType() == dest_type)
+      return src;
+
+    llvm::Type* Dest = llvm::FixedVectorType::get( dest_type , Layout::virtualNodeNumber() );
+    
+    llvm::Value* ret = builder->CreateCast( llvm::CastInst::getCastOpcode( src , true , Dest , true ) , 
+					    src , Dest , "" );
+    return ret;
+  }
+
+  
 #endif
   
   
@@ -1608,13 +1635,13 @@ namespace QDP
   }
 
   template<> ParamRef llvm_add_param<bool>() { 
-    vecParamType.push_back( llvm::Type::getInt1Ty(*TheContext) );
+    vecParamType.push_back( llvm::Type::getInt8Ty(*TheContext) );
     return vecParamType.size()-1;
     // llvm::Argument * u8 = new llvm::Argument( llvm::Type::getInt8Ty(*TheContext) , param_next() , mainFunc );
     // return llvm_cast( llvm_type<bool>::value , u8 );
   }
   template<> ParamRef llvm_add_param<bool*>() { 
-    vecParamType.push_back( llvm::Type::getInt1PtrTy(*TheContext) );
+    vecParamType.push_back( llvm::Type::getInt8PtrTy(*TheContext) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<int64_t>() { 
@@ -1682,8 +1709,7 @@ namespace QDP
 
   void llvm_cond_branch(llvm::Value * cond, llvm::BasicBlock * thenBB, llvm::BasicBlock * elseBB)
   {
-    cond = llvm_cast( llvm_get_type<bool>() , cond );
-    builder->CreateCondBr( cond , thenBB, elseBB);
+    builder->CreateCondBr( llvm_trunc_i1( cond ) , thenBB, elseBB);
   }
 
 
@@ -1728,6 +1754,8 @@ namespace QDP
   }
 
 
+  
+
   llvm::ConstantInt * llvm_create_const_int(int i) {
     return llvm::ConstantInt::getSigned( llvm::Type::getIntNTy(*TheContext,32) , i );
   }
@@ -1743,21 +1771,43 @@ namespace QDP
   llvm::Value * llvm_create_value(int64_t v ) {return llvm::ConstantInt::get( llvm::Type::getInt64Ty(*TheContext) , v );}
   llvm::Value * llvm_create_value(int v )     {return llvm::ConstantInt::get( llvm::Type::getInt32Ty(*TheContext) , v );}
   llvm::Value * llvm_create_value(size_t v)   {return llvm::ConstantInt::get( llvm::Type::getInt32Ty(*TheContext) , v );}
-  llvm::Value * llvm_create_value(bool v )    {return llvm::ConstantInt::get( llvm::Type::getInt1Ty(*TheContext) , v );}
+  llvm::Value * llvm_create_value(bool v )    {return llvm::ConstantInt::get( llvm::Type::getInt8Ty(*TheContext) , v );}
 
 
   llvm::Value * llvm_createGEP( llvm::Value * ptr , llvm::Value * idx )
   {
+#if QDP_LLVM13
+    ptr = builder->CreateGEP( ptr->getType()->getPointerElementType() , ptr , idx );
+#else
     ptr = builder->CreateGEP( ptr , idx );
-    llvm::outs() << "llvm_createGEP " << *ptr << "\n";
+#endif
+
     return ptr;
   }
 
+  
+  llvm::Value* llvm_trunc_i1( llvm::Value* val )
+  {
+    llvm::Type* Dest = llvm::Type::getInt1Ty(*TheContext);
+    
+#ifdef QDP_BACKEND_AVX
+    if (val->getType()->isVectorTy())
+      {
+	Dest = llvm::FixedVectorType::get( llvm::Type::getInt1Ty(*TheContext) , Layout::virtualNodeNumber() );
+      }
+#endif
+    
+    return builder->CreateTrunc( val , Dest );
+  }
+  
 
   llvm::Value * llvm_load( llvm::Value * ptr )
   {
+#if QDP_LLVM13
+    ptr = builder->CreateLoad( ptr->getType()->getPointerElementType() , ptr );
+#else
     ptr = builder->CreateLoad( ptr );
-    llvm::outs() << "llvm_load " << *ptr << "\n";
+#endif
     return ptr;
   }
 
@@ -1765,16 +1815,12 @@ namespace QDP
   {
     assert(ptr->getType()->isPointerTy() && "llvm_store: not a pointer type");
     llvm::Value * val_cast = llvm_cast( ptr->getType()->getPointerElementType() , val );
-    // llvm::outs() << "\nstore: val_cast  = "; val_cast->dump();
-    // llvm::outs() << "\nstore: ptr  = "; ptr->dump();
     builder->CreateStore( val_cast , ptr );
   }
 
 
   llvm::Value * llvm_load_ptr_idx( llvm::Value * ptr , llvm::Value * idx )
   {
-    llvm::outs() << "llvm_load_ptr_idx " << *ptr << " " << *idx << "\n";
-
     return llvm_load( llvm_createGEP( ptr , idx ) );
   }
 
@@ -2125,41 +2171,6 @@ namespace QDP
     get_jitf( func , ptx_kernel , str_kernel_name , str_pretty , str_arch );
     swatch.stop();
     func.time_dynload = swatch.getTimeInMicroseconds();
-
-
-    
-    if ( ptx_db::db_enabled ) {
-
-      if (Layout::primaryNode())
-	{
-	  std::string id = jit_util_get_static_dynamic_string( str_pretty );
-
-	  if ( ptx_db::db.find( id ) != ptx_db::db.end() ) {
-	    QDPIO::cout << "internal error: key already exists in DB but wasn't found earlier\n" << id << "\n";
-	    QDP_abort(1);
-	  }
-
-	  ptx_db::db[ id ] = std::make_pair( str_kernel_name , ptx_kernel );
-
-	  std::ofstream db;
-	  db.open ( ptx_db::dbname , ios::out | ios::binary );
-	  for ( ptx_db::DBType::iterator it = ptx_db::db.begin() ; it != ptx_db::db.end() ; ++it ) 
-	    {
-	      int size1 = it->first.size();
-	      db << size1;
-	      db.write( it->first.c_str() , size1 );
-
-	      int size2 = it->second.first.size();
-	      db << size2;
-	      db.write( it->second.first.c_str() , size2 );
-
-	      int size3 = it->second.second.size();
-	      db << size3;
-	      db.write( it->second.second.c_str() , size3 );
-	    }
-	  db.close();
-	}
-    } // ptx db
   }
 #endif
 
@@ -2485,8 +2496,6 @@ namespace QDP
 
     func.time_math = 0;
 
-    
-
 #if 1
     // Right now a trampoline function which calls the main function
     // is necessary. For the auto-vectorizer we need the arguments to
@@ -2529,10 +2538,18 @@ namespace QDP
     	 param_type != vecParamType.end() ; 
     	 param_type++,i++ ) {
       //(*param_type)->dump(); std::cout << "\n";
+#if QDP_LLVM13
+      llvm::Value* gep = builder->CreateGEP( AI->getType()->getPointerElementType() , &*AI , llvm_create_value(i) );
+#else
       llvm::Value* gep = builder->CreateGEP( &*AI , llvm_create_value(i) );
+#endif      
       llvm::Type* param_ptr_type = llvm::PointerType::get( *param_type , 0  );
       llvm::Value* ptr_to_arg = builder->CreatePointerCast( gep , param_ptr_type );
+#if QDP_LLVM13
+      llvm::Value* arg = builder->CreateLoad( ptr_to_arg->getType()->getPointerElementType() , ptr_to_arg );
+#else
       llvm::Value* arg = builder->CreateLoad( ptr_to_arg );
+#endif      
       vecCallArgument.push_back( arg );      
     }
 
@@ -2558,12 +2575,16 @@ namespace QDP
     llvm_opt(func);
 
     
-    if (1)
+    if (0)
     {
       std::string module_name = "module_" + str_kernel_name + ".bc";
       QDPIO::cout << "write code to " << module_name << "\n";
       std::error_code EC;
+#if QDP_LLVM13
+      llvm::raw_fd_ostream OS(module_name, EC, llvm::sys::fs::OF_None);
+#else
       llvm::raw_fd_ostream OS(module_name, EC, llvm::sys::fs::F_None);
+#endif
       llvm::WriteBitcodeToFile(*Mod, OS);
     }
 
@@ -2604,7 +2625,7 @@ namespace QDP
     }
 #endif
 
-    QDPIO::cout << "Add module\n";
+    //QDPIO::cout << "Add module\n";
 
     
     // Add module
@@ -2612,7 +2633,7 @@ namespace QDP
     auto TSM = ThreadSafeModule( std::move(Mod) , std::move(TheContext) );
     ExitOnErr(TheJIT->addModule(std::move(TSM), RT));
     
-    QDPIO::cout << "Lookup\n";
+    //QDPIO::cout << "Lookup: " << str_kernel_name << "\n";
 
     // Lookup 
     auto Sym = ExitOnErr(TheJIT->lookup( str_kernel_name ));

@@ -10,7 +10,7 @@ namespace QDP {
   enum class JitResult { JitSuccess , JitError , JitResource };
 
 #ifdef QDP_DEEP_LOG
-  void gpu_deep_logger( void* host_ptr , std::string type_W , int size_T , int start , int count , std::string pretty );
+  void gpu_deep_logger( void* host_ptr , std::string type_W , size_t field_size , std::string pretty );
   void gpu_deep_logger_close();
 #endif
 
@@ -46,23 +46,13 @@ namespace QDP {
   bool gpu_malloc( void **mem , const size_t size );
   void gpu_free( const void *mem );
 
-  void gpu_memset( void * dest , unsigned val , size_t N );
+  void gpu_memset( void * dest , unsigned char val , size_t N );
 
   JitResult gpu_launch_kernel( JitFunction& f, 
 			       unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
 			       unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
 			       unsigned int  sharedMemBytes, QDPCache::KernelArgs_t kernelArgs );
 
-#if 0
-  int CudaAttributeNumRegs( JitFunction& f );
-  int CudaAttributeLocalSize( JitFunction& f );
-  int CudaAttributeConstSize( JitFunction& f );
-  void CudaProfilerInitialize();
-  void CudaProfilerStart();
-  void CudaProfilerStop();
-#endif
-  
-  
 
   //JitFunction get_fptr_from_ptx( const char* fname , const std::string& kernel );
   bool get_jitf( JitFunction& func, const std::string& kernel , const std::string& func_name , const std::string& pretty , const std::string& compute );

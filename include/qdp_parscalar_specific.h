@@ -21,19 +21,23 @@ namespace QDP {
     @ingroup group1
     @relates QDPType */
   template<class T1>
-  inline OScalar<T1>
+  inline OScalar<typename ScalarType<T1>::Type_t>
   peekSite(const OLattice<T1>& l, const multi1d<int>& coord)
   {
-    OScalar<T1> dest;
+    OScalar<typename ScalarType<T1>::Type_t> dest;
     int nodenum = Layout::nodeNumber(coord);
 
     // Find the result somewhere within the machine.
     // Then we must get it to node zero so we can broadcast it
     // out to all nodes
     if (Layout::nodeNumber() == nodenum)
-      dest.elem() = l.elem(Layout::linearSiteIndex(coord));
+      {
+	dest.elem() = l.elem(Layout::linearSiteIndex(coord));
+      }
     else
-      zero_rep(dest.elem());
+      {
+	zero_rep(dest.elem());
+      }
 
     // Send result to primary node via some mechanism
     QDPInternal::sendToPrimaryNode(dest, nodenum);
@@ -72,7 +76,7 @@ namespace QDP {
     @relates QDPType */
   template<class T1>
   inline OLattice<T1>&
-  pokeSite(OLattice<T1>& l, const OScalar<T1>& r, const multi1d<int>& coord)
+  pokeSite(OLattice<T1>& l, const OScalar<typename ScalarType<T1>::Type_t>& r, const multi1d<int>& coord)
   {
     static JitFunction function;
 

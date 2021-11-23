@@ -25,10 +25,10 @@ namespace QDP {
     forEach(l, addr_leaf, NullCombine());
     forEach(r, addr_leaf, NullCombine());
 
-    JitParam jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) );
+    WorkgroupGuardExec workgroupGuardExec(th_count);
 
     std::vector<QDPCache::ArgKey> ids;
-    ids.push_back( jit_th_count.get_id() );
+    workgroupGuardExec.check(ids);
     ids.push_back( s.getIdSiteTable() );
     for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
       ids.push_back( addr_leaf.ids[i] );
@@ -47,39 +47,31 @@ namespace QDP {
     typedef typename QDPType<T1,C1>::Subtype_t    LT;
     typedef typename QDPSubType<T2,C2>::Subtype_t RT;
     
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
-	if (!function.empty())
-	  return;
-      }
-    
     llvm_start_new_function("localInnerProduct_type_subtype",__PRETTY_FUNCTION__ );
 
-    ParamRef p_th_count     = llvm_add_param<int>();
-    ParamRef p_site_table   = llvm_add_param<int*>();      // subset sitetable
+    WorkgroupGuard workgroupGuard;
+    ParamRef p_site_table = llvm_add_param<int*>();
 
-    ParamLeaf param_leaf;
+    ParamLeafScalar param_leaf;
 
-    typename LeafFunctor<OSubLattice<T>, ParamLeaf>::Type_t   ret_jit(forEach(ret, param_leaf, TreeCombine()));
+    typename LeafFunctor<OSubLattice<T>, ParamLeafScalar>::Type_t   ret_jit(forEach(ret, param_leaf, TreeCombine()));
 
     OP op;
-    auto op_jit = AddOpParam<OP,ParamLeaf>::apply(op,param_leaf);
+    auto op_jit = AddOpParam<OP,ParamLeafScalar>::apply(op,param_leaf);
 
-    typename LeafFunctor<QDPType<T1,C1>   , ParamLeaf>::Type_t   l_jit(forEach(l, param_leaf, TreeCombine()));
-    typename LeafFunctor<QDPSubType<T2,C2>, ParamLeaf>::Type_t   r_jit(forEach(r, param_leaf, TreeCombine()));
+    typename LeafFunctor<QDPType<T1,C1>   , ParamLeafScalar>::Type_t   l_jit(forEach(l, param_leaf, TreeCombine()));
+    typename LeafFunctor<QDPSubType<T2,C2>, ParamLeafScalar>::Type_t   r_jit(forEach(r, param_leaf, TreeCombine()));
 	
-    llvm::Value * r_th_count     = llvm_derefParam( p_th_count );
     llvm::Value* r_idx_thread = llvm_thread_idx();
 
-    llvm_cond_exit( llvm_ge( r_idx_thread , r_th_count ) );
+    workgroupGuard.check(r_idx_thread);
 
-    llvm::Value* r_idx_perm = llvm_array_type_indirection( p_site_table , r_idx_thread );
+    llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
 
-    typename REGType< typename JITType< LT >::Type_t >::Type_t l_reg;
-    l_reg.setup( l_jit.elem( JitDeviceLayout::Coalesced , r_idx_perm ) );
+    typename REGType< typename JITType< typename ScalarType<LT>::Type_t >::Type_t >::Type_t l_reg;
+    l_reg.setup( l_jit.elem( JitDeviceLayout::Coalesced , r_idx ) );
 
-    typename REGType< typename JITType< RT >::Type_t >::Type_t r_reg;
+    typename REGType< typename JITType< typename ScalarType<RT>::Type_t >::Type_t >::Type_t r_reg;
     r_reg.setup( r_jit.elem( JitDeviceLayout::Scalar , r_idx_thread ) );
 
     ret_jit.elem( JitDeviceLayout::Scalar , r_idx_thread ) = op_jit( l_reg , r_reg );
@@ -96,42 +88,33 @@ namespace QDP {
     typedef typename QDPSubType<T1,C1>::Subtype_t LT;
     typedef typename QDPType<T2,C2>::Subtype_t    RT;
     
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
-	if (!function.empty())
-	  return;
-      }
-
-
     llvm_start_new_function("localInnerProduct_subtype_type",__PRETTY_FUNCTION__ );
 
-    
-    ParamRef p_th_count     = llvm_add_param<int>();
-    ParamRef p_site_table   = llvm_add_param<int*>();      // subset sitetable
+    WorkgroupGuard workgroupGuard;
+    ParamRef p_site_table = llvm_add_param<int*>();
 
-    ParamLeaf param_leaf;
+    ParamLeafScalar param_leaf;
 
-    typename LeafFunctor<OSubLattice<T>, ParamLeaf>::Type_t   ret_jit(forEach(ret, param_leaf, TreeCombine()));
+    typename LeafFunctor<OSubLattice<T>, ParamLeafScalar>::Type_t   ret_jit(forEach(ret, param_leaf, TreeCombine()));
 
     OP op;
-    auto op_jit = AddOpParam<OP,ParamLeaf>::apply(op,param_leaf);
+    auto op_jit = AddOpParam<OP,ParamLeafScalar>::apply(op,param_leaf);
 
-    typename LeafFunctor<QDPSubType<T1,C1> , ParamLeaf>::Type_t   l_jit(forEach(l, param_leaf, TreeCombine()));
-    typename LeafFunctor<QDPType<T2,C2>    , ParamLeaf>::Type_t   r_jit(forEach(r, param_leaf, TreeCombine()));
-	
-    llvm::Value * r_th_count     = llvm_derefParam( p_th_count );
+    typename LeafFunctor<QDPSubType<T1,C1> , ParamLeafScalar>::Type_t   l_jit(forEach(l, param_leaf, TreeCombine()));
+    typename LeafFunctor<QDPType<T2,C2>    , ParamLeafScalar>::Type_t   r_jit(forEach(r, param_leaf, TreeCombine()));
+
     llvm::Value* r_idx_thread = llvm_thread_idx();
 
-    llvm_cond_exit( llvm_ge( r_idx_thread , r_th_count ) );
+    workgroupGuard.check(r_idx_thread);
 
-    llvm::Value* r_idx_perm = llvm_array_type_indirection( p_site_table , r_idx_thread );
+    llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
 
-    typename REGType< typename JITType< LT >::Type_t >::Type_t l_reg;
+
+    typename REGType< typename JITType< typename ScalarType<LT>::Type_t >::Type_t >::Type_t l_reg;
     l_reg.setup( l_jit.elem( JitDeviceLayout::Scalar , r_idx_thread ) );   // ok: Scalar
 
-    typename REGType< typename JITType< RT >::Type_t >::Type_t r_reg;
-    r_reg.setup( r_jit.elem( JitDeviceLayout::Coalesced , r_idx_perm ) );
+    typename REGType< typename JITType< typename ScalarType<RT>::Type_t >::Type_t >::Type_t r_reg;
+    r_reg.setup( r_jit.elem( JitDeviceLayout::Coalesced , r_idx ) );
 
     ret_jit.elem( JitDeviceLayout::Scalar , r_idx_thread ) = op_jit( l_reg , r_reg );   // ok: Scalar
     

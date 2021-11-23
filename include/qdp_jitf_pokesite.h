@@ -9,26 +9,18 @@ namespace QDP {
   void
   function_pokeSite_build( JitFunction& function, const OLattice<T>& dest , const OScalar<T1>& r  )
   {
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
-	if (!function.empty())
-	  return;
-      }
-
-
     llvm_start_new_function("eval_pokeSite",__PRETTY_FUNCTION__);
 
     ParamRef p_siteindex    = llvm_add_param<int>();
 
-    ParamLeaf param_leaf;
+    ParamLeafScalar param_leaf;
 
-    typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
+    typedef typename LeafFunctor<OLattice<T>, ParamLeafScalar>::Type_t  FuncRet_t;
     FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
     
-    auto op_jit = AddOpParam<OpAssign,ParamLeaf>::apply(OpAssign(),param_leaf);
+    auto op_jit = AddOpParam<OpAssign,ParamLeafScalar>::apply(OpAssign(),param_leaf);
 
-    typedef typename LeafFunctor<OScalar<T1>, ParamLeaf>::Type_t  FuncRet_t1;
+    typedef typename LeafFunctor<OScalar<T1>, ParamLeafScalar>::Type_t  FuncRet_t1;
     FuncRet_t1 r_jit(forEach(r, param_leaf, TreeCombine()));
 
     llvm::Value* r_siteindex = llvm_derefParam( p_siteindex );

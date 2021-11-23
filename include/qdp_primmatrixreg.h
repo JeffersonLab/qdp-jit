@@ -28,7 +28,7 @@ namespace QDP {
  * portion is a part of the generic class, hence it is called a domain
  * and not a category
  */
-  template <class T, int N, template<class,int> class C> class PMatrixREG //: public BaseREG<T,N*N,PMatrixREG<T,N,C> >
+  template <class T, int N, template<class,int> class C> class PMatrixREG 
 {
   T F[N*N];
 public:
@@ -65,16 +65,6 @@ public:
       return static_cast<CC&>(*this);
     }
 
-#if 0
-  PMatrixREG& assign(const PMatrixREG& rhs) 
-    {
-      for(int i=0; i < N; ++i)
-	for(int j=0; j < N; ++j)
-	  elem(i,j) = rhs.elem(i,j);
-
-      return static_cast<PMatrixREG&>(*this);
-    }
-#endif
 
   //! PMatrixREG += PMatrixREG
   template<class T1>
@@ -160,6 +150,14 @@ public:
 };
 
 
+
+  template <class T, int N, template<class,int> class C >
+  struct IsWordVec< PMatrixREG<T,N,C > >
+  {
+    constexpr static bool value = IsWordVec<T>::value;
+  };
+
+  
 
   template <class T, int N, template<class,int> class PColorMatrixREG >
   struct JITType< PMatrixREG<T,N, PColorMatrixREG > >
@@ -1522,26 +1520,6 @@ fill_gaussian(PMatrixREG<T,N,C>& d, PMatrixREG<T,N,C>& r1, PMatrixREG<T,N,C>& r2
 
 
 
-#if 0
-// Global sum over site indices only
-template<class T, int N, template<class,int> class C>
-struct UnaryReturn<PMatrixREG<T,N,C>, FnSum> {
-  typedef C<typename UnaryReturn<T, FnSum>::Type_t, N>  Type_t;
-};
-
-template<class T, int N, template<class,int> class C>
-inline typename UnaryReturn<PMatrixREG<T,N,C>, FnSum>::Type_t
-sum(const PMatrixREG<T,N,C>& s1)
-{
-  typename UnaryReturn<PMatrixREG<T,N,C>, FnSum>::Type_t  d;
-
-  for(int i=0; i < N; ++i)
-    for(int j=0; j < N; ++j)
-      d.elem(i,j) = sum(s1.elem(i,j));
-
-  return d;
-}
-#endif
 
 
 // InnerProduct (norm-seq) global sum = sum(tr(adj(s1)*s1))
@@ -1737,6 +1715,18 @@ where(const PScalarREG<T1>& a, const PMatrixREG<T2,N,C>& b, const PMatrixREG<T3,
 }
 
 
+template<class T, int N, template<class,int> class C>
+inline void 
+qdpPHI(PMatrixREG<T,N,C>& d, 
+       const PMatrixREG<T,N,C>& phi0, llvm::BasicBlock* bb0 ,
+       const PMatrixREG<T,N,C>& phi1, llvm::BasicBlock* bb1 )
+{
+  for(int i=0; i < N; ++i)
+    for(int j=0; j < N; ++j)
+      qdpPHI(d.elem(i,j),
+	     phi0.elem(i,j),bb0,
+	     phi1.elem(i,j),bb1);
+}
 
 
 

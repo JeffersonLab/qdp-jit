@@ -477,7 +477,6 @@ struct LeafFunctor<QDPType<T,C>, EvalLeaf1>
 template<class T>
 struct LeafFunctor<QDPType<T,OLattice<T> >, ParamLeaf>
 {
-  //typedef QDPTypeJIT<typename JITType<T>::Type_t,typename JITType<OLattice<T> >::Type_t>  TypeA_t;
   typedef typename JITType< OLattice<T> >::Type_t  TypeA_t;
   typedef TypeA_t  Type_t;
   inline static Type_t apply(const QDPType<T,OLattice<T> > &a, const ParamLeaf& p)
@@ -490,13 +489,58 @@ struct LeafFunctor<QDPType<T,OLattice<T> >, ParamLeaf>
 template<class T>
 struct LeafFunctor<QDPType<T,OScalar<T> >, ParamLeaf>
 {
-  //typedef QDPTypeJIT<typename JITType<T>::Type_t,typename JITType<OScalar<T> >::Type_t>  Type_t;
   typedef typename JITType< OScalar<T> >::Type_t  Type_t;
   inline static Type_t apply(const QDPType<T,OScalar<T> > &a, const ParamLeaf& p)
   {
     return Type_t( llvm_add_param< typename WordType<T>::Type_t * >() );
   }
 };
+
+template<class T>
+struct LeafFunctor<QDPType<PScalar< PScalar < RScalar< Word< T > > > >,OScalar<PScalar< PScalar < RScalar< Word< T > > > > > >, ParamLeaf>
+{
+  typedef typename JITType< OScalar<PScalar< PScalar < RScalar< Word< T > > > > > >::Type_t  Type_t;
+  inline static Type_t apply(const QDPType<PScalar< PScalar < RScalar< Word< T > > > >,OScalar<PScalar< PScalar < RScalar< Word< T > > > > > > &a, const ParamLeaf& p)
+  {
+    return Type_t( llvm_add_param< T >() );
+  }
+};
+
+
+
+
+
+template<class T>
+struct LeafFunctor<QDPType<T,OLattice<T> >, ParamLeafScalar>
+{
+  typedef typename JITType< OLattice<typename ScalarType<T>::Type_t > >::Type_t  Type_t;
+  inline static Type_t apply(const QDPType<T,OLattice<T> > &a, const ParamLeafScalar& p)
+  {
+    ParamRef    base_addr = llvm_add_param< typename WordType<T>::Type_t * >();
+    return Type_t( base_addr );
+  }
+};
+
+template<class T>
+struct LeafFunctor<QDPType<T,OScalar<T> >, ParamLeafScalar>
+{
+  typedef typename JITType< OScalar<T> >::Type_t  Type_t;
+  inline static Type_t apply(const QDPType<T,OScalar<T> > &a, const ParamLeafScalar& p)
+  {
+    return Type_t( llvm_add_param< typename WordType<T>::Type_t * >() );
+  }
+};
+
+template<class T>
+struct LeafFunctor<QDPType<PScalar< PScalar < RScalar< Word< T > > > >,OScalar<PScalar< PScalar < RScalar< Word< T > > > > > >, ParamLeafScalar>
+{
+  typedef typename JITType< OScalar<PScalar< PScalar < RScalar< Word< T > > > > > >::Type_t  Type_t;
+  inline static Type_t apply(const QDPType<PScalar< PScalar < RScalar< Word< T > > > >,OScalar<PScalar< PScalar < RScalar< Word< T > > > > > > &a, const ParamLeafScalar& p)
+  {
+    return Type_t( llvm_add_param< T >() );
+  }
+};
+
 
 
 
@@ -528,6 +572,21 @@ struct LeafFunctor<QDPType<T,OScalar<T> >, AddressLeaf>
     return 0;
   }
 };
+
+
+
+template<class T>
+struct LeafFunctor<QDPType<PScalar< PScalar < RScalar< Word< T > > > > ,OScalar<PScalar< PScalar < RScalar< Word< T > > > > > >, AddressLeaf>
+{
+  typedef int Type_t;
+  inline static
+  Type_t apply(const QDPType<PScalar< PScalar < RScalar< Word< T > > > > , OScalar<PScalar< PScalar < RScalar< Word< T > > > > > >& s, const AddressLeaf& p) 
+  {
+    p.setLit< T >( s.get_word_value() );
+    return 0;
+  }
+};
+
 
 
 

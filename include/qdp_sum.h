@@ -285,6 +285,10 @@ namespace QDP {
     prof.end_time();
 #endif
 
+#ifdef QDP_DEEP_LOG
+    gpu_deep_logger( d.getF() , typeid(typename WordType<T2>::Type_t).name() , sizeof(T2) , __PRETTY_FUNCTION__ , false );
+#endif
+
     return d;
   }
 #elif defined (QDP_BACKEND_AVX)
@@ -295,18 +299,27 @@ namespace QDP {
     typedef typename UnaryReturn<OLattice<T1>, FnSum>::Type_t::SubType_t T2;
 
     typename UnaryReturn<OLattice<T1>, FnSum>::Type_t sum;
-	
+
     zero_rep(sum);
+
     //#pragma omp parallel for reduction(+: sum)
     for (auto i = 0; i < s.numSiteTable(); i++)
       {
 	int j = s.siteTable()[i];
-	sum += s1.peekLinearSite(j);
+
+	// The ::elem access is required, otherwise it calls
+	// eval(OScalar,ExprOScalar) which then invalidates the logger
+	//
+	sum.elem() += s1.peekLinearSite(j).elem();
       }
 
     // Global sum
     QDPInternal::globalSum(sum);
-    
+
+#ifdef QDP_DEEP_LOG
+    gpu_deep_logger( sum.getF() , typeid(typename WordType<T2>::Type_t).name() , sizeof(T2) , __PRETTY_FUNCTION__ , false );
+#endif
+
     return sum;
   }
 #else
@@ -330,7 +343,7 @@ namespace QDP {
     return sum(tmp,s);
   }
 
-  
+#if 0
 #if defined (QDP_BACKEND_CUDA) || (QDP_BACKEND_ROCM)
   template<class WT>
   typename UnaryReturn< OLattice<PScalar<PScalar<RScalar<Word<double> > > > > , FnSum>::Type_t
@@ -432,10 +445,14 @@ namespace QDP {
     prof.end_time();
 #endif
 
+#ifdef QDP_DEEP_LOG
+    gpu_deep_logger( d.getF() , typeid(typename WordType<T2>::Type_t).name() , sizeof(T2) , __PRETTY_FUNCTION__ , false );
+#endif
+
     return d;
   }
 #endif
-
+#endif
   
 
   //
@@ -453,7 +470,6 @@ namespace QDP {
 
     function_global_max_exec(function, size, threads, blocks, shared_mem_usage, in_id, out_id );
   }
-
 
 
 
@@ -626,6 +642,10 @@ namespace QDP {
     prof.end_time();
 #endif
 
+#ifdef QDP_DEEP_LOG
+    gpu_deep_logger( dest.slice() , typeid(typename WordType<T2>::Type_t).name() , sizeof(T2)*numsubsets , __PRETTY_FUNCTION__ , false );
+#endif
+    
     return dest;
   }
 #elif defined (QDP_BACKEND_AVX)
@@ -634,6 +654,8 @@ namespace QDP {
   sumMulti( const OLattice<T1>& s1 , const Set& ss )
   {
     typename UnaryReturn<OLattice<T1>, FnSumMulti>::Type_t dest(ss.numSubsets());
+
+    typedef typename UnaryReturn<OLattice<T1>, FnSum>::Type_t::SubType_t T2;
 
 #if defined(QDP_USE_PROFILING)	 
     static QDPProfile_t prof(dest[0], OpAssign(), FnSum(), s1);
@@ -661,6 +683,10 @@ namespace QDP {
     prof.time += getClockTime();
     prof.count++;
     prof.print();
+#endif
+
+#ifdef QDP_DEEP_LOG
+    gpu_deep_logger( dest.slice() , typeid(typename WordType<T2>::Type_t).name() , sizeof(T2) * ss.numSubsets() , __PRETTY_FUNCTION__ , false );
 #endif
 
     return dest;
@@ -751,6 +777,10 @@ namespace QDP {
     prof.end_time();
 #endif
 
+#ifdef QDP_DEEP_LOG
+    gpu_deep_logger( d.getF() , typeid(typename WordType<T>::Type_t).name() , sizeof(T) , __PRETTY_FUNCTION__ , false );
+#endif
+    
     return d;
   }
 #elif defined (QDP_BACKEND_AVX)
@@ -784,6 +814,10 @@ namespace QDP {
     prof.time += getClockTime();
     prof.count++;
     prof.print();
+#endif
+
+#ifdef QDP_DEEP_LOG
+    gpu_deep_logger( d.getF() , typeid(typename WordType<T>::Type_t).name() , sizeof(T) , __PRETTY_FUNCTION__ , false );
 #endif
 
     return d;

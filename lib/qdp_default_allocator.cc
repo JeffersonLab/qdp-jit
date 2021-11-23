@@ -83,6 +83,10 @@ namespace Allocator {
 
     }
 
+#ifdef QDP_DEEP_LOG
+    memset( unaligned , 0 , bytes_to_alloc );
+#endif
+
     // Work out the aligned pointer
     aligned = (unsigned char *)( ( (unsigned long)unaligned + (QDP_ALIGNMENT_SIZE-1) ) & ~(QDP_ALIGNMENT_SIZE - 1));
 

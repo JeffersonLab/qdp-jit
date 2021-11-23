@@ -1,5 +1,7 @@
 #include "qdp.h"
 
+#include<signal.h>
+
 namespace QDP {
 
   namespace {
@@ -35,6 +37,7 @@ namespace QDP {
     if (isEmpty)
       {
 	QDPIO::cerr << "internal error. jit function not set.\n";
+	raise(SIGSEGV);
 	QDP_abort(1);
       }
     }

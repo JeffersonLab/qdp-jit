@@ -26,7 +26,8 @@ namespace QDP
   }
 #endif
 
-#if defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_ROCM)
+  //#if defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_ROCM)
+
   template<class T1,class C1,class T2,class C2>
   typename QDPSubTypeTrait< typename BinaryReturn<C1,C2,FnLocalInnerProduct>::Type_t >::Type_t
   localInnerProduct(const QDPSubType<T1,C1> & l,const QDPType<T2,C2> & r)
@@ -68,7 +69,9 @@ namespace QDP
     
     return ret;
   }
-#elif defined (QDP_BACKEND_AVX)
+
+#if 0
+  //#elif defined (QDP_BACKEND_AVX)
   template<class T1,class C1,class T2,class C2>
   typename QDPSubTypeTrait< typename BinaryReturn<C1,C2,FnLocalInnerProduct>::Type_t >::Type_t
   localInnerProduct(const QDPSubType<T1,C1> & l,const QDPType<T2,C2> & r)
@@ -112,8 +115,8 @@ namespace QDP
 
     return ret;
   }
-#else
-#error "No backend specified"  
+  //#else
+  //#error "No backend specified"  
 #endif
 
 
@@ -236,6 +239,8 @@ sum( const OSubLattice<T>& s1 )
 {
   typename UnaryReturn<OLattice<T>, FnSum>::Type_t  d;
 
+  typedef typename ScalarType<T>::Type_t T_scalar;
+  
   // Must initialize to zero since we do not know if the loop will be entered
   zero_rep(d.elem());
 

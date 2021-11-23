@@ -115,6 +115,7 @@ namespace QDP
     
     // Wrappers to the previous interface
     int registrate( size_t size, unsigned flags, LayoutFptr func );
+    int registrate_no_layout_conversion( size_t size );
     int registrateOwnHostMem( size_t size, const void* ptr , LayoutFptr func );
     int registrateOwnHostMemStatus( size_t size, const void* ptr , Status st );
     int registrateOwnHostMemNoPage( size_t size, const void* ptr );

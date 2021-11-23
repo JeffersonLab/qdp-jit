@@ -14,8 +14,7 @@ install(FILES ${PETE_HDRS} DESTINATION include/PETE)
 
 set( MEMORY_HDRS qdp_allocator.h
   qdp_singleton.h
-  qdp_default_allocator.h 
-  qdp_qcdoc_allocator.h)
+  qdp_default_allocator.h)
 
 install(FILES ${MEMORY_HDRS} DESTINATION include)
 
@@ -49,7 +48,6 @@ set( CUDA_HDRS qdp_gpu.h
   qdp_primscalarjit.h
   qdp_primscalarreg.h
   qdp_basejit.h
-  qdp_basereg.h
   qdp_primmatrixjit.h
   qdp_primcolormatjit.h
   qdp_primspinmatjit.h

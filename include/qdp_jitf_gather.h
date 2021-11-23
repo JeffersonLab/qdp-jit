@@ -5,17 +5,13 @@ namespace QDP {
 
 
   template<class T, class T1, class RHS>
+#if defined (QDP_PROP_OPT)
   typename std::enable_if_t< ! HasProp<RHS>::value >
+#else
+  void
+#endif  
   function_gather_build( JitFunction& function, const QDPExpr<RHS,OLattice<T1> >& rhs )
   {
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
-	if (!function.empty())
-	  return;
-      }
-
-
     typedef typename WordType<T1>::Type_t WT;
 
     llvm_start_new_function("gather",__PRETTY_FUNCTION__);
@@ -23,15 +19,15 @@ namespace QDP {
     WorkgroupGuard workgroupGuard;
 
     ParamRef p_soffset = llvm_add_param<int*>();
-    ParamRef p_sndbuf  = llvm_add_param<WT*>();
 
-    ParamLeaf param_leaf;
+    ParamLeafScalar param_leaf;
 
-    typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
+    typedef typename LeafFunctor<OLattice<T>, ParamLeafScalar>::Type_t  FuncRet_t;
+    FuncRet_t dest_jit(forEach(OLattice<T>(), param_leaf, TreeCombine()));
+
+    typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeafScalar, TreeCombine>::Type_t View_t;
     View_t rhs_view( forEach( rhs , param_leaf , TreeCombine() ) );
 
-    typedef typename JITType< OLattice<T> >::Type_t DestView_t;
-    DestView_t dest_jit( p_sndbuf );
 
     llvm::Value * r_idx     = llvm_thread_idx();
 
@@ -46,18 +42,11 @@ namespace QDP {
   }
 
 
+#if defined (QDP_PROP_OPT)
   template<class T, class T1, class RHS>
   typename std::enable_if_t< HasProp<RHS>::value >
   function_gather_build( JitFunction& function, const QDPExpr<RHS,OLattice<T1> >& rhs )
   {
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
-	if (!function.empty())
-	  return;
-      }
-
-
     typedef typename WordType<T1>::Type_t WT;
 
     llvm_start_new_function("gather_prop",__PRETTY_FUNCTION__);
@@ -65,15 +54,14 @@ namespace QDP {
     WorkgroupGuard workgroupGuard;
 
     ParamRef p_soffset = llvm_add_param<int*>();
-    ParamRef p_sndbuf  = llvm_add_param<WT*>();
 
-    ParamLeaf param_leaf;
+    ParamLeafScalar param_leaf;
 
-    typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
+    typedef typename LeafFunctor<OLattice<T>, ParamLeafScalar>::Type_t  FuncRet_t;
+    FuncRet_t dest_jit(forEach(OLattice<T>(), param_leaf, TreeCombine()));
+
+    typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeafScalar, TreeCombine>::Type_t View_t;
     View_t rhs_view( forEach( rhs , param_leaf , TreeCombine() ) );
-
-    typedef typename JITType< OLattice<T> >::Type_t DestView_t;
-    DestView_t dest_jit( p_sndbuf );
 
     llvm::Value * r_idx     = llvm_thread_idx();  
 
@@ -104,7 +92,7 @@ namespace QDP {
 
     jit_get_function( function );
   }
-
+#endif
 
 
   template<class T1, class RHS>
@@ -130,6 +118,10 @@ namespace QDP {
       ids.push_back( addr_leaf.ids[i] );
  
     jit_launch(function,th_count,ids);
+
+#ifdef QDP_DEEP_LOG
+    jit_deep_log(function);
+#endif
   }
 
 } // QDP

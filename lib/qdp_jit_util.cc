@@ -369,8 +369,6 @@ namespace QDP {
 	threads_per_block = function.get_threads_per_block();
       }
 
-    //QDPIO::cout << "jit_launch using block size = " << threads_per_block << std::endl;
-    
 
     kernel_geom_t geom = getGeom( th_count , threads_per_block );
 
@@ -395,66 +393,14 @@ namespace QDP {
 
     void (*FP)(int,void*) = (void (*)(int,void*))(intptr_t)f.get_function();
 
-    // std::cout << args.size() << std::endl;
-    // std::cout << args[0].i32 << std::endl;
-    // std::cout << args[1].ptr << " " << ((size_t)args[1].ptr)%64 << std::endl;
-    // std::cout << args[2].ptr << " " << ((size_t)args[2].ptr)%64 << std::endl;
-    // std::cout << args[3].ptr << " " << ((size_t)args[3].ptr)%64 << std::endl;
+    //std::cout << "max threads = " << omp_get_max_threads() << "\n";
 
-    QDPIO::cout << "dispatch th_count = " << th_count << std::endl;
-    
-    for ( int i = 0 ; i < th_count ; i++ )
-      FP( i , args.data() );
-    
-#if 0
-    //#pragma omp parallel
-#pragma omp for
+    //#pragma omp for
     for ( int i = 0 ; i < th_count ; i++ )
       {
 	FP( i , args.data() );
       }
-#endif
 
-#ifdef QDP_DEEP_LOG
-    if (jit_config_deep_log())
-      {
-	//size_t field_size = f.count * f.size_T;
-
-	size_t field_size = QDP_get_global_cache().getSize( f.get_dest_id() );
-
-	if (f.count > 0)
-	  {
-	    void* host_ptr;
-
-	    if ( ! (host_ptr = malloc( field_size )) )
-	      {
-		QDPIO::cout << "Cannot allocate host memory!" << endl;
-		QDP_abort(1);
-	      }
-
-	    
-	    std::vector<QDPCache::ArgKey> vec_id;
-	    vec_id.push_back( f.get_dest_id() );
-	    std::vector<void*> vec_ptrs = QDP_get_global_cache().get_dev_ptrs( vec_id );
-	    void* dev_ptr = vec_ptrs.at(0);
-
-	    //std::cout << "d2h: start = " << f.start << "  count = " << f.count << "  size_T = " << f.size_T << "   \t";
-    
-	    gpu_memcpy_d2h( host_ptr , dev_ptr , field_size );
-
-	    gpu_deep_logger( host_ptr , f.type_W , f.size_T , f.start , f.count , f.get_pretty() );
-
-	    free( host_ptr );
-	  }
-	else
-	  {
-	    QDPIO::cout << "zero count. " << f.get_pretty() << std::endl;
-	  }
-      }
-#endif
-
-
-    
     // Increment the call counter
     f.inc_call_counter();
   }
@@ -462,6 +408,39 @@ namespace QDP {
 #error "No LLVM backend specified."
 #endif
 
+
+
+  
+#ifdef QDP_DEEP_LOG
+  void jit_deep_log(JitFunction& f)
+  {
+    if (jit_config_deep_log() && f.get_dest_id() >= 0)
+      {
+	size_t field_size = QDP_get_global_cache().getSize( f.get_dest_id() );
+
+	void* host_ptr;
+
+	if ( ! (host_ptr = malloc( field_size )) )
+	  {
+	    QDPIO::cout << "Cannot allocate host memory!" << endl;
+	    QDP_abort(1);
+	  }
+	    
+	std::vector<QDPCache::ArgKey> vec_id;
+	vec_id.push_back( f.get_dest_id() );
+	std::vector<void*> vec_ptrs = QDP_get_global_cache().get_dev_ptrs( vec_id );
+	void* dev_ptr = vec_ptrs.at(0);
+
+	gpu_memcpy_d2h( host_ptr , dev_ptr , field_size );
+
+	gpu_deep_logger( host_ptr , f.type_W , field_size , f.get_pretty() , f.get_is_lat() );
+
+	free( host_ptr );
+      }
+  }
+#endif
+
+  
 
 
   

@@ -83,7 +83,7 @@ namespace Layout
   const multi1d<int>& lattSize() QDP_CONST;
 
   //! Total lattice volume
-  int vol() QDP_CONST;
+  size_t vol() QDP_CONST;
 
   //! Number of sites on node
   int sitesOnNode() QDP_CONST;
@@ -129,6 +129,7 @@ namespace Layout
 
 
 #if QDP_USE_VNODE_LAYOUT == 1
+  std::vector<multi1d<int> >& virtualNodeCoords();
   multi1d<int> virtualNodeGeom();
   multi1d<int> virtualNodeSubgridLattSize();
   int virtualNodeSites();

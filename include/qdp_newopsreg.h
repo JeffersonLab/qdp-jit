@@ -7,12 +7,12 @@ namespace QDP {
 struct FnPeekColorMatrixREG
 {
   FnPeekColorMatrixREG(ParamRef  _row, ParamRef  _col): row(_row), col(_col) {}
-
+  
   template<class T>
   inline typename UnaryReturn<T, FnPeekColorMatrixREG>::Type_t
   operator()(const T &a) const
   {
-    return (peekColor(a,llvm_derefParam(row),llvm_derefParam(col)));
+    return peekColor(a,llvm_derefParam(row),llvm_derefParam(col));
   }
   
   llvm::Value* get_row_jit() const { return llvm_derefParam(row); }
@@ -59,6 +59,24 @@ struct ForEach<UnaryNode<FnPeekColorMatrix, A>, ParamLeaf, TreeCombine>
               FnPeekColorMatrixREG( a , b ) , c);
   }
 };
+
+
+template<class A>
+struct ForEach<UnaryNode<FnPeekColorMatrix, A>, ParamLeafScalar, TreeCombine>
+{
+  typedef typename ForEach<A, ParamLeafScalar, TreeCombine>::Type_t TypeA_t;
+  typedef typename Combine1<TypeA_t, FnPeekColorMatrixREG, TreeCombine>::Type_t Type_t;
+  inline static
+  Type_t apply(const UnaryNode<FnPeekColorMatrix, A> &expr, const ParamLeafScalar &p, const TreeCombine &c)
+  {
+    ParamRef a = llvm_add_param<int>();
+    ParamRef b = llvm_add_param<int>();
+    return Combine1<TypeA_t, FnPeekColorMatrixREG, TreeCombine>::
+      combine(ForEach<A, ParamLeafScalar, TreeCombine>::apply(expr.child(), p, c),
+              FnPeekColorMatrixREG( a , b ) , c);
+  }
+};
+
   
   
 
@@ -66,21 +84,19 @@ struct ForEach<UnaryNode<FnPeekColorMatrix, A>, ParamLeaf, TreeCombine>
   struct AddOpParam< FnPokeColorMatrix, ParamLeaf> {
     typedef FnPokeColorMatrixREG Type_t;
     static FnPokeColorMatrixREG apply( const FnPokeColorMatrix& a, const ParamLeaf& p) {
-      //std::cout << __PRETTY_FUNCTION__ << "\n";
       ParamRef pa = llvm_add_param<int>();
       ParamRef pb = llvm_add_param<int>();
       return FnPokeColorMatrixREG( pa , pb );
     }
   };
 
+  
 
   template<>  
   struct AddOpAddress< FnPokeColorMatrix, AddressLeaf> {
     static void apply( const FnPokeColorMatrix& p, const AddressLeaf& a) {
-      //std::cout << __PRETTY_FUNCTION__ << "\n";
       int row = p.getRow();
       int col = p.getCol();
-      //std::cout << "set poke color matrix row,llvm_derefParam(col) = " << row << " " << col << "\n";
       a.setLit( (int)row );
       a.setLit( (int)col );
     }
@@ -98,7 +114,6 @@ struct ForEach<UnaryNode<FnPeekColorMatrix, A>, AddressLeaf, NullCombine>
     {
       int row = expr.operation().getRow();
       int col = expr.operation().getCol();
-      //std::cout << "set peek color matrix row,llvm_derefParam(col) = " << row << " " << col << "\n";
       a.setLit( (int)row );
       a.setLit( (int)col );
       return Type_t( ForEach<A, AddressLeaf, NullCombine>::apply( expr.child() , a , n ) );
@@ -116,7 +131,6 @@ struct FnPeekSpinMatrixREG
   inline typename UnaryReturn<T, FnPeekSpinMatrixREG>::Type_t
   operator()(const T &a) const
   {
-    QDPIO::cout << __PRETTY_FUNCTION__ << std::endl;
     return (peekSpin(a,llvm_derefParam(row),llvm_derefParam(col)));
   }
 
@@ -146,7 +160,6 @@ struct FnPokeSpinMatrixREG
   inline typename BinaryReturn<PColorMatrixJIT<T1R,N1>, PColorMatrixREG<T2R,N2>, FnPokeSpinMatrixREG>::Type_t
   operator()(const PColorMatrixJIT<T1R,N1> &a, const PColorMatrixREG<T2R,N2> &b) const
   {
-    //OpIdentity()(const_cast<PColorMatrixJIT<T1R,N1>&>(a),b);
     const_cast<PColorMatrixJIT<T1R,N1>&>(a) = b;
     return const_cast<PColorMatrixJIT<T1R,N1>&>(a);
   }
@@ -178,14 +191,30 @@ struct ForEach<UnaryNode<FnPeekSpinMatrix, A>, ParamLeaf, TreeCombine>
               FnPeekSpinMatrixREG( a , b ) , c);
   }
 };
-  
+
+
+  template<class A>
+  struct ForEach<UnaryNode<FnPeekSpinMatrix, A>, ParamLeafScalar, TreeCombine>
+  {
+    typedef typename ForEach<A, ParamLeafScalar, TreeCombine>::Type_t TypeA_t;
+    typedef typename Combine1<TypeA_t, FnPeekSpinMatrixREG, TreeCombine>::Type_t Type_t;
+    inline static
+    Type_t apply(const UnaryNode<FnPeekSpinMatrix, A> &expr, const ParamLeafScalar &p, const TreeCombine &c)
+    {
+      ParamRef a = llvm_add_param<int>();
+      ParamRef b = llvm_add_param<int>();
+      return Combine1<TypeA_t, FnPeekSpinMatrixREG, TreeCombine>::
+	combine(ForEach<A, ParamLeafScalar, TreeCombine>::apply(expr.child(), p, c),
+		FnPeekSpinMatrixREG( a , b ) , c);
+    }
+  };
+
   
   
   template<>  
   struct AddOpParam< FnPokeSpinMatrix, ParamLeaf> {
     typedef FnPokeSpinMatrixREG Type_t;
     static FnPokeSpinMatrixREG apply( const FnPokeSpinMatrix& a, const ParamLeaf& p) {
-      //std::cout << __PRETTY_FUNCTION__ << "\n";
       ParamRef pa = llvm_add_param<int>();
       ParamRef pb = llvm_add_param<int>();
       return FnPokeSpinMatrixREG( pa , pb );
@@ -196,10 +225,8 @@ struct ForEach<UnaryNode<FnPeekSpinMatrix, A>, ParamLeaf, TreeCombine>
   template<>  
   struct AddOpAddress< FnPokeSpinMatrix, AddressLeaf> {
     static void apply( const FnPokeSpinMatrix& p, const AddressLeaf& a) {
-      //std::cout << __PRETTY_FUNCTION__ << "\n";
       int row = p.getRow();
       int col = p.getCol();
-      //std::cout << "set poke spin matrix row,llvm_derefParam(col) = " << row << " " << col << "\n";
       a.setLit( (int)row );
       a.setLit( (int)col );
     }
@@ -217,7 +244,6 @@ struct ForEach<UnaryNode<FnPeekSpinMatrix, A>, AddressLeaf, NullCombine>
     {
       int row = expr.operation().getRow();
       int col = expr.operation().getCol();
-      //std::cout << "set peek spin matrix row,llvm_derefParam(col) = " << row << " " << col << "\n";
       a.setLit( (int)row );
       a.setLit( (int)col );
       return Type_t( ForEach<A, AddressLeaf, NullCombine>::apply( expr.child() , a , n ) );
@@ -283,14 +309,29 @@ struct ForEach<UnaryNode<FnPeekColorVector, A>, ParamLeaf, TreeCombine>
               FnPeekColorVectorREG( a ) , c);
   }
 };
-  
+
+
+  template<class A>
+  struct ForEach<UnaryNode<FnPeekColorVector, A>, ParamLeafScalar, TreeCombine>
+  {
+    typedef typename ForEach<A, ParamLeafScalar, TreeCombine>::Type_t TypeA_t;
+    typedef typename Combine1<TypeA_t, FnPeekColorVectorREG, TreeCombine>::Type_t Type_t;
+    inline static
+    Type_t apply(const UnaryNode<FnPeekColorVector, A> &expr, const ParamLeafScalar &p, const TreeCombine &c)
+    {
+      ParamRef a = llvm_add_param<int>();
+      return Combine1<TypeA_t, FnPeekColorVectorREG, TreeCombine>::
+	combine(ForEach<A, ParamLeafScalar, TreeCombine>::apply(expr.child(), p, c),
+		FnPeekColorVectorREG( a ) , c);
+    }
+  };
+
   
   
   template<>  
   struct AddOpParam< FnPokeColorVector, ParamLeaf> {
     typedef FnPokeColorVectorREG Type_t;
     static FnPokeColorVectorREG apply( const FnPokeColorVector& a, const ParamLeaf& p) {
-      //std::cout << __PRETTY_FUNCTION__ << "\n";
       return FnPokeColorVectorREG( llvm_add_param<int>() );
     }
   };
@@ -299,9 +340,7 @@ struct ForEach<UnaryNode<FnPeekColorVector, A>, ParamLeaf, TreeCombine>
   template<>  
   struct AddOpAddress< FnPokeColorVector, AddressLeaf> {
     static void apply( const FnPokeColorVector& p, const AddressLeaf& a) {
-      //std::cout << __PRETTY_FUNCTION__ << "\n";
       int row = p.getRow();
-      //std::cout << "set poke color vector row,llvm_derefParam(col) = " << row << "\n";
       a.setLit( (int)row );
     }
   };
@@ -379,14 +418,28 @@ struct ForEach<UnaryNode<FnPeekSpinVector, A>, ParamLeaf, TreeCombine>
               FnPeekSpinVectorREG( a ) , c);
   }
 };
-  
+
+  template<class A>
+  struct ForEach<UnaryNode<FnPeekSpinVector, A>, ParamLeafScalar, TreeCombine>
+  {
+    typedef typename ForEach<A, ParamLeafScalar, TreeCombine>::Type_t TypeA_t;
+    typedef typename Combine1<TypeA_t, FnPeekSpinVectorREG, TreeCombine>::Type_t Type_t;
+    inline static
+    Type_t apply(const UnaryNode<FnPeekSpinVector, A> &expr, const ParamLeafScalar &p, const TreeCombine &c)
+    {
+      ParamRef a = llvm_add_param<int>();
+      return Combine1<TypeA_t, FnPeekSpinVectorREG, TreeCombine>::
+	combine(ForEach<A, ParamLeafScalar, TreeCombine>::apply(expr.child(), p, c),
+		FnPeekSpinVectorREG( a ) , c);
+    }
+  };
+
   
   
   template<>  
   struct AddOpParam< FnPokeSpinVector, ParamLeaf> {
     typedef FnPokeSpinVectorREG Type_t;
     static FnPokeSpinVectorREG apply( const FnPokeSpinVector& a, const ParamLeaf& p) {
-      //std::cout << __PRETTY_FUNCTION__ << "\n";
       return FnPokeSpinVectorREG( llvm_add_param<int>() );
     }
   };
@@ -395,9 +448,7 @@ struct ForEach<UnaryNode<FnPeekSpinVector, A>, ParamLeaf, TreeCombine>
   template<>  
   struct AddOpAddress< FnPokeSpinVector, AddressLeaf> {
     static void apply( const FnPokeSpinVector& p, const AddressLeaf& a) {
-      //std::cout << __PRETTY_FUNCTION__ << "\n";
       int row = p.getRow();
-      //std::cout << "set poke spin vector row = " << row << "\n";
       a.setLit( (int)row );
     }
   };
@@ -417,6 +468,41 @@ struct ForEach<UnaryNode<FnPeekSpinVector, A>, AddressLeaf, NullCombine>
       a.setLit( (int)row );
       return Type_t( ForEach<A, AddressLeaf, NullCombine>::apply( expr.child() , a , n ) );
     }
+};
+
+
+
+template<>  
+struct AddOpParam< FnPokeColorMatrix, ParamLeafScalar> {
+  typedef FnPokeColorMatrixREG Type_t;
+  static FnPokeColorMatrixREG apply( const FnPokeColorMatrix& a, const ParamLeafScalar& p) {
+    ParamRef pa = llvm_add_param<int>();
+    ParamRef pb = llvm_add_param<int>();
+    return FnPokeColorMatrixREG( pa , pb );
+  }
+};
+template<>  
+struct AddOpParam< FnPokeSpinMatrix, ParamLeafScalar> {
+  typedef FnPokeSpinMatrixREG Type_t;
+  static FnPokeSpinMatrixREG apply( const FnPokeSpinMatrix& a, const ParamLeafScalar& p) {
+    ParamRef pa = llvm_add_param<int>();
+    ParamRef pb = llvm_add_param<int>();
+    return FnPokeSpinMatrixREG( pa , pb );
+  }
+};
+template<>  
+struct AddOpParam< FnPokeColorVector, ParamLeafScalar> {
+  typedef FnPokeColorVectorREG Type_t;
+  static FnPokeColorVectorREG apply( const FnPokeColorVector& a, const ParamLeafScalar& p) {
+    return FnPokeColorVectorREG( llvm_add_param<int>() );
+  }
+};
+template<>  
+struct AddOpParam< FnPokeSpinVector, ParamLeafScalar> {
+  typedef FnPokeSpinVectorREG Type_t;
+  static FnPokeSpinVectorREG apply( const FnPokeSpinVector& a, const ParamLeafScalar& p) {
+    return FnPokeSpinVectorREG( llvm_add_param<int>() );
+  }
 };
 
 

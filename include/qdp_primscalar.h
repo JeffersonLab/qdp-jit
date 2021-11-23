@@ -404,7 +404,7 @@ template<class T1, class T2>
 struct BinaryReturn<PScalar<T1>, PScalar<T2>, OpRightShiftAssign > {
   typedef PScalar<T1> &Type_t;
 };
- 
+
 
 
 //-----------------------------------------------------------------------------
@@ -1487,6 +1487,7 @@ where(const PScalar<T1>& a, const PScalar<T2>& b, const PScalar<T3>& c)
 }
 
 
+
 //-----------------------------------------------------------------------------
 //! QDP Int to int primitive in conversion routine
 template<class T> 
@@ -1539,6 +1540,8 @@ zero_rep(PScalar<T>& dest)
   zero_rep(dest.elem());
 }
 
+
+
 //! dest [some type] = source [some type]
 template<class T, class T1>
 inline void 
@@ -1574,6 +1577,8 @@ gather_sites(PScalar<T>& d,
 {
   gather_sites(d.elem(), s0.elem(), i0, s1.elem(), i1, s2.elem(), i2, s3.elem(), i3);
 }
+
+
 
 /*! @} */  // end of group primscalar
 

@@ -1,6 +1,8 @@
 #ifndef QDP_JIT_FUNCTION_H
 #define QDP_JIT_FUNCTION_H
 
+#include <cassert>
+#include<signal.h>
 
 namespace QDP {
 
@@ -117,6 +119,7 @@ namespace QDP {
     void set_dest_id( int i ) { dest_id = i; }
     int  get_dest_id() { return dest_id; }
 
+    
     void set_enable_tuning() { enable_tuning = true; }
     bool get_enable_tuning() { return enable_tuning; }
     
@@ -124,10 +127,22 @@ namespace QDP {
     int  get_threads_per_block() { return threads_per_block; }
 
 #ifdef QDP_DEEP_LOG
-    int start;
-    int count;   // number of elements of size T
-    int size_T;
+    void set_is_lat( bool lat ) { isLat = lat ? 1 : 0; }
+    bool get_is_lat()
+    {
+      if (isLat < 0)
+	{
+	  raise(SIGSEGV);
+	}
+      return isLat == 1;
+    }
+    // int start;
+    // int count;   // number of elements of size T
+    // int size_T;
     std::string type_W;
+  private:
+    int isLat = -1;
+  public:
 #endif
 
     double time_builder = 0.;
@@ -174,9 +189,12 @@ namespace QDP {
 
 
   std::vector<JitFunction*>& gpu_get_functions();
-  
-  typedef std::map< DynKey , JitFunction >  JitFunctionMap;
 
+#if defined (QDP_BACKEND_AVX)
+  typedef std::map< DynKey , std::array<JitFunction,2> >  JitFunctionMap;
+#else
+  typedef std::map< DynKey , JitFunction >  JitFunctionMap;
+#endif
   
 } // namespace
 

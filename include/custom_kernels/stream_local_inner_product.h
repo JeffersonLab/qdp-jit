@@ -26,13 +26,6 @@ namespace QDP
   void
   function_multi_localInnerProduct_sum_convert_build(JitFunction& function)
   {
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
-	if (!function.empty())
-	  return;
-      }
-
     llvm_start_new_function("multi_localInnerProduct_sum_convert",__PRETTY_FUNCTION__ );
 
     typedef typename WordType<T1>::Type_t T1WT;

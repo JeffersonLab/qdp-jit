@@ -13,8 +13,6 @@ namespace QDP {
   {
     DynKey ret;
 
-    ret.add( s.hasOrderedRep() ? 1 : 0 );
-
     DynKeyTag tag(ret);
     bool offnode = forEach( rhs , tag , OrCombine() );
 

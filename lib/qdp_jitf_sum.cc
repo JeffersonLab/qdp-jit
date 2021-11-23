@@ -16,12 +16,6 @@ namespace QDP {
 	QDP_abort(1);
       }
 
-#ifdef QDP_DEEP_LOG
-    function.start = 0;
-    function.count = blocks;
-    function.set_dest_id( out_id );
-#endif
-    
     int lo = 0;
     int hi = size;
     
@@ -54,12 +48,6 @@ namespace QDP {
 	QDPIO::cerr << "internal error: function_summulti_convert_ind_exec not power of 2\n";
 	QDP_abort(1);
       }
-
-#ifdef QDP_DEEP_LOG
-    function.start = 0;
-    function.count = blocks;
-    function.set_dest_id( out_id );
-#endif
 
     int sizes_id = QDP_get_global_cache().add( sizes.size()*sizeof(int) , QDPCache::Flags::OwnHostMemory , QDPCache::Status::host , sizes.slice() , NULL , NULL );
 
@@ -123,12 +111,6 @@ namespace QDP {
 	QDP_abort(1);
       }
 
-#ifdef QDP_DEEP_LOG
-    function.start = 0;
-    function.count = blocks;
-    function.set_dest_id( out_id );
-#endif
-
     int lo = 0;
     int hi = size;
 
@@ -158,12 +140,6 @@ namespace QDP {
 	QDP_abort(1);
       }
 
-#ifdef QDP_DEEP_LOG
-    function.start = 0;
-    function.count = blocks;
-    function.set_dest_id( out_id );
-#endif
-
     int lo = 0;
     int hi = size;
 
@@ -192,12 +168,6 @@ namespace QDP {
 	QDP_abort(1);
       }
 
-    
-#ifdef QDP_DEEP_LOG
-    function.start = 0;
-    function.count = blocks;
-    function.set_dest_id( out_id );
-#endif
     
     int lo = 0;
     int hi = size;
@@ -229,12 +199,6 @@ namespace QDP {
 	QDP_abort(1);
       }
 
-#ifdef QDP_DEEP_LOG
-    function.start = 0;
-    function.count = blocks;
-    function.set_dest_id( out_id );
-#endif
-    
     int lo = 0;
     int hi = size;
 
@@ -263,12 +227,6 @@ namespace QDP {
 	QDPIO::cerr << "internal error: function_bool_reduction_exec not power of 2\n";
 	QDP_abort(1);
       }
-
-#ifdef QDP_DEEP_LOG
-    function.start = 0;
-    function.count = blocks;
-    function.set_dest_id( out_id );
-#endif
 
     int lo = 0;
     int hi = size;

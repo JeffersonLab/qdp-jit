@@ -130,6 +130,7 @@ namespace QDP
   template<class T> struct SinglePrecType;
   template<class T> struct DoublePrecType;
   template<class T> struct ScalarType;
+  template<class T> struct IsWordVec;
   
   // Empty leaf functor tag
   struct ElemLeaf;

@@ -17,7 +17,7 @@ namespace QDP
 
   //! Default rb3 subset -- Always unordered
   Set rb3;
-
+  
   //! Default 2-checkerboard (red/black) set
   Set rb;
 

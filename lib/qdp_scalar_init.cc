@@ -232,12 +232,6 @@ namespace COUNT {
 	    sscanf((*argv)[++i], "%s", &tmp[0]);
 	    llvm_set_opt(tmp);
 	  }
-	else if (strcmp((*argv)[i], "-ptxdb")==0) 
-	  {
-	    char tmp[1024];
-	    sscanf((*argv)[++i], "%s", &tmp[0]);
-	    llvm_set_ptxdb(tmp);
-	  }
 	else if (strcmp((*argv)[i], "-defaultgpu")==0) 
 	  {
 	    int ngpu;
@@ -360,15 +354,6 @@ namespace COUNT {
 		QDPIO::cout << "lattices changed to device layout:     " << get_jit_stats_lattice2dev() << "\n";
 		QDPIO::cout << "lattices changed to host layout:       " << get_jit_stats_lattice2host() << "\n";
 		QDPIO::cout << "functions jit-compiled:                " << get_jit_stats_jitted() << "\n";
-		if (get_ptx_db_enabled())
-		  {
-		    QDPIO::cout << "PTX DB, file:                          " << get_ptx_db_fname() << "\n";
-		    QDPIO::cout << "PTX DB, size (number of functions):    " << get_ptx_db_size() << "\n";
-		  }
-		else
-		  {
-		    QDPIO::cout << "PTX DB: (not used)\n";
-		  }
 		
 		FnMapRsrcMatrix::Instance().cleanup();
 

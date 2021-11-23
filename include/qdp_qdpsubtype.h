@@ -84,39 +84,21 @@ public:
 
   template<class T1>
   inline
-  //void assign(const QDPSubType<T1,C1>& rhs)
   void assign(const OSubLattice<T1>& rhs)
   {
-    if (getOwnsMemory() && rhs.getOwnsMemory()) {
-      if (subset().numSiteTable() != rhs.subset().numSiteTable())
-	QDP_error_exit("assignment with incompatible subset sizes");
-      CC* me = static_cast<CC*>(this);
-      operator_subtype_subtype(*me,OpAssign(),rhs,subset());
-    } else
-#if 0
-    if (!getOwnsMemory() && rhs.getOwnsMemory()) {
-      //std::cout << "view = own\n";
-      if (subset().numSiteTable() != rhs.subset().numSiteTable())
-	QDP_error_exit("assignment with incompatible subset sizes");
-      const int *tab = subset().siteTable().slice();
-      for(int j=0; j < subset().numSiteTable(); ++j) {
-	int i = tab[j];
-	getId()[i] = rhs.getId()[j];
+    if (getOwnsMemory() && rhs.getOwnsMemory())
+      {
+	if (subset().numSiteTable() != rhs.subset().numSiteTable())
+	  {
+	    QDP_error_exit("assignment with incompatible subset sizes");
+	  }
+	CC* me = static_cast<CC*>(this);
+	operator_subtype_subtype(*me,OpAssign(),rhs,subset());
       }
-    }
-    if (getOwnsMemory() && !rhs.getOwnsMemory()) {
-      //std::cout << "own = view\n";
-      if (subset().numSiteTable() != rhs.subset().numSiteTable())
-	QDP_error_exit("assignment with incompatible subset sizes");
-      const int *tab = rhs.subset().siteTable().slice();
-      for(int j=0; j < rhs.subset().numSiteTable(); ++j) {
-	int i = tab[j];
-	getId()[j] = rhs.getId()[i];
+    else
+      {
+	QDP_error_exit("assignment of two view subtypes is not supported");
       }
-    }
-    if (!getOwnsMemory() && !rhs.getOwnsMemory())
-#endif
-      QDP_error_exit("assignment of two view subtypes is not supported");
   }
 
 
@@ -124,13 +106,16 @@ public:
   inline
   void assign(const QDPExpr<T1,C1>& rhs)
   {
-    if (getOwnsMemory()) {
-      CC* me = static_cast<CC*>(this);
-      evaluate_subtype_type(*me,OpAssign(),rhs,subset());
-    } else {
-      C tmp(getId(),1.0);
-      evaluate(tmp,OpAssign(),rhs,subset());
-    }
+    if (getOwnsMemory())
+      {
+	CC* me = static_cast<CC*>(this);
+	evaluate_subtype_type(*me,OpAssign(),rhs,subset());
+      }
+    else
+      {
+	C tmp(getId(),1.0);
+	evaluate(tmp,OpAssign(),rhs,subset());
+      }
   }
 
   inline
@@ -536,21 +521,18 @@ public:
 
   int getId() const   { return static_cast<const CC*>(this)->getId();}
 
-  T* getF() {return static_cast<CC*>(this)->getF();}
-  T* getF() const {return static_cast<CC const *>(this)->getF();}
+  typename ScalarType<T>::Type_t* getF() {return static_cast<CC*>(this)->getF();}
+  typename ScalarType<T>::Type_t* getF() const {return static_cast<CC const *>(this)->getF();}
   const Subset& subset() const {return static_cast<const CC*>(this)->subset();}
 
 };
 
 
 
-#if 0  
 template<class T>
 struct LeafFunctor<QDPSubType<T,OLattice<T> >, ParamLeaf>
 {
-  typedef QDPSubTypeJIT<typename JITType<T>::Type_t,typename JITType<OLattice<T> >::Type_t>  TypeA_t;
-  //typedef typename JITType< OLattice<T> >::Type_t  TypeA_t;
-  typedef TypeA_t  Type_t;
+  typedef typename JITType< OSubLattice<T> >::Type_t  Type_t;
   inline static Type_t apply(const QDPSubType<T,OLattice<T> > &a, const ParamLeaf& p)
   {
     ParamRef    base_addr = llvm_add_param< typename WordType<T>::Type_t * >();
@@ -560,18 +542,15 @@ struct LeafFunctor<QDPSubType<T,OLattice<T> >, ParamLeaf>
 
 
 template<class T>
-struct LeafFunctor<QDPSubType<T,OScalar<T> >, ParamLeaf>
+struct LeafFunctor<QDPSubType<T,OLattice<T> >, ParamLeafScalar>
 {
-  typedef QDPSubTypeJIT<typename JITType<T>::Type_t,typename JITType<OScalar<T> >::Type_t>  TypeA_t;
-  //typedef typename JITType< OScalar<T> >::Type_t  TypeA_t;
-  typedef TypeA_t  Type_t;
-  inline static Type_t apply(const QDPSubType<T,OScalar<T> > &a, const ParamLeaf& p)
+  typedef typename JITType< OSubLattice<typename ScalarType<T>::Type_t> >::Type_t  Type_t;
+  inline static Type_t apply(const QDPSubType<T,OLattice<T> > &a, const ParamLeafScalar& p)
   {
     ParamRef    base_addr = llvm_add_param< typename WordType<T>::Type_t * >();
     return Type_t( base_addr );
   }
 };
-#endif
 
 
 template<class T, class C>
@@ -581,7 +560,6 @@ struct LeafFunctor<QDPSubType<T,C>, AddressLeaf>
   inline static
   Type_t apply(const QDPSubType<T,C>& s, const AddressLeaf& p) 
   {
-    //p.setAddr( QDP_get_global_cache().getDevicePtr( s.getId() ) );
     p.setId( s.getId() );
     return 0;
   }

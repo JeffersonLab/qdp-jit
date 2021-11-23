@@ -3,6 +3,9 @@
 
 namespace QDP
 {
+  bool qdp_jit_config_get_opt_shifts();
+  void qdp_jit_config_set_opt_shifts(bool v);
+
   bool jit_config_get_instcombine();
   bool jit_config_get_inline();
 
@@ -78,6 +81,12 @@ namespace QDP
   void jit_set_config_pool_stats();
   
 #ifdef QDP_DEEP_LOG
+  double jit_config_get_fuzzfactor();
+  void   jit_config_set_fuzzfactor(double i);
+
+  double jit_config_get_tolerance();
+  void   jit_config_set_tolerance(double i);
+
   bool        jit_config_deep_log();
   bool        jit_config_deep_log_create();
   std::string jit_config_deep_log_name();

@@ -365,6 +365,18 @@ namespace QDP {
 	    sscanf((*argv)[++i], "%s", &tmp[0]);
 	    jit_config_deep_set( tmp , false );
 	  }
+	else if (strcmp((*argv)[i], "-deep-log-tolerance")==0)
+	  {
+	    double d;
+	    sscanf((*argv)[++i], "%lf", &d);
+	    jit_config_set_tolerance(d);
+	  }
+	else if (strcmp((*argv)[i], "-deep-log-fuzzfactor")==0)
+	  {
+	    double d;
+	    sscanf((*argv)[++i], "%lf", &d);
+	    jit_config_set_fuzzfactor(d);
+	  }
 #endif
 #ifdef QDP_BACKEND_ROCM
 	else if (strcmp((*argv)[i], "-keep-files")==0) 
@@ -435,6 +447,10 @@ namespace QDP {
 	  {
 	    jit_config_set_gpu_direct(true);
 	  }
+	else if (strcmp((*argv)[i], "-opt-shift")==0) 
+	  {
+	    qdp_jit_config_set_opt_shifts(true); 
+	  }
 	else if (strcmp((*argv)[i], "-threadstack")==0)
 	  {
 	    int stack;
@@ -466,12 +482,6 @@ namespace QDP {
 	else if (strcmp((*argv)[i], "-codegen-verbose")==0) 
 	  {
 	    jit_config_set_verbose_output(true);
-	  }
-	else if (strcmp((*argv)[i], "-ptxdb")==0) 
-	  {
-	    char tmp[1024];
-	    sscanf((*argv)[++i], "%s", &tmp[0]);
-	    llvm_set_ptxdb(tmp);
 	  }
 	else if (strcmp((*argv)[i], "-defaultgpu")==0) 
 	  {
@@ -724,17 +734,6 @@ namespace QDP {
 		  QDPIO::cout << "  total time for dynamic loading:          " << time_dynload/1.e6 << " s\n";
 		}
 
-#ifndef QDP_BACKEND_ROCM
-		if (get_ptx_db_enabled())
-		  {
-		QDPIO::cout << "  ptx db file:                             " << get_ptx_db_fname() << "\n";
-		QDPIO::cout << "  ptx db size (number of functions):       " << get_ptx_db_size() << "\n";
-		  }
-		else
-		  {
-		QDPIO::cout << "  ptx db: (not used)\n";
-		  }
-#endif		
 #ifdef QDP_CUDA_SPECIAL
 		for ( auto it = get_jit_stats_special_names().begin() ; it != get_jit_stats_special_names().end(); it++ )
 		  {

@@ -27,7 +27,7 @@ namespace QDP {
  * portion is a part of the generic class, hence it is called a domain
  * and not a category
  */
-  template <class T, int N, template<class,int> class C> class PVectorREG //: public BaseREG<T,N,PVectorREG<T,N,C> >
+  template <class T, int N, template<class,int> class C> class PVectorREG
 {
   T F[N];
 public:
@@ -100,33 +100,9 @@ public:
     }
 
 
-#if 0
-  // NOTE: intentially avoid defining a copy constructor - let the compiler
-  // generate one via the bit copy mechanism. This effectively achieves
-  // the first form of the if below (QDP_USE_ARRAY_INITIALIZER) without having
-  // to use that syntax which is not strictly legal in C++.
-
-  //! Deep copy constructor
-#if defined(QDP_USE_ARRAY_INITIALIZER)
-  PVectorREG(const PVectorREG& a) : F(a.F) {}
-#else
-  /*! This is a copy form - legal but not necessarily efficient */
-  PVectorREG(const PVectorREG& a)
-    {
-     
-      for(int i=0; i < N; ++i)
-	F[i] = a.F[i];
-    }
-#endif
-#endif
-
-
 public:
         T& elem(int i)       {return F[i];}
   const T& elem(int i) const {return F[i];}
-
-  // T& elem(int i) {return JV<T,N>::getF()[i];}
-  // const T& elem(int i) const {return JV<T,N>::getF()[i];}
 };
 
 
@@ -137,6 +113,14 @@ public:
 // Traits classes 
 //-----------------------------------------------------------------------------
 
+
+  template <class T, int N, template<class,int> class C >
+  struct IsWordVec< PVectorREG<T,N,C > >
+  {
+    constexpr static bool value = IsWordVec<T>::value;
+  };
+
+  
 // Underlying word type
 template<class T1, int N, template<class,int> class C>
 struct WordType<PVectorREG<T1,N,C> > 
@@ -523,111 +507,6 @@ getSite(const PVectorREG<T,N,C>& s1, int innersite)
   return d;
 }
 
-#if 0
-//! Extract color vector components 
-/*! Generically, this is an identity operation. Defined differently under color */
-template<class T, int N, template<class,int> class C>
-inline typename UnaryReturn<PVectorREG<T,N,C>, FnPeekColorVectorREG>::Type_t
-peekColor(const PVectorREG<T,N,C>& l, int row)
-{
-  typename UnaryReturn<PVectorREG<T,N,C>, FnPeekColorVectorREG>::Type_t  d;
-
-  for(int i=0; i < N; ++i)
-    d.elem(i) = peekColor(l.elem(i),row);
-  return d;
-}
-
-//! Extract color matrix components 
-/*! Generically, this is an identity operation. Defined differently under color */
-template<class T, int N, template<class,int> class C>
-inline typename UnaryReturn<PVectorREG<T,N,C>, FnPeekColorMatrixREG>::Type_t
-peekColor(const PVectorREG<T,N,C>& l, int row, int col)
-{
-  typename UnaryReturn<PVectorREG<T,N,C>, FnPeekColorMatrixREG>::Type_t  d;
-
-  for(int i=0; i < N; ++i)
-    d.elem(i) = peekColor(l.elem(i),row,col);
-  return d;
-}
-
-//! Extract spin vector components 
-/*! Generically, this is an identity operation. Defined differently under spin */
-template<class T, int N, template<class,int> class C>
-inline typename UnaryReturn<PVectorREG<T,N,C>, FnPeekSpinVectorREG>::Type_t
-peekSpin(const PVectorREG<T,N,C>& l, int row)
-{
-  typename UnaryReturn<PVectorREG<T,N,C>, FnPeekSpinVectorREG>::Type_t  d;
-
-  for(int i=0; i < N; ++i)
-    d.elem(i) = peekSpin(l.elem(i),row);
-  return d;
-}
-
-//! Extract spin matrix components 
-/*! Generically, this is an identity operation. Defined differently under spin */
-template<class T, int N, template<class,int> class C>
-inline typename UnaryReturn<PVectorREG<T,N,C>, FnPeekSpinMatrixREG>::Type_t
-peekSpin(const PVectorREG<T,N,C>& l, int row, int col)
-{
-  typename UnaryReturn<PVectorREG<T,N,C>, FnPeekSpinMatrixREG>::Type_t  d;
-
-  for(int i=0; i < N; ++i)
-    d.elem(i) = peekSpin(l.elem(i),row,col);
-  return d;
-}
-
-//! Insert color vector components 
-/*! Generically, this is an identity operation. Defined differently under color */
-template<class T1, class T2, int N, template<class,int> class C>
-inline typename UnaryReturn<PVectorREG<T1,N,C>, FnPokeColorVectorREG>::Type_t&
-pokeColor(PVectorREG<T1,N,C>& l, const PVectorREG<T2,N,C>& r, int row)
-{
-  typedef typename UnaryReturn<PVectorREG<T1,N,C>, FnPokeColorVectorREG>::Type_t  Return_t;
-
-  for(int i=0; i < N; ++i)
-    pokeColor(l.elem(i),r.elem(i),row);
-  return static_cast<Return_t&>(l);
-}
-
-//! Insert color matrix components 
-/*! Generically, this is an identity operation. Defined differently under color */
-template<class T1, class T2, int N, template<class,int> class C>
-inline typename UnaryReturn<PVectorREG<T1,N,C>, FnPokeColorVectorREG>::Type_t&
-pokeColor(PVectorREG<T1,N,C>& l, const PVectorREG<T2,N,C>& r, int row, int col)
-{
-  typedef typename UnaryReturn<PVectorREG<T1,N,C>, FnPokeColorVectorREG>::Type_t  Return_t;
-
-  for(int i=0; i < N; ++i)
-    pokeColor(l.elem(i),r.elem(i),row,col);
-  return static_cast<Return_t&>(l);
-}
-
-//! Insert spin vector components 
-/*! Generically, this is an identity operation. Defined differently under spin */
-template<class T1, class T2, int N, template<class,int> class C>
-inline typename UnaryReturn<PVectorREG<T1,N,C>, FnPokeSpinVectorREG>::Type_t&
-pokeSpin(PVectorREG<T1,N,C>& l, const PVectorREG<T2,N,C>& r, int row)
-{
-  typedef typename UnaryReturn<PVectorREG<T1,N,C>, FnPokeSpinVectorREG>::Type_t  Return_t;
-
-  for(int i=0; i < N; ++i)
-    pokeSpin(l.elem(i),r.elem(i),row);
-  return static_cast<Return_t&>(l);
-}
-
-//! Insert spin matrix components 
-/*! Generically, this is an identity operation. Defined differently under spin */
-template<class T1, class T2, int N, template<class,int> class C>
-inline typename UnaryReturn<PVectorREG<T1,N,C>, FnPokeSpinVectorREG>::Type_t&
-pokeSpin(PVectorREG<T1,N,C>& l, const PVectorREG<T2,N,C>& r, int row, int col)
-{
-  typedef typename UnaryReturn<PVectorREG<T1,N,C>, FnPokeSpinVectorREG>::Type_t  Return_t;
-
-  for(int i=0; i < N; ++i)
-    pokeSpin(l.elem(i),r.elem(i),row,col);
-  return static_cast<Return_t&>(l);
-}
-#endif
 
 
 //! dest = 0
@@ -698,25 +577,6 @@ fill_gaussian(PVectorREG<T,N,C>& d, PVectorREG<T,N,C>& r1, PVectorREG<T,N,C>& r2
 }
 
 
-#if 0
-// Global sum over site indices only
-template<class T, int N, template<class,int> class C>
-struct UnaryReturn<PVectorREG<T,N,C>, FnSum > {
-  typedef C<typename UnaryReturn<T, FnSum>::Type_t, N>  Type_t;
-};
-
-template<class T, int N, template<class,int> class C>
-inline typename UnaryReturn<PVectorREG<T,N,C>, FnSum>::Type_t
-sum(const PVectorREG<T,N,C>& s1)
-{
-  typename UnaryReturn<PVectorREG<T,N,C>, FnSum>::Type_t  d;
-
-  for(int i=0; i < N; ++i)
-    d.elem(i) = sum(s1.elem(i));
-
-  return d;
-}
-#endif
 
 
 // InnerProduct (norm-seq) global sum = sum(tr(adj(s1)*s1))
@@ -797,52 +657,6 @@ localInnerProductReal(const PVectorREG<T1,N,C>& s1, const PVectorREG<T2,N,C>& s2
 }
 
 
-// This PVectorREG<T1,N,C> stuff versus PSpinVector<T1,N> is causing problems. 
-// When searching for type matching functions, the language does not allow
-// for varying template arguments to match a function. We should just move
-// away from PVectorREG to use PSpinVector and PColorVector. However, have to
-// replicate all the functions. Uggh - another day...
-
-//
-////! PVectorREG<T> = localInnerProduct(adj(PScalarREG<T1>)*PVectorREG<T1>)
-//template<class T1, class T2, int N, template<class,int> class C>
-//struct BinaryReturn<PScalarREG<T1>, PVectorREG<T2,N,C>, FnLocalInnerProduct> {
-//  typedef PVectorREG<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t, N, C>  Type_t;
-//};
-//
-//template<class T1, class T2, int N, template<class,int> class C>
-//inline PVectorREG<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t,N,C>
-//localInnerProduct(const PScalarREG<T1>& s1, const PVectorREG<T2,N,C>& s2)
-//{
-//  typename BinaryReturn<PScalarREG<T1>, PVectorREG<T2,N,C>, FnLocalInnerProduct>::Type_t  d;
-//
-//  for(int i=0; i < N; ++i)
-//    d.elem(i) = localInnerProduct(s1.elem(0), s2.elem(i));
-//
-//  return d;
-//}
-//
-//
-////! PScalarREG<T> = InnerProductReal(adj(PScalarREG<T1>)*PVectorREG<T1>)
-///*!
-// * return  realpart of InnerProduct(adj(s1)*s2)
-// */
-//template<class T1, class T2, int N, template<class,int> class C>
-//struct BinaryReturn<PScalarREG<T1>, PVectorREG<T2,N,C>, FnLocalInnerProductReal > {
-//  typedef PVectorREG<typename BinaryReturn<T1, T2, FnLocalInnerProductReal>::Type_t, N,C>  Type_t;
-//};
-//
-//template<class T1, class T2, int N, template<class,int> class C>
-//inline PVectorREG<typename BinaryReturn<T1, T2, FnLocalInnerProductReal>::Type_t,N,C>
-//localInnerProductReal(const PScalarREG<T1>& s1, const PVectorREG<T2,N,C>& s2)
-//{
-//  typename BinaryReturn<PScalarREG<T1>, PVectorREG<T2,N,C>, FnLocalInnerProductReal>::Type_t  d;
-//
-//  for(int i=0; i < N; ++i)
-//    d.elem(i) = localInnerProductReal(s1.elem(), s2.elem(i));
-//
-//  return d;
-//}
 
 
 //! PVectorREG<T> = where(PScalarREG, PVectorREG, PVectorREG)
@@ -869,6 +683,17 @@ where(const PScalarREG<T1>& a, const PVectorREG<T2,N,C>& b, const PVectorREG<T3,
 }
 
 
+template<class T, int N, template<class,int> class C>
+inline void 
+qdpPHI(PVectorREG<T,N,C>& d, 
+       const PVectorREG<T,N,C>& phi0, llvm::BasicBlock* bb0 ,
+       const PVectorREG<T,N,C>& phi1, llvm::BasicBlock* bb1 )
+{
+  for(int i=0; i < N; ++i)
+    qdpPHI(d.elem(i),
+	   phi0.elem(i),bb0,
+	   phi1.elem(i),bb1);
+}
 
 
 

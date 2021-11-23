@@ -274,7 +274,7 @@ namespace QDP
 
 	QDPIO::cout << "Initializing pool memory with value = " << setMemoryVal << "\n";
 	
-	gpu_memset( poolPtr , setMemoryVal , poolSize/sizeof(unsigned) );
+	gpu_memset( poolPtr , setMemoryVal , poolSize );
       }
     
     bufferAllocated=true;

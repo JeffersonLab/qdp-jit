@@ -30,46 +30,17 @@ namespace QDP {
       return ret;
     }
 
+    
 
     T elem( JitDeviceLayout lay , llvm::Value * index ) const
     {
       T F;
       IndexDomainVector args;
       args.push_back( make_pair( Layout::sitesOnNode() , index ) );
-#if defined (QDP_BACKEND_AVX)
-      if ( lay == JitDeviceLayout::Coalesced )
-	{
-	  llvm::Value* vecptr = llvm_cast_to_vector( llvm_derefParam(base_m) );
-	  F.setup( vecptr , lay , args );
-	}
-      else
-	{
-	  F.setup( llvm_derefParam(base_m) , lay , args );
-	}
-#else
-      F.setup( llvm_derefParam(base_m) , lay , args );
-#endif
-      return F;
-    }
-
-
-    typename ScalarType<T>::Type_t elemScalar( JitDeviceLayout lay , llvm::Value * index ) const
-    {
-      typename ScalarType<T>::Type_t F;
-      IndexDomainVector args;
-      args.push_back( make_pair( Layout::sitesOnNode() , index ) );
       F.setup( llvm_derefParam(base_m) , lay , args );
       return F;
     }
 
-    
-    // const T& elem( JitDeviceLayout lay , llvm::Value * index ) const
-    // {
-    //   IndexDomainVector args;
-    //   args.push_back( make_pair( Layout::sitesOnNode() , index ) );
-    //   F.setup( llvm_derefParam(base_m) , lay , args );
-    //   return F;
-    // }
 
 
     T elem( JitDeviceLayout lay , llvm::Value * index , llvm::Value * multi_index ) const
@@ -80,13 +51,6 @@ namespace QDP {
       F.setup( llvm_array_type_indirection( base_m , multi_index ) , lay , args );
       return F;
     }
-
-    // const T& elem( JitDeviceLayout lay , llvm::Value * index , llvm::Value * multi_index ) const {
-    //   IndexDomainVector args;
-    //   args.push_back( make_pair( Layout::sitesOnNode() , index ) );
-    //   F.setup( llvm_array_type_indirection( base_m , multi_index ) , lay , args );
-    //   return F;
-    // }
 
 
     void set_base( ParamRef p ) const
@@ -124,11 +88,6 @@ namespace QDP {
     }
 
     
-    // void copy( const OScalarJIT& rhs ) const
-    // {
-    //   base_m     = rhs.base_m;
-    // }
-
 
     llvm::Value* get_word_value() const
     {
@@ -143,7 +102,7 @@ namespace QDP {
       return F;
     }
 
-    
+
     typename REGType<T>::Type_t elemRegValue() const
     {
       typename REGType<T>::Type_t reg;
@@ -186,6 +145,16 @@ namespace QDP {
     typedef OLatticeJIT<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
   };
 
+  template<class T1, class T2, class Op>
+  struct BinaryReturn<OLatticeJIT<T1>, OScalarJIT<T2>, Op> {
+    typedef OLatticeJIT<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
+  };
+
+  template<class T1, class T2, class Op>
+  struct BinaryReturn<OScalarJIT<T1>, OLatticeJIT<T2>, Op> {
+    typedef OLatticeJIT<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
+  };
+  
   template<class T1, class T2, class Op>
   struct BinaryReturn<OScalarJIT<T1>, OScalarJIT<T2>, Op> {
     typedef OScalarJIT<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;

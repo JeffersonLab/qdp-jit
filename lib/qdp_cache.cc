@@ -47,11 +47,26 @@ namespace QDP
   {
     if ( jit_config_get_max_allocation() < 0   ||  (int)n_bytes <= jit_config_get_max_allocation() )
       {
-	return get__cache_pool_allocator().allocate( ptr , n_bytes , id );
+	bool ret = get__cache_pool_allocator().allocate( ptr , n_bytes , id );
+
+#ifdef QDP_DEEP_LOG    
+	if (ret)
+	  {
+	    gpu_memset( *ptr , 0 , n_bytes );
+	  }
+#endif
+	return ret;
       }
     else
       {
-	return gpu_malloc( ptr , n_bytes );
+	bool ret = gpu_malloc( ptr , n_bytes );
+#ifdef QDP_DEEP_LOG    
+	if (ret)
+	  {
+	    gpu_memset( *ptr , 0 , n_bytes );
+	  }
+#endif
+	return ret;
       }
   }
   void QDPCache::gpu_free_base( void * ptr , size_t n_bytes )
@@ -69,6 +84,11 @@ namespace QDP
   bool QDPCache::gpu_allocate_base( void ** ptr , size_t n_bytes , int id )
   {
     gpu_host_alloc( ptr , n_bytes );
+
+#ifdef QDP_DEEP_LOG    
+    gpu_memset( *ptr , 0 , n_bytes );
+#endif
+
     return true;
   }
   void QDPCache::gpu_free_base( void * ptr , size_t n_bytes )
@@ -213,23 +233,44 @@ namespace QDP
 
   int QDPCache::registrateOwnHostMemStatus( size_t size, const void* ptr , Status st )
   {
-    return add( size , Flags::OwnHostMemory , st , ptr , NULL , NULL );
+    if (size)
+      return add( size , Flags::OwnHostMemory , st , ptr , NULL , NULL );
+    else
+      return -1;    
   }
 
   int QDPCache::registrateOwnHostMemNoPage( size_t size, const void *ptr )
   {
-    return add( size , Flags::OwnHostMemory | Flags::NoPage , Status::host , ptr , NULL , NULL );
+    if (size)
+      return add( size , Flags::OwnHostMemory | Flags::NoPage , Status::host , ptr , NULL , NULL );
+    else
+      return -1;
   }
 
   int QDPCache::registrateOwnHostMem( size_t size, const void* ptr , QDPCache::LayoutFptr func )
   {
-    return add( size , Flags::OwnHostMemory , Status::host , ptr , NULL , func );
+    if (size)
+      return add( size , Flags::OwnHostMemory , Status::host , ptr , NULL , func );
+    else
+      return -1;
   }
 
   int QDPCache::registrate( size_t size, unsigned flags, QDPCache::LayoutFptr func )
   {
-    return add( size , Flags::Empty , Status::undef , NULL , NULL , func );
+    if (size)
+      return add( size , Flags::Empty , Status::undef , NULL , NULL , func );
+    else
+      return -1;
   }
+
+  int QDPCache::registrate_no_layout_conversion( size_t size )
+  {
+    if (size)
+      return add( size , Flags::Empty , Status::undef , NULL , NULL , NULL );
+    else
+      return -1;
+  }
+
   
 
   int QDPCache::getNewId()

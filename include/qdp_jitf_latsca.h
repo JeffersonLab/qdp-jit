@@ -14,32 +14,31 @@ namespace QDP {
       return;
 
 #ifdef QDP_DEEP_LOG
-    function.start = s.start();
-    function.count = s.numSiteTable();
-    function.size_T = sizeof(T);
     function.type_W = typeid(typename WordType<T>::Type_t).name();
     function.set_dest_id( dest.getId() );
+    function.set_is_lat(true);
 #endif
 
-    int th_count = s.numSiteTable();
-#if defined(QDP_BACKEND_AVX)
-    th_count /= Layout::virtualNodeNumber();
-#endif
 
+    int th_count = MasterMap::Instance().getCountInnerScalar(s,0);
     WorkgroupGuardExec workgroupGuardExec(th_count);
-	
+
     AddressLeaf addr_leaf(s);
     forEach(dest, addr_leaf, NullCombine());
     AddOpAddress<Op,AddressLeaf>::apply(op,addr_leaf);
     forEach(rhs, addr_leaf, NullCombine());
-
+    
     std::vector<QDPCache::ArgKey> ids;
     workgroupGuardExec.check(ids);
-    ids.push_back( s.getIdSiteTable() );
+    ids.push_back( MasterMap::Instance().getIdInnerScalar(s,0) );
     for(unsigned i=0; i < addr_leaf.ids.size(); ++i)
       ids.push_back( addr_leaf.ids[i] );
  
     jit_launch(function,th_count,ids);
+
+#ifdef QDP_DEEP_LOG
+    jit_deep_log(function);
+#endif
   }
 
 
@@ -47,32 +46,19 @@ namespace QDP {
   void
   function_lat_sca_build(JitFunction& function, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
   {
-    //std::cout << __PRETTY_FUNCTION__ << std::endl;
-
-    // std::ostringstream expr;
-    // expr << std::string(__PRETTY_FUNCTION__) << "_key=" << key;
-  
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
-	if (!function.empty())
-	  return;
-      }
-
     llvm_start_new_function("eval_lat_sca" , __PRETTY_FUNCTION__ );
 
     WorkgroupGuard workgroupGuard;
-
     ParamRef p_site_table = llvm_add_param<int*>();
 
-    ParamLeaf param_leaf;
+    ParamLeafScalar param_leaf;
 
-    typedef typename LeafFunctor<OLattice<T>, ParamLeaf>::Type_t  FuncRet_t;
+    typedef typename LeafFunctor<OLattice<T>, ParamLeafScalar>::Type_t  FuncRet_t;
     FuncRet_t dest_jit(forEach(dest, param_leaf, TreeCombine()));
 
-    auto op_jit = AddOpParam<Op,ParamLeaf>::apply(op,param_leaf);
+    auto op_jit = AddOpParam<Op,ParamLeafScalar>::apply(op,param_leaf);
 
-    typedef typename ForEach<QDPExpr<RHS,OScalar<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
+    typedef typename ForEach<QDPExpr<RHS,OScalar<T1> >, ParamLeafScalar, TreeCombine>::Type_t View_t;
     View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
 
     llvm::Value* r_idx_thread = llvm_thread_idx();
@@ -92,17 +78,10 @@ namespace QDP {
   void
   function_lat_sca_subtype_build(JitFunction& function, OSubLattice<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& rhs)
   {
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
-	if (!function.empty())
-	  return;
-      }
-
-
     llvm_start_new_function("eval_lat_sca_subtype",__PRETTY_FUNCTION__);
 
     WorkgroupGuard workgroupGuard;
+    ParamRef p_site_table = llvm_add_param<int*>();
       
     ParamLeaf param_leaf;
 
@@ -114,8 +93,10 @@ namespace QDP {
 
     workgroupGuard.check(r_idx_thread);
 
-    op_jit(dest_jit.elem( JitDeviceLayout::Scalar , r_idx_thread ), // Coalesced
-	   forEach(rhs_view, ViewLeaf( JitDeviceLayout::Scalar , r_idx_thread ), OpCombine()));
+    llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
+
+    op_jit(dest_jit.elemScalar( JitDeviceLayout::Scalar , r_idx ),
+	   forEach(rhs_view, ViewLeaf( JitDeviceLayout::Scalar , r_idx ), OpCombine()));
 
     jit_get_function( function );
   }
@@ -144,6 +125,7 @@ namespace QDP {
 
     std::vector<QDPCache::ArgKey> ids;
     workgroupGuardExec.check(ids);
+    ids.push_back( MasterMap::Instance().getIdInnerScalar(s,0) );
     for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
       ids.push_back( addr_leaf.ids[i] );
  

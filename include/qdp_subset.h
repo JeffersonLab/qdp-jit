@@ -168,10 +168,9 @@ public:
 //! Default all subset
 extern Subset all;
 
-
 //! Experimental 3d checkerboarding for temp_precond
 extern Set rb3;
-
+  
 //! Default 2-checkerboard (red/black) subset
 extern Set rb;
 

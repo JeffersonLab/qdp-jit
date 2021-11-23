@@ -10,11 +10,9 @@ namespace QDP {
   function_extract_exec(JitFunction& function, multi1d<OScalar<T> >& dest, const OLattice<T2>& src, const Subset& s)
   {
 #ifdef QDP_DEEP_LOG
-    // function.start = s.start();
-    // function.count = s.hasOrderedRep() ? s.numSiteTable() : Layout::sitesOnNode();
-    // function.size_T = sizeof(T);
-    // function.type_W = typeid(typename WordType<T>::Type_t).name();
-    // function.set_dest_id( dest.getId() );
+    function.type_W = typeid(typename WordType<T>::Type_t).name();
+    //function.set_dest_id( dest.getId() );
+    function.set_is_lat(false);
 #endif
     
     if (s.numSiteTable() < 1)
@@ -60,17 +58,10 @@ namespace QDP {
   inline void 
   function_extract_build(JitFunction& function, multi1d<OScalar<T> >& dest, const OLattice<T2>& src)
   {
-    if (ptx_db::db_enabled)
-      {
-	llvm_ptx_db( function , __PRETTY_FUNCTION__ );
-	if (!function.empty())
-	  return;
-      }
-    
     llvm_start_new_function("extract", __PRETTY_FUNCTION__ );
+
     WorkgroupGuard workgroupGuard;
     ParamRef p_site_table = llvm_add_param<int*>();
-
 
     OLatticeJIT< typename JITType<T >::Type_t > odata  ( llvm_add_param< typename WordType<T >::Type_t* >());
 

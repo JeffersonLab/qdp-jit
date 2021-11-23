@@ -13,181 +13,200 @@ namespace QDP {
   }
 
 
-  void MasterMap::remove_neg(multi1d<int>& out, const multi1d<int>& orig) const {
-    multi1d<int> c(Layout::sitesOnNode());
-    int num=0;
-    for(int i=0 ; i<Layout::sitesOnNode() ; ++i) 
-      if (orig[i] >= 0)
-	c[num++]=i;
-    out.resize( num );
-    for(int i=0; i < num; ++i)
-      out[i] = c[i];
-  }
 
 
-
-  void MasterMap::remove_neg_in_subset(multi1d<int>& out, const multi1d<int>& orig, int s_no ) const 
-  {
-    const Subset& subset = MasterSet::Instance().getSubset(s_no);
-
-    multi1d<int> c(Layout::sitesOnNode());
-
-    int num=0;
-    for(int i=0 ; i<Layout::sitesOnNode() ; ++i) 
-      if (orig[i] >= 0 && subset.isElement(i))
-	c[num++]=i;
-
-    out.resize( num );
-
-    for(int i=0; i < num; ++i)
-      out[i] = c[i];
-  }
-
-
-
-  void MasterMap::uniquify_list_inplace(multi1d<int>& out , const multi1d<int>& ll) const
-  {
-    multi1d<int> d(ll.size());
-
-    // Enter the first element as unique to prime the search
-    int ipos = 0;
-    int num = 0;
-    int prev_node;
-  
-    d[num++] = prev_node = ll[ipos++];
-
-    // Find the unique source nodes
-    while (ipos < ll.size())
-      {
-	int this_node = ll[ipos++];
-
-	if (this_node != prev_node)
-	  {
-	    // Has this node occured before?
-	    bool found = false;
-	    for(int i=0; i < num; ++i)
-	      if (d[i] == this_node)
-		{
-		  found = true;
-		  break;
-		}
-
-	    // If this is the first time this value has occurred, enter it
-	    if (! found)
-	      d[num++] = this_node;
-	  }
-
-	prev_node = this_node;
-      }
-
-    // Copy into a compact size array
-    out.resize(num);
-    for(int i=0; i < num; ++i) {
-      out[i] = d[i];
-    }
-
-  }
-
-
-  void MasterMap::registrate_work(const Map& map, const Subset& subset) {
-
-    int id = map.getId();
-    int s_no = subset.getId();
-
-    if (powerSet[ s_no].size() > id) {
-      return;
-    }
-    
+  namespace {
+    void remove_neg_in_subset(std::vector<int>& out, const std::vector<int>& orig, int s_no )
     {
-      if (powerSet[ s_no].size() < id)
-	{
-	  int tmp = id;
-	  int log2id = 0;
-	  while (tmp >>= 1) ++log2id;
-	  assert(log2id > 0);
-	  log2id--;
-	  assert( vecPMap.size() > log2id );
-	  registrate_work( *vecPMap.at(log2id) , subset );
-	}
+      const Subset& subset = MasterSet::Instance().getSubset(s_no);
 
-      assert( powerSet[ s_no].size() == id );
+      out.resize(0);
 
-      powerSet[s_no].resize( id << 1 );
-      powerSetC[s_no].resize( id << 1 );
-      idInner[s_no].resize( id << 1 );
-      idFace[s_no].resize( id << 1 );
-
-      for (int i = 0 ; i < id ; ++i ) {
-	
-	multi1d<int> ct(Layout::sitesOnNode()); // complement, inner region
-	multi1d<int> pt(Layout::sitesOnNode()); // positive, union of receive sites
-	for(int q=0 ; q<Layout::sitesOnNode() ; ++q) {
-	  ct[q]=q;
-	  pt[q]=-1;
-	}
-
-	for (int q = 0 ; q < powerSet[s_no][i]->size() ; ++q ) {    // !!
-	  ct[ (*powerSet[s_no][i])[q] ] = -1;
-	  pt[ (*powerSet[s_no][i])[q] ] = (*powerSet[s_no][i])[q];
-	}
-
-	map.getRoffsetsId( subset ); // make sure the lazy part was computed!
-	for (int q = 0; q < map.roffset( subset ).size() ; ++q ) {
-	  ct[ map.roffset( subset )[q] ] = -1;
-	  pt[ map.roffset( subset )[q] ] = map.roffset( subset )[q];
-	}
-
-	powerSet[s_no][i|id] = new multi1d<int>;
-	powerSetC[s_no][i|id]= new multi1d<int>;
-
-	remove_neg_in_subset( *powerSetC[s_no][i|id] , ct , s_no );
-	remove_neg_in_subset( *powerSet[s_no][i|id] , pt , s_no );
-
-	assert( idFace.size() > s_no );
-	assert( idFace[s_no].size() > (i|id) );
-
-	assert( idInner.size() > s_no );
-	assert( idInner[s_no].size() > (i|id) );
-
-	idFace[s_no][i|id] = QDP_get_global_cache().registrateOwnHostMem( powerSet[s_no][i|id]->size() * sizeof(int) , 
-									  powerSet[s_no][i|id]->slice() , NULL );
-
-	idInner[s_no][i|id] = QDP_get_global_cache().registrateOwnHostMem( powerSetC[s_no][i|id]->size() * sizeof(int) , 
-									   powerSetC[s_no][i|id]->slice() , NULL );
-
-      }
+      for(int i=0 ; i<Layout::sitesOnNode() ; ++i) 
+	if (orig[i] >= 0 && subset.isElement(i))
+	  out.push_back( i );
     }
-
   }
 
 
-  int MasterMap::registrate_justid(const Map& map) {
+
+
+  
+  void MasterMap::generate_tables(const Subset& subset, int bitmask)
+  {
+    int s_no = subset.getId();
+    auto key = make_pair(s_no,bitmask);
+
+    //QDPIO::cout << "generate_tables  subset = " << s_no << "  bitmask = " << bitmask << std::endl;
+    
+    //
+    // check if (subset,map) already generated
+    //
+    if (mapTables.count( key ))
+      return;
+
+    //QDPIO::cout << "generating tables for subset_id = " << s_no << " bitmask = " << bitmask << std::endl;
+
+    tables t;
+
+    std::vector<int> t_roffset( Layout::sitesOnNode() , -1 );
+#ifdef QDP_BACKEND_AVX
+    std::vector<int> t_loffset( Layout::sitesOnNode() , -1 );
+    std::vector<int> t_innerVNodeSIMD( Layout::sitesOnNode() , -1 );
+#endif
+    
+    std::vector<int> t_innerScalar( Layout::sitesOnNode());
+    for( int q = 0 ; q < Layout::sitesOnNode() ; ++q )
+      {
+	t_innerScalar[ q ] = q ;
+      }
+
+#ifdef QDP_BACKEND_AVX
+    auto& vnode = *mapTables.at( make_pair(s_no,0) ).innerVNodeSIMD;
+    for( int q = 0 ; q < vnode.size() ; ++q )
+      {
+	t_innerVNodeSIMD[ vnode[q] ] = vnode[q];
+      }
+#endif
+    
+    int bit = 1;
+    //QDPIO::cout << "adding masks.. " << std::endl;
+    while( (1 << (bit-1)) <= bitmask )
+      {
+	if ( (1 << (bit-1)) & bitmask )
+	  {
+	    //QDPIO::cout << "adding mask: " << bit << std::endl;
+	
+	    const Map& map(*vecPMap.at( bit-1 ));
+
+	    // roffset
+	    //
+	    map.getRoffsetsId( subset ); // make sure the lazy part was computed!
+#ifdef QDP_BACKEND_AVX
+	    for (int q = 0; q < map.loffset( subset ).size() ; ++q )
+	      {
+		t_loffset       [ map.loffset( subset )[q] ] = map.loffset( subset )[q];
+		t_innerVNodeSIMD[ map.loffset( subset )[q] ] = -1;
+	      }
+#endif
+	
+	    for (int q = 0; q < map.roffset( subset ).size() ; ++q )
+	      {
+		t_roffset       [ map.roffset( subset )[q] ] = map.roffset( subset )[q];
+		t_innerScalar   [ map.roffset( subset )[q] ] = -1;
+#ifdef QDP_BACKEND_AVX
+		t_loffset       [ map.roffset( subset )[q] ] = -1;  // remove the roffset from the loffset
+		t_innerVNodeSIMD[ map.roffset( subset )[q] ] = -1;
+#endif
+	      }
+	  }
+	bit++;
+      }
+
+    remove_neg_in_subset( *t.face             , t_roffset        , s_no );
+    remove_neg_in_subset( *t.innerScalar      , t_innerScalar    , s_no );
+#ifdef QDP_BACKEND_AVX
+    remove_neg_in_subset( *t.innerVNodeScalar , t_loffset        , s_no );
+    remove_neg_in_subset( *t.innerVNodeSIMD   , t_innerVNodeSIMD , s_no );
+#endif
+    
+    // QDPIO::cout << "face count             = " << t.face->size() << std::endl;
+    // QDPIO::cout << "innerScalar count      = " << t.innerScalar->size() << std::endl;
+#ifdef QDP_BACKEND_AVX
+    // QDPIO::cout << "innerVNodeScalar count = " << t.innerVNodeScalar->size() << std::endl;
+    // QDPIO::cout << "innerVNodeSIMD count   = " << t.innerVNodeSIMD->size() << std::endl;
+#endif
+    
+    t.id_face             = QDP_get_global_cache().registrateOwnHostMem( t.face->size() * sizeof(int)             , t.face->data() , NULL );
+    t.id_innerScalar      = QDP_get_global_cache().registrateOwnHostMem( t.innerScalar->size() * sizeof(int)      , t.innerScalar->data() , NULL );
+#ifdef QDP_BACKEND_AVX
+    t.id_innerVNodeScalar = QDP_get_global_cache().registrateOwnHostMem( t.innerVNodeScalar->size() * sizeof(int) , t.innerVNodeScalar->data() , NULL );
+    t.id_innerVNodeSIMD   = QDP_get_global_cache().registrateOwnHostMem( t.innerVNodeSIMD->size() * sizeof(int)   , t.innerVNodeSIMD->data() , NULL );
+#endif
+    
+    // Now insert the whole thing
+    //
+    mapTables[ key ] = t;
+  }
+
+
+  
+
+  int MasterMap::register_justid(const Map& map)
+  {
     int id = 1 << vecPMap.size();
     vecPMap.push_back(&map);
     return id;
   }
 
   
-  int MasterMap::getIdInner(const Subset& s,int bitmask) const {
-    assert( s.getId() >= 0 && (unsigned)s.getId() < idInner.size() && "subset Id out of range");
-    assert( bitmask > 0 && (unsigned)bitmask < idInner[s.getId()].size() && "bitmask out of range");
-    return idInner[s.getId()][bitmask]; 
+  // ----------------------------------
+#ifdef QDP_BACKEND_AVX
+  int MasterMap::getCountVNodeInnerSIMD  (const Subset& s,int bitmask) 
+  {
+    generate_tables(s,bitmask);
+    auto key = make_pair(s.getId(),bitmask);
+    return mapTables.at(key).innerVNodeSIMD->size();
   }
-  int MasterMap::getIdFace(const Subset& s,int bitmask) const {
-    assert( s.getId() >= 0 && (unsigned)s.getId() < idFace.size() && "subset Id out of range");
-    assert( bitmask > 0 && (unsigned)bitmask < idFace[s.getId()].size() && "bitmask out of range");
-    return idFace[s.getId()][bitmask];
+  
+  int MasterMap::getCountVNodeInnerScalar(const Subset& s,int bitmask) 
+  {
+    generate_tables(s,bitmask);
+    auto key = make_pair(s.getId(),bitmask);
+    return mapTables.at(key).innerVNodeScalar->size();
   }
-  int MasterMap::getCountInner(const Subset& s,int bitmask) const {
-    assert( s.getId() >= 0 && (unsigned)s.getId() < powerSet.size() && "subset Id out of range");
-    assert( bitmask > 0 && (unsigned)bitmask < powerSetC[s.getId()].size() && "bitmask out of range");
-    return powerSetC[s.getId()][bitmask]->size(); 
+#endif
+  
+  int MasterMap::getCountInnerScalar     (const Subset& s,int bitmask) 
+  {
+    generate_tables(s,bitmask);
+    auto key = make_pair(s.getId(),bitmask);
+    return mapTables.at(key).innerScalar->size();
   }
-  int MasterMap::getCountFace(const Subset& s,int bitmask) const {
-    assert( s.getId() >= 0 && (unsigned)s.getId() < powerSet.size() && "subset Id out of range");
-    assert( bitmask > 0 && (unsigned)bitmask < powerSet[s.getId()].size() && "bitmask out of range");
-    return powerSet[s.getId()][bitmask]->size(); 
+  
+  int MasterMap::getCountFace            (const Subset& s,int bitmask) 
+  {
+    generate_tables(s,bitmask);
+    auto key = make_pair(s.getId(),bitmask);
+    return mapTables.at(key).face->size();
   }
+
+
+  // ---------------------
+
+  
+#ifdef QDP_BACKEND_AVX
+  int MasterMap::getIdVNodeInnerSIMD  (const Subset& s,int bitmask) 
+  {
+    generate_tables(s,bitmask);
+    auto key = make_pair(s.getId(),bitmask);
+    return mapTables.at(key).id_innerVNodeSIMD;
+  }
+  
+  int MasterMap::getIdVNodeInnerScalar(const Subset& s,int bitmask) 
+  {
+    generate_tables(s,bitmask);
+    auto key = make_pair(s.getId(),bitmask);
+    return mapTables.at(key).id_innerVNodeScalar;
+  }
+#endif
+  
+  int MasterMap::getIdInnerScalar     (const Subset& s,int bitmask) 
+  {
+    generate_tables(s,bitmask);
+    auto key = make_pair(s.getId(),bitmask);
+    return mapTables.at(key).id_innerScalar;
+  }
+  
+  int MasterMap::getIdFace            (const Subset& s,int bitmask) 
+  {
+    generate_tables(s,bitmask);
+    auto key = make_pair(s.getId(),bitmask);
+    return mapTables.at(key).id_face;
+  }
+
+  
+
 
 
 } // namespace QDP

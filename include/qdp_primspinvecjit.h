@@ -23,7 +23,6 @@ namespace QDP {
 //! Primitive spin Vector class
 template <class T, int N> class PSpinVectorJIT: public BaseJIT<T,N>
 {
-  //PSpinVectorJIT(const PSpinVectorJIT& a);
 public:
 
   // Default constructing should be possible
@@ -36,15 +35,6 @@ public:
       this->elem(i) = a.elem(i);
   }
 
-  // template<class T1>
-  // inline
-  // PSpinVectorJIT& assign(const PSpinVectorREG<T1, N>& rhs)
-  // {
-  //   for(int i=0; i < N; i++) 
-  //     elem(i) = rhs.elem(i);
-
-  //   return *this;
-  // }
 
 
   template<class T1> 
@@ -104,9 +94,6 @@ public:
 public:
         T& elem(int i)       {return this->arrayF(i);}
   const T& elem(int i) const {return this->arrayF(i);}
-
-  // T& elem(int i) {return JV<T,N>::getF()[i];}
-  // const T& elem(int i) const {return JV<T,N>::getF()[i];}
 };
 
 
@@ -394,45 +381,6 @@ getSite(const PSpinVectorJIT<T,N>& s1, int innersite)
   return d;
 }
 
-// //! Extract color vector components 
-// /*! Generically, this is an identity operation. Defined differently under color */
-// template<class T, int N>
-// inline typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekColorVectorJIT >::Type_t
-// peekColor(const PSpinVectorJIT<T,N>& l, int row)
-// {
-//   typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekColorVectorJIT >::Type_t  d;
-
-//   for(int i=0; i < N; ++i)
-//     d.elem(i) = peekColor(l.elem(i),row);
-//   return d;
-// }
-
-// //! Extract color matrix components 
-// /*! Generically, this is an identity operation. Defined differently under color */
-// template<class T, int N>
-// inline typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekColorMatrixJIT >::Type_t
-// peekColor(const PSpinVectorJIT<T,N>& l, int row, int col)
-// {
-//   typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekColorMatrixJIT >::Type_t  d;
-
-//   for(int i=0; i < N; ++i)
-//     d.elem(i) = peekColor(l.elem(i),row,col);
-//   return d;
-// }
-
-
-// //! Extract spin matrix components 
-// /*! Generically, this is an identity operation. Defined differently under spin */
-// template<class T, int N>
-// inline typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekSpinMatrixJIT>::Type_t
-// peekSpin(const PSpinVectorJIT<T,N>& l, int row, int col)
-// {
-//   typename UnaryReturn<PSpinVectorJIT<T,N>, FnPeekSpinMatrixJIT>::Type_t  d;
-
-//   for(int i=0; i < N; ++i)
-//     d.elem(i) = peekSpin(l.elem(i),row,col);
-//   return d;
-// }
 
 //! Insert color vector components 
 /*! Generically, this is an identity operation. Defined differently under color */
@@ -447,44 +395,6 @@ pokeColor(PSpinVectorJIT<T1,N>& l, const PSpinVectorREG<T2,N>& r, llvm::Value* r
   return static_cast<Return_t&>(l);
 }
 
-// //! Insert color matrix components 
-// /*! Generically, this is an identity operation. Defined differently under color */
-// template<class T1, class T2, int N>
-// inline typename UnaryReturn<PSpinVectorJIT<T1,N>, FnPokeColorVectorJIT>::Type_t&
-// pokeColor(PSpinVectorJIT<T1,N>& l, const PSpinVectorJIT<T2,N>& r, int row, int col)
-// {
-//   typedef typename UnaryReturn<PSpinVectorJIT<T1,N>, FnPokeColorVectorJIT>::Type_t  Return_t;
-
-//   for(int i=0; i < N; ++i)
-//     pokeColor(l.elem(i),r.elem(i),row,col);
-//   return static_cast<Return_t&>(l);
-// }
-
-// //! Insert spin vector components 
-// /*! Generically, this is an identity operation. Defined differently under spin */
-// template<class T1, class T2, int N>
-// inline typename UnaryReturn<PSpinVectorJIT<T1,N>, FnPokeSpinVectorJIT>::Type_t&
-// pokeSpin(PSpinVectorJIT<T1,N>& l, const PSpinVectorJIT<T2,N>& r, int row)
-// {
-//   typedef typename UnaryReturn<PSpinVectorJIT<T1,N>, FnPokeSpinVectorJIT>::Type_t  Return_t;
-
-//   for(int i=0; i < N; ++i)
-//     pokeSpin(l.elem(i),r.elem(i),row);
-//   return static_cast<Return_t&>(l);
-// }
-
-// //! Insert spin matrix components 
-// /*! Generically, this is an identity operation. Defined differently under spin */
-// template<class T1, class T2, int N>
-// inline typename UnaryReturn<PSpinVectorJIT<T1,N>, FnPokeSpinVectorJIT>::Type_t&
-// pokeSpin(PSpinVectorJIT<T1,N>& l, const PSpinVectorJIT<T2,N>& r, int row, int col)
-// {
-//   typedef typename UnaryReturn<PSpinVectorJIT<T1,N>, FnPokeSpinVectorJIT>::Type_t  Return_t;
-
-//   for(int i=0; i < N; ++i)
-//     pokeSpin(l.elem(i),r.elem(i),row,col);
-//   return static_cast<Return_t&>(l);
-// }
 
 
 //! dest = 0
@@ -535,25 +445,6 @@ gather_sites(PSpinVectorJIT<T,N> d,
 
 
 
-#if 0
-// Global sum over site indices only
-template<class T, int N>
-struct UnaryReturn<PSpinVectorJIT<T,N>, FnSum > {
-  typedef PSpinVectorJITtypename UnaryReturn<T, FnSum>::Type_t, N>  Type_t;
-};
-
-template<class T, int N>
-inline typename UnaryReturn<PSpinVectorJIT<T,N>, FnSum>::Type_t
-sum(const PSpinVectorJIT<T,N>& s1)
-{
-  typename UnaryReturn<PSpinVectorJIT<T,N>, FnSum>::Type_t  d;
-
-  for(int i=0; i < N; ++i)
-    d.elem(i) = sum(s1.elem(i));
-
-  return d;
-}
-#endif
 
 
 
@@ -607,6 +498,14 @@ where(const PScalarJIT<T1>& a, const PSpinVectorJIT<T2,N>& b, const PSpinVectorJ
 // Traits classes 
 //-----------------------------------------------------------------------------
 
+
+template<class T1, int N>
+struct ScalarType< PSpinVectorJIT<T1,N> >
+{
+  typedef PSpinVectorJIT< typename ScalarType<T1>::Type_t,N > Type_t;
+};
+
+
 template<class T1, int N>
 struct REGType<PSpinVectorJIT<T1,N> > 
 {
@@ -658,260 +557,10 @@ struct LatticeScalar<PSpinVectorJIT<T,N> > {
   typedef PSpinVectorJIT<typename LatticeScalar<T>::Type_t, N>  Type_t;
 };
 
-//-----------------------------------------------------------------------------
-// Traits classes to support return types
-//-----------------------------------------------------------------------------
-
-// Default unary(PSpinVectorJIT) -> PSpinVectorJIT
-template<class T1, int N, class Op>
-struct UnaryReturn<PSpinVectorJIT<T1,N>, Op> {
-  typedef PSpinVectorJIT<typename UnaryReturn<T1, Op>::Type_t, N>  Type_t;
-};
-
-// Default binary(PScalarJIT,PSpinVectorJIT) -> PSpinVectorJIT
-template<class T1, class T2, int N, class Op>
-struct BinaryReturn<PScalarJIT<T1>, PSpinVectorJIT<T2,N>, Op> {
-  typedef PSpinVectorJIT<typename BinaryReturn<T1, T2, Op>::Type_t, N>  Type_t;
-};
-
-// Default binary(PSpinMatrixJIT,PSpinVectorJIT) -> PSpinVectorJIT
-template<class T1, class T2, int N, class Op>
-struct BinaryReturn< PSpinMatrixJIT<T1,N>, PSpinVectorJIT<T2,N>, Op> {
-  typedef PSpinVectorJIT<typename BinaryReturn<T1, T2, Op>::Type_t, N>  Type_t;
-};
-
-
-// Default binary(PMatrixJIT,PSpinVectorJIT) -> PSpinVectorJIT
-template<class T1, class T2, int N, template <class,int> class C1, class Op>
-struct BinaryReturn< PMatrixJIT<T1,N,C1>, PSpinVectorJIT<T2,N>, Op> {
-  typedef PSpinVectorJIT<typename BinaryReturn<T1, T2, Op>::Type_t, N>  Type_t;
-};
-
-
-// Default binary(PSpinVectorJIT,PScalarJIT) -> PSpinVectorJIT
-template<class T1, class T2, int N, class Op>
-struct BinaryReturn<PSpinVectorJIT<T1,N>, PScalarJIT<T2>, Op> {
-  typedef PSpinVectorJIT<typename BinaryReturn<T1, T2, Op>::Type_t, N>  Type_t;
-};
-
-// Default binary(PSpinVectorJIT,PSpinVectorJIT) -> PSpinVectorJIT
-template<class T1, class T2, int N, class Op>
-struct BinaryReturn<PSpinVectorJIT<T1,N>, PSpinVectorJIT<T2,N>, Op> {
-  typedef PSpinVectorJIT<typename BinaryReturn<T1, T2, Op>::Type_t, N>  Type_t;
-};
-
-
-#if 0
-template<class T1, class T2>
-struct UnaryReturn<PScalarJIT<T2>, OpCast<T1> > {
-  typedef PScalarJIT<typename UnaryReturn<T, OpCast>::Type_t>  Type_t;
-//  typedef T1 Type_t;
-};
-#endif
-
-
-// Assignment is different
-template<class T1, class T2, int N>
-struct BinaryReturn<PSpinVectorJIT<T1,N>, PSpinVectorJIT<T2,N>, OpAssign > {
-  typedef PSpinVectorJIT<T1,N> &Type_t;
-};
-
-template<class T1, class T2, int N>
-struct BinaryReturn<PSpinVectorJIT<T1,N>, PSpinVectorJIT<T2,N>, OpAddAssign > {
-  typedef PSpinVectorJIT<T1,N> &Type_t;
-};
- 
-template<class T1, class T2, int N>
-struct BinaryReturn<PSpinVectorJIT<T1,N>, PSpinVectorJIT<T2,N>, OpSubtractAssign > {
-  typedef PSpinVectorJIT<T1,N> &Type_t;
-};
- 
-template<class T1, class T2, int N>
-struct BinaryReturn<PSpinVectorJIT<T1,N>, PScalarJIT<T2>, OpMultiplyAssign > {
-  typedef PSpinVectorJIT<T1,N> &Type_t;
-};
- 
-template<class T1, class T2, int N>
-struct BinaryReturn<PSpinVectorJIT<T1,N>, PScalarJIT<T2>, OpDivideAssign > {
-  typedef PSpinVectorJIT<T1,N> &Type_t;
-};
- 
-
-
-// SpinVector
-template<class T, int N>
-struct UnaryReturn<PSpinVectorJIT<T,N>, FnNorm2 > {
-  typedef PScalarJIT<typename UnaryReturn<T, FnNorm2>::Type_t>  Type_t;
-};
-
-template<class T, int N>
-struct UnaryReturn<PSpinVectorJIT<T,N>, FnLocalNorm2 > {
-  typedef PScalarJIT<typename UnaryReturn<T, FnLocalNorm2>::Type_t>  Type_t;
-};
-
-template<class T1, class T2, int N>
-struct BinaryReturn<PSpinVectorJIT<T1,N>, PSpinVectorJIT<T2,N>, FnInnerProduct> {
-  typedef PScalarJIT<typename BinaryReturn<T1, T2, FnInnerProduct>::Type_t>  Type_t;
-};
-
-template<class T1, class T2, int N>
-struct BinaryReturn<PSpinVectorJIT<T1,N>, PSpinVectorJIT<T2,N>, FnLocalInnerProduct> {
-  typedef PScalarJIT<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>  Type_t;
-};
-
-template<class T1, class T2, int N>
-struct BinaryReturn<PSpinVectorJIT<T1,N>, PSpinVectorJIT<T2,N>, FnInnerProductReal> {
-  typedef PScalarJIT<typename BinaryReturn<T1, T2, FnInnerProductReal>::Type_t>  Type_t;
-};
-
-template<class T1, class T2, int N>
-struct BinaryReturn<PSpinVectorJIT<T1,N>, PSpinVectorJIT<T2,N>, FnLocalInnerProductReal> {
-  typedef PScalarJIT<typename BinaryReturn<T1, T2, FnLocalInnerProductReal>::Type_t>  Type_t;
-};
-
-
-template<class T1, class T2, int N>
-inline PScalarJIT<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>
-localInnerProduct(const PSpinVectorJIT<T1,N>& s1, const PSpinVectorJIT<T2,N>& s2)
-{
-  PScalarJIT<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>  d;
-
-  d.elem() = localInnerProduct(s1.elem(0), s2.elem(0));
-  for(int i=1; i < N; ++i)
-    d.elem() += localInnerProduct(s1.elem(i), s2.elem(i));
-
-  return d;
-}
-
-template<class T1, class T2, int N>
-inline PScalarJIT<typename BinaryReturn<T1, T2, FnLocalInnerProductReal>::Type_t>
-localInnerProductReal(const PSpinVectorJIT<T1,N>& s1, const PSpinVectorJIT<T2,N>& s2)
-{
-  PScalarJIT<typename BinaryReturn<T1, T2, FnLocalInnerProductReal>::Type_t>  d;
-
-  d.elem() = localInnerProductReal(s1.elem(0), s2.elem(0));
-  for(int i=1; i < N; ++i)
-    d.elem() += localInnerProductReal(s1.elem(i), s2.elem(i));
-
-  return d;
-}
-
-
-// Generic Spin projection
-template<class T, int N>
-struct UnaryReturn<PSpinVectorJIT<T,N>, FnSpinProject > {
-  typedef PSpinVectorJIT<typename UnaryReturn<T, FnSpinProject>::Type_t, (N>>1) >  Type_t;
-};
-
-// spin projection for each direction
-template<class T, int N>
-struct UnaryReturn<PSpinVectorJIT<T,N>, FnSpinProjectDir0Plus > {
-  typedef PSpinVectorJIT<typename UnaryReturn<T, FnSpinProjectDir0Plus>::Type_t, (N>>1) >  Type_t;
-};
-
-template<class T, int N>
-struct UnaryReturn<PSpinVectorJIT<T,N>, FnSpinProjectDir1Plus > {
-  typedef PSpinVectorJIT<typename UnaryReturn<T, FnSpinProjectDir1Plus>::Type_t, (N>>1) >  Type_t;
-};
-
-template<class T, int N>
-struct UnaryReturn<PSpinVectorJIT<T,N>, FnSpinProjectDir2Plus > {
-  typedef PSpinVectorJIT<typename UnaryReturn<T, FnSpinProjectDir2Plus>::Type_t, (N>>1) >  Type_t;
-};
-
-template<class T, int N>
-struct UnaryReturn<PSpinVectorJIT<T,N>, FnSpinProjectDir3Plus > {
-  typedef PSpinVectorJIT<typename UnaryReturn<T, FnSpinProjectDir3Plus>::Type_t, (N>>1) >  Type_t;
-};
-
-template<class T, int N>
-struct UnaryReturn<PSpinVectorJIT<T,N>, FnSpinProjectDir0Minus > {
-  typedef PSpinVectorJIT<typename UnaryReturn<T, FnSpinProjectDir0Minus>::Type_t, (N>>1) > Type_t;
-};
-
-template<class T, int N>
-struct UnaryReturn<PSpinVectorJIT<T,N>, FnSpinProjectDir1Minus > {
-  typedef PSpinVectorJIT<typename UnaryReturn<T, FnSpinProjectDir1Minus>::Type_t, (N>>1) >  Type_t;
-};
-
-template<class T, int N>
-struct UnaryReturn<PSpinVectorJIT<T,N>, FnSpinProjectDir2Minus > {
-  typedef PSpinVectorJIT<typename UnaryReturn<T, FnSpinProjectDir2Minus>::Type_t, (N>>1) >  Type_t;
-};
-
-template<class T, int N>
-struct UnaryReturn<PSpinVectorJIT<T,N>, FnSpinProjectDir3Minus > {
-  typedef PSpinVectorJIT<typename UnaryReturn<T, FnSpinProjectDir3Minus>::Type_t, (N>>1) >  Type_t;
-};
-
-
-// Generic Spin reconstruction
-template<class T, int N>
-struct UnaryReturn<PSpinVectorJIT<T,N>, FnSpinReconstruct > {
-  typedef PSpinVectorJIT<typename UnaryReturn<T, FnSpinReconstruct>::Type_t, (N<<1) >  Type_t;
-};
-
-// spin reconstruction for each direction
-template<class T, int N>
-struct UnaryReturn<PSpinVectorJIT<T,N>, FnSpinReconstructDir0Plus > {
-  typedef PSpinVectorJIT<typename UnaryReturn<T, FnSpinReconstructDir0Plus>::Type_t, (N<<1) >  Type_t;
-};
-
-template<class T, int N>
-struct UnaryReturn<PSpinVectorJIT<T,N>, FnSpinReconstructDir1Plus > {
-  typedef PSpinVectorJIT<typename UnaryReturn<T, FnSpinReconstructDir1Plus>::Type_t, (N<<1) >  Type_t;
-};
-
-template<class T, int N>
-struct UnaryReturn<PSpinVectorJIT<T,N>, FnSpinReconstructDir2Plus > {
-  typedef PSpinVectorJIT<typename UnaryReturn<T, FnSpinReconstructDir2Plus>::Type_t, (N<<1) >  Type_t;
-};
-
-template<class T, int N>
-struct UnaryReturn<PSpinVectorJIT<T,N>, FnSpinReconstructDir3Plus > {
-  typedef PSpinVectorJIT<typename UnaryReturn<T, FnSpinReconstructDir3Plus>::Type_t, (N<<1) >  Type_t;
-};
-
-template<class T, int N>
-struct UnaryReturn<PSpinVectorJIT<T,N>, FnSpinReconstructDir0Minus > {
-  typedef PSpinVectorJIT<typename UnaryReturn<T, FnSpinReconstructDir0Minus>::Type_t, (N<<1) >  Type_t;
-};
-
-template<class T, int N>
-struct UnaryReturn<PSpinVectorJIT<T,N>, FnSpinReconstructDir1Minus > {
-  typedef PSpinVectorJIT<typename UnaryReturn<T, FnSpinReconstructDir1Minus>::Type_t, (N<<1) >  Type_t;
-};
-
-template<class T, int N>
-struct UnaryReturn<PSpinVectorJIT<T,N>, FnSpinReconstructDir2Minus > {
-  typedef PSpinVectorJIT<typename UnaryReturn<T, FnSpinReconstructDir2Minus>::Type_t, (N<<1) >  Type_t;
-};
-
-template<class T, int N>
-struct UnaryReturn<PSpinVectorJIT<T,N>, FnSpinReconstructDir3Minus > {
-  typedef PSpinVectorJIT<typename UnaryReturn<T, FnSpinReconstructDir3Minus>::Type_t, (N<<1) >  Type_t;
-};
-
-
-
-
-
-
 
 //-----------------------------------------------------------------------------
 // Operators
 //-----------------------------------------------------------------------------
-
-/*! \addtogroup primspinvector */
-/*! @{ */
-
-// Peeking and poking
-//! Extract spin vector components 
-// template<class T, int N>
-// struct UnaryReturn<PSpinVectorJIT<T,N>, FnPeekSpinVectorREG > {
-//   typedef PScalarJIT<typename UnaryReturn<T, FnPeekSpinVectorREG>::Type_t>  Type_t;
-// };
-
 
 
 template<class T1, class T2, int N>
@@ -921,379 +570,6 @@ pokeSpin(PSpinVectorJIT<T1,N>& l, const PScalarREG<T2>& r, llvm::Value* row)
   l.getJitElem(row) = r.elem();
   return l;
 }
-
-
-#if 0
-
-// SpinVector<2> = SpinProject(SpinVector<4>)
-// There are 4 cases here for Nd=4 for each forward/backward direction
-template<class T>
-inline typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir0Minus>::Type_t
-spinProjectDir0Minus(const PSpinVectorJIT<T,4>& s1)
-{
-  typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir0Minus>::Type_t  d;
-
-  /*                              ( 1  0  0 -i)  ( a0 )    ( a0 - i a3 )
-   *  B  :=  ( 1 - Gamma  ) A  =  ( 0  1 -i  0)  ( a1 )  = ( a1 - i a2 )
-   *                    0         ( 0  i  1  0)  ( a2 )    ( a2 + i a1 )
-   *                              ( i  0  0  1)  ( a3 )    ( a3 + i a0 )
-
-   * Therefore the top components are
-
-   *      ( b0r + i b0i )  =  ( {a0r + a3i} + i{a0i - a3r} )
-   *      ( b1r + i b1i )     ( {a1r + a2i} + i{a1i - a2r} )
-
-   * The bottom components of be may be reconstructed using the formula
-
-   *      ( b2r + i b2i )  =  ( {a2r - a1i} + i{a2i + a1r} )  =  ( - b1i + i b1r )
-   *      ( b3r + i b3i )     ( {a3r - a0i} + i{a3i + a0r} )     ( - b0i + i b0r ) 
-   */
-  d.elem(0) = s1.elem(0) - timesI(s1.elem(3));
-  d.elem(1) = s1.elem(1) - timesI(s1.elem(2));
-
-  return d;
-}
-
-template<class T>
-inline typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir1Minus>::Type_t
-spinProjectDir1Minus(const PSpinVectorJIT<T,4>& s1)
-{
-  typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir1Minus>::Type_t  d;
-
-  /*                              ( 1  0  0  1)  ( a0 )    ( a0 + a3 )
-   *  B  :=  ( 1 - Gamma  ) A  =  ( 0  1 -1  0)  ( a1 )  = ( a1 - a2 )
-   *                    1         ( 0 -1  1  0)  ( a2 )    ( a2 - a1 )
-   *                              ( 1  0  0  1)  ( a3 )    ( a3 + a0 )
-	 
-   * Therefore the top components are
-      
-   *      ( b0r + i b0i )  =  ( {a0r + a3r} + i{a0i + a3i} )
-   *      ( b1r + i b1i )     ( {a1r - a2r} + i{a1i - a2i} )
-      
-   * The bottom components of be may be reconstructed using the formula
-
-   *      ( b2r + i b2i )  =  ( {a2r - a1r} + i{a2i - a1i} )  =  ( - b1r - i b1i )
-   *      ( b3r + i b3i )     ( {a3r + a0r} + i{a3i + a0i} )     (   b0r + i b0i ) 
-   */
-  d.elem(0) = s1.elem(0) + s1.elem(3);
-  d.elem(1) = s1.elem(1) - s1.elem(2);
-
-  return d;
-}
-    
-template<class T>
-inline typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir2Minus>::Type_t
-spinProjectDir2Minus(const PSpinVectorJIT<T,4>& s1)
-{
-  typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir2Minus>::Type_t  d;
-
-  /*                              ( 1  0 -i  0)  ( a0 )    ( a0 - i a2 )
-   *  B  :=  ( 1 - Gamma  ) A  =  ( 0  1  0  i)  ( a1 )  = ( a1 + i a3 )
-   *                    2         ( i  0  1  0)  ( a2 )    ( a2 + i a0 )
-   *                              ( 0 -i  0  1)  ( a3 )    ( a3 - i a1 )
-
-   * Therefore the top components are
-      
-   *      ( b0r + i b0i )  =  ( {a0r + a2i} + i{a0i - a2r} )
-   *      ( b1r + i b1i )     ( {a1r - a3i} + i{a1i + a3r} )
-      
-   * The bottom components of be may be reconstructed using the formula
-
-   *      ( b2r + i b2i )  =  ( {a2r - a0i} + i{a2i + a0r} )  =  ( - b0i + i b0r )
-   *      ( b3r + i b3i )     ( {a3r + a1i} + i{a3i - a1r} )     (   b1i - i b1r )
-   */
-  d.elem(0) = s1.elem(0) - timesI(s1.elem(2));
-  d.elem(1) = s1.elem(1) + timesI(s1.elem(3));
-
-  return d;
-}
-    
-template<class T>
-inline typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir3Minus>::Type_t
-spinProjectDir3Minus(const PSpinVectorJIT<T,4>& s1)
-{
-  typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir3Minus>::Type_t  d;
-
-  /*                              ( 1  0 -1  0)  ( a0 )    ( a0 - a2 )
-   *  B  :=  ( 1 - Gamma  ) A  =  ( 0  1  0 -1)  ( a1 )  = ( a1 - a3 )
-   *                    3         (-1  0  1  0)  ( a2 )    ( a2 - a0 )
-   *                              ( 0 -1  0  1)  ( a3 )    ( a3 - a1 )
-      
-   * Therefore the top components are
-      
-   *      ( b0r + i b0i )  =  ( {a0r - a2r} + i{a0i - a2i} )
-   *      ( b1r + i b1i )     ( {a1r - a3r} + i{a1i - a3i} )
-
-   * The bottom components of be may be reconstructed using the formula
-
-   *      ( b2r + i b2i )  =  ( {a2r - a0r} + i{a2i - a0i} )  =  ( - b0r - i b0i )
-   *      ( b3r + i b3i )     ( {a3r - a1r} + i{a3i - a1i} )     ( - b1r - i b1i ) 
-   */
-  d.elem(0) = s1.elem(0) - s1.elem(2);
-  d.elem(1) = s1.elem(1) - s1.elem(3);
-
-  return d;
-}
-
-template<class T>
-inline typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir0Plus>::Type_t
-spinProjectDir0Plus(const PSpinVectorJIT<T,4>& s1)
-{
-  typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir0Plus>::Type_t  d;
-
-  /*                              ( 1  0  0 +i)  ( a0 )    ( a0 + i a3 )
-   *  B  :=  ( 1 + Gamma  ) A  =  ( 0  1 +i  0)  ( a1 )  = ( a1 + i a2 )
-   *                    0         ( 0 -i  1  0)  ( a2 )    ( a2 - i a1 )
-   *                              (-i  0  0  1)  ( a3 )    ( a3 - i a0 )
-
-   * Therefore the top components are
-
-   *      ( b0r + i b0i )  =  ( {a0r - a3i} + i{a0i + a3r} )
-   *      ( b1r + i b1i )     ( {a1r - a2i} + i{a1i + a2r} )
-
-   * The bottom components of be may be reconstructed using the formula
-
-   *      ( b2r + i b2i )  =  ( {a2r + a1i} + i{a2i - a1r} )  =  ( b1i - i b1r )
-   *      ( b3r + i b3i )     ( {a3r + a0i} + i{a3i - a0r} )     ( b0i - i b0r ) 
-   */
-  d.elem(0) = s1.elem(0) + timesI(s1.elem(3));
-  d.elem(1) = s1.elem(1) + timesI(s1.elem(2));
-
-  return d;
-}
-
-template<class T>
-inline typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir1Plus>::Type_t
-spinProjectDir1Plus(const PSpinVectorJIT<T,4>& s1)
-{
-  typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir1Plus>::Type_t  d;
-
-  /*                              ( 1  0  0 -1)  ( a0 )    ( a0 - a3 )
-   *  B  :=  ( 1 + Gamma  ) A  =  ( 0  1  1  0)  ( a1 )  = ( a1 + a2 )
-   *                    1         ( 0  1  1  0)  ( a2 )    ( a2 + a1 )
-   *                              (-1  0  0  1)  ( a3 )    ( a3 - a0 )
-
-   * Therefore the top components are
-
-   *      ( b0r + i b0i )  =  ( {a0r - a3r} + i{a0i - a3i} )
-   *      ( b1r + i b1i )     ( {a1r + a2r} + i{a1i + a2i} )
-
-   * The bottom components of be may be reconstructed using the formula
-
-   *      ( b2r + i b2i )  =  ( {a2r + a1r} + i{a2i + a1i} )  =  (   b1r + i b1i )
-   *      ( b3r + i b3i )     ( {a3r - a0r} + i{a3i - a0i} )     ( - b0r - i b0i ) 
-   */
-  d.elem(0) = s1.elem(0) - s1.elem(3);
-  d.elem(1) = s1.elem(1) + s1.elem(2);
-
-  return d;
-}
-
-template<class T>
-inline typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir2Plus>::Type_t
-spinProjectDir2Plus(const PSpinVectorJIT<T,4>& s1)
-{
-  typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir2Plus>::Type_t  d;
-
-  /*                              ( 1  0  i  0)  ( a0 )    ( a0 + i a2 )
-   *  B  :=  ( 1 + Gamma  ) A  =  ( 0  1  0 -i)  ( a1 )  = ( a1 - i a3 )
-   *                    2         (-i  0  1  0)  ( a2 )    ( a2 - i a0 )
-   *                              ( 0  i  0  1)  ( a3 )    ( a3 + i a1 )
-
-   * Therefore the top components are
-
-   *      ( b0r + i b0i )  =  ( {a0r - a2i} + i{a0i + a2r} )
-   *      ( b1r + i b1i )     ( {a1r + a3i} + i{a1i - a3r} )
-
-   * The bottom components of be may be reconstructed using the formula
-
-   *      ( b2r + i b2i )  =  ( {a2r + a0i} + i{a2i - a0r} )  =  (   b0i - i b0r )
-   *      ( b3r + i b3i )     ( {a3r - a1i} + i{a3i + a1r} )     ( - b1i + i b1r ) 
-   */
-  d.elem(0) = s1.elem(0) + timesI(s1.elem(2));
-  d.elem(1) = s1.elem(1) - timesI(s1.elem(3));
-
-  return d;
-}
-
-template<class T>
-inline typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir3Plus>::Type_t
-spinProjectDir3Plus(const PSpinVectorJIT<T,4>& s1)
-{
-  typename UnaryReturn<PSpinVectorJIT<T,4>, FnSpinProjectDir3Plus>::Type_t  d;
-
-  /*                              ( 1  0  1  0)  ( a0 )    ( a0 + a2 )
-   *  B  :=  ( 1 + Gamma  ) A  =  ( 0  1  0  1)  ( a1 )  = ( a1 + a3 )
-   *                    3         ( 1  0  1  0)  ( a2 )    ( a2 + a0 )
-   *                              ( 0  1  0  1)  ( a3 )    ( a3 + a1 )
-
-   * Therefore the top components are
-
-   *      ( b0r + i b0i )  =  ( {a0r + a2r} + i{a0i + a2i} )
-   *      ( b1r + i b1i )     ( {a1r + a3r} + i{a1i + a3i} )
-
-   * The bottom components of be may be reconstructed using the formula
-
-   *      ( b2r + i b2i )  =  ( {a2r + a0r} + i{a2i + a0i} )  =  ( b0r + i b0i )
-   *      ( b3r + i b3i )     ( {a3r + a1r} + i{a3i + a1i} )     ( b1r + i b1i ) 
-   */
-  d.elem(0) = s1.elem(0) + s1.elem(2);
-  d.elem(1) = s1.elem(1) + s1.elem(3);
-
-  return d;
-}
-
-
-// SpinVector<4> = SpinReconstruct(SpinVector<2>)
-// There are 4 cases here for Nd=4 for each forward/backward direction
-template<class T>
-inline typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir0Minus>::Type_t
-spinReconstructDir0Minus(const PSpinVectorJIT<T,2>& s1)
-{
-  typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir0Minus>::Type_t  d;
-
-  d.elem(0) = s1.elem(0);
-  d.elem(1) = s1.elem(1);
-  d.elem(2) = timesI(s1.elem(1));
-  d.elem(3) = timesI(s1.elem(0));
-
-  return d;
-}
-
-template<class T>
-inline typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir1Minus>::Type_t
-spinReconstructDir1Minus(const PSpinVectorJIT<T,2>& s1)
-{
-  typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir1Minus>::Type_t  d;
-
-  d.elem(0) = s1.elem(0);
-  d.elem(1) = s1.elem(1);
-  d.elem(2) = -s1.elem(1);
-  d.elem(3) = s1.elem(0);
-
-  return d;
-}
-
-
-template<class T>
-inline typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir2Minus>::Type_t
-spinReconstructDir2Minus(const PSpinVectorJIT<T,2>& s1)
-{
-  typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir2Minus>::Type_t  d;
-
-  d.elem(0) = s1.elem(0);
-  d.elem(1) = s1.elem(1);
-  d.elem(2) = timesI(s1.elem(0));
-  d.elem(3) = timesMinusI(s1.elem(1));
-
-  return d;
-}
-
-template<class T>
-inline typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir3Minus>::Type_t
-spinReconstructDir3Minus(const PSpinVectorJIT<T,2>& s1)
-{
-  typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir3Minus>::Type_t  d;
-
-  d.elem(0) = s1.elem(0);
-  d.elem(1) = s1.elem(1);
-  d.elem(2) = -s1.elem(0);
-  d.elem(3) = -s1.elem(1);
-
-  return d;
-}
-
-template<class T>
-inline typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir0Plus>::Type_t
-spinReconstructDir0Plus(const PSpinVectorJIT<T,2>& s1)
-{
-  typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir0Plus>::Type_t  d;
-
-  d.elem(0) = s1.elem(0);
-  d.elem(1) = s1.elem(1);
-  d.elem(2) = timesMinusI(s1.elem(1));
-  d.elem(3) = timesMinusI(s1.elem(0));
-
-  return d;
-}
-
-template<class T>
-inline typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir1Plus>::Type_t
-spinReconstructDir1Plus(const PSpinVectorJIT<T,2>& s1)
-{
-  typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir1Plus>::Type_t  d;
-
-  d.elem(0) = s1.elem(0);
-  d.elem(1) = s1.elem(1);
-  d.elem(2) = s1.elem(1);
-  d.elem(3) = -s1.elem(0);
-
-  return d;
-}
-
-template<class T>
-inline typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir2Plus>::Type_t
-spinReconstructDir2Plus(const PSpinVectorJIT<T,2>& s1)
-{
-  typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir2Plus>::Type_t  d;
-
-  d.elem(0) = s1.elem(0);
-  d.elem(1) = s1.elem(1);
-  d.elem(2) = timesMinusI(s1.elem(0));
-  d.elem(3) = timesI(s1.elem(1));
-
-  return d;
-}
-
-template<class T>
-inline typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir3Plus>::Type_t
-spinReconstructDir3Plus(const PSpinVectorJIT<T,2>& s1)
-{
-  typename UnaryReturn<PSpinVectorJIT<T,2>, FnSpinReconstructDir3Plus>::Type_t  d;
-
-  d.elem(0) = s1.elem(0);
-  d.elem(1) = s1.elem(1);
-  d.elem(2) = s1.elem(0);
-  d.elem(3) = s1.elem(1);
-
-  return d;
-}
-
-//-----------------------------------------------
-
-
-
-//-----------------------------------------------------------------------------
-//! PSpinVectorJIT<T,4> = P_+ * PSpinVectorJIT<T,4>
-template<class T>
-inline typename UnaryReturn<PSpinVectorJIT<T,4>, FnChiralProjectPlus>::Type_t
-chiralProjectPlus(const PSpinVectorJIT<T,4>& s1)
-{
-  typename UnaryReturn<PSpinVectorJIT<T,4>, FnChiralProjectPlus>::Type_t  d;
-
-  d.elem(0) = s1.elem(0);
-  d.elem(1) = s1.elem(1);
-  zero_rep(d.elem(2));
-  zero_rep(d.elem(3));
-
-  return d;
-}
-
-//! PSpinVectorJIT<T,4> = P_- * PSpinVectorJIT<T,4>
-template<class T>
-inline typename UnaryReturn<PSpinVectorJIT<T,4>, FnChiralProjectMinus>::Type_t
-chiralProjectMinus(const PSpinVectorJIT<T,4>& s1)
-{
-  typename UnaryReturn<PSpinVectorJIT<T,4>, FnChiralProjectMinus>::Type_t  d;
-
-  zero_rep(d.elem(0));
-  zero_rep(d.elem(1));
-  d.elem(2) = s1.elem(2);
-  d.elem(3) = s1.elem(3);
-
-  return d;
-}
-#endif
 
 
 //! dest  = random  
@@ -1306,6 +582,7 @@ fill_random_jit(PSpinVectorJIT<T,N> d, T1 seed, T2 skewed_seed, const T3& seed_m
     fill_random_jit(d.elem(i), seed, skewed_seed, seed_mult);
 }
 
+
 //! dest  = gaussian
 template<class T,class T2, int N>
 inline void
@@ -1314,9 +591,6 @@ fill_gaussian(PSpinVectorJIT<T,N> d, PSpinVectorREG<T2,N>& r1, PSpinVectorREG<T2
   for(int i=0; i < N; ++i)
     fill_gaussian(d.elem(i), r1.elem(i), r2.elem(i));
 }
-
-
-
 
 
 /*! @} */   // end of group primspinvector
