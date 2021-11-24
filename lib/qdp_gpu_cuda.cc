@@ -543,7 +543,7 @@ namespace QDP {
 if (size == 0) *mem = nullptr;
     CUresult ret;
     CudaCheckResult(cuCtxSetCurrent(cuContext));
-#ifndef QDP_USE_CUDA_MANAGED_MEMORY
+#ifndef QDP_ENABLE_MANAGED_MEMORY
     CudaCheckResult(cudaMalloc(mem, size));
 #else
     CudaCheckResult(cudaMallocManaged(mem, size, cudaMemAttachGlobal));
@@ -553,7 +553,7 @@ if (size == 0) *mem = nullptr;
 #else
 
     CUresult ret;
-#ifndef QDP_USE_CUDA_MANAGED_MEMORY
+#ifndef QDP_ENABLE_MANAGED_MEMORY
     ret = cuMemAlloc( (CUdeviceptr*)mem,size);
 #else
     ret = cuMemAllocManaged( (CUdeviceptr*)mem, size, CU_MEM_ATTACH_GLOBAL ); 

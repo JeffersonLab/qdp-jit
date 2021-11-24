@@ -116,7 +116,7 @@
 #cmakedefine QDP_USE_COMM_SPLIT_INIT	        @QDP_USE_COMM_SPLIT_INIT@
 
 /* CUDA use managed memory */
-#cmakedefine QDP_USE_CUDA_MANAGED_MEMORY	@QDP_USE_CUDA_MANAGED_MEMORY@
+#cmakedefine QDP_ENABLE_MANAGED_MEMORY	        @QDP_ENABLE_MANAGED_MEMORY@
 
 /* Enable HDF5 support */
 #cmakedefine QDP_USE_HDF5			@QDP_USE_HDF5@
