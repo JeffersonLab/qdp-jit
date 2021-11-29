@@ -518,17 +518,6 @@ namespace QDP {
 		logical_iogeom[j] = uu;
 	      }
 	  }
-	else if (strcmp((*argv)[i], "-lat")==0) 
-	  {
-	    multi1d<int> nrow(Nd);
-	    for(int j=0; j < Nd; j++) 
-	      {
-		int uu;
-		sscanf((*argv)[++i], "%d", &uu);
-		nrow[j] = uu;
-	      }
-	    Layout::setLattSize(nrow);
-	  }
 #ifdef USE_REMOTE_QIO
 	else if (strcmp((*argv)[i], "-cd")==0) 
 	  {
