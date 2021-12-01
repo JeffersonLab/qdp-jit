@@ -32,6 +32,7 @@ namespace QDP {
 
     CUevent evStart;
     CUevent evStop;
+    CUstream prefetchStream;
 
     int deviceCount;
 
@@ -424,6 +425,7 @@ namespace QDP {
 
     //std::cout << "creating CUDA events\n";
     gpu_create_events();
+    cuStreamCreate ( &prefetchStream, CU_STREAM_NON_BLOCKING);
   }
 
 
@@ -557,6 +559,8 @@ if (size == 0) *mem = nullptr;
     ret = cuMemAlloc( (CUdeviceptr*)mem,size);
 #else
     ret = cuMemAllocManaged( (CUdeviceptr*)mem, size, CU_MEM_ATTACH_GLOBAL ); 
+    cuMemAdvise ( (CUdeviceptr)&mem, size, CU_MEM_ADVISE_SET_PREFERRED_LOCATION, cuDevice );
+    cuMemAdvise  ( (CUdeviceptr)&mem, size, CU_MEM_ADVISE_SET_ACCESSED_BY, cuDevice );
 #endif
     return ret == CUDA_SUCCESS;
 #endif
@@ -564,6 +568,12 @@ if (size == 0) *mem = nullptr;
 
 
 
+
+  void gpu_prefetch(void *mem,  size_t size){
+#ifdef QDP_ENABLE_MANAGED_MEMORY
+    cuMemPrefetchAsync ( (CUdeviceptr)mem, size,  cuDevice, prefetchStream  );
+#endif
+  }
   
   void gpu_free(const void *mem )
   {
