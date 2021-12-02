@@ -50,7 +50,7 @@ namespace QDP {
     tables t;
 
     std::vector<int> t_roffset( Layout::sitesOnNode() , -1 );
-#ifdef QDP_BACKEND_AVX
+#ifdef QDP_CODEGEN_VECTOR
     std::vector<int> t_loffset( Layout::sitesOnNode() , -1 );
     std::vector<int> t_innerVNodeSIMD( Layout::sitesOnNode() , -1 );
 #endif
@@ -61,7 +61,7 @@ namespace QDP {
 	t_innerScalar[ q ] = q ;
       }
 
-#ifdef QDP_BACKEND_AVX
+#ifdef QDP_CODEGEN_VECTOR
     auto& vnode = *mapTables.at( make_pair(s_no,0) ).innerVNodeSIMD;
     for( int q = 0 ; q < vnode.size() ; ++q )
       {
@@ -82,7 +82,7 @@ namespace QDP {
 	    // roffset
 	    //
 	    map.getRoffsetsId( subset ); // make sure the lazy part was computed!
-#ifdef QDP_BACKEND_AVX
+#ifdef QDP_CODEGEN_VECTOR
 	    for (int q = 0; q < map.loffset( subset ).size() ; ++q )
 	      {
 		t_loffset       [ map.loffset( subset )[q] ] = map.loffset( subset )[q];
@@ -94,7 +94,7 @@ namespace QDP {
 	      {
 		t_roffset       [ map.roffset( subset )[q] ] = map.roffset( subset )[q];
 		t_innerScalar   [ map.roffset( subset )[q] ] = -1;
-#ifdef QDP_BACKEND_AVX
+#ifdef QDP_CODEGEN_VECTOR
 		t_loffset       [ map.roffset( subset )[q] ] = -1;  // remove the roffset from the loffset
 		t_innerVNodeSIMD[ map.roffset( subset )[q] ] = -1;
 #endif
@@ -105,21 +105,21 @@ namespace QDP {
 
     remove_neg_in_subset( *t.face             , t_roffset        , s_no );
     remove_neg_in_subset( *t.innerScalar      , t_innerScalar    , s_no );
-#ifdef QDP_BACKEND_AVX
+#ifdef QDP_CODEGEN_VECTOR
     remove_neg_in_subset( *t.innerVNodeScalar , t_loffset        , s_no );
     remove_neg_in_subset( *t.innerVNodeSIMD   , t_innerVNodeSIMD , s_no );
 #endif
     
     // QDPIO::cout << "face count             = " << t.face->size() << std::endl;
     // QDPIO::cout << "innerScalar count      = " << t.innerScalar->size() << std::endl;
-#ifdef QDP_BACKEND_AVX
+#ifdef QDP_CODEGEN_VECTOR
     // QDPIO::cout << "innerVNodeScalar count = " << t.innerVNodeScalar->size() << std::endl;
     // QDPIO::cout << "innerVNodeSIMD count   = " << t.innerVNodeSIMD->size() << std::endl;
 #endif
     
     t.id_face             = QDP_get_global_cache().registrateOwnHostMem( t.face->size() * sizeof(int)             , t.face->data() , NULL );
     t.id_innerScalar      = QDP_get_global_cache().registrateOwnHostMem( t.innerScalar->size() * sizeof(int)      , t.innerScalar->data() , NULL );
-#ifdef QDP_BACKEND_AVX
+#ifdef QDP_CODEGEN_VECTOR
     t.id_innerVNodeScalar = QDP_get_global_cache().registrateOwnHostMem( t.innerVNodeScalar->size() * sizeof(int) , t.innerVNodeScalar->data() , NULL );
     t.id_innerVNodeSIMD   = QDP_get_global_cache().registrateOwnHostMem( t.innerVNodeSIMD->size() * sizeof(int)   , t.innerVNodeSIMD->data() , NULL );
 #endif
@@ -141,7 +141,7 @@ namespace QDP {
 
   
   // ----------------------------------
-#ifdef QDP_BACKEND_AVX
+#ifdef QDP_CODEGEN_VECTOR
   int MasterMap::getCountVNodeInnerSIMD  (const Subset& s,int bitmask) 
   {
     generate_tables(s,bitmask);
@@ -175,7 +175,7 @@ namespace QDP {
   // ---------------------
 
   
-#ifdef QDP_BACKEND_AVX
+#ifdef QDP_CODEGEN_VECTOR
   int MasterMap::getIdVNodeInnerSIMD  (const Subset& s,int bitmask) 
   {
     generate_tables(s,bitmask);

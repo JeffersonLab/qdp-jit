@@ -359,7 +359,7 @@ public:
   }
 
 
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
   RComplexREG(const WordVecREG<typename WordType<T>::Type_t>& re,
 	      const WordREG   <typename WordType<T>::Type_t>& im) {
     real() = re;

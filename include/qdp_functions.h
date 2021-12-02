@@ -60,7 +60,7 @@ namespace QDP {
 
     //QDPIO::cout << "dyn key = " << key << std::endl;
 
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
     if (function_map[key][0].empty())
       function_build(function_map[key][0], function_map[key][1], key, dest, op, rhs, s);
 

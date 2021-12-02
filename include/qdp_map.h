@@ -160,7 +160,7 @@ public:
     assert( s.getId() >= 0 && s.getId() < roffsets.size() && "roffset: subset Id out of range");
     return roffsets[s.getId()];
   }
-#ifdef QDP_BACKEND_AVX
+#ifdef QDP_CODEGEN_VECTOR
   const std::vector<int>& loffset(const Subset& s) const {
     if (!lazy_done_s(s))
       QDP_error_exit("loffest used before lazy component was called");
@@ -241,7 +241,7 @@ private:
   mutable multi1d<int> soffsetsId; // [subset no.]
   mutable multi1d<int> goffsetsId; // [subset no.]
 
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
   mutable std::vector< std::vector<int> > loffsets;    // [subset no.][0..N] = linear index   N = srcenodes_num
   mutable multi1d<int> loffsetsId; // [subset no.]
 #endif

@@ -97,6 +97,9 @@
 /* Compile for LLVM 13.0 series */	
 #cmakedefine QDP_LLVM13				@QDP_LLVM13@
 
+/* Codegen uses vector instructions */	
+#cmakedefine QDP_CODEGEN_VECTOR			@QDP_CODEGEN_VECTOR@
+
 /* Number of color components */
 #cmakedefine QDP_NC				@QDP_NC@
 

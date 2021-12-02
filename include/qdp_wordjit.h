@@ -159,7 +159,7 @@ namespace QDP {
 
 
 
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
   template<class T>
   class WordVecJIT 
   {
@@ -419,7 +419,7 @@ namespace QDP {
     typedef WordJIT<typename UnaryReturn<T, Op>::Type_t>  Type_t;
   };
 
-#if defined (QDP_BACKEND_AVX)  
+#if defined (QDP_CODEGEN_VECTOR)  
   template<class T, class Op>
   struct UnaryReturn<WordVecJIT<T>, Op> {
     typedef WordVecJIT<typename UnaryReturn<T, Op>::Type_t>  Type_t;
@@ -448,7 +448,7 @@ namespace QDP {
   }
 
 
-#if defined (QDP_BACKEND_AVX)  
+#if defined (QDP_CODEGEN_VECTOR)  
   template<class T1>
   inline typename UnaryReturn<WordVecREG<T1>, OpUnaryMinus>::Type_t
   operator-(const WordVecJIT<T1>& l)
@@ -462,7 +462,7 @@ namespace QDP {
   // ***********
 
 
-#if defined (QDP_BACKEND_AVX)  
+#if defined (QDP_CODEGEN_VECTOR)  
   template<class T>
   struct ScalarType<WordVecJIT<T> >
   {
@@ -482,7 +482,7 @@ namespace QDP {
     typedef WordREG<typename REGType<T>::Type_t>  Type_t;
   };
 
-#if defined (QDP_BACKEND_AVX)  
+#if defined (QDP_CODEGEN_VECTOR)  
   template<class T>
   struct REGType< WordVecJIT<T> >
   {
@@ -498,7 +498,7 @@ namespace QDP {
     typedef Word<typename BASEType<T>::Type_t>  Type_t;
   };
 
-#if defined (QDP_BACKEND_AVX)  
+#if defined (QDP_CODEGEN_VECTOR)  
   template<class T>
   struct BASEType< WordVecJIT<T> >
   {
@@ -514,7 +514,7 @@ namespace QDP {
     typedef T  Type_t;
   };
 
-#if defined (QDP_BACKEND_AVX)  
+#if defined (QDP_CODEGEN_VECTOR)  
   template<class T> 
   struct WordType<WordVecJIT<T> >
   {
@@ -530,7 +530,7 @@ namespace QDP {
     typedef WordJIT<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
   };
 
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
   template<class T1, class T2, class Op>
   struct BinaryReturn<WordVecJIT<T1>, WordVecJIT<T2>, Op> {
     typedef WordVecJIT<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
@@ -576,7 +576,7 @@ namespace QDP {
 
   // *****************
 
-#if defined (QDP_BACKEND_AVX)  
+#if defined (QDP_CODEGEN_VECTOR)  
   inline void 
   zero_rep(WordVecJIT<double> dest)
   {
@@ -622,7 +622,7 @@ namespace QDP {
   }
 
 
-#if defined (QDP_BACKEND_AVX)  
+#if defined (QDP_CODEGEN_VECTOR)
   template<class T, class T1, class T2, class T3>
   inline void
   fill_random_jit(WordVecJIT<T> d, T1 seed, T2 skewed_seed, const T3& seed_mult)

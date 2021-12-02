@@ -70,7 +70,7 @@ namespace QDP {
   void llvm_set_debug( const char * str );
   void llvm_debug_write_set_name( const char* pretty, const char* additional );
 
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
   void llvm_vecstore_ptr_idx( llvm::Value * val , llvm::Value * ptr , llvm::Value * idx );
   llvm::Value* llvm_vecload_ptr_idx( llvm::Value * ptr , llvm::Value * idx );
   llvm::Value* llvm_insert_element( llvm::Value* vec , llvm::Value* val , int pos );

@@ -98,7 +98,7 @@ namespace QDP {
   };
 
   
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
   template<class T>
   struct HasProp< Reference<QDPType<PSpinMatrix<PColorMatrix<RComplex<WordVec<T> >, Nc >, Ns >, OLattice<PSpinMatrix<PColorMatrix<RComplex<WordVec<T> >, Nc >, Ns > > > > >
   {

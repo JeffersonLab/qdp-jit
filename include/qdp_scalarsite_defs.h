@@ -27,7 +27,7 @@ namespace QDP {
 // typedef GammaTypeDP<Ns> GammaDP;
 
 
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
 #define WORD WordVec
 #else
 #define WORD Word

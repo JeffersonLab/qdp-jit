@@ -205,7 +205,7 @@ namespace QDP {
 
 
 
-#if defined (QDP_BACKEND_AVX)  
+#if defined (QDP_CODEGEN_VECTOR)  
   template<class T>
   class WordVecREG 
   {
@@ -406,7 +406,7 @@ namespace QDP {
     typedef WordREG<T>  Type_t;
   };
 
-#if defined (QDP_BACKEND_AVX)  
+#if defined (QDP_CODEGEN_VECTOR)  
   template<class T>
   struct InternalScalar<WordVecREG<T> > {
     typedef WordREG<T>  Type_t;
@@ -425,7 +425,7 @@ namespace QDP {
     typedef WordJIT<T>  Type_t;
   };
   
-#if defined (QDP_BACKEND_AVX)  
+#if defined (QDP_CODEGEN_VECTOR)  
   template<class T> 
   struct JITType< WordVecREG<T> >
   {
@@ -440,7 +440,7 @@ namespace QDP {
     typedef T  Type_t;
   };
 
-#if defined (QDP_BACKEND_AVX)  
+#if defined (QDP_CODEGEN_VECTOR)  
   template<class T> 
   struct WordType<WordVecREG<T> >
   {
@@ -459,7 +459,7 @@ namespace QDP {
     typedef WordREG<typename UnaryReturn<T, FnIsFinite>::Type_t>  Type_t;
   };
 
-#if defined (QDP_BACKEND_AVX)  
+#if defined (QDP_CODEGEN_VECTOR)  
   template<class T, class Op>
   struct UnaryReturn<WordVecREG<T>, Op > {
     typedef WordVecREG<typename UnaryReturn<T, Op>::Type_t>  Type_t;
@@ -467,7 +467,7 @@ namespace QDP {
 #endif
   
 
-#if defined (QDP_BACKEND_AVX)  
+#if defined (QDP_CODEGEN_VECTOR)  
   template<class T>
   struct UnaryReturn<WordVecREG<T>, OpNot > {
     typedef WordVecREG<typename UnaryReturn<T, OpNot>::Type_t>  Type_t;
@@ -495,7 +495,7 @@ namespace QDP {
   };
 #endif
 
-#if defined (QDP_BACKEND_AVX)  
+#if defined (QDP_CODEGEN_VECTOR)  
   template<class T1, class T2, class Op>
   struct BinaryReturn<WordVecREG<T1>, WordREG<T2>, Op> {
     typedef WordVecREG<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
@@ -661,7 +661,7 @@ namespace QDP {
 
   // *************************************************
 
-#if defined (QDP_BACKEND_AVX)  
+#if defined (QDP_CODEGEN_VECTOR)  
   template<class T1>
   inline typename UnaryReturn<WordVecREG<T1>, OpUnaryMinus>::Type_t
   operator-(const WordVecREG<T1>& l)
@@ -677,7 +677,7 @@ namespace QDP {
   // Binary operators: vec, vec
 
 
-#if defined (QDP_BACKEND_AVX)  
+#if defined (QDP_CODEGEN_VECTOR)  
   template<class T1, class T2>
   inline typename BinaryReturn<WordVecREG<T1>, WordVecREG<T2>, OpAdd>::Type_t
   operator+(const WordVecREG<T1>& l, const WordVecREG<T2>& r)
@@ -1131,7 +1131,7 @@ namespace QDP {
   // **************************************************
   // Comparison, mixed; vec, scalar
 
-#if defined (QDP_BACKEND_AVX)  
+#if defined (QDP_CODEGEN_VECTOR)  
   template<class T1, class T2 >
   struct BinaryReturn<WordVecREG<T1>, WordREG<T2>, OpLT > {
     typedef WordVecREG<typename BinaryReturn<T1, T2, OpLT>::Type_t>  Type_t;
@@ -1517,7 +1517,7 @@ namespace QDP {
   }
 
 
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
 
   template<class T1, class T2, class T3>
   struct TrinaryReturn<WordVecREG<T1>, WordREG<T2>, WordREG<T3>, FnWhere > {
@@ -1643,7 +1643,7 @@ namespace QDP {
 
 
 
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
   template<class T>
   struct UnaryReturn<WordVecREG<T>, FnLocalNorm2 > {
     typedef WordVecREG<typename UnaryReturn<T, FnLocalNorm2>::Type_t>  Type_t;
@@ -1791,7 +1791,7 @@ namespace QDP {
   }
 
 
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
   template<class T>
   inline void 
   qdpPHI(WordVecREG<T>& d, 
@@ -1811,7 +1811,7 @@ namespace QDP {
   void zero_rep(WordREG<float>& dest);
   void zero_rep(WordREG<int>& dest);
 
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
   void zero_rep(WordVecREG<double>& dest);
   void zero_rep(WordVecREG<jit_half_t>& dest);
   void zero_rep(WordVecREG<float>& dest);
@@ -1873,7 +1873,7 @@ namespace QDP {
   typename BinaryReturn<WordREG<float>, WordREG<double>, FnArcTan2>::Type_t atan2(const WordREG<float>& s1, const WordREG<double>& s2);
 
 
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
   typename UnaryReturn<WordVecREG<float>, FnCeil>::Type_t ceil(const WordVecREG<float>& s1);
   typename UnaryReturn<WordVecREG<float>, FnFloor>::Type_t floor(const WordVecREG<float>& s1);
   typename UnaryReturn<WordVecREG<float>, FnFabs>::Type_t fabs(const WordVecREG<float>& s1);

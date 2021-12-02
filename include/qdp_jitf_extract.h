@@ -76,12 +76,10 @@ namespace QDP {
 
     typename REGType< typename JITType<T>::Type_t >::Type_t in_data_reg;
 
-#if defined(QDP_BACKEND_CUDA) || defined(QDP_BACKEND_ROCM)
-    in_data_reg.setup( src_jit.elem( JitDeviceLayout::Coalesced            , r_idx ) );
-#elif defined(QDP_BACKEND_AVX)
+#if defined(QDP_CODEGEN_VECTOR)
     in_data_reg.setup( src_jit.elem( JitDeviceLayout::Coalesced_scalar_idx , r_idx ) );
 #else
-#error "no backend specified"
+    in_data_reg.setup( src_jit.elem( JitDeviceLayout::Coalesced            , r_idx ) );
 #endif
     
     odata.elem( JitDeviceLayout::Scalar , r_idx_thread ) = in_data_reg;

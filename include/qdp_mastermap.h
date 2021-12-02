@@ -12,14 +12,14 @@ namespace QDP {
     int  register_justid(const Map& map);
     void register_work  (const Map& map, const Subset& subset);
     
-#ifdef QDP_BACKEND_AVX
+#ifdef QDP_CODEGEN_VECTOR
     int getCountVNodeInnerSIMD  (const Subset& s,int bitmask) ;
     int getCountVNodeInnerScalar(const Subset& s,int bitmask) ;
 #endif
     int getCountInnerScalar     (const Subset& s,int bitmask) ;
     int getCountFace            (const Subset& s,int bitmask) ;
 
-#ifdef QDP_BACKEND_AVX
+#ifdef QDP_CODEGEN_VECTOR
     int getIdVNodeInnerSIMD  (const Subset& s,int bitmask) ;
     int getIdVNodeInnerScalar(const Subset& s,int bitmask) ;
 #endif
@@ -31,14 +31,14 @@ namespace QDP {
 
     struct tables
     {
-#ifdef QDP_BACKEND_AVX
+#ifdef QDP_CODEGEN_VECTOR
       std::shared_ptr< std::vector<int> > innerVNodeSIMD;
       std::shared_ptr< std::vector<int> > innerVNodeScalar;
 #endif
       std::shared_ptr< std::vector<int> > innerScalar;
       std::shared_ptr< std::vector<int> > face;
 
-#ifdef QDP_BACKEND_AVX
+#ifdef QDP_CODEGEN_VECTOR
       int id_innerVNodeSIMD;
       int id_innerVNodeScalar;
 #endif
@@ -46,7 +46,7 @@ namespace QDP {
       int id_face;
 
       tables() {
-#ifdef QDP_BACKEND_AVX
+#ifdef QDP_CODEGEN_VECTOR
 	innerVNodeSIMD   = std::make_shared< std::vector<int> >();
 	innerVNodeScalar = std::make_shared< std::vector<int> >();
 #endif
@@ -89,7 +89,7 @@ namespace QDP {
 
 	      //QDPIO::cout << i << "  coord (" << coord[0] << " " <<  coord[1] << " " << coord[2] << " " << coord[3] << ")" << std::endl;
 
-#ifdef QDP_BACKEND_AVX
+#ifdef QDP_CODEGEN_VECTOR
 	      bool isSIMD = false;
 	      
 	      bool firstvnode = true;
@@ -134,7 +134,7 @@ namespace QDP {
 	    } // i
 
 
-#ifdef QDP_BACKEND_AVX
+#ifdef QDP_CODEGEN_VECTOR
 	  // Next round, do the VNodeScalar respecting coverSIMD
 	  //
 	  for (int i = 0 ; i < subset.numSiteTable() ; ++i )
@@ -149,14 +149,14 @@ namespace QDP {
 #endif
 	  
 	  //QDPIO::cout << "Scalar    site count = " << t.innerScalar->size() << std::endl;
-#ifdef QDP_BACKEND_AVX
+#ifdef QDP_CODEGEN_VECTOR
 	  //QDPIO::cout << "VN SIMD   site count = " << t.innerVNodeSIMD->size() << std::endl;
 	  //QDPIO::cout << "VN Scalar site count = " << t.innerVNodeScalar->size() << std::endl;
 #endif
 	  
 	  t.id_face             = -1;
 	  t.id_innerScalar      = QDP_get_global_cache().registrateOwnHostMem( t.innerScalar->size() * sizeof(int)      , t.innerScalar->data()      , NULL );
-#ifdef QDP_BACKEND_AVX
+#ifdef QDP_CODEGEN_VECTOR
 	  t.id_innerVNodeScalar = QDP_get_global_cache().registrateOwnHostMem( t.innerVNodeScalar->size() * sizeof(int) , t.innerVNodeScalar->data() , NULL );
 	  t.id_innerVNodeSIMD   = QDP_get_global_cache().registrateOwnHostMem( t.innerVNodeSIMD->size() * sizeof(int)   , t.innerVNodeSIMD->data()   , NULL );
 #endif

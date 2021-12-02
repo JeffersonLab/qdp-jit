@@ -190,7 +190,7 @@ namespace QDP {
 
   std::vector<JitFunction*>& gpu_get_functions();
 
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
   typedef std::map< DynKey , std::array<JitFunction,2> >  JitFunctionMap;
 #else
   typedef std::map< DynKey , JitFunction >  JitFunctionMap;

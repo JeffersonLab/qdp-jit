@@ -22,7 +22,7 @@ set(CUDA_TOOLKIT_ROOT_DIR "/usr/local/cuda" CACHE STRING "Root dir for CUDA")
 option(QDP_ENABLE_PROFILING "Enable profiling" OFF)
 option(QDP_ENABLE_ROCM_STATS "Enable ROCM statistics" OFF)
 option(QDP_ENABLE_MANAGED_MEMORY "Enable CUDA/HIP Managed Memory" OFF)
-
+option(QDP_ENABLE_CODEGEN_VECTOR "Enable vector instructions" OFF)
 
 option(QDP_ENABLE_CUSTOM_KERNELS "Enable Custom Kernels" OFF)
 option(QDP_ENABLE_DEEP_LOG "Enable Deep logging" OFF)
@@ -37,6 +37,12 @@ option(QDP_ENABLE_LLVM13 "Enable changes to compile with LLVM13 release" OFF)
 option(QDP_BUILD_EXAMPLES "Build examples" ON)
 
 option(QDP_PROP_OPT "Propagator optimizations" ON)
+
+
+if(QDP_ENABLE_CODEGEN_VECTOR)
+  message(STATUS "LLVM codegen uses vector instructions")
+  set(QDP_CODEGEN_VECTOR "1")
+endif()
 
 if( QDP_ENABLE_LLVM13 )
   set(QDP_LLVM13 "1")
@@ -60,7 +66,6 @@ if( ${QDP_ENABLE_BACKEND} STREQUAL "AVX")
   set(QDP_BACKEND_AVX  "1")
   set(GPU_LIBS "OpenMP::OpenMP_CXX")
 endif()
-
 
 if( ${QDP_ENABLE_BACKEND} STREQUAL "CUDA")
   message(STATUS "Building For CUDA")

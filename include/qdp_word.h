@@ -146,7 +146,7 @@ namespace QDP {
 
 
 
-#if defined (QDP_BACKEND_AVX)  
+#if defined (QDP_CODEGEN_VECTOR)  
   template<class T> class WordVec
   {
   public:
@@ -299,7 +299,7 @@ namespace QDP {
   };
 
 
-#if defined (QDP_BACKEND_AVX)  
+#if defined (QDP_CODEGEN_VECTOR)  
   template<class T>
   struct JITType<WordVec<T> >
   {
@@ -394,7 +394,7 @@ namespace QDP {
     typedef typename WordType<T>::Type_t  Type_t;
   };
 
-#if defined (QDP_BACKEND_AVX)  
+#if defined (QDP_CODEGEN_VECTOR)  
   template<class T>
   struct WordType<WordVec<T> > 
   {
@@ -409,7 +409,7 @@ namespace QDP {
     typedef Word<T> Type_t;
   };
 
-#if defined (QDP_BACKEND_AVX)  
+#if defined (QDP_CODEGEN_VECTOR)  
   template<class T>
   struct ScalarType<WordVec<T> > 
   {
@@ -564,7 +564,7 @@ namespace QDP {
   }
 
 
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
 
   template<class T>
   struct UnaryReturn<WordVec<T>, FnLocalNorm2 > {
@@ -846,7 +846,7 @@ namespace QDP {
   // *************************************
   // vec traits: vec, vec
 
-#if defined (QDP_BACKEND_AVX)  
+#if defined (QDP_CODEGEN_VECTOR)  
   template<class T1, class T2 >
   struct BinaryReturn<WordVec<T1>, WordVec<T2>, OpLeftShift > {
     typedef WordVec<typename BinaryReturn<T1, T2, OpLeftShift>::Type_t>  Type_t;

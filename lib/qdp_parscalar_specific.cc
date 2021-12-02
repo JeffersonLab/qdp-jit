@@ -177,14 +177,14 @@ namespace QDP {
 	goffsets.resize( MasterSet::Instance().numSubsets() );
 	soffsets.resize( MasterSet::Instance().numSubsets() );
 	roffsets.resize( MasterSet::Instance().numSubsets() );
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
 	loffsets.resize( MasterSet::Instance().numSubsets() );
 #endif
 	
 	goffsetsId.resize( MasterSet::Instance().numSubsets() );
 	soffsetsId.resize( MasterSet::Instance().numSubsets() );
 	roffsetsId.resize( MasterSet::Instance().numSubsets() );
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
 	loffsetsId.resize( MasterSet::Instance().numSubsets() );
 #endif
 	
@@ -235,7 +235,7 @@ namespace QDP {
 								    goffsets[s_no].slice() , NULL );
 
     
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
     //QDPIO::cout << "doing loffsets." << std::endl;
     
     for( int linear = 0 ; linear < nodeSites ; ++linear )

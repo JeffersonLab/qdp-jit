@@ -13,7 +13,7 @@ namespace QDP {
   void
 #endif
   function_build(
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
 		 JitFunction& function,
 		 JitFunction& function_scalar,
 #else
@@ -55,7 +55,7 @@ namespace QDP {
       llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
 
       ViewLeaf vl( JitDeviceLayout::Coalesced , r_idx );
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
       // The data layout VNode guarantees all receive sites are local
       vl.handle_multi_index = false;
 #endif
@@ -65,7 +65,7 @@ namespace QDP {
 
       jit_get_function( function );
     }
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
     //
     // Scalar version for AVX
     {
@@ -114,7 +114,7 @@ namespace QDP {
   template<class T, class T1, class Op, class RHS>
   typename std::enable_if_t< HasProp<RHS>::value >
   function_build(
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
 		 JitFunction& function,
 		 JitFunction& function_scalar,
 #else
@@ -157,7 +157,7 @@ namespace QDP {
       CreateLoops<T,OpJit_t>::apply( loops , op_jit );
 
       ViewSpinLeaf viewSpin( JitDeviceLayout::Coalesced , r_idx );
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
       // The data layout VNode guarantees all receive sites are local
       viewSpin.handle_multi_index = false;
 #endif
@@ -175,7 +175,7 @@ namespace QDP {
       jit_get_function( function );
     }
 
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
     //
     // Scalar version for AVX
     {
@@ -226,7 +226,7 @@ namespace QDP {
   template<class T, class T1, class Op, class RHS>
   void 
   function_exec(
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
 		JitFunction& function,
 		JitFunction& function_scalar,
 #else
@@ -238,7 +238,7 @@ namespace QDP {
     function.type_W = typeid(typename WordType<T>::Type_t).name();
     function.set_dest_id( dest.getId() );
     function.set_is_lat(true);
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
     function_scalar.type_W = typeid(typename WordType<T>::Type_t).name();
     function_scalar.set_dest_id( dest.getId() );
     function_scalar.set_is_lat(true);
@@ -265,7 +265,7 @@ namespace QDP {
     // 1st part to inner call: scalar for CUDA/ROCM, vector in case of AVX/VNODE
     if (1)
     {
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
       int th_count = MasterMap::Instance().getCountVNodeInnerSIMD(s,offnode_maps);
 #else
       int th_count = MasterMap::Instance().getCountInnerScalar(s,offnode_maps);
@@ -273,7 +273,7 @@ namespace QDP {
       WorkgroupGuardExec workgroupGuardExec(th_count);
       std::vector<QDPCache::ArgKey> ids;
       workgroupGuardExec.check(ids);
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
       ids.push_back( MasterMap::Instance().getIdVNodeInnerSIMD(s,offnode_maps) );
 #else
       ids.push_back( MasterMap::Instance().getIdInnerScalar(s,offnode_maps) );
@@ -283,7 +283,7 @@ namespace QDP {
 
       jit_launch(function,th_count,ids);
     }
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
     //
     // 2nd part to inner call: scalar for AVX/VNODE
     if (1)
@@ -316,7 +316,7 @@ namespace QDP {
 	ids.push_back( MasterMap::Instance().getIdFace(s,offnode_maps) );
 	for(unsigned i=0; i < addr_leaf.ids.size(); ++i)
 	  ids.push_back( addr_leaf.ids[i] );
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
 	jit_launch(function_scalar,th_count_face,ids);
 #else
 	jit_launch(function,th_count_face,ids);

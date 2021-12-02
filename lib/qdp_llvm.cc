@@ -424,7 +424,7 @@ namespace QDP
   template<> llvm::Type* llvm_get_type<int*>()    { return llvm::Type::getIntNPtrTy(*TheContext,32); }
   template<> llvm::Type* llvm_get_type<bool*>()   { return llvm::Type::getIntNPtrTy(*TheContext,8); }
 
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
   template<> llvm::Type* llvm_get_vectype<float>()   { return llvm::FixedVectorType::get( llvm::Type::getFloatTy(*TheContext) , Layout::virtualNodeNumber() );  }
   template<> llvm::Type* llvm_get_vectype<double>()  { return llvm::FixedVectorType::get( llvm::Type::getDoubleTy(*TheContext) , Layout::virtualNodeNumber() );  }
   template<> llvm::Type* llvm_get_vectype<bool>()    { return llvm::FixedVectorType::get( llvm::Type::getIntNTy(*TheContext,8) , Layout::virtualNodeNumber() );  }
@@ -1473,7 +1473,7 @@ namespace QDP
   llvm::Value* llvm_not( llvm::Value* lhs ) {
     llvm::Value* tr = llvm::ConstantInt::getTrue( llvm::Type::getInt1Ty(*TheContext) );
 
-#if defined (QDP_BACKEND_AVX)  
+#if defined (QDP_CODEGEN_VECTOR)  
     if (lhs->getType()->isVectorTy())
       {
 	llvm::Type* ty = llvm::FixedVectorType::get( llvm::Type::getInt1Ty(*TheContext) , Layout::virtualNodeNumber() );
@@ -1502,7 +1502,7 @@ namespace QDP
   }
 
 
-#if defined (QDP_BACKEND_AVX)  
+#if defined (QDP_CODEGEN_VECTOR)  
   llvm::Value* llvm_insert_element( llvm::Value* vec , llvm::Value* val , int pos )
   {
     return builder->CreateInsertElement ( vec, val , pos );
@@ -1790,7 +1790,7 @@ namespace QDP
   {
     llvm::Type* Dest = llvm::Type::getInt1Ty(*TheContext);
     
-#ifdef QDP_BACKEND_AVX
+#ifdef QDP_CODEGEN_VECTOR
     if (val->getType()->isVectorTy())
       {
 	Dest = llvm::FixedVectorType::get( llvm::Type::getInt1Ty(*TheContext) , Layout::virtualNodeNumber() );

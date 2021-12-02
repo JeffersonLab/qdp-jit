@@ -469,15 +469,8 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 	for ( size_t reality = 0 ; reality < lim_rea ; reality++ ) {
 	  for ( size_t color = 0 ; color < lim_col ; color++ ) {
 	    for ( size_t spin = 0 ; spin < lim_spi ; spin++ ) {
-#if defined(QDP_BACKEND_CUDA) || defined(QDP_BACKEND_ROCM) || defined(QDP_BACKEND_AVX)
 	      size_t hst_idx = (((site)*lim_spi + spin) * lim_col + color ) * lim_rea + reality;
 	      size_t dev_idx = ( ( reality * lim_col + color ) * lim_spi + spin ) * Layout::sitesOnNode() + site;
-// #elif 
-// 	      size_t hst_idx = (((site)*lim_spi + spin) * lim_col + color ) * lim_rea + reality;
-// 	      size_t dev_idx = (((site)*lim_spi + spin) * lim_col + color ) * lim_rea + reality;
-#else
-#error "No backend specified"
-#endif
 	      if (toDev)
 		out_data[dev_idx] = in_data[hst_idx];
 	      else

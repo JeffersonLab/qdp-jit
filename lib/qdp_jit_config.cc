@@ -117,7 +117,6 @@ namespace QDP
   {
 #if ! defined(QDP_BACKEND_AVX)
     QDPIO::cout << "Memory pool config:\n";
-    QDPIO::cout << "  threads per block                   : " << threads_per_block << "\n";
 
     switch (poolSetMethod) {
       case PoolSetMethod::PerThread:
@@ -133,12 +132,11 @@ namespace QDP
     }
 #endif
     QDPIO::cout << "Accurate timing                       : " << (int)jit_config_get_timing_run() << "\n";
+
+    
     QDPIO::cout << "Code generation:\n";
 #if defined (QDP_BACKEND_CUDA)
     QDPIO::cout << "  CUDA flush denormals to zero        : " << (int)jit_config_get_CUDA_FTZ() << "\n";
-#endif
-#if defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_ROCM)
-    QDPIO::cout << "  Using GPU direct                    : " << (int)jit_config_get_gpu_direct() << "\n";
 #endif
     QDPIO::cout << "  Shift optimization                  : " << (int)qdp_jit_config_get_opt_shifts() << "\n";
     QDPIO::cout << "  Propagator optimization             : ";
@@ -146,6 +144,13 @@ namespace QDP
     QDPIO::cout << "1\n";
 #else
     QDPIO::cout << "0\n";
+#endif
+
+    
+    QDPIO::cout << "Launch configuration:\n";
+    QDPIO::cout << "  Threads per block                   : " << threads_per_block << "\n";
+#if defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_ROCM)
+    QDPIO::cout << "  Using GPU direct                    : " << (int)jit_config_get_gpu_direct() << "\n";
 #endif
   }
 

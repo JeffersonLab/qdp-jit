@@ -25,7 +25,7 @@ namespace QDP
 
 
 
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
   void zero_rep(WordVecREG<double>& dest) 
   {
     dest.setup(llvm_fill_vector(llvm_create_value(0.0)));
@@ -408,7 +408,7 @@ namespace QDP
 
 
 
-#if defined (QDP_BACKEND_AVX)
+#if defined (QDP_CODEGEN_VECTOR)
   // vector f32
   //
   typename UnaryReturn<WordVecREG<float>, FnCeil>::Type_t 
