@@ -32,9 +32,6 @@ namespace QDP {
 
   int gpu_get_device_count();
 
-  void gpu_set_default_GPU(int ngpu);
-  int  gpu_get_default_GPU();
-  
   void gpu_set_device(int dev);
 
   void gpu_host_alloc(void **mem , const size_t size);
@@ -45,7 +42,7 @@ namespace QDP {
 
   bool gpu_malloc( void **mem , const size_t size );
   void gpu_free( const void *mem );
-
+  void gpu_prefetch(void *mem,   size_t  size);
   void gpu_memset( void * dest , unsigned val , size_t N );
 
   JitResult gpu_launch_kernel( JitFunction& f, 

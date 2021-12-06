@@ -32,6 +32,7 @@ namespace QDP {
 
     CUevent evStart;
     CUevent evStop;
+    CUstream prefetchStream;
 
     int deviceCount;
 
@@ -54,8 +55,6 @@ namespace QDP {
 
     unsigned major;
     unsigned minor;
-
-    int defaultGPU = -1;
 
     size_t mem_free, mem_total;
 
@@ -426,6 +425,7 @@ namespace QDP {
 
     //std::cout << "creating CUDA events\n";
     gpu_create_events();
+    cuStreamCreate ( &prefetchStream, CU_STREAM_NON_BLOCKING);
   }
 
 
@@ -545,7 +545,7 @@ namespace QDP {
 if (size == 0) *mem = nullptr;
     CUresult ret;
     CudaCheckResult(cuCtxSetCurrent(cuContext));
-#ifndef QDP_USE_CUDA_MANAGED_MEMORY
+#ifndef QDP_ENABLE_MANAGED_MEMORY
     CudaCheckResult(cudaMalloc(mem, size));
 #else
     CudaCheckResult(cudaMallocManaged(mem, size, cudaMemAttachGlobal));
@@ -555,10 +555,12 @@ if (size == 0) *mem = nullptr;
 #else
 
     CUresult ret;
-#ifndef QDP_USE_CUDA_MANAGED_MEMORY
+#ifndef QDP_ENABLE_MANAGED_MEMORY
     ret = cuMemAlloc( (CUdeviceptr*)mem,size);
 #else
     ret = cuMemAllocManaged( (CUdeviceptr*)mem, size, CU_MEM_ATTACH_GLOBAL ); 
+    cuMemAdvise ( (CUdeviceptr)&mem, size, CU_MEM_ADVISE_SET_PREFERRED_LOCATION, cuDevice );
+    cuMemAdvise  ( (CUdeviceptr)&mem, size, CU_MEM_ADVISE_SET_ACCESSED_BY, cuDevice );
 #endif
     return ret == CUDA_SUCCESS;
 #endif
@@ -566,6 +568,12 @@ if (size == 0) *mem = nullptr;
 
 
 
+
+  void gpu_prefetch(void *mem,  size_t size){
+#ifdef QDP_ENABLE_MANAGED_MEMORY
+    cuMemPrefetchAsync ( (CUdeviceptr)mem, size,  cuDevice, prefetchStream  );
+#endif
+  }
   
   void gpu_free(const void *mem )
   {
@@ -689,19 +697,6 @@ if (size == 0) *mem = nullptr;
   }
 
 
-
-  
-
-
-
-
-  void gpu_set_default_GPU(int ngpu) {
-    defaultGPU = ngpu;
-  }
-
-
-  int  gpu_get_default_GPU() { return defaultGPU; }
-  
   size_t gpu_getMaxGridX()  {return max_gridx;}
   size_t gpu_getMaxGridY()  {return max_gridy;}
   size_t gpu_getMaxGridZ()  {return max_gridz;}
@@ -715,9 +710,6 @@ if (size == 0) *mem = nullptr;
   unsigned gpu_getMajor() { return major; }
   unsigned gpu_getMinor() { return minor; }
   
-
-
-
   
 }
 

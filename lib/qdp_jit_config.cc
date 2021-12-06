@@ -65,6 +65,8 @@ namespace QDP
     std::string deep_log_name = "qdp-jit-log.dat";
 #endif
 
+    int use_gpu = -1;
+    
     bool gpu_direct = false;
     bool opt_shifts = false;
   }
@@ -72,6 +74,9 @@ namespace QDP
 
   bool qdp_jit_config_get_opt_shifts() {return opt_shifts;}
   void qdp_jit_config_set_opt_shifts(bool v) { opt_shifts = v; } 
+
+  int  qdp_jit_config_get_use_gpu() {return use_gpu;}
+  void qdp_jit_config_set_use_gpu(int v) { use_gpu = v; } 
 
 
 #ifdef QDP_BACKEND_CUDA

@@ -3,6 +3,9 @@
 
 namespace QDP
 {
+  int  qdp_jit_config_get_use_gpu();
+  void qdp_jit_config_set_use_gpu(int v);
+
   bool qdp_jit_config_get_opt_shifts();
   void qdp_jit_config_set_opt_shifts(bool v);
 

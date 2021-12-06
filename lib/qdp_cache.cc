@@ -434,6 +434,7 @@ namespace QDP
 	
 	QDP_JIT_CACHE::map_ptr_id.insert( std::make_pair( e.devPtr , Id ) );
       }
+    gpu_prefetch( e.devPtr, e.size);
     
     return Id;
   }
@@ -581,6 +582,7 @@ namespace QDP
 	QDP_error_exit("cache assureDevice: can't spill LRU object. Out of GPU memory!");
       }
     }
+    gpu_prefetch( e.devPtr, e.size);
   }
 
 
@@ -630,8 +632,11 @@ namespace QDP
       }
     else
       {
-	if (e.status == Status::device)
-	  return;
+	if (e.status == Status::device){
+    gpu_prefetch( e.devPtr, e.size);
+    return;
+  }
+	  
     
 	allocateDeviceMemory(e);
 
