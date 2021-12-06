@@ -823,7 +823,12 @@ namespace QDP {
 
   std::string gpu_get_arch()
   {
-    return "gfx" + std::to_string(gcnArch);
+    if( gcnArch == 910 ) {
+      return "gfx90a";
+    }
+    else { 
+      return "gfx" + std::to_string(gcnArch);
+    }
   }
 
 
