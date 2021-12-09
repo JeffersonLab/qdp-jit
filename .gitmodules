@@ -1,6 +1,7 @@
 [submodule "other_libs/qio"]
 	path = other_libs/qio
 	url = https://github.com/usqcd-software/qio.git
+	branch = extended
 [submodule "other_libs/xpath_reader"]
 	path = other_libs/xpath_reader
 	url = https://github.com/usqcd-software/xpath_reader.git
