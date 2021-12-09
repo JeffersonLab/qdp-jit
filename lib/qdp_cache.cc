@@ -1073,6 +1073,8 @@ namespace QDP
 		  case JitParamType::bool_  : at.i1  = e.param.bool_; ;break;
 		  }
 		ret.push_back( at );
+#elif defined (QDP_BACKEND_L0)
+#warning "no Cache::argtype push back"
 #else
 #error "No backend specified"
 #endif
@@ -1092,6 +1094,8 @@ namespace QDP
 		ArgTypes at;
 		at.ptr  = e.devPtr;
 		ret.push_back( at );
+#elif defined (QDP_BACKEND_L0)
+#warning "no Cache::argtype push back"
 #else
 #error "No backend specified"
 #endif
@@ -1114,6 +1118,8 @@ namespace QDP
 	    ArgTypes at;
 	    at.ptr  = jit_param_null_ptr;
 	    ret.push_back( at );
+#elif defined (QDP_BACKEND_L0)
+#warning "no Cache::argtype push back"
 #else
 #error "No backend specified"
 #endif

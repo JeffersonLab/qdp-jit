@@ -322,6 +322,8 @@ namespace QDP {
 
     return sum;
   }
+#elif defined (QDP_BACKEND_L0)
+#warning "no sum"
 #else
 #error "No backend specified"
 #endif
@@ -691,6 +693,8 @@ namespace QDP {
 
     return dest;
   }
+#elif defined (QDP_BACKEND_L0)
+#warning "no sumMulti"
 #else
 #error "No backend specified"
 #endif
@@ -822,6 +826,8 @@ namespace QDP {
 
     return d;
   }
+#elif defined (QDP_BACKEND_L0)
+#warning "no globalMax"
 #else
 #error "no backend specified"
 #endif
@@ -953,6 +959,8 @@ namespace QDP {
 
     return d;
   }
+#elif defined (QDP_BACKEND_L0)
+#warning "no isfinite"
 #else
 #error "no backend specified"
 #endif

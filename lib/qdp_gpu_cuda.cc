@@ -69,6 +69,7 @@ namespace QDP {
   }
   
 
+  void gpu_auto_detect();
 
 
 
@@ -387,6 +388,8 @@ namespace QDP {
     //std::cout << "creating CUDA events\n";
     gpu_create_events();
     cuStreamCreate ( &prefetchStream, CU_STREAM_NON_BLOCKING);
+
+    gpu_auto_detect();
   }
 
 

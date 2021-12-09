@@ -14,8 +14,8 @@ include(CheckSymbolExists)
 include(CheckTypeSize)
 
 
-set(QDP_ENABLE_BACKEND "CUDA" CACHE STRING "The backend, can be either CUDA, ROCM or AVX")
-set_property(CACHE QDP_ENABLE_BACKEND PROPERTY STRINGS CUDA ROCM AVX)
+set(QDP_ENABLE_BACKEND "CUDA" CACHE STRING "The backend, can be either CUDA, ROCM, AVX, or L0")
+set_property(CACHE QDP_ENABLE_BACKEND PROPERTY STRINGS CUDA ROCM AVX L0)
 
 set(CUDA_TOOLKIT_ROOT_DIR "/usr/local/cuda" CACHE STRING "Root dir for CUDA")
 
@@ -60,6 +60,16 @@ endif()
 ##     There is no find_package(for ROCm so we may need
 ##     To explicitly use -I flags and -L and -l flags...
 ##
+if( ${QDP_ENABLE_BACKEND} STREQUAL "L0")
+  message(STATUS "Building For Level Zero")
+  set(QDP_BACKEND_L0  "1")
+  find_package(PkgConfig REQUIRED)
+  pkg_search_module(PKG_LLVMSPIRV REQUIRED LLVMSPIRVLib)
+  pkg_search_module(PKG_LIBZE_LOADER REQUIRED libze_loader)
+  pkg_search_module(PKG_LEVEL_ZERO REQUIRED level-zero)
+endif()
+
+
 if( ${QDP_ENABLE_BACKEND} STREQUAL "AVX")
   message(STATUS "Building For AVX")
   find_package(OpenMP)

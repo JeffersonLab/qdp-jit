@@ -47,6 +47,8 @@ namespace QDP
       bool    i1;
     };
     typedef std::vector<ArgTypes> KernelArgs_t;
+#elif defined QDP_BACKEND_L0
+    typedef std::vector<void*> KernelArgs_t;
 #else
 #error "No backend specified"
 #endif

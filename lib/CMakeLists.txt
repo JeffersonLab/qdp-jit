@@ -31,15 +31,21 @@ add_library(qdp qdp_map.cc
 add_library(jit qdp_llvm.cc)
 
 if( QDP_ENABLE_BACKEND STREQUAL "CUDA" )
-	target_sources(qdp PRIVATE qdp_gpu_cuda.cc)
+  target_sources(qdp PRIVATE qdp_gpu_cuda.cc)
 endif()
 
 if( QDP_ENABLE_BACKEND STREQUAL "ROCM" )
-	target_sources(qdp PRIVATE qdp_gpu_rocm.cc)
+  target_sources(qdp PRIVATE qdp_gpu_rocm.cc)
 endif()
 
 if( QDP_ENABLE_BACKEND STREQUAL "AVX" )
-	target_sources(qdp PRIVATE qdp_gpu_avx.cc)
+  target_sources(qdp PRIVATE qdp_gpu_avx.cc)
+endif()
+
+if( QDP_ENABLE_BACKEND STREQUAL "L0" )
+  target_sources(qdp PRIVATE qdp_gpu_l0.cc)
+  target_link_libraries(qdp PUBLIC ${PKG_LEVEL_ZERO_LIBRARIES})
+  target_include_directories(qdp PUBLIC ${PKG_LEVEL_ZERO_INCLUDE_DIRS})
 endif()
 
 
@@ -90,8 +96,18 @@ target_include_directories(jit PUBLIC ${LLVM_INCLUDE_DIRS} )
 target_link_libraries( jit PUBLIC ${LLVM_AVAILABLE_LIBS} )
 target_link_libraries( jit PUBLIC QMP::qmp)
 
-target_include_directories(jit PUBLIC ${LLD_INCLUDE_DIRS} )
-target_link_libraries( jit PUBLIC ${LLD_EXPORTED_TARGETS} )
+if( QDP_ENABLE_BACKEND STREQUAL "ROCM" )
+  target_include_directories(jit PUBLIC ${LLD_INCLUDE_DIRS} )
+  target_link_libraries( jit PUBLIC ${LLD_EXPORTED_TARGETS} )
+endif()
+
+if( QDP_ENABLE_BACKEND STREQUAL "L0" )
+#  target_include_directories(jit PUBLIC SPIRV-Headers:: )
+#  target_link_libraries( jit PUBLIC PkgConfig::PKG_LLVMSPIRV )
+  target_link_libraries(jit PUBLIC ${PKG_LLVMSPIRV_LIBRARIES})
+  target_include_directories(jit PUBLIC ${PKG_LLVMSPIRV_INCLUDE_DIRS})
+endif()
+
 
 set_target_properties( jit PROPERTIES 
 	CXX_STANDARD 14

@@ -404,6 +404,11 @@ namespace QDP {
     // Increment the call counter
     f.inc_call_counter();
   }
+#elif defined (QDP_BACKEND_L0)
+#warning "no jit_launch"
+  void jit_launch(JitFunction& f,int th_count,std::vector<QDPCache::ArgKey>& ids)
+  {
+  }
 #else
 #error "No LLVM backend specified."
 #endif

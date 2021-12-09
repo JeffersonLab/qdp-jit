@@ -76,6 +76,9 @@
 /* AVX */
 #cmakedefine QDP_BACKEND_AVX			@QDP_BACKEND_AVX@
 
+/* L0 */
+#cmakedefine QDP_BACKEND_L0			@QDP_BACKEND_L0@
+
 /* Include CUDA special kernels */
 #cmakedefine QDP_CUDA_SPECIAL			@QDP_CUDA_SPECIAL@
 

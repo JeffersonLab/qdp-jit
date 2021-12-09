@@ -25,7 +25,7 @@ namespace QDP {
   
   std::string gpu_get_arch();
 
-  void gpu_auto_detect();
+  //void gpu_auto_detect();
 
   size_t gpu_mem_free();
   size_t gpu_mem_total();

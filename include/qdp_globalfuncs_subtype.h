@@ -254,6 +254,8 @@ sum( const OSubLattice<T>& s1 )
 
   return d;
  }
+#elif defined (QDP_BACKEND_L0)
+#warning "no sum(subLat)"
 #else
 #error "no backend specified"
 #endif

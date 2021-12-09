@@ -57,6 +57,7 @@ namespace QDP {
     }
   }
 
+  void gpu_auto_detect();
 
 
 #ifdef QDP_USE_ROCM_STATS
@@ -675,6 +676,8 @@ namespace QDP {
     CheckError("hitSetDevice",ret);
 
     gpu_create_events();
+
+    gpu_auto_detect();
   }
 
 

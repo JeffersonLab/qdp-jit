@@ -56,7 +56,7 @@ namespace QDP {
     jit_config_print_delayed_message();
 
     // Getting GPU device properties
-    gpu_auto_detect();
+    //gpu_auto_detect();
 
     // Set the pool size
     QDP_get_global_cache().setPoolSize( jit_config_get_pool_size() );

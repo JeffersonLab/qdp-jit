@@ -39,7 +39,7 @@ namespace COUNT {
   void QDP_startGPU()
   {
     // Getting GPU device properties
-    gpu_auto_detect();
+    //gpu_auto_detect();
 
     // Initialize the LLVM wrapper
     llvm_backend_init();

@@ -75,6 +75,10 @@ using namespace llvm::orc;
 #include "lld/Common/Memory.h"
 #endif
 
+#ifdef QDP_BACKEND_L0
+#include "LLVMSPIRVLib/LLVMSPIRVLib.h"
+#endif
+
 #include <system_error>
 #include <memory>
 #include <unistd.h>
@@ -417,6 +421,7 @@ namespace QDP
   template<> llvm::Type* llvm_get_type<double>() { return llvm::Type::getDoubleTy(*TheContext); }
   template<> llvm::Type* llvm_get_type<int>()    { return llvm::Type::getIntNTy(*TheContext,32); }
   template<> llvm::Type* llvm_get_type<bool>()   { return llvm::Type::getIntNTy(*TheContext,8); }
+  template<> llvm::Type* llvm_get_type<size_t>()    { return llvm::Type::getIntNTy(*TheContext,64); }
 
   template<> llvm::Type* llvm_get_type<jit_half_t*>()  { return llvm::Type::getHalfPtrTy(*TheContext); }
   template<> llvm::Type* llvm_get_type<float*>()  { return llvm::Type::getFloatPtrTy(*TheContext); }
@@ -1049,6 +1054,35 @@ namespace QDP
     mapMath["atan2_f64"]="atan2";
   }
 #endif
+
+
+
+#if defined (QDP_BACKEND_L0)
+  void llvm_backend_init_levelzero() {
+    function_created = false;
+
+    llvm::InitializeAllTargets();
+    llvm::InitializeAllTargetMCs();
+    llvm::InitializeAllAsmPrinters();
+    llvm::InitializeAllAsmParsers();
+
+    llvm::PassRegistry *Registry = llvm::PassRegistry::getPassRegistry();
+    llvm::initializeCore(*Registry);
+    llvm::initializeCodeGen(*Registry);
+    llvm::initializeLoopStrengthReducePass(*Registry);
+    llvm::initializeLowerIntrinsicsPass(*Registry);
+    //    llvm::initializeCountingFunctionInserterPass(*Registry);
+    llvm::initializeUnreachableBlockElimLegacyPassPass(*Registry);
+    llvm::initializeConstantHoistingLegacyPassPass(*Registry);
+
+    std::string str_triple("spir64-unknown-unknown");
+    TheTriple.setTriple(str_triple);
+
+    QDPIO::cout << "LLVM initialization" << std::endl;
+    QDPIO::cout << "  Target triple                       : " << str_triple << "\n";
+  }
+#endif
+
   
 
 
@@ -1062,6 +1096,8 @@ namespace QDP
     llvm_backend_init_cuda();
 #elif QDP_BACKEND_AVX
     llvm_backend_init_avx();
+#elif QDP_BACKEND_L0
+    llvm_backend_init_levelzero();
 #else
 #error "No LLVM backend specified."
 #endif
@@ -1113,6 +1149,21 @@ namespace QDP
 #elif defined(QDP_BACKEND_AVX)
     //QDPIO::cout << "setting module data layout\n";
     Mod->setDataLayout(TheJIT->getDataLayout());
+#elif defined(QDP_BACKEND_L0)
+    std::string dl = "";
+    if (0) // 32 bit
+      dl += "e-p:32:32:32-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:"
+	"64-i128:128:128-f32:32:32-f64:64:64-v16:16:16-v24:32:32-v32:32:"
+	"32-v48:64:64-v64:64:64-v96:128:128-v128:128:128-v192:"
+	"256:256-v256:256:256-v512:512:512-v1024:1024:1024";
+    else
+      dl += "e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:"
+	"64-i128:128:128-f32:32:32-f64:64:64-v16:16:16-v24:32:32-v32:32:"
+	"32-v48:64:64-v64:64:64-v96:128:128-v128:128:128-v192:"
+	"256:256-v256:256:256-v512:512:512-v1024:1024:1024";
+
+    Mod->setDataLayout(dl);
+    Mod->setTargetTriple(TheTriple.getTriple());
 #else
 #error "No LLVM backend set"
 #endif
@@ -1126,6 +1177,7 @@ namespace QDP
     AMDspecific::__grid_size_x       = llvm_add_param<int>();
 #elif defined (QDP_BACKEND_AVX)
     AVXspecific::thread_num = llvm_add_param<int>();
+#else
 #endif
   }
 
@@ -1145,8 +1197,12 @@ namespace QDP
     mainFunc = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, str_kernel_name             , Mod.get());
 #endif
     
-#ifdef QDP_BACKEND_ROCM
+#if defined QDP_BACKEND_ROCM
     mainFunc->setCallingConv( llvm::CallingConv::AMDGPU_KERNEL );
+#elif defined QDP_BACKEND_L0
+    mainFunc->setCallingConv( llvm::CallingConv::SPIR_KERNEL );
+#else
+    ;
 #endif
     
     unsigned Idx = 0;
@@ -1863,41 +1919,58 @@ namespace QDP
   
 
 
-  llvm::Value * llvm_special( const char * name )
+  llvm::Value * llvm_special( const char * name , llvm::Type* ret , std::vector<llvm::Type*> param_types , std::vector<llvm::Value*> param_values )
   {
-    llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getInt32Ty(*TheContext), false);
+    llvm::FunctionType *FT = llvm::FunctionType::get( ret ,
+    						      llvm::ArrayRef<llvm::Type*>( param_types.data() , param_types.size() ) , 
+    						      false );
 
     llvm::AttrBuilder ABuilder;
     ABuilder.addAttribute(llvm::Attribute::ReadNone);
 
-    auto ReadTidX = Mod->getOrInsertFunction( name , 
-					      IntrinFnTy , 
+    auto F = Mod->getOrInsertFunction( name , 
+					      FT , 
 					      llvm::AttributeList::get(*TheContext, 
 								       llvm::AttributeList::FunctionIndex, 
 								       ABuilder)
 					      );
 
-    return builder->CreateCall(ReadTidX);
+    if (auto FF = dyn_cast<llvm::Function>(F.getCallee())) {
+      FF->setCallingConv( llvm::CallingConv::SPIR_FUNC );
+    }
+    
+
+    
+    return builder->CreateCall(F,param_values);
+    //return builder->CreateCall(F);
   }
 
 
+
   
-#ifdef QDP_BACKEND_ROCM
-  llvm::Value * llvm_call_special_workitem_x() {     return llvm_special("llvm.amdgcn.workitem.id.x"); }
-  llvm::Value * llvm_call_special_workgroup_x() {     return llvm_special("llvm.amdgcn.workgroup.id.x"); }
-  llvm::Value * llvm_call_special_workgroup_y() {     return llvm_special("llvm.amdgcn.workgroup.id.y"); }
+
+#if defined (QDP_BACKEND_ROCM)
+  llvm::Value * llvm_call_special_workitem_x()  { return llvm_special("llvm.amdgcn.workitem.id.x" , llvm_get_type<int>() , {} , {} ); }
+  llvm::Value * llvm_call_special_workgroup_x() { return llvm_special("llvm.amdgcn.workgroup.id.x", llvm_get_type<int>() , {} , {} ); }
+  llvm::Value * llvm_call_special_workgroup_y() { return llvm_special("llvm.amdgcn.workgroup.id.y", llvm_get_type<int>() , {} , {} ); }
 
   llvm::Value * llvm_call_special_tidx() { return llvm_call_special_workitem_x(); }
   llvm::Value * llvm_call_special_ntidx() { return llvm_derefParam( AMDspecific::__threads_per_group ); }
   llvm::Value * llvm_call_special_ctaidx() { return llvm_call_special_workgroup_x(); }
   llvm::Value * llvm_call_special_nctaidx() { return llvm_derefParam( AMDspecific::__grid_size_x ); }
   llvm::Value * llvm_call_special_ctaidy() { return llvm_call_special_workgroup_y();  }
+#elif defined (QDP_BACKEND_CUDA)
+  llvm::Value * llvm_call_special_tidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.tid.x"      ,llvm_get_type<int>() , {} , {} ); }
+  llvm::Value * llvm_call_special_ntidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.ntid.x"    ,llvm_get_type<int>() , {} , {} ); }
+  llvm::Value * llvm_call_special_ctaidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.x"  ,llvm_get_type<int>() , {} , {} ); }
+  llvm::Value * llvm_call_special_nctaidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.nctaid.x",llvm_get_type<int>() , {} , {} ); }
+  llvm::Value * llvm_call_special_ctaidy() { return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.y"  ,llvm_get_type<int>() , {} , {} ); }
+#elif defined (QDP_BACKEND_L0)
+  llvm::Value * llvm_call_special_get_global_id() { return llvm_special( "get_global_id" ,
+  									 llvm_get_type<size_t>() ,
+  									 { llvm_get_type<int>() } ,
+  									 { llvm_create_value(0) } ); }
 #else
-  llvm::Value * llvm_call_special_tidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.tid.x"); }
-  llvm::Value * llvm_call_special_ntidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.ntid.x"); }
-  llvm::Value * llvm_call_special_ctaidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.x"); }
-  llvm::Value * llvm_call_special_nctaidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.nctaid.x"); }
-  llvm::Value * llvm_call_special_ctaidy() { return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.y"); }
 #endif
 
   
@@ -1913,10 +1986,17 @@ namespace QDP
     llvm::Value * nctaidx = llvm_call_special_nctaidx();
     return llvm_add( llvm_mul( llvm_add( llvm_mul( ctaidy , nctaidx ) , ctaidx ) , ntidx ) , tidx );
   }
-#else
+#elif defined (QDP_BACKEND_AVX)
   llvm::Value * llvm_thread_idx() { 
     return llvm_derefParam( AVXspecific::thread_num );
   }
+#elif defined (QDP_BACKEND_L0)
+  llvm::Value * llvm_thread_idx() {
+    if (!function_created)
+      llvm_create_function();
+    return llvm_call_special_get_global_id();
+  }
+#else
 #endif
 
 
@@ -2173,7 +2253,6 @@ namespace QDP
     func.time_dynload = swatch.getTimeInMicroseconds();
   }
 #endif
-
 
   
 #ifdef QDP_BACKEND_ROCM
@@ -2673,6 +2752,156 @@ namespace QDP
 #endif
 
   
+
+
+#ifdef QDP_BACKEND_L0
+  void llvm_build_function_levelzero_codegen(JitFunction& func, const std::string& spirv_path)
+  {
+    StopWatch swatch(false);
+    swatch.start();
+    
+    if (math_declarations.size() > 0)
+      {
+	QDPIO::cout << "no math function support ...\n";
+      }
+
+    swatch.stop();
+    func.time_math = swatch.getTimeInMicroseconds();
+    swatch.reset();
+    swatch.start();
+
+    //QDPIO::cout << "setting module data layout\n";
+    //Mod->setDataLayout(TargetMachine->createDataLayout());
+
+    if (jit_config_get_verbose_output())
+      {
+	//QDPIO::cout << "internalize and remove dead code ...\n";
+      }
+    
+    swatch.stop();
+    func.time_passes = swatch.getTimeInMicroseconds();
+
+    
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "\n\n";
+	QDPIO::cout << str_pretty << std::endl;
+	
+	if (Layout::primaryNode())
+	  {
+	    llvm_module_dump();
+	  }
+
+	std::string module_name = "module_" + str_kernel_name + ".bc";
+	QDPIO::cout << "write code to " << module_name << "\n";
+	std::error_code EC;
+#if QDP_LLVM13
+	llvm::raw_fd_ostream OS(module_name, EC, llvm::sys::fs::OF_None);
+#else
+	llvm::raw_fd_ostream OS(module_name, EC, llvm::sys::fs::F_None);
+#endif
+	llvm::WriteBitcodeToFile(*Mod, OS);
+	OS.flush();
+      }
+
+    
+    swatch.reset();
+    swatch.start();
+
+    //SPIRV::TranslatorOpts Opts;
+      
+    std::string Err;
+    std::ofstream OutFile( spirv_path , std::ios::binary );
+    //if ( ! llvm::writeSpirv( *Mod , Opts , OutFile, Err) )
+    if ( ! llvm::writeSpirv( Mod.get() , OutFile, Err) )
+      {
+	QDPIO::cout << "Error writing SPIRV\n\n";
+	QDPIO::cout << str_pretty << std::endl;
+	QDP_abort(1);
+      }
+
+    swatch.stop();
+    func.time_codegen = swatch.getTimeInMicroseconds();
+
+    
+    swatch.reset();
+    swatch.start();
+    //get_jitf( func , ptx_kernel , str_kernel_name , str_pretty , str_arch );
+    swatch.stop();
+    func.time_dynload = swatch.getTimeInMicroseconds();
+  }
+
+  
+  void llvm_build_function_levelzero(JitFunction& func)
+  {
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "\n\n";
+	QDPIO::cout << str_pretty << std::endl;
+	
+	if (Layout::primaryNode())
+	  {
+	    llvm_module_dump();
+	  }
+      }
+    
+    std::string spirv_path =
+	    "module_" + str_kernel_name +
+	    "_node_" + std::to_string(Layout::nodeNumber()) +
+	    "_pid_" + std::to_string(::getpid()) +
+	    ".spv";
+
+    // call codegen
+    llvm_build_function_levelzero_codegen( func , spirv_path );
+
+#if 0
+    std::ostringstream sstream;
+    std::ifstream fin(shared_path, ios::binary);
+    sstream << fin.rdbuf();
+    std::string shared(sstream.str());
+
+    if (! jit_config_get_keepfiles() )
+      {
+	if (std::remove(shared_path.c_str()))
+	  {
+	    QDPIO::cout << "Error removing file: " << shared_path << std::endl;
+	    QDP_abort(1);
+	  }
+      }
+
+    
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "shared object file read back in. size = " << shared.size() << "\n";
+      }
+
+    StopWatch swatch(false);
+    swatch.start();
+
+    if (!get_jitf( func , shared , str_kernel_name , str_pretty , str_arch ))
+      {
+	// Something went wrong loading the module or finding the kernel
+	// Print some diagnostics about the module
+	QDPIO::cout << "Module declarations:" << std::endl;
+	auto F = Mod->begin();
+	while ( F != Mod->end() )
+	  {
+	    if (F->isDeclaration())
+	      {
+		QDPIO::cout << F->getName().str() << std::endl;
+	      }
+	    F++;
+	  }
+	sleep(1);
+      }
+
+    swatch.stop();
+    func.time_dynload = swatch.getTimeInMicroseconds();
+#endif
+  }
+#endif
+
+
   
 
   void llvm_build_function(JitFunction& func)
@@ -2689,6 +2918,8 @@ namespace QDP
     llvm_build_function_cuda(func);
 #elif QDP_BACKEND_AVX
     llvm_build_function_avx(func);
+#elif QDP_BACKEND_L0
+    llvm_build_function_levelzero(func);
 #else
 #error "No LLVM backend specified."
 #endif
