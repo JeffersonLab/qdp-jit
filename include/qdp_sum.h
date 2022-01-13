@@ -3,16 +3,16 @@
 
 namespace QDP {
 
-#if defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_ROCM)
+#if defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_L0)
   template <class T2>
-  void qdp_jit_reduce(int size, int threads, int blocks, int shared_mem_usage, int in_id, int out_id )
+  void qdp_jit_reduce(int size, int threads, int blocks, int in_id, int out_id )
   {
     static JitFunction function;
 
     if (function.empty())
       function_sum_build<T2>(function);
 
-    function_sum_exec(function, size, threads, blocks, shared_mem_usage, in_id, out_id );
+    function_sum_exec(function, size, threads, blocks, in_id, out_id );
   }
 
 
@@ -22,7 +22,6 @@ namespace QDP {
   void qdp_jit_reduce_convert_indirection(int size, 
 					  int threads, 
 					  int blocks, 
-					  int shared_mem_usage,
 					  int in_id, 
 					  int out_id, 
 					  int siteTableId)
@@ -32,7 +31,7 @@ namespace QDP {
     if (function.empty())
        function_sum_convert_ind_build<T1,T2,input_layout>(function);
 
-    function_sum_convert_ind_exec(function, size, threads, blocks, shared_mem_usage, 
+    function_sum_convert_ind_exec(function, size, threads, blocks, 
 				  in_id, out_id, siteTableId );
   }
 
@@ -43,7 +42,6 @@ namespace QDP {
   void qdp_jit_reduce_convert_indirection_expr(int size, 
 					       int threads, 
 					       int blocks, 
-					       int shared_mem_usage,
 					       const QDPExpr<RHS,OLattice<T1> >& rhs, 
 					       int out_id, 
 					       int siteTableId)
@@ -53,7 +51,7 @@ namespace QDP {
     if (function.empty())
       function_sum_convert_ind_expr_build<input_layout>(function,rhs);
 
-    function_sum_convert_ind_expr_exec(function, size, threads, blocks, shared_mem_usage, 
+    function_sum_convert_ind_expr_exec(function, size, threads, blocks,
 				       rhs, out_id, siteTableId );
   }
 
@@ -65,7 +63,6 @@ namespace QDP {
   void qdp_jit_summulti_convert_indirection(int size, 
 					    int threads, 
 					    int blocks, 
-					    int shared_mem_usage,
 					    int in_id, 
 					    int out_id,
 					    int numsubsets,
@@ -81,7 +78,7 @@ namespace QDP {
       function_summulti_convert_ind_build<T1,T2,input_layout>(function);
 
     function_summulti_convert_ind_exec(function,
-    				       size, threads, blocks, shared_mem_usage, 
+    				       size, threads, blocks,
     				       in_id, out_id,
     				       numsubsets ,
     				       sizes ,
@@ -95,7 +92,6 @@ namespace QDP {
   void qdp_jit_summulti(int size, 
 			int threads, 
 			int blocks, 
-			int shared_mem_usage,
 			int in_id, 
 			int out_id,
 			int numsubsets,
@@ -108,7 +104,7 @@ namespace QDP {
       function_summulti_build<T>(function);
 
     function_summulti_exec(function,
-    			   size, threads, blocks, shared_mem_usage, 
+    			   size, threads, blocks,
     			   in_id, out_id,
     			   numsubsets ,
     			   sizes );
@@ -122,7 +118,6 @@ namespace QDP {
   void qdp_jit_reduce_convert(int size, 
 			      int threads, 
 			      int blocks, 
-			      int shared_mem_usage,
 			      int in_id, 
 			      int out_id)
   {
@@ -131,7 +126,7 @@ namespace QDP {
     if (function.empty())
       function_sum_convert_build<T1,T2,input_layout>(function);
 
-    function_sum_convert_exec(function, size, threads, blocks, shared_mem_usage, 
+    function_sum_convert_exec(function, size, threads, blocks,
 			      in_id, out_id );
   }
 
@@ -161,14 +156,14 @@ namespace QDP {
   
 
   template <class T2, class ReductionOp >
-  void qdp_jit_bool_reduction(int size, int threads, int blocks, int shared_mem_usage, int in_id, int out_id )
+  void qdp_jit_bool_reduction(int size, int threads, int blocks, int in_id, int out_id )
   {
     static JitFunction function;
 
     if (function.empty())
       function_bool_reduction_build<T2,ReductionOp>(function);
 
-    function_bool_reduction_exec(function, size, threads, blocks, shared_mem_usage, in_id, out_id );
+    function_bool_reduction_exec(function, size, threads, blocks, in_id, out_id );
   }
 
   
@@ -178,7 +173,6 @@ namespace QDP {
   void qdp_jit_bool_reduction_convert(int size, 
 				      int threads, 
 				      int blocks, 
-				      int shared_mem_usage,
 				      int in_id, 
 				      int out_id)
   {
@@ -187,13 +181,13 @@ namespace QDP {
     if (function.empty())
       function_bool_reduction_convert_build< T1 , T2 , input_layout , ConvertOp , ReductionOp >(function);
 
-    function_bool_reduction_exec(function, size, threads, blocks, shared_mem_usage, in_id, out_id );
+    function_bool_reduction_exec(function, size, threads, blocks, in_id, out_id );
   }
 #endif
 
 
   
-#if defined (QDP_BACKEND_CUDA) || (QDP_BACKEND_ROCM)
+#if defined (QDP_BACKEND_CUDA) || (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_L0)
   template<class T1>
   typename UnaryReturn<OLattice<T1>, FnSum>::Type_t
   sum(const OLattice<T1>& s1, const Subset& s)
@@ -228,8 +222,7 @@ namespace QDP {
 	QDP_error_exit( "sum(Lat,subset) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)gpu_getMaxGridX());
       }
 
-      int shared_mem_usage = numThreads*sizeof(T2);
-      //QDP_info("sum(Lat,subset): using %d threads per block, %d blocks, shared mem=%d" , numThreads , numBlocks , shared_mem_usage );
+      //QDP_info("sum(Lat,subset): using %d threads per block, %d blocks" , numThreads , numBlocks );
 
       if (first) {
 	allocated=true;
@@ -240,17 +233,17 @@ namespace QDP {
       
       if (numBlocks == 1) {
 	if (first) {
-	  qdp_jit_reduce_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, shared_mem_usage, s1.getId(), d_id , s.getIdSiteTable());
+	  qdp_jit_reduce_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, s1.getId(), d_id , s.getIdSiteTable());
 	}
 	else {
-	  qdp_jit_reduce<T2>( actsize , numThreads , numBlocks, shared_mem_usage , in_id , d_id );
+	  qdp_jit_reduce<T2>( actsize , numThreads , numBlocks , in_id , d_id );
 	}
       } else {
 	if (first) {
-	  qdp_jit_reduce_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, shared_mem_usage, s1.getId(), out_id, s.getIdSiteTable());
+	  qdp_jit_reduce_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, s1.getId(), out_id, s.getIdSiteTable());
 	}
 	else
-	  qdp_jit_reduce<T2>( actsize , numThreads , numBlocks , shared_mem_usage , in_id , out_id );
+	  qdp_jit_reduce<T2>( actsize , numThreads , numBlocks , in_id , out_id );
 
       }
 
@@ -272,6 +265,7 @@ namespace QDP {
 	QDP_get_global_cache().signoff( out_id );
       }
 
+    
     // Copy result to host
     QDP_get_global_cache().assureOnHost(d_id);
 
@@ -381,7 +375,6 @@ namespace QDP {
 	QDP_error_exit( "sum(Lat,subset) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)gpu_getMaxGridX());
       }
 
-      int shared_mem_usage = numThreads*sizeof(T2);
       //QDP_info("sum(Lat,subset): using %d threads per block, %d blocks, shared mem=%d" , numThreads , numBlocks , shared_mem_usage );
 
       if (first) {
@@ -395,22 +388,22 @@ namespace QDP {
 	{
 	  if (first)
 	    {
-	      qdp_jit_reduce_convert_indirection_expr<JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, shared_mem_usage, rhs , d_id , s.getIdSiteTable());
+	      qdp_jit_reduce_convert_indirection_expr<JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, rhs , d_id , s.getIdSiteTable());
 	    }
 	  else
 	    {
-	      qdp_jit_reduce<T2>( actsize , numThreads , numBlocks, shared_mem_usage , in_id , d_id );
+	      qdp_jit_reduce<T2>( actsize , numThreads , numBlocks, in_id , d_id );
 	    }
 	}
       else
 	{
 	  if (first)
 	    {
-	      qdp_jit_reduce_convert_indirection_expr<JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, shared_mem_usage, rhs , out_id, s.getIdSiteTable());
+	      qdp_jit_reduce_convert_indirection_expr<JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, rhs , out_id, s.getIdSiteTable());
 	    }
 	  else
 	    {
-	      qdp_jit_reduce<T2>( actsize , numThreads , numBlocks , shared_mem_usage , in_id , out_id );
+	      qdp_jit_reduce<T2>( actsize , numThreads , numBlocks , in_id , out_id );
 	    }
 
       }
@@ -463,14 +456,12 @@ namespace QDP {
   template <class T>
   void globalMax_kernel(int size, int threads, int blocks, int in_id, int out_id)
   {
-    int shared_mem_usage = threads * sizeof(T);
-
     static JitFunction function;
 
     if (function.empty())
       function_global_max_build<T>(function);
 
-    function_global_max_exec(function, size, threads, blocks, shared_mem_usage, in_id, out_id );
+    function_global_max_exec(function, size, threads, blocks, in_id, out_id );
   }
 
 
@@ -564,7 +555,6 @@ namespace QDP {
 	QDP_error_exit( "sumMulti(Lat,set) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)gpu_getMaxGridX());
       }
 
-      int shared_mem_usage = numThreads*sizeof(T2);
       //QDP_info("sum(Lat,subset): using %d threads per block, %d blocks, shared mem=%d" , numThreads , numBlocks , shared_mem_usage );
 
       if (first) {
@@ -576,7 +566,6 @@ namespace QDP {
       if (numBlocks == 1) {
 	if (first) {
 	  qdp_jit_summulti_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(maxsize, numThreads, numBlocks,
-										 shared_mem_usage,
 										 s1.getId(), d_id,
 										 numsubsets,
 										 sizes,
@@ -584,7 +573,6 @@ namespace QDP {
 	}
 	else {
 	  qdp_jit_summulti<T2>(maxsize, numThreads, numBlocks,
-			       shared_mem_usage,
 			       in_id, d_id,
 			       numsubsets,
 			       sizes);
@@ -592,7 +580,6 @@ namespace QDP {
       } else {
 	if (first) {
 	  qdp_jit_summulti_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(maxsize, numThreads, numBlocks,
-										 shared_mem_usage,
 										 s1.getId(), out_id,
 										 numsubsets,
 										 sizes,
@@ -600,7 +587,6 @@ namespace QDP {
 	}
 	else {
 	  qdp_jit_summulti<T2>(maxsize, numThreads, numBlocks,
-			       shared_mem_usage,
 			       in_id, out_id,
 			       numsubsets,
 			       sizes);
@@ -865,7 +851,6 @@ namespace QDP {
 	QDP_error_exit( "isfinite(Lat) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)gpu_getMaxGridX());
       }
 
-      int shared_mem_usage = numThreads*sizeof(T2);
       //QDP_info("sum(Lat,subset): using %d threads per block, %d blocks, shared mem=%d" , numThreads , numBlocks , shared_mem_usage );
 
       if (first) {
@@ -876,17 +861,17 @@ namespace QDP {
       
       if (numBlocks == 1) {
 	if (first) {
-	  qdp_jit_bool_reduction_convert<T1,T2,JitDeviceLayout::Coalesced,IsFiniteAssign,AndAssign>(actsize, numThreads, numBlocks, shared_mem_usage, s1.getId(), d_id );
+	  qdp_jit_bool_reduction_convert<T1,T2,JitDeviceLayout::Coalesced,IsFiniteAssign,AndAssign>(actsize, numThreads, numBlocks, s1.getId(), d_id );
 	}
 	else {
-	  qdp_jit_bool_reduction<T2,AndAssign>( actsize , numThreads , numBlocks, shared_mem_usage , in_id , d_id );
+	  qdp_jit_bool_reduction<T2,AndAssign>( actsize , numThreads , numBlocks, in_id , d_id );
 	}
       } else {
 	if (first) {
-	  qdp_jit_bool_reduction_convert<T1,T2,JitDeviceLayout::Coalesced,IsFiniteAssign,AndAssign>(actsize, numThreads, numBlocks, shared_mem_usage, s1.getId(), out_id );
+	  qdp_jit_bool_reduction_convert<T1,T2,JitDeviceLayout::Coalesced,IsFiniteAssign,AndAssign>(actsize, numThreads, numBlocks, s1.getId(), out_id );
 	}
 	else
-	  qdp_jit_bool_reduction<T2,AndAssign>( actsize , numThreads , numBlocks , shared_mem_usage , in_id , out_id );
+	  qdp_jit_bool_reduction<T2,AndAssign>( actsize , numThreads , numBlocks , in_id , out_id );
 
       }
 

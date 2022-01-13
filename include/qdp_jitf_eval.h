@@ -29,9 +29,10 @@ namespace QDP {
 #endif
   
     //
-    // SIMD version in AVX
+    // SIMD version for L0
     // Scalar version for CUDA/ROCM
     //
+    if (1)
     {
       llvm_start_new_function("eval",expr.str().c_str() );
 
@@ -67,7 +68,7 @@ namespace QDP {
     }
 #if defined (QDP_CODEGEN_VECTOR)
     //
-    // Scalar version for AVX
+    // Scalar version for L0
     {
       llvm_start_new_function("eval_scalar",expr.str().c_str() );
 

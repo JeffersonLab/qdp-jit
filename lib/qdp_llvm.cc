@@ -85,6 +85,8 @@ using namespace llvm::orc;
 
 #include <signal.h>
 
+    
+
 
 using namespace llvm;
 using namespace llvm::codegen;
@@ -415,6 +417,7 @@ namespace QDP
     return Mod.get();
   }
 
+  template<> llvm::Type* llvm_get_type<void>()  { return llvm::Type::getVoidTy(*TheContext); }
 
   template<> llvm::Type* llvm_get_type<jit_half_t>()  { return llvm::Type::getHalfTy(*TheContext); }
   template<> llvm::Type* llvm_get_type<float>()  { return llvm::Type::getFloatTy(*TheContext); }
@@ -1075,11 +1078,56 @@ namespace QDP
     llvm::initializeUnreachableBlockElimLegacyPassPass(*Registry);
     llvm::initializeConstantHoistingLegacyPassPass(*Registry);
 
-    std::string str_triple("spir64-unknown-unknown");
+    //std::string str_triple("spir64-unknown-unknown");
+    std::string str_triple("spir64");
     TheTriple.setTriple(str_triple);
 
     QDPIO::cout << "LLVM initialization" << std::endl;
     QDPIO::cout << "  Target triple                       : " << str_triple << "\n";
+
+    mapMath["sin_f32"]="_Z3sinf";
+    mapMath["acos_f32"]="_Z4acosf";
+    mapMath["asin_f32"]="_Z4asinf";
+    mapMath["atan_f32"]="_Z4atanf";
+    mapMath["ceil_f32"]="_Z4ceilf";
+    mapMath["floor_f32"]="_Z4floorf";
+    mapMath["cos_f32"]="_Z3cosf";
+    mapMath["cosh_f32"]="_Z4coshf";
+    mapMath["exp_f32"]="_Z3expf";
+    mapMath["log_f32"]="_Z3logf";
+    mapMath["log10_f32"]="_Z5log10f";
+    mapMath["sinh_f32"]="_Z4sinhf";
+    mapMath["tan_f32"]="_Z3tanf";
+    mapMath["tanh_f32"]="_Z4tanhf";
+    mapMath["fabs_f32"]="_Z4fabsf";
+    mapMath["sqrt_f32"]="_Z4sqrtf";
+    mapMath["isfinite_f32"]="_Z8isfinitef";
+    // mapMath["isinf_f32"]="isinfdf";
+    // mapMath["isnan_f32"]="isnandf";
+    
+    mapMath["pow_f32"]="_Z3powff";
+    mapMath["atan2_f32"]="_Z5atan2ff";
+    
+    mapMath["sin_f64"]="_Z3sind";
+    mapMath["acos_f64"]="_Z4acosd";
+    mapMath["asin_f64"]="_Z4asind";
+    mapMath["atan_f64"]="_Z4atand";
+    mapMath["ceil_f64"]="_Z4ceild";
+    mapMath["floor_f64"]="_Z4floord";
+    mapMath["cos_f64"]="_Z3cosd";
+    mapMath["cosh_f64"]="_Z4coshd";
+    mapMath["exp_f64"]="_Z3expd";
+    mapMath["log_f64"]="_Z3logd";
+    mapMath["log10_f64"]="_Z5log10d";
+    mapMath["sinh_f64"]="_Z4sinhd";
+    mapMath["tan_f64"]="_Z3tand";
+    mapMath["tanh_f64"]="_Z4tanhd";
+    mapMath["fabs_f64"]="_Z4fabsd";
+    mapMath["sqrt_f64"]="_Z4sqrtd";
+    mapMath["isfinite_f64"]="_Z8isfinited";
+    
+    mapMath["pow_f64"]="_Z3powdd";
+    mapMath["atan2_f64"]="_Z5atan2dd";
   }
 #endif
 
@@ -1157,10 +1205,11 @@ namespace QDP
 	"32-v48:64:64-v64:64:64-v96:128:128-v128:128:128-v192:"
 	"256:256-v256:256:256-v512:512:512-v1024:1024:1024";
     else
-      dl += "e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:"
-	"64-i128:128:128-f32:32:32-f64:64:64-v16:16:16-v24:32:32-v32:32:"
-	"32-v48:64:64-v64:64:64-v96:128:128-v128:128:128-v192:"
-	"256:256-v256:256:256-v512:512:512-v1024:1024:1024";
+      dl += "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024";
+	// "e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:"
+	// "64-i128:128:128-f32:32:32-f64:64:64-v16:16:16-v24:32:32-v32:32:"
+	// "32-v48:64:64-v64:64:64-v96:128:128-v128:128:128-v192:"
+	// "256:256-v256:256:256-v512:512:512-v1024:1024:1024";
 
     Mod->setDataLayout(dl);
     Mod->setTargetTriple(TheTriple.getTriple());
@@ -1374,7 +1423,7 @@ namespace QDP
   }
 
 
-  llvm::Value* llvm_shr( llvm::Value* lhs , llvm::Value* rhs ) {  
+  llvm::Value* llvm_shr( llvm::Value* lhs , llvm::Value* rhs ) {
     auto vals = llvm_normalize_values(lhs,rhs);
     //   llvm::Type* args_type = vals.first->getType();
     //   assert( !args_type->isFloatingPointTy() );
@@ -1541,8 +1590,8 @@ namespace QDP
   }
 
 
-
-  llvm::Value* llvm_get_shared_ptr( llvm::Type *ty ) {
+#if defined(QDP_BACKEND_CUDA) || defined(QDP_BACKEND_ROCM)
+  llvm::Value* llvm_get_shared_ptr( llvm::Type *ty , int n ) {
 
     llvm::GlobalVariable *gv = new llvm::GlobalVariable ( *Mod , 
 							  llvm::ArrayType::get(ty,0) ,
@@ -1552,11 +1601,28 @@ namespace QDP
 							  "shared_buffer", 
 							  0, //GlobalVariable *InsertBefore=0, 
 							  llvm::GlobalVariable::NotThreadLocal, //ThreadLocalMode=NotThreadLocal
-							  3, // unsigned AddressSpace=0, 
+							  qdp_jit_config_get_local_addrspace(), // unsigned AddressSpace=0, 
 							  false); //bool isExternallyInitialized=false)
-    return builder->CreatePointerCast(gv, llvm::PointerType::get(ty,3) );
+    return builder->CreatePointerCast(gv, llvm::PointerType::get( ty , qdp_jit_config_get_local_addrspace() ) );
   }
+#else
+  llvm::Value* llvm_get_shared_ptr( llvm::Type *ty , int n ) {
 
+    llvm::GlobalVariable *gv = new llvm::GlobalVariable ( *Mod , 
+							  llvm::ArrayType::get( ty , n ) ,
+							  false , 
+							  llvm::GlobalVariable::InternalLinkage, 
+							  nullptr, 
+							  "shared_buffer", 
+							  0, //GlobalVariable *InsertBefore=0, 
+							  llvm::GlobalVariable::NotThreadLocal, //ThreadLocalMode=NotThreadLocal
+							  qdp_jit_config_get_local_addrspace(), // unsigned AddressSpace=0, 
+							  false); //bool isExternallyInitialized=false)
+
+    return builder->CreateGEP( gv->getType()->getElementType() , gv , { llvm_create_value(0) , llvm_create_value(0) } );
+  }
+#endif
+  
 
 #if defined (QDP_CODEGEN_VECTOR)  
   llvm::Value* llvm_insert_element( llvm::Value* vec , llvm::Value* val , int pos )
@@ -1580,7 +1646,7 @@ namespace QDP
 
     llvm::Type * vec_type =  llvm::FixedVectorType::get( cast<PointerType>(val->getType())->getElementType() , Layout::virtualNodeNumber() );
 
-    return builder->CreatePointerCast( val , llvm::PointerType::get( vec_type , 0 ) );
+    return builder->CreatePointerCast( val , llvm::PointerType::get( vec_type , qdp_jit_config_get_global_addrspace() ) );
   }
 
   llvm::Value* llvm_fill_vector( llvm::Value* val )
@@ -1668,7 +1734,7 @@ namespace QDP
     auto DL = Mod->getDataLayout();
     unsigned AddrSpace = DL.getAllocaAddrSpace();
 
-    //QDPIO::cout << "using address space : " << AddrSpace << "\n";
+    //QDPIO::cout << "Alloca: using address space : " << AddrSpace << "\n";
     
     llvm::Value* ret = builder->CreateAlloca( type , AddrSpace , llvm_create_value(elements) );    // This can be a llvm::Value*
 
@@ -1697,7 +1763,7 @@ namespace QDP
     // return llvm_cast( llvm_type<bool>::value , u8 );
   }
   template<> ParamRef llvm_add_param<bool*>() { 
-    vecParamType.push_back( llvm::Type::getInt8PtrTy(*TheContext) );
+    vecParamType.push_back( llvm::Type::getInt8PtrTy(*TheContext,qdp_jit_config_get_global_addrspace()) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<int64_t>() { 
@@ -1709,7 +1775,7 @@ namespace QDP
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<int*>() { 
-    vecParamType.push_back( llvm::Type::getInt32PtrTy(*TheContext) );
+    vecParamType.push_back( llvm::Type::getInt32PtrTy(*TheContext,qdp_jit_config_get_global_addrspace()) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<jit_half_t>() { 
@@ -1721,11 +1787,11 @@ namespace QDP
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<jit_half_t*>() { 
-    vecParamType.push_back( llvm::Type::getHalfPtrTy(*TheContext) );
+    vecParamType.push_back( llvm::Type::getHalfPtrTy(*TheContext,qdp_jit_config_get_global_addrspace()) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<float*>() { 
-    vecParamType.push_back( llvm::Type::getFloatPtrTy(*TheContext) );
+    vecParamType.push_back( llvm::Type::getFloatPtrTy(*TheContext,qdp_jit_config_get_global_addrspace()) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<double>() { 
@@ -1733,20 +1799,20 @@ namespace QDP
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<double*>() { 
-    vecParamType.push_back( llvm::Type::getDoublePtrTy(*TheContext) );
+    vecParamType.push_back( llvm::Type::getDoublePtrTy(*TheContext,qdp_jit_config_get_global_addrspace()) );
     return vecParamType.size()-1;
   }
 
   template<> ParamRef llvm_add_param<int**>() {
-    vecParamType.push_back( llvm::PointerType::get( llvm::Type::getInt32PtrTy(*TheContext) , 0 ) );  // AddressSpace = 0 ??
+    vecParamType.push_back( llvm::PointerType::get( llvm::Type::getInt32PtrTy(*TheContext) , qdp_jit_config_get_global_addrspace() ) );  // AddressSpace = 0 ??
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<float**>() {
-    vecParamType.push_back( llvm::PointerType::get( llvm::Type::getFloatPtrTy(*TheContext) , 0 ) );  // AddressSpace = 0 ??
+    vecParamType.push_back( llvm::PointerType::get( llvm::Type::getFloatPtrTy(*TheContext) , qdp_jit_config_get_global_addrspace() ) );  // AddressSpace = 0 ??
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<double**>() {
-    vecParamType.push_back( llvm::PointerType::get( llvm::Type::getDoublePtrTy(*TheContext) , 0 ) );  // AddressSpace = 0 ??
+    vecParamType.push_back( llvm::PointerType::get( llvm::Type::getDoublePtrTy(*TheContext) , qdp_jit_config_get_global_addrspace() ) );  // AddressSpace = 0 ??
     return vecParamType.size()-1;
   }
 
@@ -1893,28 +1959,8 @@ namespace QDP
   }
   
 
-  void llvm_bar_sync()
-  {
-    llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getVoidTy(*TheContext), false);
 
-    llvm::AttrBuilder ABuilder;
-    ABuilder.addAttribute(llvm::Attribute::ReadNone);
-
-#ifdef QDP_BACKEND_ROCM
-    std::string bar_name("llvm.amdgcn.s.barrier");
-#else
-    std::string bar_name("llvm.nvvm.barrier0");
-#endif
-    
-    auto Bar = Mod->getOrInsertFunction( bar_name.c_str() , 
-					 IntrinFnTy , 
-					 llvm::AttributeList::get(*TheContext, 
-								  llvm::AttributeList::FunctionIndex, 
-								  ABuilder) );
-
-    builder->CreateCall(Bar);
-  }
-
+  
 
   
 
@@ -1947,6 +1993,37 @@ namespace QDP
 
 
 
+#if defined (QDP_BACKEND_L0)
+  void llvm_bar_sync()
+  {
+    llvm_special( "_Z7barrierj" , llvm_get_type<void>() , { llvm_get_type<int>() } , { llvm_create_value(1) } );
+  }
+#else
+  void llvm_bar_sync()
+  {
+    llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getVoidTy(*TheContext), false);
+
+    llvm::AttrBuilder ABuilder;
+    ABuilder.addAttribute(llvm::Attribute::ReadNone);
+
+#ifdef QDP_BACKEND_ROCM
+    std::string bar_name("llvm.amdgcn.s.barrier");
+#else
+    std::string bar_name("llvm.nvvm.barrier0");
+#endif
+    
+    auto Bar = Mod->getOrInsertFunction( bar_name.c_str() , 
+					 IntrinFnTy , 
+					 llvm::AttributeList::get(*TheContext, 
+								  llvm::AttributeList::FunctionIndex, 
+								  ABuilder) );
+
+    builder->CreateCall(Bar);
+  }
+#endif
+
+  
+
   
 
 #if defined (QDP_BACKEND_ROCM)
@@ -1966,10 +2043,12 @@ namespace QDP
   llvm::Value * llvm_call_special_nctaidx() { return llvm_special("llvm.nvvm.read.ptx.sreg.nctaid.x",llvm_get_type<int>() , {} , {} ); }
   llvm::Value * llvm_call_special_ctaidy() { return llvm_special("llvm.nvvm.read.ptx.sreg.ctaid.y"  ,llvm_get_type<int>() , {} , {} ); }
 #elif defined (QDP_BACKEND_L0)
-  llvm::Value * llvm_call_special_get_global_id() { return llvm_special( "get_global_id" ,
-  									 llvm_get_type<size_t>() ,
-  									 { llvm_get_type<int>() } ,
-  									 { llvm_create_value(0) } ); }
+  llvm::Value * llvm_call_special_get_global_id() { return llvm_special( "_Z13get_global_idj" ,	llvm_get_type<size_t>() , { llvm_get_type<int>() } , { llvm_create_value(0) } ); }
+  llvm::Value * llvm_call_special_tidx()          { return llvm_cast( llvm_get_type<int>() , llvm_special( "_Z12get_local_idj" ,	llvm_get_type<size_t>() , { llvm_get_type<int>() } , { llvm_create_value(0) } )); }
+  llvm::Value * llvm_call_special_ntidx()         { return llvm_cast( llvm_get_type<int>() , llvm_special( "_Z14get_local_sizej" ,llvm_get_type<size_t>() , { llvm_get_type<int>() } , { llvm_create_value(0) } )); }
+  llvm::Value * llvm_call_special_ctaidx()        { return llvm_cast( llvm_get_type<int>() , llvm_special( "_Z12get_group_idj"   ,llvm_get_type<size_t>() , { llvm_get_type<int>() } , { llvm_create_value(0) } )); }
+  llvm::Value * llvm_call_special_nctaidx()       { return llvm_cast( llvm_get_type<int>() , llvm_special( "_Z14get_num_groupsj" ,llvm_get_type<size_t>() , { llvm_get_type<int>() } , { llvm_create_value(0) } )); }
+  llvm::Value * llvm_call_special_ctaidy()        { return llvm_cast( llvm_get_type<int>() , llvm_special( "_Z12get_group_idj"   ,llvm_get_type<size_t>() , { llvm_get_type<int>() } , { llvm_create_value(1) } )); }
 #else
 #endif
 
@@ -2757,16 +2836,80 @@ namespace QDP
 #ifdef QDP_BACKEND_L0
   void llvm_build_function_levelzero_codegen(JitFunction& func, const std::string& spirv_path)
   {
-    StopWatch swatch(false);
-    swatch.start();
-    
-    if (math_declarations.size() > 0)
+#if 0
+    SmallVector<llvm::Metadata *, 8> addressQuals;
+    SmallVector<llvm::Metadata *, 8> accessQuals;
+    SmallVector<llvm::Metadata *, 8> argTypeNames;
+    SmallVector<llvm::Metadata *, 8> argTypeQuals;
+
+    unsigned Idx = 0;
+    for (llvm::Function::arg_iterator AI = mainFunc->arg_begin(), AE = mainFunc->arg_end() ; AI != AE ; ++AI, ++Idx)
       {
-	QDPIO::cout << "no math function support ...\n";
+	llvm::Type* ty = AI->getType();
+	
+	if (ty->isPointerTy())
+	  {
+	    std::cout << "pointer: " << AI->getName().str() << "\n";
+	    
+	    addressQuals.push_back( llvm::ConstantAsMetadata::get(builder->getInt32( dyn_cast<llvm::PointerType>(ty)->getAddressSpace() )));
+
+	    llvm::Type* ety = dyn_cast<llvm::PointerType>(ty)->getElementType();
+	    std::string type_str;
+	    if (ety == llvm::Type::getFloatTy(*TheContext))
+	      type_str = "float*";
+	    else if (ety == llvm::Type::getDoubleTy(*TheContext))
+	      type_str = "double*";
+	    else if (ety == llvm::Type::getInt8Ty(*TheContext))
+	      type_str = "bool*";
+	    else if (ety == llvm::Type::getInt32Ty(*TheContext))
+	      type_str = "int*";
+	    else
+	      {
+		QDPIO::cout << "ptr type not recognized\n";
+		QDP_abort(1);
+	      }
+	    argTypeNames.push_back(llvm::MDString::get(*TheContext, type_str ));
+
+	  }
+	else
+	  {
+	    std::cout << "non-pointer: " << AI->getName().str() << "\n";
+	    addressQuals.push_back( llvm::ConstantAsMetadata::get(builder->getInt32( 0 )));
+
+	    std::string type_str;
+	    if (ty == llvm::Type::getFloatTy(*TheContext))
+	      type_str = "float";
+	    else if (ty == llvm::Type::getDoubleTy(*TheContext))
+	      type_str = "double";
+	    else if (ty == llvm::Type::getInt8Ty(*TheContext))
+	      type_str = "bool";
+	    else if (ty == llvm::Type::getInt32Ty(*TheContext))
+	      type_str = "int";
+	    else
+	      {
+		QDPIO::cout << "type not recognized\n";
+		QDP_abort(1);
+	      }
+	    argTypeNames.push_back(llvm::MDString::get(*TheContext, type_str ));
+
+	  }
+	accessQuals.push_back(llvm::MDString::get(*TheContext, "none"));
+
+	argTypeQuals.push_back(llvm::MDString::get(*TheContext, "" ));
       }
 
-    swatch.stop();
-    func.time_math = swatch.getTimeInMicroseconds();
+    
+    mainFunc->setMetadata("kernel_arg_addr_space" , llvm::MDNode::get(*TheContext, addressQuals));
+    mainFunc->setMetadata("kernel_arg_access_qual", llvm::MDNode::get(*TheContext, accessQuals));
+    mainFunc->setMetadata("kernel_arg_type",        llvm::MDNode::get(*TheContext, argTypeNames));
+    mainFunc->setMetadata("kernel_arg_base_type",   llvm::MDNode::get(*TheContext, argTypeNames));
+    mainFunc->setMetadata("kernel_arg_type_qual",   llvm::MDNode::get(*TheContext, argTypeQuals));
+#endif
+    
+    
+    
+    StopWatch swatch(false);
+    func.time_math = 0.;
     swatch.reset();
     swatch.start();
 
@@ -2784,13 +2927,13 @@ namespace QDP
     
     if (jit_config_get_verbose_output())
       {
-	QDPIO::cout << "\n\n";
-	QDPIO::cout << str_pretty << std::endl;
+	// QDPIO::cout << "\n\n";
+	// QDPIO::cout << str_pretty << std::endl;
 	
-	if (Layout::primaryNode())
-	  {
-	    llvm_module_dump();
-	  }
+	// if (Layout::primaryNode())
+	//   {
+	//     llvm_module_dump();
+	//   }
 
 	std::string module_name = "module_" + str_kernel_name + ".bc";
 	QDPIO::cout << "write code to " << module_name << "\n";
@@ -2809,16 +2952,18 @@ namespace QDP
     swatch.start();
 
     //SPIRV::TranslatorOpts Opts;
-      
-    std::string Err;
-    std::ofstream OutFile( spirv_path , std::ios::binary );
-    //if ( ! llvm::writeSpirv( *Mod , Opts , OutFile, Err) )
-    if ( ! llvm::writeSpirv( Mod.get() , OutFile, Err) )
-      {
-	QDPIO::cout << "Error writing SPIRV\n\n";
-	QDPIO::cout << str_pretty << std::endl;
-	QDP_abort(1);
-      }
+
+    {
+      std::string Err;
+      std::ofstream OutFile( spirv_path , std::ios::binary );
+
+      if ( ! llvm::writeSpirv( Mod.get() , OutFile, Err) )
+	{
+	  QDPIO::cout << "Error writing SPIRV file\n\n";
+	  QDPIO::cout << str_pretty << std::endl;
+	  QDP_abort(1);
+	}
+    }
 
     swatch.stop();
     func.time_codegen = swatch.getTimeInMicroseconds();
@@ -2826,7 +2971,8 @@ namespace QDP
     
     swatch.reset();
     swatch.start();
-    //get_jitf( func , ptx_kernel , str_kernel_name , str_pretty , str_arch );
+    
+    get_jitf( func , spirv_path , str_kernel_name , str_pretty , str_arch );
     swatch.stop();
     func.time_dynload = swatch.getTimeInMicroseconds();
   }

@@ -287,7 +287,7 @@ namespace QDP {
 
 
 
-
+#if 0
   template<class T, int N>
   class JitSharedArray
   {
@@ -413,7 +413,8 @@ namespace QDP {
 
     
   };
-
+#endif
+  
 
   class WorkgroupGuard
   {

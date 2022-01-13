@@ -6,27 +6,27 @@
 namespace QDP {
 
   void function_sum_convert_ind_exec( JitFunction& function, 
-				      int size, int threads, int blocks, int shared_mem_usage,
+				      int size, int threads, int blocks, 
 				      int in_id, int out_id, int siteTableId );
 
   void function_sum_convert_exec( JitFunction& function, 
-				  int size, int threads, int blocks, int shared_mem_usage,
+				  int size, int threads, int blocks, 
 				  int in_id, int out_id);
 
   void function_sum_exec( JitFunction& function, 
-			  int size, int threads, int blocks, int shared_mem_usage,
+			  int size, int threads, int blocks, 
 			  int in_id, int out_id);
 
 
   void function_bool_reduction_exec( JitFunction& function, 
-				     int size, int threads, int blocks, int shared_mem_usage,
+				     int size, int threads, int blocks, 
 				     int in_id, int out_id);
 
 
   
   template<class T1 , class RHS >
   void function_sum_convert_ind_expr_exec( JitFunction& function, 
-					   int size, int threads, int blocks, int shared_mem_usage,
+					   int size, int threads, int blocks, 
 					   const QDPExpr<RHS,OLattice<T1> >& rhs, int out_id, int siteTableId )
   {
     // Make sure 'threads' is a power of two (the jit kernel make this assumption)
@@ -55,7 +55,7 @@ namespace QDP {
       }
     ids.push_back( out_id );
 
-    jit_launch_explicit_geom( function , ids , getGeom( hi-lo , threads ) , shared_mem_usage );
+    jit_launch_explicit_geom( function , ids , getGeom( hi-lo , threads ) , gpu_getMaxSMem() );
   }
   
 
@@ -69,7 +69,7 @@ namespace QDP {
 #ifdef QDP_DEEP_LOG
     function.type_W = typeid(typename WordType<T2>::Type_t).name();
 #endif
-    
+
     llvm_start_new_function("sum_convert_ind",__PRETTY_FUNCTION__ );
 
     ParamRef p_lo     = llvm_add_param<int>();
@@ -82,8 +82,8 @@ namespace QDP {
     ParamRef p_idata      = llvm_add_param< T1WT* >();  // Input  array
     ParamRef p_odata      = llvm_add_param< T2WT* >();  // output array
 
-    OLatticeJIT<typename JITType<T1>::Type_t> idata(  p_idata );   // want coal   access later
-    OLatticeJIT<typename JITType<T2>::Type_t> odata(  p_odata );   // want scalar access later
+    OLatticeJIT<typename JITType< typename ScalarType<T1>::Type_t >::Type_t> idata(  p_idata );   // want coal   access later
+    OLatticeJIT<typename JITType<                     T2>::Type_t          > odata(  p_odata );   // want scalar access later
 
     llvm_derefParam( p_lo ); // r_lo
     llvm::Value* r_hi     = llvm_derefParam( p_hi );
@@ -91,7 +91,7 @@ namespace QDP {
     //llvm_derefParam( p_idata );  // Input  array
     //llvm_derefParam( p_odata );  // output array
 
-    llvm::Value* r_shared = llvm_get_shared_ptr( llvm_get_type<T2WT>() );
+    llvm::Value* r_shared = llvm_get_shared_ptr( llvm_get_type<T2WT>() , gpu_getMaxSMem() / sizeof(T2WT) );
 
     typedef typename JITType<T2>::Type_t T2JIT;
 
@@ -106,19 +106,18 @@ namespace QDP {
     T2JIT sdata_jit;
     sdata_jit.setup( r_shared , JitDeviceLayout::Scalar , args );
     zero_rep( sdata_jit );
-
+    
     llvm_cond_exit( llvm_ge( r_idx , r_hi ) );
 
     llvm::Value* r_idx_perm = llvm_array_type_indirection( p_site_perm , r_idx );
 
-    typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_elem;   
+    typename REGType< typename JITType< typename ScalarType<T1>::Type_t >::Type_t >::Type_t reg_idata_elem;   
     reg_idata_elem.setup( idata.elem( input_layout , r_idx_perm ) );
 
     sdata_jit = reg_idata_elem; // This should do the precision conversion (SP->DP)
 
     llvm_bar_sync();
 
-    
     llvm::Value* r_pow_shr1 = llvm_shr( r_ntidx , llvm_create_value(1) );
 
     //
@@ -204,7 +203,7 @@ namespace QDP {
     llvm_derefParam( p_lo ); // r_lo
     llvm::Value* r_hi     = llvm_derefParam( p_hi );
 
-    llvm::Value* r_shared = llvm_get_shared_ptr( llvm_get_type<T2WT>() );
+    llvm::Value* r_shared = llvm_get_shared_ptr( llvm_get_type<T2WT>() , gpu_getMaxSMem() / sizeof(T2WT) );
 
     typedef typename JITType<T2>::Type_t T2JIT;
 
@@ -319,7 +318,7 @@ namespace QDP {
     llvm_derefParam( p_idata );  // Input  array
     llvm_derefParam( p_odata );  // output array
 
-    llvm::Value* r_shared = llvm_get_shared_ptr( llvm_get_type<T2WT>() );
+    llvm::Value* r_shared = llvm_get_shared_ptr( llvm_get_type<T2WT>() , gpu_getMaxSMem() / sizeof(T2WT) );
 
     typedef typename JITType<T2>::Type_t T2JIT;
 
@@ -397,8 +396,7 @@ namespace QDP {
 
 
   template<class T1>
-  void
-  function_sum_build(JitFunction& function)
+  void function_sum_build(JitFunction& function)
   {
 #ifdef QDP_DEEP_LOG
     function.type_W = typeid(typename WordType<T1>::Type_t).name();
@@ -423,7 +421,7 @@ namespace QDP {
     llvm_derefParam( p_idata );  // Input  array
     llvm_derefParam( p_odata );  // output array
 
-    llvm::Value* r_shared = llvm_get_shared_ptr( llvm_get_type<WT>() );
+    llvm::Value* r_shared = llvm_get_shared_ptr( llvm_get_type<WT>() , gpu_getMaxSMem() / sizeof(WT) );
 
 
     typedef typename JITType<T1>::Type_t T1JIT;
@@ -486,7 +484,7 @@ namespace QDP {
     //
     // -------------------
     //
-
+    
     JitIf ifStore( llvm_eq( r_tidx , llvm_create_value(0) ) );
     {
       typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_reg;   
@@ -531,7 +529,7 @@ namespace QDP {
     llvm_derefParam( p_idata );  // Input  array
     llvm_derefParam( p_odata );  // output array
 
-    llvm::Value* r_shared = llvm_get_shared_ptr( llvm_get_type<T2WT>() );
+    llvm::Value* r_shared = llvm_get_shared_ptr( llvm_get_type<T2WT>() , gpu_getMaxSMem() / sizeof(T2WT) );
 
     typedef typename JITType<T2>::Type_t T2JIT;
 
@@ -636,7 +634,7 @@ namespace QDP {
     llvm_derefParam( p_idata );  // Input  array
     llvm_derefParam( p_odata );  // output array
 
-    llvm::Value* r_shared = llvm_get_shared_ptr( llvm_get_type<WT>() );
+    llvm::Value* r_shared = llvm_get_shared_ptr( llvm_get_type<WT>() , gpu_getMaxSMem() / sizeof(WT) );
 
 
     typedef typename JITType<T1>::Type_t T1JIT;

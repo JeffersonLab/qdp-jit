@@ -42,7 +42,7 @@ namespace QDP
   }
 
 
-#if defined(QDP_BACKEND_CUDA) || defined(QDP_BACKEND_ROCM)
+#if defined(QDP_BACKEND_CUDA) || defined(QDP_BACKEND_ROCM) || defined(QDP_BACKEND_L0)
   bool QDPCache::gpu_allocate_base( void ** ptr , size_t n_bytes , int id )
   {
     if ( jit_config_get_max_allocation() < 0   ||  (int)n_bytes <= jit_config_get_max_allocation() )
@@ -81,6 +81,7 @@ namespace QDP
       }
   }
 #else
+#warning "Pool allocator will not be used"
   bool QDPCache::gpu_allocate_base( void ** ptr , size_t n_bytes , int id )
   {
     gpu_host_alloc( ptr , n_bytes );
@@ -881,6 +882,19 @@ namespace QDP
 
 
 
+#ifdef QDP_BACKEND_L0
+  namespace 
+  {
+    template<class T>
+    void insert_l0( QDPCache::KernelArgs_t& ret, void* ptr )
+    {
+      ret.push_back( std::make_pair( (int)(sizeof(T)) , ptr ) );
+    }
+  }
+#endif
+  
+
+
   QDPCache::KernelArgs_t QDPCache::get_kernel_args(std::vector<int>& ids , bool for_kernel )
   {
 #ifdef QDP_BACKEND_ROCM
@@ -1074,7 +1088,14 @@ namespace QDP
 		  }
 		ret.push_back( at );
 #elif defined (QDP_BACKEND_L0)
-#warning "no Cache::argtype push back"
+		switch(e.param_type)
+		  {
+		  case JitParamType::float_ : insert_l0<float>  (ret, &e.param.float_ ); break;
+		  case JitParamType::double_: insert_l0<double> (ret, &e.param.double_ ); break;
+		  case JitParamType::int_   : insert_l0<int>    (ret, &e.param.int_ );break;
+		  case JitParamType::int64_ : insert_l0<int64_t>(ret, &e.param.int64_ ); break;
+		  case JitParamType::bool_  : insert_l0<bool>   (ret, &e.param.bool_ ); ;break;
+		  }
 #else
 #error "No backend specified"
 #endif
@@ -1095,7 +1116,7 @@ namespace QDP
 		at.ptr  = e.devPtr;
 		ret.push_back( at );
 #elif defined (QDP_BACKEND_L0)
-#warning "no Cache::argtype push back"
+		insert_l0<void*>( ret , &e.devPtr );
 #else
 #error "No backend specified"
 #endif
@@ -1119,7 +1140,7 @@ namespace QDP
 	    at.ptr  = jit_param_null_ptr;
 	    ret.push_back( at );
 #elif defined (QDP_BACKEND_L0)
-#warning "no Cache::argtype push back"
+	    insert_l0<void*>( ret , &jit_param_null_ptr );
 #else
 #error "No backend specified"
 #endif

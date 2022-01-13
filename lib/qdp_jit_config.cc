@@ -71,12 +71,30 @@ namespace QDP
     double fuzzfactor = 50;
 #endif
 
+    int addressspace_local = 3;
+
+#if defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_ROCM)
+    int addressspace_global = 0;
+#elif defined (QDP_BACKEND_L0)
+    int addressspace_global = 1;
+#else
+#error "No backend specified"
+#endif
+
+
+    
     int use_gpu = -1;
     
     bool gpu_direct = false;
     bool opt_shifts = false;
   }
 
+  int  qdp_jit_config_get_global_addrspace()      { return addressspace_global;}
+  void qdp_jit_config_set_global_addrspace(int v) { addressspace_global = v; }
+
+  int  qdp_jit_config_get_local_addrspace()      { return addressspace_local;}
+  void qdp_jit_config_set_local_addrspace(int v) { addressspace_local = v; }
+  
   bool qdp_jit_config_get_opt_shifts() {return opt_shifts;}
   void qdp_jit_config_set_opt_shifts(bool v) { opt_shifts = v; } 
 

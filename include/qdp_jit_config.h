@@ -3,6 +3,12 @@
 
 namespace QDP
 {
+  int  qdp_jit_config_get_global_addrspace();
+  void qdp_jit_config_set_global_addrspace(int v);
+
+  int  qdp_jit_config_get_local_addrspace();
+  void qdp_jit_config_set_local_addrspace(int v);
+
   int  qdp_jit_config_get_use_gpu();
   void qdp_jit_config_set_use_gpu(int v);
 

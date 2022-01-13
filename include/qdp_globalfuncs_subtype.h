@@ -162,7 +162,6 @@ sum( const OSubLattice<T>& s1 )
       QDP_error_exit( "sum(SubLat) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)gpu_getMaxGridX());
     }
 
-    int shared_mem_usage = numThreads*sizeof(T2);
     //QDP_info("sum(Lat,subset): using %d threads per block, %d blocks, shared mem=%d" , numThreads , numBlocks , shared_mem_usage );
 
     if (first) {
@@ -175,13 +174,13 @@ sum( const OSubLattice<T>& s1 )
       {
 	if (first)
 	  {
-	    qdp_jit_reduce_convert<T,T2,JitDeviceLayout::Scalar>(actsize, numThreads, numBlocks, shared_mem_usage ,  // ok: Scalar
+	    qdp_jit_reduce_convert<T,T2,JitDeviceLayout::Scalar>(actsize, numThreads, numBlocks,   // ok: Scalar
 								 s1.getId(),
 								 d_id );
 	  }
 	else
 	  {
-	    qdp_jit_reduce<T2>( actsize , numThreads , numBlocks, shared_mem_usage , 
+	    qdp_jit_reduce<T2>( actsize , numThreads , numBlocks, 
 				in_id , d_id );
 	  }
       }
@@ -189,13 +188,13 @@ sum( const OSubLattice<T>& s1 )
       {
       if (first)
 	{
-	  qdp_jit_reduce_convert<T,T2,JitDeviceLayout::Scalar>(actsize, numThreads, numBlocks, shared_mem_usage,       // ok: Scalar
+	  qdp_jit_reduce_convert<T,T2,JitDeviceLayout::Scalar>(actsize, numThreads, numBlocks,        // ok: Scalar
 							       s1.getId(),
 							       out_id );
 	}
       else
 	{
-	  qdp_jit_reduce<T2>( actsize , numThreads , numBlocks , shared_mem_usage , in_id , out_id );
+	  qdp_jit_reduce<T2>( actsize , numThreads , numBlocks , in_id , out_id );
 	}
       }
   

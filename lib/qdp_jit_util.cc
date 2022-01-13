@@ -334,9 +334,11 @@ namespace QDP {
 #endif  
 
 
-#if defined(QDP_BACKEND_CUDA) || defined(QDP_BACKEND_ROCM)
+#if defined(QDP_BACKEND_CUDA) || defined(QDP_BACKEND_ROCM) || defined(QDP_BACKEND_L0)
   void jit_launch(JitFunction& function,int th_count,std::vector<QDPCache::ArgKey>& ids)
   {
+    //QDPIO::cerr << "jit launch, grid=(" << geom.Nblock_x << "," << geom.Nblock_y << ",1), block=(" << threads_per_block << ",1,1)\n";
+
     // For ROCm we add the __threads_per_group and 
     // __grid_size_x as parameters to the kernel.
 #ifdef QDP_BACKEND_ROCM
@@ -353,16 +355,18 @@ namespace QDP {
     function.inc_call_counter();
 
     
+#if defined(QDP_BACKEND_CUDA) || defined(QDP_BACKEND_ROCM)
     if (  jit_config_get_tuning()  &&  function.get_threads_per_block() == -1  )
       {
 	jit_tune( function , th_count , args );
       }
+#endif
     
     int threads_per_block;
-    
+
     if ( function.get_threads_per_block() == -1 )
       {
-	threads_per_block = jit_config_get_threads_per_block();
+	threads_per_block = std::min( jit_config_get_threads_per_block() , th_count );
       }
     else
       {
@@ -379,7 +383,7 @@ namespace QDP {
 					  args );
 
     if (result != JitResult::JitSuccess) {
-      QDPIO::cerr << "jit launch error, grid=(" << geom.Nblock_x << "," << geom.Nblock_y << "1), block=(" << threads_per_block << ",1,1)\n";
+      QDPIO::cerr << "jit launch error, grid=(" << geom.Nblock_x << "," << geom.Nblock_y << ",1), block=(" << threads_per_block << ",1,1)\n";
       QDP_abort(1);
     }
   }
@@ -403,11 +407,6 @@ namespace QDP {
 
     // Increment the call counter
     f.inc_call_counter();
-  }
-#elif defined (QDP_BACKEND_L0)
-#warning "no jit_launch"
-  void jit_launch(JitFunction& f,int th_count,std::vector<QDPCache::ArgKey>& ids)
-  {
   }
 #else
 #error "No LLVM backend specified."
@@ -451,6 +450,8 @@ namespace QDP {
   
   void jit_launch_explicit_geom( JitFunction& function , std::vector<QDPCache::ArgKey>& ids , const kernel_geom_t& geom , unsigned int shared )
   {
+    //QDPIO::cerr << "jit launch explicit geom, grid=(" << geom.Nblock_x << "," << geom.Nblock_y << ",1), block=(" << geom.threads_per_block << ",1,1) shared=" << shared << "\n";
+
     // For ROCm we add the __threads_per_group and 
     // __grid_size_x as parameters to the kernel.
 #ifdef QDP_BACKEND_ROCM
@@ -469,7 +470,7 @@ namespace QDP {
 					  args );
 
     if (result != JitResult::JitSuccess) {
-      QDPIO::cerr << "jit launch explicit geom error, grid=(" << geom.Nblock_x << "," << geom.Nblock_y << "1), block=(" << geom.threads_per_block << ",1,1)\n";
+      QDPIO::cerr << "jit launch explicit geom error, grid=(" << geom.Nblock_x << "," << geom.Nblock_y << ",1), block=(" << geom.threads_per_block << ",1,1)\n";
       QDP_abort(1);
     }
   }

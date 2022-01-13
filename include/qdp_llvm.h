@@ -214,7 +214,7 @@ namespace QDP {
   llvm::Value * llvm_call_special_nctaidx();
 
   llvm::Value * llvm_alloca( llvm::Type* type , int elements );
-  llvm::Value * llvm_get_shared_ptr( llvm::Type *ty );
+  llvm::Value * llvm_get_shared_ptr( llvm::Type *ty , int n );
 
   void llvm_bar_sync();
 

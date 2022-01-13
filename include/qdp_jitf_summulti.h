@@ -7,7 +7,7 @@ namespace QDP {
 
   void
   function_summulti_convert_ind_exec( JitFunction& function, 
-				      int size, int threads, int blocks, int shared_mem_usage,
+				      int size, int threads, int blocks, 
 				      int in_id, int out_id,
 				      int numsubsets,
 				      const multi1d<int>& sizes,
@@ -15,7 +15,7 @@ namespace QDP {
 
   void
   function_summulti_exec( JitFunction& function, 
-			  int size, int threads, int blocks, int shared_mem_usage,
+			  int size, int threads, int blocks, 
 			  int in_id, int out_id,
 			  int numsubsets,
 			  const multi1d<int>& sizes );
@@ -47,7 +47,7 @@ namespace QDP {
     llvm_derefParam( p_idata );  // Input  array
     llvm_derefParam( p_odata );  // output array
 
-    llvm::Value* r_shared = llvm_get_shared_ptr( llvm_get_type<T2WT>() );
+    llvm::Value* r_shared = llvm_get_shared_ptr( llvm_get_type<T2WT>() , gpu_getMaxSMem() / sizeof(T2WT) );
 
     typedef typename JITType<T2>::Type_t T2JIT;
 
@@ -168,7 +168,7 @@ namespace QDP {
     llvm_derefParam( p_idata );  // Input  array
     llvm_derefParam( p_odata );  // output array
 
-    llvm::Value* r_shared = llvm_get_shared_ptr( llvm_get_type<TWT>() );
+    llvm::Value* r_shared = llvm_get_shared_ptr( llvm_get_type<TWT>() , gpu_getMaxSMem() / sizeof(TWT) );
 
     typedef typename JITType<T>::Type_t TJIT;
 

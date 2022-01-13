@@ -29,14 +29,40 @@
 namespace QDP {
 
   namespace {
-    ze_driver_handle_t        driverHandle;
-    ze_context_handle_t       context;
-    ze_device_handle_t        device;
-    ze_command_queue_handle_t cmdQueue;
-    ze_command_list_handle_t  cmdList;
-    ze_device_properties_t    deviceProperties = {};
+    ze_driver_handle_t             driverHandle;
+    ze_context_handle_t            context;
+    ze_device_handle_t             device;
+    ze_command_queue_desc_t        cmdQueueDesc;
+    ze_command_queue_handle_t      cmdQueue;
+    ze_command_list_handle_t       cmdList;
+    ze_device_properties_t         deviceProperties;
+    ze_device_compute_properties_t deviceComputeProperties;
 
     std::vector<ze_command_queue_group_properties_t> queueProperties;
+
+    void gpu_cmd_Create()
+    {
+      std::cout << "zeCommandListCreate\n";
+      ze_command_list_desc_t cmdListDesc = {};
+      cmdListDesc.commandQueueGroupOrdinal = cmdQueueDesc.ordinal;    
+      VALIDATECALL(zeCommandListCreate(context, device, &cmdListDesc, &cmdList));
+    }
+
+    void gpu_cmd_CloseExeDestroy()
+    {
+      std::cout << "zeCommandListClose\n";
+      VALIDATECALL(zeCommandListClose(cmdList));
+
+      std::cout << "zeCommandListExe\n";
+      VALIDATECALL(zeCommandQueueExecuteCommandLists(cmdQueue, 1, &cmdList, nullptr));
+      
+      std::cout << "zeCommandListSync\n";
+      VALIDATECALL(zeCommandQueueSynchronize(cmdQueue, std::numeric_limits<uint64_t>::max())); //UINT32_MAX
+
+      std::cout << "zeCommandListDestroy\n";
+      VALIDATECALL(zeCommandListDestroy(cmdList));
+    }
+
   }
 
   void gpu_auto_detect();
@@ -88,7 +114,53 @@ namespace QDP {
 			       unsigned int  sharedMemBytes, QDPCache::KernelArgs_t kernelArgs )
   {
     JitResult ret = JitResult::JitSuccess;
+
+    typedef std::vector< std::pair< int , void* > > KernelArgs_t;
+
+    std::cout << "kernel args:\n";
+    for ( int i = 0 ; i < kernelArgs.size() ; ++i )
+      {
+	std::cout << i << ": " << kernelArgs.at(i).first << " " << kernelArgs.at(i).second << "\n";
+	VALIDATECALL(zeKernelSetArgumentValue( (ze_kernel_handle_t)f.get_function() , i , kernelArgs.at(i).first , kernelArgs.at(i).second ));
+      }
+
+    VALIDATECALL(zeKernelSetGroupSize( (ze_kernel_handle_t)f.get_function() , blockDimX , blockDimY , blockDimZ ));
+
+    ze_group_count_t dispatch;
+    dispatch.groupCountX = gridDimX;
+    dispatch.groupCountY = gridDimY;
+    dispatch.groupCountZ = 1;
+
+    std::cout << "grid =(" << dispatch.groupCountX << "," << dispatch.groupCountY << "," << dispatch.groupCountZ << ")\n";
+    std::cout << "block=(" << blockDimX << "," << blockDimY << "," << blockDimZ << ")\n";
+
+    gpu_cmd_Create();
+
+    // Launch kernel on the GPU
+    VALIDATECALL(zeCommandListAppendLaunchKernel( cmdList , (ze_kernel_handle_t)f.get_function() , &dispatch, nullptr, 0, nullptr));
+
+    gpu_cmd_CloseExeDestroy();
+
     return ret;
+  }
+
+
+  kernel_geom_t getGeom(int numSites , int threadsPerBlock)
+  {
+    kernel_geom_t geom_host;
+
+    int64_t num_sites = numSites;
+  
+    int64_t M = gpu_getMaxGridX() * threadsPerBlock;
+    int64_t Nblock_y = (num_sites + M-1) / M;
+
+    int64_t P = threadsPerBlock;
+    int64_t Nblock_x = (num_sites + P-1) / P;
+
+    geom_host.threads_per_block = threadsPerBlock;
+    geom_host.Nblock_x = Nblock_x;
+    geom_host.Nblock_y = Nblock_y;
+    return geom_host;
   }
 
 
@@ -150,7 +222,6 @@ namespace QDP {
     queueProperties.resize(numQueueGroups);
     VALIDATECALL(zeDeviceGetCommandQueueGroupProperties(device, &numQueueGroups, queueProperties.data()));
 
-    ze_command_queue_desc_t cmdQueueDesc = {};
     for (uint32_t i = 0; i < numQueueGroups; i++) { 
         if (queueProperties[i].flags & ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) {
             cmdQueueDesc.ordinal = i;
@@ -162,11 +233,6 @@ namespace QDP {
     cmdQueueDesc.mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS;
     VALIDATECALL(zeCommandQueueCreate(context, device, &cmdQueueDesc, &cmdQueue));
 
-    std::cout << "zeCommandListCreate\n";
-    // Create a command list
-    ze_command_list_desc_t cmdListDesc = {};
-    cmdListDesc.commandQueueGroupOrdinal = cmdQueueDesc.ordinal;    
-    VALIDATECALL(zeCommandListCreate(context, device, &cmdListDesc, &cmdList));
 
     gpu_auto_detect();
 
@@ -186,12 +252,28 @@ namespace QDP {
     std::cout << __PRETTY_FUNCTION__ << "\n";
 
     VALIDATECALL(zeDeviceGetProperties(device, &deviceProperties));
-    std::cout << "Device   : " << deviceProperties.name << "\n" 
-              << "Type     : " << ((deviceProperties.type == ZE_DEVICE_TYPE_GPU) ? "GPU" : "FPGA") << "\n"
-              << "Vendor ID: " << std::hex << deviceProperties.vendorId << std::dec << "\n"
-	      << "Max alloc: " << deviceProperties.maxMemAllocSize << "\n";
+    std::cout << "Device                         : " << deviceProperties.name << "\n" 
+              << "Type                           : " << ((deviceProperties.type == ZE_DEVICE_TYPE_GPU) ? "GPU" : "FPGA") << "\n"
+              << "Vendor ID                      : " << std::hex << deviceProperties.vendorId << std::dec << "\n"
+	      << "Max alloc                      : " << deviceProperties.maxMemAllocSize << "\n"
+	      << "Number of threads per EU       : " << deviceProperties.numThreadsPerEU << "\n"
+	      << "The physical EU SIMD width     : " << deviceProperties.physicalEUSimdWidth << "\n"
+	      << "Number of EUs per sub-slice    : " << deviceProperties.numEUsPerSubslice << "\n"
+	      << "Number of sub-slices per slice : " << deviceProperties.numSubslicesPerSlice << "\n"
+	      << "Number of slices               : " << deviceProperties.numSlices << "\n"
+      ;
 
-    
+    VALIDATECALL(zeDeviceGetComputeProperties(device, &deviceComputeProperties));
+    std::cout << "Maximum group size total       : " << deviceComputeProperties.maxTotalGroupSize << "\n" ;
+    std::cout << "Maximum group size X           : " << deviceComputeProperties.maxGroupSizeX << "\n" ;
+    std::cout << "Maximum group size Y           : " << deviceComputeProperties.maxGroupSizeY << "\n" ;
+    std::cout << "Maximum group size Z           : " << deviceComputeProperties.maxGroupSizeZ << "\n" ;
+    std::cout << "Maximum group count X          : " << deviceComputeProperties.maxGroupCountX << "\n" ;
+    std::cout << "Maximum group count Y          : " << deviceComputeProperties.maxGroupCountY << "\n" ;
+    std::cout << "Maximum group count Z          : " << deviceComputeProperties.maxGroupCountZ << "\n" ;
+    std::cout << "Maximum shared local memory    : " << deviceComputeProperties.maxSharedLocalMemory << "\n" ;
+    std::cout << "Maximum Number of subgroups    : " << deviceComputeProperties.numSubGroupSizes << "\n" ;
+      
   }
 
 
@@ -239,13 +321,25 @@ namespace QDP {
 
   void gpu_memcpy_h2d( void * dest , const void * src , size_t size )
   {
-    memcpy(dest,src,size);
+    //std::cout << "gpu_memcpy_h2d: dest = " << dest << ", src = " << src << ", size = " << size << "\n";
+
+    gpu_cmd_Create();
+    
+    VALIDATECALL(zeCommandListAppendMemoryCopy( cmdList , dest , src , size , nullptr , 0 , nullptr ));
+
+    gpu_cmd_CloseExeDestroy();
   }
 
   
   void gpu_memcpy_d2h( void * dest , const void * src , size_t size )
   {
-    memcpy(dest,src,size);
+    //std::cout << "gpu_memcpy_d2h: dest = " << dest << ", src = " << src << ", size = " << size << "\n";
+
+    gpu_cmd_Create();
+
+    VALIDATECALL(zeCommandListAppendMemoryCopy( cmdList , dest , src , size , nullptr , 0 , nullptr ));
+
+    gpu_cmd_CloseExeDestroy();
   }
 
 
@@ -296,26 +390,99 @@ namespace QDP {
 
 
 
-  bool get_jitf( JitFunction& func, const std::string& kernel_ptx , const std::string& kernel_name , const std::string& pretty , const std::string& str_compute )
+  bool get_jitf( JitFunction& func, const std::string& fname_spirv , const std::string& kernel_name , const std::string& pretty , const std::string& str_compute )
   {
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "get_jitf enter\n";
+      }
+
     func.set_kernel_name( kernel_name );
     func.set_pretty( pretty );
 
+    // Module Initialization
+    ze_module_handle_t module = nullptr;
+    ze_kernel_handle_t kernel = nullptr;
 
+    std::ifstream file( fname_spirv.c_str() , std::ios::binary );
+
+    if (!file.is_open())
+      {
+	std::cout << "Error reading file: " << fname_spirv << "\n";
+	QDP_abort(1);
+      }
+
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "get_jitf opened file\n";
+      }
+
+    file.seekg(0, file.end);
+    auto length = file.tellg();
+    file.seekg(0, file.beg);
+
+    std::unique_ptr<char[]> spirvInput(new char[length]);
+    file.read(spirvInput.get(), length);
+
+    ze_module_desc_t moduleDesc = {};
+    ze_module_build_log_handle_t buildLog;
+    moduleDesc.format = ZE_MODULE_FORMAT_IL_SPIRV;
+    moduleDesc.pInputModule = reinterpret_cast<const uint8_t *>(spirvInput.get());
+    moduleDesc.inputSize = length;
+    moduleDesc.pBuildFlags = "";
+
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "get_jitf module create ...\n";
+      }
+
+    auto status = zeModuleCreate(context, device, &moduleDesc, &module, &buildLog);
+
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "get_jitf module created ...\n";
+      }
+    if (status != ZE_RESULT_SUCCESS) {
+      // print log
+      size_t szLog = 0;
+      zeModuleBuildLogGetString(buildLog, &szLog, nullptr);
+
+      char* stringLog = (char*)malloc(szLog);
+      zeModuleBuildLogGetString(buildLog, &szLog, stringLog);
+      std::cout << "Build log: " << stringLog << std::endl;
+    }
+    VALIDATECALL(zeModuleBuildLogDestroy(buildLog));
+
+    ze_kernel_desc_t kernelDesc = {};
+    kernelDesc.pKernelName = kernel_name.c_str();
+  
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "get_jitf kernel create ...\n";
+      }
+
+    VALIDATECALL(zeKernelCreate(module, &kernelDesc, &kernel));
+  
+    func.set_function( (void*)kernel );
+    
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "Got function!\n";
+      }
     
     return true;
   }
 
-
-  size_t gpu_getMaxGridX()  {return 0;}
-  size_t gpu_getMaxGridY()  {return 0;}
-  size_t gpu_getMaxGridZ()  {return 0;}
-
-  size_t gpu_getMaxBlockX()  {return 0;}
-  size_t gpu_getMaxBlockY()  {return 0;}
-  size_t gpu_getMaxBlockZ()  {return 0;}
   
-  size_t gpu_getMaxSMem()  {return 0;}
+  size_t gpu_getMaxGridX()  {return deviceComputeProperties.maxGroupCountX;}
+  size_t gpu_getMaxGridY()  {return deviceComputeProperties.maxGroupCountY;}
+  size_t gpu_getMaxGridZ()  {return deviceComputeProperties.maxGroupCountZ;}
+
+  size_t gpu_getMaxBlockX()  {return deviceComputeProperties.maxGroupSizeX;}
+  size_t gpu_getMaxBlockY()  {return deviceComputeProperties.maxGroupSizeY;}
+  size_t gpu_getMaxBlockZ()  {return deviceComputeProperties.maxGroupSizeZ;}
+  
+  size_t gpu_getMaxSMem()  {return deviceComputeProperties.maxSharedLocalMemory;}
 
   unsigned gpu_getMajor() { return 0; }
   unsigned gpu_getMinor() { return 0; }
