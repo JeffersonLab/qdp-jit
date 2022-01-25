@@ -121,7 +121,7 @@ namespace QDP
 
 
 
-#if defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_ROCM)
+#if defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_L0)
 template<class T>
 typename UnaryReturn<OLattice<T>, FnSum>::Type_t
 sum( const OSubLattice<T>& s1 )
@@ -174,9 +174,9 @@ sum( const OSubLattice<T>& s1 )
       {
 	if (first)
 	  {
-	    qdp_jit_reduce_convert<T,T2,JitDeviceLayout::Scalar>(actsize, numThreads, numBlocks,   // ok: Scalar
-								 s1.getId(),
-								 d_id );
+	    qdp_jit_reduce_convert< typename ScalarType<T>::Type_t ,T2,JitDeviceLayout::Scalar>(actsize, numThreads, numBlocks,   // ok: Scalar
+												s1.getId(),
+												d_id );
 	  }
 	else
 	  {
@@ -188,9 +188,9 @@ sum( const OSubLattice<T>& s1 )
       {
       if (first)
 	{
-	  qdp_jit_reduce_convert<T,T2,JitDeviceLayout::Scalar>(actsize, numThreads, numBlocks,        // ok: Scalar
-							       s1.getId(),
-							       out_id );
+	  qdp_jit_reduce_convert< typename ScalarType<T>::Type_t ,T2,JitDeviceLayout::Scalar>(actsize, numThreads, numBlocks,        // ok: Scalar
+											      s1.getId(),
+											      out_id );
 	}
       else
 	{
@@ -253,8 +253,6 @@ sum( const OSubLattice<T>& s1 )
 
   return d;
  }
-#elif defined (QDP_BACKEND_L0)
-#warning "no sum(subLat)"
 #else
 #error "no backend specified"
 #endif
