@@ -39,8 +39,9 @@ namespace QDP {
     ParamRef p_idata      = llvm_add_param< T1WT* >();  // Input  array
     ParamRef p_odata      = llvm_add_param< T2WT* >();  // output array
 
-    OLatticeJIT<typename JITType<T1>::Type_t> idata(  p_idata );   // want coal   access later
-    OLatticeJIT<typename JITType<T2>::Type_t> odata(  p_odata );   // want scalar access later
+    
+    OLatticeJIT<typename JITType< typename ScalarType<T1>::Type_t >::Type_t > idata(  p_idata );   // want coal   access later
+    OLatticeJIT<typename JITType<                     T2>::Type_t           > odata(  p_odata );   // want scalar access later
 
     llvm::Value* r_subsetnum = llvm_derefParam( p_numsubset );
 
@@ -77,7 +78,7 @@ namespace QDP {
 	llvm::Value* r_sitetable = llvm_array_type_indirection( p_sitetables , loop_subset.index() );
 	llvm::Value* r_idx_perm  = llvm_array_type_indirection( r_sitetable , r_idx );
 
-	typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_elem;
+	typename REGType< typename JITType< typename ScalarType<T1>::Type_t >::Type_t >::Type_t reg_idata_elem;
 	reg_idata_elem.setup( idata.elem( input_layout , r_idx_perm ) );
 
 	sdata_jit = reg_idata_elem; // This should do the precision conversion (SP->DP)

@@ -466,7 +466,7 @@ namespace QDP {
 
 
 
-#if defined (QDP_BACKEND_CUDA) || (QDP_BACKEND_ROCM)
+#if defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_L0)
   namespace {
     unsigned int nextPowerOf2(unsigned int n)  
     {
@@ -499,6 +499,9 @@ namespace QDP {
 
     typename UnaryReturn<OLattice<T1>, FnSumMulti>::Type_t  dest( numsubsets );
 
+    //print_type<typename UnaryReturn<OLattice<T1>, FnSumMulti>::Type_t>("dest type = ");
+    //print_type<T2>("T2 type = ");
+    
 #if defined(QDP_USE_PROFILING)
     static QDPProfile_t prof(dest, OpAssign(), FnSumMulti(), s1);
     prof.start_time();
@@ -555,7 +558,7 @@ namespace QDP {
 	QDP_error_exit( "sumMulti(Lat,set) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)gpu_getMaxGridX());
       }
 
-      //QDP_info("sum(Lat,subset): using %d threads per block, %d blocks, shared mem=%d" , numThreads , numBlocks , shared_mem_usage );
+      QDP_info("sum(Lat,subset): using %d threads per block, %d blocks" , numThreads , numBlocks );
 
       if (first) {
 	out_id = QDP_get_global_cache().add( numBlocks*sizeof(T2)*numsubsets , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
@@ -679,14 +682,12 @@ namespace QDP {
 
     return dest;
   }
-#elif defined (QDP_BACKEND_L0)
-#warning "no sumMulti"
 #else
 #error "No backend specified"
 #endif
 
 
-#if defined (QDP_BACKEND_CUDA) || (QDP_BACKEND_ROCM)
+#if defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_L0)
   template<class T>
   typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t
   globalMax(const OLattice<T>& s1)
@@ -812,14 +813,12 @@ namespace QDP {
 
     return d;
   }
-#elif defined (QDP_BACKEND_L0)
-#warning "no globalMax"
 #else
 #error "no backend specified"
 #endif
 
 
-#if defined (QDP_BACKEND_CUDA) || (QDP_BACKEND_ROCM)
+#if defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_L0)
   template<class T1>
   bool
   isfinite(const OLattice<T1>& s1)
@@ -861,14 +860,14 @@ namespace QDP {
       
       if (numBlocks == 1) {
 	if (first) {
-	  qdp_jit_bool_reduction_convert<T1,T2,JitDeviceLayout::Coalesced,IsFiniteAssign,AndAssign>(actsize, numThreads, numBlocks, s1.getId(), d_id );
+	  qdp_jit_bool_reduction_convert< typename ScalarType<T1>::Type_t ,T2,JitDeviceLayout::Coalesced,IsFiniteAssign,AndAssign>(actsize, numThreads, numBlocks, s1.getId(), d_id );
 	}
 	else {
 	  qdp_jit_bool_reduction<T2,AndAssign>( actsize , numThreads , numBlocks, in_id , d_id );
 	}
       } else {
 	if (first) {
-	  qdp_jit_bool_reduction_convert<T1,T2,JitDeviceLayout::Coalesced,IsFiniteAssign,AndAssign>(actsize, numThreads, numBlocks, s1.getId(), out_id );
+	  qdp_jit_bool_reduction_convert< typename ScalarType<T1>::Type_t ,T2,JitDeviceLayout::Coalesced,IsFiniteAssign,AndAssign>(actsize, numThreads, numBlocks, s1.getId(), out_id );
 	}
 	else
 	  qdp_jit_bool_reduction<T2,AndAssign>( actsize , numThreads , numBlocks , in_id , out_id );
@@ -944,8 +943,6 @@ namespace QDP {
 
     return d;
   }
-#elif defined (QDP_BACKEND_L0)
-#warning "no isfinite"
 #else
 #error "no backend specified"
 #endif

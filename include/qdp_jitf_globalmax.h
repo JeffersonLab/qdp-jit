@@ -26,8 +26,8 @@ namespace QDP {
     ParamRef p_idata      = llvm_add_param< WT* >();  // Input  array
     ParamRef p_odata      = llvm_add_param< WT* >();  // output array
 
-    OLatticeJIT<typename JITType<T1>::Type_t> idata(  p_idata );   // want coal   access later
-    OLatticeJIT<typename JITType<T1>::Type_t> odata(  p_odata );   // want scalar access later
+    OLatticeJIT<typename JITType< typename ScalarType<T1>::Type_t >::Type_t> idata(  p_idata );   // want coal   access later
+    OLatticeJIT<typename JITType< typename ScalarType<T1>::Type_t >::Type_t> odata(  p_odata );   // want scalar access later
 
     llvm_derefParam( p_lo );
     llvm::Value* r_hi     = llvm_derefParam( p_hi );
@@ -40,17 +40,17 @@ namespace QDP {
     llvm::Value* r_shared = llvm_get_shared_ptr( llvm_get_type<WT>() , gpu_getMaxSMem() / sizeof(WT) );
 
 
-    typedef typename JITType<T1>::Type_t T1JIT;
+    typedef typename JITType< typename ScalarType<T1>::Type_t >::Type_t T1JIT;
 
 
     llvm::Value* r_block_idx  = llvm_call_special_ctaidx();
     llvm::Value* r_tidx       = llvm_call_special_tidx();
     llvm::Value* r_ntidx       = llvm_call_special_ntidx();
 
-    typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_elem;
+    typename REGType< typename JITType< typename ScalarType<T1>::Type_t >::Type_t >::Type_t reg_idata_elem;
     reg_idata_elem.setup( idata.elem( JitDeviceLayout::Scalar , r_idx ) );
 
-    typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_1st_elem;
+    typename REGType< typename JITType< typename ScalarType<T1>::Type_t >::Type_t >::Type_t reg_idata_1st_elem;
     reg_idata_1st_elem.setup( idata.elem( JitDeviceLayout::Scalar , llvm_create_value(0) ) ); 
 
     IndexDomainVector args;
@@ -90,13 +90,13 @@ namespace QDP {
 	  args_new.push_back( make_pair( Layout::sitesOnNode() , 
 					 llvm_add( r_tidx , loop.index() ) ) );  // sitesOnNode irrelevant since Scalar access later
 
-	  typename JITType<T1>::Type_t sdata_jit_plus;
+	  typename JITType< typename ScalarType<T1>::Type_t >::Type_t sdata_jit_plus;
 	  sdata_jit_plus.setup( r_shared , JitDeviceLayout::Scalar , args_new );
 
-	  typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_reg_plus;
+	  typename REGType< typename JITType< typename ScalarType<T1>::Type_t >::Type_t >::Type_t sdata_reg_plus;
 	  sdata_reg_plus.setup( sdata_jit_plus );
 
-	  typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_reg;   
+	  typename REGType< typename JITType< typename ScalarType<T1>::Type_t >::Type_t >::Type_t sdata_reg;   
 	  sdata_reg.setup( sdata_jit );
 
 	  sdata_jit = where( sdata_reg > sdata_reg_plus , sdata_reg , sdata_reg_plus );
@@ -114,7 +114,7 @@ namespace QDP {
 
     JitIf ifStore( llvm_eq( r_tidx , llvm_create_value(0) ) );
     {
-      typename REGType< typename JITType<T1>::Type_t >::Type_t sdata_reg;   
+      typename REGType< typename JITType< typename ScalarType<T1>::Type_t >::Type_t >::Type_t sdata_reg;   
       sdata_reg.setup( sdata_jit );
 
       odata.elem( JitDeviceLayout::Scalar , r_block_idx ) = sdata_reg;

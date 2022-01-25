@@ -1804,15 +1804,15 @@ namespace QDP
   }
 
   template<> ParamRef llvm_add_param<int**>() {
-    vecParamType.push_back( llvm::PointerType::get( llvm::Type::getInt32PtrTy(*TheContext) , qdp_jit_config_get_global_addrspace() ) );  // AddressSpace = 0 ??
+    vecParamType.push_back( llvm::PointerType::get( llvm::Type::getInt32PtrTy(*TheContext , qdp_jit_config_get_global_addrspace() ) , qdp_jit_config_get_global_addrspace() ) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<float**>() {
-    vecParamType.push_back( llvm::PointerType::get( llvm::Type::getFloatPtrTy(*TheContext) , qdp_jit_config_get_global_addrspace() ) );  // AddressSpace = 0 ??
+    vecParamType.push_back( llvm::PointerType::get( llvm::Type::getFloatPtrTy(*TheContext , qdp_jit_config_get_global_addrspace() ) , qdp_jit_config_get_global_addrspace() ) );
     return vecParamType.size()-1;
   }
   template<> ParamRef llvm_add_param<double**>() {
-    vecParamType.push_back( llvm::PointerType::get( llvm::Type::getDoublePtrTy(*TheContext) , qdp_jit_config_get_global_addrspace() ) );  // AddressSpace = 0 ??
+    vecParamType.push_back( llvm::PointerType::get( llvm::Type::getDoublePtrTy(*TheContext , qdp_jit_config_get_global_addrspace() ) , qdp_jit_config_get_global_addrspace() ) );
     return vecParamType.size()-1;
   }
 
@@ -1972,8 +1972,10 @@ namespace QDP
     						      false );
 
     llvm::AttrBuilder ABuilder;
-    ABuilder.addAttribute(llvm::Attribute::ReadNone);
+    //ABuilder.addAttribute(llvm::Attribute::ReadNone);
+    ABuilder.addAttribute(llvm::Attribute::Convergent);
 
+  
     auto F = Mod->getOrInsertFunction( name , 
 					      FT , 
 					      llvm::AttributeList::get(*TheContext, 
@@ -1981,11 +1983,11 @@ namespace QDP
 								       ABuilder)
 					      );
 
+#if defined (QDP_BACKEND_L0)
     if (auto FF = dyn_cast<llvm::Function>(F.getCallee())) {
       FF->setCallingConv( llvm::CallingConv::SPIR_FUNC );
     }
-    
-
+#endif    
     
     return builder->CreateCall(F,param_values);
     //return builder->CreateCall(F);
@@ -1996,7 +1998,12 @@ namespace QDP
 #if defined (QDP_BACKEND_L0)
   void llvm_bar_sync()
   {
-    llvm_special( "_Z7barrierj" , llvm_get_type<void>() , { llvm_get_type<int>() } , { llvm_create_value(1) } );
+    // CLK_LOCAL_MEM_FENCE  == 1
+    // CLK_GLOBAL_MEM_FENCE == 2
+    llvm_special( "_Z7barrierj" , llvm_get_type<void>() , { llvm_get_type<int>() } , { llvm_create_value(3) } );
+    //llvm_special( "_Z18work_group_barrierj" , llvm_get_type<void>() , { llvm_get_type<int>() } , { llvm_create_value(3) } );
+    //llvm_special( "_Z18work_group_barrierj12memory_scope" , llvm_get_type<void>() , { llvm_get_type<int>() , llvm_get_type<int>() } , { llvm_create_value(3) , llvm_create_value(1) } );
+    //llvm_special( "_Z18work_group_barrierj12memory_scope" , llvm_get_type<void>() , { llvm_get_type<int>() , llvm_get_type<int>() } , { llvm_create_value(3) , llvm_create_value(2) } );
   }
 #else
   void llvm_bar_sync()
