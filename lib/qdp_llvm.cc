@@ -2061,8 +2061,9 @@ namespace QDP
 
   
   
-#if defined (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_CUDA)
-  llvm::Value * llvm_thread_idx() {
+#if defined (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_L0)
+  llvm::Value * llvm_thread_idx()
+  {
     if (!function_created)
       llvm_create_function();
     llvm::Value * tidx = llvm_call_special_tidx();
@@ -2073,14 +2074,9 @@ namespace QDP
     return llvm_add( llvm_mul( llvm_add( llvm_mul( ctaidy , nctaidx ) , ctaidx ) , ntidx ) , tidx );
   }
 #elif defined (QDP_BACKEND_AVX)
-  llvm::Value * llvm_thread_idx() { 
+  llvm::Value * llvm_thread_idx()
+  { 
     return llvm_derefParam( AVXspecific::thread_num );
-  }
-#elif defined (QDP_BACKEND_L0)
-  llvm::Value * llvm_thread_idx() {
-    if (!function_created)
-      llvm_create_function();
-    return llvm_call_special_get_global_id();
   }
 #else
 #endif

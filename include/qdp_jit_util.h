@@ -422,13 +422,13 @@ namespace QDP {
   public:
     WorkgroupGuard()
     {
-#if defined (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_CUDA)
+#if defined (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_L0)
       p_th_count = llvm_add_param<int>();
 #endif
     }
     void check( llvm::Value* r_idx )
     {
-#if defined (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_CUDA)
+#if defined (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_L0)
       llvm::Value * r_th_count     = llvm_derefParam( p_th_count );
       llvm_cond_exit( llvm_ge( r_idx , r_th_count ) );
 #endif
@@ -438,11 +438,11 @@ namespace QDP {
 
   class WorkgroupGuardExec
   {
-#if defined (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_CUDA)
+#if defined (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_L0)
     JitParam jit_th_count;
 #endif
   public:
-#if defined (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_CUDA)
+#if defined (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_L0)
     WorkgroupGuardExec( int th_count ): jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) )
     {
     }
@@ -453,7 +453,7 @@ namespace QDP {
 #endif
     void check(std::vector<QDPCache::ArgKey>& ids)
     {
-#if defined (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_CUDA)
+#if defined (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_L0)
       ids.push_back( jit_th_count.get_id() );
 #endif
     }
