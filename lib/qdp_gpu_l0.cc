@@ -32,14 +32,19 @@ namespace QDP {
     ze_driver_handle_t             driverHandle;
     ze_context_handle_t            context;
     ze_device_handle_t             device;
+#if 0
     ze_command_queue_desc_t        cmdQueueDesc;
     ze_command_queue_handle_t      cmdQueue;
     ze_command_list_handle_t       cmdList;
+#else
+    ze_command_list_handle_t       cmdList = {};
+#endif
     ze_device_properties_t         deviceProperties;
     ze_device_compute_properties_t deviceComputeProperties;
 
     std::vector<ze_command_queue_group_properties_t> queueProperties;
 
+#if 0
     void gpu_cmd_Create()
     {
       std::cout << "zeCommandListCreate\n";
@@ -62,7 +67,17 @@ namespace QDP {
       std::cout << "zeCommandListDestroy\n";
       VALIDATECALL(zeCommandListDestroy(cmdList));
     }
+#else
+    void gpu_cmd_Create()
+    {
+    }
 
+    void gpu_cmd_CloseExeDestroy()
+    {
+    }
+#endif
+
+    
   }
 
   void gpu_auto_detect();
@@ -207,6 +222,7 @@ namespace QDP {
     std::cout << "zeDeviceGet\n";
     VALIDATECALL(zeDeviceGet(driverHandle, &d, &device));
 
+#if 0
     std::cout << "zeDeviceGetCommandQueueGroupProperties\n";
     // Create a command queue
     uint32_t numQueueGroups = 0;
@@ -232,7 +248,12 @@ namespace QDP {
     cmdQueueDesc.index = 0;
     cmdQueueDesc.mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS;
     VALIDATECALL(zeCommandQueueCreate(context, device, &cmdQueueDesc, &cmdQueue));
-
+#else
+    // Create an immediate command list for direct submission
+    ze_command_queue_desc_t altdesc = {};
+    altdesc.stype = ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC;
+    VALIDATECALL( zeCommandListCreateImmediate(context, device, &altdesc, &cmdList) );
+#endif
 
     gpu_auto_detect();
 
@@ -436,7 +457,7 @@ namespace QDP {
 	QDPIO::cout << "get_jitf module create ...\n";
       }
 
-    auto status = zeModuleCreate(context, device, &moduleDesc, &module, &buildLog);
+    ze_result_t status = zeModuleCreate(context, device, &moduleDesc, &module, &buildLog);
 
     if (jit_config_get_verbose_output())
       {
@@ -462,7 +483,7 @@ namespace QDP {
       }
 
     VALIDATECALL(zeKernelCreate(module, &kernelDesc, &kernel));
-  
+    
     func.set_function( (void*)kernel );
     
     if (jit_config_get_verbose_output())
