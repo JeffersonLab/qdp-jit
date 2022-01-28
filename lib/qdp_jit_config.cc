@@ -53,6 +53,7 @@ namespace QDP
     bool codegen_keepfiles = false;
     
     std::vector<std::string> extra_libs;
+    std::string prepend_path = "";
 #endif
 
 #ifdef QDP_BACKEND_CUDA
@@ -152,6 +153,9 @@ namespace QDP
 
   
 #ifdef QDP_BACKEND_ROCM
+  std::string jit_config_get_prepend_path() { return prepend_path; }
+  void        jit_config_set_prepend_path(std::string s) { prepend_path = s; }
+  
   bool jit_config_get_keepfiles() { return codegen_keepfiles; }
   void jit_config_set_keepfiles(bool v) { codegen_keepfiles = v; }
   
