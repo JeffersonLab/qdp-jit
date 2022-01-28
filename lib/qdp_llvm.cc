@@ -2429,6 +2429,7 @@ namespace QDP
     if (clang_codegen)
       {
 	clang_name =
+	  jit_config_get_prepend_path() +
 	  "module_" + str_kernel_name +
 	  "_node_" + std::to_string(Layout::nodeNumber()) +
 	  "_pid_" + std::to_string(::getpid()) +
@@ -2445,6 +2446,7 @@ namespace QDP
       }
 
     std::string isabin_path =
+      jit_config_get_prepend_path() +
       "module_" + str_kernel_name +
       "_node_" + std::to_string(Layout::nodeNumber()) +
       "_pid_" + std::to_string(::getpid()) +
@@ -2616,10 +2618,11 @@ namespace QDP
       }
     
     std::string shared_path =
-	    "module_" + str_kernel_name +
-	    "_node_" + std::to_string(Layout::nodeNumber()) +
-	    "_pid_" + std::to_string(::getpid()) +
-	    ".so";
+      jit_config_get_prepend_path() +
+      "module_" + str_kernel_name +
+      "_node_" + std::to_string(Layout::nodeNumber()) +
+      "_pid_" + std::to_string(::getpid()) +
+      ".so";
 
     // call codegen
     build_function_rocm_codegen( func , shared_path );

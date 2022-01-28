@@ -55,7 +55,9 @@ namespace QDP
   void jit_config_set_pool_alignment(size_t size );
 
 #ifdef QDP_BACKEND_ROCM
-  int jit_config_get_codegen_opt();
+  std::string jit_config_get_prepend_path();
+  void        jit_config_set_prepend_path(std::string s);
+  int  jit_config_get_codegen_opt();
   void jit_config_set_codegen_opt(int opt);
   void jit_config_add_extra_lib( std::string l );
   std::vector<std::string>& jit_config_get_extra_lib();

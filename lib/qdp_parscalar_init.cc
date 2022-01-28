@@ -374,6 +374,12 @@ namespace QDP {
 	  }
 #endif
 #ifdef QDP_BACKEND_ROCM
+	else if (strcmp((*argv)[i], "-temp-files-path")==0) 
+	  {
+	    char tmp[2048];
+	    sscanf((*argv)[++i], "%s", &tmp[0]);
+	    jit_config_set_prepend_path(tmp);
+	  }
 	else if (strcmp((*argv)[i], "-keep-files")==0) 
 	  {
 	    jit_config_set_keepfiles(true);
