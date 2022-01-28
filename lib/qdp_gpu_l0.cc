@@ -130,24 +130,42 @@ namespace QDP {
   {
     JitResult ret = JitResult::JitSuccess;
 
+    ze_group_count_t dispatch;
+    dispatch.groupCountX = gridDimX;
+    dispatch.groupCountY = gridDimY;
+    dispatch.groupCountZ = 1;
+    
+    // std::cout << "grid =(" << dispatch.groupCountX << "," << dispatch.groupCountY << "," << dispatch.groupCountZ << ")\n";
+    // std::cout << "block=(" << blockDimX << "," << blockDimY << "," << blockDimZ << ")\n";
+
+
     typedef std::vector< std::pair< int , void* > > KernelArgs_t;
 
-    std::cout << "kernel args:\n";
+    //std::cout << "kernel args:\n";
     for ( int i = 0 ; i < kernelArgs.size() ; ++i )
       {
-	std::cout << i << ": " << kernelArgs.at(i).first << " " << kernelArgs.at(i).second << "\n";
+	// std::cout << i << ": " << kernelArgs.at(i).first << " " << kernelArgs.at(i).second << "\n";
+	// switch (kernelArgs.at(i).first)
+	//   {
+	//   case 4:
+	//     {
+	//       int* tmp = (int*)kernelArgs.at(i).second;
+	//       std::cout << " int: " << *tmp << std::endl;
+	//     }
+	//     break;
+	//   case 8:
+	//     {
+	//       std::cout << " void*: " << (void*)*(int*)kernelArgs.at(i).second << std::endl;
+	//     }
+	//     break;
+	//   default:
+	//     std::cout << "size unknown\n";
+	//   }
 	VALIDATECALL(zeKernelSetArgumentValue( (ze_kernel_handle_t)f.get_function() , i , kernelArgs.at(i).first , kernelArgs.at(i).second ));
       }
 
     VALIDATECALL(zeKernelSetGroupSize( (ze_kernel_handle_t)f.get_function() , blockDimX , blockDimY , blockDimZ ));
 
-    ze_group_count_t dispatch;
-    dispatch.groupCountX = gridDimX;
-    dispatch.groupCountY = gridDimY;
-    dispatch.groupCountZ = 1;
-
-    std::cout << "grid =(" << dispatch.groupCountX << "," << dispatch.groupCountY << "," << dispatch.groupCountZ << ")\n";
-    std::cout << "block=(" << blockDimX << "," << blockDimY << "," << blockDimZ << ")\n";
 
     gpu_cmd_Create();
 
@@ -182,22 +200,21 @@ namespace QDP {
     
   void gpu_init()
   {
-    std::cout << __PRETTY_FUNCTION__ << "\n";
     // Initialization
-    std::cout << "zeInit\n";
+    //std::cout << "zeInit\n";
     VALIDATECALL(zeInit(ZE_INIT_FLAG_GPU_ONLY));
 
-    std::cout << "zeDriverGet\n";
+    //std::cout << "zeDriverGet\n";
     // Get the driver
     uint32_t driverCount = 0;
     VALIDATECALL(zeDriverGet(&driverCount, nullptr));
 
-    std::cout << "driverCount = " << driverCount << "\n";
+    //std::cout << "driverCount = " << driverCount << "\n";
     
-    std::cout << "zeDriverGet\n";
+    //std::cout << "zeDriverGet\n";
     VALIDATECALL(zeDriverGet(&driverCount, &driverHandle));
 
-    std::cout << "zuContextCreate\n";
+    //std::cout << "zuContextCreate\n";
     // Create the context
     ze_context_desc_t contextDescription = {};
     contextDescription.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
@@ -213,13 +230,13 @@ namespace QDP {
 
   void gpu_set_device(int dev)
   {
-    std::cout << __PRETTY_FUNCTION__ << "\n";
+    //std::cout << __PRETTY_FUNCTION__ << "\n";
     unsigned int d = dev;
     
     // Level Zero device ordinals are natural numbers
     d += 1;
 
-    std::cout << "zeDeviceGet\n";
+    //std::cout << "zeDeviceGet\n";
     VALIDATECALL(zeDeviceGet(driverHandle, &d, &device));
 
 #if 0
@@ -257,20 +274,20 @@ namespace QDP {
 
     gpu_auto_detect();
 
-    std::cout << "done\n";
+    //std::cout << "done\n";
   }
 
 
   void gpu_get_device_props()
   {
-    std::cout << __PRETTY_FUNCTION__ << "\n";
+    //std::cout << __PRETTY_FUNCTION__ << "\n";
   }
 
 
   
   void gpu_auto_detect()
   {
-    std::cout << __PRETTY_FUNCTION__ << "\n";
+    //std::cout << __PRETTY_FUNCTION__ << "\n";
 
     VALIDATECALL(zeDeviceGetProperties(device, &deviceProperties));
     std::cout << "Device                         : " << deviceProperties.name << "\n" 
@@ -300,13 +317,13 @@ namespace QDP {
 
   int gpu_get_device_count()
   {
-    std::cout << __PRETTY_FUNCTION__ << "\n";
+    //std::cout << __PRETTY_FUNCTION__ << "\n";
 
     // Get the device
     uint32_t deviceCount = 0;
     VALIDATECALL(zeDeviceGet(driverHandle, &deviceCount, nullptr));
 
-    std::cout << "deviceCount = " << deviceCount << "\n";
+    //std::cout << "deviceCount = " << deviceCount << "\n";
     return deviceCount;
   }
 
@@ -320,7 +337,7 @@ namespace QDP {
   
   void gpu_host_alloc(void **mem , const size_t size)
   {
-    std::cout << __PRETTY_FUNCTION__ << " size = " << size << "\n";
+    //std::cout << __PRETTY_FUNCTION__ << " size = " << size << "\n";
 
     ze_host_mem_alloc_desc_t hostDesc = {ZE_STRUCTURE_TYPE_HOST_MEM_ALLOC_DESC};
     //hostDesc.flags = ZE_HOST_MEM_ALLOC_FLAG_BIAS_UNCACHED;
@@ -331,7 +348,7 @@ namespace QDP {
 
   void gpu_host_free(void *mem)
   {
-    std::cout << __PRETTY_FUNCTION__ << "\n";
+    //std::cout << __PRETTY_FUNCTION__ << "\n";
 
     VALIDATECALL(zeMemFree(context, (void*)mem));
   }
@@ -387,7 +404,7 @@ namespace QDP {
   
   void gpu_free(const void *mem )
   {
-    std::cout << __PRETTY_FUNCTION__ << "\n";
+    //std::cout << __PRETTY_FUNCTION__ << "\n";
 
     VALIDATECALL(zeMemFree(context, (void*)mem));
   }

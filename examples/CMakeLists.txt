@@ -12,11 +12,24 @@ add_library(examples mesplq.cc reunit.cc dslashm_w.cc rgauge.cc taproj.cc
 	blas1.cc blas1.h cblas1.cc cblas1.h unittest.h testOpenPartFile.h)
 			
 target_link_libraries(examples PUBLIC QDPXX::qdp)
-set_target_properties(examples PROPERTIES 
-	CXX_STANDARD 20
-	CXX_EXTENSIONS OFF
-	C_STANDARD 99
-	C_EXTENSIONS OFF)
+
+if(QDP_PROP_OPT)
+  set_target_properties( examples PROPERTIES CXX_STANDARD 20 )
+endif()
+
+if( QDP_BACKEND_L0 )
+  find_package(PkgConfig REQUIRED)
+  pkg_search_module(PKG_LLVMSPIRV REQUIRED LLVMSPIRVLib)
+  target_link_libraries(examples PUBLIC ${PKG_LLVMSPIRV_LIBRARIES})
+  target_link_options(examples PUBLIC ${PKG_LLVMSPIRV_LDFLAGS})
+endif()
+
+      
+#set_target_properties(examples PROPERTIES 
+#	CXX_STANDARD 20
+#	CXX_EXTENSIONS OFF
+#	C_STANDARD 99
+#	C_EXTENSIONS OFF)
 
 set(TESTS t_skeleton 
 	t_io
@@ -45,10 +58,22 @@ set(TESTS ${TESTS} nersc2ildg test_ildglat lhpc2ildg)
 
 foreach(TEST ${TESTS})
  add_executable(${TEST} ${TEST}.cc)
- target_link_libraries(${TEST} examples QDPXX::jit)
- set_target_properties(${TEST} PROPERTIES 
-	CXX_STANDARD 20
- 	CXX_EXTENSIONS OFF)
+ target_link_libraries(${TEST} PUBLIC examples QDPXX::jit)
+
+ if(QDP_PROP_OPT)
+   set_target_properties( ${TEST} PROPERTIES CXX_STANDARD 20 )
+ endif()
+
+ if( QDP_BACKEND_L0 )
+   find_package(PkgConfig REQUIRED)
+   pkg_search_module(PKG_LLVMSPIRV REQUIRED LLVMSPIRVLib)
+   target_link_libraries(${TEST} PUBLIC ${PKG_LLVMSPIRV_LIBRARIES})
+   target_link_options(${TEST} PUBLIC ${PKG_LLVMSPIRV_LDFLAGS})
+ endif()
+ 
+# set_target_properties(${TEST} PROPERTIES 
+#   CXX_STANDARD 20
+#   CXX_EXTENSIONS OFF)
 endforeach()
 
 install(TARGETS nersc2ildg test_ildglat lhpc2ildg)

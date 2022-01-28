@@ -893,7 +893,7 @@ namespace QDP {
     @relates QDPType */
   template<class T>
   inline void 
-  QDP_insert(OLattice<T>& dest, const multi1d<OScalar<T> >& src, const Subset& s)
+  QDP_insert(OLattice<T>& dest, const multi1d<OScalar< typename ScalarType<T>::Type_t > >& src, const Subset& s)
   {
 #if defined(QDP_USE_PROFILING)
     qdp_jit_CPU_add(__PRETTY_FUNCTION__);

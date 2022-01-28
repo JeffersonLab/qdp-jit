@@ -410,7 +410,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
     }
 
 
-#ifdef QDP_BACKEND_AVX
+#if defined (QDP_CODEGEN_VECTOR)
     OScalar< typename ScalarType<T>::Type_t > peekLinearSite(int site) const
     {
       OScalar< typename ScalarType<T>::Type_t > ret;

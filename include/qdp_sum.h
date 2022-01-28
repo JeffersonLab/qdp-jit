@@ -558,7 +558,7 @@ namespace QDP {
 	QDP_error_exit( "sumMulti(Lat,set) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)gpu_getMaxGridX());
       }
 
-      QDP_info("sum(Lat,subset): using %d threads per block, %d blocks" , numThreads , numBlocks );
+      //QDP_info("sum(Lat,subset): using %d threads per block, %d blocks" , numThreads , numBlocks );
 
       if (first) {
 	out_id = QDP_get_global_cache().add( numBlocks*sizeof(T2)*numsubsets , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
