@@ -29,7 +29,7 @@ namespace QDP {
     static JitFunction function;
 
     if (function.empty())
-       function_sum_convert_ind_build<T1,T2,input_layout>(function);
+       function_sum_convert_ind_build<typename ScalarType<T1>::Type_t,T2,input_layout>(function);
 
     function_sum_convert_ind_exec(function, size, threads, blocks, 
 				  in_id, out_id, siteTableId );

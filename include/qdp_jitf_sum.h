@@ -106,18 +106,22 @@ namespace QDP {
     T2JIT sdata_jit;
     sdata_jit.setup( r_shared , JitDeviceLayout::Scalar , args );
     zero_rep( sdata_jit );
-    
-    llvm_cond_exit( llvm_ge( r_idx , r_hi ) );
 
-    llvm::Value* r_idx_perm = llvm_array_type_indirection( p_site_perm , r_idx );
 
-    typename REGType< typename JITType< typename ScalarType<T1>::Type_t >::Type_t >::Type_t reg_idata_elem;   
-    reg_idata_elem.setup( idata.elem( input_layout , r_idx_perm ) );
+    JitIf ifValidThreadIdx( llvm_lt( r_idx , r_hi ) );
+    {
+      llvm::Value* r_idx_perm = llvm_array_type_indirection( p_site_perm , r_idx );
 
-    sdata_jit = reg_idata_elem; // This should do the precision conversion (SP->DP)
+      typename REGType< typename JITType< typename ScalarType<T1>::Type_t >::Type_t >::Type_t reg_idata_elem;   
+      reg_idata_elem.setup( idata.elem( input_layout , r_idx_perm ) );
+
+      sdata_jit = reg_idata_elem; // This should do the precision conversion (SP->DP)
+    }
+    ifValidThreadIdx.end();
 
     llvm_bar_sync();
 
+    
     llvm::Value* r_pow_shr1 = llvm_shr( r_ntidx , llvm_create_value(1) );
 
     //
@@ -219,18 +223,15 @@ namespace QDP {
     sdata_jit.setup( r_shared , JitDeviceLayout::Scalar , args );
     zero_rep( sdata_jit );
 
-    llvm_cond_exit( llvm_ge( r_idx , r_hi ) );
 
-    llvm::Value* r_idx_perm = llvm_array_type_indirection( p_site_perm , r_idx );
+    JitIf ifValidThreadIdx( llvm_lt( r_idx , r_hi ) );
+    {
+      llvm::Value* r_idx_perm = llvm_array_type_indirection( p_site_perm , r_idx );
 
-    //typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_elem;   
-    //reg_idata_elem.setup( idata.elem( input_layout , r_idx_perm ) );
-
-    //sdata_jit = reg_idata_elem; // This should do the precision conversion (SP->DP)
-
-    OpAssign()( sdata_jit , 
-		forEach(rhs_view, ViewLeaf( input_layout , r_idx_perm ), OpCombine()));
-
+      OpAssign()( sdata_jit , 
+		  forEach(rhs_view, ViewLeaf( input_layout , r_idx_perm ), OpCombine()));
+    }
+    ifValidThreadIdx.end();
     
     llvm_bar_sync();
 
@@ -334,14 +335,16 @@ namespace QDP {
     sdata_jit.setup( r_shared , JitDeviceLayout::Scalar , args );
     zero_rep( sdata_jit );
 
-    llvm_cond_exit( llvm_ge( r_idx , r_hi ) );
 
-    typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_elem;
-    //reg_idata_elem.setup( idata.elem( input_layout , r_idx_perm ) );
-    reg_idata_elem.setup( idata.elem( input_layout , r_idx ) );
+    JitIf ifValidThreadIdx( llvm_lt( r_idx , r_hi ) );
+    {
+      typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_elem;
+      reg_idata_elem.setup( idata.elem( input_layout , r_idx ) );
 
-    sdata_jit = reg_idata_elem; // This should do the precision conversion (SP->DP)
-
+      sdata_jit = reg_idata_elem; // This should do the precision conversion (SP->DP)
+    }
+    ifValidThreadIdx.end();
+    
     llvm_bar_sync();
 
     
@@ -432,9 +435,6 @@ namespace QDP {
     llvm::Value* r_tidx       = llvm_call_special_tidx();
     llvm::Value* r_ntidx       = llvm_call_special_ntidx(); // needed later
 
-    typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_elem;   
-    reg_idata_elem.setup( idata.elem( JitDeviceLayout::Scalar , r_idx ) ); 
-
     IndexDomainVector args;
     args.push_back( make_pair( Layout::sitesOnNode() , r_tidx ) );  // sitesOnNode irrelevant since Scalar access later
 
@@ -443,10 +443,16 @@ namespace QDP {
 
     zero_rep( sdata_jit );
 
-    llvm_cond_exit( llvm_ge( r_idx , r_hi ) );
+    JitIf ifValidThreadIdx( llvm_lt( r_idx , r_hi ) );
+    {
+      typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_elem;   
+      reg_idata_elem.setup( idata.elem( JitDeviceLayout::Scalar , r_idx ) ); 
 
-    sdata_jit = reg_idata_elem; // 
+      sdata_jit = reg_idata_elem; // 
+    }
+    ifValidThreadIdx.end();
 
+    
     llvm_bar_sync();
 
     llvm::Value* r_pow_shr1 = llvm_shr( r_ntidx , llvm_create_value(1) );
@@ -546,14 +552,15 @@ namespace QDP {
 
     ReductionOp::initNeutral( sdata_jit );
     
-    llvm_cond_exit( llvm_ge( r_idx , r_hi ) );
+    JitIf ifValidThreadIdx( llvm_lt( r_idx , r_hi ) );
+    {
+      typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_elem;
+      reg_idata_elem.setup( idata.elem( input_layout , r_idx ) );
 
-    typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_elem;
-    //reg_idata_elem.setup( idata.elem( input_layout , r_idx_perm ) );
-    reg_idata_elem.setup( idata.elem( input_layout , r_idx ) );
-
-    ConvertOp::apply( sdata_jit , reg_idata_elem );
-
+      ConvertOp::apply( sdata_jit , reg_idata_elem );
+    }
+    ifValidThreadIdx.end();
+    
     llvm_bar_sync();
 
 
@@ -645,8 +652,6 @@ namespace QDP {
     llvm::Value* r_tidx       = llvm_call_special_tidx();
     llvm::Value* r_ntidx       = llvm_call_special_ntidx(); // needed later
 
-    typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_elem;   
-    reg_idata_elem.setup( idata.elem( JitDeviceLayout::Scalar , r_idx ) ); 
 
     IndexDomainVector args;
     args.push_back( make_pair( Layout::sitesOnNode() , r_tidx ) );  // sitesOnNode irrelevant since Scalar access later
@@ -656,10 +661,16 @@ namespace QDP {
     
     ReductionOp::initNeutral( sdata_jit );
     
-    llvm_cond_exit( llvm_ge( r_idx , r_hi ) );
 
-    sdata_jit = reg_idata_elem; // This is just copying booleans
+    JitIf ifValidThreadIdx( llvm_lt( r_idx , r_hi ) );
+    {
+      typename REGType< typename JITType<T1>::Type_t >::Type_t reg_idata_elem;   
+      reg_idata_elem.setup( idata.elem( JitDeviceLayout::Scalar , r_idx ) ); 
 
+      sdata_jit = reg_idata_elem; // This is just copying booleans
+    }
+    ifValidThreadIdx.end();
+    
     llvm_bar_sync();
 
     llvm::Value* r_pow_shr1 = llvm_shr( r_ntidx , llvm_create_value(1) );
