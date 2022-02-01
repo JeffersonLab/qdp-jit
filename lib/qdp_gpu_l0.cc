@@ -416,7 +416,11 @@ namespace QDP {
 
   void gpu_memset( void * dest , unsigned char val , size_t N )
   {
-    //memset( dest , val , N );
+    gpu_cmd_Create();
+
+    VALIDATECALL(zeCommandListAppendMemoryFill( cmdList , dest , &val , 1 , N , nullptr , 0 , nullptr ));
+
+    gpu_cmd_CloseExeDestroy();
   }
 
 
