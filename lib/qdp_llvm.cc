@@ -642,6 +642,8 @@ namespace QDP
 	    char *env = getenv( "CUDAPATH" );
 	    if (!env)
 	      env = getenv( "CUDA_PATH" );
+	    if (!env)
+	      env = getenv( "CUDA_HOME" );
 	    if (env)
 	      {
 		std::string ENV(env);
