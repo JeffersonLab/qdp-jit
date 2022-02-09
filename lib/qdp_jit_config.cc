@@ -128,16 +128,19 @@ namespace QDP
 #endif
     QDPIO::cout << "  GPU direct                          : " << (int)jit_config_get_gpu_direct() << "\n";
     QDPIO::cout << "  Shift optimization                  : " << (int)qdp_jit_config_get_opt_shifts() << "\n";
+
     QDPIO::cout << "  Propagator optimization             : ";
-
-
 #if defined (QDP_PROP_OPT)
     QDPIO::cout << "1\n";
 #else
     QDPIO::cout << "0\n";
 #endif
 
-		QDPIO::cout <<"Temp Files Prepend path             : " <<  jit_config_get_prepend_path() << "\n"; 
+
+#ifdef QDP_BACKEND_ROCM
+    QDPIO::cout <<"   Temp Files Prepend path             : " <<  jit_config_get_prepend_path() << "\n"; 
+#endif
+    
   }
 
 
