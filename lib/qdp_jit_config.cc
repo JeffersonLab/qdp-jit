@@ -53,7 +53,7 @@ namespace QDP
     bool codegen_keepfiles = false;
     
     std::vector<std::string> extra_libs;
-    std::string prepend_path = "";
+    std::string prepend_path = "./";
 #endif
 
 #ifdef QDP_BACKEND_CUDA
@@ -120,6 +120,7 @@ namespace QDP
       QDPIO::cout << "  memory pool size (per fraction)     : " << pool_size/1024/1024 << " MB\n";
       break;
     }
+
     QDPIO::cout << "Accurate timing                       : " << (int)jit_config_get_timing_run() << "\n";
     QDPIO::cout << "Code generation:\n";
 #ifdef QDP_BACKEND_CUDA
@@ -128,11 +129,15 @@ namespace QDP
     QDPIO::cout << "  GPU direct                          : " << (int)jit_config_get_gpu_direct() << "\n";
     QDPIO::cout << "  Shift optimization                  : " << (int)qdp_jit_config_get_opt_shifts() << "\n";
     QDPIO::cout << "  Propagator optimization             : ";
+
+
 #if defined (QDP_PROP_OPT)
     QDPIO::cout << "1\n";
 #else
     QDPIO::cout << "0\n";
 #endif
+
+		QDPIO::cout <<"Temp Files Prepend path             : " <<  jit_config_get_prepend_path() << "\n"; 
   }
 
 
