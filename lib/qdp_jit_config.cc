@@ -57,7 +57,7 @@ namespace QDP
     bool codegen_keepfiles = false;
     
     std::vector<std::string> extra_libs;
-    std::string prepend_path = "";
+    std::string prepend_path = "./";
 #endif
 
 #ifdef QDP_BACKEND_CUDA
@@ -165,6 +165,9 @@ namespace QDP
     QDPIO::cout << "0\n";
 #endif
 
+#ifdef QDP_BACKEND_ROCM
+    QDPIO::cout <<"  Temp Files Prepend path              : " <<  jit_config_get_prepend_path() << "\n"; 
+#endif
     
     QDPIO::cout << "Launch configuration:\n";
     QDPIO::cout << "  Threads per block                   : " << threads_per_block << "\n";
