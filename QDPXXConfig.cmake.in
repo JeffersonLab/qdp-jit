@@ -61,10 +61,10 @@ if( QDP_ARCH_PARSCALAR )
   find_dependency(QMP REQUIRED)
 endif()
 
-set(QDP_ENABLE_LLVM13 @QDP_ENABLE_LLVM13@)
+set(QDP_ENABLE_LLVM14 @QDP_ENABLE_LLVM14@)
 
-if(QDP_ENABLE_LLVM13)
-  set(QDP_LLVM13 "1")
+if(QDP_ENABLE_LLVM14)
+  set(QDP_LLVM14 "1")
 endif()
 
 
@@ -100,10 +100,10 @@ endif()
 
 # Now find the dependencies
 
-if(QDP_ENABLE_LLVM13)
-  find_dependency(LLVM "13.0" REQUIRED CONFIG)
+if(QDP_ENABLE_LLVM14)
+  find_dependency(LLVM "14.0" REQUIRED CONFIG)
 else()
-  find_dependency(LLVM "12.0" REQUIRED CONFIG)
+  find_dependency(LLVM "13.0" REQUIRED CONFIG)
 endif()
 
 find_dependency(XPathReader REQUIRED)
