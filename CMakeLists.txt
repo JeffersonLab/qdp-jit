@@ -32,7 +32,7 @@ set(QDP_DEEP_LOG ${QDP_ENABLE_DEEP_LOG})
 #set(QDP_ENABLE_CUDA_NVCC "nvcc" CACHE STRING "Path to cuda NVCC")
 #set(CUDA_NVCC ${QDP_ENABLE_CUDA_NVCCC})
 
-option(QDP_ENABLE_LLVM13 "Enable changes to compile with LLVM13 release" OFF)
+option(QDP_ENABLE_LLVM14 "Enable changes to compile with LLVM14 release" OFF)
 
 option(QDP_BUILD_EXAMPLES "Build examples" ON)
 
@@ -44,8 +44,8 @@ if(QDP_ENABLE_CODEGEN_VECTOR)
   set(QDP_CODEGEN_VECTOR "1")
 endif()
 
-if( QDP_ENABLE_LLVM13 )
-  set(QDP_LLVM13 "1")
+if( QDP_ENABLE_LLVM14 )
+  set(QDP_LLVM14 "1")
 endif()
 
 option(QDP_ENABLE_COMM_SPLIT_DEVICEINIT "Enable using MPI_Comm_split when initializing devices" OFF)
@@ -254,10 +254,10 @@ message( STATUS "QDP++: Setting alignment size to ${QDP_ALIGNMENT_SIZE}")
 check_function_exists("gethostname" HAVE_GETHOSTNAME)
 check_function_exists("strnlen" HAVE_STRNLEN)
 
-if( QDP_ENABLE_LLVM13 )
-  find_package(LLVM "13.0" REQUIRED CONFIG)
+if( QDP_ENABLE_LLVM14 )
+  find_package(LLVM "14.0" REQUIRED CONFIG)
 else()
-  find_package(LLVM "12.0" REQUIRED CONFIG)
+  find_package(LLVM "13.0" REQUIRED CONFIG)
 endif()
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
