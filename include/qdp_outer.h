@@ -805,7 +805,20 @@ struct LeafFunctor<OScalar< PScalar< PScalar < RScalar< Word< bool > > > > >, Ad
 };
 
 
-  
+
+template<class T>
+struct LeafFunctor<OLattice<T>, SelfAssignTag>
+{
+  typedef int Type_t;
+  inline static
+  Type_t apply(const OLattice<T>& a, const SelfAssignTag& p) 
+  {
+    return a.getId() == p.id ? 1:0;
+  }
+};
+
+
+
 
 
 //-----------------------------------------------------------------------------

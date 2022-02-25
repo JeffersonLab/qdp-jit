@@ -250,6 +250,29 @@ namespace QDP {
     jit_get_function( function );
   }
 #endif
+
+
+  template<class T, class T1, class Op, class RHS>
+#if defined (QDP_PROP_OPT)
+  typename std::enable_if_t< ! HasProp<RHS>::value >
+#else
+  void
+#endif  
+  function_check_selfassign(bool& result, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs)
+  {
+    result = false;
+  }
+
+
+#if defined (QDP_PROP_OPT)
+  template<class T, class T1, class Op, class RHS>
+  typename std::enable_if_t< HasProp<RHS>::value >
+  function_check_selfassign(bool& result, OLattice<T>& dest, const Op& op, const QDPExpr<RHS,OLattice<T1> >& rhs)
+  {
+    result = forEach(rhs, SelfAssignTag(dest.getId()) , BitOrCombine()) > 0;
+  }
+#endif
+
   
 
   template<class T, class T1, class Op, class RHS>
@@ -263,6 +286,23 @@ namespace QDP {
     function.type_W = typeid(typename WordType<T>::Type_t).name();
     function.set_dest_id( dest.getId() );
 #endif
+
+    bool has_self_assign;
+    function_check_selfassign(has_self_assign , dest, op , rhs );
+    if (has_self_assign)
+      {
+	QDPIO::cout << "Self assignment in the form a=f(a) detected, where 'a' is a propagator. This is not allowed." << std::endl;
+	QDPIO::cout << "The expression's type information:" << std::endl;
+
+	std::ostringstream expr;
+	printExprTree( expr , dest, op, rhs );
+	QDPIO::cout << expr.str() << std::endl;
+
+	QDPIO::cout << __PRETTY_FUNCTION__ << std::endl;
+
+	sleep(2);
+	QDP_abort(1);
+      }
     
     if (s.numSiteTable() < 1)
       return;

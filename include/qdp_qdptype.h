@@ -388,6 +388,8 @@ public:
 public:
   typename WordType<T>::Type_t get_word_value() const { return static_cast<const C*>(this)->get_word_value();}
 
+  int getId() const { return static_cast<const C*>(this)->getId(); }
+
   T* getF() {return static_cast<const C*>(this)->getF();}
   const T* getF() const {return static_cast<const C*>(this)->getF();}
 
@@ -548,6 +550,20 @@ struct LeafFunctor<QDPType<T,C>, ShiftPhase2>
   typedef int Type_t;
   static int apply(const QDPType<T,C> &s, const ShiftPhase2 &f) {
     return 0;
+  }
+};
+
+
+
+
+template<class T>
+struct LeafFunctor<QDPType<T,OLattice<T> >, SelfAssignTag>
+{
+  typedef int Type_t;
+  inline static
+  Type_t apply(const QDPType<T,OLattice<T> >& s, const SelfAssignTag& p) 
+  {
+    return s.getId() == p.id ? 1:0;
   }
 };
 

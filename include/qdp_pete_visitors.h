@@ -158,8 +158,24 @@ struct AddressLeaf
   };
 
 
-
   
+  struct SelfAssignTag
+  {
+    SelfAssignTag( int id_ ): id(id_) {}
+    int id;
+  };
+
+  template<class T>
+  struct LeafFunctor< T , SelfAssignTag >
+  {
+    typedef int Type_t;
+    inline static
+    Type_t apply(const T &s, const SelfAssignTag &) 
+    {
+      return 0;
+    }
+  };
+
 }
 
 #endif
