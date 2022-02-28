@@ -1140,15 +1140,7 @@ namespace QDP
 	    at.ptr  = jit_param_null_ptr;
 	    ret.push_back( at );
 #elif defined (QDP_BACKEND_L0)
-	    if (jit_param_null_ptr == NULL)
-	      {
-		if (!gpu_malloc( &jit_param_null_ptr , sizeof(float) ))
-		  {
-		    QDPIO::cerr << "Internal error: Cannot allocate few bytes for NULL pointer argument\n";
-		    QDP_abort(1);
-		  }
-	      }
-	    insert_l0<void*>( ret , &jit_param_null_ptr );
+	    insert_l0<void*>( ret , jit_param_null_ptr );
 #else
 #error "No backend specified"
 #endif
