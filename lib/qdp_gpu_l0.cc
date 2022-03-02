@@ -381,20 +381,30 @@ namespace QDP {
   }
 
 
+  // template <class T> struct ZeStruct : public T {
+  //   ZeStruct() : T{} { // zero initializes base struct
+  //     this->stype = getZeStructureType<T>();
+  //     this->pNext = nullptr;
+  //   }
+  // };
+
   bool gpu_malloc(void **mem , size_t size )
   {
     std::cout << __PRETTY_FUNCTION__ << " size = " << size << "\n";
 
-    if ( size > deviceProperties.maxMemAllocSize )
-      {
-	std::cout << "L0 error: memory allocation size larger than maximum allowed: " << size << " (" << deviceProperties.maxMemAllocSize << ").\n";
-	QDP_abort(1);
-      }
-    
     ze_device_mem_alloc_desc_t memAllocDesc = {ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC};
-    //memAllocDesc.flags = ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED;
+
     memAllocDesc.ordinal = 0;
 
+    ze_relaxed_allocation_limits_exp_desc_t relaxed;
+    relaxed.stype = ZE_STRUCTURE_TYPE_RELAXED_ALLOCATION_LIMITS_EXP_DESC;
+    relaxed.flags = ZE_RELAXED_ALLOCATION_LIMITS_EXP_FLAG_MAX_SIZE;
+
+    if ( size > deviceProperties.maxMemAllocSize )
+      {
+	std::cout << "L0 performance warning: memory allocation size larger than maximum allowed: " << size << " (" << deviceProperties.maxMemAllocSize << ").\n";
+	memAllocDesc.pNext = &relaxed;
+      }
 
     VALIDATECALL(zeMemAllocDevice( context, &memAllocDesc, size, 1, device, mem));
     
