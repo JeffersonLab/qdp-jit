@@ -2,6 +2,7 @@
 #define QDP_JITFUNC_EVAL_H
 
 #include<type_traits>
+#include <unistd.h> 
 
 namespace QDP {
 
