@@ -2916,7 +2916,7 @@ namespace QDP
     func.time_passes = swatch.getTimeInMicroseconds();
 
     
-    if (jit_config_get_verbose_output())
+    if (jit_config_get_verbose_output() || jit_config_get_keepfiles())
       {
 	// QDPIO::cout << "\n\n";
 	// QDPIO::cout << str_pretty << std::endl;

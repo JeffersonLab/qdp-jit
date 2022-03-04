@@ -61,8 +61,6 @@ namespace QDP
   void jit_config_set_codegen_opt(int opt);
   void jit_config_add_extra_lib( std::string l );
   std::vector<std::string>& jit_config_get_extra_lib();
-  bool jit_config_get_keepfiles();
-  void jit_config_set_keepfiles(bool v);
 #endif
 
 #ifdef QDP_BACKEND_CUDA
@@ -70,6 +68,10 @@ namespace QDP
   void jit_config_set_CUDA_FTZ(int i);
 #endif
 
+#if defined(QDP_BACKEND_ROCM) || (QDP_BACKEND_L0)
+  bool jit_config_get_keepfiles();
+  void jit_config_set_keepfiles(bool v);
+#endif
   
   void jit_config_set_pool_size( size_t val );
   void jit_config_set_thread_stack( int stack );

@@ -54,7 +54,6 @@ namespace QDP
     
 #ifdef QDP_BACKEND_ROCM
     int  codegen_opt = 1;
-    bool codegen_keepfiles = false;
     
     std::vector<std::string> extra_libs;
     std::string prepend_path = "./";
@@ -62,6 +61,10 @@ namespace QDP
 
 #ifdef QDP_BACKEND_CUDA
     int CUDA_FTZ = 0;
+#endif
+
+#if defined(QDP_BACKEND_ROCM) || (QDP_BACKEND_L0)
+    bool codegen_keepfiles = false;
 #endif
     
 #ifdef QDP_DEEP_LOG
@@ -197,9 +200,6 @@ namespace QDP
   std::string jit_config_get_prepend_path() { return prepend_path; }
   void        jit_config_set_prepend_path(std::string s) { prepend_path = s; }
   
-  bool jit_config_get_keepfiles() { return codegen_keepfiles; }
-  void jit_config_set_keepfiles(bool v) { codegen_keepfiles = v; }
-  
   int jit_config_get_codegen_opt() { return codegen_opt; }
   void jit_config_set_codegen_opt(int opt) { codegen_opt = opt; }
 
@@ -212,7 +212,13 @@ namespace QDP
     return extra_libs;
   }
 #endif
+
   
+#if defined(QDP_BACKEND_ROCM) || (QDP_BACKEND_L0)
+  bool jit_config_get_keepfiles() { return codegen_keepfiles; }
+  void jit_config_set_keepfiles(bool v) { codegen_keepfiles = v; }
+#endif
+
   size_t jit_config_get_pool_alignment() { return pool_alignment; }
   void jit_config_set_pool_alignment(size_t size ) { pool_alignment = size; }
 

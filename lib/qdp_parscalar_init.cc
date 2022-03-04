@@ -417,10 +417,6 @@ namespace QDP {
 	  }
 	  jit_config_set_prepend_path(stmp); 				
 	}
-	else if (strcmp((*argv)[i], "-keep-files")==0) 
-	  {
-	    jit_config_set_keepfiles(true);
-	  }
 	else if (strcmp((*argv)[i], "-opt")==0)
 	  {
 	    unsigned val;
@@ -432,6 +428,12 @@ namespace QDP {
 	    char tmp[2048];
 	    sscanf((*argv)[++i], "%s", &tmp[0]);
 	    jit_config_add_extra_lib(tmp);
+	  }
+#endif
+#if defined(QDP_BACKEND_ROCM) || (QDP_BACKEND_L0)	
+	else if (strcmp((*argv)[i], "-keep-files")==0) 
+	  {
+	    jit_config_set_keepfiles(true);
 	  }
 #endif
 #ifdef QDP_BACKEND_CUDA
