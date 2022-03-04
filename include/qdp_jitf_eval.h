@@ -125,7 +125,7 @@ namespace QDP {
   {
     std::ostringstream expr;
 
-    //expr << std::string(__PRETTY_FUNCTION__) << "_key=" << key;
+    expr << std::string(__PRETTY_FUNCTION__) << "_key=" << key;
   
     llvm_start_new_function("evalp",expr.str().c_str() );
   

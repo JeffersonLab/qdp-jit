@@ -24,6 +24,9 @@ option(QDP_ENABLE_PROFILING "Enable profiling" OFF)
 option(QDP_ENABLE_ROCM_STATS "Enable ROCM statistics" OFF)
 option(QDP_ENABLE_MANAGED_MEMORY "Enable CUDA/HIP Managed Memory" OFF)
 
+set(QDP_USE_PROFILING ${QDP_ENABLE_PROFILING})
+
+
 option(QDP_ENABLE_CUSTOM_KERNELS "Enable Custom Kernels" OFF)
 option(QDP_ENABLE_DEEP_LOG "Enable Deep logging" OFF)
 set(QDP_DEEP_LOG ${QDP_ENABLE_DEEP_LOG})
@@ -116,8 +119,7 @@ set(QDP_NS 4 CACHE STRING "Number of spins (default 4)")
 set(QDP_ALIGNMENT_SIZE "64" CACHE STRING "OLattice memory alignment size in bytes (default 512)")
 
 
-# Profiling and memory debugging
-option(QDP_USE_PROFILING "Enable Profiling interface" OFF)
+# Memory debugging
 option(QDP_DEBUG_MEMORY "Enable Memory Debugging" OFF)
 
 # LibXML on by default
