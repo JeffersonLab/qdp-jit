@@ -168,6 +168,7 @@ namespace QDP
     if (Layout::primaryNode())
     {
       string foo = QIO_string_ptr(xml_c);
+			QDPInternal::broadcast_str(foo);
       ss.str(foo);
     }
     file_xml.open(ss);
@@ -233,6 +234,7 @@ namespace QDP
     istringstream ss;
     if (Layout::primaryNode()) {
       string foo = QIO_string_ptr(xml_c);
+			QDPInternal::broadcast_str(foo);
       ss.str(foo);
     }
     rec_xml.open(ss);
@@ -281,6 +283,7 @@ namespace QDP
     istringstream ss;
     if (Layout::primaryNode()) {
       string foo = QIO_string_ptr(xml_c);
+			QDPInternal::broadcast_str(foo);
       ss.str(foo);
     }
     rec_xml.open(ss);
