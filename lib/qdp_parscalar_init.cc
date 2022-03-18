@@ -370,49 +370,45 @@ namespace QDP {
 	else if (strcmp((*argv)[i], "-temp-files-path")==0) { 
 	  char tmp[2048];
 	  sscanf((*argv)[++i], "%s", &tmp[0]);
-		std::string stmp(tmp);
-		if ( stmp.front() == '-' ) {
-		 	// argument missing
-    	QDPIO::cerr << __func__ << ": -temp-files-path: " << stmp << " starts with - \n";
-    	QDP_abort(1);
-    }
-		if ( stmp.back() != '/' ) { 
-			stmp += "/";
-    }
-		// Check prepend path exists and is a directory
-		struct stat status;
-	 	char hostname[128];
-		gethostname(hostname, 128);
- 
-		if(  stat( stmp.c_str(), &status ) != 0 ) {
-		  std::cerr << hostname<<  __func__ << ": -temp-files-path: " <<  stmp << " is an invalid path...";
-		  switch(errno) { 
-		  	case EACCES : 
-					{
-						std::cerr << " search permition is denied for a component of the path \n";
-						break;
-					}
-				case ENOTDIR :
-					{
-			 		  std::cerr << " a component of the path is not a directory \n";
-						break;
-					}
-			  default: 
-				 	std::cerr << " " << strerror(errno) << "\n";
-					break;
-			}
-			QDP_abort(1);
-		}
-    if( (status.st_mode & S_IFMT) != S_IFDIR ) {
-			std::cerr << hostname << __func__ << ": -temp-files-path: " << stmp << " is not a directory...\n";
-			QDP_abort(1);
-    }
-		jit_config_set_prepend_path(stmp); 				
-  }
-	else if (strcmp((*argv)[i], "-keep-files")==0) 
-	  {
-	    jit_config_set_keepfiles(true);
+	  std::string stmp(tmp);
+	  if ( stmp.front() == '-' ) {
+	    // argument missing
+	    QDPIO::cerr << __func__ << ": -temp-files-path: " << stmp << " starts with - \n";
+	    QDP_abort(1);
 	  }
+	  if ( stmp.back() != '/' ) { 
+	    stmp += "/";
+	  }
+	  // Check prepend path exists and is a directory
+	  struct stat status;
+	  char hostname[128];
+	  gethostname(hostname, 128);
+ 
+	  if(  stat( stmp.c_str(), &status ) != 0 ) {
+	    std::cerr << hostname<<  __func__ << ": -temp-files-path: " <<  stmp << " is an invalid path...";
+	    switch(errno) { 
+	    case EACCES : 
+	      {
+		std::cerr << " search permition is denied for a component of the path \n";
+		break;
+	      }
+	    case ENOTDIR :
+	      {
+		std::cerr << " a component of the path is not a directory \n";
+		break;
+	      }
+	    default: 
+	      std::cerr << " " << strerror(errno) << "\n";
+	      break;
+	    }
+	    QDP_abort(1);
+	  }
+	  if( (status.st_mode & S_IFMT) != S_IFDIR ) {
+	    std::cerr << hostname << __func__ << ": -temp-files-path: " << stmp << " is not a directory...\n";
+	    QDP_abort(1);
+	  }
+	  jit_config_set_prepend_path(stmp); 				
+	}
 	else if (strcmp((*argv)[i], "-opt")==0)
 	  {
 	    unsigned val;
@@ -432,6 +428,13 @@ namespace QDP {
 	    unsigned val;
 	    sscanf((*argv)[++i],"%u",&val);
 	    jit_config_set_CUDA_FTZ( val );
+	  }
+#endif
+
+#if defined(QDP_BACKEND_ROCM) || (QDP_BACKEND_L0)	
+	else if (strcmp((*argv)[i], "-keep-files")==0) 
+	  {
+	    jit_config_set_keepfiles(true);
 	  }
 #endif
 	else if (strcmp((*argv)[i], "-poolsize")==0) 

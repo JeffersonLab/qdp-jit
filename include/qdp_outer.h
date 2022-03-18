@@ -1129,6 +1129,30 @@ struct BinaryReturn<OScalar<T1>, OScalar<T2>, FnLocalInnerProductReal > {
 
 
 
+template<class T2, int N>
+struct BinaryReturn<GammaType<N>, OScalar<T2>, OpGammaTypeMultiply> {
+  typedef OScalar<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
+};
+
+template<class T2, int N>
+struct BinaryReturn<OScalar<T2>, GammaType<N>, OpMultiplyGammaType> {
+  typedef OScalar<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
+};
+
+
+template<class T2, int N>
+struct BinaryReturn<GammaTypeDP<N>, OScalar<T2>, OpGammaTypeMultiply> {
+  typedef OScalar<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
+};
+
+template<class T2, int N>
+struct BinaryReturn<OScalar<T2>, GammaTypeDP<N>, OpMultiplyGammaType> {
+  typedef OScalar<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
+};
+
+
+
+
 // Local operations
 template<class T>
 struct UnaryReturn<OScalar<T>, OpNot > {
@@ -1316,6 +1340,30 @@ template<class T1, class T2>
 struct BinaryReturn<OLattice<T1>, OLattice<T2>, FnLocalInnerProductReal > {
   typedef OLattice<typename BinaryReturn<T1, T2, FnLocalInnerProductReal>::Type_t>  Type_t;
 };
+
+
+
+template<class T2, int N>
+struct BinaryReturn<GammaType<N>, OLattice<T2>, OpGammaTypeMultiply> {
+  typedef OLattice<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
+};
+
+template<class T2, int N>
+struct BinaryReturn<OLattice<T2>, GammaType<N>, OpMultiplyGammaType> {
+  typedef OLattice<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
+};
+
+template<class T2, int N>
+struct BinaryReturn<GammaTypeDP<N>, OLattice<T2>, OpGammaTypeMultiply> {
+  typedef OLattice<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
+};
+
+template<class T2, int N>
+struct BinaryReturn<OLattice<T2>, GammaTypeDP<N>, OpMultiplyGammaType> {
+  typedef OLattice<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
+};
+
+
 
 
 // Local operations

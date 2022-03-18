@@ -563,6 +563,30 @@ struct LeafFunctor<multi2d<T>, PrintTag>
 
 
 
+template<int N>
+struct LeafFunctor<GammaType<N>, PrintTag>
+{
+  typedef int Type_t;
+  static int apply(const PrintTag &f)
+    { 
+      f.os_m << "GammaType";
+      return 0;
+    }
+};
+
+template<int N>
+struct LeafFunctor<GammaTypeDP<N>, PrintTag>
+{
+  typedef int Type_t;
+  static int apply(const PrintTag &f)
+    { 
+      f.os_m << "GammaTypeDP";
+      return 0;
+    }
+};
+
+
+
 //
 // struct ParenPrinter
 //
@@ -1496,6 +1520,22 @@ struct TagVisitor<FnNorm2, PrintTag> : public ParenPrinter<FnNorm2>
 { 
   static void visit( PrintTag t) 
     { t.os_m << "norm2"; }
+};
+
+
+
+template <>
+struct TagVisitor<OpGammaTypeMultiply, PrintTag> : public ParenPrinter<OpGammaTypeMultiply>
+{ 
+  static void visit( PrintTag t) 
+    { t.os_m << "*"; }
+};
+
+template <>
+struct TagVisitor<OpMultiplyGammaType, PrintTag> : public ParenPrinter<OpMultiplyGammaType>
+{ 
+  static void visit( PrintTag t) 
+    { t.os_m << "*"; }
 };
 
 

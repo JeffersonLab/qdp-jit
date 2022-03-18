@@ -895,6 +895,12 @@ localInnerProductReal(const PSpinVector<T1,N>& s1, const PSpinVector<T2,N>& s2)
 }
 
 
+template<class T2, int N>
+struct BinaryReturn<GammaType<N>, PSpinVector<T2,N>, OpGammaTypeMultiply> {
+  typedef PSpinVector<typename UnaryReturn<T2, OpUnaryPlus>::Type_t, N>  Type_t;
+};
+
+
 
 // Generic Spin projection
 template<class T, int N>

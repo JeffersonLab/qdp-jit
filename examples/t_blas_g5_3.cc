@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
   InScale = (REAL *)&(x.elem(0).elem(0).elem(0).real());
 
   // z2 = a*g5*x
-  z2=a*(GammaConst<Ns,Ns*Ns-1>()*x);
+  z2=a*(Gamma(15)*x);
 
   norm_diff=norm2(z1-z2);
  
@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
       swatch.reset(); 
       swatch.start();
       for(int i=0; i < iter; i++) {
-	z2=a*(GammaConst<Ns,Ns*Ns-1>()*x);
+	z2=a*(Gamma(15)*x);
       }
       swatch.stop();
       time = swatch.getTimeInSeconds();
@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
       swatch.reset(); fc.reset();
       swatch.start();
       for(int i=0; i < iter; i++) {
-	z2=a*(GammaConst<Ns,Ns*Ns-1>()*x);
+	z2=a*(Gamma(15)*x);
 	fc.addSiteFlops(2*Nc*Ns,all);
       }
       swatch.stop();
@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
   gaussian(y);
   tmp=Gamma(G5)*x;
   z1 = b*y + a*tmp;
-  z2=b*y + a*(GammaConst<Ns,Ns*Ns-1>()*x);  
+  z2=b*y + a*(Gamma(15)*x);  
   norm_diff=norm2(z1-z2); 
   {
     QDPIO::cout << "ax + bg5y diff=" << sqrt(norm_diff)/sqrt(norm2(z1)) << endl;
@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
       swatch.reset();
       swatch.start();
       for(int i=0; i < iter; i++) {
-	z2=a*y + b*(GammaConst<Ns,Ns*Ns-1>()*x);  
+	z2=a*y + b*(Gamma(15)*x);  
       }
       swatch.stop();
       time = swatch.getTimeInSeconds();
@@ -199,7 +199,7 @@ int main(int argc, char *argv[])
       swatch.reset();
       swatch.start();
       for(int i=0; i < iter; i++) {
-	z2=a*y + b*(GammaConst<Ns,Ns*Ns-1>()*x);
+	z2=a*y + b*(Gamma(15)*x);
 	fc.addSiteFlops(6*Nc*Ns);
       }
       swatch.stop();
@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
   tmp=Gamma(G5)*x;
   z1 = y - a*tmp;
   
-  z2 = y - a*(GammaConst<Ns,Ns*Ns-1>()*x);
+  z2 = y - a*(Gamma(15)*x);
 
   norm_diff=norm2(z1-z2);
  
@@ -266,7 +266,7 @@ int main(int argc, char *argv[])
       swatch.reset();
       swatch.start();
       for(int i=0; i < iter; i++) {
-	z2 = y - a*(GammaConst<Ns,Ns*Ns-1>()*x);
+	z2 = y - a*(Gamma(15)*x);
       }
       swatch.stop();
       time = swatch.getTimeInSeconds();
@@ -279,7 +279,7 @@ int main(int argc, char *argv[])
       swatch.reset();
       swatch.start();
       for(int i=0; i < iter; i++) {
-	z2 = y - a*(GammaConst<Ns,Ns*Ns-1>()*x);
+	z2 = y - a*(Gamma(15)*x);
 	fc.addSiteFlops(4*Nc*Ns, all);
       }
       swatch.stop();
@@ -296,8 +296,8 @@ int main(int argc, char *argv[])
   gaussian(x);
   gaussian(y);
   tmp=a*x-b*y;
-  z1 = GammaConst<Ns,Ns*Ns-1>()*tmp;
-  z2 = GammaConst<Ns,Ns*Ns-1>()*(a*x-b*y);
+  z1 = Gamma(15)*tmp;
+  z2 = Gamma(15)*(a*x-b*y);
   norm_diff=norm2(z1-z2);
  
   {
@@ -312,7 +312,7 @@ int main(int argc, char *argv[])
       swatch.start();
       for(int i=0; i < iter; i++) {
 	tmp=a*x-b*y;
-	z1 = GammaConst<Ns,Ns*Ns-1>()*tmp;
+	z1 = Gamma(15)*tmp;
       }
       swatch.stop();
       time = swatch.getTimeInSeconds();
@@ -325,7 +325,7 @@ int main(int argc, char *argv[])
       swatch.start();
       for(int i=0; i < iter; i++) {
 	tmp=a*x-b*y;
-	z1 = GammaConst<Ns,Ns*Ns-1>()*tmp;
+	z1 = Gamma(15)*tmp;
 	fc.addSiteFlops(6*Nc*Ns, all);
       }
       swatch.stop();
@@ -346,7 +346,7 @@ int main(int argc, char *argv[])
       swatch.reset();
       swatch.start();
       for(int i=0; i < iter; i++) {
-	z2 = GammaConst<Ns,Ns*Ns-1>()*(a*x-b*y);
+	z2 = Gamma(15)*(a*x-b*y);
       }
       swatch.stop();
       time = swatch.getTimeInSeconds();
@@ -359,7 +359,7 @@ int main(int argc, char *argv[])
       swatch.reset();
       swatch.start();
       for(int i=0; i < iter; i++) {
-	z2 = GammaConst<Ns,Ns*Ns-1>()*(a*x-b*y);
+	z2 = Gamma(15)*(a*x-b*y);
 	fc.addSiteFlops(6*Nc*Ns,all);
       }
       swatch.stop();
@@ -377,10 +377,10 @@ int main(int argc, char *argv[])
   gaussian(x);
   gaussian(y);
   z1=a*x;
-  tmp = b*(GammaConst<Ns,Ns*Ns-1>()*timesI(y));
+  tmp = b*(Gamma(15)*timesI(y));
   z1 += tmp;
 
-  z2=a*x+b*(GammaConst<Ns,Ns*Ns-1>()*(timesI(y)));
+  z2=a*x+b*(Gamma(15)*(timesI(y)));
 
   norm_diff=norm2(z1-z2);
   {
@@ -395,7 +395,7 @@ int main(int argc, char *argv[])
       swatch.start();
       for(int i=0; i < iter; i++) {
 	z1=a*x;
-	tmp = b*(GammaConst<Ns,Ns*Ns-1>()*timesI(y));
+	tmp = b*(Gamma(15)*timesI(y));
 	z1 += tmp;
       }
       swatch.stop();
@@ -409,7 +409,7 @@ int main(int argc, char *argv[])
       swatch.start();
       for(int i=0; i < iter; i++) {
 	z1=a*x;
-	tmp = b*(GammaConst<Ns,Ns*Ns-1>()*timesI(y));
+	tmp = b*(Gamma(15)*timesI(y));
 	z1 += tmp;
 	fc.addSiteFlops(6*Nc*Ns, all);
       }
@@ -429,7 +429,7 @@ int main(int argc, char *argv[])
       swatch.reset();
       swatch.start();
       for(int i=0; i < iter; i++) {
-	z2=a*x+b*(GammaConst<Ns,Ns*Ns-1>()*(timesI(y)));
+	z2=a*x+b*(Gamma(15)*(timesI(y)));
       }
       swatch.stop();
       time = swatch.getTimeInSeconds();
@@ -442,7 +442,7 @@ int main(int argc, char *argv[])
       swatch.reset();
       swatch.start();
       for(int i=0; i < iter; i++) {
-	z2=a*x+b*(GammaConst<Ns,Ns*Ns-1>()*(timesI(y)));
+	z2=a*x+b*(Gamma(15)*(timesI(y)));
 	fc.addSiteFlops(6*Nc*Ns,all);
       }
       swatch.stop();
@@ -456,10 +456,10 @@ int main(int argc, char *argv[])
   gaussian(x);
   gaussian(y);
   z1=a*x;
-  tmp = b*(GammaConst<Ns,Ns*Ns-1>()*timesI(y));
+  tmp = b*(Gamma(15)*timesI(y));
   z1 -= tmp;
 
-  z2=a*x-b*(GammaConst<Ns,Ns*Ns-1>()*(timesI(y)));
+  z2=a*x-b*(Gamma(15)*(timesI(y)));
 
   norm_diff=norm2(z1-z2);
   {
@@ -474,7 +474,7 @@ int main(int argc, char *argv[])
       swatch.start();
       for(int i=0; i < iter; i++) {
 	z1=a*x;
-	tmp = b*(GammaConst<Ns,Ns*Ns-1>()*timesI(y));
+	tmp = b*(Gamma(15)*timesI(y));
 	z1 -= tmp;
       }
       swatch.stop();
@@ -488,7 +488,7 @@ int main(int argc, char *argv[])
       swatch.start();
       for(int i=0; i < iter; i++) {
 	z1=a*x;
-	tmp = b*(GammaConst<Ns,Ns*Ns-1>()*timesI(y));
+	tmp = b*(Gamma(15)*timesI(y));
 	z1 -= tmp;
 	fc.addSiteFlops(6*Nc*Ns, all);
       }
@@ -508,7 +508,7 @@ int main(int argc, char *argv[])
       swatch.reset();
       swatch.start();
       for(int i=0; i < iter; i++) {
-	z2=a*x-b*(GammaConst<Ns,Ns*Ns-1>()*(timesI(y)));
+	z2=a*x-b*(Gamma(15)*(timesI(y)));
       }
       swatch.stop();
       time = swatch.getTimeInSeconds();
@@ -521,7 +521,7 @@ int main(int argc, char *argv[])
       swatch.reset();
       swatch.start();
       for(int i=0; i < iter; i++) {
-	z2=a*x+b*(GammaConst<Ns,Ns*Ns-1>()*(timesI(y)));
+	z2=a*x+b*(Gamma(15)*(timesI(y)));
 	fc.addSiteFlops(6*Nc*Ns,all);
       }
       swatch.stop();
@@ -534,9 +534,9 @@ int main(int argc, char *argv[])
   gaussian(x);
   gaussian(y);
   
-  tmp = a*(GammaConst<Ns,Ns*Ns-1>()*(timesI(y)));
+  tmp = a*(Gamma(15)*(timesI(y)));
   z1 = x + tmp;
-  z2 = x + a*(GammaConst<Ns,Ns*Ns-1>()*(timesI(y)));
+  z2 = x + a*(Gamma(15)*(timesI(y)));
 
   norm_diff=norm2(z1-z2);
   {
@@ -550,7 +550,7 @@ int main(int argc, char *argv[])
       swatch.reset();
       swatch.start();
       for(int i=0; i < iter; i++) {
-	tmp = a*(GammaConst<Ns,Ns*Ns-1>()*(timesI(y)));
+	tmp = a*(Gamma(15)*(timesI(y)));
 	z1 = x + tmp;
       }
       swatch.stop();
@@ -563,7 +563,7 @@ int main(int argc, char *argv[])
       swatch.reset();
       swatch.start();
       for(int i=0; i < iter; i++) {
-	tmp = a*(GammaConst<Ns,Ns*Ns-1>()*(timesI(y)));
+	tmp = a*(Gamma(15)*(timesI(y)));
 	z1 = x + tmp;
 	fc.addSiteFlops(4*Nc*Ns, all);
       }
@@ -583,7 +583,7 @@ int main(int argc, char *argv[])
       swatch.reset();
       swatch.start();
       for(int i=0; i < iter; i++) {
-	z2 = x + a*(GammaConst<Ns,Ns*Ns-1>()*(timesI(y)));
+	z2 = x + a*(Gamma(15)*(timesI(y)));
       }
       swatch.stop();
       time = swatch.getTimeInSeconds();
@@ -596,7 +596,7 @@ int main(int argc, char *argv[])
       swatch.reset();
       swatch.start();
       for(int i=0; i < iter; i++) {
-	z2 = x + a*(GammaConst<Ns,Ns*Ns-1>()*(timesI(y)));
+	z2 = x + a*(Gamma(15)*(timesI(y)));
 	fc.addSiteFlops(4*Nc*Ns,all);
       }
       swatch.stop();
@@ -609,9 +609,9 @@ int main(int argc, char *argv[])
   gaussian(x);
   gaussian(y);
   
-  tmp = a*(GammaConst<Ns,Ns*Ns-1>()*(timesI(y)));
+  tmp = a*(Gamma(15)*(timesI(y)));
   z1 = x - tmp;
-  z2 = x - a*(GammaConst<Ns,Ns*Ns-1>()*(timesI(y)));
+  z2 = x - a*(Gamma(15)*(timesI(y)));
 
   norm_diff=norm2(z1-z2);
   {
@@ -625,7 +625,7 @@ int main(int argc, char *argv[])
       swatch.reset();
       swatch.start();
       for(int i=0; i < iter; i++) {
-	tmp = a*(GammaConst<Ns,Ns*Ns-1>()*(timesI(y)));
+	tmp = a*(Gamma(15)*(timesI(y)));
 	z1 = x - tmp;
       }
       swatch.stop();
@@ -638,7 +638,7 @@ int main(int argc, char *argv[])
       swatch.reset();
       swatch.start();
       for(int i=0; i < iter; i++) {
-	tmp = a*(GammaConst<Ns,Ns*Ns-1>()*(timesI(y)));
+	tmp = a*(Gamma(15)*(timesI(y)));
 	z1 = x - tmp;
 	fc.addSiteFlops(4*Nc*Ns, all);
       }
@@ -658,7 +658,7 @@ int main(int argc, char *argv[])
       swatch.reset();
       swatch.start();
       for(int i=0; i < iter; i++) {
-	z2 = x - a*(GammaConst<Ns,Ns*Ns-1>()*(timesI(y)));
+	z2 = x - a*(Gamma(15)*(timesI(y)));
       }
       swatch.stop();
       time = swatch.getTimeInSeconds();
@@ -671,7 +671,7 @@ int main(int argc, char *argv[])
       swatch.reset();
       swatch.start();
       for(int i=0; i < iter; i++) {
-	z2 = x - a*(GammaConst<Ns,Ns*Ns-1>()*(timesI(y)));
+	z2 = x - a*(Gamma(15)*(timesI(y)));
 	fc.addSiteFlops(4*Nc*Ns,all);
       }
       swatch.stop();
@@ -689,8 +689,8 @@ int main(int argc, char *argv[])
   z1 = z1;
   z2 = z1;
 
-  z1 = z1 + a*(GammaConst<Ns,Ns*Ns-1>()*(timesI(y))); 
-  z2 += a*(GammaConst<Ns,Ns*Ns-1>()*(timesI(y)));
+  z1 = z1 + a*(Gamma(15)*(timesI(y))); 
+  z2 += a*(Gamma(15)*(timesI(y)));
 
   norm_diff=norm2(z1-z2);
   {
@@ -704,8 +704,8 @@ int main(int argc, char *argv[])
   z1 = z1;
   z2 = z1;
 
-  z1 = z1 - a*(GammaConst<Ns,Ns*Ns-1>()*(timesI(y))); 
-  z2 -= a*(GammaConst<Ns,Ns*Ns-1>()*(timesI(y)));
+  z1 = z1 - a*(Gamma(15)*(timesI(y))); 
+  z2 -= a*(Gamma(15)*(timesI(y)));
 
   norm_diff=norm2(z1-z2);
   {

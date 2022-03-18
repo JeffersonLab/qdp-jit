@@ -857,6 +857,18 @@ localInnerProductReal(const PSpinVectorREG<T1,N>& s1, const PSpinVectorREG<T2,N>
 }
 
 
+template<class T2, int N>
+struct BinaryReturn<GammaType<N>, PSpinVectorREG<T2,N>, OpGammaTypeMultiply> {
+  typedef PSpinVectorREG<typename UnaryReturn<T2, OpUnaryPlus>::Type_t, N>  Type_t;
+};
+
+template<class T2, int N>
+struct BinaryReturn<GammaTypeDP<N>, PSpinVectorREG<T2,N>, OpGammaTypeMultiply> {
+  typedef PSpinVectorREG<typename UnaryReturn<T2, OpUnaryPlus>::Type_t, N>  Type_t;
+};
+
+
+
 // Generic Spin projection
 template<class T, int N>
 struct UnaryReturn<PSpinVectorREG<T,N>, FnSpinProject > {
@@ -1013,6 +1025,236 @@ pokeSpin(PSpinVectorREG<T1,N>& l, const PScalarREG<T2>& r, int row)
   return l;
 }
 
+
+
+// SpinVector<4> = Gamma<4,m> * SpinVector<4>
+// There are 16 cases here for Nd=4
+template<class T2>
+inline typename BinaryReturn<GammaType<4>, PSpinVectorREG<T2,4>, OpGammaTypeMultiply>::Type_t
+operator*(const GammaType<4>& g, const PSpinVectorREG<T2,4>& r)
+{
+  typename BinaryReturn<GammaType<4>, PSpinVectorREG<T2,4>, OpGammaTypeMultiply>::Type_t  d;
+
+  switch ( g.elem() ) {
+  case 0:
+    d.elem(0) =  r.elem(0);
+    d.elem(1) =  r.elem(1);
+    d.elem(2) =  r.elem(2);
+    d.elem(3) =  r.elem(3);
+    break;
+  case 1:
+    d.elem(0) = timesI(r.elem(3));
+    d.elem(1) = timesI(r.elem(2));
+    d.elem(2) = timesMinusI(r.elem(1));
+    d.elem(3) = timesMinusI(r.elem(0));
+    break;
+  case 2:
+    d.elem(0) = -r.elem(3);
+    d.elem(1) =  r.elem(2);
+    d.elem(2) =  r.elem(1);
+    d.elem(3) = -r.elem(0);
+    break;
+  case 3:
+    d.elem(0) = timesMinusI(r.elem(0));
+    d.elem(1) = timesI(r.elem(1));
+    d.elem(2) = timesMinusI(r.elem(2));
+    d.elem(3) = timesI(r.elem(3));
+    break;
+  case 4:
+    d.elem(0) = timesI(r.elem(2));
+    d.elem(1) = timesMinusI(r.elem(3));
+    d.elem(2) = timesMinusI(r.elem(0));
+    d.elem(3) = timesI(r.elem(1));
+    break;
+  case 5:
+    d.elem(0) = -r.elem(1);
+    d.elem(1) =  r.elem(0);
+    d.elem(2) = -r.elem(3);
+    d.elem(3) =  r.elem(2);
+    break;
+  case 6:
+    d.elem(0) = timesMinusI(r.elem(1));
+    d.elem(1) = timesMinusI(r.elem(0));
+    d.elem(2) = timesMinusI(r.elem(3));
+    d.elem(3) = timesMinusI(r.elem(2));
+    break;
+  case 7:
+    d.elem(0) =  r.elem(2);
+    d.elem(1) =  r.elem(3);
+    d.elem(2) = -r.elem(0);
+    d.elem(3) = -r.elem(1);
+    break;
+  case 8:
+    d.elem(0) =  r.elem(2);
+    d.elem(1) =  r.elem(3);
+    d.elem(2) =  r.elem(0);
+    d.elem(3) =  r.elem(1);
+    break;
+  case 9:
+    d.elem(0) = timesI(r.elem(1));
+    d.elem(1) = timesI(r.elem(0));
+    d.elem(2) = timesMinusI(r.elem(3));
+    d.elem(3) = timesMinusI(r.elem(2));
+    break;
+  case 10:
+    d.elem(0) = -r.elem(1);
+    d.elem(1) =  r.elem(0);
+    d.elem(2) =  r.elem(3);
+    d.elem(3) = -r.elem(2);
+    break;
+  case 11:
+    d.elem(0) = timesMinusI(r.elem(2));
+    d.elem(1) = timesI(r.elem(3));
+    d.elem(2) = timesMinusI(r.elem(0));
+    d.elem(3) = timesI(r.elem(1));
+    break;
+  case 12:
+    d.elem(0) = timesI(r.elem(0));
+    d.elem(1) = timesMinusI(r.elem(1));
+    d.elem(2) = timesMinusI(r.elem(2));
+    d.elem(3) = timesI(r.elem(3));
+    break;
+  case 13:
+    d.elem(0) = -r.elem(3);
+    d.elem(1) =  r.elem(2);
+    d.elem(2) = -r.elem(1);
+    d.elem(3) =  r.elem(0);
+    break;
+  case 14:
+    d.elem(0) = timesMinusI(r.elem(3));
+    d.elem(1) = timesMinusI(r.elem(2));
+    d.elem(2) = timesMinusI(r.elem(1));
+    d.elem(3) = timesMinusI(r.elem(0));
+    break;
+  case 15:
+    d.elem(0) =  r.elem(0);
+    d.elem(1) =  r.elem(1);
+    d.elem(2) = -r.elem(2);
+    d.elem(3) = -r.elem(3);
+    break;
+  default:
+    QDPIO::cout << "Invalid gamma matrix number: " << g.elem() << std::endl;
+    QDP_abort(1);
+  }
+  
+  return d;
+}
+
+
+
+
+template<class T2>
+inline typename BinaryReturn<GammaTypeDP<4>, PSpinVectorREG<T2,4>, OpGammaTypeMultiply>::Type_t
+operator*(const GammaTypeDP<4>& g, const PSpinVectorREG<T2,4>& r)
+{
+  typename BinaryReturn<GammaTypeDP<4>, PSpinVectorREG<T2,4>, OpGammaTypeMultiply>::Type_t  d;
+
+  switch ( g.elem() ) {
+  case 0:
+    d.elem(0) =  r.elem(0);
+    d.elem(1) =  r.elem(1);
+    d.elem(2) =  r.elem(2);
+    d.elem(3) =  r.elem(3);
+    break;
+  case 1:
+    d.elem(0) = timesMinusI(r.elem(3));
+    d.elem(1) = timesMinusI(r.elem(2));
+    d.elem(2) = timesI(r.elem(1));
+    d.elem(3) = timesI(r.elem(0));
+    break;
+  case 2:
+    d.elem(0) = -r.elem(3);
+    d.elem(1) =  r.elem(2);
+    d.elem(2) =  r.elem(1);
+    d.elem(3) = -r.elem(0);
+    break;
+  case 3:
+    d.elem(0) = timesI(r.elem(0));
+    d.elem(1) = timesMinusI(r.elem(1));
+    d.elem(2) = timesI(r.elem(2));
+    d.elem(3) = timesMinusI(r.elem(3));
+    break;
+  case 4:
+    d.elem(0) = timesMinusI(r.elem(2));
+    d.elem(1) = timesI(r.elem(3));
+    d.elem(2) = timesI(r.elem(0));
+    d.elem(3) = timesMinusI(r.elem(1));
+    break;
+  case 5:
+    d.elem(0) = -r.elem(1);
+    d.elem(1) =  r.elem(0);
+    d.elem(2) = -r.elem(3);
+    d.elem(3) =  r.elem(2);
+    break;
+  case 6:
+    d.elem(0) = timesI(r.elem(1));
+    d.elem(1) = timesI(r.elem(0));
+    d.elem(2) = timesI(r.elem(3));
+    d.elem(3) = timesI(r.elem(2));
+    break;
+  case 7:
+    d.elem(0) =  r.elem(2);
+    d.elem(1) =  r.elem(3);
+    d.elem(2) = -r.elem(0);
+    d.elem(3) = -r.elem(1);
+    break;
+  case 8:
+    d.elem(0) =  r.elem(0);
+    d.elem(1) =  r.elem(1);
+    d.elem(2) = -r.elem(2);
+    d.elem(3) = -r.elem(3);
+    break;
+  case 9:
+    d.elem(0) = timesI(r.elem(3));
+    d.elem(1) = timesI(r.elem(2));
+    d.elem(2) = timesI(r.elem(1));
+    d.elem(3) = timesI(r.elem(0));
+    break;
+  case 10:
+    d.elem(0) =  r.elem(3);
+    d.elem(1) = -r.elem(2);
+    d.elem(2) =  r.elem(1);
+    d.elem(3) = -r.elem(0);
+    break;
+  case 11:
+    d.elem(0) = timesI(r.elem(0));
+    d.elem(1) = timesMinusI(r.elem(1));
+    d.elem(2) = timesMinusI(r.elem(2));
+    d.elem(3) = timesI(r.elem(3));
+    break;
+  case 12:
+    d.elem(0) = timesI(r.elem(2));
+    d.elem(1) = timesMinusI(r.elem(3));
+    d.elem(2) = timesI(r.elem(0));
+    d.elem(3) = timesMinusI(r.elem(1));
+    break;
+  case 13:
+    d.elem(0) = -r.elem(1);
+    d.elem(1) =  r.elem(0);
+    d.elem(2) =  r.elem(3);
+    d.elem(3) = -r.elem(2);
+    break;
+  case 14:
+    d.elem(0) = timesI(r.elem(1));
+    d.elem(1) = timesI(r.elem(0));
+    d.elem(2) = timesMinusI(r.elem(3));
+    d.elem(3) = timesMinusI(r.elem(2));
+    break;
+  case 15:
+    d.elem(0) = -r.elem(2);
+    d.elem(1) = -r.elem(3);
+    d.elem(2) = -r.elem(0);
+    d.elem(3) = -r.elem(1);
+    break;
+  default:
+    QDPIO::cout << "Invalid gamma matrix number: " << g.elem() << std::endl;
+    QDP_abort(1);
+  }
+  
+  return d;
+}
+
+  
 
 
 // SpinVector<2> = SpinProject(SpinVector<4>)
@@ -1348,6 +1590,9 @@ spinReconstructDir3Plus(const PSpinVectorREG<T,2>& s1)
 
   return d;
 }
+
+//-----------------------------------------------
+
 
 
 //-----------------------------------------------------------------------------

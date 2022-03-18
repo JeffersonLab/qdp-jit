@@ -52,9 +52,24 @@ struct ViewSpinLeaf
 
 
 
+
+
 struct ParamLeaf {};
 
 struct JIT2BASE {};
+
+
+template<class T>
+struct LeafFunctor<T, JIT2BASE>
+{
+  typedef T Type_t;
+  inline static
+  Type_t apply(const T & s, const JIT2BASE& v)
+  {
+    Type_t r;
+    return r;
+  }
+};
 
 
 struct JitCreateLoopsLeaf
