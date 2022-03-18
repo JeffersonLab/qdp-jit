@@ -97,6 +97,8 @@ namespace QDP
   template <class T, int N> class PSpinMatrixREG;
   template <class T> class PSeedREG;
 
+  template<int N> class GammaType;
+  template<int N> class GammaTypeDP;
 
   // Outer
   template<class T> class OScalar;

@@ -518,6 +518,33 @@ struct LeafFunctor<OLatticeJIT<T>, JIT2BASE>
 
 
 
+template<int N>
+struct LeafFunctor<GammaType<N>, JIT2BASE>
+{
+  typedef GammaType<N> Type_t;
+  inline static
+  Type_t apply(const GammaType<N> & s, const JIT2BASE& v)
+  {
+    Type_t r(s.elem());
+    return r;
+  }
+};
+
+
+template<int N>
+struct LeafFunctor<GammaTypeDP<N>, JIT2BASE>
+{
+  typedef GammaTypeDP<N> Type_t;
+  inline static
+  Type_t apply(const GammaTypeDP<N> & s, const JIT2BASE& v)
+  {
+    Type_t r(s.elem());
+    return r;
+  }
+};
+
+
+
 }
 
 #endif

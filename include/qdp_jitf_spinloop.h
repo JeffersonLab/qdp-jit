@@ -3,20 +3,17 @@
 
 #include<type_traits>
 
-
 #if defined (QDP_PROP_OPT)
 namespace QDP {
 
-  
-#if 1
+#if 0
   namespace
   {
     template <class T>
-    void print_type(std::string txt)
+    void print_type()
     {
-      QDPIO::cout << txt << "\n" << __PRETTY_FUNCTION__ << std::endl;
+      QDPIO::cout << __PRETTY_FUNCTION__ << std::endl;
     }
-
   }
 #endif
 
@@ -97,7 +94,7 @@ namespace QDP {
     constexpr static bool value = true;
   };
 
-  
+
 #if defined (QDP_CODEGEN_VECTOR)
   template<class T>
   struct HasProp< Reference<QDPType<PSpinMatrix<PColorMatrix<RComplex<WordVec<T> >, Nc >, Ns >, OLattice<PSpinMatrix<PColorMatrix<RComplex<WordVec<T> >, Nc >, Ns > > > > >
@@ -105,6 +102,7 @@ namespace QDP {
     constexpr static bool value = true;
   };
 #endif
+
   
 
   template<class A>
@@ -127,7 +125,6 @@ namespace QDP {
   template<typename T> concept ConceptEvalToSpinMatrix = EvalToSpinMatrix<T>::value;
   template<typename T> concept ConceptEvalToSpinScalar = EvalToSpinScalar<T>::value;
 
-
   template<class A,class B>
   struct Combine2<PColorMatrixREG<A,3>, PColorMatrixREG<B,3>, FnQuarkContractXX, OpCombine>
   {
@@ -139,177 +136,51 @@ namespace QDP {
     }
   };
 
-  
 
-
-
-  // -------------------------------------------------------------
-  // -------------------------------------------------------------
-  // -------------------------------------------------------------
-  // -------------------------------------------------------------
-
-
-  template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
-  struct ForEach<BinaryNode<OpMultiply, A, B>, ViewSpinLeaf, CTag >
+  template<class T>
+  class JitGammaSwitch
   {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
-    typedef typename Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::Type_t Type_t;
-
-    inline static
-    Type_t apply(const BinaryNode<OpMultiply, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
+    JitSwitch sw;
+    int c;
+    std::vector< llvm::BasicBlock* > BB;
+    std::vector< T > r;
+    T& ret;
+  public:
+    JitGammaSwitch( T& ret_ , llvm::Value* i ): sw(i), c(0), ret(ret_)
     {
-      JitStackArray< Type_t , 1 > stack;
-    
-      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c),
-		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c),
-		expr.operation(), c);
+      sw.case_begin(c);
+    }
 
-      JitForLoop loop_k(1,4);
-      {
-	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first() , loop_k.index() ) , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index() , f.index_second() ) , c),
-		  expr.operation(), c);
+    void add( const T& val )
+    {
+      switch (c) {
+      case 0:
+      case 1:
+	r.push_back( val );
+	BB.push_back( llvm_get_insert_block() );
+	sw.case_end();
+	++c;
+	sw.case_begin(c);
+	break;
+      case 2:
+	r.push_back( val );
+	BB.push_back( llvm_get_insert_block() );
+	sw.case_end();
+	++c;
+	sw.case_default();
+	break;
+      case 3:
+	r.push_back( val );
+	BB.push_back( llvm_get_insert_block() );
+	sw.case_end();
+	
+	qdpPHI4( ret , 
+		 r.at(0) , BB.at(0) ,
+		 r.at(1) , BB.at(1) ,
+		 r.at(2) , BB.at(2) ,
+		 r.at(3) , BB.at(3) );
+	break;
       }
-      loop_k.end();
-      return stack.elemREGint(0);
-    }
-  };
-  
-
-
-  template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
-  struct ForEach<BinaryNode<OpAdjMultiply, A, B>, ViewSpinLeaf, CTag >
-  {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
-    typedef typename Combine2<TypeA_t, TypeB_t, OpAdjMultiply, CTag>::Type_t Type_t;
-
-    inline static
-    Type_t apply(const BinaryNode<OpAdjMultiply, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
-    {
-      JitStackArray< Type_t , 1 > stack;
-
-      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, OpAdjMultiply, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , f.index_first()  ) , c),
-		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c),
-		expr.operation(), c);
-
-      JitForLoop loop_k(1,4);
-      {
-	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, OpAdjMultiply, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_k.index() , f.index_first()  ) , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index() , f.index_second() ) , c),
-		  expr.operation(), c);
-      }
-      loop_k.end();
-      return stack.elemREGint(0);
-    }
-  };
-
-
-
-  template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinScalar B, class CTag>
-  struct ForEach<BinaryNode<OpAdjMultiply, A, B>, ViewSpinLeaf, CTag >
-  {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
-    typedef typename Combine2<TypeA_t, TypeB_t, OpAdjMultiply, CTag>::Type_t Type_t;
-
-    inline static
-    Type_t apply(const BinaryNode<OpAdjMultiply, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
-    {
-      return Combine2<TypeA_t, TypeB_t, OpAdjMultiply, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_second() , f.index_first()  ) , c),
-		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f ) , c),
-		expr.operation(), c);
-    }
-  };
-
-
-
-  template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
-  struct ForEach<BinaryNode<OpMultiplyAdj, A, B>, ViewSpinLeaf, CTag >
-  {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
-    typedef typename Combine2<TypeA_t, TypeB_t, OpMultiplyAdj, CTag>::Type_t Type_t;
-
-    inline static
-    Type_t apply(const BinaryNode<OpMultiplyAdj, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
-    {
-      JitStackArray< Type_t , 1 > stack;
-
-      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, OpMultiplyAdj, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first()  , llvm_create_value(0) ) , c),
-		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , llvm_create_value(0) ) , c),
-		expr.operation(), c);
-
-      JitForLoop loop_k(1,4);
-      {
-	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, OpMultiplyAdj, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first()  , loop_k.index() ) , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , loop_k.index() ) , c),
-		  expr.operation(), c);
-      }
-      loop_k.end();
-      return stack.elemREGint(0);
-    }
-  };
-
-
-  template<ConceptEvalToSpinScalar A, ConceptEvalToSpinMatrix B, class CTag>
-  struct ForEach<BinaryNode<OpMultiplyAdj, A, B>, ViewSpinLeaf, CTag >
-  {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
-    typedef typename Combine2<TypeA_t, TypeB_t, OpMultiplyAdj, CTag>::Type_t Type_t;
-
-    inline static
-    Type_t apply(const BinaryNode<OpMultiplyAdj, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
-    {
-      return Combine2<TypeA_t, TypeB_t, OpMultiplyAdj, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f ) , c),
-		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , f.index_first() ) , c),
-		expr.operation(), c);
-    }
-  };
-
-
-  template<ConceptEvalToSpinScalar A, ConceptEvalToSpinMatrix B, class CTag>
-  struct ForEach<BinaryNode<OpAdjMultiplyAdj, A, B>, ViewSpinLeaf, CTag >
-  {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
-    typedef typename Combine2<TypeA_t, TypeB_t, OpAdjMultiplyAdj, CTag>::Type_t Type_t;
-
-    inline static
-    Type_t apply(const BinaryNode<OpAdjMultiplyAdj, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
-    {
-      return Combine2<TypeA_t, TypeB_t, OpAdjMultiplyAdj, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f ) , c),
-		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , f.index_first() ) , c),
-		expr.operation(), c);
-    }
-  };
-
-
-  template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinScalar B, class CTag>
-  struct ForEach<BinaryNode<OpAdjMultiplyAdj, A, B>, ViewSpinLeaf, CTag >
-  {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
-    typedef typename Combine2<TypeA_t, TypeB_t, OpAdjMultiplyAdj, CTag>::Type_t Type_t;
-
-    inline static
-    Type_t apply(const BinaryNode<OpAdjMultiplyAdj, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
-    {
-      return Combine2<TypeA_t, TypeB_t, OpAdjMultiplyAdj, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_second() , f.index_first() ) , c),
-		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f ) , c),
-		expr.operation(), c);
     }
   };
 
@@ -317,901 +188,1751 @@ namespace QDP {
 
 
 
-  template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
-  struct ForEach<BinaryNode<OpAdjMultiplyAdj, A, B>, ViewSpinLeaf, CTag >
+
+  template<ConceptEvalToSpinMatrix B, class CTag>
+  struct ForEach<BinaryNode<OpGammaTypeMultiply, GammaType<4>, B>, ViewSpinLeaf, CTag >
   {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
-    typedef typename Combine2<TypeA_t, TypeB_t, OpAdjMultiplyAdj, CTag>::Type_t Type_t;
+    //typedef PScalarREG<RComplexREG<WordREG<float> > > TypeA_t;
+    //typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
+    //typedef typename Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::Type_t Type_t;
+    typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t Type_t;
 
     inline static
-    Type_t apply(const BinaryNode<OpAdjMultiplyAdj, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
+    Type_t apply(const BinaryNode<OpGammaTypeMultiply, GammaType<4>, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
     {
-      JitStackArray< Type_t , 1 > stack;
-
-      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, OpAdjMultiplyAdj, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , f.index_first() ) , c),
-		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , llvm_create_value(0) ) , c),
-		expr.operation(), c);
-
-      JitForLoop loop_k(1,4);
-      {
-	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, OpAdjMultiplyAdj, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_k.index() , f.index_first() ) , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , loop_k.index() ) , c),
-		  expr.operation(), c);
-      }
-      loop_k.end();
-      return stack.elemREGint(0);
-    }
-  };
-
-
-
-  template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
-  struct ForEach<BinaryNode<FnQuarkContract13, A, B>, ViewSpinLeaf, CTag >
-  {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
-    typedef typename Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::Type_t Type_t;
-
-    inline static
-    Type_t apply(const BinaryNode<FnQuarkContract13, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
-    {
-      JitStackArray< Type_t , 1 > stack;
-
-      // f=(i,j)
-      // (A o B)^{i,j} = A^{k,i} o B^{k,j}
-
-      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , f.index_first() ) , c),
-		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c),
-		FnQuarkContractXX() , c);
- 
-      JitForLoop loop_k(1,4);
-      {
-	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_k.index() , f.index_first() ) , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index() , f.index_second() ) , c),
-		  FnQuarkContractXX() , c);
-      }
-      loop_k.end();
-      return stack.elemREGint(0);
-    }
-  };
-
-  template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
-  struct ForEach<BinaryNode<FnQuarkContract14, A, B>, ViewSpinLeaf, CTag >
-  {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
-    typedef typename Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::Type_t Type_t;
-
-    inline static
-    Type_t apply(const BinaryNode<FnQuarkContract14, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
-    {
-      JitStackArray< Type_t , 1 > stack;
-
-      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , f.index_first() ) , c),
-		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , llvm_create_value(0) ) , c),
-		FnQuarkContractXX() , c);
+      Type_t ret;
       
-      JitForLoop loop_k(1,4);
-      {
-	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_k.index() , f.index_first() ) , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , loop_k.index() ) , c),
-		  FnQuarkContractXX() , c);
-      }
-      loop_k.end();
-      return stack.elemREGint(0);
-    }
-  };
+      //QDPIO::cout << "gamma * B " << expr.left().elem() << "\n";
 
-  template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
-  struct ForEach<BinaryNode<FnQuarkContract23, A, B>, ViewSpinLeaf, CTag >
-  {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
-    typedef typename Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::Type_t Type_t;
-
-    inline static
-    Type_t apply(const BinaryNode<FnQuarkContract23, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
-    {
-      JitStackArray< Type_t , 1 > stack;
-
-      // f=(i,j)
-      // (A o B)^{i,j} = A^{k,i} o B^{k,j}
-
-      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c),
-		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c),
-		FnQuarkContractXX() , c);
-      
-      JitForLoop loop_k(1,4);
-      {
-	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first() , loop_k.index() ) , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index() , f.index_second() ) , c),
-		  FnQuarkContractXX() , c);
-      }
-      loop_k.end();
-      return stack.elemREGint(0);
-    }
-  };
-
-  template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
-  struct ForEach<BinaryNode<FnQuarkContract24, A, B>, ViewSpinLeaf, CTag >
-  {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
-    typedef typename Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::Type_t Type_t;
-
-    inline static
-    Type_t apply(const BinaryNode<FnQuarkContract24, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
-    {
-      JitStackArray< Type_t , 1 > stack;
-
-      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first()  , llvm_create_value(0) ) , c),
-		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , llvm_create_value(0) ) , c),
-		FnQuarkContractXX() , c);
-
-      JitForLoop loop_k(1,4);
-      {
-	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first()  , loop_k.index() ) , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , loop_k.index() ) , c),
-		  FnQuarkContractXX() , c);
-      }
-      loop_k.end();
-      return stack.elemREGint(0);
-    }
-  };
-
-  template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
-  struct ForEach<BinaryNode<FnQuarkContract12, A, B>, ViewSpinLeaf, CTag >
-  {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
-    typedef typename Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::Type_t Type_t;
-
-    inline static
-    Type_t apply(const BinaryNode<FnQuarkContract12, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
-    {
-      JitStackArray< Type_t , 1 > stack;
-
-      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
-		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first()      , f.index_second()     ) , c),
-		FnQuarkContractXX() , c);
-      
-      JitForLoop loop_k(1,4);
-      {
-	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_k.index()  , loop_k.index()   ) , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c),
-		  FnQuarkContractXX() , c);
-      }
-      loop_k.end();
-      return stack.elemREGint(0);
-    }
-  };
-
-  template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
-  struct ForEach<BinaryNode<FnQuarkContract34, A, B>, ViewSpinLeaf, CTag >
-  {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
-    typedef typename Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::Type_t Type_t;
-
-    inline static
-    Type_t apply(const BinaryNode<FnQuarkContract34, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
-    {
-      JitStackArray< Type_t , 1 > stack;
-
-      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first()      , f.index_second()     ) , c),
-		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
-		FnQuarkContractXX() , c);
-        
-      JitForLoop loop_k(1,4);
-      {
-	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index()         , loop_k.index()          ) , c),
-		  FnQuarkContractXX() , c);
-      }
-      loop_k.end();
-      return stack.elemREGint(0);
-    }
-  };
-
-  template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
-  struct ForEach<BinaryNode<FnTraceSpinQuarkContract13, A, B>, ViewSpinLeaf, CTag >
-  {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
-    typedef typename Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::Type_t Type_t;
-
-    inline static
-    Type_t apply(const BinaryNode<FnTraceSpinQuarkContract13, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
-    {
-      JitStackArray< Type_t , 1 > stack;
-
-      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
-		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
-		FnQuarkContractXX() , c);
-      
-      JitForLoop loop_k(1,4);
-      {
-	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_k.index() , llvm_create_value(0) ) , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index() , llvm_create_value(0) ) , c),
-		  FnQuarkContractXX() , c);
-      }
-      loop_k.end();
-      
-      JitForLoop loop_i(1,4);
-      {
-	JitForLoop loop_k(0,4);
+      switch( expr.left().elem() ) {
+      case 0:
 	{
-	  stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
-	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_k.index() , loop_i.index() ) , c),
-		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index() , loop_i.index() ) , c),
-		    FnQuarkContractXX() , c);
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
 	}
-	loop_k.end();
+	break;
+      case 1:
+	{
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
+	}
+	break;
+      case 2:
+	{
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c));
+	}
+	break;
+      case 3:
+	{
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
+	}
+	break;
+      case 4:
+	{
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
+	}
+	break;
+      case 5:
+	{
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c));
+	}
+	break;
+      case 6:
+	{
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
+	}
+	break;
+      case 7:
+	{
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c));
+	}
+	break;
+      case 8:
+	{
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c));
+	}
+	break;
+      case 9:
+	{
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
+	}
+	break;
+      case 10:
+	{
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c));
+	}
+	break;
+      case 11:
+	{
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
+	}
+	break;
+      case 12:
+	{
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
+	}
+	break;
+      case 13:
+	{
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c));
+	}
+	break;
+      case 14:
+	{
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
+	}
+	break;
+      case 15:
+	{
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
+	}
+	break;
+      default:
+	QDPIO::cout << "Invalid gamma matrix number: " << expr.left().elem() << std::endl;
+	QDP_abort(1);
       }
-      loop_i.end();
-    
-      return stack.elemREGint(0);
+
+      return ret;
+    }
+  };
+
+
+
+  template<ConceptEvalToSpinMatrix B, class CTag>
+  struct ForEach<BinaryNode<OpGammaTypeMultiply, GammaTypeDP<4>, B>, ViewSpinLeaf, CTag >
+  {
+    // typedef PScalarREG<RComplexREG<WordREG<float> > > TypeA_t;
+    // typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
+    // typedef typename Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::Type_t Type_t;
+    typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t Type_t;
+
+    inline static
+    Type_t apply(const BinaryNode<OpGammaTypeMultiply, GammaTypeDP<4>, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
+    {
+      Type_t ret;
+
+      switch( expr.left().elem() ) {
+      case 0:
+	{
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
+	}
+	break;
+      case 1:
+	{
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
+	}
+	break;
+      case 2:
+	{
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c));
+	}
+	break;
+      case 3:
+	{
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
+	}
+	break;
+      case 4:
+	{
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
+	}
+	break;
+      case 5:
+	{
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c));
+	}
+	break;
+      case 6:
+	{
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
+	}
+	break;
+      case 7:
+	{
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c));
+	}
+	break;
+      case 8:
+	{
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c));
+	}
+	break;
+      case 9:
+	{
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
+	}
+	break;
+      case 10:
+	{
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c));
+	}
+	break;
+      case 11:
+	{
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
+	}
+	break;
+      case 12:
+	{
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
+	}
+	break;
+      case 13:
+	{
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c));
+	}
+	break;
+      case 14:
+	{
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
+	}
+	break;
+      case 15:
+	{
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c));
+	}
+	break;
+      default:
+	QDPIO::cout << "Invalid gamma matrix number: " << expr.left().elem() << std::endl;
+	QDP_abort(1);
+      }
+
+      return ret;
     }
   };
 
 
 
 
+  
 
-
-
-  template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
-  struct ForEach<BinaryNode<FnTraceMultiply, A, B>, ViewSpinLeaf, CTag >
-  {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
-    typedef typename Combine2<TypeA_t, TypeB_t, FnTraceMultiply, CTag>::Type_t Type_t;
-
-    inline static
-    Type_t apply(const BinaryNode<FnTraceMultiply, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c)
+    template<ConceptEvalToSpinMatrix A, class CTag>
+    struct ForEach<BinaryNode<OpMultiplyGammaType, A , GammaType<4> >, ViewSpinLeaf, CTag >
     {
-      JitStackArray< Type_t , 1 > stack;
+      // typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      // typedef PScalarREG<RComplexREG<WordREG<float> > > TypeB_t;
+      // typedef typename Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::Type_t Type_t;
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t Type_t;
 
-      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnTraceMultiply, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
-		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
-		expr.operation(), c);
-
-      JitForLoop loop_k(1,4);
+      inline static
+      Type_t apply(const BinaryNode<OpMultiplyGammaType, A , GammaType<4> > &expr, const ViewSpinLeaf &f,	const CTag &c) 
       {
-	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnTraceMultiply, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , loop_k.index()       ) , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index()       , llvm_create_value(0) ) , c),
-		  expr.operation(), c);
+	Type_t ret;
+
+	//QDPIO::cout << "A * gamma " << expr.right().elem() << "\n";
+
+	switch( expr.right().elem() ) {
+
+	case 0:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
+	  }
+	  break;
+	case 1:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c) ));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c)));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c)));
+	  }
+	  break;
+	case 2:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
+	  }
+	  break;
+	case 3:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c) ));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c)));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c)));
+	  }
+	  break;
+	case 4:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c) ));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c) ));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c)));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c)));
+	  }
+	  break;
+	case 5:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
+	  }
+	  break;
+	case 6:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c)));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c)));
+	  }
+	  break;
+	case 7:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
+	  }
+	  break;
+	case 8:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
+	  }
+	  break;
+	case 9:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c) ));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c)));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c)));
+	  }
+	  break;
+	case 10:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
+	  }
+	  break;
+	case 11:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c) ));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c)));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c)));
+	  }
+	  break;
+	case 12:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c)));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c)));
+	  }
+	  break;
+	case 13:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
+	  }
+	  break;
+	case 14:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c)));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c)));
+	  }
+	  break;
+	case 15:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
+	  }
+	  break;
+	default:
+	  QDPIO::cout << "Invalid gamma matrix number: " << expr.right().elem() << std::endl;
+	  QDP_abort(1);
+	}
+
+	return ret;
       }
-      loop_k.end();
-      
-      JitForLoop loop_i(1,4);
+    };
+
+
+  
+
+    template<ConceptEvalToSpinMatrix A, class CTag>
+    struct ForEach<BinaryNode<OpMultiplyGammaType, A , GammaTypeDP<4> >, ViewSpinLeaf, CTag >
+    {
+      // typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      // typedef PScalarREG<RComplexREG<WordREG<float> > > TypeB_t;
+      // typedef typename Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::Type_t Type_t;
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t Type_t;
+
+      inline static
+      Type_t apply(const BinaryNode<OpMultiplyGammaType, A , GammaTypeDP<4> > &expr, const ViewSpinLeaf &f,	const CTag &c) 
       {
-	JitForLoop loop_k(0,4);
+	Type_t ret;
+
+	switch( expr.right().elem() ) {
+	case 0:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
+	  }
+	  break;
+	case 1:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c) ));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c)));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c)));
+	  }
+	  break;
+	case 2:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
+	  }
+	  break;
+	case 3:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c) ));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c)));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c)));
+	  }
+	  break;
+	case 4:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c)));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c)));
+	  }
+	  break;
+	case 5:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
+	  }
+	  break;
+	case 6:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c) ));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c) ));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c)));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c)));
+	  }
+	  break;
+	case 7:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
+	  }
+	  break;
+	case 8:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
+	  }
+	  break;
+	case 9:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c) ));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c) ));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c)));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c)));
+	  }
+	  break;
+	case 10:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
+	  }
+	  break;
+	case 11:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c)));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c)));
+	  }
+	  break;
+	case 12:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c) ));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c)));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c)));
+	  }
+	  break;
+	case 13:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
+	  }
+	  break;
+	case 14:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c) ));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c)));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c)));
+	  }
+	  break;
+	case 15:
+	  {
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
+	  }
+	  break;
+	default:
+	  QDPIO::cout << "Invalid gamma matrix number: " << expr.right().elem() << std::endl;
+	  QDP_abort(1);
+	}
+
+	return ret;
+      }
+    };
+
+  
+
+    template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
+    struct ForEach<BinaryNode<OpMultiply, A, B>, ViewSpinLeaf, CTag >
+    {
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
+      typedef typename Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::Type_t Type_t;
+
+      inline static
+      Type_t apply(const BinaryNode<OpMultiply, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
+      {
+	JitStackArray< Type_t , 1 > stack;
+    
+	stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c),
+		  expr.operation(), c);
+
+	JitForLoop loop_k(1,4);
 	{
-	  stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnTraceMultiply, CTag>::
-	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_i.index() , loop_k.index() ) , c),
-		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index() , loop_i.index() ) , c),
+	  stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first() , loop_k.index() ) , c),
+		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index() , f.index_second() ) , c),
 		    expr.operation(), c);
 	}
 	loop_k.end();
+	return stack.elemREGint(0);
       }
-      loop_i.end();
-      return stack.elemREGint(0);
-    }
-  };
+    };
 
 
 
-  template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
-  struct ForEach<BinaryNode<FnTraceSpinMultiply, A, B>, ViewSpinLeaf, CTag >
-  {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
-    typedef typename Combine2<TypeA_t, TypeB_t, FnTraceSpinMultiply, CTag>::Type_t Type_t;
-
-    inline static
-    Type_t apply(const BinaryNode<FnTraceSpinMultiply, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c)
+    template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
+    struct ForEach<BinaryNode<OpAdjMultiply, A, B>, ViewSpinLeaf, CTag >
     {
-      JitStackArray< Type_t , 1 > stack;
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
+      typedef typename Combine2<TypeA_t, TypeB_t, OpAdjMultiply, CTag>::Type_t Type_t;
 
-      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
-		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
-		OpMultiply(), c);
-      
-      JitForLoop loop_k(1,4);
+      inline static
+      Type_t apply(const BinaryNode<OpAdjMultiply, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
       {
-	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , loop_k.index() ) , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index() , llvm_create_value(0) ) , c),
-		  OpMultiply(), c);
+	JitStackArray< Type_t , 1 > stack;
+
+	stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, OpAdjMultiply, CTag>::
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , f.index_first()  ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c),
+		  expr.operation(), c);
+
+	JitForLoop loop_k(1,4);
+	{
+	  stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, OpAdjMultiply, CTag>::
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_k.index() , f.index_first()  ) , c),
+		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index() , f.index_second() ) , c),
+		    expr.operation(), c);
+	}
+	loop_k.end();
+	return stack.elemREGint(0);
       }
-      loop_k.end();
+    };
 
-      JitForLoop loop_i(1,4);
+
+
+    template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinScalar B, class CTag>
+    struct ForEach<BinaryNode<OpAdjMultiply, A, B>, ViewSpinLeaf, CTag >
+    {
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
+      typedef typename Combine2<TypeA_t, TypeB_t, OpAdjMultiply, CTag>::Type_t Type_t;
+
+      inline static
+      Type_t apply(const BinaryNode<OpAdjMultiply, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
       {
-	JitForLoop loop_k(0,4);
+	return Combine2<TypeA_t, TypeB_t, OpAdjMultiply, CTag>::
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_second() , f.index_first()  ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f ) , c),
+		  expr.operation(), c);
+      }
+    };
+
+
+
+    template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
+    struct ForEach<BinaryNode<OpMultiplyAdj, A, B>, ViewSpinLeaf, CTag >
+    {
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
+      typedef typename Combine2<TypeA_t, TypeB_t, OpMultiplyAdj, CTag>::Type_t Type_t;
+
+      inline static
+      Type_t apply(const BinaryNode<OpMultiplyAdj, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
+      {
+	JitStackArray< Type_t , 1 > stack;
+
+	stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, OpMultiplyAdj, CTag>::
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first()  , llvm_create_value(0) ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , llvm_create_value(0) ) , c),
+		  expr.operation(), c);
+
+	JitForLoop loop_k(1,4);
+	{
+	  stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, OpMultiplyAdj, CTag>::
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first()  , loop_k.index() ) , c),
+		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , loop_k.index() ) , c),
+		    expr.operation(), c);
+	}
+	loop_k.end();
+	return stack.elemREGint(0);
+      }
+    };
+
+
+    template<ConceptEvalToSpinScalar A, ConceptEvalToSpinMatrix B, class CTag>
+    struct ForEach<BinaryNode<OpMultiplyAdj, A, B>, ViewSpinLeaf, CTag >
+    {
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
+      typedef typename Combine2<TypeA_t, TypeB_t, OpMultiplyAdj, CTag>::Type_t Type_t;
+
+      inline static
+      Type_t apply(const BinaryNode<OpMultiplyAdj, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
+      {
+	return Combine2<TypeA_t, TypeB_t, OpMultiplyAdj, CTag>::
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , f.index_first() ) , c),
+		  expr.operation(), c);
+      }
+    };
+
+
+    template<ConceptEvalToSpinScalar A, ConceptEvalToSpinMatrix B, class CTag>
+    struct ForEach<BinaryNode<OpAdjMultiplyAdj, A, B>, ViewSpinLeaf, CTag >
+    {
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
+      typedef typename Combine2<TypeA_t, TypeB_t, OpAdjMultiplyAdj, CTag>::Type_t Type_t;
+
+      inline static
+      Type_t apply(const BinaryNode<OpAdjMultiplyAdj, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
+      {
+	return Combine2<TypeA_t, TypeB_t, OpAdjMultiplyAdj, CTag>::
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , f.index_first() ) , c),
+		  expr.operation(), c);
+      }
+    };
+
+
+    template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinScalar B, class CTag>
+    struct ForEach<BinaryNode<OpAdjMultiplyAdj, A, B>, ViewSpinLeaf, CTag >
+    {
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
+      typedef typename Combine2<TypeA_t, TypeB_t, OpAdjMultiplyAdj, CTag>::Type_t Type_t;
+
+      inline static
+      Type_t apply(const BinaryNode<OpAdjMultiplyAdj, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
+      {
+	return Combine2<TypeA_t, TypeB_t, OpAdjMultiplyAdj, CTag>::
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_second() , f.index_first() ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f ) , c),
+		  expr.operation(), c);
+      }
+    };
+
+
+
+
+
+    template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
+    struct ForEach<BinaryNode<OpAdjMultiplyAdj, A, B>, ViewSpinLeaf, CTag >
+    {
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
+      typedef typename Combine2<TypeA_t, TypeB_t, OpAdjMultiplyAdj, CTag>::Type_t Type_t;
+
+      inline static
+      Type_t apply(const BinaryNode<OpAdjMultiplyAdj, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
+      {
+	JitStackArray< Type_t , 1 > stack;
+
+	stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, OpAdjMultiplyAdj, CTag>::
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , f.index_first() ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , llvm_create_value(0) ) , c),
+		  expr.operation(), c);
+
+	JitForLoop loop_k(1,4);
+	{
+	  stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, OpAdjMultiplyAdj, CTag>::
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_k.index() , f.index_first() ) , c),
+		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , loop_k.index() ) , c),
+		    expr.operation(), c);
+	}
+	loop_k.end();
+	return stack.elemREGint(0);
+      }
+    };
+
+
+
+
+
+
+    template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
+    struct ForEach<BinaryNode<FnQuarkContract13, A, B>, ViewSpinLeaf, CTag >
+    {
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
+      typedef typename Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::Type_t Type_t;
+
+      inline static
+      Type_t apply(const BinaryNode<FnQuarkContract13, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
+      {
+	JitStackArray< Type_t , 1 > stack;
+
+	// f=(i,j)
+	// (A o B)^{i,j} = A^{k,i} o B^{k,j}
+
+	stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , f.index_first() ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c),
+		  FnQuarkContractXX() , c);
+ 
+	JitForLoop loop_k(1,4);
+	{
+	  stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_k.index() , f.index_first() ) , c),
+		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index() , f.index_second() ) , c),
+		    FnQuarkContractXX() , c);
+	}
+	loop_k.end();
+	return stack.elemREGint(0);
+      }
+    };
+
+    template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
+    struct ForEach<BinaryNode<FnQuarkContract14, A, B>, ViewSpinLeaf, CTag >
+    {
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
+      typedef typename Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::Type_t Type_t;
+
+      inline static
+      Type_t apply(const BinaryNode<FnQuarkContract14, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
+      {
+	JitStackArray< Type_t , 1 > stack;
+
+	stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , f.index_first() ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , llvm_create_value(0) ) , c),
+		  FnQuarkContractXX() , c);
+      
+	JitForLoop loop_k(1,4);
+	{
+	  stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_k.index() , f.index_first() ) , c),
+		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , loop_k.index() ) , c),
+		    FnQuarkContractXX() , c);
+	}
+	loop_k.end();
+	return stack.elemREGint(0);
+      }
+    };
+
+    template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
+    struct ForEach<BinaryNode<FnQuarkContract23, A, B>, ViewSpinLeaf, CTag >
+    {
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
+      typedef typename Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::Type_t Type_t;
+
+      inline static
+      Type_t apply(const BinaryNode<FnQuarkContract23, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
+      {
+	JitStackArray< Type_t , 1 > stack;
+
+	// f=(i,j)
+	// (A o B)^{i,j} = A^{k,i} o B^{k,j}
+
+	stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c),
+		  FnQuarkContractXX() , c);
+      
+	JitForLoop loop_k(1,4);
+	{
+	  stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first() , loop_k.index() ) , c),
+		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index() , f.index_second() ) , c),
+		    FnQuarkContractXX() , c);
+	}
+	loop_k.end();
+	return stack.elemREGint(0);
+      }
+    };
+
+    template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
+    struct ForEach<BinaryNode<FnQuarkContract24, A, B>, ViewSpinLeaf, CTag >
+    {
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
+      typedef typename Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::Type_t Type_t;
+
+      inline static
+      Type_t apply(const BinaryNode<FnQuarkContract24, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
+      {
+	JitStackArray< Type_t , 1 > stack;
+
+	stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first()  , llvm_create_value(0) ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , llvm_create_value(0) ) , c),
+		  FnQuarkContractXX() , c);
+
+	JitForLoop loop_k(1,4);
+	{
+	  stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first()  , loop_k.index() ) , c),
+		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_second() , loop_k.index() ) , c),
+		    FnQuarkContractXX() , c);
+	}
+	loop_k.end();
+	return stack.elemREGint(0);
+      }
+    };
+
+    template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
+    struct ForEach<BinaryNode<FnQuarkContract12, A, B>, ViewSpinLeaf, CTag >
+    {
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
+      typedef typename Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::Type_t Type_t;
+
+      inline static
+      Type_t apply(const BinaryNode<FnQuarkContract12, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
+      {
+	JitStackArray< Type_t , 1 > stack;
+
+	stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first()      , f.index_second()     ) , c),
+		  FnQuarkContractXX() , c);
+      
+	JitForLoop loop_k(1,4);
+	{
+	  stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_k.index()  , loop_k.index()   ) , c),
+		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c),
+		    FnQuarkContractXX() , c);
+	}
+	loop_k.end();
+	return stack.elemREGint(0);
+      }
+    };
+
+    template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
+    struct ForEach<BinaryNode<FnQuarkContract34, A, B>, ViewSpinLeaf, CTag >
+    {
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
+      typedef typename Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::Type_t Type_t;
+
+      inline static
+      Type_t apply(const BinaryNode<FnQuarkContract34, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
+      {
+	JitStackArray< Type_t , 1 > stack;
+
+	stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first()      , f.index_second()     ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
+		  FnQuarkContractXX() , c);
+        
+	JitForLoop loop_k(1,4);
+	{
+	  stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c),
+		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index()         , loop_k.index()          ) , c),
+		    FnQuarkContractXX() , c);
+	}
+	loop_k.end();
+	return stack.elemREGint(0);
+      }
+    };
+
+    template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
+    struct ForEach<BinaryNode<FnTraceSpinQuarkContract13, A, B>, ViewSpinLeaf, CTag >
+    {
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
+      typedef typename Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::Type_t Type_t;
+
+      inline static
+      Type_t apply(const BinaryNode<FnTraceSpinQuarkContract13, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
+      {
+	JitStackArray< Type_t , 1 > stack;
+
+	stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
+		  FnQuarkContractXX() , c);
+      
+	JitForLoop loop_k(1,4);
+	{
+	  stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_k.index() , llvm_create_value(0) ) , c),
+		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index() , llvm_create_value(0) ) , c),
+		    FnQuarkContractXX() , c);
+	}
+	loop_k.end();
+      
+	JitForLoop loop_i(1,4);
+	{
+	  JitForLoop loop_k(0,4);
+	  {
+	    stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnQuarkContractXX, CTag>::
+	      combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_k.index() , loop_i.index() ) , c),
+		      ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index() , loop_i.index() ) , c),
+		      FnQuarkContractXX() , c);
+	  }
+	  loop_k.end();
+	}
+	loop_i.end();
+    
+	return stack.elemREGint(0);
+      }
+    };
+
+
+
+
+
+
+
+    template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
+    struct ForEach<BinaryNode<FnTraceMultiply, A, B>, ViewSpinLeaf, CTag >
+    {
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
+      typedef typename Combine2<TypeA_t, TypeB_t, FnTraceMultiply, CTag>::Type_t Type_t;
+
+      inline static
+      Type_t apply(const BinaryNode<FnTraceMultiply, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c)
+      {
+	JitStackArray< Type_t , 1 > stack;
+
+	stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnTraceMultiply, CTag>::
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
+		  expr.operation(), c);
+
+	JitForLoop loop_k(1,4);
+	{
+	  stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnTraceMultiply, CTag>::
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , loop_k.index()       ) , c),
+		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index()       , llvm_create_value(0) ) , c),
+		    expr.operation(), c);
+	}
+	loop_k.end();
+      
+	JitForLoop loop_i(1,4);
+	{
+	  JitForLoop loop_k(0,4);
+	  {
+	    stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnTraceMultiply, CTag>::
+	      combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_i.index() , loop_k.index() ) , c),
+		      ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index() , loop_i.index() ) , c),
+		      expr.operation(), c);
+	  }
+	  loop_k.end();
+	}
+	loop_i.end();
+	return stack.elemREGint(0);
+      }
+    };
+
+
+
+    template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
+    struct ForEach<BinaryNode<FnTraceSpinMultiply, A, B>, ViewSpinLeaf, CTag >
+    {
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
+      typedef typename Combine2<TypeA_t, TypeB_t, FnTraceSpinMultiply, CTag>::Type_t Type_t;
+
+      inline static
+      Type_t apply(const BinaryNode<FnTraceSpinMultiply, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c)
+      {
+	JitStackArray< Type_t , 1 > stack;
+
+	stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
+		  OpMultiply(), c);
+      
+	JitForLoop loop_k(1,4);
 	{
 	  stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::
-	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_i.index() , loop_k.index() ) , c),
-		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index() , loop_i.index() ) , c),
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , loop_k.index() ) , c),
+		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index() , llvm_create_value(0) ) , c),
 		    OpMultiply(), c);
 	}
 	loop_k.end();
+
+	JitForLoop loop_i(1,4);
+	{
+	  JitForLoop loop_k(0,4);
+	  {
+	    stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, OpMultiply, CTag>::
+	      combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_i.index() , loop_k.index() ) , c),
+		      ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index() , loop_i.index() ) , c),
+		      OpMultiply(), c);
+	  }
+	  loop_k.end();
+	}
+	loop_i.end();
+	return stack.elemREGint(0);
       }
-      loop_i.end();
-      return stack.elemREGint(0);
-    }
-  };
+    };
 
 
 
 
-  template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
-  struct ForEach<BinaryNode<FnTraceColorMultiply, A, B>, ViewSpinLeaf, CTag >
-  {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
-    typedef typename Combine2<TypeA_t, TypeB_t, FnTraceColorMultiply, CTag>::Type_t Type_t;
-
-    inline static
-    Type_t apply(const BinaryNode<FnTraceColorMultiply, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c)
+    template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
+    struct ForEach<BinaryNode<FnTraceColorMultiply, A, B>, ViewSpinLeaf, CTag >
     {
-      JitStackArray< Type_t , 1 > stack;
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
+      typedef typename Combine2<TypeA_t, TypeB_t, FnTraceColorMultiply, CTag>::Type_t Type_t;
 
-      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnTraceColorMultiply, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first()      , llvm_create_value(0) ) , c),
-		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second()     ) , c),
+      inline static
+      Type_t apply(const BinaryNode<FnTraceColorMultiply, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c)
+      {
+	JitStackArray< Type_t , 1 > stack;
+
+	stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnTraceColorMultiply, CTag>::
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first()      , llvm_create_value(0) ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second()     ) , c),
 		  FnTraceColorMultiply(), c);
         
-      JitForLoop loop_k(1,4);
-      {
-	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnTraceColorMultiply, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first() , loop_k.index() )          , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index()         , f.index_second() ) , c),
-		  FnTraceColorMultiply(), c);
+	JitForLoop loop_k(1,4);
+	{
+	  stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnTraceColorMultiply, CTag>::
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , f.index_first() , loop_k.index() )          , c),
+		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_k.index()         , f.index_second() ) , c),
+		    FnTraceColorMultiply(), c);
+	}
+	loop_k.end();
+
+	return stack.elemREGint(0);
       }
-      loop_k.end();
-
-      return stack.elemREGint(0);
-    }
-  };
+    };
 
 
 
-  template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
-  struct ForEach<BinaryNode<FnLocalInnerProduct, A, B>, ViewSpinLeaf, CTag >
-  {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
-    typedef typename Combine2<TypeA_t, TypeB_t, FnLocalInnerProduct, CTag>::Type_t Type_t;
-
-    inline static
-    Type_t apply(const BinaryNode<FnLocalInnerProduct, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c)
+    template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
+    struct ForEach<BinaryNode<FnLocalInnerProduct, A, B>, ViewSpinLeaf, CTag >
     {
-      JitStackArray< Type_t , 1 > stack;
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
+      typedef typename Combine2<TypeA_t, TypeB_t, FnLocalInnerProduct, CTag>::Type_t Type_t;
 
-      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnLocalInnerProduct, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
-		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
-		FnLocalInnerProduct(), c);
-
-      JitForLoop loop_j(1,4);
+      inline static
+      Type_t apply(const BinaryNode<FnLocalInnerProduct, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c)
       {
-	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnLocalInnerProduct, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , loop_j.index() ) , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , loop_j.index() ) , c),
+	JitStackArray< Type_t , 1 > stack;
+
+	stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnLocalInnerProduct, CTag>::
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
 		  FnLocalInnerProduct(), c);
-      }
-      loop_j.end();
 
-      JitForLoop loop_i(1,4);
-      {
-	JitForLoop loop_j(0,4);
+	JitForLoop loop_j(1,4);
 	{
 	  stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnLocalInnerProduct, CTag>::
-	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_i.index() , loop_j.index() ) , c),
-		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_i.index() , loop_j.index() ) , c),
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , loop_j.index() ) , c),
+		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , loop_j.index() ) , c),
 		    FnLocalInnerProduct(), c);
 	}
 	loop_j.end();
+
+	JitForLoop loop_i(1,4);
+	{
+	  JitForLoop loop_j(0,4);
+	  {
+	    stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnLocalInnerProduct, CTag>::
+	      combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_i.index() , loop_j.index() ) , c),
+		      ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_i.index() , loop_j.index() ) , c),
+		      FnLocalInnerProduct(), c);
+	  }
+	  loop_j.end();
+	}
+	loop_i.end();
+
+	return stack.elemREGint(0);
       }
-      loop_i.end();
-
-      return stack.elemREGint(0);
-    }
-  };
+    };
 
 
-  template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinScalar B, class CTag>
-  struct ForEach<BinaryNode<FnLocalInnerProduct, A, B>, ViewSpinLeaf, CTag >
-  {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
-    typedef typename Combine2<TypeA_t, TypeB_t, FnLocalInnerProduct, CTag>::Type_t Type_t;
-
-    inline static
-    Type_t apply(const BinaryNode<FnLocalInnerProduct, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c)
+    template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinScalar B, class CTag>
+    struct ForEach<BinaryNode<FnLocalInnerProduct, A, B>, ViewSpinLeaf, CTag >
     {
-      JitStackArray< Type_t , 1 > stack;
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
+      typedef typename Combine2<TypeA_t, TypeB_t, FnLocalInnerProduct, CTag>::Type_t Type_t;
 
-      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnLocalInnerProduct, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
-		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f ) , c),
-		FnLocalInnerProduct(), c);
-  
-      JitForLoop loop_i(1,4);
+      inline static
+      Type_t apply(const BinaryNode<FnLocalInnerProduct, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c)
       {
-	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnLocalInnerProduct, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_i.index() , loop_i.index() ) , c),
+	JitStackArray< Type_t , 1 > stack;
+
+	stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnLocalInnerProduct, CTag>::
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
 		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f ) , c),
 		  FnLocalInnerProduct(), c);
-      }
-      loop_i.end();
-
-      return stack.elemREGint(0);
-    }
-  };
-
-
-  template<ConceptEvalToSpinScalar A, ConceptEvalToSpinMatrix B, class CTag>
-  struct ForEach<BinaryNode<FnLocalInnerProduct, A, B>, ViewSpinLeaf, CTag >
-  {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
-    typedef typename Combine2<TypeA_t, TypeB_t, FnLocalInnerProduct, CTag>::Type_t Type_t;
-
-    inline static
-    Type_t apply(const BinaryNode<FnLocalInnerProduct, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c)
-    {
-      JitStackArray< Type_t , 1 > stack;
-
-      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnLocalInnerProduct, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f ) , c),
-		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
-		FnLocalInnerProduct(), c);
   
-      JitForLoop loop_i(1,4);
+	JitForLoop loop_i(1,4);
+	{
+	  stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnLocalInnerProduct, CTag>::
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_i.index() , loop_i.index() ) , c),
+		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f ) , c),
+		    FnLocalInnerProduct(), c);
+	}
+	loop_i.end();
+
+	return stack.elemREGint(0);
+      }
+    };
+
+
+    template<ConceptEvalToSpinScalar A, ConceptEvalToSpinMatrix B, class CTag>
+    struct ForEach<BinaryNode<FnLocalInnerProduct, A, B>, ViewSpinLeaf, CTag >
+    {
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
+      typedef typename Combine2<TypeA_t, TypeB_t, FnLocalInnerProduct, CTag>::Type_t Type_t;
+
+      inline static
+      Type_t apply(const BinaryNode<FnLocalInnerProduct, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c)
       {
-	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnLocalInnerProduct, CTag>::
+	JitStackArray< Type_t , 1 > stack;
+
+	stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnLocalInnerProduct, CTag>::
 	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f ) , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_i.index() , loop_i.index() ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
 		  FnLocalInnerProduct(), c);
-      }
-      loop_i.end();
-
-      return stack.elemREGint(0);
-    }
-  };
-
-
-  template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
-  struct ForEach<BinaryNode<FnLocalInnerProductReal, A, B>, ViewSpinLeaf, CTag >
-  {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
-    typedef typename Combine2<TypeA_t, TypeB_t, FnLocalInnerProductReal, CTag>::Type_t Type_t;
-
-    inline static
-    Type_t apply(const BinaryNode<FnLocalInnerProductReal, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c)
-    {
-      JitStackArray< Type_t , 1 > stack;
-
-      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnLocalInnerProductReal, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
-		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
-		FnLocalInnerProductReal(), c);
-	
-      JitForLoop loop_j(1,4);
-      {
-	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnLocalInnerProductReal, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , loop_j.index() ) , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , loop_j.index() ) , c),
-		  FnLocalInnerProductReal(), c);
-      }
-      loop_j.end();
   
-      JitForLoop loop_i(1,4);
+	JitForLoop loop_i(1,4);
+	{
+	  stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnLocalInnerProduct, CTag>::
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f ) , c),
+		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_i.index() , loop_i.index() ) , c),
+		    FnLocalInnerProduct(), c);
+	}
+	loop_i.end();
+
+	return stack.elemREGint(0);
+      }
+    };
+
+
+    template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinMatrix B, class CTag>
+    struct ForEach<BinaryNode<FnLocalInnerProductReal, A, B>, ViewSpinLeaf, CTag >
+    {
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
+      typedef typename Combine2<TypeA_t, TypeB_t, FnLocalInnerProductReal, CTag>::Type_t Type_t;
+
+      inline static
+      Type_t apply(const BinaryNode<FnLocalInnerProductReal, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c)
       {
-	JitForLoop loop_j(0,4);
+	JitStackArray< Type_t , 1 > stack;
+
+	stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnLocalInnerProductReal, CTag>::
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
+		  FnLocalInnerProductReal(), c);
+	
+	JitForLoop loop_j(1,4);
 	{
 	  stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnLocalInnerProductReal, CTag>::
-	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_i.index() , loop_j.index() ) , c),
-		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_i.index() , loop_j.index() ) , c),
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , loop_j.index() ) , c),
+		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , loop_j.index() ) , c),
 		    FnLocalInnerProductReal(), c);
 	}
 	loop_j.end();
+  
+	JitForLoop loop_i(1,4);
+	{
+	  JitForLoop loop_j(0,4);
+	  {
+	    stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnLocalInnerProductReal, CTag>::
+	      combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_i.index() , loop_j.index() ) , c),
+		      ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_i.index() , loop_j.index() ) , c),
+		      FnLocalInnerProductReal(), c);
+	  }
+	  loop_j.end();
+	}
+	loop_i.end();
+
+	return stack.elemREGint(0);
       }
-      loop_i.end();
-
-      return stack.elemREGint(0);
-    }
-  };
+    };
 
 
-  template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinScalar B, class CTag>
-  struct ForEach<BinaryNode<FnLocalInnerProductReal, A, B>, ViewSpinLeaf, CTag >
-  {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
-    typedef typename Combine2<TypeA_t, TypeB_t, FnLocalInnerProductReal, CTag>::Type_t Type_t;
-
-    inline static
-    Type_t apply(const BinaryNode<FnLocalInnerProductReal, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c)
+    template<ConceptEvalToSpinMatrix A, ConceptEvalToSpinScalar B, class CTag>
+    struct ForEach<BinaryNode<FnLocalInnerProductReal, A, B>, ViewSpinLeaf, CTag >
     {
-      JitStackArray< Type_t , 1 > stack;
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
+      typedef typename Combine2<TypeA_t, TypeB_t, FnLocalInnerProductReal, CTag>::Type_t Type_t;
 
-      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnLocalInnerProductReal, CTag>::
+      inline static
+      Type_t apply(const BinaryNode<FnLocalInnerProductReal, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c)
+      {
+	JitStackArray< Type_t , 1 > stack;
+
+	stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnLocalInnerProductReal, CTag>::
 	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
 		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f ) , c),
 		  FnLocalInnerProductReal(), c);
   
-      JitForLoop loop_i(1,4);
-      {
-	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnLocalInnerProductReal, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_i.index() , loop_i.index() ) , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f ) , c),
-		  FnLocalInnerProductReal(), c);
+	JitForLoop loop_i(1,4);
+	{
+	  stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnLocalInnerProductReal, CTag>::
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f , loop_i.index() , loop_i.index() ) , c),
+		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f ) , c),
+		    FnLocalInnerProductReal(), c);
+	}
+	loop_i.end();
+
+	return stack.elemREGint(0);
       }
-      loop_i.end();
-
-      return stack.elemREGint(0);
-    }
-  };
+    };
 
 
-  template<ConceptEvalToSpinScalar A, ConceptEvalToSpinMatrix B, class CTag>
-  struct ForEach<BinaryNode<FnLocalInnerProductReal, A, B>, ViewSpinLeaf, CTag >
-  {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
-    typedef typename Combine2<TypeA_t, TypeB_t, FnLocalInnerProductReal, CTag>::Type_t Type_t;
-
-    inline static
-    Type_t apply(const BinaryNode<FnLocalInnerProductReal, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c)
+    template<ConceptEvalToSpinScalar A, ConceptEvalToSpinMatrix B, class CTag>
+    struct ForEach<BinaryNode<FnLocalInnerProductReal, A, B>, ViewSpinLeaf, CTag >
     {
-      JitStackArray< Type_t , 1 > stack;
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename ForEach<B, ViewSpinLeaf, CTag>::Type_t TypeB_t;
+      typedef typename Combine2<TypeA_t, TypeB_t, FnLocalInnerProductReal, CTag>::Type_t Type_t;
 
-      stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnLocalInnerProductReal, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f ) , c),
-		ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
-		FnLocalInnerProductReal(), c);
-  
-      JitForLoop loop_i(1,4);
+      inline static
+      Type_t apply(const BinaryNode<FnLocalInnerProductReal, A, B> &expr, const ViewSpinLeaf &f,	const CTag &c)
       {
-	stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnLocalInnerProductReal, CTag>::
+	JitStackArray< Type_t , 1 > stack;
+
+	stack.elemJITint(0) = Combine2<TypeA_t, TypeB_t, FnLocalInnerProductReal, CTag>::
 	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f ) , c),
-		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_i.index() , loop_i.index() ) , c),
+		  ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
 		  FnLocalInnerProductReal(), c);
-      }
-      loop_i.end();
-
-      return stack.elemREGint(0);
-    }
-  };
-
-
-
-
-
-
-
-  template<ConceptEvalToSpinMatrix A, class CTag>
-  struct ForEach<UnaryNode<FnRealTrace, A>, ViewSpinLeaf, CTag >
-  {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename Combine1<TypeA_t, FnRealTrace, CTag>::Type_t Type_t;
-
-    inline static
-    Type_t apply(const UnaryNode<FnRealTrace, A> &expr, const ViewSpinLeaf &f,	const CTag &c)
-    {
-      JitStackArray< Type_t , 1 > stack;
-
-      stack.elemJITint(0) = Combine1<TypeA_t, FnRealTrace, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
-		expr.operation(), c);
-
-      JitForLoop loop_i(1,4);
-      {
-	stack.elemJITint(0) += Combine1<TypeA_t, FnRealTrace, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , loop_i.index() , loop_i.index() ) , c),
-		  expr.operation(), c);
-      }
-      loop_i.end();
-      return stack.elemREGint(0);
-    }
-  };
-
-
-
-
-  template<ConceptEvalToSpinMatrix A, class CTag>
-  struct ForEach<UnaryNode<FnTrace, A>, ViewSpinLeaf, CTag >
-  {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename Combine1<TypeA_t, FnTrace, CTag>::Type_t Type_t;
-
-    inline static
-    Type_t apply(const UnaryNode<FnTrace, A> &expr, const ViewSpinLeaf &f,	const CTag &c)
-    {
-      JitStackArray< Type_t , 1 > stack;
-
-      stack.elemJITint(0) = Combine1<TypeA_t, FnTrace, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
-		expr.operation(), c);
   
-      JitForLoop loop_i(1,4);
-      {
-	stack.elemJITint(0) += Combine1<TypeA_t, FnTrace, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , loop_i.index() , loop_i.index() ) , c),
-		  expr.operation(), c);
+	JitForLoop loop_i(1,4);
+	{
+	  stack.elemJITint(0) += Combine2<TypeA_t, TypeB_t, FnLocalInnerProductReal, CTag>::
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(),  ViewSpinLeaf( f ) , c),
+		    ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , loop_i.index() , loop_i.index() ) , c),
+		    FnLocalInnerProductReal(), c);
+	}
+	loop_i.end();
+
+	return stack.elemREGint(0);
       }
-      loop_i.end();
-      return stack.elemREGint(0);
-    }
-  };
+    };
 
 
 
-  template<ConceptEvalToSpinMatrix A, class CTag>
-  struct ForEach<UnaryNode<FnAdjoint, A>, ViewSpinLeaf, CTag >
-  {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename Combine1<TypeA_t, FnAdjoint, CTag>::Type_t Type_t;
 
-    inline static
-    Type_t apply(const UnaryNode<FnAdjoint, A> &expr, const ViewSpinLeaf &f,	const CTag &c)
+
+
+
+    template<ConceptEvalToSpinMatrix A, class CTag>
+    struct ForEach<UnaryNode<FnRealTrace, A>, ViewSpinLeaf, CTag >
     {
-      return Combine1<TypeA_t, FnAdjoint, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , f.index_second() , f.index_first() ) , c),
-		expr.operation(), c);
-    }
-  };
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename Combine1<TypeA_t, FnRealTrace, CTag>::Type_t Type_t;
+
+      inline static
+      Type_t apply(const UnaryNode<FnRealTrace, A> &expr, const ViewSpinLeaf &f,	const CTag &c)
+      {
+	JitStackArray< Type_t , 1 > stack;
+
+	stack.elemJITint(0) = Combine1<TypeA_t, FnRealTrace, CTag>::
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
+		  expr.operation(), c);
+
+	JitForLoop loop_i(1,4);
+	{
+	  stack.elemJITint(0) += Combine1<TypeA_t, FnRealTrace, CTag>::
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , loop_i.index() , loop_i.index() ) , c),
+		    expr.operation(), c);
+	}
+	loop_i.end();
+	return stack.elemREGint(0);
+      }
+    };
 
 
 
-  template<ConceptEvalToSpinMatrix A, class CTag>
-  struct ForEach<UnaryNode<FnImagTrace, A>, ViewSpinLeaf, CTag >
-  {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename Combine1<TypeA_t, FnImagTrace, CTag>::Type_t Type_t;
 
-    inline static
-    Type_t apply(const UnaryNode<FnImagTrace, A> &expr, const ViewSpinLeaf &f,	const CTag &c)
+    template<ConceptEvalToSpinMatrix A, class CTag>
+    struct ForEach<UnaryNode<FnTrace, A>, ViewSpinLeaf, CTag >
     {
-      JitStackArray< Type_t , 1 > stack;
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename Combine1<TypeA_t, FnTrace, CTag>::Type_t Type_t;
 
-      stack.elemJITint(0) = Combine1<TypeA_t, FnImagTrace, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
-		expr.operation(), c);
+      inline static
+      Type_t apply(const UnaryNode<FnTrace, A> &expr, const ViewSpinLeaf &f,	const CTag &c)
+      {
+	JitStackArray< Type_t , 1 > stack;
+
+	stack.elemJITint(0) = Combine1<TypeA_t, FnTrace, CTag>::
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
+		  expr.operation(), c);
   
-      JitForLoop loop_i(1,4);
+	JitForLoop loop_i(1,4);
+	{
+	  stack.elemJITint(0) += Combine1<TypeA_t, FnTrace, CTag>::
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , loop_i.index() , loop_i.index() ) , c),
+		    expr.operation(), c);
+	}
+	loop_i.end();
+	return stack.elemREGint(0);
+      }
+    };
+
+
+
+    template<ConceptEvalToSpinMatrix A, class CTag>
+    struct ForEach<UnaryNode<FnAdjoint, A>, ViewSpinLeaf, CTag >
+    {
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename Combine1<TypeA_t, FnAdjoint, CTag>::Type_t Type_t;
+
+      inline static
+      Type_t apply(const UnaryNode<FnAdjoint, A> &expr, const ViewSpinLeaf &f,	const CTag &c)
       {
-	stack.elemJITint(0) += Combine1<TypeA_t, FnImagTrace, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , loop_i.index() , loop_i.index() ) , c),
+	return Combine1<TypeA_t, FnAdjoint, CTag>::
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , f.index_second() , f.index_first() ) , c),
 		  expr.operation(), c);
       }
-      loop_i.end();
-      return stack.elemREGint(0);
-    }
-  };
+    };
 
 
-  template<ConceptEvalToSpinMatrix A, class CTag>
-  struct ForEach<UnaryNode<FnTraceSpin, A>, ViewSpinLeaf, CTag >
-  {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename Combine1<TypeA_t, FnTraceSpin, CTag>::Type_t Type_t;
 
-    inline static
-    Type_t apply(const UnaryNode<FnTraceSpin, A> &expr, const ViewSpinLeaf &f,	const CTag &c)
+    template<ConceptEvalToSpinMatrix A, class CTag>
+    struct ForEach<UnaryNode<FnImagTrace, A>, ViewSpinLeaf, CTag >
     {
-      JitStackArray< Type_t , 1 > stack;
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename Combine1<TypeA_t, FnImagTrace, CTag>::Type_t Type_t;
 
-      stack.elemJITint(0) = Combine1<TypeA_t, OpIdentity, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
-		OpIdentity(), c);
-      
-      JitForLoop loop_i(1,4);
+      inline static
+      Type_t apply(const UnaryNode<FnImagTrace, A> &expr, const ViewSpinLeaf &f,	const CTag &c)
       {
-	stack.elemJITint(0) += Combine1<TypeA_t, OpIdentity, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , loop_i.index() , loop_i.index() ) , c),
+	JitStackArray< Type_t , 1 > stack;
+
+	stack.elemJITint(0) = Combine1<TypeA_t, FnImagTrace, CTag>::
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
+		  expr.operation(), c);
+  
+	JitForLoop loop_i(1,4);
+	{
+	  stack.elemJITint(0) += Combine1<TypeA_t, FnImagTrace, CTag>::
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , loop_i.index() , loop_i.index() ) , c),
+		    expr.operation(), c);
+	}
+	loop_i.end();
+	return stack.elemREGint(0);
+      }
+    };
+
+
+    template<ConceptEvalToSpinMatrix A, class CTag>
+    struct ForEach<UnaryNode<FnTraceSpin, A>, ViewSpinLeaf, CTag >
+    {
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename Combine1<TypeA_t, FnTraceSpin, CTag>::Type_t Type_t;
+
+      inline static
+      Type_t apply(const UnaryNode<FnTraceSpin, A> &expr, const ViewSpinLeaf &f,	const CTag &c)
+      {
+	JitStackArray< Type_t , 1 > stack;
+
+	stack.elemJITint(0) = Combine1<TypeA_t, OpIdentity, CTag>::
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
 		  OpIdentity(), c);
-      }
-      loop_i.end();
-      return stack.elemREGint(0);
-    }
-  };
-
-
-
-  template<ConceptEvalToSpinMatrix A, class CTag>
-  struct ForEach<UnaryNode<FnTransposeSpin, A>, ViewSpinLeaf, CTag >
-  {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename Combine1<TypeA_t, FnTransposeSpin, CTag>::Type_t Type_t;
-
-    inline static
-    Type_t apply(const UnaryNode<FnTransposeSpin, A> &expr, const ViewSpinLeaf &f,	const CTag &c)
-    {
-      return Combine1<TypeA_t, OpIdentity, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::
-		apply(expr.child(),  ViewSpinLeaf( f , f.index_second() , f.index_first() ) , c),
-		OpIdentity(), c);
-
-    }
-  };
-
-
-
-
-  //template<ConceptEvalToSpinMatrix A,class CTag>
-  template<class A,class CTag>
-  struct ForEach<UnaryNode<FnPeekSpinMatrixREG, A>, ViewSpinLeaf, CTag >
-  {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename Combine1<TypeA_t, FnPeekSpinMatrixREG, CTag>::Type_t Type_t;
-
-    inline static
-    Type_t apply(const UnaryNode<FnPeekSpinMatrixREG, A> &expr, const ViewSpinLeaf &f, const CTag &c)
-    {
-      return expr.child().
-	elem( f.getLayout() , f.getIndex() ).
-	getRegElem( expr.operation().get_row_jit() , expr.operation().get_col_jit() );
-    }
-  };
-
-
-
-  template<ConceptEvalToSpinMatrix A, class CTag>
-  struct ForEach<UnaryNode<FnLocalNorm2, A>, ViewSpinLeaf, CTag >
-  {
-    typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
-    typedef typename Combine1<TypeA_t, FnLocalNorm2, CTag>::Type_t Type_t;
-
-    inline static
-    Type_t apply(const UnaryNode<FnLocalNorm2, A> &expr, const ViewSpinLeaf &f,	const CTag &c)
-    {
-      JitStackArray< Type_t , 1 > stack;
-
-      stack.elemJITint(0) = Combine1<TypeA_t, FnLocalNorm2, CTag>::
-	combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
-		expr.operation(), c);
       
-      JitForLoop loop_j(1,4);
-      {
-	stack.elemJITint(0) += Combine1<TypeA_t, FnLocalNorm2, CTag>::
-	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , llvm_create_value(0) , loop_j.index() ) , c),
-		  expr.operation(), c);
+	JitForLoop loop_i(1,4);
+	{
+	  stack.elemJITint(0) += Combine1<TypeA_t, OpIdentity, CTag>::
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , loop_i.index() , loop_i.index() ) , c),
+		    OpIdentity(), c);
+	}
+	loop_i.end();
+	return stack.elemREGint(0);
       }
-      loop_j.end();
-  
-      JitForLoop loop_i(1,4);
+    };
+
+
+
+    template<ConceptEvalToSpinMatrix A, class CTag>
+    struct ForEach<UnaryNode<FnTransposeSpin, A>, ViewSpinLeaf, CTag >
+    {
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename Combine1<TypeA_t, FnTransposeSpin, CTag>::Type_t Type_t;
+
+      inline static
+      Type_t apply(const UnaryNode<FnTransposeSpin, A> &expr, const ViewSpinLeaf &f,	const CTag &c)
       {
-	JitForLoop loop_j(0,4);
+	return Combine1<TypeA_t, OpIdentity, CTag>::
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::
+		  apply(expr.child(),  ViewSpinLeaf( f , f.index_second() , f.index_first() ) , c),
+		  OpIdentity(), c);
+
+      }
+    };
+
+
+
+
+    //template<ConceptEvalToSpinMatrix A,class CTag>
+    template<class A,class CTag>
+    struct ForEach<UnaryNode<FnPeekSpinMatrixREG, A>, ViewSpinLeaf, CTag >
+    {
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename Combine1<TypeA_t, FnPeekSpinMatrixREG, CTag>::Type_t Type_t;
+
+      inline static
+      Type_t apply(const UnaryNode<FnPeekSpinMatrixREG, A> &expr, const ViewSpinLeaf &f, const CTag &c)
+      {
+	return expr.child().
+	  elem( f.getLayout() , f.getIndex() ).
+	  getRegElem( expr.operation().get_row_jit() , expr.operation().get_col_jit() );
+      }
+    };
+
+
+
+    template<ConceptEvalToSpinMatrix A, class CTag>
+    struct ForEach<UnaryNode<FnLocalNorm2, A>, ViewSpinLeaf, CTag >
+    {
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename Combine1<TypeA_t, FnLocalNorm2, CTag>::Type_t Type_t;
+
+      inline static
+      Type_t apply(const UnaryNode<FnLocalNorm2, A> &expr, const ViewSpinLeaf &f,	const CTag &c)
+      {
+	JitStackArray< Type_t , 1 > stack;
+
+	stack.elemJITint(0) = Combine1<TypeA_t, FnLocalNorm2, CTag>::
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , llvm_create_value(0) , llvm_create_value(0) ) , c),
+		  expr.operation(), c);
+      
+	JitForLoop loop_j(1,4);
 	{
 	  stack.elemJITint(0) += Combine1<TypeA_t, FnLocalNorm2, CTag>::
-	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , loop_i.index() , loop_j.index() ) , c),
+	    combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , llvm_create_value(0) , loop_j.index() ) , c),
 		    expr.operation(), c);
 	}
 	loop_j.end();
+  
+	JitForLoop loop_i(1,4);
+	{
+	  JitForLoop loop_j(0,4);
+	  {
+	    stack.elemJITint(0) += Combine1<TypeA_t, FnLocalNorm2, CTag>::
+	      combine(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.child(),  ViewSpinLeaf( f , loop_i.index() , loop_j.index() ) , c),
+		      expr.operation(), c);
+	  }
+	  loop_j.end();
+	}
+	loop_i.end();
+	return stack.elemREGint(0);
       }
-      loop_i.end();
-      return stack.elemREGint(0);
-    }
-  };
-
-  
-  // -------------------------------------------------------------
-  // -------------------------------------------------------------
-
-  
-
-  // viewSpinJit 
-  //
-  
-  template<class T,int N>
-  T viewSpinJit( OLatticeJIT< PSpinMatrixJIT<T,N> >& dest , const ViewSpinLeaf& v )
-  {
-    if (v.indices.size() != 2)
-      {
-	QDPIO::cout << "at viewSpinJit(spinmat) but not 2 indices provided" << std::endl;
-	QDP_abort(1);
-      }
-  
-    return dest.elem( v.getLayout() , v.getIndex() ).getJitElem( v.indices[0] , v.indices[1] );
-  }
-
-  template<class T,int N>
-  T viewSpinJit( OLatticeJIT< PSpinVectorJIT<T,N> >& dest , const ViewSpinLeaf& v )
-  {
-    if (v.indices.size() != 1)
-      {
-	QDPIO::cout << "at viewSpinJit(spinvec) but not 1 index provided" << std::endl;
-	QDP_abort(1);
-      }
-  
-    return dest.elem( v.getLayout() , v.getIndex() ).getJitElem( v.indices[0] );
-  }
-
-  template<class T>
-  T viewSpinJit( OLatticeJIT< PScalarJIT<T> >& dest , const ViewSpinLeaf& v )
-  {
-    if (v.indices.size() != 0)
-      {
-	QDPIO::cout << "at viewSpinJit(pscalar) but not 0 indices provided " << std::endl;
-	QDP_abort(1);
-      }
-  
-    return dest.elem( v.getLayout() , v.getIndex() ).getJitElem();
-  }
+    };
 
 
 
-  //////////////////////////////////////  
 
-  
-
-  template<class T, class Op>
-  struct CreateLoops
-  {
-    static void apply( std::vector< JitForLoop >& loops , const Op& op )
+    template<class T,int N>
+    T viewSpinJit( OLatticeJIT< PSpinMatrixJIT<T,N> >& dest , const ViewSpinLeaf& v )
     {
-      //QDPIO::cout << "dest: no spin loops created\n";
+      if (v.indices.size() != 2)
+	{
+	  QDPIO::cout << "at viewSpinJit(spinmat) but not 2 indices provided" << std::endl;
+	  QDP_abort(1);
+	}
+  
+      return dest.elem( v.getLayout() , v.getIndex() ).getJitElem( v.indices[0] , v.indices[1] );
     }
-  };
 
 
-  template<class T, int N, class Op>
-  struct CreateLoops< PSpinMatrix<T,N> , Op >
-  {
-    static void apply( std::vector< JitForLoop >& loops , const Op& op )
+    template<class T,int N>
+    T viewSpinJit( OLatticeJIT< PSpinVectorJIT<T,N> >& dest , const ViewSpinLeaf& v )
     {
-      //QDPIO::cout << "create spin mat\n";
+      if (v.indices.size() != 1)
+	{
+	  QDPIO::cout << "at viewSpinJit(spinvec) but not 1 index provided" << std::endl;
+	  QDP_abort(1);
+	}
+  
+      return dest.elem( v.getLayout() , v.getIndex() ).getJitElem( v.indices[0] );
+    }
+
+
+    template<class T>
+    T viewSpinJit( OLatticeJIT< PScalarJIT<T> >& dest , const ViewSpinLeaf& v )
+    {
+      if (v.indices.size() != 0)
+	{
+	  QDPIO::cout << "at viewSpinJit(pscalar) but not 0 indices provided " << std::endl;
+	  QDP_abort(1);
+	}
+  
+      return dest.elem( v.getLayout() , v.getIndex() ).getJitElem();
+    }
+
+
+  
+
+    template<class T, class Op>
+    struct CreateLoops
+    {
+      static void apply( std::vector< JitForLoop >& loops , const Op& op )
+      {
+	//QDPIO::cout << "dest: no spin loops created\n";
+      }
+    };
+
+
+    template<class T, int N, class Op>
+    struct CreateLoops< PSpinMatrix<T,N> , Op >
+    {
+      static void apply( std::vector< JitForLoop >& loops , const Op& op )
+      {
+	//QDPIO::cout << "create spin mat\n";
 	
-      //QDPIO::cout << "loop(0,N)\n";
-      loops.push_back( JitForLoop(0,N) );
+	//QDPIO::cout << "loop(0,N)\n";
+	loops.push_back( JitForLoop(0,N) );
   
-      //QDPIO::cout << "loop(0,N)\n";
-      loops.push_back( JitForLoop(0,N) );
-    }
-  };
+	//QDPIO::cout << "loop(0,N)\n";
+	loops.push_back( JitForLoop(0,N) );
+      }
+    };
 
 
-  template<class T, int N>
-  struct CreateLoops< PSpinMatrix<T,N> , FnPokeSpinMatrixREG >
-  {
-    static void apply( std::vector< JitForLoop >& loops , const FnPokeSpinMatrixREG& op )
+    template<class T, int N>
+    struct CreateLoops< PSpinMatrix<T,N> , FnPokeSpinMatrixREG >
     {
-      //QDPIO::cout << "pokeSpinMat with two 1-loops\n";
+      static void apply( std::vector< JitForLoop >& loops , const FnPokeSpinMatrixREG& op )
+      {
+	//QDPIO::cout << "pokeSpinMat with two 1-loops\n";
 
-      llvm::Value* row = op.jitRow();
-      llvm::Value* col = op.jitCol();
+	llvm::Value* row = op.jitRow();
+	llvm::Value* col = op.jitCol();
   
-      loops.push_back( JitForLoop( row , llvm_add( row , llvm_create_value( 1 ) ) ) );
-      loops.push_back( JitForLoop( col , llvm_add( col , llvm_create_value( 1 ) ) ) );
-    }
-  };
+	loops.push_back( JitForLoop( row , llvm_add( row , llvm_create_value( 1 ) ) ) );
+	loops.push_back( JitForLoop( col , llvm_add( col , llvm_create_value( 1 ) ) ) );
+      }
+    };
 
-} // QDP
+  } // QDP
 #endif
 #endif

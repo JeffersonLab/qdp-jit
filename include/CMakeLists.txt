@@ -62,6 +62,7 @@ set( CUDA_HDRS qdp_gpu.h
   qdp_primvectorreg.h
   qdp_primspinvecreg.h
   qdp_primcolorvecreg.h
+  qdp_primgamma.h
   qdp_handle.h
   qdp_mastermap.h
   qdp_masterset.h

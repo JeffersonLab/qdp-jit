@@ -315,6 +315,679 @@ struct BinaryReturn<PScalar<T1>, PSpinMatrix<T2,N>, FnLocalInnerProductReal> {
 
 
 
+template<class T2, int N>
+struct BinaryReturn<GammaType<N>, PSpinMatrix<T2,N>, OpGammaTypeMultiply> {
+  typedef PSpinMatrix<typename UnaryReturn<T2, OpUnaryPlus>::Type_t, N>  Type_t;
+};
+
+template<class T2, int N>
+struct BinaryReturn<PSpinMatrix<T2,N>, GammaType<N>, OpMultiplyGammaType> {
+  typedef PSpinMatrix<typename UnaryReturn<T2, OpUnaryPlus>::Type_t, N>  Type_t;
+};
+
+
+template<class T2, int N>
+struct BinaryReturn<GammaTypeDP<N>, PSpinMatrix<T2,N>, OpGammaTypeMultiply> {
+  typedef PSpinMatrix<typename UnaryReturn<T2, OpUnaryPlus>::Type_t, N>  Type_t;
+};
+
+template<class T2, int N>
+struct BinaryReturn<PSpinMatrix<T2,N>, GammaTypeDP<N>, OpMultiplyGammaType> {
+  typedef PSpinMatrix<typename UnaryReturn<T2, OpUnaryPlus>::Type_t, N>  Type_t;
+};
+
+
+
+
+template<class T2>
+inline typename BinaryReturn<GammaType<4>, PSpinMatrix<T2,4>, OpGammaTypeMultiply>::Type_t
+operator*(const GammaType<4>& g, const PSpinMatrix<T2,4>& r)
+{
+  typename BinaryReturn<GammaType<4>, PSpinMatrix<T2,4>, OpGammaTypeMultiply>::Type_t  d;
+
+  switch ( g.elem() ) {
+  case 0:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) = r.elem(0,i);
+	d.elem(1,i) = r.elem(1,i);
+	d.elem(2,i) = r.elem(2,i);
+	d.elem(3,i) = r.elem(3,i);
+      }
+    break;
+  case 1:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) = timesI(r.elem(3,i));
+	d.elem(1,i) = timesI(r.elem(2,i));
+	d.elem(2,i) = timesMinusI(r.elem(1,i));
+	d.elem(3,i) = timesMinusI(r.elem(0,i));
+      }
+    break;
+  case 2:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) = -r.elem(3,i);
+	d.elem(1,i) = r.elem(2,i);
+	d.elem(2,i) = r.elem(1,i);
+	d.elem(3,i) = -r.elem(0,i);
+      }
+    break;
+  case 3:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) = timesMinusI(r.elem(0,i));
+	d.elem(1,i) = timesI(r.elem(1,i));
+	d.elem(2,i) = timesMinusI(r.elem(2,i));
+	d.elem(3,i) = timesI(r.elem(3,i));
+      }
+    break;
+  case 4:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) = timesI(r.elem(2,i));
+	d.elem(1,i) = timesMinusI(r.elem(3,i));
+	d.elem(2,i) = timesMinusI(r.elem(0,i));
+	d.elem(3,i) = timesI(r.elem(1,i));
+      }
+    break;
+  case 5:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) = -r.elem(1,i);
+	d.elem(1,i) = r.elem(0,i);
+	d.elem(2,i) = -r.elem(3,i);
+	d.elem(3,i) = r.elem(2,i);
+      }
+    break;
+  case 6:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) = timesMinusI(r.elem(1,i));
+	d.elem(1,i) = timesMinusI(r.elem(0,i));
+	d.elem(2,i) = timesMinusI(r.elem(3,i));
+	d.elem(3,i) = timesMinusI(r.elem(2,i));
+      }
+    break;
+  case 7:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) = r.elem(2,i);
+	d.elem(1,i) = r.elem(3,i);
+	d.elem(2,i) = -r.elem(0,i);
+	d.elem(3,i) = -r.elem(1,i);
+      }
+    break;
+  case 8:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) = r.elem(2,i);
+	d.elem(1,i) = r.elem(3,i);
+	d.elem(2,i) = r.elem(0,i);
+	d.elem(3,i) = r.elem(1,i);
+      }
+    break;
+  case 9:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) = timesI(r.elem(1,i));
+	d.elem(1,i) = timesI(r.elem(0,i));
+	d.elem(2,i) = timesMinusI(r.elem(3,i));
+	d.elem(3,i) = timesMinusI(r.elem(2,i));
+      }
+    break;
+  case 10:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) = -r.elem(1,i);
+	d.elem(1,i) = r.elem(0,i);
+	d.elem(2,i) = r.elem(3,i);
+	d.elem(3,i) = -r.elem(2,i);
+      }
+    break;
+  case 11:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) = timesMinusI(r.elem(2,i));
+	d.elem(1,i) = timesI(r.elem(3,i));
+	d.elem(2,i) = timesMinusI(r.elem(0,i));
+	d.elem(3,i) = timesI(r.elem(1,i));
+      }
+    break;
+  case 12:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) = timesI(r.elem(0,i));
+	d.elem(1,i) = timesMinusI(r.elem(1,i));
+	d.elem(2,i) = timesMinusI(r.elem(2,i));
+	d.elem(3,i) = timesI(r.elem(3,i));
+      }
+    break;
+  case 13:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) = -r.elem(3,i);
+	d.elem(1,i) = r.elem(2,i);
+	d.elem(2,i) = -r.elem(1,i);
+	d.elem(3,i) = r.elem(0,i);
+      }
+    break;
+  case 14:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) = timesMinusI(r.elem(3,i));
+	d.elem(1,i) = timesMinusI(r.elem(2,i));
+	d.elem(2,i) = timesMinusI(r.elem(1,i));
+	d.elem(3,i) = timesMinusI(r.elem(0,i));
+      }
+    break;
+  case 15:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) = r.elem(0,i);
+	d.elem(1,i) = r.elem(1,i);
+	d.elem(2,i) = -r.elem(2,i);
+	d.elem(3,i) = -r.elem(3,i);
+      }
+    break;
+  default:
+    QDPIO::cout << "Invalid gamma matrix number: " << g.elem() << std::endl;
+    QDP_abort(1);
+  }
+  
+  return d;
+}
+
+
+template<class T2>
+inline typename BinaryReturn<GammaTypeDP<4>, PSpinMatrix<T2,4>, OpGammaTypeMultiply>::Type_t
+operator*(const GammaTypeDP<4>& g, const PSpinMatrix<T2,4>& r)
+{
+  typename BinaryReturn<GammaTypeDP<4>, PSpinMatrix<T2,4>, OpGammaTypeMultiply>::Type_t  d;
+
+  switch ( g.elem() ) {
+  case 0:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) = r.elem(0,i);
+	d.elem(1,i) = r.elem(1,i);
+	d.elem(2,i) = r.elem(2,i);
+	d.elem(3,i) = r.elem(3,i);
+      }
+    break;
+  case 1:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) = timesMinusI(r.elem(3,i));
+	d.elem(1,i) = timesMinusI(r.elem(2,i));
+	d.elem(2,i) = timesI(r.elem(1,i));
+	d.elem(3,i) = timesI(r.elem(0,i));
+      }
+    break;
+  case 2:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) = -r.elem(3,i);
+	d.elem(1,i) = r.elem(2,i);
+	d.elem(2,i) = r.elem(1,i);
+	d.elem(3,i) = -r.elem(0,i);
+      }
+    break;
+  case 3:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) = timesI(r.elem(0,i));
+	d.elem(1,i) = timesMinusI(r.elem(1,i));
+	d.elem(2,i) = timesI(r.elem(2,i));
+	d.elem(3,i) = timesMinusI(r.elem(3,i));
+      }
+    break;
+  case 4:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) = timesMinusI(r.elem(2,i));
+	d.elem(1,i) = timesI(r.elem(3,i));
+	d.elem(2,i) = timesI(r.elem(0,i));
+	d.elem(3,i) = timesMinusI(r.elem(1,i));
+      }
+    break;
+  case 5:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) = -r.elem(1,i);
+	d.elem(1,i) = r.elem(0,i);
+	d.elem(2,i) = -r.elem(3,i);
+	d.elem(3,i) = r.elem(2,i);
+      }
+    break;
+  case 6:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) = timesI(r.elem(1,i));
+	d.elem(1,i) = timesI(r.elem(0,i));
+	d.elem(2,i) = timesI(r.elem(3,i));
+	d.elem(3,i) = timesI(r.elem(2,i));
+      }
+    break;
+  case 7:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) = r.elem(2,i);
+	d.elem(1,i) = r.elem(3,i);
+	d.elem(2,i) = -r.elem(0,i);
+	d.elem(3,i) = -r.elem(1,i);
+      }
+    break;
+  case 8:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) = r.elem(0,i);
+	d.elem(1,i) = r.elem(1,i);
+	d.elem(2,i) = -r.elem(2,i);
+	d.elem(3,i) = -r.elem(3,i);
+      }
+    break;
+  case 9:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) = timesI(r.elem(3,i));
+	d.elem(1,i) = timesI(r.elem(2,i));
+	d.elem(2,i) = timesI(r.elem(1,i));
+	d.elem(3,i) = timesI(r.elem(0,i));
+      }
+    break;
+  case 10:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) =  r.elem(3,i);
+	d.elem(1,i) = -r.elem(2,i);
+	d.elem(2,i) =  r.elem(1,i);
+	d.elem(3,i) = -r.elem(0,i);
+      }
+    break;
+  case 11:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) = timesI(r.elem(0,i));
+	d.elem(1,i) = timesMinusI(r.elem(1,i));
+	d.elem(2,i) = timesMinusI(r.elem(2,i));
+	d.elem(3,i) = timesI(r.elem(3,i));
+      }
+    break;
+  case 12:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) = timesI(r.elem(2,i));
+	d.elem(1,i) = timesMinusI(r.elem(3,i));
+	d.elem(2,i) = timesI(r.elem(0,i));
+	d.elem(3,i) = timesMinusI(r.elem(1,i));
+      }
+    break;
+  case 13:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) = -r.elem(1,i);
+	d.elem(1,i) = r.elem(0,i);
+	d.elem(2,i) = r.elem(3,i);
+	d.elem(3,i) = -r.elem(2,i);
+      }
+    break;
+  case 14:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) = timesI(r.elem(1,i));
+	d.elem(1,i) = timesI(r.elem(0,i));
+	d.elem(2,i) = timesMinusI(r.elem(3,i));
+	d.elem(3,i) = timesMinusI(r.elem(2,i));
+      }
+    break;
+  case 15:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(0,i) = -r.elem(2,i);
+	d.elem(1,i) = -r.elem(3,i);
+	d.elem(2,i) = -r.elem(0,i);
+	d.elem(3,i) = -r.elem(1,i);
+      }
+    break;
+  default:
+    QDPIO::cout << "Invalid gamma matrix number: " << g.elem() << std::endl;
+    QDP_abort(1);
+  }
+  
+  return d;
+}
+
+
+
+
+
+
+template<class T2>
+inline typename BinaryReturn<PSpinMatrix<T2,4>, GammaType<4>, OpGammaTypeMultiply>::Type_t
+operator*(const PSpinMatrix<T2,4>& l, const GammaType<4>& g)
+{
+  typename BinaryReturn<PSpinMatrix<T2,4>, GammaType<4>, OpGammaTypeMultiply>::Type_t  d; 
+
+  switch ( g.elem() ) {
+  case 0:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) =  l.elem(i,0);
+	d.elem(i,1) =  l.elem(i,1);
+	d.elem(i,2) =  l.elem(i,2);
+	d.elem(i,3) =  l.elem(i,3);
+      }
+    break;  
+  case 1:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) = timesMinusI(l.elem(i,3));
+	d.elem(i,1) = timesMinusI(l.elem(i,2));
+	d.elem(i,2) = timesI(l.elem(i,1));
+	d.elem(i,3) = timesI(l.elem(i,0));
+      }
+    break;  
+  case 2:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) = -l.elem(i,3);
+	d.elem(i,1) =  l.elem(i,2);
+	d.elem(i,2) =  l.elem(i,1);
+	d.elem(i,3) = -l.elem(i,0);
+      }
+    break;  
+  case 3:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) = timesMinusI(l.elem(i,0));
+	d.elem(i,1) = timesI(l.elem(i,1));
+	d.elem(i,2) = timesMinusI(l.elem(i,2));
+	d.elem(i,3) = timesI(l.elem(i,3));
+      }
+    break;  
+  case 4:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) = timesMinusI(l.elem(i,2));
+	d.elem(i,1) = timesI(l.elem(i,3));
+	d.elem(i,2) = timesI(l.elem(i,0));
+	d.elem(i,3) = timesMinusI(l.elem(i,1));
+      }
+    break;  
+  case 5:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) =  l.elem(i,1);
+	d.elem(i,1) = -l.elem(i,0);
+	d.elem(i,2) =  l.elem(i,3);
+	d.elem(i,3) = -l.elem(i,2);
+      }
+    break;  
+  case 6:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) = timesMinusI(l.elem(i,1));
+	d.elem(i,1) = timesMinusI(l.elem(i,0));
+	d.elem(i,2) = timesMinusI(l.elem(i,3));
+	d.elem(i,3) = timesMinusI(l.elem(i,2));
+      }
+    break;  
+  case 7:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) = -l.elem(i,2);
+	d.elem(i,1) = -l.elem(i,3);
+	d.elem(i,2) =  l.elem(i,0);
+	d.elem(i,3) =  l.elem(i,1);
+      }
+    break;  
+  case 8:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) =  l.elem(i,2);
+	d.elem(i,1) =  l.elem(i,3);
+	d.elem(i,2) =  l.elem(i,0);
+	d.elem(i,3) =  l.elem(i,1);
+      }
+    break;  
+  case 9:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) = timesI(l.elem(i,1));
+	d.elem(i,1) = timesI(l.elem(i,0));
+	d.elem(i,2) = timesMinusI(l.elem(i,3));
+	d.elem(i,3) = timesMinusI(l.elem(i,2));
+      }
+    break;  
+  case 10:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) =  l.elem(i,1);
+	d.elem(i,1) = -l.elem(i,0);
+	d.elem(i,2) = -l.elem(i,3);
+	d.elem(i,3) =  l.elem(i,2);
+      }
+    break;  
+  case 11:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) = timesMinusI(l.elem(i,2));
+	d.elem(i,1) = timesI(l.elem(i,3));
+	d.elem(i,2) = timesMinusI(l.elem(i,0));
+	d.elem(i,3) = timesI(l.elem(i,1));
+      }
+    break;  
+  case 12:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) = timesI(l.elem(i,0));
+	d.elem(i,1) = timesMinusI(l.elem(i,1));
+	d.elem(i,2) = timesMinusI(l.elem(i,2));
+	d.elem(i,3) = timesI(l.elem(i,3));
+      }
+    break;  
+  case 13:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) =  l.elem(i,3);
+	d.elem(i,1) = -l.elem(i,2);
+	d.elem(i,2) =  l.elem(i,1);
+	d.elem(i,3) = -l.elem(i,0);
+      }
+    break;  
+  case 14:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) = timesMinusI(l.elem(i,3));
+	d.elem(i,1) = timesMinusI(l.elem(i,2));
+	d.elem(i,2) = timesMinusI(l.elem(i,1));
+	d.elem(i,3) = timesMinusI(l.elem(i,0));
+      }
+    break;  
+  case 15:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) =  l.elem(i,0);
+	d.elem(i,1) =  l.elem(i,1);
+	d.elem(i,2) = -l.elem(i,2);
+	d.elem(i,3) = -l.elem(i,3);
+      }
+    break;  
+  default:
+    QDPIO::cout << "Invalid gamma matrix number: " << g.elem() << std::endl;
+    QDP_abort(1);
+  }
+ 
+  return d;
+}
+
+
+
+
+template<class T2>
+inline typename BinaryReturn<PSpinMatrix<T2,4>, GammaTypeDP<4>, OpGammaTypeMultiply>::Type_t
+operator*(const PSpinMatrix<T2,4>& l, const GammaTypeDP<4>& g)
+{
+  typename BinaryReturn<PSpinMatrix<T2,4>, GammaTypeDP<4>, OpGammaTypeMultiply>::Type_t  d; 
+
+  switch ( g.elem() ) {
+  case 0:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) =  l.elem(i,0);
+	d.elem(i,1) =  l.elem(i,1);
+	d.elem(i,2) =  l.elem(i,2);
+	d.elem(i,3) =  l.elem(i,3);
+      }
+    break;  
+  case 1:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) = timesI(l.elem(i,3));
+	d.elem(i,1) = timesI(l.elem(i,2));
+	d.elem(i,2) = timesMinusI(l.elem(i,1));
+	d.elem(i,3) = timesMinusI(l.elem(i,0));
+      }
+    break;  
+  case 2:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) = -l.elem(i,3);
+	d.elem(i,1) =  l.elem(i,2);
+	d.elem(i,2) =  l.elem(i,1);
+	d.elem(i,3) = -l.elem(i,0);
+      }
+    break;  
+  case 3:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) = timesI(l.elem(i,0));
+	d.elem(i,1) = timesMinusI(l.elem(i,1));
+	d.elem(i,2) = timesI(l.elem(i,2));
+	d.elem(i,3) = timesMinusI(l.elem(i,3));
+      }
+    break;  
+  case 4:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) = timesI(l.elem(i,2));
+	d.elem(i,1) = timesMinusI(l.elem(i,3));
+	d.elem(i,2) = timesMinusI(l.elem(i,0));
+	d.elem(i,3) = timesI(l.elem(i,1));
+      }
+    break;  
+  case 5:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) =  l.elem(i,1);
+	d.elem(i,1) = -l.elem(i,0);
+	d.elem(i,2) =  l.elem(i,3);
+	d.elem(i,3) = -l.elem(i,2);
+      }
+    break;  
+  case 6:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) = timesI(l.elem(i,1));
+	d.elem(i,1) = timesI(l.elem(i,0));
+	d.elem(i,2) = timesI(l.elem(i,3));
+	d.elem(i,3) = timesI(l.elem(i,2));
+      }
+    break;  
+  case 7:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) = -l.elem(i,2);
+	d.elem(i,1) = -l.elem(i,3);
+	d.elem(i,2) =  l.elem(i,0);
+	d.elem(i,3) =  l.elem(i,1);
+      }
+    break;  
+  case 8:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) =  l.elem(i,0);
+	d.elem(i,1) =  l.elem(i,1);
+	d.elem(i,2) = -l.elem(i,2);
+	d.elem(i,3) = -l.elem(i,3);
+      }
+    break;  
+  case 9:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) = timesI(l.elem(i,3));
+	d.elem(i,1) = timesI(l.elem(i,2));
+	d.elem(i,2) = timesI(l.elem(i,1));
+	d.elem(i,3) = timesI(l.elem(i,0));
+      }
+    break;  
+  case 10:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) = -l.elem(i,3);
+	d.elem(i,1) =  l.elem(i,2);
+	d.elem(i,2) = -l.elem(i,1);
+	d.elem(i,3) =  l.elem(i,0);
+      }
+    break;  
+  case 11:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) = timesI(l.elem(i,0));
+	d.elem(i,1) = timesMinusI(l.elem(i,1));
+	d.elem(i,2) = timesMinusI(l.elem(i,2));
+	d.elem(i,3) = timesI(l.elem(i,3));
+      }
+    break;  
+  case 12:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) = timesI(l.elem(i,2));
+	d.elem(i,1) = timesMinusI(l.elem(i,3));
+	d.elem(i,2) = timesI(l.elem(i,0));
+	d.elem(i,3) = timesMinusI(l.elem(i,1));
+      }
+    break;  
+  case 13:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) =  l.elem(i,1);
+	d.elem(i,1) = -l.elem(i,0);
+	d.elem(i,2) = -l.elem(i,3);
+	d.elem(i,3) =  l.elem(i,2);
+      }
+    break;  
+  case 14:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) = timesI(l.elem(i,1));
+	d.elem(i,1) = timesI(l.elem(i,0));
+	d.elem(i,2) = timesMinusI(l.elem(i,3));
+	d.elem(i,3) = timesMinusI(l.elem(i,2));
+      }
+    break;  
+  case 15:
+    for(int i=0; i < 4; ++i)
+      {
+	d.elem(i,0) = -l.elem(i,2);
+	d.elem(i,1) = -l.elem(i,3);
+	d.elem(i,2) = -l.elem(i,0);
+	d.elem(i,3) = -l.elem(i,1);
+      }
+    break;  
+  default:
+    QDPIO::cout << "Invalid gamma matrix number: " << g.elem() << std::endl;
+    QDP_abort(1);
+  }
+ 
+  return d;
+}
+
+
+
+
+
 
 
 

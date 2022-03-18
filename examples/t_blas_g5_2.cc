@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
   qz = zero;
   qz2 = zero;
 
-  qx = Real(0.5)*(qy + GammaConst<Ns,Ns*Ns-1>()*qy);
+  qx = Real(0.5)*(qy + Gamma(15)*qy);
   qz += a*qx;
   qz2 +=  a*chiralProjectPlus(qy);
  
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
   qz = zero;
   qz2 = zero;
 
-  qx = Real(0.5)*(qy - GammaConst<Ns,Ns*Ns-1>()*qy);
+  qx = Real(0.5)*(qy - Gamma(15)*qy);
   qz += a*qx;
   qz2 +=  a*chiralProjectMinus(qy);
  
@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
   gaussian(qz);
   qz2 = qz;
 
-  qx = Real(0.5)*(qy + GammaConst<Ns,Ns*Ns-1>()*qy);
+  qx = Real(0.5)*(qy + Gamma(15)*qy);
   qz -= a*qx;
   qz2 -=  a*chiralProjectPlus(qy);
  
@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
   gaussian(qz);;
   qz2 = qz;
 
-  qx = Real(0.5)*(qy - GammaConst<Ns,Ns*Ns-1>()*qy);
+  qx = Real(0.5)*(qy - Gamma(15)*qy);
   qz -= a*qx;
   qz2 -=  a*chiralProjectMinus(qy);
  
@@ -202,7 +202,7 @@ int main(int argc, char *argv[])
   qz = zero;
   qz2 = zero;
 
-  qx = Real(0.5)*(qy + GammaConst<Ns,Ns*Ns-1>()*qy);
+  qx = Real(0.5)*(qy + Gamma(15)*qy);
   qz += qx;
   qz2 +=  chiralProjectPlus(qy);
  
@@ -243,7 +243,7 @@ int main(int argc, char *argv[])
   qz = zero;
   qz2 = zero;
 
-  qx = Real(0.5)*(qy - GammaConst<Ns,Ns*Ns-1>()*qy);
+  qx = Real(0.5)*(qy - Gamma(15)*qy);
   qz += qx;
   qz2 +=  chiralProjectMinus(qy);
  
@@ -284,7 +284,7 @@ int main(int argc, char *argv[])
   gaussian(qz);
   qz2 = qz;
 
-  qx = Real(0.5)*(qy + GammaConst<Ns,Ns*Ns-1>()*qy);
+  qx = Real(0.5)*(qy + Gamma(15)*qy);
   qz -= qx;
   qz2 -=  chiralProjectPlus(qy);
  
@@ -325,7 +325,7 @@ int main(int argc, char *argv[])
   gaussian(qz);
   qz2 = qz;
 
-  qx = Real(0.5)*(qy - GammaConst<Ns,Ns*Ns-1>()*qy);
+  qx = Real(0.5)*(qy - Gamma(15)*qy);
   qz -= qx;
   qz2 -=  chiralProjectMinus(qy);
  
@@ -367,7 +367,7 @@ int main(int argc, char *argv[])
   gaussian(qx);
  
 
-  qz = qx + a*Real(0.5)*(qy + GammaConst<Ns,Ns*Ns-1>()*qy);
+  qz = qx + a*Real(0.5)*(qy + Gamma(15)*qy);
   qz2 =qx + a* chiralProjectPlus(qy);
  
   norm_diff=norm2(qz-qz2);
@@ -408,7 +408,7 @@ int main(int argc, char *argv[])
   gaussian(qx);
  
 
-  qz = qx + a*Real(0.5)*(qy - GammaConst<Ns,Ns*Ns-1>()*qy);
+  qz = qx + a*Real(0.5)*(qy - Gamma(15)*qy);
   qz2 =qx + a* chiralProjectMinus(qy);
  
   norm_diff=norm2(qz-qz2);
@@ -449,7 +449,7 @@ int main(int argc, char *argv[])
   gaussian(qx);
  
 
-  qz = qx - a*Real(0.5)*(qy + GammaConst<Ns,Ns*Ns-1>()*qy);
+  qz = qx - a*Real(0.5)*(qy + Gamma(15)*qy);
   qz2 =qx - a* chiralProjectPlus(qy);
  
   norm_diff=norm2(qz-qz2);
@@ -490,7 +490,7 @@ int main(int argc, char *argv[])
   gaussian(qx);
  
 
-  qz = qx - a*Real(0.5)*(qy - GammaConst<Ns,Ns*Ns-1>()*qy);
+  qz = qx - a*Real(0.5)*(qy - Gamma(15)*qy);
   qz2 =qx - a* chiralProjectMinus(qy);
  
   norm_diff=norm2(qz-qz2);
@@ -531,7 +531,7 @@ int main(int argc, char *argv[])
   gaussian(qx);
  
 
-  qz = a* qx + Real(0.5)*(qy + GammaConst<Ns,Ns*Ns-1>()*qy);
+  qz = a* qx + Real(0.5)*(qy + Gamma(15)*qy);
   qz2 =a* qx + chiralProjectPlus(qy);
  
   norm_diff=norm2(qz-qz2);
@@ -572,7 +572,7 @@ int main(int argc, char *argv[])
   gaussian(qx);
  
 
-  qz = a* qx + Real(0.5)*(qy - GammaConst<Ns,Ns*Ns-1>()*qy);
+  qz = a* qx + Real(0.5)*(qy - Gamma(15)*qy);
   qz2 =a* qx + chiralProjectMinus(qy);
  
   norm_diff=norm2(qz-qz2);
@@ -613,7 +613,7 @@ int main(int argc, char *argv[])
   gaussian(qx);
  
 
-  qz = a* qx - Real(0.5)*(qy + GammaConst<Ns,Ns*Ns-1>()*qy);
+  qz = a* qx - Real(0.5)*(qy + Gamma(15)*qy);
   qz2 =a* qx - chiralProjectPlus(qy);
  
   norm_diff=norm2(qz-qz2);
@@ -654,7 +654,7 @@ int main(int argc, char *argv[])
   gaussian(qx);
  
 
-  qz = a* qx - Real(0.5)*(qy - GammaConst<Ns,Ns*Ns-1>()*qy);
+  qz = a* qx - Real(0.5)*(qy - Gamma(15)*qy);
   qz2 =a* qx - chiralProjectMinus(qy);
  
   norm_diff=norm2(qz-qz2);
@@ -691,7 +691,7 @@ int main(int argc, char *argv[])
   }
 
   //  z = a P{+}y
-  qz = a* Real(0.5)*(qy + GammaConst<Ns,Ns*Ns-1>()*qy);
+  qz = a* Real(0.5)*(qy + Gamma(15)*qy);
   qz2 =a* chiralProjectPlus(qy);
  
   norm_diff=norm2(qz-qz2);
@@ -728,7 +728,7 @@ int main(int argc, char *argv[])
   }
 
   //  z = a P{-}y
-  qz = a* Real(0.5)*(qy - GammaConst<Ns,Ns*Ns-1>()*qy);
+  qz = a* Real(0.5)*(qy - Gamma(15)*qy);
   qz2 =a* chiralProjectMinus(qy);
  
   norm_diff=norm2(qz-qz2);
@@ -770,7 +770,7 @@ int main(int argc, char *argv[])
   Real b=Real(-5.3);
 
 
-  qz = a* qx + b*Real(0.5)*(qy + GammaConst<Ns,Ns*Ns-1>()*qy);
+  qz = a* qx + b*Real(0.5)*(qy + Gamma(15)*qy);
   qz2 =a* qx + b*chiralProjectPlus(qy);
  
   norm_diff=norm2(qz-qz2);
@@ -812,7 +812,7 @@ int main(int argc, char *argv[])
   b=Real(-5.3);
 
 
-  qz = a* qx + b*Real(0.5)*(qy - GammaConst<Ns,Ns*Ns-1>()*qy);
+  qz = a* qx + b*Real(0.5)*(qy - Gamma(15)*qy);
   qz2 =a* qx + b*chiralProjectMinus(qy);
  
   norm_diff=norm2(qz-qz2);
@@ -855,7 +855,7 @@ int main(int argc, char *argv[])
   b=Real(-5.3);
 
 
-  qz = a* qx - b*Real(0.5)*(qy + GammaConst<Ns,Ns*Ns-1>()*qy);
+  qz = a* qx - b*Real(0.5)*(qy + Gamma(15)*qy);
   qz2 =a* qx - b*chiralProjectPlus(qy);
  
   norm_diff=norm2(qz-qz2);
@@ -897,7 +897,7 @@ int main(int argc, char *argv[])
   b=Real(-5.3);
 
 
-  qz = a* qx - b*Real(0.5)*(qy - GammaConst<Ns,Ns*Ns-1>()*qy);
+  qz = a* qx - b*Real(0.5)*(qy - Gamma(15)*qy);
   qz2 =a* qx - b*chiralProjectMinus(qy);
  
   norm_diff=norm2(qz-qz2);

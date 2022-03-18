@@ -231,7 +231,7 @@ int main(int argc, char *argv[])
     LatticeFermion psi, chi;
     random(psi); random(chi);
     Real InvTwoKappa = 0.5;
-    chi = GammaConst<Ns,Ns*Ns-1>()*psi;
+    chi = Gamma(15)*psi;
   }
 #endif
 

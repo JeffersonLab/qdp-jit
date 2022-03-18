@@ -1729,6 +1729,26 @@ qdpPHI(PMatrixREG<T,N,C>& d,
 }
 
 
+template<class T, int N, template<class,int> class C>
+inline void 
+qdpPHI4(PMatrixREG<T,N,C>& d, 
+       const PMatrixREG<T,N,C>& phi0, llvm::BasicBlock* bb0 ,
+       const PMatrixREG<T,N,C>& phi1, llvm::BasicBlock* bb1 ,
+       const PMatrixREG<T,N,C>& phi2, llvm::BasicBlock* bb2 ,
+       const PMatrixREG<T,N,C>& phi3, llvm::BasicBlock* bb3 )
+{
+  for(int i=0; i < N; ++i)
+    for(int j=0; j < N; ++j)
+      qdpPHI4(d.elem(i,j),
+	      phi0.elem(i,j),bb0,
+	      phi1.elem(i,j),bb1,
+	      phi2.elem(i,j),bb2,
+	      phi3.elem(i,j),bb3 );
+}
+
+
+
+
 
 
 /*! @} */  // end of group primmatrix

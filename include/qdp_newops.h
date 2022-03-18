@@ -661,6 +661,277 @@ pokeSpin(const QDPSubType<T1,C1>& l, const QDPExpr<T2,C2>& r, int row)
 
 
 
+struct OpGammaTypeMultiply
+{
+  PETE_EMPTY_CONSTRUCTORS(OpGammaTypeMultiply)
+  template<int N, class T>
+  inline T
+  operator()(const GammaType<N>& a, const T &b) const
+  {
+    return (a * b);
+  }
+
+  template<int N, class T>
+  inline T
+  operator()(const GammaTypeDP<N>& a, const T &b) const
+  {
+    return (a * b);
+  }
+};
+
+
+
+struct OpMultiplyGammaType
+{
+  PETE_EMPTY_CONSTRUCTORS(OpMultiplyGammaType)
+  template<class T, int N>
+  inline T
+  operator()(const T &a, const GammaType<N>& b) const
+  {
+    return (a * b);
+  }
+
+  template<class T, int N>
+  inline T
+  operator()(const T &a, const GammaTypeDP<N>& b) const
+  {
+    return (a * b);
+  }
+
+};
+
+
+
+
+
+
+//-----------------------------------------------------------------------------
+// Leaf stuff
+//-----------------------------------------------------------------------------
+
+template<int N>
+struct CreateLeaf<GammaType<N> >
+{
+  typedef GammaType<N> Input_t;
+  typedef Input_t Leaf_t;
+//  typedef Reference<Input_t> Leaf_t;
+
+  inline static
+  Leaf_t make(const Input_t& a) { return Leaf_t(a); }
+};
+
+template<int N>
+struct LeafFunctor<GammaType<N>, ElemLeaf>
+{
+  typedef GammaType<N> Type_t;
+  inline static Type_t apply(const GammaType<N> &a, const ElemLeaf &f)
+    {return a;}
+};
+
+
+template<int N>
+struct LeafFunctor<GammaType<N>, EvalLeaf1>
+{
+  typedef GammaType<N> Type_t;
+  inline static Type_t apply(const GammaType<N> &a, const EvalLeaf1 &f)
+    {return a;}
+};
+
+
+// ---- DP
+
+template<int N>
+struct CreateLeaf<GammaTypeDP<N> >
+{
+  typedef GammaTypeDP<N> Input_t;
+  typedef Input_t Leaf_t;
+//  typedef Reference<Input_t> Leaf_t;
+
+  inline static
+  Leaf_t make(const Input_t& a) { return Leaf_t(a); }
+};
+
+template<int N>
+struct LeafFunctor<GammaTypeDP<N>, ElemLeaf>
+{
+  typedef GammaTypeDP<N> Type_t;
+  inline static Type_t apply(const GammaTypeDP<N> &a, const ElemLeaf &f)
+    {return a;}
+};
+
+
+template<int N>
+struct LeafFunctor<GammaTypeDP<N>, EvalLeaf1>
+{
+  typedef GammaTypeDP<N> Type_t;
+  inline static Type_t apply(const GammaTypeDP<N> &a, const EvalLeaf1 &f)
+    {return a;}
+};
+
+
+
+
+
+
+
+//-----------------------------------------------------------------------------
+// Additional operators
+//-----------------------------------------------------------------------------
+
+
+//! GammaType * QDPType
+/*! @ingroup group1 */
+template<int N,class T2,class C2>
+inline typename MakeReturn<BinaryNode<OpGammaTypeMultiply,
+  typename CreateLeaf<GammaType<N> >::Leaf_t,
+  typename CreateLeaf<QDPType<T2,C2> >::Leaf_t>,
+  typename BinaryReturn<GammaType<N>,C2,OpGammaTypeMultiply>::Type_t >::Expression_t
+operator*(const GammaType<N> & l,const QDPType<T2,C2> & r)
+{
+  typedef BinaryNode<OpGammaTypeMultiply,
+    typename CreateLeaf<GammaType<N> >::Leaf_t,
+    typename CreateLeaf<QDPType<T2,C2> >::Leaf_t> Tree_t;
+  typedef typename BinaryReturn<GammaType<N>,C2,OpGammaTypeMultiply>::Type_t Container_t;
+  return MakeReturn<Tree_t,Container_t>::make(Tree_t(
+    CreateLeaf<GammaType<N> >::make(l),
+    CreateLeaf<QDPType<T2,C2> >::make(r)));
+}
+
+//! GammaType * QDPExpr
+template<int N,class T2,class C2>
+inline typename MakeReturn<BinaryNode<OpGammaTypeMultiply,
+  typename CreateLeaf<GammaType<N> >::Leaf_t,
+  typename CreateLeaf<QDPExpr<T2,C2> >::Leaf_t>,
+  typename BinaryReturn<GammaType<N>,C2,OpGammaTypeMultiply>::Type_t >::Expression_t
+operator*(const GammaType<N> & l,const QDPExpr<T2,C2> & r)
+{
+  typedef BinaryNode<OpGammaTypeMultiply,
+    typename CreateLeaf<GammaType<N> >::Leaf_t,
+    typename CreateLeaf<QDPExpr<T2,C2> >::Leaf_t> Tree_t;
+  typedef typename BinaryReturn<GammaType<N>,C2,OpGammaTypeMultiply>::Type_t Container_t;
+  return MakeReturn<Tree_t,Container_t>::make(Tree_t(
+    CreateLeaf<GammaType<N> >::make(l),
+    CreateLeaf<QDPExpr<T2,C2> >::make(r)));
+}
+
+//! QDPType * GammaType
+/*! @ingroup group1 */
+template<class T1,class C1,int N>
+inline typename MakeReturn<BinaryNode<OpMultiplyGammaType,
+  typename CreateLeaf<QDPType<T1,C1> >::Leaf_t,
+  typename CreateLeaf<GammaType<N> >::Leaf_t>,
+  typename BinaryReturn<C1,GammaType<N>,OpMultiplyGammaType>::Type_t >::Expression_t
+operator*(const QDPType<T1,C1> & l,const GammaType<N> & r)
+{
+  typedef BinaryNode<OpMultiplyGammaType,
+    typename CreateLeaf<QDPType<T1,C1> >::Leaf_t,
+    typename CreateLeaf<GammaType<N> >::Leaf_t> Tree_t;
+  typedef typename BinaryReturn<C1,GammaType<N>,OpMultiplyGammaType>::Type_t Container_t;
+  return MakeReturn<Tree_t,Container_t>::make(Tree_t(
+    CreateLeaf<QDPType<T1,C1> >::make(l),
+    CreateLeaf<GammaType<N> >::make(r)));
+}
+
+//! QDPExpr * GammaType
+template<class T1,class C1,int N>
+inline typename MakeReturn<BinaryNode<OpMultiplyGammaType,
+  typename CreateLeaf<QDPExpr<T1,C1> >::Leaf_t,
+  typename CreateLeaf<GammaType<N> >::Leaf_t>,
+  typename BinaryReturn<C1,GammaType<N>,OpMultiplyGammaType>::Type_t >::Expression_t
+operator*(const QDPExpr<T1,C1> & l,const GammaType<N> & r)
+{
+  typedef BinaryNode<OpMultiplyGammaType,
+    typename CreateLeaf<QDPExpr<T1,C1> >::Leaf_t,
+    typename CreateLeaf<GammaType<N> >::Leaf_t> Tree_t;
+  typedef typename BinaryReturn<C1,GammaType<N>,OpMultiplyGammaType>::Type_t Container_t;
+  return MakeReturn<Tree_t,Container_t>::make(Tree_t(
+    CreateLeaf<QDPExpr<T1,C1> >::make(l),
+    CreateLeaf<GammaType<N> >::make(r)));
+}
+
+
+
+// ----- DP
+
+
+//! GammaType * QDPType
+/*! @ingroup group1 */
+template<int N,class T2,class C2>
+inline typename MakeReturn<BinaryNode<OpGammaTypeMultiply,
+  typename CreateLeaf<GammaTypeDP<N> >::Leaf_t,
+  typename CreateLeaf<QDPType<T2,C2> >::Leaf_t>,
+  typename BinaryReturn<GammaTypeDP<N>,C2,OpGammaTypeMultiply>::Type_t >::Expression_t
+operator*(const GammaTypeDP<N> & l,const QDPType<T2,C2> & r)
+{
+  typedef BinaryNode<OpGammaTypeMultiply,
+    typename CreateLeaf<GammaTypeDP<N> >::Leaf_t,
+    typename CreateLeaf<QDPType<T2,C2> >::Leaf_t> Tree_t;
+  typedef typename BinaryReturn<GammaTypeDP<N>,C2,OpGammaTypeMultiply>::Type_t Container_t;
+  return MakeReturn<Tree_t,Container_t>::make(Tree_t(
+    CreateLeaf<GammaTypeDP<N> >::make(l),
+    CreateLeaf<QDPType<T2,C2> >::make(r)));
+}
+
+//! GammaTypeDP * QDPExpr
+template<int N,class T2,class C2>
+inline typename MakeReturn<BinaryNode<OpGammaTypeMultiply,
+  typename CreateLeaf<GammaTypeDP<N> >::Leaf_t,
+  typename CreateLeaf<QDPExpr<T2,C2> >::Leaf_t>,
+  typename BinaryReturn<GammaTypeDP<N>,C2,OpGammaTypeMultiply>::Type_t >::Expression_t
+operator*(const GammaTypeDP<N> & l,const QDPExpr<T2,C2> & r)
+{
+  typedef BinaryNode<OpGammaTypeMultiply,
+    typename CreateLeaf<GammaTypeDP<N> >::Leaf_t,
+    typename CreateLeaf<QDPExpr<T2,C2> >::Leaf_t> Tree_t;
+  typedef typename BinaryReturn<GammaTypeDP<N>,C2,OpGammaTypeMultiply>::Type_t Container_t;
+  return MakeReturn<Tree_t,Container_t>::make(Tree_t(
+    CreateLeaf<GammaTypeDP<N> >::make(l),
+    CreateLeaf<QDPExpr<T2,C2> >::make(r)));
+}
+
+//! QDPType * GammaTypeDP
+/*! @ingroup group1 */
+template<class T1,class C1,int N>
+inline typename MakeReturn<BinaryNode<OpMultiplyGammaType,
+  typename CreateLeaf<QDPType<T1,C1> >::Leaf_t,
+  typename CreateLeaf<GammaTypeDP<N> >::Leaf_t>,
+  typename BinaryReturn<C1,GammaTypeDP<N>,OpMultiplyGammaType>::Type_t >::Expression_t
+operator*(const QDPType<T1,C1> & l,const GammaTypeDP<N> & r)
+{
+  typedef BinaryNode<OpMultiplyGammaType,
+    typename CreateLeaf<QDPType<T1,C1> >::Leaf_t,
+    typename CreateLeaf<GammaTypeDP<N> >::Leaf_t> Tree_t;
+  typedef typename BinaryReturn<C1,GammaTypeDP<N>,OpMultiplyGammaType>::Type_t Container_t;
+  return MakeReturn<Tree_t,Container_t>::make(Tree_t(
+    CreateLeaf<QDPType<T1,C1> >::make(l),
+    CreateLeaf<GammaTypeDP<N> >::make(r)));
+}
+
+//! QDPExpr * GammaTypeDP
+template<class T1,class C1,int N>
+inline typename MakeReturn<BinaryNode<OpMultiplyGammaType,
+  typename CreateLeaf<QDPExpr<T1,C1> >::Leaf_t,
+  typename CreateLeaf<GammaTypeDP<N> >::Leaf_t>,
+  typename BinaryReturn<C1,GammaTypeDP<N>,OpMultiplyGammaType>::Type_t >::Expression_t
+operator*(const QDPExpr<T1,C1> & l,const GammaTypeDP<N> & r)
+{
+  typedef BinaryNode<OpMultiplyGammaType,
+    typename CreateLeaf<QDPExpr<T1,C1> >::Leaf_t,
+    typename CreateLeaf<GammaTypeDP<N> >::Leaf_t> Tree_t;
+  typedef typename BinaryReturn<C1,GammaTypeDP<N>,OpMultiplyGammaType>::Type_t Container_t;
+  return MakeReturn<Tree_t,Container_t>::make(Tree_t(
+    CreateLeaf<QDPExpr<T1,C1> >::make(l),
+    CreateLeaf<GammaTypeDP<N> >::make(r)));
+}
+
+
+
+
+
+//-----------------------------------------------------------------------------
+// Additional operators
+//-----------------------------------------------------------------------------
+
 #if 0
 // Explicit casts
 template<class T1,class T2,class C2>

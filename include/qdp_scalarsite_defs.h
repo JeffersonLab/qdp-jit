@@ -23,9 +23,9 @@ namespace QDP {
 
 
 
-// typedef GammaType<Ns> Gamma;
-// typedef GammaTypeDP<Ns> GammaDP;
-
+  typedef GammaType<Ns> Gamma;
+  typedef GammaTypeDP<Ns> GammaDP;
+ 
 
 #if defined (QDP_CODEGEN_VECTOR)
 #define WORD WordVec
@@ -611,11 +611,6 @@ typedef OSubLattice< PScalar< PScalar< RComplex<WORD<REAL64> > > > > SubLatticeC
 typedef OSubLattice< PScalar< PScalar< RScalar<WORD<REAL64> > > > > SubLatticeRealD;
 
 
-SpinMatrix  Gamma(int i);
-SpinMatrixD GammaDP(int i);
-
-template<int N,int i> SpinMatrix  GammaConst();
-template<int N,int i> SpinMatrixD GammaConstDP();
 
   
 #undef WORD
