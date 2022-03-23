@@ -748,6 +748,9 @@ namespace QDP {
 		    QDPIO::cout << "stack" << "\t";
 		    QDPIO::cout << "regs" << "\t";
 		    QDPIO::cout << "cmem" << "\t";
+		    QDPIO::cout << "IR" << "\t";
+		    QDPIO::cout << "codegen" << "\t";
+		    QDPIO::cout << "dynload" << "\t";
 #endif
 		    QDPIO::cout << "sum(ms)" << "\t\t";
 		    QDPIO::cout << "mean" << "\t\t";
@@ -787,6 +790,12 @@ namespace QDP {
 			QDPIO::cout << all.at(i)->get_stack() << "\t";
 			QDPIO::cout << all.at(i)->get_regs() << "\t";
 			QDPIO::cout << all.at(i)->get_cmem() << "\t";
+			printf("%.3f\t",all.at(i)->time_builder/1.0e6);
+			printf("%.3f\t",all.at(i)->time_codegen/1.0e6);
+			printf("%.3f\t",all.at(i)->time_dynload/1.0e6);
+			// QDPIO::cout << all.at(i)->time_builder/1.0e6 << "\t";
+			// QDPIO::cout << all.at(i)->time_codegen/1.0e6 << "\t";
+			// QDPIO::cout << all.at(i)->time_dynload/1.0e6 << "\t";
 #endif
 			
 			auto timings = all.at(i)->get_timings();
