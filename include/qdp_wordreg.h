@@ -632,6 +632,23 @@ inline void
   }
 
 
+  template<class T>
+  inline void 
+  qdpPHI4(WordREG<T>& d, 
+	  const WordREG<T>& phi0, llvm::BasicBlock* bb0 ,
+	  const WordREG<T>& phi1, llvm::BasicBlock* bb1 ,
+	  const WordREG<T>& phi2, llvm::BasicBlock* bb2 ,
+	  const WordREG<T>& phi3, llvm::BasicBlock* bb3 )
+  {
+    d.setup( llvm_phi( llvm_get_type<T>() , 4 ) );
+    llvm_add_incoming( d.get_val() , phi0.get_val() , bb0 );
+    llvm_add_incoming( d.get_val() , phi1.get_val() , bb1 );
+    llvm_add_incoming( d.get_val() , phi2.get_val() , bb2 );
+    llvm_add_incoming( d.get_val() , phi3.get_val() , bb3 );
+  }
+
+
+
 
 typename UnaryReturn<WordREG<float>, FnCeil>::Type_t ceil(const WordREG<float>& s1);
 typename UnaryReturn<WordREG<float>, FnFloor>::Type_t floor(const WordREG<float>& s1);

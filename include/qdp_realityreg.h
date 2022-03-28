@@ -2601,6 +2601,27 @@ qdpPHI(RComplexREG<T>& d,
 }
 
 
+template<class T>
+inline void 
+qdpPHI4(RComplexREG<T>& d, 
+       const RComplexREG<T>& phi0, llvm::BasicBlock* bb0 ,
+       const RComplexREG<T>& phi1, llvm::BasicBlock* bb1 ,
+       const RComplexREG<T>& phi2, llvm::BasicBlock* bb2 ,
+       const RComplexREG<T>& phi3, llvm::BasicBlock* bb3 )
+{
+  qdpPHI4(d.real(),
+	  phi0.real(),bb0,
+	  phi1.real(),bb1,
+	  phi2.real(),bb2,
+	  phi3.real(),bb3);
+  qdpPHI4(d.imag(),
+	  phi0.imag(),bb0,
+	  phi1.imag(),bb1,
+	  phi2.imag(),bb2,
+	  phi3.imag(),bb3);
+}
+
+
 
 /*! @} */  // end of group rcomplex
 

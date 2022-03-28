@@ -116,6 +116,57 @@ namespace QDP {
   template<typename T> concept ConceptEvalToSpinScalar = EvalToSpinScalar<T>::value;
 
 
+  template<class T>
+  class JitGammaSwitch
+  {
+    JitSwitch sw;
+    int c;
+    std::vector< llvm::BasicBlock* > BB;
+    std::vector< T > r;
+    T& ret;
+  public:
+    JitGammaSwitch( T& ret_ , llvm::Value* i ): sw(i), c(0), ret(ret_)
+    {
+      sw.case_begin(c);
+    }
+
+    void add( const T& val )
+    {
+      switch (c) {
+      case 0:
+      case 1:
+	r.push_back( val );
+	BB.push_back( llvm_get_insert_block() );
+	sw.case_end();
+	++c;
+	sw.case_begin(c);
+	break;
+      case 2:
+	r.push_back( val );
+	BB.push_back( llvm_get_insert_block() );
+	sw.case_end();
+	++c;
+	sw.case_default();
+	break;
+      case 3:
+	r.push_back( val );
+	BB.push_back( llvm_get_insert_block() );
+	sw.case_end();
+	
+	qdpPHI4( ret , 
+		 r.at(0) , BB.at(0) ,
+		 r.at(1) , BB.at(1) ,
+		 r.at(2) , BB.at(2) ,
+		 r.at(3) , BB.at(3) );
+	break;
+      }
+    }
+  };
+
+
+
+
+
 
   template<ConceptEvalToSpinMatrix B, class CTag>
   struct ForEach<BinaryNode<OpGammaTypeMultiply, GammaType<4>, B>, ViewSpinLeaf, CTag >
@@ -128,375 +179,153 @@ namespace QDP {
     inline static
     Type_t apply(const BinaryNode<OpGammaTypeMultiply, GammaType<4>, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
     {
-      JitStackArray< Type_t , 1 > stack;
+      Type_t ret;
+      
+      //QDPIO::cout << "gamma * B " << expr.left().elem() << "\n";
 
       switch( expr.left().elem() ) {
       case 0:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c);
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
 	}
 	break;
       case 1:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) );
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
 	}
 	break;
       case 2:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = -ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = -ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c);
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c));
 	}
 	break;
       case 3:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) );
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
 	}
 	break;
       case 4:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) );
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
 	}
 	break;
       case 5:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = -ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = -ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c);
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c));
 	}
 	break;
       case 6:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) );
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
 	}
 	break;
       case 7:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = -ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = -ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c);
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c));
 	}
 	break;
       case 8:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c);
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c));
 	}
 	break;
       case 9:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) );
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
 	}
 	break;
       case 10:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = -ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = -ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c);
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c));
 	}
 	break;
       case 11:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) );
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
 	}
 	break;
       case 12:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) );
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
 	}
 	break;
       case 13:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = -ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = -ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c);
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c));
 	}
 	break;
       case 14:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) );
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
 	}
 	break;
       case 15:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = -ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = -ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c);
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
 	}
 	break;
       default:
@@ -504,7 +333,7 @@ namespace QDP {
 	QDP_abort(1);
       }
 
-      return stack.elemREGint(0);
+      return ret;
     }
   };
 
@@ -521,375 +350,151 @@ namespace QDP {
     inline static
     Type_t apply(const BinaryNode<OpGammaTypeMultiply, GammaTypeDP<4>, B> &expr, const ViewSpinLeaf &f,	const CTag &c) 
     {
-      JitStackArray< Type_t , 1 > stack;
+      Type_t ret;
 
       switch( expr.left().elem() ) {
       case 0:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c);
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
 	}
 	break;
       case 1:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) );
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
 	}
 	break;
       case 2:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = -ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = -ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c);
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c));
 	}
 	break;
       case 3:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) );
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
 	}
 	break;
       case 4:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) );
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
 	}
 	break;
       case 5:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = -ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = -ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c);
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c));
 	}
 	break;
       case 6:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) );
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
 	}
 	break;
       case 7:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = -ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = -ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c);
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c));
 	}
 	break;
       case 8:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = -ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = -ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c);
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c));
 	}
 	break;
       case 9:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) );
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
 	}
 	break;
       case 10:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = -ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = -ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c);
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c));
 	}
 	break;
       case 11:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) );
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
 	}
 	break;
       case 12:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) );
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
 	}
 	break;
       case 13:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = -ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = -ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c);
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c));
+	  jg.add(ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c));
 	}
 	break;
       case 14:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) );
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) );
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c) ));
+	  jg.add(timesI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c) ));
+	  jg.add(timesMinusI( ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c) ));
 	}
 	break;
       case 15:
 	{
-	  JitSwitch sw(f.index_first());
-	  sw.case_begin(0);
-	  stack.elemJITint(0) = -ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(1);
-	  stack.elemJITint(0) = -ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(2);
-	  stack.elemJITint(0) = -ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c);
-	  sw.case_end();
-	
-	  sw.case_begin(3);
-	  stack.elemJITint(0) = -ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c);
-	  sw.case_end();
-
-	  sw.case_default();
-	  sw.case_end();
+	  JitGammaSwitch jg(ret,f.index_first());
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(2) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(3) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(0) , f.index_second() ) , c));
+	  jg.add(-ForEach<B, ViewSpinLeaf, CTag>::apply(expr.right(), ViewSpinLeaf( f , llvm_create_value(1) , f.index_second() ) , c));
 	}
 	break;
       default:
@@ -897,7 +502,7 @@ namespace QDP {
 	QDP_abort(1);
       }
 
-      return stack.elemREGint(0);
+      return ret;
     }
   };
 
@@ -917,391 +522,154 @@ namespace QDP {
       inline static
       Type_t apply(const BinaryNode<OpMultiplyGammaType, A , GammaType<4> > &expr, const ViewSpinLeaf &f,	const CTag &c) 
       {
-	JitStackArray< Type_t , 1 > stack;
+	Type_t ret;
+
+	//QDPIO::cout << "A * gamma " << expr.right().elem() << "\n";
 
 	switch( expr.right().elem() ) {
+
 	case 0:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c);
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
 	  }
 	  break;
 	case 1:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c) ));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c)));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c)));
 	  }
 	  break;
 	case 2:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = -ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = -ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c);
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
 	  }
 	  break;
 	case 3:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c) ));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c)));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c)));
 	  }
 	  break;
 	case 4:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c) ));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c) ));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c)));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c)));
 	  }
 	  break;
 	case 5:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = -ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = -ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c);
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
 	  }
 	  break;
 	case 6:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c)));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c)));
 	  }
 	  break;
 	case 7:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = -ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = -ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c);
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
 	  }
 	  break;
 	case 8:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c);
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
 	  }
 	  break;
 	case 9:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c) ));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c)));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c)));
 	  }
 	  break;
 	case 10:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = -ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = -ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c);
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
 	  }
 	  break;
 	case 11:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c) ));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c)));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c)));
 	  }
 	  break;
 	case 12:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c)));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c)));
 	  }
 	  break;
 	case 13:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = -ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = -ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c);
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
 	  }
 	  break;
 	case 14:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c)));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c)));
 	  }
 	  break;
 	case 15:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = -ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = -ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c);
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , f.index_second() ) , c));
 	  }
 	  break;
 	default:
@@ -1309,7 +677,7 @@ namespace QDP {
 	  QDP_abort(1);
 	}
 
-	return stack.elemREGint(0);
+	return ret;
       }
     };
 
@@ -1327,391 +695,151 @@ namespace QDP {
       inline static
       Type_t apply(const BinaryNode<OpMultiplyGammaType, A , GammaTypeDP<4> > &expr, const ViewSpinLeaf &f,	const CTag &c) 
       {
-	JitStackArray< Type_t , 1 > stack;
+	Type_t ret;
 
 	switch( expr.right().elem() ) {
 	case 0:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c);
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
 	  }
 	  break;
 	case 1:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c) ));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c)));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c)));
 	  }
 	  break;
 	case 2:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = -ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = -ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c);
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
 	  }
 	  break;
 	case 3:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c) ));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c)));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c)));
 	  }
 	  break;
 	case 4:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c)));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c)));
 	  }
 	  break;
 	case 5:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = -ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = -ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c);
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
 	  }
 	  break;
 	case 6:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c) ));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c) ));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c)));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c)));
 	  }
 	  break;
 	case 7:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = -ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = -ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c);
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
 	  }
 	  break;
 	case 8:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = -ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = -ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c);
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
 	  }
 	  break;
 	case 9:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c) ));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c) ));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c)));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c)));
 	  }
 	  break;
 	case 10:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = -ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = -ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c);
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
 	  }
 	  break;
 	case 11:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c)));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c)));
 	  }
 	  break;
 	case 12:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c) ));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c)));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c)));
 	  }
 	  break;
 	case 13:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = -ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = -ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c);
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
+	    jg.add(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
 	  }
 	  break;
 	case 14:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c) );
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c) ));
+	    jg.add(timesI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c) ));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c)));
+	    jg.add(timesMinusI(ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c)));
 	  }
 	  break;
 	case 15:
 	  {
-	    JitSwitch sw(f.index_second());
-
-	    sw.case_begin(0);
-	    stack.elemJITint(0) = -ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(1);
-	    stack.elemJITint(0) = -ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(2);
-	    stack.elemJITint(0) = -ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c);
-	    sw.case_end();
-	
-	    sw.case_begin(3);
-	    stack.elemJITint(0) = -ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c);
-	    sw.case_end();
-
-	    sw.case_default();
-	    sw.case_end();
+	    JitGammaSwitch jg(ret,f.index_second());
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(2) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(3) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(0) ) , c));
+	    jg.add(-ForEach<A, ViewSpinLeaf, CTag>::apply(expr.left(), ViewSpinLeaf( f , f.index_first() , llvm_create_value(1) ) , c));
 	  }
 	  break;
 	default:
@@ -1719,7 +847,7 @@ namespace QDP {
 	  QDP_abort(1);
 	}
 
-	return stack.elemREGint(0);
+	return ret;
       }
     };
 

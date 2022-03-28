@@ -124,6 +124,7 @@ namespace QDP {
     std::vector<llvm::BasicBlock*> BB;
     llvm::BasicBlock* BBcont;
     llvm::SwitchInst *SI;
+    std::map< int , llvm::BasicBlock* > cases;
 
   public:
     JitSwitch( llvm::Value* value )
@@ -144,6 +145,8 @@ namespace QDP {
       llvm_switch_add_case( SI , val , BB.back() );
       
       llvm_set_insert_point( BB.back() );
+
+      cases[val]=BB.back();
     }
 
     void case_end()
@@ -157,6 +160,17 @@ namespace QDP {
       llvm_set_insert_point(BB[0]);
     }
 
+    llvm::BasicBlock* get_block(int val)
+    {
+      return cases.at(val);
+    }
+
+    llvm::BasicBlock* get_default_block()
+    {
+      return BB.at(0);
+    }
+
+    
   };
 
 
