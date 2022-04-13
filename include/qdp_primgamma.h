@@ -78,6 +78,20 @@ struct LeafFunctor<GammaType<N>, ParamLeaf>
   }
 };
 
+
+template<int N>
+struct LeafFunctor<GammaType<N>, ParamLeafScalar>
+{
+  typedef GammaType<N> Type_t;
+  inline static
+  Type_t apply(const GammaType<N>& g, const ParamLeafScalar& p) 
+  {
+    Type_t ret(g.elem());
+    return ret;
+  }
+};
+
+  
 template<int N>
 struct LeafFunctor<GammaType<N>, ShiftPhase1>
 {
