@@ -871,8 +871,6 @@ namespace QDP {
     static QDPProfile_t prof("QDP_extract", dest, src);
     prof.start_time();
 #endif
-    dest.resize(s.numSiteTable());
-    
     static JitFunction function;
     if (function.empty())
       function_extract_build(function ,dest, src);

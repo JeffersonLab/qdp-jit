@@ -82,7 +82,7 @@ namespace QDP {
     in_data_reg.setup( src_jit.elem( JitDeviceLayout::Coalesced            , r_idx ) );
 #endif
     
-    odata.elem( JitDeviceLayout::Scalar , r_idx_thread ) = in_data_reg;
+    odata.elem( JitDeviceLayout::Scalar , r_idx ) = in_data_reg;
 
     jit_get_function( function );
   }
