@@ -1385,13 +1385,13 @@ namespace QDP
 
   llvm::Value * llvm_createGEP( llvm::Value * ptr , llvm::Value * idx )
   {
-    return builder->CreateGEP( ptr , idx );
+    return builder->CreateGEP( ptr->getType()->getPointerElementType() , ptr , idx );
   }
 
 
   llvm::Value * llvm_load( llvm::Value * ptr )
   {
-    return builder->CreateLoad( ptr );
+    return builder->CreateLoad( ptr->getType()->getPointerElementType() , ptr );
   }
 
   void llvm_store( llvm::Value * val , llvm::Value * ptr )
@@ -1426,7 +1426,12 @@ namespace QDP
   {
     llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getVoidTy(TheContext), false);
 
+#if QDP_LLVM14
+    llvm::AttrBuilder ABuilder(TheContext);
+#else
     llvm::AttrBuilder ABuilder;
+#endif
+    
     ABuilder.addAttribute(llvm::Attribute::ReadNone);
 
 #ifdef QDP_BACKEND_ROCM
@@ -1452,7 +1457,12 @@ namespace QDP
   {
     llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getInt32Ty(TheContext), false);
 
+#if QDP_LLVM14
+    llvm::AttrBuilder ABuilder(TheContext);
+#else
     llvm::AttrBuilder ABuilder;
+#endif
+
     ABuilder.addAttribute(llvm::Attribute::ReadNone);
 
     auto ReadTidX = Mod->getOrInsertFunction( name , 
