@@ -1385,13 +1385,21 @@ namespace QDP
 
   llvm::Value * llvm_createGEP( llvm::Value * ptr , llvm::Value * idx )
   {
-    return builder->CreateGEP( ptr , idx );
+    #if QDP_LLVM14
+        return builder->CreateGEP( ptr->getType()->getPointerElementType(), ptr , idx );
+    #else
+        return builder->CreateGEP( ptr , idx );
+    #endif
   }
 
 
   llvm::Value * llvm_load( llvm::Value * ptr )
   {
-    return builder->CreateLoad( ptr );
+    #if QDP_LLVM14
+        return builder->CreateLoad( ptr->getType()->getPointerElementType(), ptr );
+    #else
+        return builder->CreateLoad( ptr );
+    #endif
   }
 
   void llvm_store( llvm::Value * val , llvm::Value * ptr )
