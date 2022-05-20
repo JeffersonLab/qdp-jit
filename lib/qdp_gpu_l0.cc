@@ -28,46 +28,27 @@
 
 namespace QDP {
 
+  //#define EMAX 2147483600
+  #define EMAX 1000
+  
   namespace {
-    ze_driver_handle_t             driverHandle;
-    ze_context_handle_t            context;
-    ze_device_handle_t             device;
-#if 0
-    ze_command_queue_desc_t        cmdQueueDesc;
-    ze_command_queue_handle_t      cmdQueue;
+    ze_device_handle_t             hDevice;
+    ze_driver_handle_t             hDriver;
+    ze_context_handle_t            hContext;
+    uint32_t                       deviceCount = 0;
+
     ze_command_list_handle_t       cmdList;
-#else
-    ze_command_list_handle_t       cmdList = {};
-#endif
+
     ze_device_properties_t         deviceProperties;
     ze_device_compute_properties_t deviceComputeProperties;
 
+    ze_event_pool_handle_t hEventPool;
+    //int ev_cur;
+    //std::vector<ze_event_handle_t> vec_ev;
+    ze_event_handle_t ev0;
+    
     std::vector<ze_command_queue_group_properties_t> queueProperties;
 
-#if 0
-    void gpu_cmd_Create()
-    {
-      std::cout << "zeCommandListCreate\n";
-      ze_command_list_desc_t cmdListDesc = {};
-      cmdListDesc.commandQueueGroupOrdinal = cmdQueueDesc.ordinal;    
-      VALIDATECALL(zeCommandListCreate(context, device, &cmdListDesc, &cmdList));
-    }
-
-    void gpu_cmd_CloseExeDestroy()
-    {
-      std::cout << "zeCommandListClose\n";
-      VALIDATECALL(zeCommandListClose(cmdList));
-
-      std::cout << "zeCommandListExe\n";
-      VALIDATECALL(zeCommandQueueExecuteCommandLists(cmdQueue, 1, &cmdList, nullptr));
-      
-      std::cout << "zeCommandListSync\n";
-      VALIDATECALL(zeCommandQueueSynchronize(cmdQueue, std::numeric_limits<uint64_t>::max())); //UINT32_MAX
-
-      std::cout << "zeCommandListDestroy\n";
-      VALIDATECALL(zeCommandListDestroy(cmdList));
-    }
-#else
     void gpu_cmd_Create()
     {
     }
@@ -75,7 +56,6 @@ namespace QDP {
     void gpu_cmd_CloseExeDestroy()
     {
     }
-#endif
 
     
   }
@@ -108,7 +88,27 @@ namespace QDP {
 
   size_t gpu_mem_free()
   {
-    return 0;
+    uint32_t count = 0;
+    VALIDATECALL(zeDeviceGetMemoryProperties( hDevice , &count, nullptr));
+
+    if (count != 1)
+      {
+	std::cout << "zeDeviceGetMemoryProperties: expected count of 1\n";
+	std::cout << "couint = " << count << "\n";
+	exit(1);
+      }
+
+    ze_device_memory_properties_t prop;
+    count = 1;
+    VALIDATECALL(zeDeviceGetMemoryProperties( hDevice , &count, &prop));
+
+    std::cout << "Memory properties:\n";
+    std::cout << "flags = " << prop.flags << "\n";
+    std::cout << "clock = " << prop.maxClockRate << "\n";
+    std::cout << "maxBusWidth = " << prop.maxBusWidth << "\n";
+    std::cout << "totalSize = " << prop.totalSize << "\n";
+
+    return prop.totalSize;
   }
   
   size_t gpu_mem_total()
@@ -135,44 +135,22 @@ namespace QDP {
     dispatch.groupCountY = gridDimY;
     dispatch.groupCountZ = 1;
     
-    // std::cout << "grid =(" << dispatch.groupCountX << "," << dispatch.groupCountY << "," << dispatch.groupCountZ << ")\n";
-    // std::cout << "block=(" << blockDimX << "," << blockDimY << "," << blockDimZ << ")\n";
-
+    //std::cout << "grid =(" << dispatch.groupCountX << "," << dispatch.groupCountY << "," << dispatch.groupCountZ << ")";
+    //std::cout << "  block=(" << blockDimX << "," << blockDimY << "," << blockDimZ << ")\n";
 
     typedef std::vector< std::pair< int , void* > > KernelArgs_t;
 
-    //std::cout << "kernel args:\n";
     for ( int i = 0 ; i < kernelArgs.size() ; ++i )
       {
-	// std::cout << i << ": " << kernelArgs.at(i).first << " " << kernelArgs.at(i).second << "\n";
-	// switch (kernelArgs.at(i).first)
-	//   {
-	//   case 4:
-	//     {
-	//       int* tmp = (int*)kernelArgs.at(i).second;
-	//       std::cout << " int: " << *tmp << std::endl;
-	//     }
-	//     break;
-	//   case 8:
-	//     {
-	//       std::cout << " void*: " << (void*)*(int*)kernelArgs.at(i).second << std::endl;
-	//     }
-	//     break;
-	//   default:
-	//     std::cout << "size unknown\n";
-	//   }
 	VALIDATECALL(zeKernelSetArgumentValue( (ze_kernel_handle_t)f.get_function() , i , kernelArgs.at(i).first , kernelArgs.at(i).second ));
       }
 
     VALIDATECALL(zeKernelSetGroupSize( (ze_kernel_handle_t)f.get_function() , blockDimX , blockDimY , blockDimZ ));
 
-
-    gpu_cmd_Create();
-
-    // Launch kernel on the GPU
-    VALIDATECALL(zeCommandListAppendLaunchKernel( cmdList , (ze_kernel_handle_t)f.get_function() , &dispatch, nullptr, 0, nullptr));
-
-    gpu_cmd_CloseExeDestroy();
+    VALIDATECALL(zeCommandListAppendBarrier( cmdList, nullptr, 0, nullptr));
+    VALIDATECALL(zeCommandListAppendLaunchKernel( cmdList , (ze_kernel_handle_t)f.get_function() , &dispatch , ev0 , 0 , nullptr ));
+    VALIDATECALL(zeEventHostSynchronize( ev0 , UINT64_MAX));
+    VALIDATECALL(zeEventHostReset( ev0 ));
 
     return ret;
   }
@@ -197,87 +175,158 @@ namespace QDP {
   }
 
 
-    
+
   void gpu_init()
   {
-    // Initialization
-    //std::cout << "zeInit\n";
-    VALIDATECALL(zeInit(ZE_INIT_FLAG_GPU_ONLY));
+    // Initialize the driver
+    //VALIDATECALL(zeInit(ZE_INIT_FLAG_GPU_ONLY));
+    VALIDATECALL(zeInit(0));
 
-    //std::cout << "zeDriverGet\n";
-    // Get the driver
+    // Discover all the driver instances
     uint32_t driverCount = 0;
     VALIDATECALL(zeDriverGet(&driverCount, nullptr));
 
-    //std::cout << "driverCount = " << driverCount << "\n";
-    
-    //std::cout << "zeDriverGet\n";
-    VALIDATECALL(zeDriverGet(&driverCount, &driverHandle));
+    std::cout << "Driver count = " << driverCount << std::endl;
 
-    //std::cout << "zuContextCreate\n";
-    // Create the context
-    ze_context_desc_t contextDescription = {};
-    contextDescription.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
-    VALIDATECALL(zeContextCreate(driverHandle, &contextDescription, &context));
+    if (driverCount < 1)
+      {
+	std::cout << "Expected driver count of at least 1\n";
+	exit(1);
+      }
+
+    ze_driver_handle_t* allDrivers = (ze_driver_handle_t*)malloc(driverCount * sizeof(ze_driver_handle_t));
+    VALIDATECALL(zeDriverGet(&driverCount, allDrivers));
+
+    // Always use the first driver (for now)
+    hDriver = allDrivers[0];
+    hDevice = nullptr;
+
+
+    // Create context
+    ze_context_desc_t ctxtDesc = {
+      ZE_STRUCTURE_TYPE_CONTEXT_DESC,
+      nullptr,
+      0
+    };
+    VALIDATECALL(zeContextCreate(hDriver, &ctxtDesc, &hContext));
+
+    
+    VALIDATECALL(zeDeviceGet( hDriver, &deviceCount, nullptr));
+    std::cout << "Devices found: " << deviceCount << std::endl;
+
+    free(allDrivers);
+
   }
 
+  
+
+  void gpu_done()
+  {
+    VALIDATECALL(zeEventDestroy( ev0 ));
+    VALIDATECALL(zeEventPoolDestroy(hEventPool));
+  }
   
   std::string gpu_get_arch()
   {
     return "dummy";
   }
 
+  
 
   void gpu_set_device(int dev)
   {
-    //std::cout << __PRETTY_FUNCTION__ << "\n";
-    unsigned int d = dev;
-    
-    // Level Zero device ordinals are natural numbers
-    d += 1;
+    if (deviceCount <= dev)
+      {
+	std::cout << "Devices found: " << deviceCount << std::endl;
+	std::cout << "Trying to use device: " << dev << std::endl;
+	exit(1);
+      }
 
-    //std::cout << "zeDeviceGet\n";
-    VALIDATECALL(zeDeviceGet(driverHandle, &d, &device));
+    ze_device_handle_t* allDevices = (ze_device_handle_t*)malloc(deviceCount * sizeof(ze_device_handle_t));
+    zeDeviceGet(hDriver, &deviceCount, allDevices);
 
-#if 0
-    std::cout << "zeDeviceGetCommandQueueGroupProperties\n";
-    // Create a command queue
-    uint32_t numQueueGroups = 0;
-    VALIDATECALL(zeDeviceGetCommandQueueGroupProperties(device, &numQueueGroups, nullptr));
-    if (numQueueGroups == 0) {
-        std::cout << "No queue groups found\n";
-        std::terminate();
-    } else {
-        std::cout << "#Queue Groups: " << numQueueGroups << std::endl;
+    ze_device_properties_t device_properties;
+    zeDeviceGetProperties(allDevices[dev], &device_properties);
+      
+    if (device_properties.type != ZE_DEVICE_TYPE_GPU) {
+      std::cout << "Device " << dev << " is not of GPU type." << std::endl;
+      exit(1);
     }
 
-    std::cout << "zeDeviceGetCommandQueueGroupProperties\n";
-    queueProperties.resize(numQueueGroups);
-    VALIDATECALL(zeDeviceGetCommandQueueGroupProperties(device, &numQueueGroups, queueProperties.data()));
+    hDevice = allDevices[dev];
 
-    for (uint32_t i = 0; i < numQueueGroups; i++) { 
-        if (queueProperties[i].flags & ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) {
-            cmdQueueDesc.ordinal = i;
-        }
-    }
+    free(allDevices);
 
-    std::cout << "zeCommandQueueCreate\n";
-    cmdQueueDesc.index = 0;
-    cmdQueueDesc.mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS;
-    VALIDATECALL(zeCommandQueueCreate(context, device, &cmdQueueDesc, &cmdQueue));
-#else
     // Create an immediate command list for direct submission
-    ze_command_queue_desc_t altdesc = {};
-    altdesc.stype = ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC;
-    VALIDATECALL( zeCommandListCreateImmediate(context, device, &altdesc, &cmdList) );
-#endif
+    // ze_command_queue_desc_t altdesc = {};
+    // altdesc.stype = ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC;
+    // VALIDATECALL( zeCommandListCreateImmediate(hContext, hDevice, &altdesc, &cmdList) );
+
+
+    // Discover all command queue groups
+    uint32_t cmdqueueGroupCount = 0;
+    zeDeviceGetCommandQueueGroupProperties(hDevice, &cmdqueueGroupCount, nullptr);
+
+    std::cout << "cmdqueueGroupCount: " << cmdqueueGroupCount << std::endl;
+    
+    ze_command_queue_group_properties_t* cmdqueueGroupProperties = (ze_command_queue_group_properties_t*)malloc(cmdqueueGroupCount * sizeof(ze_command_queue_group_properties_t));
+    zeDeviceGetCommandQueueGroupProperties(hDevice, &cmdqueueGroupCount, cmdqueueGroupProperties);
+    
+    // Find a command queue type that support compute
+    uint32_t computeQueueGroupOrdinal = cmdqueueGroupCount;
+    for( uint32_t i = 0; i < cmdqueueGroupCount; ++i ) {
+      if( cmdqueueGroupProperties[ i ].flags & ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE ) {
+        computeQueueGroupOrdinal = i;
+        break;
+      }
+    }
+
+    
+    if(computeQueueGroupOrdinal == cmdqueueGroupCount)
+      {
+	std::cout << "no compute queues found" << std::endl;
+	exit(1);
+      }
+
+	  
+    // Create an immediate command list
+    ze_command_queue_desc_t commandQueueDesc = {
+      ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC,
+      nullptr,
+      computeQueueGroupOrdinal,
+      0, // index
+      0, // flags
+      ZE_COMMAND_QUEUE_MODE_DEFAULT,
+      ZE_COMMAND_QUEUE_PRIORITY_NORMAL
+    };
+    ze_command_list_handle_t hCommandList;
+    VALIDATECALL(zeCommandListCreateImmediate(hContext, hDevice, &commandQueueDesc, &cmdList));
+
+    
+
+    ze_event_pool_desc_t eventPoolDesc = {
+      ZE_STRUCTURE_TYPE_EVENT_POOL_DESC,
+      nullptr,
+      ZE_EVENT_POOL_FLAG_HOST_VISIBLE, // all events in pool are visible to Host
+      1 // count
+    };
+    VALIDATECALL(zeEventPoolCreate(hContext, &eventPoolDesc, 0, nullptr, &hEventPool));
+
+    ze_event_desc_t eventDesc = {
+      ZE_STRUCTURE_TYPE_EVENT_DESC,
+      nullptr,
+      0, // index
+      0, // no additional memory/cache coherency required on signal
+      ZE_EVENT_SCOPE_FLAG_HOST  // ensure memory coherency across device and Host after event completes
+    };
+    VALIDATECALL(zeEventCreate(hEventPool, &eventDesc, &ev0));
 
     gpu_auto_detect();
-
-    //std::cout << "done\n";
   }
 
 
+
+  
   void gpu_get_device_props()
   {
     //std::cout << __PRETTY_FUNCTION__ << "\n";
@@ -289,7 +338,7 @@ namespace QDP {
   {
     //std::cout << __PRETTY_FUNCTION__ << "\n";
 
-    VALIDATECALL(zeDeviceGetProperties(device, &deviceProperties));
+    VALIDATECALL(zeDeviceGetProperties(hDevice, &deviceProperties));
     std::cout << "Device                         : " << deviceProperties.name << "\n" 
               << "Type                           : " << ((deviceProperties.type == ZE_DEVICE_TYPE_GPU) ? "GPU" : "FPGA") << "\n"
               << "Vendor ID                      : " << std::hex << deviceProperties.vendorId << std::dec << "\n"
@@ -301,7 +350,7 @@ namespace QDP {
 	      << "Number of slices               : " << deviceProperties.numSlices << "\n"
       ;
 
-    VALIDATECALL(zeDeviceGetComputeProperties(device, &deviceComputeProperties));
+    VALIDATECALL(zeDeviceGetComputeProperties(hDevice, &deviceComputeProperties));
     std::cout << "Maximum group size total       : " << deviceComputeProperties.maxTotalGroupSize << "\n" ;
     std::cout << "Maximum group size X           : " << deviceComputeProperties.maxGroupSizeX << "\n" ;
     std::cout << "Maximum group size Y           : " << deviceComputeProperties.maxGroupSizeY << "\n" ;
@@ -315,15 +364,9 @@ namespace QDP {
   }
 
 
+
   int gpu_get_device_count()
   {
-    //std::cout << __PRETTY_FUNCTION__ << "\n";
-
-    // Get the device
-    uint32_t deviceCount = 0;
-    VALIDATECALL(zeDeviceGet(driverHandle, &deviceCount, nullptr));
-
-    //std::cout << "deviceCount = " << deviceCount << "\n";
     return deviceCount;
   }
 
@@ -337,12 +380,14 @@ namespace QDP {
   
   void gpu_host_alloc(void **mem , const size_t size)
   {
-    //std::cout << __PRETTY_FUNCTION__ << " size = " << size << "\n";
 
     ze_host_mem_alloc_desc_t hostDesc = {ZE_STRUCTURE_TYPE_HOST_MEM_ALLOC_DESC};
     //hostDesc.flags = ZE_HOST_MEM_ALLOC_FLAG_BIAS_UNCACHED;
 
-    VALIDATECALL(zeMemAllocHost(context, &hostDesc, size , 1, mem));
+    VALIDATECALL(zeMemAllocHost(hContext, &hostDesc, size , 1, mem));
+
+
+    std::cout << "gpu_host_alloc size = " << size << "  addr = " << *mem << "\n";
   }
 
 
@@ -350,9 +395,8 @@ namespace QDP {
   {
     //std::cout << __PRETTY_FUNCTION__ << "\n";
 
-    VALIDATECALL(zeMemFree(context, (void*)mem));
+    VALIDATECALL(zeMemFree(hContext, (void*)mem));
   }
-
 
 
 
@@ -361,25 +405,30 @@ namespace QDP {
   {
     //std::cout << "gpu_memcpy_h2d: dest = " << dest << ", src = " << src << ", size = " << size << "\n";
 
-    gpu_cmd_Create();
+    VALIDATECALL(zeCommandListAppendBarrier( cmdList, nullptr, 0, nullptr));
     
-    VALIDATECALL(zeCommandListAppendMemoryCopy( cmdList , dest , src , size , nullptr , 0 , nullptr ));
+    VALIDATECALL(zeCommandListAppendMemoryCopy( cmdList , dest , src , size , ev0 , 0 , nullptr ));
 
-    gpu_cmd_CloseExeDestroy();
+    VALIDATECALL(zeEventHostSynchronize(ev0, UINT64_MAX));
+
+    VALIDATECALL(zeEventHostReset( ev0 ));
   }
 
-  
+
   void gpu_memcpy_d2h( void * dest , const void * src , size_t size )
   {
     //std::cout << "gpu_memcpy_d2h: dest = " << dest << ", src = " << src << ", size = " << size << "\n";
 
-    gpu_cmd_Create();
+    VALIDATECALL(zeCommandListAppendBarrier( cmdList, nullptr, 0, nullptr));
 
-    VALIDATECALL(zeCommandListAppendMemoryCopy( cmdList , dest , src , size , nullptr , 0 , nullptr ));
+    VALIDATECALL(zeCommandListAppendMemoryCopy( cmdList , dest , src , size , ev0 , 0 , nullptr ));
 
-    gpu_cmd_CloseExeDestroy();
+    VALIDATECALL(zeEventHostSynchronize( ev0 , UINT64_MAX));
+
+    VALIDATECALL(zeEventHostReset( ev0 ));
   }
 
+  
 
   // template <class T> struct ZeStruct : public T {
   //   ZeStruct() : T{} { // zero initializes base struct
@@ -404,9 +453,12 @@ namespace QDP {
       {
 	std::cout << "L0 performance warning: memory allocation size larger than maximum allowed: " << size << " (" << deviceProperties.maxMemAllocSize << ").\n";
 	memAllocDesc.pNext = &relaxed;
+
+	std::cout << "bit ZE_RELAXED_ALLOCATION_LIMITS_EXP_FLAG_MAX_SIZE set\n";
+	memAllocDesc.flags = ZE_RELAXED_ALLOCATION_LIMITS_EXP_FLAG_MAX_SIZE;
       }
 
-    VALIDATECALL(zeMemAllocDevice( context, &memAllocDesc, size, 1, device, mem));
+    VALIDATECALL(zeMemAllocDevice( hContext, &memAllocDesc, size, 1, hDevice, mem));
     
     return true;
   }
@@ -416,7 +468,7 @@ namespace QDP {
   {
     //std::cout << __PRETTY_FUNCTION__ << "\n";
 
-    VALIDATECALL(zeMemFree(context, (void*)mem));
+    VALIDATECALL(zeMemFree(hContext, (void*)mem));
   }
 
   void gpu_prefetch(void *mem,  size_t size)
@@ -488,7 +540,7 @@ namespace QDP {
 	QDPIO::cout << "get_jitf module create ...\n";
       }
 
-    ze_result_t status = zeModuleCreate(context, device, &moduleDesc, &module, &buildLog);
+    ze_result_t status = zeModuleCreate(hContext, hDevice, &moduleDesc, &module, &buildLog);
 
     if (jit_config_get_verbose_output())
       {

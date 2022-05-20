@@ -695,6 +695,8 @@ namespace QDP {
 			QDP_abort(1);
 		}
 
+		gpu_done();
+
 		// Destroy lattice coordinates helpers
 		Layout::destroyLatticeCoordinate();
 		

@@ -22,6 +22,7 @@ namespace QDP {
 
   
   void gpu_init();
+  void gpu_done();
   
   std::string gpu_get_arch();
 
