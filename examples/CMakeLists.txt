@@ -17,12 +17,12 @@ if(QDP_PROP_OPT)
   set_target_properties( examples PROPERTIES CXX_STANDARD 20 )
 endif()
 
-if( QDP_BACKEND_L0 )
-  find_package(PkgConfig REQUIRED)
-  pkg_search_module(PKG_LLVMSPIRV REQUIRED LLVMSPIRVLib)
-  target_link_libraries(examples PUBLIC ${PKG_LLVMSPIRV_LIBRARIES})
-  target_link_options(examples PUBLIC ${PKG_LLVMSPIRV_LDFLAGS})
-endif()
+#if( QDP_BACKEND_L0 )
+#  find_package(PkgConfig REQUIRED)
+#  pkg_search_module(PKG_LLVMSPIRV REQUIRED LLVMSPIRVLib)
+#  target_link_libraries(examples PUBLIC ${PKG_LLVMSPIRV_LIBRARIES})
+#  target_link_options(examples PUBLIC ${PKG_LLVMSPIRV_LDFLAGS})
+#endif()
 
       
 #set_target_properties(examples PROPERTIES 

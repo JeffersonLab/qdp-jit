@@ -63,12 +63,13 @@ endif()
 ##     To explicitly use -I flags and -L and -l flags...
 ##
 if( ${QDP_ENABLE_BACKEND} STREQUAL "L0")
+  list( APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake )
+
   message(STATUS "Building For Level Zero")
   set(QDP_BACKEND_L0  "1")
   find_package(PkgConfig REQUIRED)
   pkg_search_module(PKG_LLVMSPIRV REQUIRED LLVMSPIRVLib)
-  pkg_search_module(PKG_LIBZE_LOADER REQUIRED libze_loader)
-  pkg_search_module(PKG_LEVEL_ZERO REQUIRED level-zero)
+  find_package(LevelZero REQUIRED)
 endif()
 
 

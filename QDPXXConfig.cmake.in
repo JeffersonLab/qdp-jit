@@ -162,6 +162,10 @@ elseif( QDP_BACKEND_ROCM )
   if(QDP_USE_ROCM_STATS)
     find_dependency(amd_comgr REQUIRED)
   endif()
+elseif( QDP_BACKEND_L0 )
+  find_dependency(LevelZero REQUIRED)
 endif()
-   
+
+
+
 include(${CMAKE_CURRENT_LIST_DIR}/QDPXXTargets.cmake)

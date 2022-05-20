@@ -44,8 +44,8 @@ endif()
 
 if( QDP_ENABLE_BACKEND STREQUAL "L0" )
   target_sources(qdp PRIVATE qdp_gpu_l0.cc)
-  target_link_libraries(qdp PUBLIC ${PKG_LEVEL_ZERO_LIBRARIES})
-  target_include_directories(qdp PUBLIC ${PKG_LEVEL_ZERO_INCLUDE_DIRS})
+  target_link_libraries(qdp PUBLIC ${LevelZero_LIBRARIES})
+  target_include_directories(qdp PUBLIC ${LevelZero_INCLUDE_DIRS})
 endif()
 
 
