@@ -373,6 +373,12 @@ namespace QDP {
 	    sscanf((*argv)[++i], "%lf", &d);
 	    jit_config_set_fuzzfactor(d);
 	  }
+	else if (strcmp((*argv)[i], "-deep-log-events")==0)
+	  {
+	    unsigned val;
+	    sscanf((*argv)[++i],"%u",&val);
+	    jit_config_set_log_events( val );
+	  }
 #endif
 #ifdef QDP_BACKEND_ROCM
 	else if (strcmp((*argv)[i], "-temp-files-path")==0) { 

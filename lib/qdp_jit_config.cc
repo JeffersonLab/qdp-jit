@@ -73,6 +73,7 @@ namespace QDP
     std::string deep_log_name = "qdp-jit-log.dat";
     double tolerance = 1.0e-5;
     double fuzzfactor = 50;
+    size_t deep_log_events = 0;
 #endif
 
     int addressspace_local = 3;
@@ -231,6 +232,9 @@ namespace QDP
 
 
 #ifdef QDP_DEEP_LOG
+  size_t jit_config_get_log_events() { return deep_log_events; }
+  void jit_config_set_log_events( unsigned e ) { deep_log_events = e; }
+
   double jit_config_get_fuzzfactor()           { return fuzzfactor; }
   void   jit_config_set_fuzzfactor(double i)   { fuzzfactor = i; }
   

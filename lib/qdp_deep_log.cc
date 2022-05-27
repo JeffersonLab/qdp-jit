@@ -13,6 +13,7 @@ namespace QDP {
 #ifdef QDP_DEEP_LOG
   namespace {
     std::unique_ptr<std::fstream> logger_cmp;
+    size_t log_count = 0;
   }
 
   namespace
@@ -182,7 +183,8 @@ namespace QDP {
 
     void logger_print_lattice( std::string type_W , const char* host_pos )
     {
-      for( int i = 0 ; i < Layout::sitesOnNode() ; ++i )
+      //for( int i = 0 ; i < Layout::sitesOnNode() ; ++i )
+      for( int i = 0 ; i < 10 ; ++i )
 	{
 	  if (type_W == "i")
 	    {
@@ -376,6 +378,8 @@ namespace QDP {
 		    logger_print_lattice(type_W , host_pos);
 		    sleep(1);
 		    raise(SIGSEGV);
+		    sleep(5);
+		    QDP_abort(1);
 		  }
 		
 		++coord[0];
@@ -420,6 +424,15 @@ namespace QDP {
     if (!jit_config_deep_log())
       return;
 
+    if (jit_config_get_log_events() > 0  &&  log_count >= jit_config_get_log_events())
+      {
+	QDPIO::cout << "Log events count reached user given number, cleaning up\n";
+	gpu_deep_logger_close();
+	QDP_abort(0);
+      }
+
+    QDPIO::cout << log_count++ << " ";
+    
     if ( jit_config_deep_log_create() )
       {
 	gpu_deep_logger_create( host_ptr , type_W , field_size , pretty , isLat );

@@ -94,6 +94,9 @@ namespace QDP
   void jit_set_config_pool_stats();
   
 #ifdef QDP_DEEP_LOG
+  size_t jit_config_get_log_events();
+  void jit_config_set_log_events( unsigned e );
+
   double jit_config_get_fuzzfactor();
   void   jit_config_set_fuzzfactor(double i);
 
