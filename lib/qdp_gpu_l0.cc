@@ -150,7 +150,8 @@ namespace QDP {
     VALIDATECALL(zeCommandListAppendBarrier( cmdList, nullptr, 0, nullptr));
     VALIDATECALL(zeCommandListAppendLaunchKernel( cmdList , (ze_kernel_handle_t)f.get_function() , &dispatch , ev0 , 0 , nullptr ));
     VALIDATECALL(zeEventHostSynchronize( ev0 , UINT64_MAX));
-    VALIDATECALL(zeEventHostReset( ev0 ));
+    VALIDATECALL(zeCommandListAppendEventReset( cmdList , ev0 ));
+    //VALIDATECALL(zeEventHostReset( ev0 ));
 
     return ret;
   }
@@ -316,9 +317,11 @@ namespace QDP {
       ZE_STRUCTURE_TYPE_EVENT_DESC,
       nullptr,
       0, // index
-      0, // no additional memory/cache coherency required on signal
-      ZE_EVENT_SCOPE_FLAG_HOST  // ensure memory coherency across device and Host after event completes
+      ZE_EVENT_SCOPE_FLAG_DEVICE & ZE_EVENT_SCOPE_FLAG_HOST, // no additional memory/cache coherency required on signal
+      ZE_EVENT_SCOPE_FLAG_DEVICE & ZE_EVENT_SCOPE_FLAG_HOST // ensure memory coherency across device and Host after event completes
     };
+
+
     VALIDATECALL(zeEventCreate(hEventPool, &eventDesc, &ev0));
 
     gpu_auto_detect();
@@ -410,8 +413,9 @@ namespace QDP {
     VALIDATECALL(zeCommandListAppendMemoryCopy( cmdList , dest , src , size , ev0 , 0 , nullptr ));
 
     VALIDATECALL(zeEventHostSynchronize(ev0, UINT64_MAX));
+    VALIDATECALL(zeCommandListAppendEventReset( cmdList , ev0 ));
 
-    VALIDATECALL(zeEventHostReset( ev0 ));
+    //VALIDATECALL(zeEventHostReset( ev0 ));
   }
 
 
@@ -424,8 +428,9 @@ namespace QDP {
     VALIDATECALL(zeCommandListAppendMemoryCopy( cmdList , dest , src , size , ev0 , 0 , nullptr ));
 
     VALIDATECALL(zeEventHostSynchronize( ev0 , UINT64_MAX));
+    VALIDATECALL(zeCommandListAppendEventReset( cmdList , ev0 ));
 
-    VALIDATECALL(zeEventHostReset( ev0 ));
+    //VALIDATECALL(zeEventHostReset( ev0 ));
   }
 
   
@@ -458,7 +463,7 @@ namespace QDP {
 	memAllocDesc.flags = ZE_RELAXED_ALLOCATION_LIMITS_EXP_FLAG_MAX_SIZE;
       }
 
-    VALIDATECALL(zeMemAllocDevice( hContext, &memAllocDesc, size, 1, hDevice, mem));
+    VALIDATECALL(zeMemAllocDevice( hContext, &memAllocDesc, size, 1024, hDevice, mem));
     
     return true;
   }
