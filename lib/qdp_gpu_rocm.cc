@@ -662,7 +662,8 @@ namespace QDP {
   }
 
 
-
+  void gpu_done() {
+  }
 
 
 

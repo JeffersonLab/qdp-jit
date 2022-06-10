@@ -337,6 +337,9 @@ namespace QDP {
     }
   }
 
+  void gpu_done() {
+  }
+  
   std::string gpu_get_arch()
   {
     int major = gpu_getMajor();
