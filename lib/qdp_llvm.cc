@@ -1971,7 +1971,12 @@ namespace QDP
     						      llvm::ArrayRef<llvm::Type*>( param_types.data() , param_types.size() ) , 
     						      false );
 
+#if QDP_LLVM14
+    llvm::AttrBuilder ABuilder(*TheContext);
+#else
     llvm::AttrBuilder ABuilder;
+#endif
+    
     //ABuilder.addAttribute(llvm::Attribute::ReadNone);
     ABuilder.addAttribute(llvm::Attribute::Convergent);
 
@@ -2010,7 +2015,12 @@ namespace QDP
   {
     llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getVoidTy(*TheContext), false);
 
+#if QDP_LLVM14
+    llvm::AttrBuilder ABuilder(*TheContext);
+#else
     llvm::AttrBuilder ABuilder;
+#endif
+    
     ABuilder.addAttribute(llvm::Attribute::ReadNone);
 
 #ifdef QDP_BACKEND_ROCM
