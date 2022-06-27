@@ -381,6 +381,23 @@ struct LeafFunctor<Word<T>, PrintTag>
     }
 };
 
+
+#if defined (QDP_CODEGEN_VECTOR)  
+template<class T>
+struct LeafFunctor<WordVec<T>, PrintTag>
+{
+  typedef int Type_t;
+  static int apply(const PrintTag &f)
+    {
+      f.os_m << "WordVec<"; 
+      LeafFunctor<T,PrintTag>::apply(f);
+      f.os_m << ">"; 
+      return 0;
+    }
+};
+#endif
+
+
 template<class T>
 struct LeafFunctor<RComplex<T>, PrintTag>
 {

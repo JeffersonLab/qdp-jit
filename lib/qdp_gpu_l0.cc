@@ -148,9 +148,13 @@ namespace QDP {
     VALIDATECALL(zeKernelSetGroupSize( (ze_kernel_handle_t)f.get_function() , blockDimX , blockDimY , blockDimZ ));
 
     VALIDATECALL(zeCommandListAppendBarrier( cmdList, nullptr, 0, nullptr));
+#if 0
     VALIDATECALL(zeCommandListAppendLaunchKernel( cmdList , (ze_kernel_handle_t)f.get_function() , &dispatch , ev0 , 0 , nullptr ));
     VALIDATECALL(zeEventHostSynchronize( ev0 , UINT64_MAX));
     VALIDATECALL(zeCommandListAppendEventReset( cmdList , ev0 ));
+#else
+    VALIDATECALL(zeCommandListAppendLaunchKernel( cmdList , (ze_kernel_handle_t)f.get_function() , &dispatch , nullptr , 0 , nullptr ));
+#endif    
     //VALIDATECALL(zeEventHostReset( ev0 ));
 
     return ret;
@@ -535,10 +539,15 @@ namespace QDP {
 
     ze_module_desc_t moduleDesc = {};
     ze_module_build_log_handle_t buildLog;
+
+    moduleDesc.stype = ZE_STRUCTURE_TYPE_MODULE_DESC;
+    moduleDesc.pNext = nullptr;
     moduleDesc.format = ZE_MODULE_FORMAT_IL_SPIRV;
-    moduleDesc.pInputModule = reinterpret_cast<const uint8_t *>(spirvInput.get());
     moduleDesc.inputSize = length;
+    moduleDesc.pInputModule = reinterpret_cast<const uint8_t *>(spirvInput.get());
+    //moduleDesc.pBuildFlags = "-vc-codegen";
     moduleDesc.pBuildFlags = "";
+    moduleDesc.pConstants = nullptr;
 
     if (jit_config_get_verbose_output())
       {
