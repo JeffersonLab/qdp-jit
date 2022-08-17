@@ -79,7 +79,7 @@ namespace QDP {
   template<class Op, class A, class B, class C>
   struct HasProp< TrinaryNode<Op,A,B,C> >
   {
-    constexpr static bool value = HasProp<B>::value || HasProp<C>::value;
+    constexpr static bool value = HasProp<A>::value || HasProp<B>::value || HasProp<C>::value;
   };
 
   template<class Op, class A>

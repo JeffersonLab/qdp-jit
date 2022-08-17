@@ -18,38 +18,19 @@ namespace QDP {
 
   // T1 input
   // T2 output
-  template < class T1 , class T2 , JitDeviceLayout input_layout >
-  void qdp_jit_reduce_convert_indirection(int size, 
-					  int threads, 
-					  int blocks, 
-					  int in_id, 
-					  int out_id, 
-					  int siteTableId)
-  {
-    static JitFunction function;
-
-    if (function.empty())
-       function_sum_convert_ind_build<typename ScalarType<T1>::Type_t,T2,input_layout>(function);
-
-    function_sum_convert_ind_exec(function, size, threads, blocks, 
-				  in_id, out_id, siteTableId );
-  }
-
-
-  // T1 input
-  // T2 output
-  template < JitDeviceLayout input_layout, class T1 , class RHS >
+  template < class T1 , class RHS >
   void qdp_jit_reduce_convert_indirection_expr(int size, 
 					       int threads, 
 					       int blocks, 
 					       const QDPExpr<RHS,OLattice<T1> >& rhs, 
 					       int out_id, 
-					       int siteTableId)
+					       int siteTableId,
+					       JitDeviceLayout input_layout )
   {
     static JitFunction function;
 
     if (function.empty())
-      function_sum_convert_ind_expr_build<input_layout>(function,rhs);
+      function_sum_convert_ind_expr_build(function,rhs,input_layout);
 
     function_sum_convert_ind_expr_exec(function, size, threads, blocks,
 				       rhs, out_id, siteTableId );
@@ -183,14 +164,45 @@ namespace QDP {
 
     function_bool_reduction_exec(function, size, threads, blocks, in_id, out_id );
   }
-#endif
 
 
+  template<class T>
+  struct HasShift
+  {
+    constexpr static bool value = false;
+  };
+
+  template<class Op, class A, class B>
+  struct HasShift< BinaryNode<Op,A,B> >
+  {
+    constexpr static bool value = HasShift<A>::value || HasShift<B>::value;
+  };
+
+  template<class Op, class A, class B, class C>
+  struct HasShift< TrinaryNode<Op,A,B,C> >
+  {
+    constexpr static bool value = HasShift<A>::value || HasShift<B>::value || HasShift<C>::value;
+  };
+
+  template<class Op, class A>
+  struct HasShift< UnaryNode<Op,A> >
+  {
+    constexpr static bool value = HasShift<A>::value;
+  };
+
+  template<class A>
+  struct HasShift< UnaryNode<FnMap,A> >
+  {
+    constexpr static bool value = true;
+  };
   
-#if defined (QDP_BACKEND_CUDA) || (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_L0)
-  template<class T1>
-  typename UnaryReturn<OLattice<T1>, FnSum>::Type_t
-  sum(const OLattice<T1>& s1, const Subset& s)
+  template<typename T> concept ConceptHasShift   =  HasShift<T>::value;
+  template<typename T> concept ConceptHasNoShift = !HasShift<T>::value;
+  
+  
+  template<ConceptHasNoShift RHS, class T1>
+  typename UnaryReturn< OLattice<T1> , FnSum>::Type_t
+  sum(const QDPExpr<RHS, OLattice<T1> >& rhs, const Subset& s)
   {
     typedef typename UnaryReturn<OLattice<T1>, FnSum>::Type_t::SubType_t T2;
     
@@ -205,7 +217,7 @@ namespace QDP {
 #endif
 
     // Register the destination object with the memory cache
-    int d_id = QDP_get_global_cache().registrateOwnHostMem( sizeof(typename UnaryReturn<OLattice<T1>, FnSum>::Type_t::SubType_t) , d.getF() , nullptr );
+    int d_id = QDP_get_global_cache().registrateOwnHostMem( sizeof(T2) , d.getF() , nullptr );
     
     unsigned actsize=s.numSiteTable();
     bool first=true;
@@ -230,17 +242,16 @@ namespace QDP {
 	in_id  = QDP_get_global_cache().add( numBlocks*sizeof(T2) , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
       }
 
-      
       if (numBlocks == 1) {
 	if (first) {
-	  qdp_jit_reduce_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, s1.getId(), d_id , s.getIdSiteTable());
+	  qdp_jit_reduce_convert_indirection_expr(actsize, numThreads, numBlocks, rhs , d_id , s.getIdSiteTable() , JitDeviceLayout::Coalesced);
 	}
 	else {
 	  qdp_jit_reduce<T2>( actsize , numThreads , numBlocks , in_id , d_id );
 	}
       } else {
 	if (first) {
-	  qdp_jit_reduce_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, s1.getId(), out_id, s.getIdSiteTable());
+	  qdp_jit_reduce_convert_indirection_expr(actsize, numThreads, numBlocks, rhs , out_id, s.getIdSiteTable() , JitDeviceLayout::Coalesced);
 	}
 	else
 	  qdp_jit_reduce<T2>( actsize , numThreads , numBlocks , in_id , out_id );
@@ -285,6 +296,14 @@ namespace QDP {
 
     return d;
   }
+
+  template<ConceptHasShift RHS, class T1>
+  typename UnaryReturn< OLattice<T1> , FnSum>::Type_t
+  sum(const QDPExpr<RHS, OLattice<T1> >& rhs, const Subset& s)
+  {
+    OLattice<T1> tmp = rhs;
+    return sum(tmp,s);
+  }
 #elif defined (QDP_BACKEND_AVX)
   template<class T1>
   typename UnaryReturn<OLattice<T1>, FnSum>::Type_t
@@ -316,138 +335,19 @@ namespace QDP {
 
     return sum;
   }
-#elif defined (QDP_BACKEND_L0)
-#warning "no sum"
 #else
 #error "No backend specified"
 #endif
   
 
+
+  
   template<class T1, class RHS>
   typename UnaryReturn< OLattice<T1> , FnSum>::Type_t
   sum(const QDPExpr<RHS,OLattice<T1> >& rhs)
   {
     return sum(rhs,all);
   }
-
-  
-  template<class T1, class RHS>
-  typename UnaryReturn< OLattice<T1> , FnSum>::Type_t
-  sum(const QDPExpr<RHS,OLattice<T1> >& rhs, const Subset& s)
-  {
-    OLattice<T1> tmp = rhs;
-    return sum(tmp,s);
-  }
-
-#if 0
-#if defined (QDP_BACKEND_CUDA) || (QDP_BACKEND_ROCM)
-  template<class WT>
-  typename UnaryReturn< OLattice<PScalar<PScalar<RScalar<Word<double> > > > > , FnSum>::Type_t
-  sum(const QDPExpr<UnaryNode<FnLocalNorm2, Reference<QDPType<PSpinVector<PColorVector<RComplex<Word<WT> >, 3>, 4>, OLattice<PSpinVector<PColorVector<RComplex<Word<WT> >, 3>, 4> > > > >,OLattice<PScalar<PScalar<RScalar<Word<double> > > > > >& rhs, const Subset& s)
-  {
-    typedef typename UnaryReturn< OLattice< PScalar<PScalar<RScalar<Word<double> > > > > , FnSum>::Type_t::SubType_t T2;
-    
-    int out_id,in_id;
-
-    typename UnaryReturn< OLattice< PScalar<PScalar<RScalar<Word<double> > > > >, FnSum>::Type_t  d;
-    zero_rep(d);
-
-#if defined(QDP_USE_PROFILING)
-    static QDPProfile_t prof(d, OpAssign(), FnSum(), rhs);
-    prof.start_time();
-#endif
-
-    // Register the destination object with the memory cache
-    int d_id = QDP_get_global_cache().registrateOwnHostMem( sizeof(typename UnaryReturn< OLattice< PScalar<PScalar<RScalar<Word<double> > > > > , FnSum>::Type_t::SubType_t) , d.getF() , nullptr );
-    
-    unsigned actsize=s.numSiteTable();
-    bool first=true;
-    bool allocated=false;
-    while (actsize > 0) {
-
-      unsigned numThreads = gpu_getMaxBlockX();
-      while ((numThreads*sizeof(T2) > gpu_getMaxSMem()) || (numThreads > (unsigned)actsize)) {
-	numThreads >>= 1;
-      }
-      unsigned numBlocks=(int)ceil(float(actsize)/numThreads);
-
-      if (numBlocks > gpu_getMaxGridX()) {
-	QDP_error_exit( "sum(Lat,subset) numBlocks(%d) > maxGridX(%d)",numBlocks,(int)gpu_getMaxGridX());
-      }
-
-      //QDP_info("sum(Lat,subset): using %d threads per block, %d blocks, shared mem=%d" , numThreads , numBlocks , shared_mem_usage );
-
-      if (first) {
-	allocated=true;
-	out_id = QDP_get_global_cache().add( numBlocks*sizeof(T2) , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
-	in_id  = QDP_get_global_cache().add( numBlocks*sizeof(T2) , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
-      }
-
-      
-      if (numBlocks == 1)
-	{
-	  if (first)
-	    {
-	      qdp_jit_reduce_convert_indirection_expr<JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, rhs , d_id , s.getIdSiteTable());
-	    }
-	  else
-	    {
-	      qdp_jit_reduce<T2>( actsize , numThreads , numBlocks, in_id , d_id );
-	    }
-	}
-      else
-	{
-	  if (first)
-	    {
-	      qdp_jit_reduce_convert_indirection_expr<JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, rhs , out_id, s.getIdSiteTable());
-	    }
-	  else
-	    {
-	      qdp_jit_reduce<T2>( actsize , numThreads , numBlocks , in_id , out_id );
-	    }
-
-      }
-
-      first =false;
-
-      if (numBlocks==1) 
-	break;
-
-      actsize=numBlocks;
-
-      int tmp = in_id;
-      in_id = out_id;
-      out_id = tmp;
-    }
-
-    if (allocated)
-      {
-	QDP_get_global_cache().signoff( in_id );
-	QDP_get_global_cache().signoff( out_id );
-      }
-
-    // Copy result to host
-    QDP_get_global_cache().assureOnHost(d_id);
-
-    // Global sum
-    QDPInternal::globalSum(d);
-
-    // Sign off result
-    QDP_get_global_cache().signoff( d_id );
-
-
-#if defined(QDP_USE_PROFILING)
-    prof.end_time();
-#endif
-
-#ifdef QDP_DEEP_LOG
-    gpu_deep_logger( d.getF() , typeid(typename WordType<T2>::Type_t).name() , sizeof(T2) , __PRETTY_FUNCTION__ , false );
-#endif
-
-    return d;
-  }
-#endif
-#endif
   
 
   //
