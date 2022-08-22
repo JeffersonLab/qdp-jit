@@ -1426,7 +1426,7 @@ namespace QDP
   {
     llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getVoidTy(TheContext), false);
 
-#if QDP_LLVM14
+#if 0
     llvm::AttrBuilder ABuilder(TheContext);
 #else
     llvm::AttrBuilder ABuilder;
@@ -1457,7 +1457,8 @@ namespace QDP
   {
     llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getInt32Ty(TheContext), false);
 
-#if QDP_LLVM14
+#if 0
+ QDP_LLVM14
     llvm::AttrBuilder ABuilder(TheContext);
 #else
     llvm::AttrBuilder ABuilder;
