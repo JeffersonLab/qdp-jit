@@ -1426,7 +1426,7 @@ namespace QDP
   {
     llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getVoidTy(TheContext), false);
 
-#if 0
+#if QDP_LLVM14 && !defined(QDP_BACKEND_ROCM)
     llvm::AttrBuilder ABuilder(TheContext);
 #else
     llvm::AttrBuilder ABuilder;
@@ -1457,9 +1457,12 @@ namespace QDP
   {
     llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getInt32Ty(TheContext), false);
 
-#if 0
- QDP_LLVM14
+#if QDP_LLVM14
+  #ifndef QDP_BACKEND_ROCM
     llvm::AttrBuilder ABuilder(TheContext);
+  #else
+    llvm::AttrBuilder ABuilder;
+  #endif
 #else
     llvm::AttrBuilder ABuilder;
 #endif
