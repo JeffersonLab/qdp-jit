@@ -24,8 +24,14 @@ int main(int argc, char **argv)
   multi1d<int> nrow(Nd);
   nrow = foo;  // Use only Nd elements
 
+  bool range_all = false;
+
   for (int i=1; i<argc; i++) 
     {
+      if (strcmp((argv)[i], "-all")==0) 
+	{
+	  range_all = true;
+	}
       if (strcmp((argv)[i], "-lat")==0) 
 	{
 	  int lat;
@@ -54,24 +60,46 @@ int main(int argc, char **argv)
 
   int iter = 1000;
 
-  for (int isign=-1 ; isign <= +1 ; isign += 2 )
-    for (int cb=0 ; cb <= 1 ; cb++ )
-      {
-	QDPIO::cout << "Applying D" << endl;
-      
-	dslash(chi, u, psi, isign, cb);
+  if (range_all)
+    {
+      for (int isign=-1 ; isign <= +1 ; isign += 2 )
+	{
+	  QDPIO::cout << "Applying D" << endl;
+
+	  dslash(chi, u, psi, isign, all );
     
-	StopWatch w;
-	w.start();
-	for(int i=0; i < iter; i++)
-	  dslash(chi, u, psi, isign, cb);
-	w.stop();
+	  StopWatch w;
+	  w.start();
+	  for(int i=0; i < iter; i++)
+	    dslash(chi, u, psi, isign, all );
+	  w.stop();
 
-	double gflops = 1392.0 * ((double)((((double)Layout::vol())/2.) * ((double)iter))) * 1.0e-9 / w.getTimeInSeconds();
+	  double gflops = 1392.0 * ((double)((((double)Layout::vol())) * ((double)iter))) * 1.0e-9 / w.getTimeInSeconds();
 
-	QDPIO::cout << "cb=" << cb << "  sign=" << isign << "  performance = " << gflops << " GFlops\n";
+	  QDPIO::cout << "sign=" << isign << "  performance = " << gflops << " GFlops\n";
+	}
+    }
+  else
+    {
+      for (int isign=-1 ; isign <= +1 ; isign += 2 )
+	for (int cb=0 ; cb <= 1 ; cb++ )
+	  {
+	    QDPIO::cout << "Applying D" << endl;
+
+	    dslash(chi, u, psi, isign, rb[cb] );
+    
+	    StopWatch w;
+	    w.start();
+	    for(int i=0; i < iter; i++)
+	      dslash(chi, u, psi, isign, rb[cb] );
+	    w.stop();
+
+	    double gflops = 1392.0 * ((double)((((double)Layout::vol())/2.) * ((double)iter))) * 1.0e-9 / w.getTimeInSeconds();
+
+	    QDPIO::cout << "cb=" << cb << "  sign=" << isign << "  performance = " << gflops << " GFlops\n";
       
-      }
+	  }
+    }
 
 #if 0
   chi = zero;

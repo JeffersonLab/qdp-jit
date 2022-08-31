@@ -40,7 +40,7 @@ void baryon(const LatticePropagator& quark_propagator,
 void dslash_2d_plus(LatticeFermion& chi, const multi1d<LatticeColorMatrix>& u, const LatticeFermion& psi,
 	    int cb);
 void dslash(LatticeFermion& chi, const multi1d<LatticeColorMatrix>& u, const LatticeFermion& psi,
-	    int isign, int cb);
+	    int isign, const Subset& s);
 
 void dslash2(LatticeFermion& chi, const multi1d<LatticeColorMatrix>& u, const LatticeFermion& psi,
 	    int isign, int cb);
