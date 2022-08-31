@@ -45,7 +45,7 @@ using namespace QDP;
 void dslash(LatticeFermion& chi, 
 	    const multi1d<LatticeColorMatrix>& u, 
 	    const LatticeFermion& psi,
-	    int isign, int cb)
+	    int isign, const Subset& s)
 {
   /*     F 
    *   a2  (x)  :=  U  (x) (1 - isign gamma  ) psi(x)
@@ -65,7 +65,7 @@ void dslash(LatticeFermion& chi,
   // for other Nd
   if (isign > 0)
   {
-    chi[rb[cb]] = spinReconstructDir0Minus(u[0] * shift(spinProjectDir0Minus(psi), FORWARD, 0))
+    chi[s] = spinReconstructDir0Minus(u[0] * shift(spinProjectDir0Minus(psi), FORWARD, 0))
                 + spinReconstructDir0Plus(shift(adj(u[0]) * spinProjectDir0Plus(psi), BACKWARD, 0))
 #if QDP_ND >= 2
                 + spinReconstructDir1Minus(u[1] * shift(spinProjectDir1Minus(psi), FORWARD, 1))
@@ -86,7 +86,7 @@ void dslash(LatticeFermion& chi,
   }
   else
   {
-    chi[rb[cb]] = spinReconstructDir0Plus(u[0] * shift(spinProjectDir0Plus(psi), FORWARD, 0))
+    chi[s] = spinReconstructDir0Plus(u[0] * shift(spinProjectDir0Plus(psi), FORWARD, 0))
                 + spinReconstructDir0Minus(shift(adj(u[0]) * spinProjectDir0Minus(psi), BACKWARD, 0))
 #if QDP_ND >= 2
                 + spinReconstructDir1Plus(u[1] * shift(spinProjectDir1Plus(psi), FORWARD, 1))
@@ -109,12 +109,12 @@ void dslash(LatticeFermion& chi,
 
   // NOTE: the loop is not unrolled - it should be all in a single line for
   // optimal performance
-  chi[rb[cb]] = zero;
+  chi[s] = zero;
 
   // NOTE: temporarily has conversion call of LatticeHalfFermion - will be removed
   for(int mu = 0; mu < Nd; ++mu)
   {
-    chi[rb[cb]] += spinReconstruct(LatticeHalfFermion(u[mu] * shift(spinProject(psi,mu,-isign), FORWARD, mu)),mu,-isign)
+    chi[s] += spinReconstruct(LatticeHalfFermion(u[mu] * shift(spinProject(psi,mu,-isign), FORWARD, mu)),mu,-isign)
       + spinReconstruct(LatticeHalfFermion(shift(adj(u[mu]) * spinProject(psi,mu,+isign), BACKWARD, mu)),mu,+isign);
   }
 #endif
