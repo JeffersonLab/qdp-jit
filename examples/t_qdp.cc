@@ -190,7 +190,7 @@ int main(int argc, char **argv)
   LatticeFermion psi, chi;
   random(psi);
   chi = zero;
-  dslash(chi, u, psi, +1, 0);
+  dslash(chi, u, psi, +1, rb[0]);
 
   write(xml,"psi", psi);
   write(xml,"chi", chi);
