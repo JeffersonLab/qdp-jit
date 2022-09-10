@@ -21,9 +21,7 @@ namespace QDP {
   
   void gpu_create_events();
   void gpu_record_start();
-  void gpu_record_stop();
-  void gpu_event_sync();
-  float gpu_get_time();
+  float gpu_record_stop_sync_time();
 
   
   void gpu_init();

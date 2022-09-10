@@ -144,49 +144,39 @@ namespace QDP {
       }
   }
 
-  void gpu_record_stop()
+
+  float gpu_record_stop_sync_time()
   {
 #ifdef QDP_THRUSTALIGN
     CudaCheckResult(cuCtxSetCurrent(cuContext));
 #endif
+    // stop
     CUresult res = cuEventRecord ( evStop, 0 );
     if (res != CUDA_SUCCESS)
       {
 	QDPIO::cout << "error event record stop\n";
 	QDP_abort(1);
       }
-  }
 
-  void gpu_event_sync()
-  {
-#ifdef QDP_THRUSTALIGN
-    CudaCheckResult(cuCtxSetCurrent(cuContext));
-#endif
-    CUresult res = cuEventSynchronize ( evStop );
+    // sync
+    res = cuEventSynchronize ( evStop );
     if (res != CUDA_SUCCESS)
       {
 	QDPIO::cout << "error event sync stop\n";
 	QDP_abort(1);
       }
-  }
 
-
-  float gpu_get_time()
-  {
+    // get time
     float pMilliseconds;
-#ifdef QDP_THRUSTALIGN
-    CudaCheckResult(cuCtxSetCurrent(cuContext));
-#endif
-    CUresult res = cuEventElapsedTime( &pMilliseconds, evStart, evStop );
+    res = cuEventElapsedTime( &pMilliseconds, evStart, evStop );
     if (res != CUDA_SUCCESS)
       {
 	QDPIO::cout << "error event get time\n";
 	QDP_abort(1);
       }
+
     return pMilliseconds;
   }
-
-
 
 
   size_t gpu_mem_free()
@@ -244,9 +234,7 @@ namespace QDP {
     
     if (gpu_get_record_stats() && Layout::primaryNode())
       {
-	gpu_record_stop();
-	gpu_event_sync();
-	float time = gpu_get_time();
+	float time = gpu_record_stop_sync_time();
 	f.add_timing( time );
       }
   

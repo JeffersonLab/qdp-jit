@@ -216,12 +216,12 @@ namespace QDP {
   
   
 
-#if defined(QDP_BACKEND_CUDA) || defined(QDP_BACKEND_ROCM)
+#if defined(QDP_BACKEND_CUDA) || defined(QDP_BACKEND_ROCM) || defined(QDP_BACKEND_L0)
   void jit_tune( JitFunction& function , int th_count , QDPCache::KernelArgs_t& args)
   {
     if ( ! function.get_enable_tuning() )
       {
-	QDPIO::cout << "Tuning disabled for: " << function.get_kernel_name() << std::endl;
+	//QDPIO::cout << "Tuning disabled for: " << function.get_kernel_name() << std::endl;
 	function.set_threads_per_block( jit_config_get_threads_per_block() );
 	return;
       }
@@ -295,9 +295,9 @@ namespace QDP {
 	  }
 	
 	//w.stop();
-	gpu_record_stop();
-	gpu_event_sync();
-	float ms = gpu_get_time();
+	//gpu_record_stop();
+	//gpu_event_sync();
+	float ms = gpu_record_stop_sync_time();
 
 	//double ms = w.getTimeInMicroseconds();
 
@@ -355,7 +355,7 @@ namespace QDP {
     function.inc_call_counter();
 
     
-#if defined(QDP_BACKEND_CUDA) || defined(QDP_BACKEND_ROCM)
+#if defined(QDP_BACKEND_CUDA) || defined(QDP_BACKEND_ROCM) || defined(QDP_BACKEND_L0)
     if (  jit_config_get_tuning()  &&  function.get_threads_per_block() == -1  )
       {
 	jit_tune( function , th_count , args );

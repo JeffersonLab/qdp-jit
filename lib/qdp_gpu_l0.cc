@@ -49,6 +49,8 @@ namespace QDP {
     
     std::vector<ze_command_queue_group_properties_t> queueProperties;
 
+    void *globalTsStart, *globalTsEnd;
+
     void gpu_cmd_Create()
     {
     }
@@ -65,25 +67,56 @@ namespace QDP {
 
   void gpu_create_events()
   {
+    constexpr size_t tsAllocSize = 64;
+
+    globalTsStart = nullptr;
+    globalTsEnd = nullptr;
+
+    ze_device_mem_alloc_desc_t deviceDesc = {ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC};
+    deviceDesc.flags = ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED;
+    deviceDesc.ordinal = 0;
+
+    VALIDATECALL(zeMemAllocDevice(hContext, &deviceDesc, tsAllocSize, 8, hDevice, &globalTsStart));
+    VALIDATECALL(zeMemAllocDevice(hContext, &deviceDesc, tsAllocSize, 8, hDevice, &globalTsEnd));
+
+    //gpu_malloc( &globalTsStart , 64 );
+    //gpu_malloc( &globalTsEnd , 64 );
   }
 
   void gpu_record_start()
   {
+    VALIDATECALL(zeCommandListAppendBarrier( cmdList, nullptr, 0, nullptr));
+    VALIDATECALL(zeCommandListAppendWriteGlobalTimestamp(cmdList, (uint64_t *)globalTsStart, nullptr, 0, nullptr));
   }
 
-  void gpu_record_stop()
+  float gpu_record_stop_sync_time()
   {
+    uint64_t tsStartResult = 0, tsEndResult = 0;
+
+    VALIDATECALL(zeCommandListAppendBarrier( cmdList, nullptr, 0, nullptr));
+    VALIDATECALL(zeCommandListAppendWriteGlobalTimestamp(cmdList, (uint64_t *)globalTsEnd, nullptr, 0, nullptr));
+    VALIDATECALL(zeCommandListAppendBarrier( cmdList, nullptr, 0, nullptr));
+
+    VALIDATECALL(zeCommandListAppendMemoryCopy(cmdList, &tsStartResult, globalTsStart, sizeof(tsStartResult), nullptr, 0, nullptr));
+    VALIDATECALL(zeCommandListAppendBarrier( cmdList, nullptr, 0, nullptr));
+    VALIDATECALL(zeCommandListAppendMemoryCopy(cmdList, &tsEndResult, globalTsEnd, sizeof(tsEndResult), ev0 , 0, nullptr));
+
+    VALIDATECALL(zeEventHostSynchronize( ev0 , UINT64_MAX));
+
+    uint64_t commandDuration = tsEndResult - tsStartResult;
+    uint64_t timerResolution = deviceProperties.timerResolution;
+
+#if 0
+    std::cout << "Global timestamp statistics: \n"
+              << std::fixed
+              << " Command start : " << std::dec << tsStartResult << " cycles\n"
+              << " Command end : " << std::dec << tsEndResult << " cycles\n"
+              << " Command duration : " << std::dec << commandDuration << " cycles, " << commandDuration * timerResolution << " ns\n";
+#endif
+    
+    return (float)((commandDuration * timerResolution) / 1000. / 1000.);
   }
 
-  void gpu_event_sync()
-  {
-  }
-
-
-  float gpu_get_time()
-  {
-    return 0.;
-  }
 
 
   size_t gpu_mem_free()
@@ -317,6 +350,7 @@ namespace QDP {
     };
     VALIDATECALL(zeEventPoolCreate(hContext, &eventPoolDesc, 0, nullptr, &hEventPool));
 
+    // Event for kernels and memory copies
     ze_event_desc_t eventDesc = {
       ZE_STRUCTURE_TYPE_EVENT_DESC,
       nullptr,
@@ -324,10 +358,10 @@ namespace QDP {
       ZE_EVENT_SCOPE_FLAG_DEVICE & ZE_EVENT_SCOPE_FLAG_HOST, // no additional memory/cache coherency required on signal
       ZE_EVENT_SCOPE_FLAG_DEVICE & ZE_EVENT_SCOPE_FLAG_HOST // ensure memory coherency across device and Host after event completes
     };
-
-
     VALIDATECALL(zeEventCreate(hEventPool, &eventDesc, &ev0));
 
+    gpu_create_events();
+    
     gpu_auto_detect();
   }
 
