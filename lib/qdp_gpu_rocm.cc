@@ -456,31 +456,29 @@ namespace QDP {
       }
   }
 
-  void gpu_record_stop()
+
+  
+  float gpu_record_stop_sync_time()
   {
+    //stop
     hipError_t res = hipEventRecord ( evStop, NULL );
     if (res != hipSuccess)
       {
 	QDPIO::cout << "error event record stop\n";
 	QDP_abort(1);
       }
-  }
 
-  void gpu_event_sync()
-  {
-    hipError_t res = hipEventSynchronize ( evStop );
+    //sync
+    res = hipEventSynchronize ( evStop );
     if (res != hipSuccess)
       {
 	QDPIO::cout << "error event sync stop\n";
 	QDP_abort(1);
       }
-  }
 
-
-  float gpu_get_time()
-  {
+    //get time
     float pMilliseconds;
-    hipError_t res = hipEventElapsedTime( &pMilliseconds, evStart, evStop );
+    res = hipEventElapsedTime( &pMilliseconds, evStart, evStop );
     if (res != hipSuccess)
       {
 	QDPIO::cout << "error event get time\n";
@@ -488,9 +486,6 @@ namespace QDP {
       }
     return pMilliseconds;
   }
-
-
-
 
   
 
@@ -528,9 +523,7 @@ namespace QDP {
 #if 1
     if (gpu_get_record_stats() && Layout::primaryNode())
       {
-	gpu_record_stop();
-	gpu_event_sync();
-	float time = gpu_get_time();
+	float time = gpu_record_stop_sync_time();
 	f.add_timing( time );
       }
 #endif
