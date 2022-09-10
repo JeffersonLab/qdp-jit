@@ -24,6 +24,14 @@
 namespace QDP {
 
   namespace {
+#if defined (CUDA_VERSION)
+    int CUDA_version_major = CUDA_VERSION / 1000;
+    int CUDA_version_minor = (CUDA_VERSION % 1000)/10;
+#else
+    int CUDA_version_major = 0;
+    int CUDA_version_minor = 0;
+#endif
+    
     CUdevice cuDevice;
     CUcontext cuContext;
 #ifdef QDP_THRUSTALIGN
@@ -69,6 +77,17 @@ namespace QDP {
   }
   
 
+  int gpu_SDK_version_major()
+  {
+    return CUDA_version_major;
+  }
+
+  int gpu_SDK_version_minor()
+  {
+    return CUDA_version_minor;
+  }
+
+  
   void gpu_auto_detect();
 
 
