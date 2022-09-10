@@ -14,6 +14,11 @@ namespace QDP {
   void gpu_deep_logger_close();
 #endif
 
+#ifdef QDP_BACKEND_CUDA
+  int gpu_SDK_version_major();
+  int gpu_SDK_version_minor();
+#endif
+  
   void gpu_create_events();
   void gpu_record_start();
   void gpu_record_stop();

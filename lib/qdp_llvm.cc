@@ -299,11 +299,12 @@ namespace QDP
 
     bool clang_codegen = false;
     std::string clang_opt;
-    
+
     //
     // Default search locations for libdevice
     // "ARCH"      gets replaced by "gfx908" (ROCm) or "70" (CUDA)
-    // "CUDAPATH"  gets replaced by the envvar CUDAPATH or CUDA_PATH
+    // "CUDAPATH"  gets replaced by the envvar CUDAPATH or CUDA_PATH or NVIDIA_PATH
+    // "CUDAVERSION"  gets replaced by the CUDA version, like "11.4"
     //
 #ifdef QDP_BACKEND_ROCM
     std::vector<std::string> vec_str_libdevice_path = { ROCM_DIR };
@@ -311,7 +312,7 @@ namespace QDP
     std::vector<std::string> vec_str_libdevice_name = { "libm-amdgcn-ARCH.bc" };
 #elif QDP_BACKEND_CUDA
     std::vector<std::string> vec_str_libdevice_path = { "CUDAPATH" , "/usr/local/cuda/" , "/usr/lib/nvidia-cuda-toolkit/" };
-    std::vector<std::string> vec_str_libdevice_path_append = { "nvvm/libdevice/" , "libdevice/" };
+    std::vector<std::string> vec_str_libdevice_path_append = { "nvvm/libdevice/" , "libdevice/" , "cuda/nvvm/libdevice/" , "cuda/CUDAVERSION/nvvm/libdevice/"};
     std::vector<std::string> vec_str_libdevice_name = { "libdevice.10.bc" , "libdevice.compute_ARCH.10.bc" };
 #else
 #endif
@@ -640,6 +641,20 @@ namespace QDP
 	    name->replace(index, 4, arch );
 	  }
 
+#ifdef QDP_BACKEND_CUDA
+	//
+	// Replace CUDAVERSION with CUDA version string
+	//
+	for( auto pathappend = vec_str_libdevice_path_append.begin() ; pathappend != vec_str_libdevice_path_append.end() ; ++pathappend )
+	  {
+	    std::string version_str = std::to_string( gpu_SDK_version_major() ) + "." + std::to_string( gpu_SDK_version_minor() );
+
+	    auto index = pathappend->find("CUDAVERSION", 0);
+	    if (index != std::string::npos)
+	      pathappend->replace(index, 11, version_str );
+	  }
+#endif
+	
 	//
 	// Replace CUDAPATH with endvar
 	//
@@ -650,6 +665,8 @@ namespace QDP
 	      env = getenv( "CUDA_PATH" );
 	    if (!env)
 	      env = getenv( "CUDA_HOME" );
+	    if (!env)
+	      env = getenv( "NVIDIA_PATH" );
 	    if (env)
 	      {
 		std::string ENV(env);
@@ -664,6 +681,8 @@ namespace QDP
 	      }
 	  }
 
+
+	
 	
 	for( auto path = vec_str_libdevice_path.begin() ; path != vec_str_libdevice_path.end() ; ++path )
 	  for( auto append = vec_str_libdevice_path_append.begin() ; append != vec_str_libdevice_path_append.end() ; ++append )
