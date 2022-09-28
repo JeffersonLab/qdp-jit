@@ -20,6 +20,7 @@ install(FILES ${MEMORY_HDRS} DESTINATION include)
 
 set( CUDA_HDRS qdp_gpu.h
   qdp_cache.h
+  qdp_alloc_cache.h
   qdp_quda.h
   qdp_mapresource.h
   qdp_pool_allocator.h

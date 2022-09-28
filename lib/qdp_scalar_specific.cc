@@ -94,8 +94,8 @@ namespace QDP {
 	goffsets[s_no][linear] = Layout::linearSiteIndex(lazy_fcoord[linear]);
       }
 
-    goffsetsId[s_no] = QDP_get_global_cache().registrateOwnHostMem( sizeof(int)*goffsets[s_no].size() , 
-								    goffsets[s_no].slice() , NULL );
+    goffsetsId[s_no] = QDP_get_global_cache().addOwnHostMemNoPage( sizeof(int)*goffsets[s_no].size() , 
+								    goffsets[s_no].slice() );
 
     lazy_done[s_no] = true;
 

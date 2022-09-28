@@ -6,10 +6,21 @@ namespace QDP {
 
   //template<class T> ParamRef jit_add_param();
 
-  
-  void jit_util_ringBuffer_init();
-  int  jit_util_ringBuffer_allocate( size_t size , const void *hstPtr );
+  class RingBuffer
+  {
+    std::vector<int> ringBufferOScalar;
+    int ringBufferNext;
+  public:
+    RingBuffer();
+    int  allocate( size_t size , const void *hstPtr );
+    void done();
+  };
+    
+  RingBuffer& QDP_get_global_ring_buffer();
 
+
+
+    
   int jit_util_get_tune_count();
 
   void jit_get_function(JitFunction&);
@@ -463,6 +474,29 @@ namespace QDP {
   llvm::Value* jit_ternary( llvm::Value* cond , llvm::Value* val_true , llvm::Value* val_false );
   llvm::Value* llvm_epsilon_1st( int p1 , llvm::Value* j );
   llvm::Value* llvm_epsilon_2nd( int p2 , llvm::Value* i );
+
+
+
+  class DeviceMulti
+  {
+    multi1d<void*> dev_ptr;
+    JitParam param;
+    
+  public:
+    DeviceMulti( const multi1d<QDPCache::ArgKey>& ids ):
+      dev_ptr( QDP_get_global_cache().get_dev_ptrs( ids ) ),
+      param( QDP_get_global_cache().addOwnHostMemNoPage( dev_ptr.size() * sizeof(void*) , dev_ptr.slice() ) )
+    {      
+    }
+
+    
+    QDPCache::ArgKey get_id()
+    {
+      return param.get_id();
+    }
+
+  };
+
   
 
 } // namespace

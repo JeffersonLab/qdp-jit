@@ -155,9 +155,9 @@ namespace QDP
   class DynKey;
 
 
-  template<class T, class T1, class RHS>
-  JitFunction
-  function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs );
+  // template<class T, class T1, class RHS>
+  // JitFunction
+  // function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs );
 
   namespace RNG 
   {
@@ -167,8 +167,6 @@ namespace QDP
 	       PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > >& skewed_seed, 
 	       const OScalarJIT<PScalarJIT<PSeedJIT<RScalarJIT<WordJIT<int> > > > >& seed_mult);
   }
-
-  int  jit_util_ringBuffer_allocate( size_t size , const void *hstPtr );
 
 
 } // namespace QDP

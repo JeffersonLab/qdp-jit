@@ -480,10 +480,6 @@ namespace QDP {
     VALIDATECALL(zeMemFree(hContext, (void*)mem));
   }
 
-  void gpu_prefetch(void *mem,  size_t size)
-  {
-  }
-
 
   void gpu_memset( void * dest , unsigned char val , size_t N )
   {

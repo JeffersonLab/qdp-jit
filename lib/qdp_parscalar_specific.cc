@@ -231,8 +231,8 @@ namespace QDP {
 	  }
       }
 
-    goffsetsId[s_no] = QDP_get_global_cache().registrateOwnHostMem( sizeof(int)*goffsets[s_no].size() , 
-								    goffsets[s_no].slice() , NULL );
+    goffsetsId[s_no] = QDP_get_global_cache().addOwnHostMemNoPage( sizeof(int)*goffsets[s_no].size() , 
+								   goffsets[s_no].slice() );
 
     
 #if defined (QDP_CODEGEN_VECTOR)
@@ -354,8 +354,8 @@ namespace QDP {
 	if (goffsets[s_no].size()==0)
 	  QDP_error_exit("gsoffsets empty");
 
-	roffsetsId[s_no] = QDP_get_global_cache().registrateOwnHostMem( sizeof(int)*roffsets[s_no].size() , roffsets[s_no].slice() , NULL );
-	soffsetsId[s_no] = QDP_get_global_cache().registrateOwnHostMem( sizeof(int)*soffsets[s_no].size() , soffsets[s_no].slice() , NULL );
+	roffsetsId[s_no] = QDP_get_global_cache().addOwnHostMem( sizeof(int)*roffsets[s_no].size() , roffsets[s_no].slice() );
+	soffsetsId[s_no] = QDP_get_global_cache().addOwnHostMem( sizeof(int)*soffsets[s_no].size() , soffsets[s_no].slice() );
 
 #if QDP_DEBUG >= 3
 	for(int i=0; i < destnodes.size(); ++i)

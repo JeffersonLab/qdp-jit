@@ -49,11 +49,13 @@ namespace QDP {
 	QDP_abort(1);
       }
 
-    int sizes_id = QDP_get_global_cache().add( sizes.size()*sizeof(int) , QDPCache::Flags::OwnHostMemory , QDPCache::Status::host , sizes.slice() , NULL , NULL );
+    int sizes_id = QDP_get_global_cache().addOwnHostMem( sizes.size()*sizeof(int) , sizes.slice() );
 
     JitParam jit_numsubsets( QDP_get_global_cache().addJitParamInt( numsubsets ) );
-    JitParam jit_tables(     QDP_get_global_cache().addMulti(       table_ids  ) );
-						      
+    
+    //JitParam jit_tables(     QDP_get_global_cache().addMulti(       table_ids  ) );
+    DeviceMulti jit_tables( table_ids );
+    
     std::vector<QDPCache::ArgKey> ids;
     ids.push_back( jit_numsubsets.get_id() );
     ids.push_back( sizes_id );
@@ -82,7 +84,7 @@ namespace QDP {
 	QDP_abort(1);
       }
 
-    int sizes_id = QDP_get_global_cache().add( sizes.size()*sizeof(int) , QDPCache::Flags::OwnHostMemory , QDPCache::Status::host , sizes.slice() , NULL , NULL );
+    int sizes_id = QDP_get_global_cache().addOwnHostMem( sizes.size()*sizeof(int) , sizes.slice() );
 
     JitParam jit_numsubsets( QDP_get_global_cache().addJitParamInt( numsubsets ) );
 						      

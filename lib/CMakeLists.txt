@@ -30,6 +30,10 @@ add_library(qdp qdp_map.cc
 
 add_library(jit qdp_llvm.cc)
 
+if (QDP_ENABLE_MANAGED_MEMORY)
+  target_sources(qdp PRIVATE qdp_alloc_cache.cc)
+endif()
+
 if( QDP_ENABLE_BACKEND STREQUAL "CUDA" )
   target_sources(qdp PRIVATE qdp_gpu_cuda.cc)
 endif()

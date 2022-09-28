@@ -13,7 +13,6 @@ namespace QDP
     size_t thread_stack = 512 * sizeof(REAL);
     bool use_total_pool_size = false;
     size_t pool_size = 0;
-    bool use_defrag = false;
     int max_allocation_size = -1;
     size_t pool_alignment = 128;
     size_t min_total_reserved_GPU_memory = 50*1024*1024; // 50 MB
@@ -92,7 +91,9 @@ namespace QDP
     
     bool gpu_direct = false;
     bool opt_shifts = false;
+
   }
+
 
   int  qdp_jit_config_get_global_addrspace()      { return addressspace_global;}
   void qdp_jit_config_set_global_addrspace(int v) { addressspace_global = v; }
@@ -138,22 +139,27 @@ namespace QDP
   
   void jit_config_print()
   {
+#if defined (QDP_ENABLE_MANAGED_MEMORY)
+    QDPIO::cout << "Using managed GPU memory\n";
+#else
 #if ! defined(QDP_BACKEND_AVX)
     QDPIO::cout << "Memory pool config:\n";
 
     switch (poolSetMethod) {
-      case PoolSetMethod::PerThread:
+    case PoolSetMethod::PerThread:
       QDPIO::cout << "  reserved memory per thread          : " << thread_stack << " bytes\n";
       QDPIO::cout << "  resulting memory pool size          : " << pool_size/1024/1024 << " MB\n";
       break;
-      case PoolSetMethod::User:
+    case PoolSetMethod::User:
       QDPIO::cout << "  memory pool size (user request)     : " << pool_size/1024/1024 << " MB\n";
       break;
-      case PoolSetMethod::Fraction:
+    case PoolSetMethod::Fraction:
       QDPIO::cout << "  memory pool size (per fraction)     : " << pool_size/1024/1024 << " MB\n";
       break;
     }
 #endif
+#endif
+    
     QDPIO::cout << "Accurate timing                       : " << (int)jit_config_get_timing_run() << "\n";
 
     
@@ -254,16 +260,6 @@ namespace QDP
 #endif
 
   
-  bool qdp_jit_config_defrag()
-  {
-    return use_defrag;
-  }
-
-  void qdp_jit_set_defrag()
-  {
-    use_defrag = true;
-  }
-
   
 
   size_t qdp_jit_config_pool_size_decrement()

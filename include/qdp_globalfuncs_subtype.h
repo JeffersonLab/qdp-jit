@@ -137,7 +137,7 @@ sum( const OSubLattice<T>& s1 )
 // #endif
 
   // Register the destination object with the memory cache
-  int d_id = QDP_get_global_cache().registrateOwnHostMem( sizeof(typename UnaryReturn<OLattice<T>, FnSum>::Type_t::SubType_t) , d.getF() , nullptr );
+  int d_id = QDP_get_global_cache().addOwnHostMem( sizeof(typename UnaryReturn<OLattice<T>, FnSum>::Type_t::SubType_t) , d.getF() );
   
   zero_rep(d);
 
@@ -166,8 +166,8 @@ sum( const OSubLattice<T>& s1 )
 
     if (first) {
       allocated=true;
-      out_id = QDP_get_global_cache().add( numBlocks*sizeof(T2) , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
-      in_id  = QDP_get_global_cache().add( numBlocks*sizeof(T2) , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
+      out_id = QDP_get_global_cache().add( numBlocks*sizeof(T2) );
+      in_id  = QDP_get_global_cache().add( numBlocks*sizeof(T2) );
     }
 
     if (numBlocks == 1)

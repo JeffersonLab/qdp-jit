@@ -30,9 +30,6 @@ namespace QDP
   }
 
 
-  std::vector<QDPCache::Entry>& QDPCache::get__vec_backed() {
-    return __vec_backed;
-  }
 
 
   bool qdp_cache_get_cache_verbose() { return __cacheverbose; }
@@ -41,13 +38,23 @@ namespace QDP
     __cacheverbose = b;
   }
 
-
-#if defined(QDP_BACKEND_CUDA) || defined(QDP_BACKEND_ROCM) || defined(QDP_BACKEND_L0)
+  
+#if defined (QDP_ENABLE_MANAGED_MEMORY)
   bool QDPCache::gpu_allocate_base( void ** ptr , size_t n_bytes , int id )
   {
+    return QDP_get_global_alloc_cache().allocate( ptr , n_bytes , id );
+  }
+  void QDPCache::gpu_free_base( void * ptr , size_t n_bytes )
+  {
+    QDP_get_global_alloc_cache().free( ptr );
+  }
+#else
+  bool QDPCache::gpu_allocate_base( void ** ptr , size_t n_bytes , int id )
+  {
+    bool ret;
     if ( jit_config_get_max_allocation() < 0   ||  (int)n_bytes <= jit_config_get_max_allocation() )
       {
-	bool ret = get__cache_pool_allocator().allocate( ptr , n_bytes , id );
+	ret = get__cache_pool_allocator().allocate( ptr , n_bytes , id );
 
 #ifdef QDP_DEEP_LOG    
 	if (ret)
@@ -73,28 +80,8 @@ namespace QDP
   {
     if ( jit_config_get_max_allocation() < 0   ||  (int)n_bytes <= jit_config_get_max_allocation() )
       {
-	return get__cache_pool_allocator().free( ptr );
+	get__cache_pool_allocator().free( ptr );
       }
-    else
-      {
-	return gpu_free( ptr );
-      }
-  }
-#else
-#warning "Pool allocator will not be used"
-  bool QDPCache::gpu_allocate_base( void ** ptr , size_t n_bytes , int id )
-  {
-    gpu_host_alloc( ptr , n_bytes );
-
-#ifdef QDP_DEEP_LOG    
-    gpu_memset( *ptr , 0 , n_bytes );
-#endif
-
-    return true;
-  }
-  void QDPCache::gpu_free_base( void * ptr , size_t n_bytes )
-  {
-    gpu_host_free( ptr );
   }
 #endif
 
@@ -107,11 +94,6 @@ namespace QDP
     return get__cache_pool_allocator().get_count();
   }
 
-
-  int QDPCache::getPoolDefrags()
-  {
-    return get__cache_pool_allocator().defrag_occurrences();
-  }
 
 
   void QDPCache::enableMemset(unsigned val)
@@ -169,10 +151,7 @@ namespace QDP
 		<< ", flags = ";
     
     if (e.flags & OwnHostMemory) QDPIO::cout << "own hst|";
-    if (e.flags & OwnDeviceMemory) QDPIO::cout << "own dev|";
-    if (e.flags & JitParam) QDPIO::cout << "param|";
-    if (e.flags & Static) QDPIO::cout << "static|";
-    if (e.flags & Multi) QDPIO::cout << "multi|";
+
     QDPIO::cout << ", ";
 
     QDPIO::cout << "status = ";
@@ -191,15 +170,15 @@ namespace QDP
 	QDPIO::cout << "unknown, \n";
       }
 
-    if (e.flags & QDPCache::Flags::JitParam)
+    if (e.location == Location::literal)
       {
 	QDPIO::cout << "value = ";
 	switch(e.param_type) {
-	case JitParamType::float_: QDPIO::cout << (float)e.param.float_ << ", "; break;
-	case JitParamType::double_: QDPIO::cout << (double)e.param.double_ << ", "; break;
-	case JitParamType::int_: QDPIO::cout << (int)e.param.int_ << ", "; break;
-	case JitParamType::int64_: QDPIO::cout << (int64_t)e.param.int64_ << ", "; break;
-	case JitParamType::bool_:
+	case LiteralType::float_: QDPIO::cout << (float)e.param.float_ << ", "; break;
+	case LiteralType::double_: QDPIO::cout << (double)e.param.double_ << ", "; break;
+	case LiteralType::int_: QDPIO::cout << (int)e.param.int_ << ", "; break;
+	case LiteralType::int64_: QDPIO::cout << (int64_t)e.param.int64_ << ", "; break;
+	case LiteralType::bool_:
 	  if (e.param.bool_)
 	    QDPIO::cout << "true, ";
 	  else
@@ -226,48 +205,52 @@ namespace QDP
   void QDPCache::growStack()
   {
     const int portion = 1024;
+    QDPIO::cout << "growing stack to " << vecEntry.size() + portion << "\n";
     vecEntry.resize( vecEntry.size() + portion );
     for ( int i = 0 ; i < portion ; i++ ) {
       stackFree.push( vecEntry.size()-i-1 );
     }
   }
 
-  int QDPCache::registrateOwnHostMemStatus( size_t size, const void* ptr , Status st )
+  int QDPCache::addOwnHostMemStatus( size_t size, const void* ptr , Status st )
   {
     if (size)
-      return add( size , Flags::OwnHostMemory , st , ptr , NULL , NULL );
+      return add_pool( size , Flags::OwnHostMemory , st , ptr , NULL , NULL );
     else
       return -1;    
   }
 
-  int QDPCache::registrateOwnHostMemNoPage( size_t size, const void *ptr )
+  int QDPCache::addOwnHostMemNoPage( size_t size, const void *ptr )
   {
     if (size)
-      return add( size , Flags::OwnHostMemory | Flags::NoPage , Status::host , ptr , NULL , NULL );
+      return add_pool( size , Flags::OwnHostMemory | Flags::NoPage , Status::host , ptr , NULL , NULL );
     else
       return -1;
   }
 
-  int QDPCache::registrateOwnHostMem( size_t size, const void* ptr , QDPCache::LayoutFptr func )
+  int QDPCache::addOwnHostMem( size_t size, const void* ptr )
   {
     if (size)
-      return add( size , Flags::OwnHostMemory , Status::host , ptr , NULL , func );
+      return add_pool( size , Flags::OwnHostMemory , Status::host , ptr , NULL , NULL );
     else
       return -1;
   }
 
-  int QDPCache::registrate( size_t size, unsigned flags, QDPCache::LayoutFptr func )
+
+  int QDPCache::addLayout( size_t size, QDPCache::LayoutFptr func )
   {
     if (size)
-      return add( size , Flags::Empty , Status::undef , NULL , NULL , func );
+      return add_pool( size , Flags::Empty , Status::undef , NULL , NULL , func );
     else
       return -1;
   }
 
-  int QDPCache::registrate_no_layout_conversion( size_t size )
+
+
+  int QDPCache::add( size_t size )
   {
     if (size)
-      return add( size , Flags::Empty , Status::undef , NULL , NULL , NULL );
+      return add_pool( size , Flags::Empty , Status::undef , NULL , NULL , NULL );
     else
       return -1;
   }
@@ -297,11 +280,11 @@ namespace QDP
     Entry& e = vecEntry[ Id ];
     e.Id           = Id;
     e.size         = 0;
-    e.flags        = Flags::JitParam;
+    e.flags        = Flags::Empty;
     e.param.float_ = i;
-    e.param_type   = JitParamType::float_;
-    e.multi.clear();
-    e.iterTrack = lstTracker.insert( lstTracker.end() , Id );
+    e.param_type   = LiteralType::float_;
+    e.iterTrack    = lstTracker.insert( lstTracker.end() , Id );
+    e.location     = Location::literal;
     return Id;
   }
 
@@ -311,11 +294,11 @@ namespace QDP
     Entry& e = vecEntry[ Id ];
     e.Id            = Id;
     e.size         = 0;
-    e.flags         = Flags::JitParam;
+    e.flags         = Flags::Empty;
     e.param.double_ = i;
-    e.param_type   = JitParamType::double_;
-    e.multi.clear();
+    e.param_type   = LiteralType::double_;
     e.iterTrack = lstTracker.insert( lstTracker.end() , Id );
+    e.location     = Location::literal;
     return Id;
   }
 
@@ -325,11 +308,11 @@ namespace QDP
     Entry& e = vecEntry[ Id ];
     e.Id           = Id;
     e.size         = 0;
-    e.flags        = Flags::JitParam;
+    e.flags        = Flags::Empty;
     e.param.int_   = i;
-    e.param_type   = JitParamType::int_;
-    e.multi.clear();
+    e.param_type   = LiteralType::int_;
     e.iterTrack = lstTracker.insert( lstTracker.end() , Id );
+    e.location     = Location::literal;
     return Id;
   }
 
@@ -339,11 +322,11 @@ namespace QDP
     Entry& e = vecEntry[ Id ];
     e.Id            = Id;
     e.size         = 0;
-    e.flags         = Flags::JitParam;
+    e.flags         = Flags::Empty;
     e.param.int64_  = i;
-    e.param_type    = JitParamType::int64_;
-    e.multi.clear();
+    e.param_type    = LiteralType::int64_;
     e.iterTrack = lstTracker.insert( lstTracker.end() , Id );
+    e.location     = Location::literal;
     return Id;
   }
 
@@ -353,35 +336,15 @@ namespace QDP
     Entry& e = vecEntry[ Id ];
     e.Id           = Id;
     e.size         = 0;
-    e.flags        = Flags::JitParam;
+    e.flags        = Flags::Empty;
     e.param.bool_  = i;
-    e.param_type   = JitParamType::bool_;
-    e.multi.clear();
+    e.param_type   = LiteralType::bool_;
     e.iterTrack = lstTracker.insert( lstTracker.end() , Id );
+    e.location     = Location::literal;
     return Id;
   }
 
   
-  int QDPCache::addMulti( const multi1d<int>& ids )
-  {
-    int Id = getNewId();
-    Entry& e = vecEntry[ Id ];
-    e.Id        = Id;
-    e.flags     = Flags::Multi;
-    e.hstPtr    = nullptr;
-    e.devPtr    = nullptr;
-    e.fptr      = nullptr;
-    e.size      = ids.size() * sizeof(void*);
-    
-    e.multi.clear();
-    e.multi.resize(ids.size());
-    for( int i = 0 ; i < ids.size() ; ++i )
-      e.multi[i] = ids[i];
-
-    e.iterTrack = lstTracker.insert( lstTracker.end() , Id );
-
-    return Id;
-  }
 
   namespace QDP_JIT_CACHE
   {
@@ -396,8 +359,8 @@ namespace QDP
       signoff( search->second );
       QDP_JIT_CACHE::map_ptr_id.erase(search);
     } else {
-      QDPIO::cout << "QDP Cache: Ptr (sign off via ptr) not found\n";
-      QDP_error_exit("giving up");
+      QDPIO::cerr << "QDP Cache: Ptr (sign off via ptr) not found\n";
+      QDP_abort(1);
     }
   }
 
@@ -412,10 +375,6 @@ namespace QDP
     get__cache_pool_allocator().print_pool();
   }
 
-  void QDPCache::defrag()
-  {
-    get__cache_pool_allocator().defrag();
-  }
 
   size_t QDPCache::get_max_allocated()
   {
@@ -434,51 +393,23 @@ namespace QDP
     int Id = getNewId();
     Entry& e = vecEntry[ Id ];
 
-    if ( qdp_jit_config_defrag() )
-      {
-	bool allocated = get__cache_pool_allocator().allocate_fixed( ptr , n_bytes , Id );
-	
-	while (!allocated)
-	  {
-	    bool defrag = false;
-	    
-	    if (!spill_lru())
-	      {
-		get__cache_pool_allocator().defrag();
-
-		defrag = true;
-	      }
-
-	    allocated = get__cache_pool_allocator().allocate_fixed( ptr , n_bytes , Id );
-	    
-	    if ( !allocated && defrag )
-	      {
-		QDPIO::cout << "Can't allocate static memory even after pool defragmentation." << std::endl;
-		QDP_abort(1);
-	      }
-	  }
-      }
-    else
-      {
-	//while (!get__cache_pool_allocator().allocate( ptr , n_bytes , Id ))
-	while (!gpu_allocate_base( ptr , n_bytes , Id ))
-	  {
-	    if (!spill_lru())
-	      {
-		QDP_error_exit("cache allocate_device_static: can't spill LRU object");
-	      }
-	  }
-      }
-    
-
     e.Id        = Id;
     e.size      = n_bytes;
-    e.flags     = Flags::Static;
-    e.devPtr    = *ptr;
-    e.multi.clear();
-
+    e.flags     = Flags::NoPage;
+    e.devPtr    = nullptr;
+    e.hstPtr    = nullptr;
+    e.location  = Location::pool;
+    e.fptr      = nullptr;
+    
     e.iterTrack = lstTracker.insert( lstTracker.end() , Id );
 
+    allocateDeviceMemory(e);
+
+    e.status    = Status::device;
+
+    // set the pointer
+    *ptr = e.devPtr;
+    
     if (track_ptr)
       {
 	// Sanity: make sure the address is not already stored
@@ -487,13 +418,14 @@ namespace QDP
 	
 	QDP_JIT_CACHE::map_ptr_id.insert( std::make_pair( e.devPtr , Id ) );
       }
-    gpu_prefetch( e.devPtr, e.size);
+
+    //gpu_prefetch( e.devPtr, e.size);
     
     return Id;
   }
 
 
-  int QDPCache::add( size_t size, Flags flags, Status status, const void* hstptr_, const void* devptr_, QDPCache::LayoutFptr func )
+  int QDPCache::add_pool( size_t size, Flags flags, Status status, const void* hstptr_, const void* devptr_, QDPCache::LayoutFptr func )
   {
     void * hstptr = const_cast<void*>(hstptr_);
     void * devptr = const_cast<void*>(devptr_);
@@ -513,8 +445,8 @@ namespace QDP
     e.hstPtr    = hstptr;
     e.devPtr    = devptr;
     e.fptr      = func;
-    e.multi.clear();
     e.status    = status;
+    e.location  = Location::pool;
 
     e.iterTrack = lstTracker.insert( lstTracker.end() , Id );
 
@@ -534,20 +466,8 @@ namespace QDP
     
     lstTracker.erase( e.iterTrack );
 
-    if ( !( e.flags & ( Flags::JitParam | Flags::Static | Flags::Multi ) ) )
-      {
-	freeHostMemory( e );
-      }
-    
-    if ( !( e.flags & ( Flags::JitParam ) ) )
-      {
-	freeDeviceMemory( e );
-      }
-
-    if ( e.flags & ( Flags::Multi ) )
-      {
-	e.multi.clear();
-      }
+    freeHostMemory( e );
+    freeDeviceMemory( e );
     
     stackFree.push( id );
   }
@@ -558,8 +478,7 @@ namespace QDP
   void QDPCache::assureOnHost(int id) {
     assert( vecEntry.size() > id );
     Entry& e = vecEntry[id];
-    assert(e.flags != Flags::JitParam);
-    assert(e.flags != Flags::Static);
+    assert(e.location == Location::pool);
     assureHost( e );
   }
 
@@ -568,8 +487,7 @@ namespace QDP
     assert( vecEntry.size() > id );
     Entry& e = vecEntry[id];
 
-    assert(e.flags != Flags::JitParam);
-    assert(e.flags != Flags::Static);
+    assert(e.location == Location::pool);
 
     assureHost( e );
 
@@ -582,24 +500,19 @@ namespace QDP
 
   void QDPCache::freeHostMemory(Entry& e)
   {
-    if ( e.flags & ( Flags::OwnHostMemory ) )
-      return;
-    
-    if (!e.hstPtr)
-      return;
-
-    assert(e.flags != Flags::JitParam);
-    assert(e.flags != Flags::Static);
-
-    QDP::Allocator::theQDPAllocator::Instance().free( e.hstPtr );
-    e.hstPtr=nullptr;
+    if (e.location == Location::pool)
+      if ( e.hstPtr )
+	if ( ! ( e.flags & Flags::OwnHostMemory ) )
+	  {
+	    QDP::Allocator::theQDPAllocator::Instance().free( e.hstPtr );
+	    e.hstPtr=nullptr;
+	  }
   }
 
 
   
   void QDPCache::allocateHostMemory(Entry& e) {
-    assert(e.flags != Flags::JitParam);
-    assert(e.flags != Flags::Static);
+    assert(e.location == Location::pool);
     
     if ( e.flags & Flags::OwnHostMemory )
       return;
@@ -616,43 +529,46 @@ namespace QDP
   }
 
 
-  void QDPCache::allocateDeviceMemory(Entry& e) {
-    assert(e.flags != Flags::JitParam);
-    assert(e.flags != Flags::Static);
-    
-    if ( e.flags & Flags::OwnDeviceMemory )
+  void QDPCache::allocateDeviceMemory(Entry& e)
+  {
+    if (e.location != Location::pool)
       return;
 
     if (e.devPtr)
       return;
 
-    //while (!get__cache_pool_allocator().allocate( &e.devPtr , e.size , e.Id )) {
-    while (!gpu_allocate_base( &e.devPtr , e.size , e.Id )) {
-      if (!spill_lru()) {
-	QDP_info("Device pool:");
-	//get__cache_pool_allocator().printListPool();
-	//printLockSets();
-	QDP_error_exit("cache assureDevice: can't spill LRU object. Out of GPU memory!");
+#if defined (QDP_ENABLE_MANAGED_MEMORY)
+    if (!gpu_allocate_base( &e.devPtr , e.size , e.Id ))
+      {
+	QDPIO::cerr << "Failed to allocate managed memory. size = " << e.size << std::endl;
+	QDP_abort(1);
       }
-    }
-    gpu_prefetch( e.devPtr, e.size);
+#else
+    while (!gpu_allocate_base( &e.devPtr , e.size , e.Id ))
+      {
+	if (!spill_lru())
+	  {
+	    QDPIO::cerr << "Failed to swap any object to host memory. Could not allocate device GPU memory." << std::endl;
+	    QDP_abort(1);
+	  }
+      }
+#endif
+    //gpu_prefetch( e.devPtr, e.size);
   }
 
 
 
-  void QDPCache::freeDeviceMemory(Entry& e) {
-    //QDPIO::cout << "free size = " << e.size << "\n";
-    assert(e.flags != Flags::JitParam);
-    
-    if ( e.flags & Flags::OwnDeviceMemory )
+  void QDPCache::freeDeviceMemory(Entry& e)
+  {
+    if (e.location != Location::pool)
       return;
 
-    if (!e.devPtr)
+    if (e.devPtr == nullptr)
       return;
 
-    //get__cache_pool_allocator().free( e.devPtr );
+    // This is the same for managed/explicit
     gpu_free_base( e.devPtr , e.size );
-    e.devPtr = NULL;
+    e.devPtr = nullptr;
   }
 
 
@@ -669,55 +585,52 @@ namespace QDP
   
   void QDPCache::assureDevice(Entry& e)
   {
-    if (e.flags & Flags::JitParam)
+    if (e.location != Location::pool)
       return;
-    if (e.flags & Flags::Static)
-      return;
-
+	
     // new
     lstTracker.splice( lstTracker.end(), lstTracker , e.iterTrack );
 
-    //std::cout << "id = " << e.Id << "  flags = " << e.flags << "\n";
-
-    if (e.flags & Flags::Multi)
+    if (e.status == Status::device)
       {
-	allocateDeviceMemory(e);
+	//gpu_prefetch( e.devPtr, e.size);
+	return;
       }
-    else
-      {
-	if (e.status == Status::device){
-    gpu_prefetch( e.devPtr, e.size);
-    return;
-  }
-	  
+
+    allocateDeviceMemory(e);
     
-	allocateDeviceMemory(e);
-
-	if ( e.status == Status::host )
+    if ( e.status == Status::host )
+      {
+	if (qdp_cache_get_cache_verbose())
 	  {
-	    if (qdp_cache_get_cache_verbose())
-	      {
-		if (e.size >= 1024*1024)
-		  QDPIO::cerr << "copy host --> GPU " << e.size/1024/1024 << " MB\n";
-		else
-		  QDPIO::cerr << "copy host --> GPU " << e.size << " bytes\n";
-	      }
-
-	    if (e.fptr) {
-
-	      char * tmp = new char[e.size];
-	      e.fptr(true,tmp,e.hstPtr);
-	      gpu_memcpy_h2d( e.devPtr , tmp , e.size );
-	      delete[] tmp;
-
-	    } else {
-	      gpu_memcpy_h2d( e.devPtr , e.hstPtr , e.size );
-	    }
-
+	    if (e.size >= 1024*1024)
+	      QDPIO::cerr << "copy host --> GPU " << e.size/1024/1024 << " MB\n";
+	    else
+	      QDPIO::cerr << "copy host --> GPU " << e.size << " bytes\n";
 	  }
 
-	e.status = Status::device;
+	if (e.fptr)
+	  {
+#if defined (QDP_ENABLE_MANAGED_MEMORY)
+	    e.fptr( true , e.devPtr , e.hstPtr );
+#else
+	    char * tmp = new char[e.size];
+	    e.fptr(true,tmp,e.hstPtr);
+	    gpu_memcpy_h2d( e.devPtr , tmp , e.size );
+	    delete[] tmp;
+#endif
+	  }
+	else
+	  {
+#if defined (QDP_ENABLE_MANAGED_MEMORY)
+	    gpu_memcpy( e.devPtr , e.hstPtr , e.size );
+#else
+	    gpu_memcpy_h2d( e.devPtr , e.hstPtr , e.size );
+#endif
+	  }
       }
+
+    e.status = Status::device;
   }
 
 
@@ -726,8 +639,7 @@ namespace QDP
 
   void QDPCache::assureHost(Entry& e)
   {
-    assert(e.flags != Flags::JitParam);
-    assert(e.flags != Flags::Static);
+    assert(e.location == Location::pool);
     
     allocateHostMemory(e);
 
@@ -742,14 +654,25 @@ namespace QDP
 	      QDPIO::cerr << "copy host <-- GPU " << e.size << " bytes\n";
 	  }
 	    
-	if (e.fptr) {
-	  char * tmp = new char[e.size];
-	  gpu_memcpy_d2h( tmp , e.devPtr , e.size );
-	  e.fptr(false,e.hstPtr,tmp);
-	  delete[] tmp;
-	} else {
-	  gpu_memcpy_d2h( e.hstPtr , e.devPtr , e.size );
-	}
+	if (e.fptr)
+	  {
+#if defined (QDP_ENABLE_MANAGED_MEMORY)
+	    e.fptr( false , e.hstPtr , e.devPtr );
+#else
+	    char * tmp = new char[e.size];
+	    gpu_memcpy_d2h( tmp , e.devPtr , e.size );
+	    e.fptr(false,e.hstPtr,tmp);
+	    delete[] tmp;
+#endif
+	  }
+	else
+	  {
+#if defined (QDP_ENABLE_MANAGED_MEMORY)
+	    gpu_memcpy( e.hstPtr , e.devPtr , e.size );
+#else
+	    gpu_memcpy_d2h( e.hstPtr , e.devPtr , e.size );
+#endif
+	  }
       }
 
     e.status = Status::host;
@@ -761,7 +684,8 @@ namespace QDP
 
 
 
-  bool QDPCache::spill_lru() {
+  bool QDPCache::spill_lru()
+  {
     if (lstTracker.size() < 1)
       return false;
 
@@ -774,19 +698,25 @@ namespace QDP
       e = &vecEntry[ *it_key ];
 
       found = ( ( e->devPtr != NULL) &&
-		( ! ( e->flags & ( Flags::JitParam | Flags::Static | Flags::Multi | Flags::OwnDeviceMemory | Flags::NoPage ) ) ) );
+		( e->location == Location::pool ) &&
+		( ! ( e->flags & ( Flags::NoPage ) ) ) );
     
       if (!found)
 	it_key++;
     }
 
-    if (found) {
-      //QDPIO::cout << "spill id = " << e->Id << "   size = " << e->size << "\n";
-      assureHost( *e );
-      return true;
-    } else {
-      return false;
-    }
+    if (found)
+      {
+	//QDPIO::cout << "spill id = " << e->Id << "   size = " << e->size << "\n";
+	assureHost( *e );
+	return true;
+      }
+    else
+      {
+	//QDPIO::cout << "nothing found to spill " << std::endl;
+	
+	return false;
+      }
   }
 
 
@@ -806,25 +736,16 @@ namespace QDP
 
   bool QDPCache::isOnDevice(int id)
   {
-    // An id < 0 indicates a NULL pointer
     if (id < 0)
       return true;
     
     assert( vecEntry.size() > id );
     Entry& e = vecEntry[id];
 
-    if (e.flags & QDPCache::JitParam)
+    if (e.location != Location::pool)
       return true;
 
-    if (e.flags & QDPCache::Static)
-      return true;
-
-    if (e.flags & QDPCache::Multi)
-      {
-	return e.devPtr != NULL;
-      }
-
-    return ( e.status == QDPCache::Status::device );
+    return e.status == QDPCache::Status::device;
   }
 
 
@@ -905,11 +826,12 @@ namespace QDP
 	    QDPIO::cerr << "get_kernel_args: Size less than 2\n";
 	    QDP_abort(1);
 	  }
+	
 	Entry& e0 = vecEntry[ ids[0] ];
 	Entry& e1 = vecEntry[ ids[1] ];
 
-	if ( ( e0.param_type != JitParamType::int_ ) ||
-	     ( e1.param_type != JitParamType::int_ ) )
+	if ( ( e0.param_type != LiteralType::int_ ) ||
+	     ( e1.param_type != LiteralType::int_ ) )
 	  {
 	    QDPIO::cerr << "get_kernel_args: For AMD expected for two parameters being integers\n";
 	    QDP_abort(1);
@@ -922,43 +844,19 @@ namespace QDP
     // 2) check all are cached
     // This should replace the old 'lock set'
 
-    //QDPIO::cout << "ids: ";
-    std::vector<int> allids;
     for ( auto i : ids )
       {
-	allids.push_back(i);
-	if (i >= 0)
-	  {
-	    //QDPIO::cout << i << " ";
-	    assert( vecEntry.size() > i );
-	    Entry& e = vecEntry[i];
-	    if (e.flags & QDPCache::Flags::Multi)
-	      {
-		for ( auto ak : e.multi )
-		  {
-		    allids.push_back( ak );
-		  }
-	      }
-	  }
-      }
-    //QDPIO::cout << "\n";
-
-    //QDPIO::cout << "assureDevice:\n";
-    for ( auto i : allids )
-      {
-	//QDPIO::cout << "id = " << i.id << ", elem = " << i.elem << "\n";
 	assureDevice(i);
       }
-    //QDPIO::cout << "done\n";
     
     bool all = true;
-    for ( auto i : allids )
+    for ( auto i : ids )
       {
 	all = all && isOnDevice(i);
       }
     
     if (!all) {
-      QDPIO::cout << "It was not possible to load all objects required by the kernel into device memory\n";
+      QDPIO::cerr << "kernel: Failed to cache all objects into device memory\n";
       for ( auto i : ids )
 	{
 	  if (i >= 0)
@@ -978,56 +876,17 @@ namespace QDP
 		  QDPIO::cout << "device,";
 		  break;
 		default:
-		  QDPIO::cout << "unkown\n";
+		  QDPIO::cout << "unknown";
 		}
+	      QDPIO::cout << std::endl;
 	    }
 	  else
 	    {
 	      QDPIO::cout << "id = " << i << "\n";
 	    }
 	}
-      QDP_error_exit("giving up");
+      QDP_abort(1);
     }
-
-
-    // Handle multi-ids
-    for ( auto i : ids )
-      {
-	if (i >= 0)
-	  {
-	    Entry& e = vecEntry[i];
-	    if (e.flags & QDPCache::Flags::Multi)
-	      {
-		assert( isOnDevice(i) );
-		multi1d<void*> dev_ptr(e.multi.size());
-
-		int count=0;
-		for( auto ak : e.multi )  // q == id
-		  {
-		    if ( ak >= 0 )
-		      {
-			assert( vecEntry.size() > ak );
-			Entry& qe = vecEntry[ ak ];
-			assert( ! (qe.flags & QDPCache::Flags::Multi) );
-			assert( isOnDevice( ak ) );
-			dev_ptr[count++] = qe.devPtr;
-		      }
-		    else
-		      {
-			dev_ptr[count++] = NULL;
-		      }
-		  }
-		
-		if (qdp_cache_get_cache_verbose())
-		  {
-		    QDPIO::cerr << "copy host --> GPU " << e.multi.size() * sizeof(void*) << " bytes (kernel args, multi)\n";
-		  }
-		
-		gpu_memcpy_h2d( e.devPtr , dev_ptr.slice() , e.multi.size() * sizeof(void*) );
-		//QDPIO::cout << "multi-ids: copied elements = " << e.multi.size() << "\n";
-	      }
-	  }
-      }
 
     
     const bool print_param = false;
@@ -1043,16 +902,16 @@ namespace QDP
 	if (i >= 0)
 	  {
 	    Entry& e = vecEntry[i];
-	    if (e.flags & QDPCache::Flags::JitParam)
+	    if (e.location == Location::literal)
 	      {
 		if (print_param)
 		  {
 		    switch(e.param_type) {
-		    case JitParamType::float_: QDPIO::cout << (float)e.param.float_ << ", "; break;
-		    case JitParamType::double_: QDPIO::cout << (double)e.param.double_ << ", "; break;
-		    case JitParamType::int_: QDPIO::cout << (int)e.param.int_ << ", "; break;
-		    case JitParamType::int64_: QDPIO::cout << (int64_t)e.param.int64_ << ", "; break;
-		    case JitParamType::bool_:
+		    case LiteralType::float_: QDPIO::cout << (float)e.param.float_ << ", "; break;
+		    case LiteralType::double_: QDPIO::cout << (double)e.param.double_ << ", "; break;
+		    case LiteralType::int_: QDPIO::cout << (int)e.param.int_ << ", "; break;
+		    case LiteralType::int64_: QDPIO::cout << (int64_t)e.param.int64_ << ", "; break;
+		    case LiteralType::bool_:
 		      if (e.param.bool_)
 			QDPIO::cout << "true, ";
 		      else
@@ -1068,11 +927,11 @@ namespace QDP
 #if defined (QDP_BACKEND_ROCM)
 		switch(e.param_type)
 		  {
-		  case JitParamType::float_ : insert_ret<float>  (ret, e.param.float_ ); break;
-		  case JitParamType::double_: insert_ret<double> (ret, e.param.double_ ); break;
-		  case JitParamType::int_   : insert_ret<int>    (ret, e.param.int_ );break;
-		  case JitParamType::int64_ : insert_ret<int64_t>(ret, e.param.int64_ ); break;
-		  case JitParamType::bool_  : insert_ret<bool>   (ret, e.param.bool_ ); ;break;
+		  case LiteralType::float_ : insert_ret<float>  (ret, e.param.float_ ); break;
+		  case LiteralType::double_: insert_ret<double> (ret, e.param.double_ ); break;
+		  case LiteralType::int_   : insert_ret<int>    (ret, e.param.int_ );break;
+		  case LiteralType::int64_ : insert_ret<int64_t>(ret, e.param.int64_ ); break;
+		  case LiteralType::bool_  : insert_ret<bool>   (ret, e.param.bool_ ); ;break;
 		  }
 #elif defined (QDP_BACKEND_CUDA)
 		ret.push_back( &e.param );
@@ -1080,21 +939,21 @@ namespace QDP
 		ArgTypes at;
 		switch(e.param_type)
 		  {
-		  case JitParamType::float_ : at.f32 = e.param.float_; break;
-		  case JitParamType::double_: at.f64 = e.param.double_; break;
-		  case JitParamType::int_   : at.i32 = e.param.int_; break;
-		  case JitParamType::int64_ : at.i64 = e.param.int64_; break;
-		  case JitParamType::bool_  : at.i1  = e.param.bool_; ;break;
+		  case LiteralType::float_ : at.f32 = e.param.float_; break;
+		  case LiteralType::double_: at.f64 = e.param.double_; break;
+		  case LiteralType::int_   : at.i32 = e.param.int_; break;
+		  case LiteralType::int64_ : at.i64 = e.param.int64_; break;
+		  case LiteralType::bool_  : at.i1  = e.param.bool_; ;break;
 		  }
 		ret.push_back( at );
 #elif defined (QDP_BACKEND_L0)
 		switch(e.param_type)
 		  {
-		  case JitParamType::float_ : insert_l0<float>  (ret, &e.param.float_ ); break;
-		  case JitParamType::double_: insert_l0<double> (ret, &e.param.double_ ); break;
-		  case JitParamType::int_   : insert_l0<int>    (ret, &e.param.int_ );break;
-		  case JitParamType::int64_ : insert_l0<int64_t>(ret, &e.param.int64_ ); break;
-		  case JitParamType::bool_  : insert_l0<bool>   (ret, &e.param.bool_ ); ;break;
+		  case LiteralType::float_ : insert_l0<float>  (ret, &e.param.float_ ); break;
+		  case LiteralType::double_: insert_l0<double> (ret, &e.param.double_ ); break;
+		  case LiteralType::int_   : insert_l0<int>    (ret, &e.param.int_ );break;
+		  case LiteralType::int64_ : insert_l0<int64_t>(ret, &e.param.int64_ ); break;
+		  case LiteralType::bool_  : insert_l0<bool>   (ret, &e.param.bool_ ); ;break;
 		  }
 #else
 #error "No backend specified"
@@ -1154,7 +1013,7 @@ namespace QDP
   }
 
 
-  std::vector<void*> QDPCache::get_dev_ptrs( const std::vector<int>& ids )
+  multi1d<void*> QDPCache::get_dev_ptrs( const multi1d<int>& ids )
   {
     // Here we do two cycles through the ids:
     // 1) cache all objects
@@ -1163,111 +1022,50 @@ namespace QDP
 
     //QDPIO::cout << "ids: ";
     std::vector<int> allids;
-    for ( auto i : ids )
+    for ( int k = 0 ; k < ids.size() ; ++k )
       {
-	allids.push_back(i);
-	if (i >= 0)
-	  {
-	    //QDPIO::cout << i << " ";
-	    assert( vecEntry.size() > i );
-	    Entry& e = vecEntry[i];
-	    if (e.flags & QDPCache::Flags::Multi)
-	      {
-		for ( auto ak : e.multi )
-		  {
-		    allids.push_back( ak );
-		  }
-	      }
-	  }
+	allids.push_back( ids[k] );
       }
     //QDPIO::cout << "\n";
 
     int run = 0;
-    bool all;
-      
-    do
+
+    for ( auto i : allids )
       {
-	// This never happens
-	// Can't defrag from pool's side as recv buffers are
-	// allocated as device static.
-	if (run == 1)
-	  {
-	    get__cache_pool_allocator().defrag();
-	  }
-	
-	//QDPIO::cout << "assureDevice:\n";
-	for ( auto i : allids ) {
-	  //QDPIO::cout << "id = " << i << "\n";
-	  assureDevice(i);
-	}
-	//QDPIO::cout << "done\n";
-    
-	all = true;
-	for ( auto i : allids )
-	  all = all && isOnDevice(i);
-	run++;
+	//QDPIO::cout << "id = " << i.id << ", elem = " << i.elem << "\n";
+	assureDevice(i);
       }
-    while ( (run < 1) && (!all) );
+    //QDPIO::cout << "done\n";
     
-    if (!all) {
-      QDPIO::cerr << "It was not possible to load all objects required by the kernel into device memory\n";
-      QDP_abort(1);
-    }
-
-
-    // Handle multi-ids
-    for ( auto i : ids )
+    bool all = true;
+    for ( auto i : allids )
       {
+	all = all && isOnDevice(i);
+      }
+    
+    if (!all)
+      {
+	QDPIO::cerr << "Failed to cache all objects into device memory\n";
+	QDP_abort(1);
+      }
+
+    
+    multi1d<void*> ret(ids.size());
+    for ( int k = 0 ; k < ids.size() ; ++k )
+      {
+	int i = ids[k];
+
 	if (i >= 0)
 	  {
 	    Entry& e = vecEntry[i];
-	    if (e.flags & QDPCache::Flags::Multi)
-	      {
-		assert( isOnDevice(i) );
-		multi1d<void*> dev_ptr(e.multi.size());
-
-		int count=0;
-		for( auto ak : e.multi )  // q == id
-		  {
-		    if ( ak >= 0 )
-		      {
-			assert( vecEntry.size() > ak );
-			Entry& qe = vecEntry[ ak ];
-			assert( ! (qe.flags & QDPCache::Flags::Multi) );
-			assert( isOnDevice( ak ) );
-			dev_ptr[count++] = qe.devPtr;
-		      }
-		    else
-		      {
-			dev_ptr[count++] = NULL;
-		      }
-		  }
-		
-		if (qdp_cache_get_cache_verbose())
-		  {
-		    QDPIO::cerr << "copy host --> GPU " << e.multi.size() * sizeof(void*) << " bytes (kernel args, multi)\n";
-		  }
-		
-		gpu_memcpy_h2d( e.devPtr , dev_ptr.slice() , e.multi.size() * sizeof(void*) );
-		//QDPIO::cout << "multi-ids: copied elements = " << e.multi.size() << "\n";
-	      }
-	  }
-      }
-
-    std::vector<void*> ret;
-    for ( auto i : ids )
-      {
-	if (i >= 0)
-	  {
-	    Entry& e = vecEntry[i];
-	    if (e.flags & QDPCache::Flags::JitParam)
+	    if (e.location == Location::literal)
 	      {
 		QDPIO::cerr << __func__ << ": shouldnt be here\n";
 		QDP_abort(1);
 	      }
 	    else
 	      {
-		ret.push_back( e.devPtr );
+		ret[k] = e.devPtr;
 	      }
 	  }
 	else
@@ -1280,6 +1078,14 @@ namespace QDP
     return ret;
   }
 
+
+  void* QDPCache::get_dev_ptr( int id )
+  {
+    multi1d<int> ids(1);
+    ids[0] = id;
+    multi1d<void*> tmp = get_dev_ptrs( ids );
+    return tmp[0];
+  }
 
 
 
@@ -1306,6 +1112,3 @@ namespace QDP
 
 
 } // QDP
-
-
-

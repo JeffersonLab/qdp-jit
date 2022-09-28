@@ -569,7 +569,7 @@ struct LeafFunctor<QDPType<T,OScalar<T> >, AddressLeaf>
   inline static
   Type_t apply(const QDPType<T,OScalar<T> >& s, const AddressLeaf& p) 
   {
-    int id = jit_util_ringBuffer_allocate( sizeof(T) , s.getF() );
+    int id = QDP_get_global_ring_buffer().allocate( sizeof(T) , s.getF() );
     p.setId( id );
     return 0;
   }

@@ -38,13 +38,19 @@ namespace QDP {
   void gpu_host_alloc(void **mem , const size_t size);
   void gpu_host_free(void *mem);
 
+
+#if defined (QDP_ENABLE_MANAGED_MEMORY)
+  void gpu_memcpy( void * dest , const void * src , size_t size );
+  bool gpu_malloc_managed( void **mem , size_t size );
+  //void gpu_prefetch(void *mem,   size_t  size);
+#endif
+
   void gpu_memcpy_h2d( void * dest , const void * src , size_t size );
   void gpu_memcpy_d2h( void * dest , const void * src , size_t size );
-
-  bool gpu_malloc( void **mem , const size_t size );
+  
+  bool gpu_malloc( void **mem , size_t size );
   void gpu_free( const void *mem );
-  void gpu_prefetch(void *mem,   size_t  size);
-
+  
   void gpu_memset( void * dest , unsigned char val , size_t N );
 
   JitResult gpu_launch_kernel( JitFunction& f, 

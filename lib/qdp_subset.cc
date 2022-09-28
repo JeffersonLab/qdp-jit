@@ -234,8 +234,8 @@ namespace QDP
 
     for(int cb=0; cb < nsubset_indices; ++cb)
       {
-	idSiteTable[cb]   = sitetables[cb].size()   > 0 ? QDP_get_global_cache().registrateOwnHostMem( sitetables[cb].size()   * sizeof(int)  , sitetables[cb].slice()   , NULL ) : -1 ;
-	idMemberTable[cb] = membertables[cb].size() > 0 ? QDP_get_global_cache().registrateOwnHostMem( membertables[cb].size() * sizeof(bool) , membertables[cb].slice() , NULL ) : -1 ;
+	idSiteTable[cb]   = sitetables[cb].size()   > 0 ? QDP_get_global_cache().addOwnHostMemNoPage( sitetables[cb].size()   * sizeof(int)  , sitetables[cb].slice()   ) : -1 ;
+	idMemberTable[cb] = membertables[cb].size() > 0 ? QDP_get_global_cache().addOwnHostMemNoPage( membertables[cb].size() * sizeof(bool) , membertables[cb].slice() ) : -1 ;
 
 	sub[cb].make( s[cb].ordRep, s[cb].startSite, s[cb].endSite,
 		      &sitetables[cb], &idSiteTable[cb],

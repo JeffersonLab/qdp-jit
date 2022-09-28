@@ -20,21 +20,29 @@ namespace QDP {
     int db_tune_count = 0;
   }
 
-  namespace
+
+
+  namespace {
+    RingBuffer* __global_ring_buffer;
+  }
+
+  RingBuffer& QDP_get_global_ring_buffer()
   {
-    std::vector<int> ringBufferOScalar;
-    int ringBufferNext;
+    if (!__global_ring_buffer) {
+      __global_ring_buffer = new RingBuffer();
+    }
+    return *__global_ring_buffer;
   }
 
 
-  void jit_util_ringBuffer_init()
+  RingBuffer::RingBuffer()
   {
     ringBufferOScalar.resize( jit_config_get_oscalar_ringbuffer_size() , -1 );
     ringBufferNext = 0;
   }
   
 
-  int jit_util_ringBuffer_allocate( size_t size , const void *hstPtr )
+  int RingBuffer::allocate( size_t size , const void *hstPtr )
   {
     int& buf_elem = ringBufferOScalar.at( ringBufferNext );
 
@@ -44,7 +52,7 @@ namespace QDP {
       	QDP_get_global_cache().signoff( buf_elem );
       }
     
-    buf_elem = QDP_get_global_cache().registrateOwnHostMemNoPage( size, hstPtr );
+    buf_elem = QDP_get_global_cache().addOwnHostMemNoPage( size, hstPtr );
     //QDPIO::cout << "ringBuffer: allocated " << buf_elem << " (" << size << ")" << std::endl;
 
     ringBufferNext = ( ringBufferNext + 1 ) % ringBufferOScalar.size();
@@ -52,6 +60,17 @@ namespace QDP {
 
     return buf_elem;
   }
+
+  
+  void RingBuffer::done()
+  {
+    for( auto i : ringBufferOScalar )
+      {
+	if (i >=0 )
+	  QDP_get_global_cache().signoff( i );
+      }
+  }
+
   
 
   int jit_util_get_tune_count()
@@ -235,10 +254,7 @@ namespace QDP {
 
     size_t field_size      = QDP_get_global_cache().getSize       ( function.get_dest_id() );
 
-    std::vector<QDPCache::ArgKey> vec_id;
-    vec_id.push_back( function.get_dest_id() );
-    std::vector<void*> vec_ptrs = QDP_get_global_cache().get_dev_ptrs( vec_id );
-    void* dev_ptr = vec_ptrs.at(0);
+    void* dev_ptr = QDP_get_global_cache().get_dev_ptr( function.get_dest_id() );
   
     void* host_ptr;
 

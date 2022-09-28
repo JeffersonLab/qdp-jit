@@ -91,7 +91,7 @@ public:
 
   void alloc_mem() {
     if (s->numSiteTable() > 0)
-      myId = QDP_get_global_cache().registrate_no_layout_conversion( sizeof(T) * s->numSiteTable() ); 
+      myId = QDP_get_global_cache().add( sizeof(T) * s->numSiteTable() ); 
   }
 
   ~OSubLattice() {

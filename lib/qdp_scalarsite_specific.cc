@@ -195,8 +195,8 @@ void Set::make(const SetFunc& fun)
     }
 
 
-    idSiteTable[cb]   = sitetable.size()   > 0 ? QDP_get_global_cache().registrateOwnHostMem( sitetable.size()   * sizeof(int)  , sitetable.slice() , NULL ) : -1 ;
-    idMemberTable[cb] = membertable.size() > 0 ? QDP_get_global_cache().registrateOwnHostMem( membertable.size() * sizeof(bool) , membertable.slice() , NULL ) : -1 ;
+    idSiteTable[cb]   = sitetable.size()   > 0 ? QDP_get_global_cache().addOwnHostMemNoPage( sitetable.size()   * sizeof(int)  , sitetable.slice() ) : -1 ;
+    idMemberTable[cb] = membertable.size() > 0 ? QDP_get_global_cache().addOwnHostMemNoPage( membertable.size() * sizeof(bool) , membertable.slice() ) : -1 ;
 
 
     sub[cb].make(ordRep, start, end, &sitetables[cb], &idSiteTable[cb], cb, this, &membertables[cb], &idMemberTable[cb] , -1 ); // -1 for the masterset id which is still unknown

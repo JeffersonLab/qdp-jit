@@ -415,9 +415,9 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
     {
       OScalar< typename ScalarType<T>::Type_t > ret;
 
-      std::vector<void*> ptrs = QDP_get_global_cache().get_dev_ptrs( { this->getId() } );
+      void* ptr = QDP_get_global_cache().get_dev_ptr( this->getId() );
 
-      typename WordType<T>::Type_t * in_data  = (typename WordType<T>::Type_t *)ptrs.at(0);
+      typename WordType<T>::Type_t * in_data  = (typename WordType<T>::Type_t *)ptr;
       typename WordType<T>::Type_t * out_data = (typename WordType<T>::Type_t *)ret.getF();
       
       size_t lim_rea = GetLimit<T,2>::Limit_v; //T::ThisSize;
@@ -490,7 +490,7 @@ void evaluate(OScalar<T>& dest, const Op& op, const QDPExpr<RHS,OScalar<T1> >& r
 
     inline void alloc_mem(const char* msg) const
     {
-      myId = QDP_get_global_cache().registrate( Layout::sitesOnNode() * sizeof(T) , 1 , &changeLayout );
+      myId = QDP_get_global_cache().addLayout( Layout::sitesOnNode() * sizeof(T) , &changeLayout );
       mem = true;
     }
 
@@ -675,7 +675,7 @@ struct LeafFunctor<OScalar<T>, AddressLeaf>
   inline static
   Type_t apply(const OScalar<T>& s, const AddressLeaf& p)
   {
-    int id = jit_util_ringBuffer_allocate( sizeof(T) , s.getF() );
+    int id = QDP_get_global_ring_buffer().allocate( sizeof(T) , s.getF() );
     p.setId( id );
     return 0;
   }
