@@ -856,7 +856,7 @@ namespace QDP
       }
     
     if (!all) {
-      QDPIO::cerr << "kernel: Failed to cache all objects into device memory\n";
+      QDPIO::cerr << "qdp-jit cache: Failed to provide all fields into device memory\n";
       for ( auto i : ids )
 	{
 	  if (i >= 0)
@@ -1020,35 +1020,25 @@ namespace QDP
     // 2) check all are cached
     // This should replace the old 'lock set'
 
-    //QDPIO::cout << "ids: ";
-    std::vector<int> allids;
-    for ( int k = 0 ; k < ids.size() ; ++k )
-      {
-	allids.push_back( ids[k] );
-      }
-    //QDPIO::cout << "\n";
+    int num = ids.size();
 
-    int run = 0;
-
-    for ( auto i : allids )
+    for ( int i = 0 ; i < num ; ++i )
       {
-	//QDPIO::cout << "id = " << i.id << ", elem = " << i.elem << "\n";
-	assureDevice(i);
+	assureDevice(ids[i]);
       }
     //QDPIO::cout << "done\n";
     
     bool all = true;
-    for ( auto i : allids )
+    for ( int i = 0 ; i < num ; ++i )
       {
-	all = all && isOnDevice(i);
+	all = all && isOnDevice(ids[i]);
       }
     
     if (!all)
       {
-	QDPIO::cerr << "Failed to cache all objects into device memory\n";
+	QDPIO::cerr << "qdp-jit cache: Failed to provide all objects in device memory\n";
 	QDP_abort(1);
       }
-
     
     multi1d<void*> ret(ids.size());
     for ( int k = 0 ; k < ids.size() ; ++k )
@@ -1070,8 +1060,7 @@ namespace QDP
 	  }
 	else
 	  {
-	    QDPIO::cerr << __func__ << ": shouldnt be here neither\n";
-	    QDP_abort(1);
+	    ret[k] = NULL;
 	  }
       }
 

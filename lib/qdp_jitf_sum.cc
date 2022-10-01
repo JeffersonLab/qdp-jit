@@ -52,8 +52,7 @@ namespace QDP {
     int sizes_id = QDP_get_global_cache().addOwnHostMem( sizes.size()*sizeof(int) , sizes.slice() );
 
     JitParam jit_numsubsets( QDP_get_global_cache().addJitParamInt( numsubsets ) );
-    
-    //JitParam jit_tables(     QDP_get_global_cache().addMulti(       table_ids  ) );
+
     DeviceMulti jit_tables( table_ids );
     
     std::vector<QDPCache::ArgKey> ids;
@@ -66,6 +65,9 @@ namespace QDP {
     jit_launch_explicit_geom( function , ids , getGeom( size , threads ) , gpu_getMaxSMem() );
 
     QDP_get_global_cache().signoff(sizes_id);
+
+    // Probably need the sync here because DeviceMulti destructor signs off the sitetables (subject to be overwritten later)
+    gpu_sync();
   }
 
 
