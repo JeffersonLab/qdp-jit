@@ -129,14 +129,11 @@ target_include_directories( qdp PUBLIC
 target_link_libraries( qdp PUBLIC ${GPU_LIBS} )
 
 set_target_properties( qdp PROPERTIES 
+	CXX_STANDARD 20
 	CXX_EXTENSIONS OFF
 	PROPERTIES C_STANDARD 99 
 	PROPERTIES CXX_EXTENSIONS OFF
 )
-
-if(QDP_PROP_OPT)
-  set_target_properties( qdp PROPERTIES CXX_STANDARD 20 )
-endif()
 
 
 # Link QIO from subtree
