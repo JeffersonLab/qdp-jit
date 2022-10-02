@@ -159,6 +159,9 @@ namespace QDP
     }
 #endif
 #endif
+
+    
+    QDPIO::cout << "Base precision                        : " << (int)BASE_PRECISION << "\n";
     
     QDPIO::cout << "Accurate timing                       : " << (int)jit_config_get_timing_run() << "\n";
 
