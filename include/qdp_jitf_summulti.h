@@ -5,14 +5,53 @@
 namespace QDP {
 
 
-  void
-  function_summulti_convert_ind_exec( JitFunction& function, 
-				      int size, int threads, int blocks, 
-				      int in_id, int out_id,
-				      int numsubsets,
-				      const multi1d<int>& sizes,
-				      const multi1d<QDPCache::ArgKey>& table_ids );
 
+  template<class T1 , class RHS >
+  void function_summulti_convert_ind_expr_exec( JitFunction& function, 
+						int size, int threads, int blocks, 
+						const QDPExpr<RHS,OLattice<T1> >& rhs, int out_id,
+						int numsubsets,
+						const multi1d<int>& sizes,
+						const multi1d<QDPCache::ArgKey>& table_ids )
+  {
+    // Make sure 'threads' is a power of two (the jit kernel make this assumption)
+    if ( (threads & (threads - 1)) != 0 )
+      {
+	QDPIO::cerr << "internal error: function_summulti_convert_ind_exec not power of 2\n";
+	QDP_abort(1);
+      }
+
+    int sizes_id = QDP_get_global_cache().addOwnHostMem( sizes.size()*sizeof(int) , sizes.slice() );
+
+    JitParam jit_numsubsets( QDP_get_global_cache().addJitParamInt( numsubsets ) );
+
+    DeviceMulti jit_tables( table_ids );
+    
+    AddressLeaf addr_leaf(all);
+    forEach(rhs, addr_leaf, NullCombine());
+
+    std::vector<QDPCache::ArgKey> ids;
+    ids.push_back( jit_numsubsets.get_id() );
+    ids.push_back( sizes_id );
+    ids.push_back( jit_tables.get_id() );
+    //ids.push_back( in_id );
+    for(unsigned i=0; i < addr_leaf.ids.size(); ++i)
+      {
+     	ids.push_back( addr_leaf.ids[i] );
+      }
+    ids.push_back( out_id );
+
+    jit_launch_explicit_geom( function , ids , getGeom( size , threads ) , gpu_getMaxSMem() );
+
+    QDP_get_global_cache().signoff(sizes_id);
+
+    // Probably need the sync here because DeviceMulti destructor signs off the sitetables (subject to be overwritten later)
+    gpu_sync();
+  }
+
+
+
+  
   void
   function_summulti_exec( JitFunction& function, 
 			  int size, int threads, int blocks, 
@@ -24,9 +63,9 @@ namespace QDP {
   
   // T1 input
   // T2 output
-  template< class T1 , class T2 , JitDeviceLayout input_layout >
+  template< class RHS, class T1 , class T2 , JitDeviceLayout input_layout >
   void
-  function_summulti_convert_ind_build(JitFunction& function)
+  function_summulti_convert_ind_expr_build(JitFunction& function , const QDPExpr<RHS,OLattice<T1> >& rhs )
   {
     llvm_start_new_function("summulti_convert_ind",__PRETTY_FUNCTION__ );
 
@@ -36,16 +75,21 @@ namespace QDP {
     ParamRef p_numsubset  = llvm_add_param< int  >();   // number of subsets
     ParamRef p_sizes      = llvm_add_param< int* >();   // size (per subset)
     ParamRef p_sitetables = llvm_add_param< int** >();  // sitetable (per subset)
-    ParamRef p_idata      = llvm_add_param< T1WT* >();  // Input  array
+    //ParamRef p_idata      = llvm_add_param< T1WT* >();  // Input  array
+
+    ParamLeaf param_leaf;
+    typedef typename ForEach<QDPExpr<RHS,OLattice<T1> >, ParamLeaf, TreeCombine>::Type_t View_t;
+    View_t rhs_view(forEach(rhs, param_leaf, TreeCombine()));
+
     ParamRef p_odata      = llvm_add_param< T2WT* >();  // output array
 
     
-    OLatticeJIT<typename JITType< typename ScalarType<T1>::Type_t >::Type_t > idata(  p_idata );   // want coal   access later
+    //OLatticeJIT<typename JITType< typename ScalarType<T1>::Type_t >::Type_t > idata(  p_idata );   // want coal   access later
     OLatticeJIT<typename JITType<                     T2>::Type_t           > odata(  p_odata );   // want scalar access later
 
     llvm::Value* r_subsetnum = llvm_derefParam( p_numsubset );
 
-    llvm_derefParam( p_idata );  // Input  array
+    //llvm_derefParam( p_idata );  // Input  array
     llvm_derefParam( p_odata );  // output array
 
     llvm::Value* r_shared = llvm_get_shared_ptr( llvm_get_type<T2WT>() , gpu_getMaxSMem() / sizeof(T2WT) );
@@ -78,10 +122,14 @@ namespace QDP {
 	llvm::Value* r_sitetable = llvm_array_type_indirection( p_sitetables , loop_subset.index() );
 	llvm::Value* r_idx_perm  = llvm_array_type_indirection( r_sitetable , r_idx );
 
-	typename REGType< typename JITType< typename ScalarType<T1>::Type_t >::Type_t >::Type_t reg_idata_elem;
-	reg_idata_elem.setup( idata.elem( input_layout , r_idx_perm ) );
+	//typename REGType< typename JITType< typename ScalarType<T1>::Type_t >::Type_t >::Type_t reg_idata_elem;
+	//reg_idata_elem.setup( idata.elem( input_layout , r_idx_perm ) );
 
-	sdata_jit = reg_idata_elem; // This should do the precision conversion (SP->DP)
+	//sdata_jit = reg_idata_elem; // This should do the precision conversion (SP->DP)
+
+	OpAssign()( sdata_jit , 
+		    forEach(rhs_view, ViewLeaf( input_layout , r_idx_perm ), OpCombine()));
+
       }
       ifInRange.end();
 

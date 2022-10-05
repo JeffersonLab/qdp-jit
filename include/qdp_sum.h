@@ -39,15 +39,15 @@ namespace QDP {
 
   // T1 input
   // T2 output
-  template < class T1 , class T2 , JitDeviceLayout input_layout >
-  void qdp_jit_summulti_convert_indirection(int size, 
-					    int threads, 
-					    int blocks, 
-					    int in_id, 
-					    int out_id,
-					    int numsubsets,
-					    const multi1d<int>& sizes,
-					    const multi1d<QDPCache::ArgKey>& table_ids)
+  template < class RHS, class T1 , class T2 , JitDeviceLayout input_layout >
+  void qdp_jit_summulti_convert_indirection_expr(int size, 
+						 int threads, 
+						 int blocks, 
+						 const QDPExpr<RHS,OLattice<T1> >& rhs,
+						 int out_id,
+						 int numsubsets,
+						 const multi1d<int>& sizes,
+						 const multi1d<QDPCache::ArgKey>& table_ids)
   {
     static JitFunction function;
 
@@ -55,14 +55,14 @@ namespace QDP {
     assert( table_ids.size() == numsubsets );
 
     if (function.empty())
-      function_summulti_convert_ind_build<T1,T2,input_layout>(function);
+      function_summulti_convert_ind_expr_build<RHS,T1,T2,input_layout>(function,rhs);
 
-    function_summulti_convert_ind_exec(function,
-    				       size, threads, blocks,
-    				       in_id, out_id,
-    				       numsubsets ,
-    				       sizes ,
-    				       table_ids );
+    function_summulti_convert_ind_expr_exec(function,
+					    size, threads, blocks,
+					    rhs, out_id,
+					    numsubsets ,
+					    sizes ,
+					    table_ids );
   }
 
 
@@ -383,14 +383,15 @@ namespace QDP {
       return 1 << count;  
     }
   }
+
   //
   // sumMulti 
   //
-  template<class T1>
+  template<ConceptHasNoShift RHS, class T1>
   typename UnaryReturn<OLattice<T1>, FnSumMulti>::Type_t
-  sumMulti( const OLattice<T1>& s1 , const Set& ss )
+  sumMulti( const QDPExpr<RHS, OLattice<T1> >& rhs, const Set& ss)
   {
-    //QDPIO::cout << "using jit version of sumMulti\n";
+    //QDPIO::cout << "using jit version of sumMulti on expr\n";
     
     typedef typename UnaryReturn<OLattice<T1>, FnSum>::Type_t::SubType_t T2;
 
@@ -467,11 +468,11 @@ namespace QDP {
 
       if (numBlocks == 1) {
 	if (first) {
-	  qdp_jit_summulti_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(maxsize, numThreads, numBlocks,
-										 s1.getId(), d_id,
-										 numsubsets,
-										 sizes,
-										 table_ids);
+	  qdp_jit_summulti_convert_indirection_expr<RHS,T1,T2,JitDeviceLayout::Coalesced>(maxsize, numThreads, numBlocks,
+											  rhs, d_id,
+											  numsubsets,
+											  sizes,
+											  table_ids);
 	}
 	else {
 	  qdp_jit_summulti<T2>(maxsize, numThreads, numBlocks,
@@ -481,11 +482,11 @@ namespace QDP {
 	}
       } else {
 	if (first) {
-	  qdp_jit_summulti_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(maxsize, numThreads, numBlocks,
-										 s1.getId(), out_id,
-										 numsubsets,
-										 sizes,
-										 table_ids);
+	  qdp_jit_summulti_convert_indirection_expr<RHS,T1,T2,JitDeviceLayout::Coalesced>(maxsize, numThreads, numBlocks,
+											  rhs, out_id,
+											  numsubsets,
+											  sizes,
+											  table_ids);
 	}
 	else {
 	  qdp_jit_summulti<T2>(maxsize, numThreads, numBlocks,
@@ -538,6 +539,16 @@ namespace QDP {
     
     return dest;
   }
+
+  template<ConceptHasShift RHS, class T1>
+  typename UnaryReturn< OLattice<T1> , FnSumMulti>::Type_t
+  sumMulti(const QDPExpr<RHS, OLattice<T1> >& rhs, const Set& ss)
+  {
+    OLattice<T1> tmp = rhs;
+    return sumMulti(tmp,ss);
+  }
+
+  
 #elif defined (QDP_BACKEND_AVX)
   template<class T1>
   typename UnaryReturn<OLattice<T1>, FnSumMulti>::Type_t
