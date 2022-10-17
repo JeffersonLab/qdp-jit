@@ -40,7 +40,7 @@ namespace QDP {
 
     CUevent evStart;
     CUevent evStop;
-    CUstream prefetchStream;
+    //CUstream prefetchStream;
 
     int deviceCount;
 
@@ -344,8 +344,12 @@ namespace QDP {
     }
   }
 
+  
+
+  
   void gpu_done() {
   }
+    
   
   std::string gpu_get_arch()
   {
@@ -388,7 +392,7 @@ namespace QDP {
 
     ret = cuCtxGetCurrent(&cuContext);
     
-    if (ret != CUDA_SUCCESS || cuContext == NULL) 
+    if (ret != CUDA_SUCCESS || cuContext == NULL)
     {
       ret = cuCtxCreate(&cuContext, CU_CTX_MAP_HOST, cuDevice);
     }
@@ -397,7 +401,7 @@ namespace QDP {
 
     //std::cout << "creating CUDA events\n";
     gpu_create_events();
-    cuStreamCreate ( &prefetchStream, CU_STREAM_NON_BLOCKING);
+    //cuStreamCreate ( &prefetchStream, CU_STREAM_NON_BLOCKING);
 
     gpu_auto_detect();
   }
@@ -482,7 +486,32 @@ namespace QDP {
 
 
 
+#if defined (QDP_ENABLE_MANAGED_MEMORY)
+  void gpu_memcpy( void * dest , const void * src , size_t size )
+  {
+    CUresult ret;
+#ifdef GPU_DEBUG_DEEP
+    QDP_debug_deep("CudaMemcpy dest=%p src=%p size=%d" ,  dest , src , size );
+#endif
+    ret = cuMemcpy((CUdeviceptr)const_cast<void*>(dest), (CUdeviceptr)const_cast<void*>(src), size);
+    CudaRes("cuMemcpy",ret);
+  }
 
+  bool gpu_malloc_managed(void **mem , size_t size )
+  {
+    CUresult ret;
+    ret = cuMemAllocManaged( (CUdeviceptr*)mem , size , CU_MEM_ATTACH_GLOBAL );
+    return ret == CUDA_SUCCESS;
+  }
+
+  // void gpu_prefetch(void *mem,  size_t size)
+  // {
+  //   cuMemPrefetchAsync ( (CUdeviceptr)mem, size,  cuDevice, prefetchStream  );
+  // }
+#endif
+
+
+  
   void gpu_memcpy_h2d( void * dest , const void * src , size_t size )
   {
     CUresult ret;
@@ -511,31 +540,21 @@ namespace QDP {
     CudaRes("cuMemcpyD2H",ret);
   }
 
+  
+  
 
   bool gpu_malloc(void **mem , size_t size )
   {
 #ifdef QDP_THRUSTALIGN
-
-if (size == 0) *mem = nullptr;
+    if (size == 0)
+      *mem = nullptr;
     CUresult ret;
-    CudaCheckResult(cuCtxSetCurrent(cuContext));
-#ifndef QDP_ENABLE_MANAGED_MEMORY
+    CudaCheckResult(cuCtxSetCurrent(cuContext));   
     CudaCheckResult(cudaMalloc(mem, size));
-#else
-    CudaCheckResult(cudaMallocManaged(mem, size, cudaMemAttachGlobal));
-#endif
     return ret == CUDA_SUCCESS;
-
 #else
-
     CUresult ret;
-#ifndef QDP_ENABLE_MANAGED_MEMORY
     ret = cuMemAlloc( (CUdeviceptr*)mem,size);
-#else
-    ret = cuMemAllocManaged( (CUdeviceptr*)mem, size, CU_MEM_ATTACH_GLOBAL ); 
-    cuMemAdvise ( (CUdeviceptr)&mem, size, CU_MEM_ADVISE_SET_PREFERRED_LOCATION, cuDevice );
-    cuMemAdvise  ( (CUdeviceptr)&mem, size, CU_MEM_ADVISE_SET_ACCESSED_BY, cuDevice );
-#endif
     return ret == CUDA_SUCCESS;
 #endif
   }
@@ -543,11 +562,6 @@ if (size == 0) *mem = nullptr;
 
 
 
-  void gpu_prefetch(void *mem,  size_t size){
-#ifdef QDP_ENABLE_MANAGED_MEMORY
-    cuMemPrefetchAsync ( (CUdeviceptr)mem, size,  cuDevice, prefetchStream  );
-#endif
-  }
   
   void gpu_free(const void *mem )
   {
@@ -588,6 +602,7 @@ if (size == 0) *mem = nullptr;
   void gpu_sync()
   {
     CUresult ret = cuCtxSynchronize();
+    //CUresult ret = cuStreamSynchronize( 0 );
     CudaRes("cuCtxSynchronize",ret);
   }
 

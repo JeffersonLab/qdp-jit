@@ -47,8 +47,7 @@ void mesons2(const LatticePropagator& quark_prop_1,
 
     LatticeComplex corr_fn;
 
-    corr_fn = trace(adj(anti_quark_prop) * (Gamma(gamma_value) *
-					    quark_prop_1 * Gamma(gamma_value)));
+    corr_fn = trace(adj(anti_quark_prop) * (Gamma(gamma_value) * quark_prop_1 * Gamma(gamma_value))); // JIT
 
     StopWatch w;
     w.start();
@@ -68,10 +67,12 @@ void mesons2(const LatticePropagator& quark_prop_1,
     double t_corr = w.getTimeInSeconds();
     QDPIO::cout << "time trace = " << t_corr << std::endl;
 
+    multi2d<DComplex> hsum;
+    hsum = phases.sft(corr_fn); // JIT
+
     w.reset();
     w.start();
     
-    multi2d<DComplex> hsum;
     hsum = phases.sft(corr_fn);
 
     w.stop();

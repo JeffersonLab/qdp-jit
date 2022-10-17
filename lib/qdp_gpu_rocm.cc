@@ -551,11 +551,7 @@ namespace QDP {
 	    QDP_abort(1);
 	  }
 
-	    
-	std::vector<QDPCache::ArgKey> vec_id;
-	vec_id.push_back( f.get_dest_id() );
-	std::vector<void*> vec_ptrs = QDP_get_global_cache().get_dev_ptrs( vec_id );
-	void* dev_ptr = vec_ptrs.at(0);
+	void* dev_ptr = QDP_get_global_cache().get_dev_ptrs( f.get_dest_id() );
 
 	//std::cout << "d2h: start = " << f.start << "  count = " << f.count << "  size_T = " << f.size_T << "   \t";
     
@@ -795,10 +791,6 @@ namespace QDP {
     CheckError("hipFree",ret);
   }
 
-
-  void gpu_prefetch(void *mem,  size_t size)
-  {
-  }
 
 
   void gpu_memset( void * dest , unsigned char val , size_t N )

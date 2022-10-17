@@ -43,6 +43,15 @@ namespace QDP
   }
 
 
+  template<class T, class C>
+  inline typename UnaryReturn<C, FnSumMulti>::Type_t
+  sumMulti(const QDPType<T,C>& s1, const Set& s)
+  {
+    return sumMulti(PETE_identity(s1),s);
+  }
+
+  
+
   //! OScalar = norm2(trace(adj(source)*source))
   /*!
    * return  num(trace(adj(source)*source))

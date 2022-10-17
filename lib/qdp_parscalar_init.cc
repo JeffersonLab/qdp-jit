@@ -22,17 +22,9 @@
 
 namespace QDP {
 
-  namespace COUNT {
-    int count = 0;
-  }
-
-  namespace {
-    bool setPoolSize = false;
-  }
-
   namespace Layout {
-  // Destroy lattice coordinate
-  void destroyLatticeCoordinate();
+    // Destroy lattice coordinate
+    void destroyLatticeCoordinate();
   }
 
   //! Private flag for status
@@ -41,12 +33,6 @@ namespace QDP {
   bool setIOGeomP = false;
   multi1d<int> logical_geom(Nd);   // apriori logical geometry of the machine
   multi1d<int> logical_iogeom(Nd); // apriori logical 	
-
-
-
-
-
-
   
 
   
@@ -69,9 +55,6 @@ namespace QDP {
       {
 	db_tune_read( jit_config_get_tuning_file() );
       }
-
-    // Initialize the ring buffer for OScalars
-    jit_util_ringBuffer_init();
   }
 
 
@@ -273,11 +256,38 @@ namespace QDP {
 	    setProgramProfileLevel(lev);
 	  }
 #endif
+#if ! defined (QDP_ENABLE_MANAGED_MEMORY)
+	else if (strcmp((*argv)[i], "-poolsize")==0) 
+	  {
+	    float f;
+	    char c;
+	    sscanf((*argv)[++i],"%f%c",&f,&c);
+	    double mul;
+	    switch (tolower(c)) {
+	    case 'k': 
+	      mul=1024.; 
+	      break;
+	    case 'm': 
+	      mul=1024.*1024; 
+	      break;
+	    case 'g': 
+	      mul=1024.*1024*1024; 
+	      break;
+	    case 't':
+	      mul=1024.*1024*1024*1024;
+	      break;
+	    case '\0':
+	      break;
+	    default:
+	      QDP_error_exit("unknown multiplication factor");
+	    }
+	    size_t val = (size_t)((double)(f) * mul);
+	    jit_config_set_pool_size(val);
+	  }
 	else if (strcmp((*argv)[i], "-poolmemset")==0) 
 	  {
 	    unsigned val;
 	    sscanf((*argv)[++i],"%u",&val);
-	    //QDP_get_global_cache().get_allocator().enableMemset(val);
 	    QDP_get_global_cache().enableMemset(val);
 	  }
 	else if (strcmp((*argv)[i], "-pool-max-alloc")==0) 
@@ -292,6 +302,11 @@ namespace QDP {
 	    sscanf((*argv)[++i],"%u",&val);
 	    jit_config_set_pool_alignment( val );
 	  }
+	else if (strcmp((*argv)[i], "-pool-stats")==0) 
+	  {
+	    jit_set_config_pool_stats();
+	  }
+#endif
 	else if (strcmp((*argv)[i], "-blocksize")==0)
 	  {
 	    unsigned val;
@@ -330,17 +345,9 @@ namespace QDP {
 
 	    jit_config_set_tuning(true);
 	  }
-	else if (strcmp((*argv)[i], "-defrag")==0)
-	  {
-	    qdp_jit_set_defrag();
-	  }
 	else if (strcmp((*argv)[i], "-clang-codegen")==0) 
 	  {
 	    llvm_set_clang_codegen();
-	  }
-	else if (strcmp((*argv)[i], "-pool-stats")==0) 
-	  {
-	    jit_set_config_pool_stats();
 	  }
 	else if (strcmp((*argv)[i], "-clang-opt")==0)
 	  {
@@ -450,33 +457,6 @@ namespace QDP {
 	    jit_config_set_CUDA_FTZ( val );
 	  }
 #endif
-	else if (strcmp((*argv)[i], "-poolsize")==0) 
-	  {
-	    float f;
-	    char c;
-	    sscanf((*argv)[++i],"%f%c",&f,&c);
-	    double mul;
-	    switch (tolower(c)) {
-	    case 'k': 
-	      mul=1024.; 
-	      break;
-	    case 'm': 
-	      mul=1024.*1024; 
-	      break;
-	    case 'g': 
-	      mul=1024.*1024*1024; 
-	      break;
-	    case 't':
-	      mul=1024.*1024*1024*1024;
-	      break;
-	    case '\0':
-	      break;
-	    default:
-	      QDP_error_exit("unknown multiplication factor");
-	    }
-	    size_t val = (size_t)((double)(f) * mul);
-	    jit_config_set_pool_size(val);
-	  }
 	else if (strcmp((*argv)[i], "-opt-inline")==0) 
 	  {
 	    int active;
@@ -701,14 +681,27 @@ namespace QDP {
 			QDP_abort(1);
 		}
 
-		gpu_done();
+
+		// Wait for all tasks on the GPU to finish
+		gpu_sync();
 
 		// Destroy lattice coordinates helpers
 		Layout::destroyLatticeCoordinate();
-		
+
 		// Close RNG
 		RNG::doneDefaultRNG();
+		
+		
+		// Finalize ring buffer
+		//
+		QDP_get_global_ring_buffer().done();
 
+
+#if defined (QDP_ENABLE_MANAGED_MEMORY)
+		QDP_get_global_alloc_cache().freeAllUnused();
+#endif
+
+		gpu_done();
 		
 		QDPIO::cout << "\n";
 		QDPIO::cout << "        ------------------------\n";
@@ -719,24 +712,20 @@ namespace QDP {
 		QDPIO::cout << "  lattice objects copied to host memory:   " << get_jit_stats_lattice2dev() << "\n";
 		QDPIO::cout << "  lattice objects copied to device memory: " << get_jit_stats_lattice2host() << "\n";
 		QDPIO::cout << "\n";
+#if ! defined (QDP_ENABLE_MANAGED_MEMORY)
 		QDPIO::cout << "Pool allocator \n";
 		QDPIO::cout << "  peak memory usage:                       " << QDP_get_global_cache().get_max_allocated() << "\n";
-		if ( qdp_jit_config_defrag() )
-		  {
-		QDPIO::cout << "  memory pool defragmentation count:       " << QDP_get_global_cache().getPoolDefrags() << "\n";
-		  }
-		
 		if (jit_config_pool_stats())
 		  {
-		QDPIO::cout << "  memory allocation count: \n";
-		auto& count = QDP_get_global_cache().get_alloc_count();
-		for ( auto i = count.begin() ; i != count.end() ; ++i )
-		  {
-		    QDPIO::cout << "  " << i->first << " bytes \t\t" << i->second << std::endl;
+		    QDPIO::cout << "  memory allocation count: \n";
+		    auto& count = QDP_get_global_cache().get_alloc_count();
+		    for ( auto i = count.begin() ; i != count.end() ; ++i )
+		      {
+			QDPIO::cout << "  " << i->first << " bytes \t\t" << i->second << std::endl;
+		      }
+		    QDPIO::cout << "\n";
 		  }
-		QDPIO::cout << "\n";
-		  }
-		
+#endif
 		QDPIO::cout << "Code generator \n";
 		QDPIO::cout << "  functions jit-compiled:                  " << get_jit_stats_jitted() << "\n";
 

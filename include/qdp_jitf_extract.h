@@ -19,7 +19,7 @@ namespace QDP {
       return;
 
     // Register the destination object with the memory cache
-    int d_id = QDP_get_global_cache().registrateOwnHostMem( sizeof(T) * s.numSiteTable() , dest.slice() , nullptr );
+    int d_id = QDP_get_global_cache().addOwnHostMem( sizeof(T) * s.numSiteTable() , dest.slice() );
 
     AddressLeaf addr_leaf(s);
     forEach(src, addr_leaf, NullCombine());

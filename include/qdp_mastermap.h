@@ -155,10 +155,10 @@ namespace QDP {
 #endif
 	  
 	  t.id_face             = -1;
-	  t.id_innerScalar      = QDP_get_global_cache().registrateOwnHostMem( t.innerScalar->size() * sizeof(int)      , t.innerScalar->data()      , NULL );
+	  t.id_innerScalar      = QDP_get_global_cache().addOwnHostMemNoPage( t.innerScalar->size() * sizeof(int)      , t.innerScalar->data()       );
 #ifdef QDP_CODEGEN_VECTOR
-	  t.id_innerVNodeScalar = QDP_get_global_cache().registrateOwnHostMem( t.innerVNodeScalar->size() * sizeof(int) , t.innerVNodeScalar->data() , NULL );
-	  t.id_innerVNodeSIMD   = QDP_get_global_cache().registrateOwnHostMem( t.innerVNodeSIMD->size() * sizeof(int)   , t.innerVNodeSIMD->data()   , NULL );
+	  t.id_innerVNodeScalar = QDP_get_global_cache().addOwnHostMemNoPage( t.innerVNodeScalar->size() * sizeof(int) , t.innerVNodeScalar->data()  );
+	  t.id_innerVNodeSIMD   = QDP_get_global_cache().addOwnHostMemNoPage( t.innerVNodeSIMD->size() * sizeof(int)   , t.innerVNodeSIMD->data()    );
 #endif
 	  
 	  // Store in map

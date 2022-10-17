@@ -30,6 +30,10 @@ add_library(qdp qdp_map.cc
 
 add_library(jit qdp_llvm.cc)
 
+if (QDP_ENABLE_MANAGED_MEMORY)
+  target_sources(qdp PRIVATE qdp_alloc_cache.cc)
+endif()
+
 if( QDP_ENABLE_BACKEND STREQUAL "CUDA" )
   target_sources(qdp PRIVATE qdp_gpu_cuda.cc)
 endif()
@@ -125,14 +129,11 @@ target_include_directories( qdp PUBLIC
 target_link_libraries( qdp PUBLIC ${GPU_LIBS} )
 
 set_target_properties( qdp PROPERTIES 
+	CXX_STANDARD 20
 	CXX_EXTENSIONS OFF
 	PROPERTIES C_STANDARD 99 
 	PROPERTIES CXX_EXTENSIONS OFF
 )
-
-if(QDP_PROP_OPT)
-  set_target_properties( qdp PROPERTIES CXX_STANDARD 20 )
-endif()
 
 
 # Link QIO from subtree

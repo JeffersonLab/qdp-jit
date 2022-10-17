@@ -63,7 +63,7 @@ namespace QDP {
 
 
   // T1 input
-  template< class T1 , class RHS >
+  template< class T1 , class RHS , JitDeviceLayout input_layout >
   void
   function_sum_convert_ind_expr_build( JitFunction& function , const QDPExpr<RHS,OLattice<T1> >& rhs , JitDeviceLayout input_layout )
   {

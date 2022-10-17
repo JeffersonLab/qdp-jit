@@ -51,9 +51,6 @@ namespace QDP
     void enableMemset(unsigned val);
 
 
-    void defrag();
-    int defrag_occurrences() { return defrags; }
-
 
     bool allocateInternalBuffer();
 
@@ -113,7 +110,6 @@ namespace QDP
     size_t             poolSize;
     size_t             bytes_allocated;
     listEntry_t        listEntry;
-    int                defrags = 0;
     size_t             max_allocated = 0;
     size_t             total_allocated = 0;
 
@@ -295,76 +291,6 @@ namespace QDP
 
   
 
-  template<class Allocator>
-  void QDPPoolAllocator<Allocator>::defrag()
-  {
-    QDPIO::cout << "Defragmentation of pool memory." << "\n";
-
-    auto firstFixed = std::find_if( listEntry.begin() , listEntry.end() , findFixed<entry_t> );
-
-    defrags++;
-    size_t free = 0;
-    
-    QDPIO::cout << "Copying fields to host .." << std::endl;
-    iterEntry_t i = listEntry.begin();
-    while (i != firstFixed)
-      {
-	//QDPIO::cout << "visiting: " << i->size << std::endl;
-
-	if ( i->allocated )
-	  {
-	    if ( i->fixed )
-	      {
-		QDPIO::cout << "defrag: should not be here." << std::endl;
-		QDP_abort(1);
-	      }
-
-	    if ( !( i->host_ptr = malloc( i->size ) ) )
-	      {
-		QDPIO::cerr << "out of host memory during pool memory defragmentation." << std::endl;
-		QDP_abort(1);
-	      }
-
-	    gpu_memcpy_d2h( i->host_ptr , i->ptr , i->size );
-	    
-	    i++;
-	  }
-	else
-	  {
-	    free += i->size;
-	    
-	    listEntry.erase( i++ );
-	  }
-      }
-
-    QDPIO::cout << "Copying fields back to device .." << std::endl;
-    void* ptr_cur = poolPtr;
-    
-    i = listEntry.begin();
-    while ( i != firstFixed )
-      {
-	i->ptr = ptr_cur;
-
-	//QDPIO::cout << "h2d dev ptr = " << (size_t)i->ptr << std::endl;
-
-	gpu_memcpy_h2d( i->ptr , i->host_ptr , i->size );
-
-	::free( i->host_ptr );
-	
-	QDP_get_global_cache().updateDevPtr( i->id , i->ptr );
-
-	*(size_t*)&ptr_cur += i->size;
-	i++;
-      }
-
-    entry_t e;
-    e.ptr = ptr_cur;
-    e.size = free;
-    e.id = -1;
-    e.allocated = false;
-
-    listEntry.insert( firstFixed , e );
-  }
 
 
   template<class Allocator>

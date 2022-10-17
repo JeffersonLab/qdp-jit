@@ -34,37 +34,6 @@ namespace QDP {
   }
 
 
-  void
-  function_summulti_convert_ind_exec( JitFunction& function, 
-				      int size, int threads, int blocks,
-				      int in_id, int out_id,
-				      int numsubsets,
-				      const multi1d<int>& sizes,
-				      const multi1d<QDPCache::ArgKey>& table_ids )
-  {
-    // Make sure 'threads' is a power of two (the jit kernel make this assumption)
-    if ( (threads & (threads - 1)) != 0 )
-      {
-	QDPIO::cerr << "internal error: function_summulti_convert_ind_exec not power of 2\n";
-	QDP_abort(1);
-      }
-
-    int sizes_id = QDP_get_global_cache().add( sizes.size()*sizeof(int) , QDPCache::Flags::OwnHostMemory , QDPCache::Status::host , sizes.slice() , NULL , NULL );
-
-    JitParam jit_numsubsets( QDP_get_global_cache().addJitParamInt( numsubsets ) );
-    JitParam jit_tables(     QDP_get_global_cache().addMulti(       table_ids  ) );
-						      
-    std::vector<QDPCache::ArgKey> ids;
-    ids.push_back( jit_numsubsets.get_id() );
-    ids.push_back( sizes_id );
-    ids.push_back( jit_tables.get_id() );
-    ids.push_back( in_id );
-    ids.push_back( out_id );
-
-    jit_launch_explicit_geom( function , ids , getGeom( size , threads ) , gpu_getMaxSMem() );
-
-    QDP_get_global_cache().signoff(sizes_id);
-  }
 
 
 
@@ -82,7 +51,7 @@ namespace QDP {
 	QDP_abort(1);
       }
 
-    int sizes_id = QDP_get_global_cache().add( sizes.size()*sizeof(int) , QDPCache::Flags::OwnHostMemory , QDPCache::Status::host , sizes.slice() , NULL , NULL );
+    int sizes_id = QDP_get_global_cache().addOwnHostMem( sizes.size()*sizeof(int) , sizes.slice() );
 
     JitParam jit_numsubsets( QDP_get_global_cache().addJitParamInt( numsubsets ) );
 						      

@@ -77,7 +77,7 @@ namespace QDP {
 #endif
 
     // Register the seed_tmp object with the memory cache
-    int seed_tmp_id = QDP_get_global_cache().registrateOwnHostMemStatus( sizeof(Seed) , seed_tmp.getF() , QDPCache::Status::undef );
+    int seed_tmp_id = QDP_get_global_cache().addOwnHostMemStatus( sizeof(Seed) , seed_tmp.getF() , QDPCache::Status::undef );
 
     AddressLeaf addr_leaf(s);
 

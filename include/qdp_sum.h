@@ -18,7 +18,7 @@ namespace QDP {
 
   // T1 input
   // T2 output
-  template < class T1 , class RHS >
+  template < class T1 , class RHS , JitDeviceLayout input_layout>
   void qdp_jit_reduce_convert_indirection_expr(int size, 
 					       int threads, 
 					       int blocks, 
@@ -30,7 +30,7 @@ namespace QDP {
     static JitFunction function;
 
     if (function.empty())
-      function_sum_convert_ind_expr_build(function,rhs,input_layout);
+      function_sum_convert_ind_expr_build<T1,RHS,input_layout>(function,rhs);
 
     function_sum_convert_ind_expr_exec(function, size, threads, blocks,
 				       rhs, out_id, siteTableId );
@@ -40,15 +40,15 @@ namespace QDP {
 
   // T1 input
   // T2 output
-  template < class T1 , class T2 , JitDeviceLayout input_layout >
-  void qdp_jit_summulti_convert_indirection(int size, 
-					    int threads, 
-					    int blocks, 
-					    int in_id, 
-					    int out_id,
-					    int numsubsets,
-					    const multi1d<int>& sizes,
-					    const multi1d<QDPCache::ArgKey>& table_ids)
+  template < class RHS, class T1 , class T2 , JitDeviceLayout input_layout >
+  void qdp_jit_summulti_convert_indirection_expr(int size, 
+						 int threads, 
+						 int blocks, 
+						 const QDPExpr<RHS,OLattice<T1> >& rhs,
+						 int out_id,
+						 int numsubsets,
+						 const multi1d<int>& sizes,
+						 const multi1d<QDPCache::ArgKey>& table_ids)
   {
     static JitFunction function;
 
@@ -56,14 +56,14 @@ namespace QDP {
     assert( table_ids.size() == numsubsets );
 
     if (function.empty())
-      function_summulti_convert_ind_build<T1,T2,input_layout>(function);
+      function_summulti_convert_ind_expr_build<RHS,T1,T2,input_layout>(function,rhs);
 
-    function_summulti_convert_ind_exec(function,
-    				       size, threads, blocks,
-    				       in_id, out_id,
-    				       numsubsets ,
-    				       sizes ,
-    				       table_ids );
+    function_summulti_convert_ind_expr_exec(function,
+					    size, threads, blocks,
+					    rhs, out_id,
+					    numsubsets ,
+					    sizes ,
+					    table_ids );
   }
 
 
@@ -217,7 +217,7 @@ namespace QDP {
 #endif
 
     // Register the destination object with the memory cache
-    int d_id = QDP_get_global_cache().registrateOwnHostMem( sizeof(T2) , d.getF() , nullptr );
+    int d_id = QDP_get_global_cache().addOwnHostMem( sizeof(T2) , d.getF() );
     
     unsigned actsize=s.numSiteTable();
     bool first=true;
@@ -238,20 +238,20 @@ namespace QDP {
 
       if (first) {
 	allocated=true;
-	out_id = QDP_get_global_cache().add( numBlocks*sizeof(T2) , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
-	in_id  = QDP_get_global_cache().add( numBlocks*sizeof(T2) , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
+	out_id = QDP_get_global_cache().add( numBlocks*sizeof(T2) );
+	in_id  = QDP_get_global_cache().add( numBlocks*sizeof(T2) );
       }
 
       if (numBlocks == 1) {
 	if (first) {
-	  qdp_jit_reduce_convert_indirection_expr(actsize, numThreads, numBlocks, rhs , d_id , s.getIdSiteTable() , JitDeviceLayout::Coalesced);
+	  qdp_jit_reduce_convert_indirection_expr<T1,RHS,JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, rhs , d_id , s.getIdSiteTable() );
 	}
 	else {
 	  qdp_jit_reduce<T2>( actsize , numThreads , numBlocks , in_id , d_id );
 	}
       } else {
 	if (first) {
-	  qdp_jit_reduce_convert_indirection_expr(actsize, numThreads, numBlocks, rhs , out_id, s.getIdSiteTable() , JitDeviceLayout::Coalesced);
+	  qdp_jit_reduce_convert_indirection_expr<T1,RHS,JitDeviceLayout::Coalesced>(actsize, numThreads, numBlocks, rhs , out_id, s.getIdSiteTable());
 	}
 	else
 	  qdp_jit_reduce<T2>( actsize , numThreads , numBlocks , in_id , out_id );
@@ -384,14 +384,15 @@ namespace QDP {
       return 1 << count;  
     }
   }
+
   //
   // sumMulti 
   //
-  template<class T1>
+  template<ConceptHasNoShift RHS, class T1>
   typename UnaryReturn<OLattice<T1>, FnSumMulti>::Type_t
-  sumMulti( const OLattice<T1>& s1 , const Set& ss )
+  sumMulti( const QDPExpr<RHS, OLattice<T1> >& rhs, const Set& ss)
   {
-    //QDPIO::cout << "using jit version of sumMulti\n";
+    //QDPIO::cout << "using jit version of sumMulti on expr\n";
     
     typedef typename UnaryReturn<OLattice<T1>, FnSum>::Type_t::SubType_t T2;
 
@@ -408,7 +409,7 @@ namespace QDP {
 #endif
 
     // Register the destination object with the memory cache
-    int d_id = QDP_get_global_cache().registrateOwnHostMem( sizeof(T2) * numsubsets , dest.slice() , nullptr );
+    int d_id = QDP_get_global_cache().addOwnHostMem( sizeof(T2) * numsubsets , dest.slice() );
     
     //QDPIO::cout << "number of subsets: " << numsubsets << "\n";
     multi1d<QDPCache::ArgKey> table_ids( numsubsets );
@@ -423,7 +424,7 @@ namespace QDP {
 	sizes[i]     = ss[i].numSiteTable();
 	//QDPIO::cout << sizes[i] << " ";
 
-	table_ids[i] = QDPCache::ArgKey( ss[i].getIdSiteTable() );
+	table_ids[i] = ss[i].getIdSiteTable();
       }
     //QDPIO::cout << "\n";    
       
@@ -461,18 +462,18 @@ namespace QDP {
       //QDP_info("sum(Lat,subset): using %d threads per block, %d blocks" , numThreads , numBlocks );
 
       if (first) {
-	out_id = QDP_get_global_cache().add( numBlocks*sizeof(T2)*numsubsets , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
-	in_id  = QDP_get_global_cache().add( numBlocks*sizeof(T2)*numsubsets , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
+	out_id = QDP_get_global_cache().add( numBlocks*sizeof(T2)*numsubsets );
+	in_id  = QDP_get_global_cache().add( numBlocks*sizeof(T2)*numsubsets );
 	allocated = true;
       }
 
       if (numBlocks == 1) {
 	if (first) {
-	  qdp_jit_summulti_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(maxsize, numThreads, numBlocks,
-										 s1.getId(), d_id,
-										 numsubsets,
-										 sizes,
-										 table_ids);
+	  qdp_jit_summulti_convert_indirection_expr<RHS,T1,T2,JitDeviceLayout::Coalesced>(maxsize, numThreads, numBlocks,
+											  rhs, d_id,
+											  numsubsets,
+											  sizes,
+											  table_ids);
 	}
 	else {
 	  qdp_jit_summulti<T2>(maxsize, numThreads, numBlocks,
@@ -482,11 +483,11 @@ namespace QDP {
 	}
       } else {
 	if (first) {
-	  qdp_jit_summulti_convert_indirection<T1,T2,JitDeviceLayout::Coalesced>(maxsize, numThreads, numBlocks,
-										 s1.getId(), out_id,
-										 numsubsets,
-										 sizes,
-										 table_ids);
+	  qdp_jit_summulti_convert_indirection_expr<RHS,T1,T2,JitDeviceLayout::Coalesced>(maxsize, numThreads, numBlocks,
+											  rhs, out_id,
+											  numsubsets,
+											  sizes,
+											  table_ids);
 	}
 	else {
 	  qdp_jit_summulti<T2>(maxsize, numThreads, numBlocks,
@@ -539,6 +540,16 @@ namespace QDP {
     
     return dest;
   }
+
+  template<ConceptHasShift RHS, class T1>
+  typename UnaryReturn< OLattice<T1> , FnSumMulti>::Type_t
+  sumMulti(const QDPExpr<RHS, OLattice<T1> >& rhs, const Set& ss)
+  {
+    OLattice<T1> tmp = rhs;
+    return sumMulti(tmp,ss);
+  }
+
+  
 #elif defined (QDP_BACKEND_AVX)
   template<class T1>
   typename UnaryReturn<OLattice<T1>, FnSumMulti>::Type_t
@@ -604,7 +615,7 @@ namespace QDP {
 #endif
 
     // Register the destination object with the memory cache
-    int d_id = QDP_get_global_cache().registrateOwnHostMem( sizeof(typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t) , d.getF() , nullptr );
+    int d_id = QDP_get_global_cache().addOwnHostMem( sizeof(typename UnaryReturn<OLattice<T>, FnGlobalMax>::Type_t) , d.getF() );
     
     int actsize=nodeSites;
     bool first=true;
@@ -623,8 +634,8 @@ namespace QDP {
       }
 
       if (first) {
-	out_id = QDP_get_global_cache().add( numBlocks*sizeof(T) , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
-	in_id  = QDP_get_global_cache().add( numBlocks*sizeof(T) , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
+	out_id = QDP_get_global_cache().add( numBlocks*sizeof(T) );
+	in_id  = QDP_get_global_cache().add( numBlocks*sizeof(T) );
       }
 
 
@@ -733,7 +744,7 @@ namespace QDP {
 #endif
 
     // Register the destination object with the memory cache
-    int d_id = QDP_get_global_cache().registrateOwnHostMem( sizeof(Boolean) , d.getF() , nullptr );
+    int d_id = QDP_get_global_cache().addOwnHostMem( sizeof(Boolean) , d.getF() );
 
     int out_id,in_id;
     unsigned actsize=Layout::sitesOnNode();
@@ -753,8 +764,8 @@ namespace QDP {
       //QDP_info("sum(Lat,subset): using %d threads per block, %d blocks, shared mem=%d" , numThreads , numBlocks , shared_mem_usage );
 
       if (first) {
-	out_id = QDP_get_global_cache().add( numBlocks*sizeof(T2) , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
-	in_id  = QDP_get_global_cache().add( numBlocks*sizeof(T2) , QDPCache::Flags::Empty , QDPCache::Status::undef , NULL , NULL , NULL );
+	out_id = QDP_get_global_cache().add( numBlocks*sizeof(T2) );
+	in_id  = QDP_get_global_cache().add( numBlocks*sizeof(T2) );
       }
 
       

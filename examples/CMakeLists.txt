@@ -13,9 +13,7 @@ add_library(examples mesplq.cc reunit.cc dslashm_w.cc rgauge.cc taproj.cc
 			
 target_link_libraries(examples PUBLIC QDPXX::qdp)
 
-if(QDP_PROP_OPT)
-  set_target_properties( examples PROPERTIES CXX_STANDARD 20 )
-endif()
+set_target_properties( examples PROPERTIES CXX_STANDARD 20 )
 
 #if( QDP_BACKEND_L0 )
 #  find_package(PkgConfig REQUIRED)
@@ -61,9 +59,7 @@ foreach(TEST ${TESTS})
  add_executable(${TEST} ${TEST}.cc)
  target_link_libraries(${TEST} PUBLIC examples QDPXX::jit)
 
- if(QDP_PROP_OPT)
-   set_target_properties( ${TEST} PROPERTIES CXX_STANDARD 20 )
- endif()
+ set_target_properties( ${TEST} PROPERTIES CXX_STANDARD 20 )
 
  if( QDP_BACKEND_L0 )
    find_package(PkgConfig REQUIRED)
@@ -72,9 +68,6 @@ foreach(TEST ${TESTS})
    target_link_options(${TEST} PUBLIC ${PKG_LLVMSPIRV_LDFLAGS})
  endif()
  
-# set_target_properties(${TEST} PROPERTIES 
-#   CXX_STANDARD 20
-#   CXX_EXTENSIONS OFF)
 endforeach()
 
 install(TARGETS nersc2ildg test_ildglat lhpc2ildg)

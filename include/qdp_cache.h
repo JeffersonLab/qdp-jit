@@ -1,6 +1,7 @@
 #ifndef QDP_CACHE
 #define QDP_CACHE
 
+
 #include <iostream>
 #include <vector>
 #include <stack>
@@ -17,22 +18,43 @@ namespace QDP
   class QDPCache
   {
   public:
-    typedef int ArgKey;
+    typedef void (* LayoutFptr)(bool toDev,void * outPtr,void * inPtr);
+    enum class Status      { undef , host , device };
+    enum       Flags       { Empty = 0, OwnHostMemory = 1, NoPage = 2  };
     
-    enum Flags {
-      Empty = 0,
-      OwnHostMemory = 1,
-      OwnDeviceMemory = 2,
-      JitParam = 4,
-      Static = 8,
-      Multi = 16,
-      NoPage = 32
+  private:
+    enum class Location    { pool , literal };
+    enum class LiteralType { float_, int_ , int64_, double_, bool_ };
+
+    struct Entry 
+    {
+      union LiteralUnion {
+	void *  ptr;
+	float   float_;
+	int     int_;
+	int64_t int64_;
+	double  double_;
+	bool    bool_;
+      };
+
+      int      Id;
+      size_t   size;
+      Location location;
+      Flags    flags;
+      void*    hstPtr;
+      void*    devPtr;  // NULL if not allocated
+      std::list<int>::iterator iterTrack;
+      LayoutFptr fptr;
+      LiteralUnion param;
+      LiteralType param_type;
+
+      Status status;
     };
 
-    enum class Status       { undef , host , device };
-    enum class JitParamType { float_, int_ , int64_, double_, bool_ };
-    typedef void (* LayoutFptr)(bool toDev,void * outPtr,void * inPtr);
 
+  public:
+    typedef int ArgKey;
+    
 #if defined QDP_BACKEND_ROCM
     typedef std::vector<unsigned char> KernelArgs_t;
 #elif defined QDP_BACKEND_CUDA
@@ -54,45 +76,17 @@ namespace QDP
 #endif
 
     
-    
-    struct Entry 
-    {
-      union JitParamUnion {
-	void *  ptr;
-	float   float_;
-	int     int_;
-	int64_t int64_;
-	double  double_;
-	bool    bool_;
-      };
-
-      int    Id;
-      size_t size;
-      size_t elem_size;
-      Flags  flags;
-      void*  hstPtr;
-      void*  devPtr;  // NULL if not allocated
-      std::list<int>::iterator iterTrack;
-      LayoutFptr fptr;
-      JitParamUnion param;
-      JitParamType param_type;
-      std::vector<int> multi;
-      Status status;
-    };
-
-
-    
     QDPCache();
 
     KernelArgs_t get_kernel_args(std::vector<int>& ids , bool for_kernel = true );
     
-    std::vector<void*> get_dev_ptrs( const std::vector<int>& ids );
+    multi1d<void*> get_dev_ptrs( const multi1d<QDPCache::ArgKey>& ids );
+    void* get_dev_ptr( QDPCache::ArgKey id );
     
     void printInfo(int id);
 
     size_t free_mem();
     void print_pool();
-    void defrag();
     size_t get_max_allocated();
 
     std::map<size_t,size_t>& get_alloc_count();
@@ -108,19 +102,17 @@ namespace QDP
     void signoffViaPtr( void* ptr );
     int addDeviceStatic( size_t n_bytes );
     
-    int add( size_t size, Flags flags, Status st, const void* ptr_host, const void* ptr_dev, LayoutFptr func );
 
-    int addMulti( const multi1d<int>& ids );
 
     void zero_rep( int id );
     void copyD2H(int id);
     
-    // Wrappers to the previous interface
-    int registrate( size_t size, unsigned flags, LayoutFptr func );
-    int registrate_no_layout_conversion( size_t size );
-    int registrateOwnHostMem( size_t size, const void* ptr , LayoutFptr func );
-    int registrateOwnHostMemStatus( size_t size, const void* ptr , Status st );
-    int registrateOwnHostMemNoPage( size_t size, const void* ptr );
+
+    int add( size_t size );
+    int addLayout( size_t size, LayoutFptr func );
+    int addOwnHostMem( size_t size, const void* ptr );
+    int addOwnHostMemStatus( size_t size, const void* ptr , Status st );
+    int addOwnHostMemNoPage( size_t size, const void* ptr );
 
     void signoff(int id);
     void assureOnHost(int id);
@@ -128,21 +120,19 @@ namespace QDP
     void  getHostPtr(void ** ptr , int id);
     
     size_t getSize(int id);
-    void printLockSet();
 
     void updateDevPtr(int id, void* ptr);
-    
-    int  getPoolDefrags();
     
     void   setPoolSize(size_t s);
     size_t getPoolSize();
     void   enableMemset(unsigned val);
 
-    std::vector<QDPCache::Entry>&  get__vec_backed();
-
     bool isOnDevice(int id);
 
+    
   private:
+    int add_pool( size_t size, Flags flags, Status st, const void* ptr_host, const void* ptr_dev, LayoutFptr func );
+
     void printInfo(const Entry& e);
     std::string stringStatus( Status s );
 
@@ -184,6 +174,7 @@ namespace QDP
 
   QDPCache& QDP_get_global_cache();
 
+  QDPCache::Flags operator|(QDPCache::Flags a, QDPCache::Flags b);
 
   class JitParam
   {
@@ -197,12 +188,5 @@ namespace QDP
     int get_id() const { return id; }
   };
 
-
-  QDPCache::Flags operator|(QDPCache::Flags a, QDPCache::Flags b);
-
-
 }
-
-
 #endif
-
