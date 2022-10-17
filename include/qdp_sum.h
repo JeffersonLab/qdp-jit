@@ -24,8 +24,7 @@ namespace QDP {
 					       int blocks, 
 					       const QDPExpr<RHS,OLattice<T1> >& rhs, 
 					       int out_id, 
-					       int siteTableId,
-					       JitDeviceLayout input_layout )
+					       int siteTableId)
   {
     static JitFunction function;
 

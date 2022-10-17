@@ -65,7 +65,7 @@ namespace QDP {
   // T1 input
   template< class T1 , class RHS , JitDeviceLayout input_layout >
   void
-  function_sum_convert_ind_expr_build( JitFunction& function , const QDPExpr<RHS,OLattice<T1> >& rhs , JitDeviceLayout input_layout )
+  function_sum_convert_ind_expr_build( JitFunction& function , const QDPExpr<RHS,OLattice<T1> >& rhs )
   {
     typedef typename UnaryReturn< OLattice<T1> , FnSum>::Type_t::SubType_t T2;
 

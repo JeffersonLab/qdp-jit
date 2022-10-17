@@ -27,9 +27,6 @@ option(QDP_ENABLE_MANAGED_MEMORY "Enable CUDA/HIP Managed Memory" OFF)
 option(QDP_ROCM5FIX "Work around ROCM5 issue" OFF)
 
 
-option(QDP_ROCM5FIX "Work around ROCM5 issue" OFF)
-
-
 set(QDP_USE_PROFILING ${QDP_ENABLE_PROFILING})
 
 option(QDP_ENABLE_CUSTOM_KERNELS "Enable Custom Kernels" OFF)
