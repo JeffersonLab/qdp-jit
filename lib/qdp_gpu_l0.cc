@@ -121,28 +121,43 @@ namespace QDP {
 
   size_t gpu_mem_free()
   {
-    uint32_t count = 0;
-    VALIDATECALL(zeDeviceGetMemoryProperties( hDevice , &count, nullptr));
+    // Discover memories on device
+    uint32_t memCount = 0;
+    zeDeviceGetMemoryProperties(hDevice, &memCount, nullptr);
 
-    if (count != 1)
+    if (memCount != 1)
       {
 	std::cout << "zeDeviceGetMemoryProperties: expected count of 1\n";
-	std::cout << "couint = " << count << "\n";
+	std::cout << "count = " << memCount << "\n";
 	exit(1);
       }
 
-    ze_device_memory_properties_t prop;
-    count = 1;
-    VALIDATECALL(zeDeviceGetMemoryProperties( hDevice , &count, &prop));
+    // Allocate properties structs
+    ze_device_memory_properties_t* pMemProps = (ze_device_memory_properties_t*)malloc(memCount*sizeof(ze_device_memory_properties_t));
+    ze_device_memory_ext_properties_t* pExtMemProps = (ze_device_memory_ext_properties_t*)malloc(memCount*sizeof(ze_device_memory_ext_properties_t));
+    
+    // Make pNext in memProps point at corresponding extMemProps
+    for (uint32_t i = 0; i < memCount; ++i) {
+      pMemProps[i].stype = ZE_STRUCTURE_TYPE_DEVICE_MEMORY_PROPERTIES;
+      pMemProps[i].pNext = &pExtMemProps[i];
+      pExtMemProps[i].stype = ZE_STRUCTURE_TYPE_DEVICE_MEMORY_EXT_PROPERTIES;
+      pExtMemProps[i].pNext = nullptr;
+    }
 
+    // Obtain memory & extended memory properties
+    std::cout << "calling zeDeviceGetMemoryProperties\n";
+    zeDeviceGetMemoryProperties(hDevice, &memCount, pMemProps);
+    std::cout << "done calling\n";
+    
     std::cout << "Memory properties:\n";
-    std::cout << "flags = " << prop.flags << "\n";
-    std::cout << "clock = " << prop.maxClockRate << "\n";
-    std::cout << "maxBusWidth = " << prop.maxBusWidth << "\n";
-    std::cout << "totalSize = " << prop.totalSize << "\n";
+    std::cout << "flags = " << pMemProps[0].flags << "\n";
+    std::cout << "clock = " << pMemProps[0].maxClockRate << "\n";
+    std::cout << "maxBusWidth = " << pMemProps[0].maxBusWidth << "\n";
+    std::cout << "totalSize = " << pMemProps[0].totalSize << "\n";
 
-    return prop.totalSize;
+    return pMemProps[0].totalSize;
   }
+
   
   size_t gpu_mem_total()
   {
@@ -502,7 +517,9 @@ namespace QDP {
       }
 
     VALIDATECALL(zeMemAllocDevice( hContext, &memAllocDesc, size, 1024, hDevice, mem));
-    
+
+    std::cout << __PRETTY_FUNCTION__ << " done\n";
+
     return true;
   }
 
