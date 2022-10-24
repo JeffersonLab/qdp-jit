@@ -82,6 +82,10 @@ namespace QDP
       {
 	get__cache_pool_allocator().free( ptr );
       }
+    else
+      {
+	return gpu_free( ptr );
+      }
   }
 #endif
 
