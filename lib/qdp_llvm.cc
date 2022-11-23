@@ -45,7 +45,7 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/SourceMgr.h"
 
-#if QDP_LLVM14
+#if defined (QDP_LLVM14) || (QDP_LLVM15) || (QDP_LLVM16)
 #include "llvm/MC/TargetRegistry.h"
 #else
 #include "llvm/Support/TargetRegistry.h"
@@ -105,7 +105,7 @@ namespace llvm {
 
 
 #ifdef QDP_BACKEND_AVX
-#ifdef QDP_LLVM14
+#if defined (QDP_LLVM14) || (QDP_LLVM15) || (QDP_LLVM16)
 class KaleidoscopeJIT {
 private:
   std::unique_ptr<ExecutionSession> ES;
@@ -382,6 +382,22 @@ namespace QDP
   }
 
 
+  llvm::Value* llvm_builder_CreateLoad( llvm::Type* ty , llvm::Value* ptr )
+  {
+    return builder->CreateLoad( ty , ptr );
+  }
+
+
+  void         llvm_builder_CreateStore( llvm::Type* ty , llvm::Value* val , llvm::Value* ptr )
+  {
+    builder->CreateStore( val , ptr );
+  }
+
+
+  llvm::Value* llvm_builder_CreateGEP( llvm::Type*  ty  , llvm::Value* ptr , llvm::Value* idx )
+  {
+    return builder->CreateGEP( ty , ptr , idx );
+  }
 
   
 
@@ -424,21 +440,32 @@ namespace QDP
     return Mod.get();
   }
 
-  template<> llvm::Type* llvm_get_type<void>()  { return llvm::Type::getVoidTy(*TheContext); }
 
-  template<> llvm::Type* llvm_get_type<jit_half_t>()  { return llvm::Type::getHalfTy(*TheContext); }
-  template<> llvm::Type* llvm_get_type<float>()  { return llvm::Type::getFloatTy(*TheContext); }
-  template<> llvm::Type* llvm_get_type<double>() { return llvm::Type::getDoubleTy(*TheContext); }
-  template<> llvm::Type* llvm_get_type<int>()    { return llvm::Type::getIntNTy(*TheContext,32); }
-  template<> llvm::Type* llvm_get_type<bool>()   { return llvm::Type::getIntNTy(*TheContext,8); }
-  template<> llvm::Type* llvm_get_type<size_t>()    { return llvm::Type::getIntNTy(*TheContext,64); }
+  template<> llvm::Type* llvm_get_type<void>()       { return llvm::Type::getVoidTy(*TheContext); }
+  template<> llvm::Type* llvm_get_type<jit_half_t>() { return llvm::Type::getHalfTy(*TheContext); }
+  template<> llvm::Type* llvm_get_type<float>()      { return llvm::Type::getFloatTy(*TheContext); }
+  template<> llvm::Type* llvm_get_type<double>()     { return llvm::Type::getDoubleTy(*TheContext); }
+  template<> llvm::Type* llvm_get_type<int>()        { return llvm::Type::getIntNTy(*TheContext,32); }
+  template<> llvm::Type* llvm_get_type<bool>()       { return llvm::Type::getIntNTy(*TheContext,8); }
+  template<> llvm::Type* llvm_get_type<size_t>()     { return llvm::Type::getIntNTy(*TheContext,64); }
 
-  template<> llvm::Type* llvm_get_type<jit_half_t*>()  { return llvm::Type::getHalfPtrTy(*TheContext); }
-  template<> llvm::Type* llvm_get_type<float*>()  { return llvm::Type::getFloatPtrTy(*TheContext); }
-  template<> llvm::Type* llvm_get_type<double*>() { return llvm::Type::getDoublePtrTy(*TheContext); }
-  template<> llvm::Type* llvm_get_type<int*>()    { return llvm::Type::getIntNPtrTy(*TheContext,32); }
-  template<> llvm::Type* llvm_get_type<bool*>()   { return llvm::Type::getIntNPtrTy(*TheContext,8); }
+  
+#if defined (QDP_LLVM15) || (QDP_LLVM16)
+  template<> llvm::Type* llvm_get_type<jit_half_t*>() { return llvm::PointerType::get(*TheContext , qdp_jit_config_get_global_addrspace()); }
+  template<> llvm::Type* llvm_get_type<float*>()      { return llvm::PointerType::get(*TheContext , qdp_jit_config_get_global_addrspace()); }
+  template<> llvm::Type* llvm_get_type<double*>()     { return llvm::PointerType::get(*TheContext , qdp_jit_config_get_global_addrspace()); }
+  template<> llvm::Type* llvm_get_type<int*>()        { return llvm::PointerType::get(*TheContext , qdp_jit_config_get_global_addrspace()); }
+  template<> llvm::Type* llvm_get_type<bool*>()       { return llvm::PointerType::get(*TheContext , qdp_jit_config_get_global_addrspace()); }
+#else
+  template<> llvm::Type* llvm_get_type<jit_half_t*>() { return llvm::Type::getHalfPtrTy(*TheContext); }
+  template<> llvm::Type* llvm_get_type<float*>()      { return llvm::Type::getFloatPtrTy(*TheContext); }
+  template<> llvm::Type* llvm_get_type<double*>()     { return llvm::Type::getDoublePtrTy(*TheContext); }
+  template<> llvm::Type* llvm_get_type<int*>()        { return llvm::Type::getIntNPtrTy(*TheContext,32); }
+  template<> llvm::Type* llvm_get_type<bool*>()       { return llvm::Type::getIntNPtrTy(*TheContext,8); }
+#endif
 
+
+  
 #if defined (QDP_CODEGEN_VECTOR)
   template<> llvm::Type* llvm_get_vectype<float>()   { return llvm::FixedVectorType::get( llvm::Type::getFloatTy(*TheContext) , Layout::virtualNodeNumber() );  }
   template<> llvm::Type* llvm_get_vectype<double>()  { return llvm::FixedVectorType::get( llvm::Type::getDoubleTy(*TheContext) , Layout::virtualNodeNumber() );  }
@@ -603,10 +630,6 @@ namespace QDP
 
     if (FileName.empty())
       {
-	// std::vector<std::string> vec_str_cuda_path = { "/usr/local/cuda" , "/usr/lib/nvidia-cuda-toolkit" };
-	// std::vector<std::string> vec_str_cuda_path_append = { "/nvvm/libdevice" , "/libdevice" };
-	// std::vector<std::string> vec_str_libdevice_name = { "libdevice.10.bc" };
-
 	std::vector<std::string> all;
 
 	if (!user_libdevice_path.empty())
@@ -1310,25 +1333,6 @@ namespace QDP
   }
 
 
-  llvm::Value* llvm_array_type_indirection( ParamRef p , llvm::Value* idx )
-  {
-    llvm::Value* base = llvm_derefParam( p );
-    llvm::Value* gep = llvm_createGEP( base , idx );
-    return llvm_load( gep );
-  }
-
-  
-  llvm::Value* llvm_array_type_indirection( llvm::Value* base , llvm::Value* idx )
-  {
-    llvm::Value* gep = llvm_createGEP( base , idx );
-    return llvm_load( gep );
-  }
-
-  
-  // llvm::ConstantInt * llvm_create_const_int(int i) {
-  //   return llvm::ConstantInt::getSigned( llvm::Type::getIntNTy(*TheContext,32) , i );
-  // }
-
 
   llvm::SwitchInst * llvm_switch_create( llvm::Value* val , llvm::BasicBlock* bb_default ) 
   {
@@ -1923,13 +1927,6 @@ namespace QDP
   llvm::Value * llvm_create_value(bool v )    {return llvm::ConstantInt::get( llvm::Type::getInt8Ty(*TheContext) , v );}
 
 
-  llvm::Value * llvm_createGEP( llvm::Value * ptr , llvm::Value * idx )
-  {
-    ptr = builder->CreateGEP( ptr->getType()->getPointerElementType() , ptr , idx );
-
-    return ptr;
-  }
-
   
   llvm::Value* llvm_trunc_i1( llvm::Value* val )
   {
@@ -1946,41 +1943,11 @@ namespace QDP
   }
   
 
-  llvm::Value * llvm_load( llvm::Value * ptr )
-  {
-    ptr = builder->CreateLoad( ptr->getType()->getPointerElementType() , ptr );
-    return ptr;
-  }
-
-  void llvm_store( llvm::Value * val , llvm::Value * ptr )
-  {
-    assert(ptr->getType()->isPointerTy() && "llvm_store: not a pointer type");
-    llvm::Value * val_cast = llvm_cast( ptr->getType()->getPointerElementType() , val );
-    builder->CreateStore( val_cast , ptr );
-  }
-
-
-  llvm::Value * llvm_load_ptr_idx( llvm::Value * ptr , llvm::Value * idx )
-  {
-    return llvm_load( llvm_createGEP( ptr , idx ) );
-  }
-
-
-  void llvm_store_ptr_idx( llvm::Value * val , llvm::Value * ptr , llvm::Value * idx )
-  {
-    llvm_store( val , llvm_createGEP( ptr , idx ) );
-  }
-
 
   void llvm_add_incoming( llvm::Value* phi , llvm::Value* val , llvm::BasicBlock* bb )
   {
     dyn_cast<llvm::PHINode>(phi)->addIncoming( val , bb );
   }
-  
-
-
-  
-
   
 
 
@@ -1990,7 +1957,7 @@ namespace QDP
     						      llvm::ArrayRef<llvm::Type*>( param_types.data() , param_types.size() ) , 
     						      false );
 
-#if defined (QDP_LLVM14) && (!defined (QDP_ROCM5FIX))
+#if defined (QDP_LLVM14) || (QDP_LLVM15) || (QDP_LLVM16)
     llvm::AttrBuilder ABuilder(*TheContext);
 #else
     llvm::AttrBuilder ABuilder;
@@ -2034,7 +2001,7 @@ namespace QDP
   {
     llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getVoidTy(*TheContext), false);
 
-#if defined (QDP_LLVM14) && (!defined (QDP_ROCM5FIX))
+#if defined (QDP_LLVM14) || (QDP_LLVM15) || (QDP_LLVM16)
     llvm::AttrBuilder ABuilder(*TheContext);
 #else
     llvm::AttrBuilder ABuilder;

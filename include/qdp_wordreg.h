@@ -38,7 +38,7 @@ namespace QDP {
     }
 
     void setup(const WordJIT<T>& wj) {
-      llvm::Value *val_j = llvm_load_ptr_idx( wj.getBaseReg() , wj.getOffset() );
+      llvm::Value *val_j = llvm_load_ptr_idx<T>( wj.getBaseReg() , wj.getOffset() );
       setup( val_j );
     }
 

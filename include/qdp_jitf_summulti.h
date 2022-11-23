@@ -114,13 +114,13 @@ namespace QDP {
       sdata_jit.setup( r_shared , JitDeviceLayout::Scalar , args );
       zero_rep( sdata_jit );
 
-      llvm::Value* r_size = llvm_array_type_indirection( p_sizes , loop_subset.index() );
+      llvm::Value* r_size = llvm_array_type_indirection<int>( p_sizes , loop_subset.index() );
 
 
       JitIf ifInRange( llvm_lt( r_idx , r_size ) );
       {
-	llvm::Value* r_sitetable = llvm_array_type_indirection( p_sitetables , loop_subset.index() );
-	llvm::Value* r_idx_perm  = llvm_array_type_indirection( r_sitetable , r_idx );
+	llvm::Value* r_sitetable = llvm_array_type_indirection<int*>( p_sitetables , loop_subset.index() );
+	llvm::Value* r_idx_perm  = llvm_array_type_indirection<int>( r_sitetable , r_idx );
 
 	//typename REGType< typename JITType< typename ScalarType<T1>::Type_t >::Type_t >::Type_t reg_idata_elem;
 	//reg_idata_elem.setup( idata.elem( input_layout , r_idx_perm ) );
@@ -239,7 +239,7 @@ namespace QDP {
       sdata_jit.setup( r_shared , JitDeviceLayout::Scalar , args );
       zero_rep( sdata_jit );
 
-      llvm::Value* r_size = llvm_array_type_indirection( p_sizes , loop_subset.index() );
+      llvm::Value* r_size = llvm_array_type_indirection<int>( p_sizes , loop_subset.index() );
 
 
       JitIf ifInRange( llvm_lt( r_idx , r_size ) );

@@ -32,7 +32,7 @@ namespace QDP {
     llvm::Value * r_idx_thread = llvm_thread_idx();
     workgroupGuard.check(r_idx_thread);
 
-    llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
+    llvm::Value* r_idx = llvm_array_type_indirection<int>( p_site_table , r_idx_thread );
 
     PSeedREG seed_reg;
     PSeedREG ran_mult_n_reg;

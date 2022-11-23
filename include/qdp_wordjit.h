@@ -33,7 +33,7 @@ namespace QDP {
     template<class T1>
     void operator=(const WordREG<T1>& s1) {
       assert(setup_m);
-      llvm_store_ptr_idx( s1.get_val() , r_base , offset );
+      llvm_store_ptr_idx<T>( s1.get_val() , r_base , offset );
     }
 
 
@@ -42,9 +42,9 @@ namespace QDP {
     inline
     WordJIT& operator+=(const WordREG<T1>& rhs) 
     {
-      llvm::Value * tmp = llvm_load_ptr_idx( r_base , offset );
+      llvm::Value * tmp = llvm_load_ptr_idx<T>( r_base , offset );
       llvm::Value * tmp2 = llvm_add( tmp , rhs.get_val() );
-      llvm_store_ptr_idx( tmp2 , r_base , offset );
+      llvm_store_ptr_idx<T>( tmp2 , r_base , offset );
       return *this;
     }
 
@@ -53,9 +53,9 @@ namespace QDP {
     inline
     WordJIT& operator-=(const WordREG<T1>& rhs) 
     {
-      llvm::Value * tmp = llvm_load_ptr_idx( r_base , offset );
+      llvm::Value * tmp = llvm_load_ptr_idx<T>( r_base , offset );
       llvm::Value * tmp2 = llvm_sub( tmp , rhs.get_val() );
-      llvm_store_ptr_idx( tmp2 , r_base , offset );
+      llvm_store_ptr_idx<T>( tmp2 , r_base , offset );
       return *this;
     }
 
@@ -64,9 +64,9 @@ namespace QDP {
     inline
     WordJIT& operator*=(const WordREG<T1>& rhs) 
     {
-      llvm::Value * tmp = llvm_load_ptr_idx( r_base , offset );
+      llvm::Value * tmp = llvm_load_ptr_idx<T>( r_base , offset );
       llvm::Value * tmp2 = llvm_mul( tmp , rhs.get_val() );
-      llvm_store_ptr_idx( tmp2 , r_base , offset );
+      llvm_store_ptr_idx<T>( tmp2 , r_base , offset );
       return *this;
     }
 
@@ -75,9 +75,9 @@ namespace QDP {
     inline
     WordJIT& operator/=(const WordREG<T1>& rhs) 
     {
-      llvm::Value * tmp = llvm_load_ptr_idx( r_base , offset );
+      llvm::Value * tmp = llvm_load_ptr_idx<T>( r_base , offset );
       llvm::Value * tmp2 = llvm_div( tmp , rhs.get_val() );
-      llvm_store_ptr_idx( tmp2 , r_base , offset );
+      llvm_store_ptr_idx<T>( tmp2 , r_base , offset );
       return *this;
     }
 
@@ -86,9 +86,9 @@ namespace QDP {
     inline
     WordJIT& operator%=(const WordREG<T1>& rhs) 
     {
-      llvm::Value * tmp = llvm_load_ptr_idx( r_base , offset );
+      llvm::Value * tmp = llvm_load_ptr_idx<T>( r_base , offset );
       llvm::Value * tmp2 = llvm_rem( tmp , rhs.get_val() );
-      llvm_store_ptr_idx( tmp2 , r_base , offset );
+      llvm_store_ptr_idx<T>( tmp2 , r_base , offset );
       return *this;
     }
 
@@ -97,9 +97,9 @@ namespace QDP {
     inline
     WordJIT& operator|=(const WordREG<T1>& rhs) 
     {
-      llvm::Value * tmp = llvm_load_ptr_idx( r_base , offset );
+      llvm::Value * tmp = llvm_load_ptr_idx<T>( r_base , offset );
       llvm::Value * tmp2 = llvm_or( tmp , rhs.get_val() );
-      llvm_store_ptr_idx( tmp2 , r_base , offset );
+      llvm_store_ptr_idx<T>( tmp2 , r_base , offset );
       return *this;
     }
 
@@ -108,9 +108,9 @@ namespace QDP {
     inline
     WordJIT& operator&=(const WordREG<T1>& rhs) 
     {
-      llvm::Value * tmp = llvm_load_ptr_idx( r_base , offset );
+      llvm::Value * tmp = llvm_load_ptr_idx<T>( r_base , offset );
       llvm::Value * tmp2 = llvm_and( tmp , rhs.get_val() );
-      llvm_store_ptr_idx( tmp2 , r_base , offset );
+      llvm_store_ptr_idx<T>( tmp2 , r_base , offset );
       return *this;
     }
 
@@ -119,9 +119,9 @@ namespace QDP {
     inline
     WordJIT& operator^=(const WordREG<T1>& rhs) 
     {
-      llvm::Value * tmp = llvm_load_ptr_idx( r_base , offset );
+      llvm::Value * tmp = llvm_load_ptr_idx<T>( r_base , offset );
       llvm::Value * tmp2 = llvm_xor( tmp , rhs.get_val() );
-      llvm_store_ptr_idx( tmp2 , r_base , offset );
+      llvm_store_ptr_idx<T>( tmp2 , r_base , offset );
       return *this;
     }
 
@@ -130,9 +130,9 @@ namespace QDP {
     inline
     WordJIT& operator<<=(const WordREG<T1>& rhs) 
     {
-      llvm::Value * tmp = llvm_load_ptr_idx( r_base , offset );
+      llvm::Value * tmp = llvm_load_ptr_idx<T>( r_base , offset );
       llvm::Value * tmp2 = llvm_shl( tmp , rhs.get_val() );
-      llvm_store_ptr_idx( tmp2 , r_base , offset );
+      llvm_store_ptr_idx<T>( tmp2 , r_base , offset );
       return *this;
     }
 
@@ -141,9 +141,9 @@ namespace QDP {
     inline
     WordJIT& operator>>=(const WordREG<T1>& rhs) 
     {
-      llvm::Value * tmp = llvm_load_ptr_idx( r_base , offset );
+      llvm::Value * tmp = llvm_load_ptr_idx<T>( r_base , offset );
       llvm::Value * tmp2 = llvm_shr( tmp , rhs.get_val() );
-      llvm_store_ptr_idx( tmp2 , r_base , offset );
+      llvm_store_ptr_idx<T>( tmp2 , r_base , offset );
       return *this;
     }
 
@@ -552,25 +552,25 @@ namespace QDP {
   inline void 
   zero_rep(WordJIT<double> dest)
   {
-    llvm_store_ptr_idx( llvm_create_value( 0.0 ) , dest.getBaseReg() , dest.getOffset() );
+    llvm_store_ptr_idx<double>( llvm_create_value( 0.0 ) , dest.getBaseReg() , dest.getOffset() );
   }
 
   inline void 
   zero_rep(WordJIT<jit_half_t> dest)
   {
-    llvm_store_ptr_idx( llvm_create_value( 0.0 ) , dest.getBaseReg() , dest.getOffset() );
+    llvm_store_ptr_idx<jit_half_t>( llvm_create_value( 0.0 ) , dest.getBaseReg() , dest.getOffset() );
   }
-
+  
   inline void 
   zero_rep(WordJIT<float> dest)
   {
-    llvm_store_ptr_idx( llvm_create_value( 0.0 ) , dest.getBaseReg() , dest.getOffset() );
+    llvm_store_ptr_idx<float>( llvm_create_value( 0.0 ) , dest.getBaseReg() , dest.getOffset() );
   }
 
   inline void 
   zero_rep(WordJIT<int> dest)
   {
-    llvm_store_ptr_idx( llvm_create_value( 0 ) , dest.getBaseReg() , dest.getOffset() );
+    llvm_store_ptr_idx<int>( llvm_create_value( 0 ) , dest.getBaseReg() , dest.getOffset() );
   }
 
 

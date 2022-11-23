@@ -70,9 +70,17 @@ endif()
 
 
 set(QDP_ENABLE_LLVM14 @QDP_ENABLE_LLVM14@)
+set(QDP_ENABLE_LLVM15 @QDP_ENABLE_LLVM15@)
+set(QDP_ENABLE_LLVM16 @QDP_ENABLE_LLVM16@)
 
 if(QDP_ENABLE_LLVM14)
   set(QDP_LLVM14 "1")
+endif()
+if(QDP_ENABLE_LLVM15)
+  set(QDP_LLVM15 "1")
+endif()
+if(QDP_ENABLE_LLVM16)
+  set(QDP_LLVM16 "1")
 endif()
 
 
@@ -108,11 +116,16 @@ endif()
 
 # Now find the dependencies
 
-if(QDP_ENABLE_LLVM14)
-  find_dependency(LLVM "14.0" REQUIRED CONFIG)
+if( QDP_ENABLE_LLVM16 )
+  find_package(LLVM "16.0" REQUIRED CONFIG)
+elseif( QDP_ENABLE_LLVM15 )
+  find_package(LLVM "15.0" REQUIRED CONFIG)
+elseif( QDP_ENABLE_LLVM14 )
+  find_package(LLVM "14.0" REQUIRED CONFIG)
 else()
-  find_dependency(LLVM "13.0" REQUIRED CONFIG)
+  find_package(LLVM "13.0" REQUIRED CONFIG)
 endif()
+
 
 find_dependency(XPathReader REQUIRED)
 find_dependency(FileDB REQUIRED)

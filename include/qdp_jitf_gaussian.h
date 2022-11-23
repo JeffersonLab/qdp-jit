@@ -23,7 +23,7 @@ function_gaussian_build( JitFunction& function, OLattice<T>& dest ,OLattice<T>& 
   llvm::Value* r_idx_thread = llvm_thread_idx();
   workgroupGuard.check(r_idx_thread);
 
-  llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
+  llvm::Value* r_idx = llvm_array_type_indirection<int>( p_site_table , r_idx_thread );
   
   typedef typename REGType< typename ScalarType< typename JITType<T>::Type_t >::Type_t >::Type_t TREG;
   TREG r1_reg;

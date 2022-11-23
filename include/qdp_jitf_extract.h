@@ -72,7 +72,7 @@ namespace QDP {
 
     workgroupGuard.check(r_idx_thread);
 
-    llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
+    llvm::Value* r_idx = llvm_array_type_indirection<int>( p_site_table , r_idx_thread );
 
     typename REGType< typename JITType<T>::Type_t >::Type_t in_data_reg;
 

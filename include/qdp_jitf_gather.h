@@ -33,7 +33,7 @@ namespace QDP {
 
     workgroupGuard.check(r_idx);
 
-    llvm::Value * r_idx_site = llvm_array_type_indirection( p_soffset , r_idx );
+    llvm::Value * r_idx_site = llvm_array_type_indirection<int>( p_soffset , r_idx );
   
     OpAssign()( dest_jit.elem( JitDeviceLayout::Scalar , r_idx ) , 
 		forEach(rhs_view, ViewLeaf( JitDeviceLayout::Coalesced , r_idx_site ) , OpCombine() ) );
@@ -67,7 +67,7 @@ namespace QDP {
 
     workgroupGuard.check(r_idx);
 
-    llvm::Value * r_idx_site = llvm_array_type_indirection( p_soffset , r_idx );
+    llvm::Value * r_idx_site = llvm_array_type_indirection<int>( p_soffset , r_idx );
 
   
     std::vector< JitForLoop > loops;

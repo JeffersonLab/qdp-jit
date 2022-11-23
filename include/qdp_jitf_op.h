@@ -66,7 +66,7 @@ namespace QDP {
 
     workgroupGuard.check(r_idx_thread);
 
-    llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
+    llvm::Value* r_idx = llvm_array_type_indirection<int>( p_site_table , r_idx_thread );
 
     typename REGType< typename JITType< typename ScalarType<LT>::Type_t >::Type_t >::Type_t l_reg;
     l_reg.setup( l_jit.elem( JitDeviceLayout::Coalesced , r_idx ) );
@@ -107,7 +107,7 @@ namespace QDP {
 
     workgroupGuard.check(r_idx_thread);
 
-    llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
+    llvm::Value* r_idx = llvm_array_type_indirection<int>( p_site_table , r_idx_thread );
 
 
     typename REGType< typename JITType< typename ScalarType<LT>::Type_t >::Type_t >::Type_t l_reg;

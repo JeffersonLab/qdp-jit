@@ -24,7 +24,7 @@ namespace QDP {
 
     workgroupGuard.check(r_idx_thread);
 
-    llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
+    llvm::Value* r_idx = llvm_array_type_indirection<int>( p_site_table , r_idx_thread );
 
     op_jit( dest_jit.elem( JitDeviceLayout::Scalar , r_idx_thread ),
 	    forEach(rhs_jit, ViewLeaf( JitDeviceLayout::Coalesced , r_idx ), OpCombine()));
@@ -55,7 +55,7 @@ namespace QDP {
 
     workgroupGuard.check(r_idx_thread);
 
-    llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
+    llvm::Value* r_idx = llvm_array_type_indirection<int>( p_site_table , r_idx_thread );
 
     typename REGType< typename JITType< RT >::Type_t >::Type_t rhs_reg;
     rhs_reg.setup( rhs_jit.elem( JitDeviceLayout::Scalar , r_idx_thread ) );
@@ -88,7 +88,7 @@ namespace QDP {
 
     workgroupGuard.check(r_idx_thread);
 
-    llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
+    llvm::Value* r_idx = llvm_array_type_indirection<int>( p_site_table , r_idx_thread );
 
     typename REGType< typename JITType< RT >::Type_t >::Type_t rhs_reg;
     rhs_reg.setup( rhs_jit.elemScalar( JitDeviceLayout::Scalar , r_idx_thread ) );

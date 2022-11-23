@@ -97,6 +97,12 @@
 /* Compile for LLVM 14.0 series */	
 #cmakedefine QDP_LLVM14				@QDP_LLVM14@
 
+/* Compile for LLVM 15.0 series */	
+#cmakedefine QDP_LLVM15				@QDP_LLVM15@
+
+/* Compile for LLVM 16.0 series */	
+#cmakedefine QDP_LLVM16				@QDP_LLVM16@
+
 /* Codegen uses vector instructions */	
 #cmakedefine QDP_CODEGEN_VECTOR			@QDP_CODEGEN_VECTOR@
 
@@ -126,9 +132,6 @@
 
 /* CUDA use managed memory */
 #cmakedefine QDP_ENABLE_MANAGED_MEMORY	        @QDP_ENABLE_MANAGED_MEMORY@
-
-/* Fix for ROCM5 */
-#cmakedefine QDP_ROCM5FIX                       @QDP_ROCM5FIX@
 
 /* Enable HDF5 support */
 #cmakedefine QDP_USE_HDF5			@QDP_USE_HDF5@

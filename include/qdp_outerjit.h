@@ -48,7 +48,7 @@ namespace QDP {
       T F;
       IndexDomainVector args;
       args.push_back( make_pair( Layout::sitesOnNode() , index ) );
-      F.setup( llvm_array_type_indirection( base_m , multi_index ) , lay , args );
+      F.setup( llvm_array_type_indirection< typename WordType<T>::Type_t* >( base_m , multi_index ) , lay , args );
       return F;
     }
 

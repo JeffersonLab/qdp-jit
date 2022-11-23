@@ -53,7 +53,7 @@ namespace QDP {
        
       workgroupGuard.check(r_idx_thread);
 
-      llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
+      llvm::Value* r_idx = llvm_array_type_indirection<int>( p_site_table , r_idx_thread );
 
       ViewLeaf vl( JitDeviceLayout::Coalesced , r_idx );
 #if defined (QDP_CODEGEN_VECTOR)
@@ -89,7 +89,7 @@ namespace QDP {
        
       workgroupGuard.check(r_idx_thread);
 
-      llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
+      llvm::Value* r_idx = llvm_array_type_indirection<int>( p_site_table , r_idx_thread );
 
       // op_jit( dest_jit.elemScalar( JitDeviceLayout::Coalesced , r_idx ),
       // 	      forEach(rhs_view, ViewLeafScalar( JitDeviceLayout::Coalesced , r_idx ), OpCombine()));
@@ -152,7 +152,7 @@ namespace QDP {
        
       workgroupGuard.check(r_idx_thread);
 
-      llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
+      llvm::Value* r_idx = llvm_array_type_indirection<int>( p_site_table , r_idx_thread );
 
       std::vector< JitForLoop > loops;
       CreateLoops<T,OpJit_t>::apply( loops , op_jit );
@@ -200,7 +200,7 @@ namespace QDP {
        
       workgroupGuard.check(r_idx_thread);
 
-      llvm::Value* r_idx = llvm_array_type_indirection( p_site_table , r_idx_thread );
+      llvm::Value* r_idx = llvm_array_type_indirection<int>( p_site_table , r_idx_thread );
 
       std::vector< JitForLoop > loops;
       CreateLoops<T,OpJit_t>::apply( loops , op_jit );

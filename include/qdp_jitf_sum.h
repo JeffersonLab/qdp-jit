@@ -116,7 +116,7 @@ namespace QDP {
 
     JitIf ifValidThreadIdx( llvm_lt( r_idx , r_hi ) );
     {
-      llvm::Value* r_idx_perm = llvm_array_type_indirection( p_site_perm , r_idx );
+      llvm::Value* r_idx_perm = llvm_array_type_indirection<int>( p_site_perm , r_idx );
 
       OpAssign()( sdata_jit , 
 		  forEach(rhs_view, ViewLeaf( input_layout , r_idx_perm ), OpCombine()));

@@ -194,18 +194,65 @@ namespace QDP {
 
   llvm::Value* llvm_trunc_i1( llvm::Value* val );
 
-  llvm::Value * llvm_createGEP( llvm::Value * ptr , llvm::Value * idx );
-  llvm::Value * llvm_load( llvm::Value * ptr );
-  void          llvm_store( llvm::Value * val , llvm::Value * ptr );
+  //llvm::Value * llvm_createGEP( llvm::Value * ptr , llvm::Value * idx );
 
-  llvm::Value * llvm_load_ptr_idx( llvm::Value * ptr , llvm::Value * idx );
-  void          llvm_store_ptr_idx( llvm::Value * val , llvm::Value * ptr , llvm::Value * idx );
 
+  llvm::Value* llvm_builder_CreateLoad ( llvm::Type*  ty  , llvm::Value* ptr );
+  void         llvm_builder_CreateStore( llvm::Type*  ty  , llvm::Value* val , llvm::Value* ptr );
+  llvm::Value* llvm_builder_CreateGEP( llvm::Type*  ty  , llvm::Value* ptr , llvm::Value* idx );
+
+  
+  template<class T>
+  llvm::Value * llvm_load( llvm::Value * ptr )
+  {
+    return llvm_builder_CreateLoad( llvm_get_type<T>() , ptr );
+  }
+
+  template<class T>
+  void llvm_store( llvm::Value * val , llvm::Value * ptr )
+  {
+    //assert(ptr->getType()->isPointerTy() && "llvm_store: not a pointer type");
+    llvm::Value * val_cast = llvm_cast( llvm_get_type<T>() , val );
+    llvm_builder_CreateStore( llvm_get_type<T>() , val_cast , ptr );
+  }
+  
+
+  template<class T>
+  llvm::Value * llvm_load_ptr_idx ( llvm::Value * ptr , llvm::Value * idx )
+  {
+    return llvm_load<T>( llvm_builder_CreateGEP( llvm_get_type<T>() , ptr , idx ) );
+  }
+
+  
+  template<class T>
+  void llvm_store_ptr_idx( llvm::Value * val , llvm::Value * ptr , llvm::Value * idx )
+  {
+    llvm_store<T>( val , llvm_builder_CreateGEP( llvm_get_type<T>() , ptr , idx ) );
+  }
+
+
+  
   void          llvm_add_incoming( llvm::Value * phi , llvm::Value* val , llvm::BasicBlock* bb );
 
-  llvm::Value * llvm_array_type_indirection( ParamRef p        , llvm::Value* idx );
-  llvm::Value * llvm_array_type_indirection( llvm::Value* base , llvm::Value* idx );
+  
+  template<class T>
+  llvm::Value * llvm_array_type_indirection( ParamRef p        , llvm::Value* idx )
+  {
+    llvm::Value* base = llvm_derefParam( p );
+    //llvm::Value* gep = builder->CreateGEP( llvm_get_type<T>() , base , idx );
+    llvm::Value* gep = llvm_builder_CreateGEP( llvm_get_type<T>() , base , idx );
+    return llvm_load<T>( gep );
+  }
 
+  template<class T>
+  llvm::Value * llvm_array_type_indirection( llvm::Value* base , llvm::Value* idx )
+  {
+    //llvm::Value* gep = builder->CreateGEP( llvm_get_type<T>() , base , idx );
+    llvm::Value* gep = llvm_builder_CreateGEP( llvm_get_type<T>() , base , idx );
+    return llvm_load<T>( gep );
+  }
+
+  
   llvm::Value * llvm_special( const char * name );
 
   llvm::Value * llvm_call_special_tidx();

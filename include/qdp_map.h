@@ -390,7 +390,7 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
       
 	      IndexRet index = expr.operation().index;
 
-	      llvm::Value * r_multi_index = llvm_array_type_indirection( index.p_multi_index , v.getIndex() );
+	      llvm::Value * r_multi_index = llvm_array_type_indirection<int>( index.p_multi_index , v.getIndex() );
 
 	      JitIf inRecvBuffer( llvm_lt( r_multi_index , llvm_create_value(0) ) );
 	      {
@@ -427,7 +427,7 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
 	    {
 	      IndexRet index = expr.operation().index;
 
-	      llvm::Value * r_multi_index = llvm_array_type_indirection( index.p_multi_index , v.getIndex() );
+	      llvm::Value * r_multi_index = llvm_array_type_indirection<int>( index.p_multi_index , v.getIndex() );
 
 	      ViewLeaf vv( JitDeviceLayout::Coalesced , r_multi_index );
 
@@ -445,7 +445,7 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
       
 	  IndexRet index = expr.operation().index;
 
-	  llvm::Value * r_multi_index = llvm_array_type_indirection( index.p_multi_index , v.getIndex() );
+	  llvm::Value * r_multi_index = llvm_array_type_indirection<int>( index.p_multi_index , v.getIndex() );
 
 	  JitIf inRecvBuffer( llvm_lt( r_multi_index , llvm_create_value(0) ) );
 	  {
@@ -548,7 +548,7 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewSpinLeaf, OpCombine>
 
 	      IndexRet index = expr.operation().index;
 
-	      llvm::Value * r_multi_index = llvm_array_type_indirection( index.p_multi_index , v.getIndex() );
+	      llvm::Value * r_multi_index = llvm_array_type_indirection<int>( index.p_multi_index , v.getIndex() );
 
 	      JitIf inRecvBuffer( llvm_lt( r_multi_index , llvm_create_value(0) ) );
 	      {
@@ -586,7 +586,7 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewSpinLeaf, OpCombine>
 	      // straight return
 	      IndexRet index = expr.operation().index;
 
-	      llvm::Value * r_new_index = llvm_array_type_indirection( index.p_multi_index , v.getIndex() );
+	      llvm::Value * r_new_index = llvm_array_type_indirection<int>( index.p_multi_index , v.getIndex() );
 
 	      ViewSpinLeaf vv( JitDeviceLayout::Coalesced , r_new_index , v.getIndices() );
 
@@ -607,7 +607,7 @@ struct ForEach<UnaryNode<FnMapJIT, A>, ViewSpinLeaf, OpCombine>
 
 	  IndexRet index = expr.operation().index;
 
-	  llvm::Value * r_multi_index = llvm_array_type_indirection( index.p_multi_index , v.getIndex() );
+	  llvm::Value * r_multi_index = llvm_array_type_indirection<int>( index.p_multi_index , v.getIndex() );
 
 	  JitIf inRecvBuffer( llvm_lt( r_multi_index , llvm_create_value(0) ) );
 	  {
