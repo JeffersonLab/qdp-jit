@@ -125,19 +125,11 @@ namespace QDP
     }
     
 
-    struct SizeNotAllocated: public std::binary_function< entry_t , size_t , bool >
-    {
-      bool operator () ( const entry_t & ent , size_t size ) const
-      {
-	return ( !ent.allocated ) && ( ent.size >= size );
-      }
-    };
-
 
     template<class T>
     bool findNextNotAllocated( T& start , const T& end , size_t size )
     {
-      start = std::find_if( start , end , std::bind2nd( SizeNotAllocated(), size ) );
+      start = std::find_if( start , end , [size](entry_t& ent) { return ( !ent.allocated ) && ( ent.size >= size ); } );
       
       if ( start == end)
 	{
@@ -152,7 +144,16 @@ namespace QDP
 
 
 
-    
+#if 0
+    struct MemMatch
+    {
+      bool operator () (const entry_t& ent , const void* mem ) const
+      {
+	return ent.ptr == mem;
+      }
+    };
+  
+
     struct MemMatch: public std::binary_function< entry_t , const void * , bool >
     {
       bool operator () ( const entry_t& ent , const void* mem ) const
@@ -160,7 +161,7 @@ namespace QDP
 	return ent.ptr == mem;
       }
     };
-
+    
 
     bool findMemMatch( iterEntry_t& match , const void* mem )
     {
@@ -168,6 +169,7 @@ namespace QDP
 
       return match != listEntry.end();
     }
+#endif
 
 
   };
@@ -478,12 +480,15 @@ namespace QDP
       return;
 
     iterEntry_t p;
+
+    p = std::find_if( listEntry.begin() , listEntry.end(), [mem](entry_t& i){ return i.ptr == mem; } );
     
-    if (!findMemMatch( p , mem ))
+    if ( p == listEntry.end() )
       {
 	QDPIO::cerr << "pool allocator: free: address not found " << mem << std::endl;
 	QDP_abort(1);
       }
+    
 
     p->allocated = false;
 

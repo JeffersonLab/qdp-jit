@@ -77,6 +77,7 @@
 #include <memory>
 #include <vector>
 #include <map>
+#include <array>
 
 #include <string>
 #include <fstream>
