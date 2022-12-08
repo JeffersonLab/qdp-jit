@@ -45,7 +45,7 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/SourceMgr.h"
 
-#if defined (QDP_LLVM14) || (QDP_LLVM15) || (QDP_LLVM16)
+#if defined (QDP_LLVM14) || defined (QDP_LLVM15) || defined (QDP_LLVM16)
 #include "llvm/MC/TargetRegistry.h"
 #else
 #include "llvm/Support/TargetRegistry.h"
@@ -105,7 +105,7 @@ namespace llvm {
 
 
 #ifdef QDP_BACKEND_AVX
-#if defined (QDP_LLVM14) || (QDP_LLVM15) || (QDP_LLVM16)
+#if defined (QDP_LLVM14) || defined (QDP_LLVM15) || defined (QDP_LLVM16)
 class KaleidoscopeJIT {
 private:
   std::unique_ptr<ExecutionSession> ES;
@@ -264,8 +264,12 @@ namespace {
 	      llvm::raw_ostream &stderrOS, bool exitEarly = true)
   {
     std::vector<const char *> args(argv, argv + argc);
-    
+
+#if defined (QDP_LLVM15) || defined (QDP_LLVM16)
+    return !lld::elf::link(args, stdoutOS, stderrOS, exitEarly, false);
+#else
     return !lld::elf::link(args, exitEarly, stdoutOS, stderrOS);
+#endif
   }
 }
 #endif
@@ -450,7 +454,7 @@ namespace QDP
   template<> llvm::Type* llvm_get_type<size_t>()     { return llvm::Type::getIntNTy(*TheContext,64); }
 
   
-#if defined (QDP_LLVM15) || (QDP_LLVM16)
+#if defined (QDP_LLVM15) || defined (QDP_LLVM16)
   template<> llvm::Type* llvm_get_type<jit_half_t*>() { return llvm::PointerType::get(*TheContext , qdp_jit_config_get_global_addrspace()); }
   template<> llvm::Type* llvm_get_type<float*>()      { return llvm::PointerType::get(*TheContext , qdp_jit_config_get_global_addrspace()); }
   template<> llvm::Type* llvm_get_type<double*>()     { return llvm::PointerType::get(*TheContext , qdp_jit_config_get_global_addrspace()); }
