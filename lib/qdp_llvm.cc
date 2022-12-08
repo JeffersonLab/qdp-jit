@@ -1957,7 +1957,7 @@ namespace QDP
     						      llvm::ArrayRef<llvm::Type*>( param_types.data() , param_types.size() ) , 
     						      false );
 
-#if defined (QDP_LLVM14) || (QDP_LLVM15) || (QDP_LLVM16)
+#if (defined (QDP_LLVM14) && (!defined (QDP_ROCM5FIX))) || defined (QDP_LLVM15) || defined (QDP_LLVM16)
     llvm::AttrBuilder ABuilder(*TheContext);
 #else
     llvm::AttrBuilder ABuilder;
@@ -2001,7 +2001,7 @@ namespace QDP
   {
     llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getVoidTy(*TheContext), false);
 
-#if defined (QDP_LLVM14) || (QDP_LLVM15) || (QDP_LLVM16)
+#if (defined (QDP_LLVM14) && (!defined (QDP_ROCM5FIX))) || defined (QDP_LLVM15) || defined (QDP_LLVM16)
     llvm::AttrBuilder ABuilder(*TheContext);
 #else
     llvm::AttrBuilder ABuilder;
