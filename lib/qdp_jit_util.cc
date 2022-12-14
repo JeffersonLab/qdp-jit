@@ -446,10 +446,7 @@ namespace QDP {
 	    QDP_abort(1);
 	  }
 	    
-	std::vector<QDPCache::ArgKey> vec_id;
-	vec_id.push_back( f.get_dest_id() );
-	std::vector<void*> vec_ptrs = QDP_get_global_cache().get_dev_ptrs( vec_id );
-	void* dev_ptr = vec_ptrs.at(0);
+	void* dev_ptr = QDP_get_global_cache().get_dev_ptr( f.get_dest_id() );
 
 	gpu_memcpy_d2h( host_ptr , dev_ptr , field_size );
 
