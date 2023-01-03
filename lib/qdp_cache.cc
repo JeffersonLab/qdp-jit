@@ -776,30 +776,22 @@ namespace QDP
 #ifdef QDP_BACKEND_ROCM
   namespace 
   {
+    void round_off( std::vector<unsigned char>& ret )
+    {
+      ret.resize( ret.size() + ret.size() % sizeof(void*) );
+    }
     template<class T>
     void insert_ret( std::vector<unsigned char>& ret, T t )
     {
-      if (std::is_pointer<T>::value)
-	{
-	  //std::cout << "size is " << ret.size() << " resizing by " << ret.size() % sizeof(T) << " to meet padding requirements\n";
-	  ret.resize( ret.size() + ret.size() % sizeof(T) );
-	  ret.resize( ret.size() + sizeof(T) );
-	  *(T*)&ret[ ret.size() - sizeof(T) ] = t;
-	  //std::cout << "inserted pointer (size " << sizeof(T) << ") " << t << "\n";
-	}
-      else
-	{
-	  ret.resize( ret.size() + sizeof(T) );
-	  *(T*)&ret[ ret.size() - sizeof(T) ] = t;
-	  //std::cout << "inserted (size " << sizeof(T) << ") " << t << "\n";
-	}
+      ret.resize( ret.size() + ret.size() % sizeof(T) );
+      ret.resize( ret.size() + sizeof(T) );
+      *(T*)&ret[ ret.size() - sizeof(T) ] = t;
     }
     template<>
     void insert_ret<bool>( std::vector<unsigned char>& ret, bool t )
     {
       ret.resize( ret.size() + 4 );
       *(bool*)&ret[ ret.size() - 4 ] = t;
-      //std::cout << "inserted bool (as size 4) " << t << "\n";
     }
 
   } // namespace
@@ -1013,6 +1005,10 @@ namespace QDP
     if (print_param)
       QDPIO::cout << "\n";
 
+#if defined (QDP_BACKEND_ROCM)
+    round_off(ret);
+#endif
+    
     return ret;
   }
 
