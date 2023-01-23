@@ -933,9 +933,7 @@ namespace QDP
 							 str_arch,
 							 "",
 							 options,
-							 Reloc::PIC_,
-							 None,
-							 llvm::CodeGenOpt::Aggressive, true ));
+							 Reloc::PIC_));
     
     if (!TargetMachine)
       {
@@ -1319,8 +1317,12 @@ namespace QDP
     it_stack = builder->GetInsertPoint(); // probly bb_stack.begin()
     
     bb_afterstack = llvm::BasicBlock::Create(*TheContext, "afterstack" );
+#if defined (QDP_LLVM16)
+    mainFunc->insert(mainFunc->end(), bb_afterstack);
+#else
     mainFunc->getBasicBlockList().push_back(bb_afterstack);
-    
+#endif
+
     builder->SetInsertPoint(bb_afterstack);
 
     llvm_counters::label_counter = 0;
@@ -1859,7 +1861,11 @@ namespace QDP
     std::ostringstream oss;
     oss << "L" << llvm_counters::label_counter++;
     llvm::BasicBlock *BB = llvm::BasicBlock::Create(*TheContext, oss.str() );
+#if defined (QDP_LLVM16)
+    mainFunc->insert(mainFunc->end(), BB);
+#else
     mainFunc->getBasicBlockList().push_back(BB);
+#endif
     return BB;
   }
 
