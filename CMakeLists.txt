@@ -21,7 +21,7 @@ set(CUDA_TOOLKIT_ROOT_DIR "/usr/local/cuda" CACHE STRING "Root dir for CUDA")
 
 option(QDP_ENABLE_PROFILING "Enable profiling" OFF)
 option(QDP_ENABLE_ROCM_STATS "Enable ROCM statistics" OFF)
-option(QDP_ENABLE_MANAGED_MEMORY "Enable CUDA/HIP Managed Memory" OFF)
+option(QDP_ENABLE_MANAGED_MEMORY "Enable CUDA/HIP/LevelZero Managed Memory" OFF)
 
 option(QDP_ROCM5FIX "Work around ROCM5 issue" OFF)
 

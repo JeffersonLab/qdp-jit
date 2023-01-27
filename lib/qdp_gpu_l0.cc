@@ -492,6 +492,35 @@ namespace QDP {
     return true;
   }
 
+
+#if defined (QDP_ENABLE_MANAGED_MEMORY)
+  void gpu_memcpy( void * dest , const void * src , size_t size )
+  {
+    VALIDATECALL(zeCommandListAppendBarrier( cmdList, nullptr, 0, nullptr));
+
+    VALIDATECALL(zeCommandListAppendMemoryCopy( cmdList , dest , src , size , ev0 , 0 , nullptr ));
+
+    VALIDATECALL(zeEventHostSynchronize( ev0 , UINT64_MAX));
+    VALIDATECALL(zeCommandListAppendEventReset( cmdList , ev0 ));
+  }
+
+  
+  bool gpu_malloc_managed(void **mem , size_t size )
+  {
+    ze_device_mem_alloc_desc_t memAllocDesc;
+    memAllocDesc.flags = ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED;
+    memAllocDesc.ordinal = 0;
+    
+    ze_host_mem_alloc_desc_t hostDesc;
+    hostDesc.flags = ZE_HOST_MEM_ALLOC_FLAG_BIAS_UNCACHED;
+ 
+    VALIDATECALL(zeMemAllocShared( hContext, &memAllocDesc, &hostDesc , size , 1024 , hDevice, mem));
+
+    return true;
+  }
+#endif
+
+  
   
   void gpu_free(const void *mem )
   {
