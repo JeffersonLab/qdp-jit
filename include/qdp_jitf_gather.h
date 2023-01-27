@@ -97,7 +97,7 @@ namespace QDP {
 
   template<class T1, class RHS>
   void
-  function_gather_exec( JitFunction& function, int send_buf_id , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs , const Subset& subset )
+  function_gather_exec( JitFunction& function, int send_buf_id , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs , const Subset& subset , bool set_l0_event=false )
   {
     if (subset.numSiteTable() < 1)
       return;
@@ -116,8 +116,8 @@ namespace QDP {
     ids.push_back( send_buf_id );
     for(unsigned i=0; i < addr_leaf.ids.size(); ++i) 
       ids.push_back( addr_leaf.ids[i] );
- 
-    jit_launch(function,th_count,ids);
+
+    jit_launch( function , th_count , ids , set_l0_event );
 
 #ifdef QDP_DEEP_LOG
     jit_deep_log(function);

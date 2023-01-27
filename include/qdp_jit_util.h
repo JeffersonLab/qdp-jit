@@ -32,7 +32,7 @@ namespace QDP {
       
   
 
-  void jit_launch       ( JitFunction& function , int th_count , std::vector<QDPCache::ArgKey>& ids );
+  void jit_launch       ( JitFunction& function , int th_count , std::vector<QDPCache::ArgKey>& ids , bool set_l0_event = false );
   void jit_launch_explicit_geom( JitFunction& function , std::vector<QDPCache::ArgKey>& ids , const kernel_geom_t& geom , unsigned int shared );
 
 #ifdef QDP_DEEP_LOG

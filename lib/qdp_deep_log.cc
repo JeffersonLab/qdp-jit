@@ -46,7 +46,10 @@ namespace QDP {
 	QDPIO::cout << "creating log object ..." << std::endl;
 	logger_cmp.reset( new std::fstream );
 	QDPIO::cout << "opening log file ..." << std::endl;
-	logger_cmp->open( jit_config_deep_log_name().c_str() , ios::out | ios::binary);
+
+	std::string fname = std::string(jit_config_deep_log_name().c_str()) + "_" + std::to_string(Layout::nodeNumber());
+	logger_cmp->open( fname.c_str() , ios::out | ios::binary);
+
 	if(!(*logger_cmp))
 	  {
 	    QDPIO::cout << "Cannot open log file!" << endl;
@@ -276,7 +279,10 @@ namespace QDP {
 	QDPIO::cout << "creating log object ..." << std::endl;
 	logger_cmp.reset( new std::fstream );
 	QDPIO::cout << "opening log file ..." << std::endl;
-	logger_cmp->open( jit_config_deep_log_name().c_str() , ios::in | ios::binary);
+
+	std::string fname = std::string(jit_config_deep_log_name().c_str()) + "_" + std::to_string(Layout::nodeNumber());
+	logger_cmp->open( fname.c_str() , ios::in | ios::binary);
+
 	if(!(*logger_cmp))
 	  {
 	    QDPIO::cout << "Cannot open log file!" << endl;

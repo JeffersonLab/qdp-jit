@@ -745,13 +745,21 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
 	    function_gather_build<InnerType_t>( function , subexpr );
 	  }
 
+#ifdef QDP_BACKEND_L0
+	function_gather_exec(function, rRSrc.getSendBufId() , map , subexpr , f.subset , jit_config_get_gpu_direct() );
+	if ( jit_config_get_gpu_direct() )
+	  {
+	    gpu_wait_l0_event();
+	  }
+#else
 	function_gather_exec(function, rRSrc.getSendBufId() , map , subexpr , f.subset );
 
 	if ( jit_config_get_gpu_direct() )
 	  {
 	    gpu_sync();
 	  }
-
+#endif
+	
 	rRSrc.send_receive();
       }
 
