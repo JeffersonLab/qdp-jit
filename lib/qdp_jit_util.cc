@@ -351,7 +351,7 @@ namespace QDP {
 
 
 #if defined(QDP_BACKEND_CUDA) || defined(QDP_BACKEND_ROCM) || defined(QDP_BACKEND_L0)
-  void jit_launch(JitFunction& function,int th_count,std::vector<QDPCache::ArgKey>& ids)
+  void jit_launch( JitFunction& function , int th_count , std::vector<QDPCache::ArgKey>& ids , bool set_l0_event )
   {
     //QDPIO::cerr << "jit launch, grid=(" << geom.Nblock_x << "," << geom.Nblock_y << ",1), block=(" << threads_per_block << ",1,1)\n";
 
@@ -396,7 +396,8 @@ namespace QDP {
 					  geom.Nblock_x,geom.Nblock_y,1,
 					  geom.threads_per_block,1,1,
 					  0, // shared mem
-					  args );
+					  args ,
+					  set_l0_event );
 
     if (result != JitResult::JitSuccess) {
       QDPIO::cerr << "jit launch error, grid=(" << geom.Nblock_x << "," << geom.Nblock_y << ",1), block=(" << threads_per_block << ",1,1)\n";
@@ -446,7 +447,7 @@ namespace QDP {
 	    QDP_abort(1);
 	  }
 	    
-	void* dev_ptr = QDP_get_global_cache().get_dev_ptr( f.get_dest_id() );
+        void* dev_ptr = QDP_get_global_cache().get_dev_ptr( f.get_dest_id() );
 
 	gpu_memcpy_d2h( host_ptr , dev_ptr , field_size );
 

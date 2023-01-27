@@ -62,7 +62,7 @@ namespace QDP
     int CUDA_FTZ = 0;
 #endif
 
-#if defined(QDP_BACKEND_ROCM) || (QDP_BACKEND_L0)
+#if defined(QDP_BACKEND_ROCM) || defined (QDP_BACKEND_L0)
     bool codegen_keepfiles = false;
 #endif
     
@@ -184,7 +184,7 @@ namespace QDP
     
     QDPIO::cout << "Launch configuration:\n";
     QDPIO::cout << "  Threads per block                   : " << threads_per_block << "\n";
-#if defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_ROCM)
+#if defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_L0)
     QDPIO::cout << "  Using GPU direct                    : " << (int)jit_config_get_gpu_direct() << "\n";
 #endif
   }
@@ -224,7 +224,7 @@ namespace QDP
 #endif
 
   
-#if defined(QDP_BACKEND_ROCM) || (QDP_BACKEND_L0)
+#if defined(QDP_BACKEND_ROCM) || defined (QDP_BACKEND_L0)
   bool jit_config_get_keepfiles() { return codegen_keepfiles; }
   void jit_config_set_keepfiles(bool v) { codegen_keepfiles = v; }
 #endif

@@ -58,7 +58,7 @@ namespace QDP {
   JitResult gpu_launch_kernel( JitFunction& f, 
 			       unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
 			       unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
-			       unsigned int  sharedMemBytes, QDPCache::KernelArgs_t kernelArgs )
+			       unsigned int  sharedMemBytes, QDPCache::KernelArgs_t kernelArgs , bool set_l0_event )
   {
     JitResult ret = JitResult::JitSuccess;
     return ret;

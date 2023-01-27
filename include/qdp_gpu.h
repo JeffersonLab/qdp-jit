@@ -59,9 +59,14 @@ namespace QDP {
   JitResult gpu_launch_kernel( JitFunction& f, 
 			       unsigned int  gridDimX, unsigned int  gridDimY, unsigned int  gridDimZ, 
 			       unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
-			       unsigned int  sharedMemBytes, QDPCache::KernelArgs_t kernelArgs );
+			       unsigned int  sharedMemBytes, QDPCache::KernelArgs_t kernelArgs ,
+			       bool set_l0_event = false );
 
+#ifdef QDP_BACKEND_L0
+  void gpu_wait_l0_event();
+#endif
 
+  
   //JitFunction get_fptr_from_ptx( const char* fname , const std::string& kernel );
   bool get_jitf( JitFunction& func, const std::string& kernel , const std::string& func_name , const std::string& pretty , const std::string& compute );
 
