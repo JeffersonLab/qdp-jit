@@ -267,7 +267,7 @@ namespace {
     bool ret;
     std::vector<const char *> args(argv, argv + argc);
 
-#if defined (QDP_LLVM15) || defined (QDP_LLVM16)
+#if defined (QDP_LLVM14) || defined (QDP_LLVM15) || defined (QDP_LLVM16)
     ret = lld::elf::link(args, stdoutOS, stderrOS, exitEarly, false);
 #else
     ret = lld::elf::link(args, exitEarly, stdoutOS, stderrOS);
