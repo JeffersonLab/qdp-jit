@@ -1790,6 +1790,25 @@ namespace QDP {
     };
 
 
+  
+    template<ConceptEvalToSpinMatrix A, class CTag>
+    struct ForEach<UnaryNode<FnTranspose, A>, ViewSpinLeaf, CTag >
+    {
+      typedef typename ForEach<A, ViewSpinLeaf, CTag>::Type_t TypeA_t;
+      typedef typename Combine1<TypeA_t, FnTranspose, CTag>::Type_t Type_t;
+
+      inline static
+      Type_t apply(const UnaryNode<FnTranspose, A> &expr, const ViewSpinLeaf &f,	const CTag &c)
+      {
+	return Combine1<TypeA_t, FnTranspose, CTag>::
+	  combine(ForEach<A, ViewSpinLeaf, CTag>::
+		  apply(expr.child(),  ViewSpinLeaf( f , f.index_second() , f.index_first() ) , c),
+		  FnTranspose(), c);
+
+      }
+    };
+
+  
 
 
     //template<ConceptEvalToSpinMatrix A,class CTag>
