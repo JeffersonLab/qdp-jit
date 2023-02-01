@@ -319,8 +319,8 @@ namespace QDP
     //
 #ifdef QDP_BACKEND_ROCM
     std::vector<std::string> vec_str_libdevice_path = { ROCM_DIR };
-    std::vector<std::string> vec_str_libdevice_path_append = { "llvm/lib/libdevice/" };
-    std::vector<std::string> vec_str_libdevice_name = { "libm-amdgcn-ARCH.bc" };
+    std::vector<std::string> vec_str_libdevice_path_append = { "llvm/lib/libdevice/" , "llvm/lib/" };
+    std::vector<std::string> vec_str_libdevice_name = { "libm-amdgcn-ARCH.bc" , "libomptarget-amdgcn-ARCH.bc" , "libomptarget-new-amdpu-ARCH.bc" };
 #elif QDP_BACKEND_CUDA
     std::vector<std::string> vec_str_libdevice_path = { "CUDAPATH" , "/usr/local/cuda/" , "/usr/lib/nvidia-cuda-toolkit/" };
     std::vector<std::string> vec_str_libdevice_path_append = { "nvvm/libdevice/" , "libdevice/" , "cuda/nvvm/libdevice/" , "cuda/CUDAVERSION/nvvm/libdevice/"};
