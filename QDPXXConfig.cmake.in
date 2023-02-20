@@ -145,9 +145,9 @@ if(@QDP_USE_HDF5@)
 endif()
 
 # OpenMP is always a dependency now
-if( NOT OpenMP_FOUND )
-  find_dependency(OpenMP REQUIRED)
-endif()
+#if( NOT OpenMP_FOUND )
+#  find_dependency(OpenMP REQUIRED)
+#endif()
 
 if(NOT Threads_FOUND )
   find_dependency(Threads REQUIRED)
