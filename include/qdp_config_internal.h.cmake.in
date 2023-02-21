@@ -136,6 +136,9 @@
 /* Fix for ROCM5 */
 #cmakedefine QDP_ROCM5FIX                       @QDP_ROCM5FIX@
 
+/* For ROCMs earlier than 5.2.x */
+#cmakedefine QDP_ROCM_PRE                       @QDP_ROCM_PRE@
+
 /* Enable HDF5 support */
 #cmakedefine QDP_USE_HDF5			@QDP_USE_HDF5@
 

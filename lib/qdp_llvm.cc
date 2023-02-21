@@ -79,7 +79,9 @@ using namespace llvm::orc;
 #include "lld/Common/Driver.h"
 #include "lld/Common/ErrorHandler.h"
 #include "lld/Common/Memory.h"
+#if ! defined(QDP_ROCM_PRE)
 #include "lld/Common/CommonLinkerContext.h"
+#endif
 #endif
 
 #ifdef QDP_BACKEND_L0
@@ -267,15 +269,17 @@ namespace {
     bool ret;
     std::vector<const char *> args(argv, argv + argc);
 
-#if defined (QDP_LLVM14) || defined (QDP_LLVM15) || defined (QDP_LLVM16)
+#if defined (QDP_LLVM15) || defined (QDP_LLVM16)
     ret = lld::elf::link(args, stdoutOS, stderrOS, exitEarly, false);
 #else
     ret = lld::elf::link(args, exitEarly, stdoutOS, stderrOS);
 #endif
-    
+
+#if ! defined(QDP_ROCM_PRE)
     // Cleanup
     lld::CommonLinkerContext::destroy();
-
+#endif
+    
     return ret ? 0 : 1;
   }
 }
