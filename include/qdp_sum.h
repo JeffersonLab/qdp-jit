@@ -223,7 +223,7 @@ namespace QDP {
     bool allocated=false;
     while (actsize > 0) {
 
-      unsigned numThreads = gpu_getMaxBlockX();
+      unsigned numThreads = gpu_getMaxBlockX() >> 1;
       while ((numThreads*sizeof(T2) > gpu_getMaxSMem()) || (numThreads > (unsigned)actsize)) {
 	numThreads >>= 1;
       }
@@ -448,7 +448,7 @@ namespace QDP {
 
       //QDPIO::cout << "maxsize power2 : " << maxsizep2 << "\n";
       
-      unsigned numThreads = gpu_getMaxBlockX();
+      unsigned numThreads = gpu_getMaxBlockX() >> 1;
       while ((numThreads*sizeof(T2) > gpu_getMaxSMem()) || (numThreads > (unsigned)maxsizep2)) {
 	numThreads >>= 1;
       }
