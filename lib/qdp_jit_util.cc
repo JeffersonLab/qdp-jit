@@ -477,6 +477,16 @@ namespace QDP {
     // Increment the call counter
     function.inc_call_counter();
 
+#if defined (QDP_BACKEND_CUDA)
+    if ( geom.threads_per_block * function.get_regs() > jit_config_get_max_regs_per_block() )
+      {
+	QDPIO::cerr << "jit launch explicit, grid=(" << geom.Nblock_x << "," << geom.Nblock_y << ",1), block=(" << geom.threads_per_block << ",1,1)" << std::endl;
+	QDPIO::cerr << "kernel: regs = " << function.get_regs() << ", stack = " << function.get_stack() << ", cmem = " << function.get_cmem() << std::endl;
+	QDPIO::cerr << "resulting in " << geom.threads_per_block * function.get_regs() << " registers, exceeding hardware limit " << jit_config_get_max_regs_per_block() << std::endl;
+	QDP_abort(1);
+      }
+#endif
+    
     JitResult result = gpu_launch_kernel( function,
 					  geom.Nblock_x,geom.Nblock_y,1,
 					  geom.threads_per_block,1,1,

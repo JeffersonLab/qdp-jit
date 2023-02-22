@@ -66,6 +66,8 @@ namespace QDP
 #ifdef QDP_BACKEND_CUDA
   int  jit_config_get_CUDA_FTZ();
   void jit_config_set_CUDA_FTZ(int i);
+
+  int  jit_config_get_max_regs_per_block();
 #endif
 
 #if defined(QDP_BACKEND_ROCM) || (QDP_BACKEND_L0)

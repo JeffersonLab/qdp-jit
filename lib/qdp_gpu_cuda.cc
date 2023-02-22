@@ -652,12 +652,13 @@ namespace QDP {
     
     mapCUFuncPTX[func.get_function()] = kernel_ptx;
 
-    if ( gpu_get_record_stats() && Layout::primaryNode() )
+    if ( Layout::primaryNode() )
       {
 	func.set_regs ( cuda_get_attribute( CU_FUNC_ATTRIBUTE_NUM_REGS , cuf ) );
 	func.set_stack( cuda_get_attribute( CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES , cuf ) );
 	func.set_cmem ( cuda_get_attribute( CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES , cuf ) );
       }
+    
     return true;
   }
 
