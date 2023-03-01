@@ -2844,78 +2844,6 @@ namespace QDP
 #ifdef QDP_BACKEND_L0
   void llvm_build_function_levelzero_codegen(JitFunction& func, const std::string& spirv_path)
   {
-#if 0
-    SmallVector<llvm::Metadata *, 8> addressQuals;
-    SmallVector<llvm::Metadata *, 8> accessQuals;
-    SmallVector<llvm::Metadata *, 8> argTypeNames;
-    SmallVector<llvm::Metadata *, 8> argTypeQuals;
-
-    unsigned Idx = 0;
-    for (llvm::Function::arg_iterator AI = mainFunc->arg_begin(), AE = mainFunc->arg_end() ; AI != AE ; ++AI, ++Idx)
-      {
-	llvm::Type* ty = AI->getType();
-	
-	if (ty->isPointerTy())
-	  {
-	    std::cout << "pointer: " << AI->getName().str() << "\n";
-	    
-	    addressQuals.push_back( llvm::ConstantAsMetadata::get(builder->getInt32( dyn_cast<llvm::PointerType>(ty)->getAddressSpace() )));
-
-	    llvm::Type* ety = dyn_cast<llvm::PointerType>(ty)->getElementType();
-	    std::string type_str;
-	    if (ety == llvm::Type::getFloatTy(*TheContext))
-	      type_str = "float*";
-	    else if (ety == llvm::Type::getDoubleTy(*TheContext))
-	      type_str = "double*";
-	    else if (ety == llvm::Type::getInt8Ty(*TheContext))
-	      type_str = "bool*";
-	    else if (ety == llvm::Type::getInt32Ty(*TheContext))
-	      type_str = "int*";
-	    else
-	      {
-		QDPIO::cout << "ptr type not recognized\n";
-		QDP_abort(1);
-	      }
-	    argTypeNames.push_back(llvm::MDString::get(*TheContext, type_str ));
-
-	  }
-	else
-	  {
-	    std::cout << "non-pointer: " << AI->getName().str() << "\n";
-	    addressQuals.push_back( llvm::ConstantAsMetadata::get(builder->getInt32( 0 )));
-
-	    std::string type_str;
-	    if (ty == llvm::Type::getFloatTy(*TheContext))
-	      type_str = "float";
-	    else if (ty == llvm::Type::getDoubleTy(*TheContext))
-	      type_str = "double";
-	    else if (ty == llvm::Type::getInt8Ty(*TheContext))
-	      type_str = "bool";
-	    else if (ty == llvm::Type::getInt32Ty(*TheContext))
-	      type_str = "int";
-	    else
-	      {
-		QDPIO::cout << "type not recognized\n";
-		QDP_abort(1);
-	      }
-	    argTypeNames.push_back(llvm::MDString::get(*TheContext, type_str ));
-
-	  }
-	accessQuals.push_back(llvm::MDString::get(*TheContext, "none"));
-
-	argTypeQuals.push_back(llvm::MDString::get(*TheContext, "" ));
-      }
-
-    
-    mainFunc->setMetadata("kernel_arg_addr_space" , llvm::MDNode::get(*TheContext, addressQuals));
-    mainFunc->setMetadata("kernel_arg_access_qual", llvm::MDNode::get(*TheContext, accessQuals));
-    mainFunc->setMetadata("kernel_arg_type",        llvm::MDNode::get(*TheContext, argTypeNames));
-    mainFunc->setMetadata("kernel_arg_base_type",   llvm::MDNode::get(*TheContext, argTypeNames));
-    mainFunc->setMetadata("kernel_arg_type_qual",   llvm::MDNode::get(*TheContext, argTypeQuals));
-#endif
-    
-    
-    
     StopWatch swatch(false);
     func.time_math = 0.;
     swatch.reset();
@@ -2935,14 +2863,6 @@ namespace QDP
     
     if (jit_config_get_verbose_output() || jit_config_get_keepfiles())
       {
-	// QDPIO::cout << "\n\n";
-	// QDPIO::cout << str_pretty << std::endl;
-	
-	// if (Layout::primaryNode())
-	//   {
-	//     llvm_module_dump();
-	//   }
-
 	std::string module_name = "module_" + str_kernel_name + ".bc";
 	QDPIO::cout << "write code to " << module_name << "\n";
 	std::error_code EC;
@@ -2952,7 +2872,6 @@ namespace QDP
 	llvm::WriteBitcodeToFile(*Mod, OS);
 	OS.flush();
       }
-
     
     swatch.reset();
     swatch.start();
@@ -2981,6 +2900,12 @@ namespace QDP
     get_jitf( func , spirv_path , str_kernel_name , str_pretty , str_arch );
     swatch.stop();
     func.time_dynload = swatch.getTimeInMicroseconds();
+
+    if (! jit_config_get_keepfiles() )
+      {
+	std::remove(spirv_path.c_str());
+      }
+
   }
 
   
@@ -3006,50 +2931,6 @@ namespace QDP
     // call codegen
     llvm_build_function_levelzero_codegen( func , spirv_path );
 
-#if 0
-    std::ostringstream sstream;
-    std::ifstream fin(shared_path, ios::binary);
-    sstream << fin.rdbuf();
-    std::string shared(sstream.str());
-
-    if (! jit_config_get_keepfiles() )
-      {
-	if (std::remove(shared_path.c_str()))
-	  {
-	    QDPIO::cout << "Error removing file: " << shared_path << std::endl;
-	    QDP_abort(1);
-	  }
-      }
-
-    
-    if (jit_config_get_verbose_output())
-      {
-	QDPIO::cout << "shared object file read back in. size = " << shared.size() << "\n";
-      }
-
-    StopWatch swatch(false);
-    swatch.start();
-
-    if (!get_jitf( func , shared , str_kernel_name , str_pretty , str_arch ))
-      {
-	// Something went wrong loading the module or finding the kernel
-	// Print some diagnostics about the module
-	QDPIO::cout << "Module declarations:" << std::endl;
-	auto F = Mod->begin();
-	while ( F != Mod->end() )
-	  {
-	    if (F->isDeclaration())
-	      {
-		QDPIO::cout << F->getName().str() << std::endl;
-	      }
-	    F++;
-	  }
-	sleep(1);
-      }
-
-    swatch.stop();
-    func.time_dynload = swatch.getTimeInMicroseconds();
-#endif
   }
 #endif
 

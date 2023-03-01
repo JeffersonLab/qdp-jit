@@ -11,7 +11,6 @@
 #include <unistd.h>
 
 
-
 #define VALIDATECALL(myZeCall) \
   if (myZeCall != ZE_RESULT_SUCCESS){  \
     std::cout << "Error at "	       \
@@ -55,13 +54,16 @@ namespace QDP {
 
   void gpu_create_events()
   {
-    constexpr size_t tsAllocSize = 64;
+    size_t tsAllocSize = 64;
 
     globalTsStart = nullptr;
     globalTsEnd = nullptr;
 
-    ze_device_mem_alloc_desc_t deviceDesc = {ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC};
-    deviceDesc.flags = ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED;
+    ze_device_mem_alloc_desc_t deviceDesc;
+    deviceDesc.stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC;
+    //deviceDesc.flags = ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED;
+    deviceDesc.pNext = nullptr;
+    deviceDesc.flags = 0;
     deviceDesc.ordinal = 0;
 
     VALIDATECALL(zeMemAllocDevice(hContext, &deviceDesc, tsAllocSize, 8, hDevice, &globalTsStart));
@@ -124,15 +126,15 @@ namespace QDP {
     }
 
     // Obtain memory & extended memory properties
-    std::cout << "calling zeDeviceGetMemoryProperties\n";
+    //std::cout << "calling zeDeviceGetMemoryProperties\n";
     zeDeviceGetMemoryProperties(hDevice, &memCount, pMemProps);
-    std::cout << "done calling\n";
+    //std::cout << "done calling\n";
     
-    std::cout << "Memory properties:\n";
-    std::cout << "flags = " << pMemProps[0].flags << "\n";
-    std::cout << "clock = " << pMemProps[0].maxClockRate << "\n";
-    std::cout << "maxBusWidth = " << pMemProps[0].maxBusWidth << "\n";
-    std::cout << "totalSize = " << pMemProps[0].totalSize << "\n";
+    //std::cout << "Memory properties:\n";
+    //std::cout << "flags = " << pMemProps[0].flags << "\n";
+    //std::cout << "clock = " << pMemProps[0].maxClockRate << "\n";
+    //std::cout << "maxBusWidth = " << pMemProps[0].maxBusWidth << "\n";
+    //std::cout << "totalSize = " << pMemProps[0].totalSize << "\n";
 
     return pMemProps[0].totalSize;
   }
@@ -213,12 +215,10 @@ namespace QDP {
     uint32_t driverCount = 0;
     VALIDATECALL(zeDriverGet(&driverCount, nullptr));
 
-    std::cout << "Driver count = " << driverCount << std::endl;
-
     if (driverCount < 1)
       {
-	std::cout << "Expected driver count of at least 1\n";
-	exit(1);
+	QDPIO::cerr << "Expected driver count of at least 1\n";
+	QDP_abort(1);
       }
 
     ze_driver_handle_t* allDrivers = (ze_driver_handle_t*)malloc(driverCount * sizeof(ze_driver_handle_t));
@@ -239,7 +239,12 @@ namespace QDP {
 
     
     VALIDATECALL(zeDeviceGet( hDriver, &deviceCount, nullptr));
-    std::cout << "Devices found: " << deviceCount << std::endl;
+
+    if (deviceCount < 1)
+      {
+	QDPIO::cerr << "Expected device count of at least 1\n";
+	QDP_abort(1);
+      }
 
     free(allDrivers);
   }
@@ -278,8 +283,8 @@ namespace QDP {
     zeDeviceGetProperties(allDevices[dev], &device_properties);
       
     if (device_properties.type != ZE_DEVICE_TYPE_GPU) {
-      std::cout << "Device " << dev << " is not of GPU type." << std::endl;
-      exit(1);
+      QDPIO::cerr << "Device " << dev << " is not of GPU type. Confused." << std::endl;
+      QDP_abort(1);
     }
 
     hDevice = allDevices[dev];
@@ -291,7 +296,7 @@ namespace QDP {
     uint32_t cmdqueueGroupCount = 0;
     zeDeviceGetCommandQueueGroupProperties(hDevice, &cmdqueueGroupCount, nullptr);
 
-    std::cout << "cmdqueueGroupCount: " << cmdqueueGroupCount << std::endl;
+    //std::cout << "cmdqueueGroupCount: " << cmdqueueGroupCount << std::endl;
     
     ze_command_queue_group_properties_t* cmdqueueGroupProperties = (ze_command_queue_group_properties_t*)malloc(cmdqueueGroupCount * sizeof(ze_command_queue_group_properties_t));
     zeDeviceGetCommandQueueGroupProperties(hDevice, &cmdqueueGroupCount, cmdqueueGroupProperties);
@@ -308,8 +313,8 @@ namespace QDP {
     
     if(computeQueueGroupOrdinal == cmdqueueGroupCount)
       {
-	std::cout << "no compute queues found" << std::endl;
-	exit(1);
+	QDPIO::cerr << "no compute queues found" << std::endl;
+	QDP_abort(1);
       }
 
 	  
@@ -367,17 +372,16 @@ namespace QDP {
   
   void gpu_get_device_props()
   {
-    //std::cout << __PRETTY_FUNCTION__ << "\n";
   }
 
 
   
   void gpu_auto_detect()
   {
-    //std::cout << __PRETTY_FUNCTION__ << "\n";
-
     VALIDATECALL(zeDeviceGetProperties(hDevice, &deviceProperties));
-    std::cout << "Device                         : " << deviceProperties.name << "\n" 
+
+#if 0
+    QDPIO::cout << "Device                         : " << deviceProperties.name << "\n" 
               << "Type                           : " << ((deviceProperties.type == ZE_DEVICE_TYPE_GPU) ? "GPU" : "FPGA") << "\n"
               << "Vendor ID                      : " << std::hex << deviceProperties.vendorId << std::dec << "\n"
 	      << "Max alloc                      : " << deviceProperties.maxMemAllocSize << "\n"
@@ -387,18 +391,20 @@ namespace QDP {
 	      << "Number of sub-slices per slice : " << deviceProperties.numSubslicesPerSlice << "\n"
 	      << "Number of slices               : " << deviceProperties.numSlices << "\n"
       ;
+#endif
 
     VALIDATECALL(zeDeviceGetComputeProperties(hDevice, &deviceComputeProperties));
-    std::cout << "Maximum group size total       : " << deviceComputeProperties.maxTotalGroupSize << "\n" ;
-    std::cout << "Maximum group size X           : " << deviceComputeProperties.maxGroupSizeX << "\n" ;
-    std::cout << "Maximum group size Y           : " << deviceComputeProperties.maxGroupSizeY << "\n" ;
-    std::cout << "Maximum group size Z           : " << deviceComputeProperties.maxGroupSizeZ << "\n" ;
-    std::cout << "Maximum group count X          : " << deviceComputeProperties.maxGroupCountX << "\n" ;
-    std::cout << "Maximum group count Y          : " << deviceComputeProperties.maxGroupCountY << "\n" ;
-    std::cout << "Maximum group count Z          : " << deviceComputeProperties.maxGroupCountZ << "\n" ;
-    std::cout << "Maximum shared local memory    : " << deviceComputeProperties.maxSharedLocalMemory << "\n" ;
-    std::cout << "Maximum Number of subgroups    : " << deviceComputeProperties.numSubGroupSizes << "\n" ;
-      
+#if 0
+    QDPIO::cout << "Maximum group size total       : " << deviceComputeProperties.maxTotalGroupSize << "\n" ;
+    QDPIO::cout << "Maximum group size X           : " << deviceComputeProperties.maxGroupSizeX << "\n" ;
+    QDPIO::cout << "Maximum group size Y           : " << deviceComputeProperties.maxGroupSizeY << "\n" ;
+    QDPIO::cout << "Maximum group size Z           : " << deviceComputeProperties.maxGroupSizeZ << "\n" ;
+    QDPIO::cout << "Maximum group count X          : " << deviceComputeProperties.maxGroupCountX << "\n" ;
+    QDPIO::cout << "Maximum group count Y          : " << deviceComputeProperties.maxGroupCountY << "\n" ;
+    QDPIO::cout << "Maximum group count Z          : " << deviceComputeProperties.maxGroupCountZ << "\n" ;
+    QDPIO::cout << "Maximum shared local memory    : " << deviceComputeProperties.maxSharedLocalMemory << "\n" ;
+    QDPIO::cout << "Maximum Number of subgroups    : " << deviceComputeProperties.numSubGroupSizes << "\n" ;
+#endif
   }
 
 
@@ -419,11 +425,14 @@ namespace QDP {
   void gpu_host_alloc(void **mem , const size_t size)
   {
 
-    ze_host_mem_alloc_desc_t hostDesc = {ZE_STRUCTURE_TYPE_HOST_MEM_ALLOC_DESC};
+    ze_host_mem_alloc_desc_t hostDesc;
+    hostDesc.stype = ZE_STRUCTURE_TYPE_HOST_MEM_ALLOC_DESC;
+    hostDesc.pNext = nullptr;
+    hostDesc.flags = 0;
+    
+    VALIDATECALL(zeMemAllocHost(hContext, &hostDesc, size , jit_config_get_pool_alignment() , mem));
 
-    VALIDATECALL(zeMemAllocHost(hContext, &hostDesc, size , 1, mem));
-
-    std::cout << "gpu_host_alloc size = " << size << "  addr = " << *mem << "\n";
+    //std::cout << "gpu_host_alloc size = " << size << "  addr = " << *mem << "\n";
   }
 
 
@@ -436,7 +445,7 @@ namespace QDP {
   void gpu_wait_l0_event()
   {
     VALIDATECALL(zeEventHostSynchronize(ev1, UINT64_MAX));
-    VALIDATECALL(zeCommandListAppendEventReset( cmdList , ev1 ));
+    VALIDATECALL(zeEventHostReset( ev1 ));
   }
   
 
@@ -444,11 +453,10 @@ namespace QDP {
   {
     VALIDATECALL(zeCommandListAppendBarrier( cmdList, nullptr, 0, nullptr));
 
-    //if (Layout::primaryNode()) std::cerr << "next copy is H2D" << std::endl;
     VALIDATECALL(zeCommandListAppendMemoryCopy( cmdList , dest , src , size , ev0 , 0 , nullptr ));
 
     VALIDATECALL(zeEventHostSynchronize(ev0, UINT64_MAX));
-    VALIDATECALL(zeCommandListAppendEventReset( cmdList , ev0 ));
+    VALIDATECALL(zeEventHostReset( ev0 ));
   }
 
 
@@ -456,11 +464,10 @@ namespace QDP {
   {
     VALIDATECALL(zeCommandListAppendBarrier( cmdList, nullptr, 0, nullptr));
 
-    //if (Layout::primaryNode()) std::cerr << "next copy is D2H" << std::endl;
     VALIDATECALL(zeCommandListAppendMemoryCopy( cmdList , dest , src , size , ev0 , 0 , nullptr ));
 
     VALIDATECALL(zeEventHostSynchronize( ev0 , UINT64_MAX));
-    VALIDATECALL(zeCommandListAppendEventReset( cmdList , ev0 ));
+    VALIDATECALL(zeEventHostReset( ev0 ));
   }
 
   
@@ -470,14 +477,16 @@ namespace QDP {
   {
     //std::cout << __PRETTY_FUNCTION__ << " size = " << size << "\n";
 
-    ze_device_mem_alloc_desc_t memAllocDesc = {ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC};
-
+    ze_device_mem_alloc_desc_t memAllocDesc;
+    memAllocDesc.stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC;
+    memAllocDesc.pNext = nullptr;
+    memAllocDesc.flags = 0;
     memAllocDesc.ordinal = 0;
 
     ze_relaxed_allocation_limits_exp_desc_t relaxed;
     relaxed.stype = ZE_STRUCTURE_TYPE_RELAXED_ALLOCATION_LIMITS_EXP_DESC;
     relaxed.flags = ZE_RELAXED_ALLOCATION_LIMITS_EXP_FLAG_MAX_SIZE;
-
+ 
     if ( size > deviceProperties.maxMemAllocSize )
       {
 	std::cout << "L0 performance warning: memory allocation size larger than maximum allowed: " << size << " (" << deviceProperties.maxMemAllocSize << ").\n";
@@ -487,7 +496,7 @@ namespace QDP {
 	memAllocDesc.flags = ZE_RELAXED_ALLOCATION_LIMITS_EXP_FLAG_MAX_SIZE;
       }
 
-    VALIDATECALL(zeMemAllocDevice( hContext, &memAllocDesc, size, 1024, hDevice, mem));
+    VALIDATECALL(zeMemAllocDevice( hContext, &memAllocDesc, size, jit_config_get_pool_alignment() , hDevice, mem));
 
     return true;
   }
@@ -501,20 +510,22 @@ namespace QDP {
     VALIDATECALL(zeCommandListAppendMemoryCopy( cmdList , dest , src , size , ev0 , 0 , nullptr ));
 
     VALIDATECALL(zeEventHostSynchronize( ev0 , UINT64_MAX));
-    VALIDATECALL(zeCommandListAppendEventReset( cmdList , ev0 ));
+    VALIDATECALL(zeEventHostReset( ev0 ));
   }
 
   
   bool gpu_malloc_managed(void **mem , size_t size )
   {
     ze_device_mem_alloc_desc_t memAllocDesc;
-    memAllocDesc.flags = ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED;
+    memAllocDesc.flags = 0;
+    memAllocDesc.pNext = nullptr;
     memAllocDesc.ordinal = 0;
     
     ze_host_mem_alloc_desc_t hostDesc;
-    hostDesc.flags = ZE_HOST_MEM_ALLOC_FLAG_BIAS_UNCACHED;
- 
-    VALIDATECALL(zeMemAllocShared( hContext, &memAllocDesc, &hostDesc , size , 1024 , hDevice, mem));
+    hostDesc.flags = 0;
+    hostDesc.pNext = nullptr;
+
+    VALIDATECALL(zeMemAllocShared( hContext, &memAllocDesc, &hostDesc , size , jit_config_get_pool_alignment() , hDevice, mem));
 
     return true;
   }
@@ -577,7 +588,7 @@ namespace QDP {
     std::unique_ptr<char[]> spirvInput(new char[length]);
     file.read(spirvInput.get(), length);
 
-    ze_module_desc_t moduleDesc = {};
+    ze_module_desc_t moduleDesc;
     ze_module_build_log_handle_t buildLog;
 
     moduleDesc.stype = ZE_STRUCTURE_TYPE_MODULE_DESC;
@@ -611,7 +622,7 @@ namespace QDP {
     }
     VALIDATECALL(zeModuleBuildLogDestroy(buildLog));
 
-    ze_kernel_desc_t kernelDesc = {};
+    ze_kernel_desc_t kernelDesc;
     kernelDesc.pKernelName = kernel_name.c_str();
   
     if (jit_config_get_verbose_output())
