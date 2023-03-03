@@ -33,10 +33,10 @@ namespace RNG
   }
 
     //! Find the number of bits required to represent x.
-  int numbits(int x)
+  int numbits(size_t x)
   {
     int num = 1;
-    int iceiling = 2;
+    size_t iceiling = 2;
     while (iceiling <= x)
     {
       num++;
@@ -147,7 +147,7 @@ namespace RNG
     Seed aa;
     Seed aamult;
 
-    int ibit = Layout::vol();
+    size_t ibit = Layout::vol();
     aa = RNG_Internals->ran_mult;
 //    ran_mult_n = 1;    // produces def    ran_mult_n = ran_mult^{vol}
     RNG_Internals->ran_mult_n = RNG_Internals->ran_mult;   // produces def  ran_mult_n = ran_mult^{vol+1}
