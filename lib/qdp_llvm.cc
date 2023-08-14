@@ -1667,7 +1667,7 @@ namespace QDP
 							  qdp_jit_config_get_local_addrspace(), // unsigned AddressSpace=0, 
 							  false); //bool isExternallyInitialized=false)
 
-    return builder->CreateGEP( gv->getType()->getElementType() , gv , { llvm_create_value(0) , llvm_create_value(0) } );
+    return builder->CreatePointerCast(gv, llvm::PointerType::get( ty , qdp_jit_config_get_local_addrspace() ) );
   }
 #endif
   

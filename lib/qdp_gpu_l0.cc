@@ -638,6 +638,20 @@ namespace QDP {
       {
 	QDPIO::cout << "Got function!\n";
       }
+
+    
+    if ( Layout::primaryNode() )
+      {
+        ze_kernel_properties_t pKernelProperties;
+        pKernelProperties.stype = ZE_STRUCTURE_TYPE_KERNEL_PROPERTIES;
+        pKernelProperties.pNext = nullptr;
+        
+        VALIDATECALL(zeKernelGetProperties( kernel , &pKernelProperties ));
+
+        func.set_regs ( pKernelProperties.privateMemSize );
+        func.set_stack( pKernelProperties.spillMemSize );
+        func.set_cmem ( pKernelProperties.localMemSize );
+      }
     
     return true;
   }

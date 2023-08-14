@@ -106,6 +106,8 @@ namespace QDP
   bool        jit_config_deep_log_create();
   std::string jit_config_deep_log_name();
 
+  void        jit_config_deep_log_start();
+
   void        jit_config_deep_set( std::string name , bool create );
 #endif
 
