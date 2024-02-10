@@ -72,6 +72,7 @@ endif()
 set(QDP_ENABLE_LLVM14 @QDP_ENABLE_LLVM14@)
 set(QDP_ENABLE_LLVM15 @QDP_ENABLE_LLVM15@)
 set(QDP_ENABLE_LLVM16 @QDP_ENABLE_LLVM16@)
+set(QDP_ENABLE_LLVM17 @QDP_ENABLE_LLVM17@)
 
 if(QDP_ENABLE_LLVM14)
   set(QDP_LLVM14 "1")
@@ -81,6 +82,9 @@ if(QDP_ENABLE_LLVM15)
 endif()
 if(QDP_ENABLE_LLVM16)
   set(QDP_LLVM16 "1")
+endif()
+if(QDP_ENABLE_LLVM17)
+  set(QDP_LLVM17 "1")
 endif()
 
 
@@ -116,7 +120,9 @@ endif()
 
 # Now find the dependencies
 
-if( QDP_ENABLE_LLVM16 )
+if( QDP_ENABLE_LLVM17 )
+  find_package(LLVM "17.0" REQUIRED CONFIG)
+elseif( QDP_ENABLE_LLVM16 )
   find_package(LLVM "16.0" REQUIRED CONFIG)
 elseif( QDP_ENABLE_LLVM15 )
   find_package(LLVM "15.0" REQUIRED CONFIG)

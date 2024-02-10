@@ -38,28 +38,26 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/FormattedStream.h"
-#include "llvm/Support/Host.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/Program.h"
 #include "llvm/Support/raw_os_ostream.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/SourceMgr.h"
-
-#if defined (QDP_LLVM14) || defined (QDP_LLVM15) || defined (QDP_LLVM16)
+//#include "llvm/TargetParser/Host.h"
+#include "llvm/Passes/PassBuilder.h"
 #include "llvm/MC/TargetRegistry.h"
-#else
-#include "llvm/Support/TargetRegistry.h"
-#endif
 
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/ToolOutputFile.h"
 #include "llvm/Target/TargetMachine.h"
-#include "llvm/Transforms/IPO/AlwaysInliner.h"
 #include "llvm/Transforms/IPO.h"
-#include "llvm/Transforms/IPO/PassManagerBuilder.h"
+#include "llvm/Transforms/IPO/AlwaysInliner.h"
+#include "llvm/Transforms/IPO/Internalize.h"
+#include "llvm/Transforms/IPO/GlobalDCE.h"
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Utils/Cloning.h"
 #include "llvm/Transforms/InstCombine/InstCombine.h"
+
 
 #ifdef QDP_BACKEND_AVX
 #include "llvm/ADT/StringRef.h"
@@ -108,7 +106,6 @@ namespace llvm {
 
 
 #ifdef QDP_BACKEND_AVX
-#if defined (QDP_LLVM14) || defined (QDP_LLVM15) || defined (QDP_LLVM16)
 class KaleidoscopeJIT {
 private:
   std::unique_ptr<ExecutionSession> ES;
@@ -172,85 +169,6 @@ public:
     return ES->lookup({&MainJD}, Mangle(Name.str()));
   }
 };
-#else
-class KaleidoscopeJIT {
-private:
-  std::unique_ptr<TargetProcessControl> TPC;
-  std::unique_ptr<ExecutionSession> ES;
-
-  DataLayout DL;
-  MangleAndInterner Mangle;
-
-  RTDyldObjectLinkingLayer ObjectLayer;
-  IRCompileLayer CompileLayer;
-
-  JITDylib &MainJD;
-
-public:
-  KaleidoscopeJIT(std::unique_ptr<TargetProcessControl> TPC,
-                  std::unique_ptr<ExecutionSession> ES,
-                  JITTargetMachineBuilder JTMB, DataLayout DL)
-      : TPC(std::move(TPC)), ES(std::move(ES)), DL(std::move(DL)),
-        Mangle(*this->ES, this->DL),
-        ObjectLayer(*this->ES,
-                    []() { return std::make_unique<SectionMemoryManager>(); }),
-        CompileLayer(*this->ES, ObjectLayer,
-                     std::make_unique<ConcurrentIRCompiler>(std::move(JTMB))),
-        MainJD(this->ES->createBareJITDylib("<main>")) {
-    MainJD.addGenerator(
-        cantFail(DynamicLibrarySearchGenerator::GetForCurrentProcess(
-            DL.getGlobalPrefix())));
-  }
-
-  ~KaleidoscopeJIT() {
-    if (auto Err = ES->endSession())
-      ES->reportError(std::move(Err));
-  }
-
-  static Expected<std::unique_ptr<KaleidoscopeJIT>> Create() {
-    auto SSP = std::make_shared<SymbolStringPool>();
-    auto TPC = SelfTargetProcessControl::Create(SSP);
-    if (!TPC)
-      return TPC.takeError();
-
-    auto ES = std::make_unique<ExecutionSession>(std::move(SSP));
-
-    JITTargetMachineBuilder JTMB((*TPC)->getTargetTriple());
-
-    llvm::outs() << "feature string: " << JTMB.getFeatures().getString() << "\n";
-	
-    llvm::outs() << "adding features...\n";
-    JTMB.addFeatures({"+avx2"});
-    
-    llvm::outs() << "feature string: " << JTMB.getFeatures().getString() << "\n";
-    
-
-    
-    auto DL = JTMB.getDefaultDataLayoutForTarget();
-    if (!DL)
-      return DL.takeError();
-
-    return std::make_unique<KaleidoscopeJIT>(std::move(*TPC), std::move(ES),
-                                             std::move(JTMB), std::move(*DL));
-  }
-
-  const DataLayout &getDataLayout() const { return DL; }
-
-  JITDylib &getMainJITDylib() { return MainJD; }
-
-  Error addModule(ThreadSafeModule TSM, ResourceTrackerSP RT = nullptr) {
-    if (!RT)
-      RT = MainJD.getDefaultResourceTracker();
-    return CompileLayer.add(RT, std::move(TSM));
-  }
-
-  Expected<JITEvaluatedSymbol> lookup(StringRef Name) {
-    return ES->lookup({&MainJD}, Mangle(Name.str()));
-  }
-};
-#endif
-
-
 namespace QDP
 {
   ExitOnError ExitOnErr;
@@ -269,7 +187,7 @@ namespace {
     bool ret;
     std::vector<const char *> args(argv, argv + argc);
 
-#if (defined (QDP_LLVM14) && ! defined(QDP_ROCM5FIX)) || defined (QDP_LLVM15) || defined (QDP_LLVM16)
+#if defined (QDP_LLVM15) || defined (QDP_LLVM16)
     ret = lld::elf::link(args, stdoutOS, stderrOS, exitEarly, false);
 #else
     ret = lld::elf::link(args, exitEarly, stdoutOS, stderrOS);
@@ -324,7 +242,7 @@ namespace QDP
 #ifdef QDP_BACKEND_ROCM
     std::vector<std::string> vec_str_libdevice_path = { ROCM_DIR };
     std::vector<std::string> vec_str_libdevice_path_append = { "llvm/lib/libdevice/" , "llvm/lib/" };
-    std::vector<std::string> vec_str_libdevice_name = { "libm-amdgcn-ARCH.bc" , "libomptarget-amdgcn-ARCH.bc" , "libomptarget-new-amdgpu-ARCH.bc" , "libomptarget-old-amdgpu-ARCH.bc" };
+    std::vector<std::string> vec_str_libdevice_name = { "libm-amdgcn-ARCH.bc" , "libomptarget-amdgcn-ARCH.bc" , "libomptarget-new-amdpu-ARCH.bc" };
 #elif QDP_BACKEND_CUDA
     std::vector<std::string> vec_str_libdevice_path = { "CUDAPATH" , "/usr/local/cuda/" , "/usr/lib/nvidia-cuda-toolkit/" };
     std::vector<std::string> vec_str_libdevice_path_append = { "nvvm/libdevice/" , "libdevice/" , "cuda/nvvm/libdevice/" , "cuda/CUDAVERSION/nvvm/libdevice/"};
@@ -465,19 +383,12 @@ namespace QDP
   template<> llvm::Type* llvm_get_type<size_t>()     { return llvm::Type::getIntNTy(*TheContext,64); }
 
   
-#if defined (QDP_LLVM15) || defined (QDP_LLVM16)
+
   template<> llvm::Type* llvm_get_type<jit_half_t*>() { return llvm::PointerType::get(*TheContext , qdp_jit_config_get_global_addrspace()); }
   template<> llvm::Type* llvm_get_type<float*>()      { return llvm::PointerType::get(*TheContext , qdp_jit_config_get_global_addrspace()); }
   template<> llvm::Type* llvm_get_type<double*>()     { return llvm::PointerType::get(*TheContext , qdp_jit_config_get_global_addrspace()); }
   template<> llvm::Type* llvm_get_type<int*>()        { return llvm::PointerType::get(*TheContext , qdp_jit_config_get_global_addrspace()); }
   template<> llvm::Type* llvm_get_type<bool*>()       { return llvm::PointerType::get(*TheContext , qdp_jit_config_get_global_addrspace()); }
-#else
-  template<> llvm::Type* llvm_get_type<jit_half_t*>() { return llvm::Type::getHalfPtrTy(*TheContext); }
-  template<> llvm::Type* llvm_get_type<float*>()      { return llvm::Type::getFloatPtrTy(*TheContext); }
-  template<> llvm::Type* llvm_get_type<double*>()     { return llvm::Type::getDoublePtrTy(*TheContext); }
-  template<> llvm::Type* llvm_get_type<int*>()        { return llvm::Type::getIntNPtrTy(*TheContext,32); }
-  template<> llvm::Type* llvm_get_type<bool*>()       { return llvm::Type::getIntNPtrTy(*TheContext,8); }
-#endif
 
 
   
@@ -1328,12 +1239,15 @@ namespace QDP
     it_stack = builder->GetInsertPoint(); // probly bb_stack.begin()
     
     bb_afterstack = llvm::BasicBlock::Create(*TheContext, "afterstack" );
-#if defined (QDP_LLVM16)
+#if defined (QDP_LLVM16) || defined (QDP_LLVM17)
     mainFunc->insert(mainFunc->end(), bb_afterstack);
 #else
     mainFunc->getBasicBlockList().push_back(bb_afterstack);
 #endif
 
+
+
+    
     builder->SetInsertPoint(bb_afterstack);
 
     llvm_counters::label_counter = 0;
@@ -1872,11 +1786,13 @@ namespace QDP
     std::ostringstream oss;
     oss << "L" << llvm_counters::label_counter++;
     llvm::BasicBlock *BB = llvm::BasicBlock::Create(*TheContext, oss.str() );
-#if defined (QDP_LLVM16)
+#if defined (QDP_LLVM16) || defined (QDP_LLVM17)
     mainFunc->insert(mainFunc->end(), BB);
 #else
     mainFunc->getBasicBlockList().push_back(BB);
 #endif
+
+    
     return BB;
   }
 
@@ -1977,13 +1893,12 @@ namespace QDP
     llvm::FunctionType *FT = llvm::FunctionType::get( ret ,
     						      llvm::ArrayRef<llvm::Type*>( param_types.data() , param_types.size() ) , 
     						      false );
-
-#if (defined (QDP_LLVM14) && (!defined (QDP_ROCM5FIX))) || defined (QDP_LLVM15) || defined (QDP_LLVM16)
+#if (defined (QDP_LLVM14) && (!defined (QDP_ROCM5FIX))) || defined (QDP_LLVM15) || defined (QDP_LLVM16) || defined (QDP_LLVM17)
     llvm::AttrBuilder ABuilder(*TheContext);
 #else
     llvm::AttrBuilder ABuilder;
 #endif
-    
+
     //ABuilder.addAttribute(llvm::Attribute::ReadNone);
     ABuilder.addAttribute(llvm::Attribute::Convergent);
 
@@ -2022,7 +1937,7 @@ namespace QDP
   {
     llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getVoidTy(*TheContext), false);
 
-#if (defined (QDP_LLVM14) && (!defined (QDP_ROCM5FIX))) || defined (QDP_LLVM15) || defined (QDP_LLVM16)
+#if (defined (QDP_LLVM14) && (!defined (QDP_ROCM5FIX))) || defined (QDP_LLVM15) || defined (QDP_LLVM16) || defined (QDP_LLVM17)
     llvm::AttrBuilder ABuilder(*TheContext);
 #else
     llvm::AttrBuilder ABuilder;
@@ -2213,15 +2128,12 @@ namespace QDP
     if ( jit_config_get_instcombine() )
       PM2.add( llvm::createInstructionCombiningPass() );
     if ( jit_config_get_inline() )
-    PM2.add( llvm::createFunctionInliningPass() );
 
   
     if (jit_config_get_verbose_output())
       {
 	if ( jit_config_get_instcombine() )
 	  QDPIO::cout << "LLVM opt instcombine\n";
-	if ( jit_config_get_inline() )
-	  QDPIO::cout << "LLVM opt inline\n";
       }
 
     PM2.run(*Mod);
@@ -2277,14 +2189,37 @@ namespace QDP
 
     Mod->addModuleFlag( llvm::Module::ModFlagBehavior::Override, "nvvm-reflect-ftz" , NVPTX_CUDA_FTZ );
 
-    llvm::legacy::PassManager PM2;
-    PM2.add( llvm::createInternalizePass( all_but_kernel_name ) );
-#if 1
-    unsigned int sm_gpu = gpu_getMajor() * 10 + gpu_getMinor();
-    PM2.add( llvm::createNVVMReflectPass( sm_gpu ));
-#endif
-    PM2.add( llvm::createGlobalDCEPass() );
 
+    LoopAnalysisManager LAM;
+    FunctionAnalysisManager FAM;
+    CGSCCAnalysisManager CGAM;
+    ModuleAnalysisManager MAM;
+    
+    PassBuilder PB(TargetMachine.get());
+
+    PB.registerModuleAnalyses(MAM);
+    PB.registerCGSCCAnalyses(CGAM);
+    PB.registerFunctionAnalyses(FAM);
+    PB.registerLoopAnalyses(LAM);
+    PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+
+#if defined (QDP_LLVM17)
+    ModulePassManager MPM = PB.buildPerModuleDefaultPipeline(OptimizationLevel::O0);
+#else
+    ModulePassManager MPM = PB.buildO0DefaultPipeline(OptimizationLevel::O0);
+#endif
+    
+    MPM.addPass(InternalizePass(all_but_kernel_name));
+    MPM.addPass(GlobalDCEPass());
+
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "running passes ...\n";
+      }
+
+    // run them
+    MPM.run(*Mod,MAM);
+    
 #if 0
     if (jit_config_get_verbose_output())
       {
@@ -2296,20 +2231,15 @@ namespace QDP
 	    llvm_module_dump();
 	  }
 
-	std::string module_name = "module_" + str_kernel_name + ".bc";
-	QDPIO::cout << "write code to " << module_name << "\n";
-	std::error_code EC;
-	llvm::raw_fd_ostream OS(module_name, EC, llvm::sys::fs::F_None);
-	llvm::WriteBitcodeToFile(*Mod, OS);
-	OS.flush();
+	// std::string module_name = "module_" + str_kernel_name + ".bc";
+	// QDPIO::cout << "write code to " << module_name << "\n";
+	// std::error_code EC;
+	// llvm::raw_fd_ostream OS(module_name, EC, llvm::sys::fs::F_None);
+	// llvm::WriteBitcodeToFile(*Mod, OS);
+	// OS.flush();
       }
 #endif
 
-    if (jit_config_get_verbose_output())
-      {
-	QDPIO::cout << "internalize and remove dead code ...\n";
-      }
-    PM2.run(*Mod);
     
     swatch.stop();
     func.time_passes = swatch.getTimeInMicroseconds();
@@ -2411,17 +2341,31 @@ namespace QDP
     swatch.reset();
     swatch.start();
 
-    llvm::legacy::PassManager PM2;
+    LoopAnalysisManager LAM;
+    FunctionAnalysisManager FAM;
+    CGSCCAnalysisManager CGAM;
+    ModuleAnalysisManager MAM;
     
-    PM2.add( llvm::createInternalizePass( all_but_kernel_name ) );
-    PM2.add( llvm::createGlobalDCEPass() );
+    PassBuilder PB(TargetMachine.get());
+
+    PB.registerModuleAnalyses(MAM);
+    PB.registerCGSCCAnalyses(CGAM);
+    PB.registerFunctionAnalyses(FAM);
+    PB.registerLoopAnalyses(LAM);
+    PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+
+    ModulePassManager MPM = PB.buildPerModuleDefaultPipeline(OptimizationLevel::O1);
+    MPM.addPass(InternalizePass(all_but_kernel_name));
+    MPM.addPass(GlobalDCEPass());
 
     if (jit_config_get_verbose_output())
       {
-	QDPIO::cout << "internalize and remove dead code ...\n";
+	QDPIO::cout << "running passes ...\n";
       }
-    PM2.run(*Mod);
-    
+
+    // run them
+    MPM.run(*Mod,MAM);
+
     //llvm_module_dump();
 
     swatch.stop();
@@ -2485,47 +2429,38 @@ namespace QDP
       }
     else
       {
-	//legacy::FunctionPassManager PerFunctionPasses(Mod.get());
-	//PerFunctionPasses.add( createTargetTransformInfoWrapperPass( TargetMachine->getTargetIRAnalysis() ) );
-    
-	llvm::legacy::PassManager PM;
+	LoopAnalysisManager LAM;
+	FunctionAnalysisManager FAM;
+	CGSCCAnalysisManager CGAM;
+	ModuleAnalysisManager MAM;
 
-	llvm::TargetLibraryInfoImpl TLII( TheTriple );
-	//TLII.addVectorizableFunctionsFromVecLib(TargetLibraryInfoImpl::Accelerate);
-	//TLII.addVectorizableFunctionsFromVecLib(TargetLibraryInfoImpl::SVML);
-	//TLII.addVectorizableFunctionsFromVecLib(TargetLibraryInfoImpl::MASSV);
-	PM.add(new llvm::TargetLibraryInfoWrapperPass(TLII));
+	PassBuilder PB(TargetMachine.get());
 
-	//
-	//
-	// This PMBuilder.populateModulePassManager is essential
-	PassManagerBuilder PMBuilder;
-	PMBuilder.OptLevel = jit_config_get_codegen_opt();
+	PB.registerModuleAnalyses(MAM);
+	PB.registerCGSCCAnalyses(CGAM);
+	PB.registerFunctionAnalyses(FAM);
+	PB.registerLoopAnalyses(LAM);
+	PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
 
-	//PMBuilder.populateFunctionPassManager(PerFunctionPasses);
-	PMBuilder.populateModulePassManager(PM);
-
-	// New stuff
-	//PMBuilder.Inliner = createAlwaysInlinerLegacyPass(true);
-	//
+	llvm::OptimizationLevel opt;
+	switch(jit_config_get_codegen_opt())
+	  {
+	  case 0: opt = llvm::OptimizationLevel::O0; break;
+	  case 1: opt = llvm::OptimizationLevel::O1; break;
+	  case 2: opt = llvm::OptimizationLevel::O2; break;
+	  case 3: opt = llvm::OptimizationLevel::O3; break;
+	  default: opt = llvm::OptimizationLevel::O1; break;
+	  }
 	
-#if 0
-	QDPIO::cout << "Running function passes..\n";
-	PerFunctionPasses.doInitialization();
-	for (Function &F : *Mod)
-	  if (!F.isDeclaration())
-	    PerFunctionPasses.run(F);
-	PerFunctionPasses.doFinalization();
-	QDPIO::cout << "..done\n";
-#endif
-
+	ModulePassManager MPM = PB.buildPerModuleDefaultPipeline( opt );
 
 	if (jit_config_get_verbose_output())
 	  {
-	    QDPIO::cout << "running module passes ...\n";
+	    QDPIO::cout << "running passes ...\n";
 	  }
-	PM.run(*Mod);
 
+	// run them
+	MPM.run(*Mod,MAM);
 
 #if 0
 	{
