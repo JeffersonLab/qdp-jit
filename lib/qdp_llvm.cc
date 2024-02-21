@@ -383,13 +383,19 @@ namespace QDP
   template<> llvm::Type* llvm_get_type<size_t>()     { return llvm::Type::getIntNTy(*TheContext,64); }
 
   
-
+#if defined (QDP_LLVM14)
+  template<> llvm::Type* llvm_get_type<jit_half_t*>() { return llvm::Type::getHalfPtrTy(*TheContext); }
+  template<> llvm::Type* llvm_get_type<float*>()      { return llvm::Type::getFloatPtrTy(*TheContext); }
+  template<> llvm::Type* llvm_get_type<double*>()     { return llvm::Type::getDoublePtrTy(*TheContext); }
+  template<> llvm::Type* llvm_get_type<int*>()        { return llvm::Type::getIntNPtrTy(*TheContext,32); }
+  template<> llvm::Type* llvm_get_type<bool*>()       { return llvm::Type::getIntNPtrTy(*TheContext,8); }
+#else
   template<> llvm::Type* llvm_get_type<jit_half_t*>() { return llvm::PointerType::get(*TheContext , qdp_jit_config_get_global_addrspace()); }
   template<> llvm::Type* llvm_get_type<float*>()      { return llvm::PointerType::get(*TheContext , qdp_jit_config_get_global_addrspace()); }
   template<> llvm::Type* llvm_get_type<double*>()     { return llvm::PointerType::get(*TheContext , qdp_jit_config_get_global_addrspace()); }
   template<> llvm::Type* llvm_get_type<int*>()        { return llvm::PointerType::get(*TheContext , qdp_jit_config_get_global_addrspace()); }
   template<> llvm::Type* llvm_get_type<bool*>()       { return llvm::PointerType::get(*TheContext , qdp_jit_config_get_global_addrspace()); }
-
+#endif
 
   
 #if defined (QDP_CODEGEN_VECTOR)
