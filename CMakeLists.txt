@@ -24,6 +24,7 @@ option(QDP_ENABLE_ROCM_STATS "Enable ROCM statistics" OFF)
 option(QDP_ENABLE_MANAGED_MEMORY "Enable CUDA/HIP/LevelZero Managed Memory" OFF)
 
 option(QDP_ROCM5FIX "Work around ROCM5.1.x issue" OFF)
+option(QDP_ROCM553FIX "Work around ROCM5.5.3 issue" OFF)
 option(QDP_ROCM_PRE "Use ROCM pre 5.2.x" OFF)
 
 set(QDP_USE_PROFILING ${QDP_ENABLE_PROFILING})

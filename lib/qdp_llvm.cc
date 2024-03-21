@@ -1245,7 +1245,7 @@ namespace QDP
     it_stack = builder->GetInsertPoint(); // probly bb_stack.begin()
     
     bb_afterstack = llvm::BasicBlock::Create(*TheContext, "afterstack" );
-#if defined (QDP_LLVM16) || defined (QDP_LLVM17)
+#if (defined (QDP_LLVM16) && !defined (QDP_ROCM553FIX) ) || defined (QDP_LLVM17)
     mainFunc->insert(mainFunc->end(), bb_afterstack);
 #else
     mainFunc->getBasicBlockList().push_back(bb_afterstack);
@@ -1792,7 +1792,7 @@ namespace QDP
     std::ostringstream oss;
     oss << "L" << llvm_counters::label_counter++;
     llvm::BasicBlock *BB = llvm::BasicBlock::Create(*TheContext, oss.str() );
-#if defined (QDP_LLVM16) || defined (QDP_LLVM17)
+#if (defined (QDP_LLVM16) && !defined (QDP_ROCM553FIX) ) || defined (QDP_LLVM17)
     mainFunc->insert(mainFunc->end(), BB);
 #else
     mainFunc->getBasicBlockList().push_back(BB);

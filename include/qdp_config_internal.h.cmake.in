@@ -138,6 +138,7 @@
 
 /* Fix for ROCM5 */
 #cmakedefine QDP_ROCM5FIX                       @QDP_ROCM5FIX@
+#cmakedefine QDP_ROCM553FIX                     @QDP_ROCM553FIX@
 
 /* For ROCMs earlier than 5.2.x */
 #cmakedefine QDP_ROCM_PRE                       @QDP_ROCM_PRE@
