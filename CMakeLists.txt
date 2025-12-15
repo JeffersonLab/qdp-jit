@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.20)
 project(QDP-JIT VERSION 0.1 LANGUAGES CXX;C)
 
 include(CheckSymbolExists)
@@ -284,25 +284,34 @@ message( STATUS "QDP++: Setting alignment size to ${QDP_ALIGNMENT_SIZE}")
 check_function_exists("gethostname" HAVE_GETHOSTNAME)
 check_function_exists("strnlen" HAVE_STRNLEN)
 
+# LLVM's LLVMConfigVersion.cmake is not smart enough to deal with 
+# Ranges and requires that MAJOR and MINOR version match LLVM's internal
+# and that the patch version be more recent than the required patch
+# version. 
+find_package(LLVM CONFIG REQUIRED)
 if( QDP_ENABLE_LLVM20 )
-  find_package(LLVM "20...<21" REQUIRED CONFIG)
+  set(WANT_LLVM_MAJOR 20)
 elseif( QDP_ENABLE_LLVM19 )
-  find_package(LLVM "19...<20" REQUIRED CONFIG)
+  set(WANT_LLVM_MAJOR 19)
 elseif( QDP_ENABLE_LLVM18 )
-  find_package(LLVM "18...<19" REQUIRED CONFIG)
+  set(WANT_LLVM_MAJOR 18)
 elseif( QDP_ENABLE_LLVM17 )
-  find_package(LLVM "17...<18" REQUIRED CONFIG)
+  set(WANT_LLVM_MAJOR 17)
 elseif( QDP_ENABLE_LLVM16 )
-  find_package(LLVM "16...<17" REQUIRED CONFIG)
+  set(WANT_LLVM_MAJOR 16)
 elseif( QDP_ENABLE_LLVM15 )
-  find_package(LLVM "15...<16" REQUIRED CONFIG)
+  set(WANT_LLVM_MAJOR 15)
 elseif( QDP_ENABLE_LLVM14 )
-  find_package(LLVM "14...<15" REQUIRED CONFIG)
+  set(WANT_LLVM_MAJOR 14)
 else()
-  find_package(LLVM "13...<14" REQUIRED CONFIG)
+  set(WANT_LLVM_MAJOR 13)
 endif()
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+if (NOT ${LLVM_VERSION_MAJOR} EQUAL ${WANT_LLVM_MAJOR})
+   message(FATAL_ERROR "LLVM Major version mismatch")
+endif()
+ 
 message(STATUS "Using LLVMConfig.cmake in ${LLVM_DIR}")
 
 
