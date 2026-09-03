@@ -717,10 +717,22 @@ namespace QDP
   void llvm_backend_init_rocm() {
     function_created = false;
 
-    llvm::InitializeAllTargets();
-    llvm::InitializeAllTargetMCs();
-    llvm::InitializeAllAsmPrinters();
-    llvm::InitializeAllAsmParsers();
+    // AMDGPU only, not InitializeAllTargets(). Those are macros that expand
+    // over llvm/Config/Targets.def -- one initializer per target the LLVM
+    // *installation* was built with -- while lib/CMakeLists.txt links only the
+    // AMDGPU component for this backend. Every other target LLVM happens to
+    // carry is then an undefined symbol in libjit.so, which surfaces when an
+    // executable links against it rather than when the library is built:
+    //   ld.lld: error: undefined reference: LLVMInitializeX86Target
+    //   ld.lld: error: undefined reference: LLVMInitializeSPIRVTarget
+    // ROCm 7.14's LLVM builds X86 and SPIRV alongside AMDGPU, which is what
+    // exposed this. Nothing here wants either: the triple below is pinned to
+    // amdgcn-amd-amdhsa and that is the only target ever looked up.
+    LLVMInitializeAMDGPUTargetInfo();
+    LLVMInitializeAMDGPUTarget();
+    LLVMInitializeAMDGPUTargetMC();
+    LLVMInitializeAMDGPUAsmPrinter();
+    LLVMInitializeAMDGPUAsmParser();
 
     llvm::PassRegistry *Registry = llvm::PassRegistry::getPassRegistry();
     llvm::initializeCore(*Registry);

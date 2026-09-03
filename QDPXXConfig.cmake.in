@@ -162,7 +162,10 @@ elseif(LLVM_VERSION_MAJOR EQUAL 19)
   set(QDP_LLVM19 1)
 elseif(LLVM_VERSION_MAJOR EQUAL 20)
   set(QDP_LLVM20 1)
-elseif(LLVM_VERSION_MAJOR EQUAL 22)
+elseif(LLVM_VERSION_MAJOR GREATER_EQUAL 22)
+  # Must match the dispatch in CMakeLists.txt exactly -- this is the second
+  # copy of it, the one consumers see. QDP_LLVM22 is the newest API this tree
+  # has, not the LLVM 22 API, so it is also the right branch for anything newer.
   set(QDP_LLVM22 1)
 else()
   message(FATAL_ERROR
