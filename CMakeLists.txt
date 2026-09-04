@@ -341,7 +341,7 @@ elseif(LLVM_VERSION_MAJOR EQUAL 19)
   set(QDP_LLVM19 1)
 elseif(LLVM_VERSION_MAJOR EQUAL 20)
   set(QDP_LLVM20 1)
-elseif(LLVM_VERSION_MAJOR EQUAL 22)
+elseif(LLVM_VERSION_MAJOR GREATER_EQUAL 22)
   set(QDP_LLVM22 1)
 else()
   message(FATAL_ERROR
@@ -380,6 +380,17 @@ if(QDP_ENABLE_BACKEND STREQUAL "ROCM")
     oclc_correctly_rounded_sqrt_on.bc
     oclc_abi_version_500.bc
   )
+
+  set(QDP_ROCM_OPTIONAL_BC
+    oclc_daz_opt_off.bc
+    oclc_correctly_rounded_sqrt_on.bc
+  )
+
+  foreach(bc IN LISTS QDP_ROCM_OPTIONAL_BC)
+    if(NOT EXISTS "${QDP_ROCM_BITCODE_DIR}/${bc}")
+      message(STATUS "ROCm device bitcode ${bc} is absent; this ROCm has retired that control")
+    endif()
+  endforeach()
 
   foreach(bc IN LISTS QDP_ROCM_REQUIRED_BC)
     if(NOT EXISTS "${QDP_ROCM_BITCODE_DIR}/${bc}")

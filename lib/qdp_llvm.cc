@@ -717,10 +717,11 @@ namespace QDP
   void llvm_backend_init_rocm() {
     function_created = false;
 
-    llvm::InitializeAllTargets();
-    llvm::InitializeAllTargetMCs();
-    llvm::InitializeAllAsmPrinters();
-    llvm::InitializeAllAsmParsers();
+    LLVMInitializeAMDGPUTargetInfo();
+    LLVMInitializeAMDGPUTarget();
+    LLVMInitializeAMDGPUTargetMC();
+    LLVMInitializeAMDGPUAsmPrinter();
+    LLVMInitializeAMDGPUAsmParser();
 
     llvm::PassRegistry *Registry = llvm::PassRegistry::getPassRegistry();
     llvm::initializeCore(*Registry);
