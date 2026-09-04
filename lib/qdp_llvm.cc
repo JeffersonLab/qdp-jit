@@ -842,11 +842,11 @@ namespace QDP
   void llvm_backend_init_cuda() {
     function_created = false;
 
-    llvm::InitializeAllTargets();
-    llvm::InitializeAllTargetMCs();
-    llvm::InitializeAllAsmPrinters();
-    llvm::InitializeAllAsmParsers();
-
+    LLVMInitializeNVPTXTargetInfo();
+    LLVMInitializeNVPTXTarget();
+    LLVMInitializeNVPTXTargetMC();
+    LLVMInitializeNVPTXAsmPrinter();
+    
     llvm::PassRegistry *Registry = llvm::PassRegistry::getPassRegistry();
     llvm::initializeCore(*Registry);
     llvm::initializeCodeGen(*Registry);
