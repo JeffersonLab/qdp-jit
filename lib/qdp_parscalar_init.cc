@@ -449,6 +449,12 @@ namespace QDP {
 	    sscanf((*argv)[++i], "%s", &tmp[0]);
 	    jit_config_add_extra_lib(tmp);
 	  }
+	else if (strcmp((*argv)[i], "-setdevice")==0) 
+	  {
+	    unsigned val;
+	    sscanf((*argv)[++i],"%u",&val);
+	    qdp_jit_config_set_rocm_set_device(val);
+	  }
 #endif
 #if defined(QDP_BACKEND_ROCM) || (QDP_BACKEND_L0)	
 	else if (strcmp((*argv)[i], "-keep-files")==0) 

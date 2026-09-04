@@ -63,6 +63,8 @@ namespace QDP
   void jit_config_set_codegen_opt(int opt);
   void jit_config_add_extra_lib( std::string l );
   std::vector<std::string>& jit_config_get_extra_lib();
+  int qdp_jit_config_get_rocm_set_device();
+  void qdp_jit_config_set_rocm_set_device(int b);
 #endif
 
 #ifdef QDP_BACKEND_CUDA

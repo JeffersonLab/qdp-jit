@@ -59,6 +59,8 @@ namespace QDP
 
     std::string libdevice_name = "libomptarget-new-amdgpu-gfx90a-5.4.3.bc";
     std::string libdevice_path = "/libdevice/";
+
+    int rocm_set_device = 1;
 #endif
 
 #ifdef QDP_BACKEND_CUDA
@@ -185,7 +187,8 @@ namespace QDP
 #endif
 
 #ifdef QDP_BACKEND_ROCM
-    QDPIO::cout <<"  Temp Files Prepend path              : " <<  jit_config_get_prepend_path() << "\n"; 
+    QDPIO::cout << "  Temp Files Prepend path             : " <<  jit_config_get_prepend_path() << "\n";
+    QDPIO::cout << "  Set GPU device before each HIP call : " <<  qdp_jit_config_get_rocm_set_device() << "\n";
 #endif
     
     QDPIO::cout << "Launch configuration:\n";
@@ -231,6 +234,9 @@ namespace QDP
   {
     return extra_libs;
   }
+
+  int qdp_jit_config_get_rocm_set_device()       { return   rocm_set_device; }
+  void qdp_jit_config_set_rocm_set_device(int b) { rocm_set_device=b; }
 #endif
 
   
