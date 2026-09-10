@@ -39,7 +39,7 @@ public:
   void log( const OLattice<T>& dest , const Subset& s )
   {
     if (!logging) return;
-    
+
     check_created();
 
     if (compare)
@@ -55,7 +55,7 @@ public:
   template<class T>
   void log_create( const OLattice<T>& dest , const Subset& s )
   {
-    QDPIO::cout << "log: add lattice, sitecount = " << s.numSiteTable() << endl;
+    QDPIO::cout << "log " << log_count++ << " add lattice, sitecount = " << s.numSiteTable() << endl;
     for (int i = 0 ; i < s.numSiteTable() ; ++i )
       {
 	dest.writeElemTo( s.siteTable()[i] , logger_cmp );
@@ -116,7 +116,7 @@ public:
   template<class T>
   void log_create( const OScalar<T>& dest )
   {
-    QDPIO::cout << "log: add scalar" << endl;
+    QDPIO::cout << "log " << log_count++ << " add scalar" << endl;
     dest.writeTo( logger_cmp );
   }
 

@@ -90,6 +90,11 @@ using namespace llvm::orc;
 #include "LLVMSPIRVLib/LLVMSPIRVLib.h"
 #endif
 
+#ifdef QDP_BACKEND_CUDA
+#include <llvm/IR/Intrinsics.h>
+#include <llvm/IR/IntrinsicsNVPTX.h>
+#endif
+
 #include <system_error>
 #include <memory>
 #include <unistd.h>
@@ -2003,6 +2008,7 @@ namespace QDP
 
 
 
+  
 #if defined (QDP_BACKEND_L0)
   void llvm_bar_sync()
   {
@@ -2013,25 +2019,32 @@ namespace QDP
     //llvm_special( "_Z18work_group_barrierj12memory_scope" , llvm_get_type<void>() , { llvm_get_type<int>() , llvm_get_type<int>() } , { llvm_create_value(3) , llvm_create_value(1) } );
     //llvm_special( "_Z18work_group_barrierj12memory_scope" , llvm_get_type<void>() , { llvm_get_type<int>() , llvm_get_type<int>() } , { llvm_create_value(3) , llvm_create_value(2) } );
   }
-#else
+#endif
+
+
+  
+#if defined (QDP_BACKEND_CUDA)
+void llvm_bar_sync()
+{
+  builder->CreateIntrinsic(
+      llvm::Intrinsic::nvvm_barrier_cta_sync_aligned_all,
+      {},
+      {builder->getInt32(0)});
+}
+#endif
+
+
+  
+#if defined (QDP_BACKEND_ROCM)
   void llvm_bar_sync()
   {
     llvm::FunctionType *IntrinFnTy = llvm::FunctionType::get(llvm::Type::getVoidTy(*TheContext), false);
 
-#if (defined (QDP_LLVM14) && (!defined (QDP_ROCM5FIX))) || defined (QDP_LLVM15) || defined (QDP_LLVM16) || defined (QDP_LLVM17) || defined (QDP_LLVM18) || defined (QDP_LLVM19) || defined(QDP_LLVM20) || defined(QDP_LLVM22)
     llvm::AttrBuilder ABuilder(*TheContext);
-#else
-    llvm::AttrBuilder ABuilder;
-#endif
-    
     ABuilder.addAttribute(llvm::Attribute::ReadNone);
 
-#ifdef QDP_BACKEND_ROCM
     std::string bar_name("llvm.amdgcn.s.barrier");
-#else
-    std::string bar_name("llvm.nvvm.barrier0");
-#endif
-    
+
     auto Bar = Mod->getOrInsertFunction( bar_name.c_str() , 
 					 IntrinFnTy , 
 					 llvm::AttributeList::get(*TheContext, 
@@ -2039,8 +2052,9 @@ namespace QDP
 								  ABuilder) );
 
     builder->CreateCall(Bar);
-  }
 #endif
+  
+
 
   
 

@@ -635,48 +635,114 @@ namespace QDP {
   }
 
 
-  bool get_jitf( JitFunction& func, const std::string& kernel_ptx , const std::string& kernel_name , const std::string& pretty , const std::string& str_compute )
+  bool get_jitf(JitFunction& func,
+		const std::string& kernel_ptx,
+		const std::string& kernel_name,
+		const std::string& pretty,
+		const std::string& str_compute)
   {
     CUresult ret;
     CUmodule cuModule;
 
-    func.set_kernel_name( kernel_name );
-    func.set_pretty( pretty );
-    
+    func.set_kernel_name(kernel_name);
+    func.set_pretty(pretty);
+
 #ifdef QDP_THRUSTALIGN
     CudaCheckResult(cuCtxSetCurrent(cuContext));
 #endif
-    ret = cuModuleLoadData(&cuModule, (const void *)kernel_ptx.c_str());
+
+    constexpr size_t log_size = 16384;
+
+    char error_log[log_size] = {};
+    char info_log[log_size] = {};
+
+    CUjit_option options[] = {
+      CU_JIT_ERROR_LOG_BUFFER,
+      CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES,
+      CU_JIT_INFO_LOG_BUFFER,
+      CU_JIT_INFO_LOG_BUFFER_SIZE_BYTES,
+      CU_JIT_LOG_VERBOSE
+    };
+
+    void* option_values[] = {
+      error_log,
+      reinterpret_cast<void*>(log_size),
+      info_log,
+      reinterpret_cast<void*>(log_size),
+      reinterpret_cast<void*>(1)
+    };
+
+    ret = cuModuleLoadDataEx(&cuModule,
+			     static_cast<const void*>(kernel_ptx.c_str()),
+			     sizeof(options) / sizeof(options[0]),
+			     options,
+			     option_values);
 
     if (ret != CUDA_SUCCESS) {
-      QDPIO::cerr << "Error loading external data.\n";
-      //raise(SIGSEGV);
+      const char* error_name = nullptr;
+      const char* error_string = nullptr;
+
+      cuGetErrorName(ret, &error_name);
+      cuGetErrorString(ret, &error_string);
+
+      QDPIO::cerr
+	<< "\ncuModuleLoadDataEx failed\n"
+	<< "Kernel: " << kernel_name << "\n"
+	<< "CUDA error: "
+	<< (error_name ? error_name : "unknown") << "\n"
+	<< "Description: "
+	<< (error_string ? error_string : "unknown") << "\n"
+	<< "\nCUDA JIT error log:\n"
+	<< error_log << "\n"
+	<< "\nCUDA JIT info log:\n"
+	<< info_log << "\n";
+
+      {
+	QDPIO::cerr << "Writing failing PTX to failing.ptx\n";
+	std::ofstream out("failing.ptx");
+	out << kernel_ptx;
+      }
+      
       QDP_abort(1);
     }
 
     CUfunction cuf;
-    ret = cuModuleGetFunction( &cuf , cuModule , kernel_name.c_str() );
+
+    ret = cuModuleGetFunction(&cuf, cuModule, kernel_name.c_str());
+
     if (ret != CUDA_SUCCESS) {
-      QDPIO::cerr << "Error getting function.";
+      const char* error_name = nullptr;
+      const char* error_string = nullptr;
+
+      cuGetErrorName(ret, &error_name);
+      cuGetErrorString(ret, &error_string);
+
+      QDPIO::cerr
+	<< "cuModuleGetFunction failed for "
+	<< kernel_name << ": "
+	<< (error_name ? error_name : "unknown")
+	<< ": "
+	<< (error_string ? error_string : "unknown")
+	<< "\n";
+
       QDP_abort(1);
     }
 
-    func.set_function( cuf );
-    
+    func.set_function(cuf);
+
     mapCUFuncPTX[func.get_function()] = kernel_ptx;
 
-    if ( Layout::primaryNode() )
-      {
-	func.set_regs ( cuda_get_attribute( CU_FUNC_ATTRIBUTE_NUM_REGS , cuf ) );
-	func.set_stack( cuda_get_attribute( CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES , cuf ) );
-	func.set_cmem ( cuda_get_attribute( CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES , cuf ) );
-      }
-    
+    if (Layout::primaryNode()) {
+      func.set_regs(
+		    cuda_get_attribute(CU_FUNC_ATTRIBUTE_NUM_REGS, cuf));
+      func.set_stack(
+		     cuda_get_attribute(CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES, cuf));
+      func.set_cmem(
+		    cuda_get_attribute(CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES, cuf));
+    }
+
     return true;
   }
-
-
-
 
 
 
