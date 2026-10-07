@@ -6,6 +6,26 @@
 
 namespace QDP {
 
+  template<class Op, class A, class B>
+  struct ForEach<BinaryNode<Op, A, B>, ViewLeaf, OpCombine>
+  {
+    typedef typename ForEach<A, ViewLeaf, OpCombine>::Type_t TypeA_t;
+    typedef typename ForEach<B, ViewLeaf, OpCombine>::Type_t TypeB_t;
+    typedef typename Combine2<TypeA_t, TypeB_t, Op, OpCombine>::Type_t Type_t;
+
+    inline static Type_t apply(const BinaryNode<Op, A, B>& expr,
+                               const ViewLeaf& view,
+                               const OpCombine& combiner)
+    {
+      TypeA_t left_value = ForEach<A, ViewLeaf, OpCombine>::apply(
+          expr.left(), view, combiner);
+      TypeB_t right_value = ForEach<B, ViewLeaf, OpCombine>::apply(
+          expr.right(), view, combiner);
+      return Combine2<TypeA_t, TypeB_t, Op, OpCombine>::combine(
+          left_value, right_value, expr.operation(), combiner);
+    }
+  };
+
   template<class T, class T1, class Op, class RHS>
 #if defined (QDP_PROP_OPT)
   typename std::enable_if_t< ! HasProp<RHS>::value >

@@ -23,7 +23,7 @@ namespace QDP
     enum       Flags       { Empty = 0, OwnHostMemory = 1, NoPage = 2  };
     
   private:
-    enum class Location    { pool , literal };
+    enum class Location    { pool , direct_device , literal };
     enum class LiteralType { float_, int_ , int64_, double_, bool_ };
 
     struct Entry 
@@ -99,8 +99,17 @@ namespace QDP
 
     // track_ptr - this enables to sign off via the pointer (needed for QUDA, where we hijack cudaMalloc)
     int addDeviceStatic( void** ptr, size_t n_bytes , bool track_ptr = false );
+    int addDeviceStaticDirect( void** ptr, size_t n_bytes );
     void signoffViaPtr( void* ptr );
     int addDeviceStatic( size_t n_bytes );
+
+    size_t get_direct_device_current_bytes() const { return direct_device_current_bytes; }
+    size_t get_direct_device_peak_bytes() const { return direct_device_peak_bytes; }
+    size_t get_direct_device_total_bytes() const { return direct_device_total_bytes; }
+    size_t get_direct_device_largest_allocation() const { return direct_device_largest_allocation; }
+    size_t get_direct_device_allocation_count() const { return direct_device_allocation_count; }
+    size_t get_direct_device_active_allocations() const { return direct_device_active_allocations; }
+    size_t get_direct_device_peak_allocations() const { return direct_device_peak_allocations; }
     
 
 
@@ -152,6 +161,14 @@ namespace QDP
     
     void assureDevice(Entry& e);
     void assureDevice(Entry& e,int elem);
+
+    size_t direct_device_current_bytes;
+    size_t direct_device_peak_bytes;
+    size_t direct_device_total_bytes;
+    size_t direct_device_largest_allocation;
+    size_t direct_device_allocation_count;
+    size_t direct_device_active_allocations;
+    size_t direct_device_peak_allocations;
 
     void assureDevice(int id);
     void assureDevice(int id,int elem);

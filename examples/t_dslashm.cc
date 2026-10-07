@@ -7,6 +7,7 @@
 #include "examples.h"
 #include <iostream>
 #include <cstdio>
+#include <cmath>
 
 
 #include <sys/time.h>
@@ -25,12 +26,23 @@ int main(int argc, char **argv)
   nrow = foo;  // Use only Nd elements
 
   bool range_all = false;
+  bool verify_dslash = false;
+  int iter = 1000;
 
   for (int i=1; i<argc; i++) 
     {
       if (strcmp((argv)[i], "-all")==0) 
 	{
 	  range_all = true;
+	}
+      if (strcmp((argv)[i], "-verify-dslash")==0)
+	{
+	  verify_dslash = true;
+	}
+      if (strcmp((argv)[i], "-iters")==0)
+	{
+	  if ((i + 1 >= argc) || (sscanf((argv)[++i], "%d", &iter) != 1) || (iter <= 0))
+	    QDP_error_exit("-iters requires a positive integer");
 	}
       if (strcmp((argv)[i], "-lat")==0) 
 	{
@@ -58,7 +70,10 @@ int main(int argc, char **argv)
   random(psi);
   chi = zero;
 
-  int iter = 1000;
+  const int warmup_iters = 10;
+
+  QDPIO::cout << "Untimed warm-up iterations per variant: " << warmup_iters << endl;
+  QDPIO::cout << "Timed iterations per variant: " << iter << endl;
 
   if (range_all)
     {
@@ -66,7 +81,8 @@ int main(int argc, char **argv)
 	{
 	  QDPIO::cout << "Applying D" << endl;
 
-	  dslash(chi, u, psi, isign, all );
+	  for (int i=0; i < warmup_iters; i++)
+	    dslash(chi, u, psi, isign, all );
     
 	  StopWatch w;
 	  w.start();
@@ -86,7 +102,8 @@ int main(int argc, char **argv)
 	  {
 	    QDPIO::cout << "Applying D" << endl;
 
-	    dslash(chi, u, psi, isign, rb[cb] );
+	    for (int i=0; i < warmup_iters; i++)
+	      dslash(chi, u, psi, isign, rb[cb] );
     
 	    StopWatch w;
 	    w.start();
@@ -99,6 +116,35 @@ int main(int argc, char **argv)
 	    QDPIO::cout << "cb=" << cb << "  sign=" << isign << "  performance = " << gflops << " GFlops\n";
       
 	  }
+    }
+
+  if (verify_dslash)
+    {
+      const double tolerance = 1.0e-5;
+      LatticeFermion chi2, diff;
+      random(psi);
+      for(int isign=-1; isign < 2; isign+=2)
+	for(int cb=0; cb<2; cb++)
+	  {
+	    int otherCB = cb == 0 ? 1 : 0;
+	    chi = zero;
+	    chi2 = zero;
+	    diff = zero;
+	    dslash(chi, u, psi, isign, rb[cb]);
+	    dslash2(chi2, u, psi, isign, cb);
+	    diff[rb[cb]] = chi2 - chi;
+	    double relative_error = toDouble(sqrt(norm2(diff, rb[cb]) /
+					          norm2(psi, rb[otherCB])));
+	    QDPIO::cout << "VERIFY_DSLASH isign=" << isign
+			  << " cb=" << cb
+			  << " relative_error=" << relative_error << endl;
+	    if (!std::isfinite(relative_error) || relative_error > tolerance)
+	      {
+		QDPIO::cerr << "VERIFY_DSLASH FAILED tolerance=" << tolerance << endl;
+		QDP_abort(2);
+	      }
+	  }
+      QDPIO::cout << "VERIFY_DSLASH PASSED tolerance=" << tolerance << endl;
     }
 
 #if 0

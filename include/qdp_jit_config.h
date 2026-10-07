@@ -80,8 +80,10 @@ namespace QDP
 #endif
 
   void jit_config_set_pool_size( size_t val );
+  void jit_config_set_pool_reserve( size_t val );
   void jit_config_set_thread_stack( int stack );
   size_t jit_config_get_pool_size();
+  size_t jit_config_get_pool_reserve();
 
   int  jit_config_get_max_allocation();
   void jit_config_set_max_allocation(int size );

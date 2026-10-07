@@ -390,16 +390,10 @@ namespace QDP {
     ret = cuDeviceGet(&cuDevice, dev);
     CudaRes(__func__,ret);
 
-    ret = cuCtxGetCurrent(&cuContext);
-    
-    if (ret != CUDA_SUCCESS || cuContext == NULL)
-    {
-#if (CUDA_VERSION >= 13000)
-      ret = cuCtxCreate(&cuContext, NULL, CU_CTX_MAP_HOST, cuDevice);
-#else
-      ret = cuCtxCreate(&cuContext, CU_CTX_MAP_HOST, cuDevice);
-#endif
-    }
+    ret = cuDevicePrimaryCtxRetain(&cuContext, dev);
+    CudaRes(__func__,ret);
+
+    ret = cuCtxPushCurrent(cuContext);
     CudaRes(__func__,ret);
 #endif
 
@@ -781,5 +775,3 @@ namespace QDP {
   
   
 }
-
-

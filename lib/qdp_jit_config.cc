@@ -13,15 +13,16 @@ namespace QDP
     size_t thread_stack = 512 * sizeof(REAL);
     bool use_total_pool_size = false;
     size_t pool_size = 0;
+    size_t requested_pool_size = 0;
+    bool use_pool_reserve = false;
+    size_t pool_reserve = 0;
+    size_t effective_pool_reserve = 0;
     int max_allocation_size = -1;
     size_t pool_alignment = 128;
     size_t min_total_reserved_GPU_memory = 50*1024*1024; // 50 MB
+    double free_mem_fraction = 0.90;
     
-    // In case the Layout is not initialized when the pool size is set
-    // use this fraction of free GPU memory to determine the pool size
-    double free_mem_fraction = 0.92; 
-
-    enum PoolSetMethod { User , PerThread , Fraction };
+    enum PoolSetMethod { User , PerThread , Automatic };
     PoolSetMethod poolSetMethod = PoolSetMethod::PerThread;
     
     // In case memory allocation fails, decrease Pool size by this amount for next try.
@@ -159,12 +160,14 @@ namespace QDP
       QDPIO::cout << "  resulting memory pool size          : " << pool_size/1024/1024 << " MB\n";
       break;
     case PoolSetMethod::User:
-      QDPIO::cout << "  memory pool size (user request)     : " << pool_size/1024/1024 << " MB\n";
+      QDPIO::cout << "  memory pool size (user request)     : " << requested_pool_size/1024/1024 << " MB\n";
+      QDPIO::cout << "  resulting memory pool size          : " << pool_size/1024/1024 << " MB\n";
       break;
-    case PoolSetMethod::Fraction:
-      QDPIO::cout << "  memory pool size (per fraction)     : " << pool_size/1024/1024 << " MB\n";
+    case PoolSetMethod::Automatic:
+      QDPIO::cout << "  memory pool size (automatic)        : " << pool_size/1024/1024 << " MB\n";
       break;
     }
+    QDPIO::cout << "  non-pool device memory reserve      : " << effective_pool_reserve/1024/1024 << " MB\n";
 #endif
 #endif
 
@@ -317,7 +320,13 @@ namespace QDP
   void jit_config_set_pool_size( size_t val )
   {
     use_total_pool_size = true;
-    pool_size = val;
+    requested_pool_size = val;
+  }
+
+  void jit_config_set_pool_reserve( size_t val )
+  {
+    use_pool_reserve = true;
+    pool_reserve = val;
   }
   
   void jit_config_set_thread_stack( int stack )
@@ -327,37 +336,52 @@ namespace QDP
 
   size_t jit_config_get_pool_size()
   {
+    const size_t free_memory = gpu_mem_free();
+    effective_pool_reserve = use_pool_reserve
+      ? pool_reserve
+      : free_memory - (size_t)((double)free_memory * free_mem_fraction);
+
+    if (effective_pool_reserve >= free_memory)
+      {
+	QDP_error_exit("Requested non-pool device memory reserve is not smaller than free device memory");
+      }
+
+    const size_t maximum_pool_size = free_memory - effective_pool_reserve;
+
     if (use_total_pool_size)
       {
 	poolSetMethod = PoolSetMethod::User;
-
+	pool_size = std::min(requested_pool_size, maximum_pool_size);
 	return pool_size;
       }
     else
       {
 	size_t size;
-	
+
 	if (Layout::initialized())
 	  {
-	    size = gpu_mem_free() - (size_t)Layout::sitesOnNode() * thread_stack;
-
-	    if ( (size_t)Layout::sitesOnNode() * thread_stack < min_total_reserved_GPU_memory )
-	      {
-		size = gpu_mem_free() - min_total_reserved_GPU_memory;
-	      }
+	    const size_t layout_reserve = std::max((size_t)Layout::sitesOnNode() * thread_stack,
+					   min_total_reserved_GPU_memory);
+	    size = layout_reserve < free_memory ? free_memory - layout_reserve : 0;
+	    size = std::min(size, maximum_pool_size);
 
 	    poolSetMethod = PoolSetMethod::PerThread;
 	    pool_size = size;
 	  }
 	else
 	  {
-	    size = (size_t)((double)gpu_mem_free() * free_mem_fraction);
-	    poolSetMethod = PoolSetMethod::Fraction;
+	    size = maximum_pool_size;
+	    poolSetMethod = PoolSetMethod::Automatic;
 	    pool_size = size;
 	  }
 	  
 	return size;
       }
+  }
+
+  size_t jit_config_get_pool_reserve()
+  {
+    return effective_pool_reserve;
   }
 
 
