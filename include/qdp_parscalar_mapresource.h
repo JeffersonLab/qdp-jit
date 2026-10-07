@@ -36,7 +36,7 @@ public:
   void cleanup();
 
   ~FnMapRsrc() {
-    //QDPIO::cout << "~FnMapRsrc()\n";
+    cleanup();
   }
 
   void qmp_wait() const;

@@ -2026,10 +2026,14 @@ namespace QDP
 #if defined (QDP_BACKEND_CUDA)
 void llvm_bar_sync()
 {
+#if defined (QDP_LLVM22)
   builder->CreateIntrinsic(
       llvm::Intrinsic::nvvm_barrier_cta_sync_aligned_all,
       {},
       {builder->getInt32(0)});
+#else
+  llvm_special("llvm.nvvm.barrier0", llvm_get_type<void>(), {}, {});
+#endif
 }
 #endif
 
@@ -3315,4 +3319,3 @@ static void rewriteROCmLibmCallsToOCML(llvm::Module &M)
   
   
 } // namespace QDP
-

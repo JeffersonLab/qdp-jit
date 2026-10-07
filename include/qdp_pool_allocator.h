@@ -226,11 +226,30 @@ namespace QDP
       }
 
     bool pool_allocated = false;
+    const size_t pool_overhead = 2 * jit_config_get_pool_alignment();
+    const size_t free_memory = gpu_mem_free();
+    const size_t reserve = jit_config_get_pool_reserve();
+
+    if (free_memory <= reserve + pool_overhead)
+      {
+	QDPIO::cerr << "Insufficient free device memory to preserve the non-pool reserve of "
+		     << reserve << " bytes" << std::endl;
+	return false;
+      }
+
+    const size_t maximum_pool_size = free_memory - reserve - pool_overhead;
+    if (poolSize > maximum_pool_size)
+      {
+	QDPIO::cout << "Reducing pool size from " << poolSize << " to " << maximum_pool_size
+		     << " bytes to preserve " << reserve << " bytes outside the pool." << std::endl;
+	poolSize = maximum_pool_size;
+      }
+
     size_t orig_size = poolSize;
     
     while ( !pool_allocated && poolSize > (orig_size >> 1) )
       {
-	bytes_allocated = poolSize + 2 * jit_config_get_pool_alignment();
+	bytes_allocated = poolSize + pool_overhead;
 
 
 	if (Allocator::allocate( (void**)&unaligned , bytes_allocated ))
@@ -556,5 +575,4 @@ namespace QDP
 
 
 #endif
-
 

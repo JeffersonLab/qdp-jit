@@ -435,6 +435,46 @@ namespace QDP
   }
 
 
+  int QDPCache::addDeviceStaticDirect( void** ptr, size_t n_bytes )
+  {
+    int Id = getNewId();
+    Entry& e = vecEntry[ Id ];
+
+    e.Id        = Id;
+    e.size      = n_bytes;
+    e.flags     = Flags::NoPage;
+    e.devPtr    = nullptr;
+    e.hstPtr    = nullptr;
+    e.location  = Location::direct_device;
+    e.fptr      = nullptr;
+    e.iterTrack = lstTracker.insert( lstTracker.end() , Id );
+
+    if (!gpu_malloc(&e.devPtr, e.size))
+      {
+	QDPIO::cerr << "Failed to allocate direct device communication buffer of "
+		     << e.size << " bytes. Free device memory is " << gpu_mem_free()
+		     << " bytes; current direct communication allocation is "
+		     << direct_device_current_bytes << " bytes. Reduce -poolsize or increase -pool-reserve."
+		     << std::endl;
+	QDP_abort(1);
+      }
+
+    e.status = Status::device;
+    *ptr = e.devPtr;
+
+    direct_device_current_bytes += e.size;
+    direct_device_peak_bytes = std::max(direct_device_peak_bytes, direct_device_current_bytes);
+    direct_device_total_bytes += e.size;
+    direct_device_largest_allocation = std::max(direct_device_largest_allocation, e.size);
+    direct_device_allocation_count++;
+    direct_device_active_allocations++;
+    direct_device_peak_allocations = std::max(direct_device_peak_allocations,
+					      direct_device_active_allocations);
+
+    return Id;
+  }
+
+
   int QDPCache::add_pool( size_t size, Flags flags, Status status, const void* hstptr_, const void* devptr_, QDPCache::LayoutFptr func )
   {
     void * hstptr = const_cast<void*>(hstptr_);
@@ -570,6 +610,18 @@ namespace QDP
 
   void QDPCache::freeDeviceMemory(Entry& e)
   {
+    if (e.location == Location::direct_device)
+      {
+	if (e.devPtr)
+	  {
+	    gpu_free(e.devPtr);
+	    e.devPtr = nullptr;
+	    direct_device_current_bytes -= e.size;
+	    direct_device_active_allocations--;
+	  }
+	return;
+      }
+
     if (e.location != Location::pool)
       return;
 
@@ -735,7 +787,14 @@ namespace QDP
 
 
 
-  QDPCache::QDPCache() : vecEntry(1024)
+  QDPCache::QDPCache() : direct_device_current_bytes(0),
+			 direct_device_peak_bytes(0),
+			 direct_device_total_bytes(0),
+			 direct_device_largest_allocation(0),
+			 direct_device_allocation_count(0),
+			 direct_device_active_allocations(0),
+			 direct_device_peak_allocations(0),
+			 vecEntry(1024)
   {
     for ( int i = vecEntry.size()-1 ; i >= 0 ; --i )
       {

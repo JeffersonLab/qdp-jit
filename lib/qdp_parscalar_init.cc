@@ -33,6 +33,35 @@ namespace QDP {
   bool setIOGeomP = false;
   multi1d<int> logical_geom(Nd);   // apriori logical geometry of the machine
   multi1d<int> logical_iogeom(Nd); // apriori logical 	
+
+  namespace {
+    size_t parse_memory_size(const char* text)
+    {
+      char* suffix;
+      double value = strtod(text, &suffix);
+      double multiplier = 1.;
+
+      if (suffix == text || value < 0.)
+	QDP_error_exit("Invalid memory size: %s", text);
+
+      if (*suffix != '\0')
+	{
+	  if (suffix[1] != '\0')
+	    QDP_error_exit("Invalid memory size suffix: %s", text);
+
+	  switch (tolower(*suffix))
+	    {
+	    case 'k': multiplier = 1024.; break;
+	    case 'm': multiplier = 1024.*1024.; break;
+	    case 'g': multiplier = 1024.*1024.*1024.; break;
+	    case 't': multiplier = 1024.*1024.*1024.*1024.; break;
+	    default: QDP_error_exit("Invalid memory size suffix: %s", text);
+	    }
+	}
+
+      return (size_t)(value * multiplier);
+    }
+  }
   
 
   
@@ -218,6 +247,10 @@ namespace QDP {
 	  fprintf(stderr,"    -h        help\n");
 	  fprintf(stderr,"    -V        %%d [%d] verbose mode for QMP\n", 
 		  QMP_verboseP);
+#if ! defined (QDP_ENABLE_MANAGED_MEMORY)
+	  fprintf(stderr,"    -poolsize %%s requested device pool size\n");
+	  fprintf(stderr,"    -pool-reserve %%s minimum device memory left outside the pool\n");
+#endif
 #if defined(QDP_USE_PROFILING)   
 	  fprintf(stderr,"    -p        %%d [%d] profile level\n", 
 		  getProfileLevel());
@@ -262,30 +295,11 @@ namespace QDP {
 #if ! defined (QDP_ENABLE_MANAGED_MEMORY)
 	else if (strcmp((*argv)[i], "-poolsize")==0) 
 	  {
-	    float f;
-	    char c;
-	    sscanf((*argv)[++i],"%f%c",&f,&c);
-	    double mul;
-	    switch (tolower(c)) {
-	    case 'k': 
-	      mul=1024.; 
-	      break;
-	    case 'm': 
-	      mul=1024.*1024; 
-	      break;
-	    case 'g': 
-	      mul=1024.*1024*1024; 
-	      break;
-	    case 't':
-	      mul=1024.*1024*1024*1024;
-	      break;
-	    case '\0':
-	      break;
-	    default:
-	      QDP_error_exit("unknown multiplication factor");
-	    }
-	    size_t val = (size_t)((double)(f) * mul);
-	    jit_config_set_pool_size(val);
+	    jit_config_set_pool_size(parse_memory_size((*argv)[++i]));
+	  }
+	else if (strcmp((*argv)[i], "-pool-reserve")==0)
+	  {
+	    jit_config_set_pool_reserve(parse_memory_size((*argv)[++i]));
 	  }
 	else if (strcmp((*argv)[i], "-poolmemset")==0) 
 	  {
@@ -757,6 +771,34 @@ namespace QDP {
 		    QDPIO::cout << "\n";
 		  }
 #endif
+		if (jit_config_get_gpu_direct())
+		  {
+		    double current_bytes = QDP_get_global_cache().get_direct_device_current_bytes();
+		    double peak_bytes = QDP_get_global_cache().get_direct_device_peak_bytes();
+		    double total_bytes = QDP_get_global_cache().get_direct_device_total_bytes();
+		    double largest_allocation = QDP_get_global_cache().get_direct_device_largest_allocation();
+		    double allocation_count = QDP_get_global_cache().get_direct_device_allocation_count();
+		    double active_allocations = QDP_get_global_cache().get_direct_device_active_allocations();
+		    double peak_allocations = QDP_get_global_cache().get_direct_device_peak_allocations();
+
+		    QMP_max_double(&current_bytes);
+		    QMP_max_double(&peak_bytes);
+		    QMP_max_double(&total_bytes);
+		    QMP_max_double(&largest_allocation);
+		    QMP_max_double(&allocation_count);
+		    QMP_max_double(&active_allocations);
+		    QMP_max_double(&peak_allocations);
+
+		    QDPIO::cout << "Direct device communication buffers (maximum over ranks)\n";
+		    QDPIO::cout << "  current allocated bytes:                 " << (size_t)current_bytes << "\n";
+		    QDPIO::cout << "  peak allocated bytes:                    " << (size_t)peak_bytes << "\n";
+		    QDPIO::cout << "  cumulative allocated bytes:              " << (size_t)total_bytes << "\n";
+		    QDPIO::cout << "  largest allocation:                      " << (size_t)largest_allocation << "\n";
+		    QDPIO::cout << "  allocation count:                        " << (size_t)allocation_count << "\n";
+		    QDPIO::cout << "  current active allocations:              " << (size_t)active_allocations << "\n";
+		    QDPIO::cout << "  peak active allocations:                 " << (size_t)peak_allocations << "\n";
+		    QDPIO::cout << "\n";
+		  }
 		QDPIO::cout << "Code generator \n";
 		QDPIO::cout << "  functions jit-compiled:                  " << get_jit_stats_jitted() << "\n";
 

@@ -27,11 +27,13 @@ namespace QDP {
       gpu_host_alloc(&recv_buf,srcnum);
     }
 
-    //QDPIO::cout << "Allocating receive buffer on device: " << srcnum << " bytes\n";
-    recv_buf_id = QDP_get_global_cache().addDeviceStatic( &recv_buf_dev , srcnum);
-
-    //QDPIO::cout << "Allocating send buffer on device: " << dstnum << " bytes\n";
-    send_buf_id = QDP_get_global_cache().addDeviceStatic( &send_buf_dev , dstnum);
+    if (jit_config_get_gpu_direct()) {
+      recv_buf_id = QDP_get_global_cache().addDeviceStaticDirect( &recv_buf_dev , srcnum);
+      send_buf_id = QDP_get_global_cache().addDeviceStaticDirect( &send_buf_dev , dstnum);
+    } else {
+      recv_buf_id = QDP_get_global_cache().addDeviceStatic( &recv_buf_dev , srcnum);
+      send_buf_id = QDP_get_global_cache().addDeviceStatic( &send_buf_dev , dstnum);
+    }
 
     if (!jit_config_get_gpu_direct()) {
       msg[0] = QMP_declare_msgmem( recv_buf , srcnum );
@@ -89,6 +91,7 @@ namespace QDP {
         gpu_host_free(send_buf);
         gpu_host_free(recv_buf);
       }
+      bSet=false;
     }
   }
 
