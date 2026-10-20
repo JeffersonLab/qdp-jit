@@ -1,10 +1,9 @@
-// -*- C++ -*-
+#ifndef QDP_DB_STUB_H
+#define QDP_DB_STUB_H
+
 /*! @file
  * @brief Stubs of wrappers over filedb
  */
-
-#ifndef QDP_DB_STUB_H
-#define QDP_DB_STUB_H
 
 #include <vector>
 #include <string>

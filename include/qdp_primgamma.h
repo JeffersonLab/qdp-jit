@@ -1,290 +1,188 @@
-// -*- C++ -*-
-//
-//
-// QDP data parallel interface
-//
-
 #ifndef QDP_PRIMGAMMA_H
 #define QDP_PRIMGAMMA_H
 
 namespace QDP {
 
-//-------------------------------------------------------------------------------------
-//! Gamma matrices
-//! Simple interface for gamma matrices. These are run-time constructable
-template<int N> class GammaType
-{
-public:
-  //! Destructor
-  ~GammaType() {}
 
-  //! Index  from an integer
+class GammaType
+{
+  const int m;
+
+public:
   GammaType(int mm) : m(mm) {}
 
-public:
-  //! The integer representation for which product of gamma matrices
-  int elem() const {return m;}  
+  int elem() const {return m;}
 
+  Shape shape() const { return Shape{4,1}; }
+  
 private:
-  //! Main constructor 
-  GammaType() {}
-  //! Representation
-  /*! 
-   * The integer in the range 0 to Ns*Ns-1 that represents which product
-   * gamma matrices
-   */
-  const int m;
+  GammaType() = delete;
 };
 
 
-template<int N>
-struct LeafFunctor<GammaType<N>, ViewSpinLeaf>
+
+template <>
+struct LeafFunctor<GammaType, MGParamLeaf>
 {
-  typedef GammaType<N> Type_t;
+  typedef GammaType Type_t;
   inline static
-  Type_t apply(const GammaType<N>& g, const ViewSpinLeaf& v)
+  Type_t apply(const GammaType& g, MGParamLeaf& p) 
   {
-    return Type_t(g.elem());
+    Type_t ret( p.next( PlanEntry::Kind::Gamma ).gamma );
+    return ret;
   }
 };
 
   
 
-template<int N>
-struct FirstWord<GammaType<N> >
+template <>
+struct LeafFunctor<GammaType, DummyJitLeaf>
 {
-  static int get(const GammaType<N>& a)
+  typedef GammaType Type_t;
+  inline static
+  Type_t apply(const GammaType& g, DummyJitLeaf& p) 
+  {
+    Type_t ret(0);
+    return ret;
+  }
+};
+
+ 
+
+template <>
+struct LeafFunctor<GammaType, ShiftPhase1>
+{
+  typedef int Type_t;
+  static int apply(const GammaType &s, ShiftPhase1 &f)
   {
     return 0;
   }
 };
 
-
-
-//
-// GammaType Trait classes for code generation
-//
-
-
-template<int N>
-struct LeafFunctor<GammaType<N>, ParamLeaf>
-{
-  typedef GammaType<N> Type_t;
-  inline static
-  Type_t apply(const GammaType<N>& g, const ParamLeaf& p) 
-  {
-    Type_t ret(g.elem());
-    return ret;
-  }
-};
-
-
-template<int N>
-struct LeafFunctor<GammaType<N>, ParamLeafScalar>
-{
-  typedef GammaType<N> Type_t;
-  inline static
-  Type_t apply(const GammaType<N>& g, const ParamLeafScalar& p) 
-  {
-    Type_t ret(g.elem());
-    return ret;
-  }
-};
-
   
-template<int N>
-struct LeafFunctor<GammaType<N>, ShiftPhase1>
+template <>
+struct LeafFunctor<GammaType, ShiftPhase2>
 {
   typedef int Type_t;
-  static int apply(const GammaType<N> &s, const ShiftPhase1 &f) { return 0; }
-};
-
-template<int N>
-struct LeafFunctor<GammaType<N>, ShiftPhase2>
-{
-  typedef int Type_t;
-  static int apply(const GammaType<N> &s, const ShiftPhase2 &f) { return 0; }
-};
-
-template<int N>
-struct LeafFunctor<GammaType<N>, ViewLeaf>
-{
-  typedef GammaType<N> Type_t;
-  inline static
-  Type_t apply(const GammaType<N>& g, const ViewLeaf& v)
-  {
-    Type_t ret(g.elem());
-    return ret;
-  }
-};
-
-template<int N>
-struct LeafFunctor<GammaType<N>, AddressLeaf>
-{
-  typedef int Type_t;
-  inline static
-  Type_t apply(const GammaType<N>& g, const AddressLeaf& v)
+  static int apply(const GammaType &s, ShiftPhase2 &f)
   {
     return 0;
   }
 };
 
-template<int N>
-struct LeafFunctor<GammaType<N>, DynKeyTag>
+ 
+template <>
+struct LeafFunctor<GammaType, MGViewLeaf>
 {
-  typedef bool Type_t;
+  typedef GammaType Type_t;
   inline static
-  Type_t apply(const GammaType<N>& g, const DynKeyTag& v)
+  Type_t apply(const GammaType& g, MGViewLeaf& v)
   {
-    v.key.add( g.elem() );
-    return false;
+    Type_t ret(g.elem());
+    return ret;
   }
 };
 
   
-
-//-----------------------------------------------------------------------------
-// Traits classes to support return types
-//-----------------------------------------------------------------------------
-
-template<class T2, int N>
-struct BinaryReturn<GammaType<N>, PScalar<T2>, OpGammaTypeMultiply> {
+ 
+template<class T2>
+struct BinaryReturn<GammaType, PScalar<T2>, OpGammaTypeMultiply> {
   typedef PScalar<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
 };
 
-template<class T2, int N>
-struct BinaryReturn<PScalar<T2>, GammaType<N>, OpMultiplyGammaType> {
+
+template<class T2>
+struct BinaryReturn<PScalar<T2>, GammaType, OpMultiplyGammaType> {
   typedef PScalar<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
 };
 
  
 
-  // ------- DP
-#if 1
-
-template<int N> class GammaTypeDP
+class GammaTypeDP
 {
+  const int m;
 public:
-  //! Destructor
-  ~GammaTypeDP() {}
-
-  //! Index  from an integer
   GammaTypeDP(int mm) : m(mm) {}
 
-public:
-  //! The integer representation for which product of gamma matrices
   int elem() const {return m;}  
 
+  Shape shape() const { return Shape{4,1}; }
+
 private:
-  //! Main constructor 
-  GammaTypeDP() {}
-  //! Representation
-  /*! 
-   * The integer in the range 0 to Ns*Ns-1 that represents which product
-   * gamma matrices
-   */
-  const int m;
+  GammaTypeDP() = delete;
 };
 
 
-template<int N>
-struct LeafFunctor<GammaTypeDP<N>, ViewSpinLeaf>
+
+template <>
+struct LeafFunctor<GammaTypeDP, MGParamLeaf>
 {
-  typedef GammaTypeDP<N> Type_t;
+  typedef GammaTypeDP Type_t;
   inline static
-  Type_t apply(const GammaTypeDP<N>& g, const ViewSpinLeaf& v)
+  Type_t apply(const GammaTypeDP& g, MGParamLeaf& p) 
   {
-    return Type_t(g.elem());
+    Type_t ret( p.next( PlanEntry::Kind::Gamma ).gamma );
+    return ret;
   }
 };
 
+  
 
-template<int N>
-struct FirstWord<GammaTypeDP<N> >
+template <>
+struct LeafFunctor<GammaTypeDP, DummyJitLeaf>
 {
-  static int get(const GammaTypeDP<N>& a)
+  typedef GammaTypeDP Type_t;
+  inline static
+  Type_t apply(const GammaTypeDP& g, DummyJitLeaf& p) 
   {
-    return 0;
+    Type_t ret(0);
+    return ret;
   }
 };
 
-
-template<int N>
-struct LeafFunctor<GammaTypeDP<N>, ParamLeaf>
+  
+template <>
+struct LeafFunctor<GammaTypeDP, ShiftPhase1>
 {
-  typedef GammaTypeDP<N> Type_t;
+  typedef int Type_t;
+  static int apply(const GammaTypeDP &s, ShiftPhase1 &f) { return 0; }
+};
+
+
+template <>  
+struct LeafFunctor<GammaTypeDP, ShiftPhase2>
+{
+  typedef int Type_t;
+  static int apply(const GammaTypeDP &s, ShiftPhase2 &f) { return 0; }
+};
+
+
+
+
+template <>  
+struct LeafFunctor<GammaTypeDP, MGViewLeaf>
+{
+  typedef GammaTypeDP Type_t;
   inline static
-  Type_t apply(const GammaTypeDP<N>& g, const ParamLeaf& p) 
+  Type_t apply(const GammaTypeDP& g, MGViewLeaf& v)
   {
     Type_t ret(g.elem());
     return ret;
   }
 };
 
-template<int N>
-struct LeafFunctor<GammaTypeDP<N>, ShiftPhase1>
-{
-  typedef int Type_t;
-  static int apply(const GammaTypeDP<N> &s, const ShiftPhase1 &f) { return 0; }
-};
+  
 
-template<int N>
-struct LeafFunctor<GammaTypeDP<N>, ShiftPhase2>
-{
-  typedef int Type_t;
-  static int apply(const GammaTypeDP<N> &s, const ShiftPhase2 &f) { return 0; }
-};
-
-template<int N>
-struct LeafFunctor<GammaTypeDP<N>, ViewLeaf>
-{
-  typedef GammaTypeDP<N> Type_t;
-  inline static
-  Type_t apply(const GammaTypeDP<N>& g, const ViewLeaf& v)
-  {
-    Type_t ret(g.elem());
-    return ret;
-  }
-};
-
-template<int N>
-struct LeafFunctor<GammaTypeDP<N>, AddressLeaf>
-{
-  typedef int Type_t;
-  inline static
-  Type_t apply(const GammaTypeDP<N>& g, const AddressLeaf& v)
-  {
-    return 0;
-  }
-};
-
-template<int N>
-struct LeafFunctor<GammaTypeDP<N>, DynKeyTag>
-{
-  typedef bool Type_t;
-  inline static
-  Type_t apply(const GammaTypeDP<N>& g, const DynKeyTag& v)
-  {
-    v.key.add( g.elem() );
-    return false;
-  }
-};
-
-//-----------------------------------------------------------------------------
-// Traits classes to support return types
-//-----------------------------------------------------------------------------
-
-template<class T2, int N>
-struct BinaryReturn<GammaTypeDP<N>, PScalar<T2>, OpGammaTypeMultiply> {
+template<class T2>
+struct BinaryReturn<GammaTypeDP, PScalar<T2>, OpGammaTypeMultiply> {
   typedef PScalar<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
 };
 
-template<class T2, int N>
-struct BinaryReturn<PScalar<T2>, GammaTypeDP<N>, OpMultiplyGammaType> {
+template<class T2>
+struct BinaryReturn<PScalar<T2>, GammaTypeDP, OpMultiplyGammaType> {
   typedef PScalar<typename UnaryReturn<T2, OpUnaryPlus>::Type_t>  Type_t;
 };
 
-#endif
 
 
 } // namespace QDP

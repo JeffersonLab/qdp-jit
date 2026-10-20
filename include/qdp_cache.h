@@ -1,8 +1,12 @@
-#ifndef QDP_CACHE
-#define QDP_CACHE
+#ifndef QDP_CACHE_H
+#define QDP_CACHE_H
 
 
 #include <iostream>
+#include <cstddef>
+#include <cstdint>
+#include <map>
+#include <utility>
 #include <vector>
 #include <stack>
 #include <list>
@@ -14,13 +18,22 @@ namespace QDP
   template<class T> class multi1d;
 
   void qdp_cache_set_cache_verbose(bool b);
-  
+
+
   class QDPCache
   {
   public:
-    typedef void (* LayoutFptr)(bool toDev,void * outPtr,void * inPtr);
-    enum class Status      { undef , host , device };
-    enum       Flags       { Empty = 0, OwnHostMemory = 1, NoPage = 2  };
+    typedef void (* ConvertFptr)(bool toDev,void * outPtr,void * inPtr, int layout_ref, Shape shape , JitDataFormat data_format );
+    enum class Status { undef, host, device };
+
+    enum class Flags : unsigned
+    {
+      Empty         = 0,
+      OwnHostMemory = 1u << 0,
+      NonEvictable  = 1u << 1,
+
+      NoPage        = NonEvictable
+    };
     
   private:
     enum class Location    { pool , direct_device , literal };
@@ -35,32 +48,80 @@ namespace QDP
 	int64_t int64_;
 	double  double_;
 	bool    bool_;
+
+	LiteralUnion() : ptr(nullptr) {}
       };
 
-      int      Id;
-      size_t   size;
-      Location location;
-      Flags    flags;
-      void*    hstPtr;
-      void*    devPtr;  // NULL if not allocated
+      int      Id = -1;
+      size_t   size = 0;
+      Location location = Location::pool;
+      Flags    flags = Flags::Empty;
+      void*    hstPtr = nullptr;
+      void*    devPtr = nullptr;
       std::list<int>::iterator iterTrack;
-      LayoutFptr fptr;
+      ConvertFptr fptr = nullptr;
+      int      layout_ref = -1;
       LiteralUnion param;
-      LiteralType param_type;
+      LiteralType param_type = LiteralType::int_;
 
-      Status status;
+      Status status = Status::undef;
+      Shape shape{};
+      JitDataFormat data_format;
+      size_t   host_size = 0;
+
+      bool active = false;
+      unsigned pin_count = 0;
+      bool tracked_device_ptr = false;
+    };
+
+    class ScopedPinSet
+    {
+    public:
+      ScopedPinSet(QDPCache& cache, const std::vector<int>& ids);
+      ~ScopedPinSet();
+
+      ScopedPinSet(const ScopedPinSet&) = delete;
+      ScopedPinSet& operator=(const ScopedPinSet&) = delete;
+
+    private:
+      QDPCache& cache_;
+      const std::vector<int>& ids_;
     };
 
 
   public:
     typedef int ArgKey;
+
+    class KernelArgPin
+    {
+    public:
+      KernelArgPin(KernelArgPin&& rhs) noexcept;
+      KernelArgPin& operator=(KernelArgPin&& rhs) noexcept;
+      ~KernelArgPin();
+
+      KernelArgPin(const KernelArgPin&) = delete;
+      KernelArgPin& operator=(const KernelArgPin&) = delete;
+
+    private:
+      friend class QDPCache;
+      KernelArgPin(QDPCache& cache, const std::vector<int>& ids);
+      void release();
+
+      QDPCache* cache_;
+      std::vector<int> ids_;
+    };
     
 #if defined QDP_BACKEND_ROCM
     typedef std::vector<unsigned char> KernelArgs_t;
 #elif defined QDP_BACKEND_CUDA
     typedef std::vector<void*> KernelArgs_t;
-#elif defined QDP_BACKEND_AVX
-    union ArgTypes {
+#elif defined QDP_BACKEND_L0
+    typedef std::vector< std::pair< int , void* > > KernelArgs_t;
+#else
+#error "No backend specified"
+#endif
+
+    union HostArgTypes {
       void *  ptr;
       float   f32;
       int     i32;
@@ -68,17 +129,14 @@ namespace QDP
       double  f64;
       bool    i1;
     };
-    typedef std::vector<ArgTypes> KernelArgs_t;
-#elif defined QDP_BACKEND_L0
-    typedef std::vector< std::pair< int , void* > > KernelArgs_t;
-#else
-#error "No backend specified"
-#endif
+    typedef std::vector<HostArgTypes> HostArgs_t;
 
     
     QDPCache();
 
+    KernelArgPin pin_kernel_args(const std::vector<int>& ids);
     KernelArgs_t get_kernel_args(std::vector<int>& ids , bool for_kernel = true );
+    HostArgs_t get_host_args(std::vector<int>& ids );
     
     multi1d<void*> get_dev_ptrs( const multi1d<QDPCache::ArgKey>& ids );
     void* get_dev_ptr( QDPCache::ArgKey id );
@@ -97,19 +155,21 @@ namespace QDP
     int addJitParamInt64(int64_t i);
     int addJitParamBool(bool i);
 
-    // track_ptr - this enables to sign off via the pointer (needed for QUDA, where we hijack cudaMalloc)
     int addDeviceStatic( void** ptr, size_t n_bytes , bool track_ptr = false );
-    int addDeviceStaticDirect( void** ptr, size_t n_bytes );
     void signoffViaPtr( void* ptr );
     int addDeviceStatic( size_t n_bytes );
+    int addDeviceStaticDirect( void** ptr, size_t n_bytes );
 
-    size_t get_direct_device_current_bytes() const { return direct_device_current_bytes; }
-    size_t get_direct_device_peak_bytes() const { return direct_device_peak_bytes; }
-    size_t get_direct_device_total_bytes() const { return direct_device_total_bytes; }
-    size_t get_direct_device_largest_allocation() const { return direct_device_largest_allocation; }
-    size_t get_direct_device_allocation_count() const { return direct_device_allocation_count; }
-    size_t get_direct_device_active_allocations() const { return direct_device_active_allocations; }
-    size_t get_direct_device_peak_allocations() const { return direct_device_peak_allocations; }
+    struct DirectDeviceStats
+    {
+      size_t current_bytes = 0;
+      size_t peak_bytes = 0;
+      size_t largest_allocation = 0;
+      size_t allocations = 0;
+      size_t active = 0;
+      size_t peak_active = 0;
+    };
+    const DirectDeviceStats& get_direct_device_stats() const { return direct_device_stats; }
     
 
 
@@ -118,7 +178,7 @@ namespace QDP
     
 
     int add( size_t size );
-    int addLayout( size_t size, LayoutFptr func );
+    int addConverted( size_t size, size_t host_size, ConvertFptr func , int layout_ref , Shape shape , JitDataFormat data_format );
     int addOwnHostMem( size_t size, const void* ptr );
     int addOwnHostMemStatus( size_t size, const void* ptr , Status st );
     int addOwnHostMemNoPage( size_t size, const void* ptr );
@@ -137,14 +197,31 @@ namespace QDP
     void   enableMemset(unsigned val);
 
     bool isOnDevice(int id);
+    bool isOnHost(int id);
 
-    void* getPoolPtr();
     
   private:
-    int add_pool( size_t size, Flags flags, Status st, const void* ptr_host, const void* ptr_dev, LayoutFptr func );
+    DirectDeviceStats direct_device_stats;
+
+    int add_pool( size_t size,
+		  Flags flags,
+		  Status st,
+		  const void* ptr_host,
+		  const void* ptr_dev,
+		  ConvertFptr func ,
+		  JitDataFormat data_format = JitDataFormat() ,
+		  int layout_ref = -1 ,
+		  Shape shape = Shape() ,
+		  size_t host_size = 0 );
 
     void printInfo(const Entry& e);
     std::string stringStatus( Status s );
+
+    Entry& getActiveEntry(int id);
+    const Entry& getActiveEntry(int id) const;
+    static bool hasFlag(Flags flags, Flags bit);
+    void pinIds(const std::vector<int>& ids);
+    void unpinIds(const std::vector<int>& ids);
 
     bool gpu_allocate_base( void ** ptr , size_t n_bytes , int id );
     void gpu_free_base( void * ptr , size_t n_bytes );
@@ -161,14 +238,6 @@ namespace QDP
     
     void assureDevice(Entry& e);
     void assureDevice(Entry& e,int elem);
-
-    size_t direct_device_current_bytes;
-    size_t direct_device_peak_bytes;
-    size_t direct_device_total_bytes;
-    size_t direct_device_largest_allocation;
-    size_t direct_device_allocation_count;
-    size_t direct_device_active_allocations;
-    size_t direct_device_peak_allocations;
 
     void assureDevice(int id);
     void assureDevice(int id,int elem);
@@ -188,6 +257,8 @@ namespace QDP
     std::vector<int> __ids_last;
     std::vector<QDPCache::Entry> __vec_backed;
     std::vector<void*>  __hst_ptr;
+
+    std::vector<unsigned char> staging_buffer;
   };
 
   QDPCache& QDP_get_global_cache();
@@ -200,6 +271,8 @@ namespace QDP
     int id;
   public:
     JitParam( int id ): id(id) {}
+    JitParam( const JitParam& ) = delete;
+    JitParam& operator=( const JitParam& ) = delete;
     ~JitParam() {
       QDP_get_global_cache().signoff(id);
     }

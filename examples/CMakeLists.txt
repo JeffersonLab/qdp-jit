@@ -9,9 +9,11 @@ endif()
 
 add_library(examples mesplq.cc reunit.cc dslashm_w.cc rgauge.cc taproj.cc 
 	expm12.cc baryon_w.cc mesons_w.cc formfac_w.cc linalg1.cc linalg.h 
-	blas1.cc blas1.h cblas1.cc cblas1.h unittest.h testOpenPartFile.h sftmom.cc)
-			
+	unittest.h testOpenPartFile.h sftmom.cc)
+
+      
 target_link_libraries(examples PUBLIC QDPXX::qdp)
+target_link_libraries(examples PUBLIC QDPXX::jit)
 
 set_target_properties( examples PROPERTIES CXX_STANDARD 20 )
 
@@ -29,24 +31,30 @@ set_target_properties( examples PROPERTIES CXX_STANDARD 20 )
 #	C_STANDARD 99
 #	C_EXTENSIONS OFF)
 
-set(TESTS t_skeleton 
-	t_io
-	t_mesplq
-	t_db
-	t_xml
-	t_entry
-	t_nersc
-	t_shift
-	t_exotic
-	t_basic
-	t_qio
-	t_cugauge
-	t_transpose_spin
-	t_partfile
-	t_map_obj_disk
-	t_map_obj_memory
-	t_mesons
-	)
+set(TESTS
+  t_mg
+  t_eval_bench
+  t_mg_coarse_op
+  t_clover
+  t_stout
+  t_io
+  t_mesplq
+  t_db
+  t_xml
+  t_entry
+  t_nersc
+  t_shift
+  t_exotic
+  t_basic
+  t_qio
+  t_cugauge
+  t_matvec
+  t_transpose_spin
+  t_partfile
+  t_map_obj_disk
+  t_map_obj_memory
+  t_mesons
+  )
 
 if( BUILD_WILSON_EXAMPLES )
   set(TESTS ${TESTS} t_dslashm t_formfac t_spectrum t_qdp t_linalg)
@@ -57,8 +65,9 @@ set(TESTS ${TESTS} nersc2ildg test_ildglat lhpc2ildg)
 
 foreach(TEST ${TESTS})
  add_executable(${TEST} ${TEST}.cc)
- target_link_libraries(${TEST} PUBLIC examples QDPXX::jit)
-
+ target_link_libraries(${TEST} PUBLIC examples QDPXX::jit QDPXX::qdp)
+ #target_link_libraries(${TEST} PUBLIC )
+ 
  set_target_properties( ${TEST} PROPERTIES CXX_STANDARD 20 )
 
  if( QDP_BACKEND_L0 )
@@ -71,3 +80,4 @@ foreach(TEST ${TESTS})
 endforeach()
 
 install(TARGETS nersc2ildg test_ildglat lhpc2ildg)
+

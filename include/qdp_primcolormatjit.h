@@ -1,567 +1,476 @@
-// -*- C++ -*-
-
-/*! \file
- * \brief Primitive Color Matrix
- */
-
-
 #ifndef QDP_PRIMCOLORMATJIT_H
 #define QDP_PRIMCOLORMATJIT_H
+
 
 namespace QDP {
 
 
-//-------------------------------------------------------------------------------------
-/*! \addtogroup primcolormatrix Color matrix primitive
- * \ingroup primmatrix
- *
- * Primitive type that transforms like a Color Matrix
- *
- * @{
- */
-
-
-//! Primitive color Matrix class 
-template <class T, int N> class PColorMatrixJIT : public PMatrixJIT<T, N, PColorMatrixJIT>
+template <class T> class PColorMatrixJIT : public PMatrixJIT<T, PColorMatrixJIT>
 {
 public:
 
-  //! PColorMatrixJIT = PScalarJIT
-  /*! Fill with primitive scalar */
-  template<class T1>
-  inline
-  PColorMatrixJIT& operator=(const PScalarREG<T1>& rhs)
-    {
-      for(int i=0; i < N; ++i)
-	for(int j=0; j < N; ++j)
-	  if (i == j)
-	    this->elem(i,j) = rhs.elem();
-	  else
-	    zero_rep(this->elem(i,j));
-      return *this;
-    }
+  PColorMatrixJIT() {}
 
-  //! PColorMatrixJIT = PColorMatrixJIT
-  /*! Set equal to another PMatrix */
-  template<class T1>
-  inline
-  PColorMatrixJIT& operator=(const PColorMatrixREG<T1,N>& rhs) 
-    {
-      for(int i=0; i < N; ++i)
-	for(int j=0; j < N; ++j)
-	  this->elem(i,j) = rhs.elem(i,j);
-      return *this;
-    }
+  PColorMatrixJIT( llvm::Value * base , JitDataFormat fmt , NestedIndex args , Shape shape ) : PMatrixJIT<T, PColorMatrixJIT>(base,fmt,args,shape) {}
 
-  template<class T1>
-  inline
-  PColorMatrixJIT& operator+=(const PColorMatrixREG<T1,N>& rhs) 
-    {
-      for(int i=0; i < N; ++i)
-	for(int j=0; j < N; ++j)
-	  this->elem(i,j) += rhs.elem(i,j);
-      return *this;
-    }
+  
+  // for eval Shape
+  PColorMatrixJIT( Shape shape ) : PMatrixJIT<T, PColorMatrixJIT>(shape) {}
+  
+
+  PColorMatrixJIT( const PColorMatrixJIT& rhs ): PMatrixJIT<T, PColorMatrixJIT>(rhs) {}
+  
+  Shape::Axis axis() const { return Shape::Axis::Color; }
+
+  int getN() const
+  {
+    int ret = shape().extent(axis());
+
+    return ret;
+  }
+
+  int this_size() const
+  {
+    int ret = getN() * getN();
+
+    return ret;
+  }
+
+  Shape shape() const { return PMatrixJIT<T, PColorMatrixJIT>::shape(); }
+
 
   template<class T1>
-  inline
-  PColorMatrixJIT& operator-=(const PColorMatrixREG<T1,N>& rhs) 
-    {
-      for(int i=0; i < N; ++i)
-	for(int j=0; j < N; ++j)
-	  this->elem(i,j) -= rhs.elem(i,j);
-      return *this;
-    }
+  PColorMatrixJIT operator=(PScalarJIT<T1> rhs)
+  {
+    this->assign(rhs);
+    return *this;
+  }
+
 
   template<class T1>
-  inline
-  PColorMatrixJIT& operator+=(const PScalarREG<T1>& rhs) 
-    {
-      for(int i=0; i < N; ++i)
-	this->elem(i,i) += rhs.elem();
-
-      return *this;
-    }
-
-  //! PMatrixJIT -= PScalarJIT
-  template<class T1>
-  inline
-  PColorMatrixJIT& operator-=(const PScalarREG<T1>& rhs) 
-    {
-      for(int i=0; i < N; ++i)
-	this->elem(i,i) -= rhs.elem();
-
-      return *this;
-    }
-
-  //! PMatrixJIT *= PScalarJIT
-  template<class T1>
-  inline
-  PColorMatrixJIT& operator*=(const PScalarREG<T1>& rhs) 
-    {
-      for(int i=0; i < N; ++i)
-	for(int j=0; j < N; ++j)
-	  this->elem(i,j) *= rhs.elem();
-
-      return *this;
-    }
-
-  //! PMatrixJIT /= PScalarJIT
-  template<class T1>
-  inline
-  PColorMatrixJIT& operator/=(const PScalarREG<T1>& rhs) 
-    {
-      for(int i=0; i < N; ++i)
-	for(int j=0; j < N; ++j)
-	  this->elem(i,j) /= rhs.elem();
-
-      return *this;
-    }
+  PColorMatrixJIT operator=(PColorMatrixJIT<T1> rhs) 
+  {
+    this->assign(rhs);
+    return *this;
+  }
 
 
-
+  PColorMatrixJIT operator=(PColorMatrixJIT rhs) 
+  {
+    this->assign(rhs);
+    return *this;
+  }
 };
 
-/*! @} */   // end of group primcolormatrix
 
-//-----------------------------------------------------------------------------
-// Traits classes 
-//-----------------------------------------------------------------------------
 
-  template<class T, int N>
-  struct ScalarType<PColorMatrixJIT<T,N> >
+
+template<class T>
+class WordSize< PColorMatrixJIT<T> >
+{
+public:
+  static int value( const Shape& ret )
   {
-    typedef PColorMatrixJIT< typename ScalarType<T>::Type_t,N > Type_t;
+    return ret.nc() * ret.nc() * WordSize<T>::value( ret );
+  }
+};
+  
+
+
+  
+  template <class T>
+  struct JITType< PColorMatrixJIT<T> >
+  {
+    typedef PColorMatrixJIT< typename JITType<T>::Type_t >  Type_t;
   };
 
 
-  template<class T, int N> 
-  struct REGType<PColorMatrixJIT<T,N> >
-  {
-    typedef PColorMatrixREG<typename REGType<T>::Type_t,N>  Type_t;
-  };
-
-  template<class T, int N> 
-  struct BASEType<PColorMatrixJIT<T,N> >
-  {
-    typedef PColorMatrix<typename BASEType<T>::Type_t,N>  Type_t;
-  };
 
 
-// Underlying word type
-template<class T1, int N>
-struct WordType<PColorMatrixJIT<T1,N> > 
+template<class T1>
+struct WordType<PColorMatrixJIT<T1> > 
 {
   typedef typename WordType<T1>::Type_t  Type_t;
 };
 
-// Fixed Precisions
-template<class T1, int N>
-struct SinglePrecType<PColorMatrixJIT<T1,N> >
+
+template<class T1>
+struct SinglePrecType<PColorMatrixJIT<T1> >
 {
-  typedef PColorMatrixJIT<typename SinglePrecType<T1>::Type_t, N> Type_t;
+  typedef PColorMatrixJIT<typename SinglePrecType<T1>::Type_t> Type_t;
 };
 
-template<class T1, int N>
-struct DoublePrecType<PColorMatrixJIT<T1,N> >
+template<class T1>
+struct DoublePrecType<PColorMatrixJIT<T1> >
 {
-  typedef PColorMatrixJIT<typename DoublePrecType<T1>::Type_t, N> Type_t;
+  typedef PColorMatrixJIT<typename DoublePrecType<T1>::Type_t> Type_t;
 };
 
 
 
-// Internally used scalars
-template<class T, int N>
-struct InternalScalar<PColorMatrixJIT<T,N> > {
+
+template<class T>
+struct InternalScalar<PColorMatrixJIT<T> > {
   typedef PScalarJIT<typename InternalScalar<T>::Type_t>  Type_t;
 };
 
-// Makes a primitive into a scalar leaving grid along
-template<class T, int N>
-struct PrimitiveScalar<PColorMatrixJIT<T,N> > {
+
+template<class T>
+struct PrimitiveScalar<PColorMatrixJIT<T> > {
   typedef PScalarJIT<typename PrimitiveScalar<T>::Type_t>  Type_t;
 };
 
-// Makes a lattice scalar leaving primitive indices along
-template<class T, int N>
-struct LatticeScalar<PColorMatrixJIT<T,N> > {
-  typedef PColorMatrixJIT<typename LatticeScalar<T>::Type_t, N>  Type_t;
-};
 
-//-----------------------------------------------------------------------------
-// Traits classes to support return types
-//-----------------------------------------------------------------------------
-
-// Default unary(PColorMatrixJIT) -> PColorMatrixJIT
-template<class T1, int N, class Op>
-struct UnaryReturn<PColorMatrixJIT<T1,N>, Op> {
-  typedef PColorMatrixJIT<typename UnaryReturn<T1, Op>::Type_t, N>  Type_t;
-};
-
-// Default binary(PScalarJIT,PColorMatrixJIT) -> PColorMatrixJIT
-template<class T1, class T2, int N, class Op>
-struct BinaryReturn<PScalarJIT<T1>, PColorMatrixJIT<T2,N>, Op> {
-  typedef PColorMatrixJIT<typename BinaryReturn<T1, T2, Op>::Type_t, N>  Type_t;
-};
-
-// Default binary(PColorMatrixJIT,PColorMatrixJIT) -> PColorMatrixJIT
-template<class T1, class T2, int N, class Op>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, Op> {
-  typedef PColorMatrixJIT<typename BinaryReturn<T1, T2, Op>::Type_t, N>  Type_t;
-};
-
-// Default binary(PColorMatrixJIT,PScalarJIT) -> PColorMatrixJIT
-template<class T1, int N, class T2, class Op>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PScalarJIT<T2>, Op> {
-  typedef PColorMatrixJIT<typename BinaryReturn<T1, T2, Op>::Type_t, N>  Type_t;
+template<class T>
+struct LatticeScalar<PColorMatrixJIT<T> > {
+  typedef PColorMatrixJIT<typename LatticeScalar<T>::Type_t>  Type_t;
 };
 
 
-// Assignment is different
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, OpAssign > {
-  typedef PColorMatrixJIT<T1,N> &Type_t;
-};
-
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, OpAddAssign > {
-  typedef PColorMatrixJIT<T1,N> &Type_t;
-};
- 
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, OpSubtractAssign > {
-  typedef PColorMatrixJIT<T1,N> &Type_t;
-};
- 
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, OpMultiplyAssign > {
-  typedef PColorMatrixJIT<T1,N> &Type_t;
-};
- 
-
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PScalarJIT<T2>, OpAssign > {
-  typedef PColorMatrixJIT<T1,N> &Type_t;
-};
-
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PScalarJIT<T2>, OpAddAssign > {
-  typedef PColorMatrixJIT<T1,N> &Type_t;
-};
- 
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PScalarJIT<T2>, OpSubtractAssign > {
-  typedef PColorMatrixJIT<T1,N> &Type_t;
-};
- 
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PScalarJIT<T2>, OpMultiplyAssign > {
-  typedef PColorMatrixJIT<T1,N> &Type_t;
-};
- 
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PScalarJIT<T2>, OpDivideAssign > {
-  typedef PColorMatrixJIT<T1,N> &Type_t;
-};
- 
 
 
-// ColorMatrix
-template<class T, int N>
-struct UnaryReturn<PColorMatrixJIT<T,N>, FnTrace > {
+
+
+template<class T1, class Op>
+struct UnaryReturn<PColorMatrixJIT<T1>, Op> {
+  typedef PColorMatrixJIT<typename UnaryReturn<T1, Op>::Type_t>  Type_t;
+};
+
+
+template<class T1, class T2, class Op>
+struct BinaryReturn<PScalarJIT<T1>, PColorMatrixJIT<T2>, Op> {
+  typedef PColorMatrixJIT<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
+};
+
+
+template<class T1, class T2, class Op>
+struct BinaryReturn<PColorMatrixJIT<T1>, PColorMatrixJIT<T2>, Op> {
+  typedef PColorMatrixJIT<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
+};
+
+
+template<class T1, class T2, class Op>
+struct BinaryReturn<PColorMatrixJIT<T1>, PScalarJIT<T2>, Op> {
+  typedef PColorMatrixJIT<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
+};
+
+
+
+template<class T>
+struct UnaryReturn<PColorMatrixJIT<T>, FnTrace > {
   typedef PScalarJIT<typename UnaryReturn<T, FnTrace>::Type_t>  Type_t;
 };
 
-template<class T, int N>
-struct UnaryReturn<PColorMatrixJIT<T,N>, FnRealTrace > {
+template<class T>
+struct UnaryReturn<PColorMatrixJIT<T>, FnRealTrace > {
   typedef PScalarJIT<typename UnaryReturn<T, FnRealTrace>::Type_t>  Type_t;
 };
 
-template<class T, int N>
-struct UnaryReturn<PColorMatrixJIT<T,N>, FnImagTrace > {
+template<class T>
+struct UnaryReturn<PColorMatrixJIT<T>, FnImagTrace > {
   typedef PScalarJIT<typename UnaryReturn<T, FnImagTrace>::Type_t>  Type_t;
 };
 
-template<class T, int N>
-struct UnaryReturn<PColorMatrixJIT<T,N>, FnNorm2 > {
+template<class T>
+struct UnaryReturn<PColorMatrixJIT<T>, FnNorm2 > {
   typedef PScalarJIT<typename UnaryReturn<T, FnNorm2>::Type_t>  Type_t;
 };
 
-template<class T, int N>
-struct UnaryReturn<PColorMatrixJIT<T,N>, FnLocalNorm2 > {
+template<class T>
+struct UnaryReturn<PColorMatrixJIT<T>, FnLocalNorm2 > {
   typedef PScalarJIT<typename UnaryReturn<T, FnLocalNorm2>::Type_t>  Type_t;
 };
 
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, FnTraceMultiply> {
+template<class T1, class T2>
+struct BinaryReturn<PColorMatrixJIT<T1>, PColorMatrixJIT<T2>, FnTraceMultiply> {
   typedef PScalarJIT<typename BinaryReturn<T1, T2, FnTraceMultiply>::Type_t>  Type_t;
 };
 
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PScalarJIT<T2>, FnTraceMultiply> {
+template<class T1, class T2>
+struct BinaryReturn<PColorMatrixJIT<T1>, PScalarJIT<T2>, FnTraceMultiply> {
   typedef PScalarJIT<typename BinaryReturn<T1, T2, FnTraceMultiply>::Type_t>  Type_t;
 };
 
-template<class T1, class T2, int N>
-struct BinaryReturn<PScalarJIT<T1>, PColorMatrixJIT<T2,N>, FnTraceMultiply> {
+template<class T1, class T2>
+struct BinaryReturn<PScalarJIT<T1>, PColorMatrixJIT<T2>, FnTraceMultiply> {
   typedef PScalarJIT<typename BinaryReturn<T1, T2, FnTraceMultiply>::Type_t>  Type_t;
 };
 
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, FnInnerProduct> {
+template<class T1, class T2>
+struct BinaryReturn<PColorMatrixJIT<T1>, PColorMatrixJIT<T2>, FnInnerProduct> {
   typedef PScalarJIT<typename BinaryReturn<T1, T2, FnInnerProduct>::Type_t>  Type_t;
 };
 
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PScalarJIT<T2>, FnInnerProduct> {
+template<class T1, class T2>
+struct BinaryReturn<PColorMatrixJIT<T1>, PScalarJIT<T2>, FnInnerProduct> {
   typedef PScalarJIT<typename BinaryReturn<T1, T2, FnInnerProduct>::Type_t>  Type_t;
 };
 
-template<class T1, class T2, int N>
-struct BinaryReturn<PScalarJIT<T1>, PColorMatrixJIT<T2,N>, FnInnerProduct> {
+template<class T1, class T2>
+struct BinaryReturn<PScalarJIT<T1>, PColorMatrixJIT<T2>, FnInnerProduct> {
   typedef PScalarJIT<typename BinaryReturn<T1, T2, FnInnerProduct>::Type_t>  Type_t;
 };
 
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, FnLocalInnerProduct> {
+template<class T1, class T2>
+struct BinaryReturn<PColorMatrixJIT<T1>, PColorMatrixJIT<T2>, FnLocalInnerProduct> {
   typedef PScalarJIT<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>  Type_t;
 };
 
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PScalarJIT<T2>, FnLocalInnerProduct> {
+template<class T1, class T2>
+struct BinaryReturn<PColorMatrixJIT<T1>, PScalarJIT<T2>, FnLocalInnerProduct> {
   typedef PScalarJIT<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>  Type_t;
 };
 
-template<class T1, class T2, int N>
-struct BinaryReturn<PScalarJIT<T1>, PColorMatrixJIT<T2,N>, FnLocalInnerProduct> {
+template<class T1, class T2>
+struct BinaryReturn<PScalarJIT<T1>, PColorMatrixJIT<T2>, FnLocalInnerProduct> {
   typedef PScalarJIT<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>  Type_t;
 };
 
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, FnInnerProductReal> {
+template<class T1, class T2>
+struct BinaryReturn<PColorMatrixJIT<T1>, PColorMatrixJIT<T2>, FnInnerProductReal> {
   typedef PScalarJIT<typename BinaryReturn<T1, T2, FnInnerProductReal>::Type_t>  Type_t;
 };
 
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PScalarJIT<T2>, FnInnerProductReal> {
+template<class T1, class T2>
+struct BinaryReturn<PColorMatrixJIT<T1>, PScalarJIT<T2>, FnInnerProductReal> {
   typedef PScalarJIT<typename BinaryReturn<T1, T2, FnInnerProductReal>::Type_t>  Type_t;
 };
 
-template<class T1, class T2, int N>
-struct BinaryReturn<PScalarJIT<T1>, PColorMatrixJIT<T2,N>, FnInnerProductReal> {
+template<class T1, class T2>
+struct BinaryReturn<PScalarJIT<T1>, PColorMatrixJIT<T2>, FnInnerProductReal> {
   typedef PScalarJIT<typename BinaryReturn<T1, T2, FnInnerProductReal>::Type_t>  Type_t;
 };
 
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, FnLocalInnerProductReal> {
+template<class T1, class T2>
+struct BinaryReturn<PColorMatrixJIT<T1>, PColorMatrixJIT<T2>, FnLocalInnerProductReal> {
   typedef PScalarJIT<typename BinaryReturn<T1, T2, FnLocalInnerProductReal>::Type_t>  Type_t;
 };
 
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PScalarJIT<T2>, FnLocalInnerProductReal> {
+template<class T1, class T2>
+struct BinaryReturn<PColorMatrixJIT<T1>, PScalarJIT<T2>, FnLocalInnerProductReal> {
   typedef PScalarJIT<typename BinaryReturn<T1, T2, FnLocalInnerProductReal>::Type_t>  Type_t;
 };
 
-template<class T1, class T2, int N>
-struct BinaryReturn<PScalarJIT<T1>, PColorMatrixJIT<T2,N>, FnLocalInnerProductReal> {
+template<class T1, class T2>
+struct BinaryReturn<PScalarJIT<T1>, PColorMatrixJIT<T2>, FnLocalInnerProductReal> {
   typedef PScalarJIT<typename BinaryReturn<T1, T2, FnLocalInnerProductReal>::Type_t>  Type_t;
 };
 
 
 
+template<class T1>
+struct UnaryReturn<PColorMatrixJIT<T1>, FnIsFinite> {
+  typedef PScalarJIT< typename UnaryReturn<T1, FnIsFinite >::Type_t > Type_t;
+};
 
 
-//-----------------------------------------------------------------------------
-// Operators
-//-----------------------------------------------------------------------------
 
-/*! \addtogroup primcolormatrix */
-/*! @{ */
 
-// trace = traceColor(source1)
-/*! This only acts on color indices and is diagonal in all other indices */
-template<class T, int N>
-struct UnaryReturn<PColorMatrixJIT<T,N>, FnTraceColor > {
+template<class T>
+struct UnaryReturn<PColorMatrixJIT<T>, FnTraceColor > {
   typedef PScalarJIT<typename UnaryReturn<T, FnTraceColor>::Type_t>  Type_t;
 };
 
-template<class T, int N>
-inline typename UnaryReturn<PColorMatrixJIT<T,N>, FnTraceColor>::Type_t
-traceColor(const PColorMatrixJIT<T,N>& s1)
+template<class T>
+typename UnaryReturn<PColorMatrixJIT<T>, FnTraceColor>::Type_t
+traceColor(PColorMatrixJIT<T> s1)
 {
-  typename UnaryReturn<PColorMatrixJIT<T,N>, FnTraceColor>::Type_t  d(s1.func());
+  auto d = unary_return<FnTraceColor>( s1 );
 
-  // Since the color index is eaten, do not need to pass on function by
-  // calling trace(...) again
   d.elem() = s1.elem(0,0);
-  for(int i=1; i < N; ++i)
+  JitForLoop i( 1 , s1.getN() );
+  {
     d.elem() += s1.elem(i,i);
-
+  }
+  i.end();
+  
   return d;
 }
 
 
-//! PScalarJIT = traceColorMultiply(PColorMatrixJIT,PColorMatrixJIT)
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, FnTraceColorMultiply> {
+
+template<class T1, class T2>
+struct BinaryReturn<PColorMatrixJIT<T1>, PColorMatrixJIT<T2>, FnTraceColorMultiply> {
   typedef PScalarJIT<typename BinaryReturn<T1, T2, FnTraceColorMultiply>::Type_t>  Type_t;
 };
 
-template<class T1, class T2, int N>
-inline typename BinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, FnTraceColorMultiply>::Type_t
-traceColorMultiply(const PColorMatrixJIT<T1,N>& l, const PColorMatrixJIT<T2,N>& r)
+template<class T1, class T2>
+typename BinaryReturn<PColorMatrixJIT<T1>, PColorMatrixJIT<T2>, FnTraceColorMultiply>::Type_t
+traceColorMultiply(PColorMatrixJIT<T1> l, PColorMatrixJIT<T2> r)
 {
-  typename BinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, FnTraceColorMultiply>::Type_t  d(l.func());
+  assert(l.getN() == r.getN());
 
-  // The traceColor is eaten here
+  auto d = binary_return<FnTraceColorMultiply>( l , r );
+
   d.elem() = l.elem(0,0) * r.elem(0,0);
-  for(int k=1; k < N; ++k)
+  JitForLoop k( 1 , l.getN() );
+  {
     d.elem() += l.elem(0,k) * r.elem(k,0);
-
-  for(int j=1; j < N; ++j)
-    for(int k=0; k < N; ++k)
+  }
+  k.end();
+  
+  JitForLoop j( 1 , l.getN() );
+  {
+    JitForLoop k( 0 , l.getN() );
+    {
       d.elem() += l.elem(j,k) * r.elem(k,j);
-
+    }
+    k.end();
+  }
+  j.end();
+  
   return d;
 }
 
-//! PScalarJIT = traceColorMultiply(PColorMatrixJIT,PScalarJIT)
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PScalarJIT<T2>, FnTraceColorMultiply> {
+
+template<class T1, class T2>
+struct BinaryReturn<PColorMatrixJIT<T1>, PScalarJIT<T2>, FnTraceColorMultiply> {
   typedef PScalarJIT<typename BinaryReturn<T1, T2, FnTraceColorMultiply>::Type_t>  Type_t;
 };
 
-template<class T1, class T2, int N, template<class,int> class C>
-inline typename BinaryReturn<PColorMatrixJIT<T1,N>, PScalarJIT<T2>, FnTraceColorMultiply>::Type_t
-traceColorMultiply(const PColorMatrixJIT<T1,N>& l, const PScalarJIT<T2>& r)
+template<class T1, class T2, template<class> class C>
+typename BinaryReturn<PColorMatrixJIT<T1>, PScalarJIT<T2>, FnTraceColorMultiply>::Type_t
+traceColorMultiply(PColorMatrixJIT<T1> l,  PScalarJIT<T2> r)
 {
-  typename BinaryReturn<PColorMatrixJIT<T1,N>, PScalarJIT<T2>, FnTraceColorMultiply>::Type_t  d(l.func());
+  auto d = binary_return<FnTraceColorMultiply>( l , r );
 
-  // The traceColor is eaten here
   d.elem() = l.elem(0,0) * r.elem();
-  for(int k=1; k < N; ++k)
+  JitForLoop k( 1 , l.getN() );
+  {
     d.elem() += l.elem(k,k) * r.elem();
-
+  }
+  k.end();
+  
   return d;
 }
 
-// PScalarJIT = traceColorMultiply(PScalarJIT,PColorMatrixJIT)
-template<class T1, class T2, int N>
-struct BinaryReturn<PScalarJIT<T1>, PColorMatrixJIT<T2,N>, FnTraceColorMultiply> {
+
+template<class T1, class T2>
+struct BinaryReturn<PScalarJIT<T1>, PColorMatrixJIT<T2>, FnTraceColorMultiply> {
   typedef PScalarJIT<typename BinaryReturn<T1, T2, FnTraceColorMultiply>::Type_t>  Type_t;
 };
 
-template<class T1, class T2, int N>
-inline typename BinaryReturn<PScalarJIT<T1>, PColorMatrixJIT<T2,N>, FnTraceColorMultiply>::Type_t
-traceColorMultiply(const PScalarJIT<T1>& l, const PColorMatrixJIT<T2,N>& r)
+template<class T1, class T2>
+typename BinaryReturn<PScalarJIT<T1>, PColorMatrixJIT<T2>, FnTraceColorMultiply>::Type_t
+traceColorMultiply( PScalarJIT<T1> l, PColorMatrixJIT<T2> r)
 {
-  typename BinaryReturn<PScalarJIT<T1>, PColorMatrixJIT<T2,N>, FnTraceColorMultiply>::Type_t  d(l.func());
+  auto d = binary_return<FnTraceColorMultiply>( l , r );
 
-  // The traceColor is eaten here
   d.elem() = l.elem() * r.elem(0,0);
-  for(int k=1; k < N; ++k)
+  JitForLoop k( 1 , r.getN() );
+  {
     d.elem() += l.elem() * r.elem(k,k);
-
+  }
+  k.end();
+  
   return d;
 }
 
 
-/*! Specialise the return type */
-template <class T, int N>
-struct UnaryReturn<PColorMatrixJIT<T,N>, FnTransposeColor > {
-  typedef PColorMatrixJIT<typename UnaryReturn<T, FnTransposeColor>::Type_t, N> Type_t;
+
+template <class T>
+struct UnaryReturn<PColorMatrixJIT<T>, FnTransposeColor > {
+  typedef PColorMatrixJIT<typename UnaryReturn<T, FnTransposeColor>::Type_t> Type_t;
 };
 
-//! PColorMatrixJIT = transposeColor(PColorMatrixJIT) 
-/*! t = transposeColor(source1) - ColorMatrix specialization -- where the work is actually done */
-template<class T, int N>
-inline typename UnaryReturn<PColorMatrixJIT<T,N>, FnTransposeColor >::Type_t
-transposeColor(const PColorMatrixJIT<T,N>& s1)
+
+
+template<class T>
+typename UnaryReturn<PColorMatrixJIT<T>, FnTransposeColor >::Type_t
+transposeColor(PColorMatrixJIT<T> s1)
 {
-  typename UnaryReturn<PColorMatrixJIT<T,N>, FnTransposeColor>::Type_t d(s1.func());;
- 
-  for(int i=0; i < N; i++) { 
-    for(int j=0; j < N; j++) { 
-      // Transpose, so flip indices
+  auto d = unary_return<FnTransposeColor>( s1 );
+
+  JitForLoop i( 0 , s1.getN() );
+  {
+    JitForLoop j( 0 , s1.getN() );
+    {
       d.elem(i,j) = s1.elem(j,i);
     }
+    j.end();
   }
+  i.end();
+  
   return d;
 }
 
 
-//-----------------------------------------------
-// OuterProduct must be handled specially for each color and spin
-// The problem is the traits class - I have no way to say to PVector's
-//  transform into a PMatrix but downcast the trait to a PColorMatrixJIT or PSpinMatrix
 
-//! PColorMatrixJIT = outerProduct(PColorVectorJIT, PColorVectorJIT)
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorVectorJIT<T1,N>, PColorVectorJIT<T2,N>, FnOuterProduct> {
-  typedef PColorMatrixJIT<typename BinaryReturn<T1, T2, FnOuterProduct>::Type_t, N>  Type_t;
+template<class T1, class T2>
+struct BinaryReturn<PColorVectorJIT<T1>, PColorVectorJIT<T2>, FnOuterProduct> {
+  typedef PColorMatrixJIT<typename BinaryReturn<T1, T2, FnOuterProduct>::Type_t>  Type_t;
 };
 
-template<class T1, class T2, int N>
-inline typename BinaryReturn<PColorVectorJIT<T1,N>, PColorVectorJIT<T2,N>, FnOuterProduct>::Type_t
-outerProduct(const PColorVectorJIT<T1,N>& l, const PColorVectorJIT<T2,N>& r)
+template<class T1, class T2>
+typename BinaryReturn<PColorVectorJIT<T1>, PColorVectorJIT<T2>, FnOuterProduct>::Type_t
+outerProduct( PColorVectorJIT<T1> l, PColorVectorJIT<T2> r)
 {
-  typename BinaryReturn<PColorVectorJIT<T1,N>, PColorVectorJIT<T2,N>, FnOuterProduct>::Type_t  d(l.func());
+  assert(l.getN() == r.getN());
 
-  for(int i=0; i < N; ++i)
-    for(int j=0; j < N; ++j)
+  auto d = binary_return<FnOuterProduct>( l,r );
+
+  JitForLoop i( 0 , l.getN() );
+  {
+    JitForLoop j( 0 , l.getN() );
+    {
       d.elem(i,j) = outerProduct(l.elem(i),r.elem(j));
+    }
+    j.end();
+  }
+  i.end();
 
   return d;
 }
 
 
-//-----------------------------------------------
-// Peeking and poking
-//! Extract color matrix components 
-/*! Generically, this is an identity operation. Defined differently under color */
-// template<class T, int N>
-// struct UnaryReturn<PColorMatrixJIT<T,N>, FnPeekColorMatrixJIT > {
-//   typedef PScalarJIT<typename UnaryReturn<T, FnPeekColorMatrixJIT>::Type_t>  Type_t;
-// };
 
-// template<class T, int N>
-// inline typename UnaryReturn<PColorMatrixJIT<T,N>, FnPeekColorMatrixJIT>::Type_t
-// peekColor(const PColorMatrixJIT<T,N>& l, int row, int col)
-// {
-//   typename UnaryReturn<PColorMatrixJIT<T,N>, FnPeekColorMatrixJIT>::Type_t  d( l.func() );
-//   d.elem() = l.getRegElem(row,col);
-//   return d;
-// }
-
-// //! Insert color matrix components
-// template<class T1, class T2, int N>
-// inline PColorMatrixJIT<T1,N>&
-// pokeColor(PColorMatrixJIT<T1,N>& l, const PScalarJIT<T2>& r, int row, int col)
-// {
-//   // Note, do not need to propagate down since the function is eaten at this level
-//   l.getRegElem(row,col) = r.elem();
-//   return l;
-// }
+template<class T>
+struct UnaryReturn<PColorMatrixJIT<T>, FnPeekColorMatrixJIT > {
+  typedef PScalarJIT<T>  Type_t;
+};
 
 
-template<class T1, class T2, int N>
-inline PColorMatrixJIT<T1,N>&
-pokeColor(PColorMatrixJIT<T1,N>& l, const PScalarREG<T2>& r, llvm::Value* row, llvm::Value* col)
+template<class T>
+struct UnaryReturn<PColorMatrixJIT<T>, FnPeekColorMatrix > {
+  typedef PScalarJIT<T>  Type_t;
+};
+
+
+
+template<class T>
+typename UnaryReturn<PColorMatrixJIT<T>, FnPeekColorMatrixJIT>::Type_t
+peekColor( PColorMatrixJIT<T> l, llvm::Value* row, llvm::Value* col)
 {
-  l.getJitElem(row,col) = r.elem();
-  return l;
+  auto d = unary_return<FnPeekColorMatrixJIT>(l);
+  
+  d.elem() = l.elem(row,col);
+  return d;
 }
 
 
-//-----------------------------------------------------------------------------
-// Contraction for color matrices
-// colorContract 
-template<class T1, class T2, class T3, int N>
-struct TrinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, PColorMatrixJIT<T3,N>, FnColorContract> {
+
+template<class T1, class T2>
+void
+pokeColor(PColorMatrixJIT<T1> l,  PScalarJIT<T2> r, llvm::Value* row, llvm::Value* col)
+{
+  l.elem(row,col) = r.elem();
+}
+
+
+template<class T1, class T2, class T3>
+struct TrinaryReturn<PScalarJIT<T1>, PColorMatrixJIT<T2>, PColorMatrixJIT<T3>, FnWhere> {
+  typedef PColorMatrixJIT<typename TrinaryReturn<T1, T2, T3, FnWhere>::Type_t>  Type_t;
+};
+
+
+
+template<class T1, class T2, class T3>
+struct TrinaryReturn<PColorMatrixJIT<T1>, PColorMatrixJIT<T2>, PColorMatrixJIT<T3>, FnColorContract>
+{
   typedef PScalarJIT<typename TrinaryReturn<T1, T2, T3, FnColorContract>::Type_t>  Type_t;
 };
 
-//! dest  = colorContract(Qprop1,Qprop2,Qprop3)
+
 /*!
  * Performs:
  *  \f$dest = \sum_{i1,i2,i3,j1,j2,j3} \epsilon^{i1,j1,k1}\epsilon^{i2,j2,k2} Q1^{i1,i2} Q2^{j1,j2} Q3^{k1,k2}\f$
@@ -569,10 +478,10 @@ struct TrinaryReturn<PColorMatrixJIT<T1,N>, PColorMatrixJIT<T2,N>, PColorMatrixJ
  * This routine is completely unrolled for 3 colors
  */
 template<class T1, class T2, class T3>
-inline typename TrinaryReturn<PColorMatrixJIT<T1,3>, PColorMatrixJIT<T2,3>, PColorMatrixJIT<T3,3>, FnColorContract>::Type_t
-colorContract(const PColorMatrixJIT<T1,3>& s1, const PColorMatrixJIT<T2,3>& s2, const PColorMatrixJIT<T3,3>& s3)
+typename TrinaryReturn<PColorMatrixJIT<T1>, PColorMatrixJIT<T2>, PColorMatrixJIT<T3>, FnColorContract>::Type_t
+colorContract(PColorMatrixJIT<T1> s1, PColorMatrixJIT<T2> s2, PColorMatrixJIT<T3> s3)
 {
-  typename TrinaryReturn<PColorMatrixJIT<T1,3>, PColorMatrixJIT<T2,3>, PColorMatrixJIT<T3,3>, FnColorContract>::Type_t  d(s1.func());
+  auto d = trinary_return<FnColorContract>( s1,s2,s3 );
 
   // Permutations: +(0,1,2)+(1,2,0)+(2,0,1)-(1,0,2)-(0,2,1)-(2,1,0)
 
@@ -621,82 +530,13 @@ colorContract(const PColorMatrixJIT<T1,3>& s1, const PColorMatrixJIT<T2,3>& s2, 
 }
 
 
-//! dest  = colorContract(Qprop1,Qprop2,Qprop3)
-/*!
- * Performs:
- *  \f$dest = \sum_{i1,i2,i3,j1,j2,j3} \epsilon^{i1,j1,k1}\epsilon^{i2,j2,k2} Q1^{i1,i2} Q2^{j1,j2} Q3^{k1,k2}\f$
- *
- *  These are some place holders for Nc = 1
- *  These routine are actually used in the 
- *  baryon routines. Seperate baryon routines
- *  should be written for every number of colors.
- */
-template<class T1, class T2, class T3>
-inline typename TrinaryReturn<PColorMatrixJIT<T1,1>, PColorMatrixJIT<T2,1>, PColorMatrixJIT<T3,1>, FnColorContract>::Type_t
-colorContract(const PColorMatrixJIT<T1,1>& s1, const PColorMatrixJIT<T2,1>& s2, const PColorMatrixJIT<T3,1>& s3)
-{
-  typename TrinaryReturn<PColorMatrixJIT<T1,1>, PColorMatrixJIT<T2,1>, PColorMatrixJIT<T3,1>, FnColorContract>::Type_t  d(s1.func());
-
-  // not written 
-  QDPIO::cerr << __func__ << ": not written for Nc=1" << endl;
-  QDP_abort(1);
-
-  return d ; 
-}
 
 
-//! dest  = colorContract(Qprop1,Qprop2,Qprop3)
-/*!
- * Performs:
- *  \f$dest = \sum_{i1,i2,i3,j1,j2,j3} \epsilon^{i1,j1,k1}\epsilon^{i2,j2,k2} Q1^{i1,i2} Q2^{j1,j2} Q3^{k1,k2}\f$
- *
- *  These are some place holders for Nc = 2
- *  These routine are actually used in the 
- *  baryon routines. Seperate baryon routines
- *  should be written for every number of colors.
- */
-template<class T1, class T2, class T3>
-inline typename TrinaryReturn<PColorMatrixJIT<T1,2>, PColorMatrixJIT<T2,2>, PColorMatrixJIT<T3,2>, FnColorContract>::Type_t
-colorContract(const PColorMatrixJIT<T1,2>& s1, const PColorMatrixJIT<T2,2>& s2, const PColorMatrixJIT<T3,2>& s3)
-{
-  typename TrinaryReturn<PColorMatrixJIT<T1,2>, PColorMatrixJIT<T2,2>, PColorMatrixJIT<T3,2>, FnColorContract>::Type_t  d(s1.func());
-
-  // not written 
-  QDPIO::cerr << __func__ << ": not written for Nc=2" << endl;
-  QDP_abort(1);
-
-  return d ; 
-}
 
 
-//! dest  = colorContract(Qprop1,Qprop2,Qprop3)
-/*!
- * Performs:
- *  \f$dest = \sum_{i1,i2,i3,j1,j2,j3} \epsilon^{i1,j1,k1}\epsilon^{i2,j2,k2} Q1^{i1,i2} Q2^{j1,j2} Q3^{k1,k2}\f$
- *
- *  These are some place holders for Nc = 4
- *  These routine are actually used in the 
- *  baryon routines. Seperate baryon routines
- *  should be written for every number of colors.
- */
-template<class T1, class T2, class T3>
-inline typename TrinaryReturn<PColorMatrixJIT<T1,4>, PColorMatrixJIT<T2,4>, PColorMatrixJIT<T3,4>, FnColorContract>::Type_t
-colorContract(const PColorMatrixJIT<T1,4>& s1, const PColorMatrixJIT<T2,4>& s2, const PColorMatrixJIT<T3,4>& s3)
-{
-  typename TrinaryReturn<PColorMatrixJIT<T1,4>, PColorMatrixJIT<T2,4>, PColorMatrixJIT<T3,4>, FnColorContract>::Type_t  d(s1.func());
-
-  // not written 
-  QDPIO::cerr << __func__ << ": not written for Nc=4" << endl;
-  QDP_abort(1);
-
-  return d ; 
-}
 
 
-//-----------------------------------------------------------------------------
-// Contraction for quark propagators
-// QuarkContract 
-//! dest  = QuarkContractXX(Qprop1,Qprop2)
+
 /*!
  * Performs:
  *  \f$dest^{k2,k1} = \sum_{i1,i2,j1,j2} \epsilon^{i1,j1,k1}\epsilon^{i2,j2,k2} Q1^{i1,i2} Q2^{j1,j2}\f$
@@ -704,11 +544,15 @@ colorContract(const PColorMatrixJIT<T1,4>& s1, const PColorMatrixJIT<T2,4>& s2, 
  * This routine is completely unrolled for 3 colors
  */
 template<class T1, class T2>
-inline typename BinaryReturn<PColorMatrixJIT<T1,3>, PColorMatrixJIT<T2,3>, FnQuarkContractXX>::Type_t
-quarkContractXX(const PColorMatrixJIT<T1,3>& s1, const PColorMatrixJIT<T2,3>& s2)
+typename BinaryReturn<PColorMatrixJIT<T1>, PColorMatrixJIT<T2>, FnQuarkContractXX>::Type_t
+quarkContractXX(PColorMatrixJIT<T1> s1, PColorMatrixJIT<T2> s2)
 {
-  typename BinaryReturn<PColorMatrixJIT<T1,3>, PColorMatrixJIT<T2,3>, FnQuarkContractXX>::Type_t  d(s1.func());
+  assert(s1.getN() == s2.getN());
+  assert(s1.getN() == 3);
+  
+  auto d = binary_return<FnQuarkContractXX>( s1,s2 );
 
+#if 1
   // Permutations: +(0,1,2)+(1,2,0)+(2,0,1)-(1,0,2)-(0,2,1)-(2,1,0)
 
   // k1 = 0, k2 = 0
@@ -782,92 +626,42 @@ quarkContractXX(const PColorMatrixJIT<T1,3>& s1, const PColorMatrixJIT<T2,3>& s2
               - s1.elem(0,1)*s2.elem(1,0)
               - s1.elem(1,0)*s2.elem(0,1)
               + s1.elem(1,1)*s2.elem(0,0);
+  
+#else
+  
+  typedef typename BinaryReturn<PColorMatrixJIT<T1>, PColorMatrixJIT<T2>, FnQuarkContractXX>::Type_t::Sub_t  T_return;
 
+  JitStackMatrix< T1 , 3 > s1_a( s1 );
+  JitStackMatrix< T2 , 3 > s2_a( s2 );
+  JitStackMatrix< T_return , 3 > d_a;
+
+  JitForLoop loop_j(0);
+  JitForLoop loop_i(0);
+
+  d_a.elemJIT( loop_i.index() , loop_j.index() ) =
+				   s1_a.elemJIT( llvm_epsilon_1st( 1 , loop_j.index() ) , llvm_epsilon_2nd( 1 , loop_i.index() ) ) *
+				   s2_a.elemJIT( llvm_epsilon_1st( 2 , loop_j.index() ) , llvm_epsilon_2nd( 2 , loop_i.index() ) )
+				 - s1_a.elemJIT( llvm_epsilon_1st( 1 , loop_j.index() ) , llvm_epsilon_2nd( 2 , loop_i.index() ) ) *
+				   s2_a.elemJIT( llvm_epsilon_1st( 2 , loop_j.index() ) , llvm_epsilon_2nd( 1 , loop_i.index() ) )
+				 - s1_a.elemJIT( llvm_epsilon_1st( 2 , loop_j.index() ) , llvm_epsilon_2nd( 1 , loop_i.index() ) ) *
+				   s2_a.elemJIT( llvm_epsilon_1st( 1 , loop_j.index() ) , llvm_epsilon_2nd( 2 , loop_i.index() ) )
+				 + s1_a.elemJIT( llvm_epsilon_1st( 2 , loop_j.index() ) , llvm_epsilon_2nd( 2 , loop_i.index() ) ) *
+      				   s2_a.elemJIT( llvm_epsilon_1st( 1 , loop_j.index() ) , llvm_epsilon_2nd( 1 , loop_i.index() ) );
+				 
+  loop_i.end();
+  loop_j.end();
+
+  for(int i=0; i < 3; ++i)
+    for(int j=0; j < 3; ++j)
+      d.elem(i,j).setup( d_a.elemJIT(i,j) );
+
+
+#endif
   return d;
 }
 
 
-// Contraction for quark propagators
-// QuarkContract 
-//! dest  = QuarkContractXX(Qprop1,Qprop2)
-/*!
- * Performs:
- *  \f$dest^{k2,k1} = \sum_{i1,i2,j1,j2} \epsilon^{i1,j1,k1}\epsilon^{i2,j2,k2} Q1^{i1,i2} Q2^{j1,j2}\f$
- *
- *  These are some place holders for Nc = 2
- *  These routine are actually used in the 
- *  baryon routines. Seperate baryon routines
- *  should be written for every number of colors.
- */
-template<class T1, class T2>
-inline typename BinaryReturn<PColorMatrixJIT<T1,1>, PColorMatrixJIT<T2,1>, FnQuarkContractXX>::Type_t
-quarkContractXX(const PColorMatrixJIT<T1,1>& s1, const PColorMatrixJIT<T2,1>& s2)
-{
-  typename BinaryReturn<PColorMatrixJIT<T1,1>, PColorMatrixJIT<T2,1>, FnQuarkContractXX>::Type_t  d(s1.func());
 
-  // not yet written 
-  QDPIO::cerr << __func__ << ": not written for Nc=1" << endl;
-  QDP_abort(1);
-
-  return d ; 
-}
-
-
-// Contraction for quark propagators
-// QuarkContract 
-//! dest  = QuarkContractXX(Qprop1,Qprop2)
-/*!
- * Performs:
- *  \f$dest^{k2,k1} = \sum_{i1,i2,j1,j2} \epsilon^{i1,j1,k1}\epsilon^{i2,j2,k2} Q1^{i1,i2} Q2^{j1,j2}\f$
- *
- *  These are some place holders for Nc = 2
- *  These routine are actually used in the 
- *  baryon routines. Seperate baryon routines
- *  should be written for every number of colors.
- */
-template<class T1, class T2>
-inline typename BinaryReturn<PColorMatrixJIT<T1,2>, PColorMatrixJIT<T2,2>, FnQuarkContractXX>::Type_t
-quarkContractXX(const PColorMatrixJIT<T1,2>& s1, const PColorMatrixJIT<T2,2>& s2)
-{
-  typename BinaryReturn<PColorMatrixJIT<T1,2>, PColorMatrixJIT<T2,2>, FnQuarkContractXX>::Type_t  d(s1.func());
-
-  // not yet written 
-  QDPIO::cerr << __func__ << ": not written for Nc=2" << endl;
-  QDP_abort(1);
-
-  return d ; 
-}
-
-
-// Contraction for quark propagators
-// QuarkContract 
-//! dest  = QuarkContractXX(Qprop1,Qprop2)
-/*!
- * Performs:
- *  \f$dest^{k2,k1} = \sum_{i1,i2,j1,j2} \epsilon^{i1,j1,k1}\epsilon^{i2,j2,k2} Q1^{i1,i2} Q2^{j1,j2}\f$
- *
- *  These are some place holders for Nc = 4 
- *  These routine are actually used in the 
- *  baryon routines. Seperate baryon routines
- *  should be written for every number of colors.
- */
-template<class T1, class T2>
-inline typename BinaryReturn<PColorMatrixJIT<T1,4>, PColorMatrixJIT<T2,4>, FnQuarkContractXX>::Type_t
-quarkContractXX(const PColorMatrixJIT<T1,4>& s1, const PColorMatrixJIT<T2,4>& s2)
-{
-  typename BinaryReturn<PColorMatrixJIT<T1,4>, PColorMatrixJIT<T2,4>, FnQuarkContractXX>::Type_t  d(s1.func());
-
-  // not yet written 
-  QDPIO::cerr << __func__ << ": not written for Nc=4" << endl;
-  QDP_abort(1);
-
-  return d ; 
-}
-
-
-  
-
-/*! @} */   // end of group primcolormatrix
 
 } // namespace QDP
 

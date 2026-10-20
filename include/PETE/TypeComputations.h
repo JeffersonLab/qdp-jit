@@ -1,4 +1,6 @@
-// -*- C++ -*-
+#ifndef QDP_PETE_TYPECOMPUTATIONS_H
+#define QDP_PETE_TYPECOMPUTATIONS_H
+
 // ACL:license
 // ----------------------------------------------------------------------
 // This software and ancillary information (herein called "SOFTWARE")
@@ -25,9 +27,6 @@
 // or visit the PETE web page at http://www.acl.lanl.gov/pete/.
 // ----------------------------------------------------------------------
 // ACL:license
-
-#ifndef PETE_PETE_TYPECOMPUTATIONS_H
-#define PETE_PETE_TYPECOMPUTATIONS_H
 
 //-----------------------------------------------------------------------------
 //
@@ -62,6 +61,7 @@ template<class T, class Op>
 struct UnaryReturn {
   typedef T Type_t;
 };
+
 
 //-----------------------------------------------------------------------------
 //

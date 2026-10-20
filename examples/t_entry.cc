@@ -92,6 +92,4 @@ int main(int argc, char **argv)
 
   // Time to bolt
   QDP_finalize();
-
-  exit(0);
 }

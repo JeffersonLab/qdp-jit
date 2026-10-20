@@ -1,5 +1,5 @@
-#ifndef TEST_IO_NODE_H
-#define TEST_IO_NODE_H
+#ifndef QDP_EXAMPLES_TESTIONODE_H
+#define QDP_EXAMPLES_TESTIONODE_H
 
 // These tests are disabled -- pending what we do with the 
 // QIO

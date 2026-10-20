@@ -1,14 +1,7 @@
-// -*- C++ -*-
-
-/*! \file
- * \brief QDP Operations on built-in types
- */
-
 #ifndef QDP_SIMPLEWORD_H
 #define QDP_SIMPLEWORD_H
 
 #define DOUBLE_TYPE double
-
 
 #include <cmath>
 
@@ -40,33 +33,21 @@ using std::tan;
 using std::tanh;
 
 
-/*! \addtogroup simpleword Builtin word operations
- * \ingroup fiber
- *
- * Fiber operations on builtin types. These operations are in support of QDP.
- * Namely, the builtin types are the lowest level (most deeply nested) types
- * within the QDP type composition
- *
- * @{
- */
 
-// All these are explicit to avoid any general template clashes
-
-//! dest = 0
 inline
 void zero_rep(int& dest) 
 {
   dest = 0;
 }
 
-//! dest = 0
+
 inline
 void zero_rep(float& dest) 
 {
   dest = 0;
 }
 
-//! dest = 0
+
 inline
 void zero_rep(double& dest) 
 {
@@ -83,117 +64,20 @@ void zero_rep(bool& dest)
 
 
 
-//---------------------------
-//! dest [float type] = source [int type]
-inline
-void cast_rep(float& d, int s1)
-{
-  d = float(s1);
-}
-
-//! dest [float type] = source [float type]
-inline
-void cast_rep(float& d, float s1)
-{
-  d = float(s1);
-}
-
-//! dest [float type] = source [double type]
-inline
-void cast_rep(float& d, double s1)
-{
-  d = float(s1);
-}
-
-
-//! dest [float type] = source [int type]
-inline
-void cast_rep(double& d, int s1)
-{
-  d = double(s1);
-}
-
-//! dest [double type] = source [float type]
-inline
-void cast_rep(double& d, float s1)
-{
-  d = double(s1);
-}
-
-//! dest [double type] = source [double type]
-inline
-void cast_rep(double& d, double s1)
-{
-  d = double(s1);
-}
-
-
-//---------------------------
-//! dest [float type] = source [int type]
-inline
-void recast_rep(float& d, int s1)
-{
-  cast_rep(d,s1);
-}
-
-//! dest [float type] = source [float type]
-inline
-void recast_rep(float& d, float s1)
-{
-  cast_rep(d,s1);
-}
-
-//! dest [float type] = source [double type]
-inline
-void recast_rep(float& d, double s1)
-{
-  cast_rep(d,s1);
-}
-
-
-//! dest [float type] = source [int type]
-inline
-void recast_rep(double& d, int s1)
-{
-  cast_rep(d,s1);
-}
-
-//! dest [double type] = source [float type]
-inline
-void recast_rep(double& d, float s1)
-{
-  cast_rep(d,s1);
-}
-
-//! dest [double type] = source [double type]
-inline
-void recast_rep(double& d, double s1)
-{
-  cast_rep(d,s1);
-}
-
-
-
-
-
-//-------------------------------------------------------
-// Functions
-
-// Conjugate
 inline 
 float conj(float l)
 {
   return l;
 }
 
-// Conjugate
+
 inline 
 double conj(double l)
 {
   return l;
 }
 
-// Conjugate
+
 inline 
 int conj(int l)
 {
@@ -201,14 +85,14 @@ int conj(int l)
 }
 
 
-// Transpose
+
 inline 
 float transpose(float l)
 {
   return l;
 }
 
-// Transpose
+
 inline 
 double transpose(double l)
 {
@@ -438,13 +322,16 @@ double localColorInnerProduct(double s1, double s2)
 }
 
 
-/*! @} */  // end of group simpleword
+template<>
+struct UnaryReturn<float, FnIsFinite> {
+  typedef bool  Type_t;
+};
 
-//-----------------------------------------------------------------------------
-// Traits classes 
-//-----------------------------------------------------------------------------
+template<>
+struct UnaryReturn<double, FnIsFinite> {
+  typedef bool  Type_t;
+};
 
-// Return types
 template<>
 struct UnaryReturn<int, FnSeedToFloat> {
   typedef float  Type_t;

@@ -1,20 +1,7 @@
-// -*- C++ -*-
-
-/*! @file
- * @brief Parallel version of stdio
- *
- * These are the QDP parallel versions of the STL cout,cerr,cin.
- * The user can control which nodes are involved in output/input.
- */
-
-
 #include "qdp.h"
 
 namespace QDP {
 
-//-----------------------------------------
-// Make global (parallel) versions of stdin, stdout, stderr
-// Put this in a different namespace to avoid collisions
 namespace QDPIO
 {
   StandardInputStream  cin;
@@ -23,8 +10,6 @@ namespace QDPIO
 }
 
 
-//-----------------------------------------
-//! stdin support
 StandardInputStream::StandardInputStream() {open=false; is=0;}
 
 void StandardInputStream::init(std::istream* b)
@@ -291,6 +276,11 @@ StandardOutputStream& operator<<(StandardOutputStream& s, const DynKey& rhs)
   return s;
 }
 
+  StandardOutputStream& operator<<(StandardOutputStream& s, const Shape& v)
+  {
+    s << "Shape(ns=" << v.ns() << ", nc=" << v.nc() << ")";
+    return s;
+  }
   
 
 } // namespace QDP;

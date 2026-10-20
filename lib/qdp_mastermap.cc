@@ -1,214 +1,117 @@
-// -*- C++ -*-
-
 #include "qdp.h"
-#include "qdp_util.h"
+
+#include <algorithm>
+#include <bit>
 
 namespace QDP {
 
-
   MasterMap& MasterMap::Instance()
   {
-    static MasterMap singleton;
-    return singleton;
+    static MasterMap* singleton = new MasterMap;
+    return *singleton;
   }
 
 
-
-
-  namespace {
-    void remove_neg_in_subset(std::vector<int>& out, const std::vector<int>& orig, int s_no )
-    {
-      const Subset& subset = MasterSet::Instance().getSubset(s_no);
-
-      out.resize(0);
-
-      for(int i=0 ; i<Layout::sitesOnNode() ; ++i) 
-	if (orig[i] >= 0 && subset.isElement(i))
-	  out.push_back( i );
-    }
-  }
-
-
-
-
-  
-  void MasterMap::generate_tables(const Subset& subset, int bitmask)
+  int MasterMap::register_map(const Map& map)
   {
-    int s_no = subset.getId();
-    auto key = make_pair(s_no,bitmask);
+    auto free = std::find( maps.begin() , maps.end() , nullptr );
+    int bit = free - maps.begin();
 
-    //QDPIO::cout << "generate_tables  subset = " << s_no << "  bitmask = " << bitmask << std::endl;
-    
-    //
-    // check if (subset,map) already generated
-    //
-    if (mapTables.count( key ))
-      return;
-
-    //QDPIO::cout << "generating tables for subset_id = " << s_no << " bitmask = " << bitmask << std::endl;
-
-    tables t;
-
-    std::vector<int> t_roffset( Layout::sitesOnNode() , -1 );
-#ifdef QDP_CODEGEN_VECTOR
-    std::vector<int> t_loffset( Layout::sitesOnNode() , -1 );
-    std::vector<int> t_innerVNodeSIMD( Layout::sitesOnNode() , -1 );
-#endif
-    
-    std::vector<int> t_innerScalar( Layout::sitesOnNode());
-    for( int q = 0 ; q < Layout::sitesOnNode() ; ++q )
+    if (bit >= 8 * (int)sizeof(int) - 1)
       {
-	t_innerScalar[ q ] = q ;
+	QDPIO::cerr << "MasterMap: too many maps with off-node communication (at most "
+		    << 8 * sizeof(int) - 1 << " at a time are supported)" << std::endl;
+	QDP_abort(1);
       }
 
-#ifdef QDP_CODEGEN_VECTOR
-    auto& vnode = *mapTables.at( make_pair(s_no,0) ).innerVNodeSIMD;
-    for( int q = 0 ; q < vnode.size() ; ++q )
+    if (free == maps.end())
+      maps.push_back(&map);
+    else
+      *free = &map;
+
+    return 1 << bit;
+  }
+
+
+  template<class Pred>
+  void MasterMap::drop_tables(Pred pred)
+  {
+    for ( auto it = tables.begin() ; it != tables.end() ; )
       {
-	t_innerVNodeSIMD[ vnode[q] ] = vnode[q];
-      }
-#endif
-    
-    int bit = 1;
-    //QDPIO::cout << "adding masks.. " << std::endl;
-    while( (1 << (bit-1)) <= bitmask )
-      {
-	if ( (1 << (bit-1)) & bitmask )
+	if (pred( it->first ))
 	  {
-	    //QDPIO::cout << "adding mask: " << bit << std::endl;
-	
-	    const Map& map(*vecPMap.at( bit-1 ));
-
-	    // roffset
-	    //
-	    map.getRoffsetsId( subset ); // make sure the lazy part was computed!
-#ifdef QDP_CODEGEN_VECTOR
-	    for (int q = 0; q < map.loffset( subset ).size() ; ++q )
-	      {
-		t_loffset       [ map.loffset( subset )[q] ] = map.loffset( subset )[q];
-		t_innerVNodeSIMD[ map.loffset( subset )[q] ] = -1;
-	      }
-#endif
-	
-	    for (int q = 0; q < map.roffset( subset ).size() ; ++q )
-	      {
-		t_roffset       [ map.roffset( subset )[q] ] = map.roffset( subset )[q];
-		t_innerScalar   [ map.roffset( subset )[q] ] = -1;
-#ifdef QDP_CODEGEN_VECTOR
-		t_loffset       [ map.roffset( subset )[q] ] = -1;  // remove the roffset from the loffset
-		t_innerVNodeSIMD[ map.roffset( subset )[q] ] = -1;
-#endif
-	      }
+	    for ( int id : { it->second.id_inner , it->second.id_face } )
+	      if (id >= 0)
+		QDP_get_global_cache().signoff( id );
+	    it = tables.erase( it );
 	  }
-	bit++;
+	else
+	  ++it;
+      }
+  }
+
+
+  void MasterMap::unregister_map(int id)
+  {
+    int bit = std::countr_zero( (unsigned)id );
+    assert( id > 0 && bit < (int)maps.size() && maps[bit] );
+    maps[bit] = nullptr;
+
+    drop_tables( [id](const auto& key) { return std::get<2>(key) & id; } );
+  }
+
+
+  void MasterMap::drop_subset(int subset_id)
+  {
+    drop_tables( [subset_id](const auto& key) { return std::get<1>(key) == subset_id; } );
+  }
+
+
+  void MasterMap::generate_tables(Storage& t, const Subset& subset, LatticeLayout layout, int mask) const
+  {
+    std::vector<char> is_face( layout.sitesOnNode() , 0 );
+
+    for( int bit = 0 ; bit < (int)maps.size() ; ++bit )
+      {
+	if ( (1 << bit) & mask )
+	  {
+	    const Map& map = *maps[ bit ];
+
+	    map.make_lazy( subset , layout.index() );
+
+	    const multi1d<int>& roffset = map.roffset( subset , layout.index() );
+	    for (int q = 0 ; q < roffset.size() ; ++q )
+	      is_face[ roffset[q] ] = 1;
+	  }
       }
 
-    remove_neg_in_subset( *t.face             , t_roffset        , s_no );
-    remove_neg_in_subset( *t.innerScalar      , t_innerScalar    , s_no );
-#ifdef QDP_CODEGEN_VECTOR
-    remove_neg_in_subset( *t.innerVNodeScalar , t_loffset        , s_no );
-    remove_neg_in_subset( *t.innerVNodeSIMD   , t_innerVNodeSIMD , s_no );
-#endif
-    
-    // QDPIO::cout << "face count             = " << t.face->size() << std::endl;
-    // QDPIO::cout << "innerScalar count      = " << t.innerScalar->size() << std::endl;
-#ifdef QDP_CODEGEN_VECTOR
-    // QDPIO::cout << "innerVNodeScalar count = " << t.innerVNodeScalar->size() << std::endl;
-    // QDPIO::cout << "innerVNodeSIMD count   = " << t.innerVNodeSIMD->size() << std::endl;
-#endif
-    
-    t.id_face             = QDP_get_global_cache().addOwnHostMemNoPage( t.face->size() * sizeof(int)             , t.face->data() );
-    t.id_innerScalar      = QDP_get_global_cache().addOwnHostMemNoPage( t.innerScalar->size() * sizeof(int)      , t.innerScalar->data() );
-#ifdef QDP_CODEGEN_VECTOR
-    t.id_innerVNodeScalar = QDP_get_global_cache().addOwnHostMemNoPage( t.innerVNodeScalar->size() * sizeof(int) , t.innerVNodeScalar->data() );
-    t.id_innerVNodeSIMD   = QDP_get_global_cache().addOwnHostMemNoPage( t.innerVNodeSIMD->size() * sizeof(int)   , t.innerVNodeSIMD->data() );
-#endif
-    
-    // Now insert the whole thing
-    //
-    mapTables[ key ] = t;
+    const multi1d<int>& sites = subset.siteTable(layout);
+    for (int i = 0 ; i < sites.size() ; ++i )
+      {
+	if (is_face[ sites[i] ])
+	  t.face.push_back( sites[i] );
+	else
+	  t.inner.push_back( sites[i] );
+      }
+
+    t.id_inner = QDP_get_global_cache().addOwnHostMemNoPage( t.inner.size() * sizeof(int) , t.inner.data() );
+    t.id_face  = QDP_get_global_cache().addOwnHostMemNoPage( t.face.size()  * sizeof(int) , t.face.data() );
   }
 
 
-  
-
-  int MasterMap::register_justid(const Map& map)
+  MasterMap::Tables MasterMap::get(const Subset& s, LatticeLayout layout, int mask)
   {
-    int id = 1 << vecPMap.size();
-    vecPMap.push_back(&map);
-    return id;
-  }
+    if (!mask)
+      return { s.numSiteTable(layout) , s.getIdSiteTable(layout) , s.siteTable(layout).slice() , 0 , -1 , nullptr };
 
-  
-  // ----------------------------------
-#ifdef QDP_CODEGEN_VECTOR
-  int MasterMap::getCountVNodeInnerSIMD  (const Subset& s,int bitmask) 
-  {
-    generate_tables(s,bitmask);
-    auto key = make_pair(s.getId(),bitmask);
-    return mapTables.at(key).innerVNodeSIMD->size();
-  }
-  
-  int MasterMap::getCountVNodeInnerScalar(const Subset& s,int bitmask) 
-  {
-    generate_tables(s,bitmask);
-    auto key = make_pair(s.getId(),bitmask);
-    return mapTables.at(key).innerVNodeScalar->size();
-  }
-#endif
-  
-  int MasterMap::getCountInnerScalar     (const Subset& s,int bitmask) 
-  {
-    generate_tables(s,bitmask);
-    auto key = make_pair(s.getId(),bitmask);
-    return mapTables.at(key).innerScalar->size();
-  }
-  
-  int MasterMap::getCountFace            (const Subset& s,int bitmask) 
-  {
-    generate_tables(s,bitmask);
-    auto key = make_pair(s.getId(),bitmask);
-    return mapTables.at(key).face->size();
-  }
+    auto [it, inserted] = tables.try_emplace( std::make_tuple( layout.index() , s.getId() , mask ) );
+    Storage& t = it->second;
 
+    if (inserted)
+      generate_tables( t , s , layout , mask );
 
-  // ---------------------
-
-  
-#ifdef QDP_CODEGEN_VECTOR
-  int MasterMap::getIdVNodeInnerSIMD  (const Subset& s,int bitmask) 
-  {
-    generate_tables(s,bitmask);
-    auto key = make_pair(s.getId(),bitmask);
-    return mapTables.at(key).id_innerVNodeSIMD;
+    return { (int)t.inner.size() , t.id_inner , t.inner.data() ,
+	     (int)t.face.size()  , t.id_face  , t.face.data() };
   }
-  
-  int MasterMap::getIdVNodeInnerScalar(const Subset& s,int bitmask) 
-  {
-    generate_tables(s,bitmask);
-    auto key = make_pair(s.getId(),bitmask);
-    return mapTables.at(key).id_innerVNodeScalar;
-  }
-#endif
-  
-  int MasterMap::getIdInnerScalar     (const Subset& s,int bitmask) 
-  {
-    generate_tables(s,bitmask);
-    auto key = make_pair(s.getId(),bitmask);
-    return mapTables.at(key).id_innerScalar;
-  }
-  
-  int MasterMap::getIdFace            (const Subset& s,int bitmask) 
-  {
-    generate_tables(s,bitmask);
-    auto key = make_pair(s.getId(),bitmask);
-    return mapTables.at(key).id_face;
-  }
-
-  
-
-
 
 } // namespace QDP
-
-

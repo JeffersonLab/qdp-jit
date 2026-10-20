@@ -1,13 +1,32 @@
-//
-/*! @file
- * @brief IO support via QIO
- */
-
 #include "qdp.h"
 
 namespace QDP 
 {
+  template<>
+  void QDPOScalarFactoryPut<char>(char *buf, size_t linear, int count, void *arg)
+  {
+    typedef char T;
+    
+    T *field = (T *)arg;
 
+    void *dest = (void*)(field+linear);
+    memcpy(dest,(const void*)buf,count*sizeof(T));
+  }
+
+  template<>
+  void QDPOScalarFactoryGet<char>(char *buf, size_t linear, int count, void *arg)
+  {
+    typedef char T;
+
+    /* Translate arg */
+    T *field = (T *)arg;
+
+    void *src = (void*)(field+linear);
+    memcpy(buf,(const void*)src,count*sizeof(T));
+  }
+
+
+  
   //-----------------------------------------
   static int get_node_number(const int coord[])
   {

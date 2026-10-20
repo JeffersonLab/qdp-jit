@@ -1,7 +1,5 @@
-// -*- C++ -*-
-
-#ifndef QDP_INIT
-#define QDP_INIT
+#ifndef QDP_INIT_H
+#define QDP_INIT_H
 
 #ifndef QDP_CONFIG_H
 #include "qdp_config.h"

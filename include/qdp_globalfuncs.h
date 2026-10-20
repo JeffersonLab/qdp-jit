@@ -1,11 +1,9 @@
-// -*- C++ -*-
+#ifndef QDP_GLOBALFUNCS_H
+#define QDP_GLOBALFUNCS_H
 
 /*! \file
  * \brief Global functions on QDPType
  */
-
-#ifndef QDP_GLOBALFUNCS_H
-#define QDP_GLOBALFUNCS_H
 
 namespace QDP
 {

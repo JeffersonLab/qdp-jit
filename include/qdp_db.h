@@ -1,10 +1,9 @@
-// -*- C++ -*-
+#ifndef QDP_DB_H
+#define QDP_DB_H
+
 /*! @file
  * @brief Support for filedb
  */
-
-#ifndef QDP_DB_H
-#define QDP_DB_H
 
 #ifdef BUILD_FILEDB
 

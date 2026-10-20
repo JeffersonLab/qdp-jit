@@ -1,3 +1,6 @@
+#ifndef QDP_EXAMPLES_LINALG_H
+#define QDP_EXAMPLES_LINALG_H
+
 // -*- C++ -*-
 // $Id: linalg.h,v 1.9 2006-09-26 01:58:36 edwards Exp $
 //
@@ -82,23 +85,24 @@ double QDP_V_eq_V_plus_V(LatticeColorVector& dest,
 			 const LatticeColorVector& s2,
 			 int cnt);
 
-double QDP_D_eq_M_times_D(LatticeDiracFermion& dest, 
+double QDP_D_eq_M_times_D(LatticeFermion& dest, 
 			  const LatticeColorMatrix& s1, 
-			  const LatticeDiracFermion& s2,
+			  const LatticeFermion& s2,
 			  int cnt);
 
-double QDP_D_eq_Ma_times_D(LatticeDiracFermion& dest, 
+double QDP_D_eq_Ma_times_D(LatticeFermion& dest, 
 			   const LatticeColorMatrix& s1, 
-			   const LatticeDiracFermion& s2,
+			   const LatticeFermion& s2,
 			   int cnt);
 
-double QDP_H_eq_M_times_H(LatticeHalfFermion& dest, 
-			  const LatticeColorMatrix& s1, 
-			  const LatticeHalfFermion& s2,
-			  int cnt);
+// double QDP_H_eq_M_times_H(LatticeFermion& dest, 
+// 			  const LatticeColorMatrix& s1, 
+// 			  const LatticeFermion& s2,
+// 			  int cnt);
 
-double QDP_H_eq_Ma_times_H(LatticeHalfFermion& dest, 
-			   const LatticeColorMatrix& s1, 
-			   const LatticeHalfFermion& s2,
-			   int cnt);
+// double QDP_H_eq_Ma_times_H(LatticeFermion& dest, 
+// 			   const LatticeColorMatrix& s1, 
+// 			   const LatticeFermion& s2,
+// 			   int cnt);
 
+#endif

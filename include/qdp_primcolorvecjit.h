@@ -1,311 +1,273 @@
-// -*- C++ -*-
-
-/*! \file
- * \brief Primitive Color Vector
- */
-
-
 #ifndef QDP_PRIMCOLORVECJIT_H
 #define QDP_PRIMCOLORVECJIT_H
 
 namespace QDP {
 
-//-------------------------------------------------------------------------------------
-/*! \addtogroup primcolorvector Color vector primitive
- * \ingroup primvector
- *
- * Primitive type that transforms like a Color vector
- *
- * @{
- */
 
-//! Primitive color Vector class
-template <class T, int N> class PColorVectorJIT : public PVectorJIT<T, N, PColorVectorJIT>
+template <class T> class PColorVectorJIT : public PVectorJIT<T, PColorVectorJIT>
 {
 public:
+  Shape::Axis axis() const { return Shape::Axis::Color; }
 
-  // Default constructing should be possible
-  // then there is no need for MPL index when
-  // construction a PMatrix<T,N>
-  PColorVectorJIT(){}
+  PColorVectorJIT( llvm::Value * base , JitDataFormat fmt , NestedIndex args , Shape shape ) : PVectorJIT<T, PColorVectorJIT>(base,fmt,args,shape) {}
 
-  //! PColorVectorJIT = PColorVectorJIT
-  /*! Set equal to another PColorVectorJIT */
+  // for eval Shape
+  PColorVectorJIT( Shape shape ) : PVectorJIT<T, PColorVectorJIT>(shape) {}
+
+  
+  Shape shape() const { return PVectorJIT<T, PColorVectorJIT>::shape(); }
+
+  int getN() const
+  {
+    return shape().extent(Shape::Axis::Color);
+  }
+
+  int this_size() const
+  {
+    return getN();
+  }
+
+
   template<class T1>
-  inline
-  PColorVectorJIT& operator=(const PColorVectorREG<T1,N>& rhs) 
-    {
-      for(int i=0; i < N; ++i)
-	this->elem(i) = rhs.elem(i);
-      return *this;
-    }
-
-  template<class T1>
-  inline
-  PColorVectorJIT& operator+=(const PColorVectorREG<T1,N>& rhs) 
-    {
-      for(int i=0; i < N; ++i)
-	this->elem(i) += rhs.elem(i);
-
-      return *this;
-    }
-
-  //! PVectorJIT -= PVectorJIT
-  template<class T1>
-  inline
-  PColorVectorJIT& operator-=(const PColorVectorREG<T1,N>& rhs) 
-    {
-      for(int i=0; i < N; ++i)
-	this->elem(i) -= rhs.elem(i);
-
-      return *this;
-    }
-
-  //! PVectorJIT *= PScalarJIT
-  template<class T1>
-  inline
-  PColorVectorJIT& operator*=(const PScalarREG<T1>& rhs) 
-    {
-      for(int i=0; i < N; ++i)
-	this->elem(i) *= rhs.elem();
-
-      return *this;
-    }
-
-  //! PVectorJIT /= PScalarJIT
-  template<class T1>
-  inline
-  PColorVectorJIT& operator/=(const PScalarREG<T1>& rhs) 
-    {
-      for(int i=0; i < N; ++i)
-	this->elem(i) /= rhs.elem();
-
-      return *this;
-    }
+  PColorVectorJIT operator=(PColorVectorJIT<T1> rhs)
+  {
+    this->assign(rhs);
+    return *this;
+  }
 
 
-
+  PColorVectorJIT operator=(PColorVectorJIT rhs)
+  {
+    this->assign(rhs);
+    return *this;
+  }
+  
 };
 
-/*! @} */  // end of group primcolorvector
-
-//-----------------------------------------------------------------------------
-// Traits classes 
-//-----------------------------------------------------------------------------
 
 
-template<class T1, int N>
-struct ScalarType< PColorVectorJIT<T1,N> >
+  template <class T>
+  struct IsWordVec< PColorVectorJIT<T > >
+  {
+    constexpr static bool value = IsWordVec<T>::value;
+  };
+
+
+  template<class T>
+class WordSize< PColorVectorJIT<T> >
 {
-  typedef PColorVectorJIT< typename ScalarType<T1>::Type_t,N > Type_t;
+public:
+  static int value( const Shape& ret )
+  {
+    return ret.nc() * WordSize<T>::value( ret );
+  }
 };
 
 
-template<class T1, int N>
-struct REGType<PColorVectorJIT<T1,N> > 
+template<class T1>
+struct BASEType<PColorVectorJIT<T1> > 
 {
-  typedef PColorVectorREG<typename REGType<T1>::Type_t,N>  Type_t;
+  typedef PColorVector<typename BASEType<T1>::Type_t>  Type_t;
 };
 
-template<class T1, int N>
-struct BASEType<PColorVectorJIT<T1,N> > 
-{
-  typedef PColorVector<typename BASEType<T1>::Type_t,N>  Type_t;
-};
+  
 
 
-// Underlying word type
-template<class T1, int N>
-struct WordType<PColorVectorJIT<T1,N> > 
+template<class T1>
+struct WordType<PColorVectorJIT<T1> > 
 {
   typedef typename WordType<T1>::Type_t  Type_t;
 };
 
 
 
-template<class T1, int N>
-struct SinglePrecType< PColorVectorJIT<T1,N> >
+template<class T1>
+struct SinglePrecType< PColorVectorJIT<T1> >
 {
-  typedef PColorVectorJIT< typename SinglePrecType<T1>::Type_t, N> Type_t;
+  typedef PColorVectorJIT< typename SinglePrecType<T1>::Type_t> Type_t;
 };
 
 
-template<class T1, int N>
-struct DoublePrecType< PColorVectorJIT<T1,N> >
+template<class T1>
+struct DoublePrecType< PColorVectorJIT<T1> >
 {
-  typedef PColorVectorJIT< typename DoublePrecType<T1>::Type_t, N> Type_t;
+  typedef PColorVectorJIT< typename DoublePrecType<T1>::Type_t> Type_t;
 };
 
 
-// Internally used scalars
-template<class T, int N>
-struct InternalScalar<PColorVectorJIT<T,N> > {
+
+template<class T>
+struct InternalScalar<PColorVectorJIT<T> > {
   typedef PScalarJIT<typename InternalScalar<T>::Type_t>  Type_t;
 };
 
-// Makes a primitive scalar leaving other indices along
-template<class T, int N>
-struct PrimitiveScalar<PColorVectorJIT<T,N> > {
+
+template<class T>
+struct PrimitiveScalar<PColorVectorJIT<T> > {
   typedef PScalarJIT<typename PrimitiveScalar<T>::Type_t>  Type_t;
 };
 
-// Makes a lattice scalar leaving primitive indices alone
-template<class T, int N>
-struct LatticeScalar<PColorVectorJIT<T,N> > {
-  typedef PColorVectorJIT<typename LatticeScalar<T>::Type_t, N>  Type_t;
-};
 
-//-----------------------------------------------------------------------------
-// Traits classes to support return types
-//-----------------------------------------------------------------------------
-
-// Default unary(PColorVectorJIT) -> PColorVectorJIT
-template<class T1, int N, class Op>
-struct UnaryReturn<PColorVectorJIT<T1,N>, Op> {
-  typedef PColorVectorJIT<typename UnaryReturn<T1, Op>::Type_t, N>  Type_t;
-};
-// Default binary(PScalarJIT,PColorVectorJIT) -> PColorVectorJIT
-template<class T1, class T2, int N, class Op>
-struct BinaryReturn<PScalarJIT<T1>, PColorVectorJIT<T2,N>, Op> {
-  typedef PColorVectorJIT<typename BinaryReturn<T1, T2, Op>::Type_t, N>  Type_t;
-};
-
-// Default binary(PColorMatrixJIT,PColorVectorJIT) -> PColorVectorJIT
-template<class T1, class T2, int N, class Op>
-struct BinaryReturn<PColorMatrixJIT<T1,N>, PColorVectorJIT<T2,N>, Op> {
-  typedef PColorVectorJIT<typename BinaryReturn<T1, T2, Op>::Type_t, N>  Type_t;
-};
-
-// Default binary(PColorVectorJIT,PScalarJIT) -> PColorVectorJIT
-template<class T1, class T2, int N, class Op>
-struct BinaryReturn<PColorVectorJIT<T1,N>, PScalarJIT<T2>, Op> {
-  typedef PColorVectorJIT<typename BinaryReturn<T1, T2, Op>::Type_t, N>  Type_t;
-};
-
-// Default binary(PColorVectorJIT,PColorVectorJIT) -> PColorVectorJIT
-template<class T1, class T2, int N, class Op>
-struct BinaryReturn<PColorVectorJIT<T1,N>, PColorVectorJIT<T2,N>, Op> {
-  typedef PColorVectorJIT<typename BinaryReturn<T1, T2, Op>::Type_t, N>  Type_t;
+template<class T>
+struct LatticeScalar<PColorVectorJIT<T> > {
+  typedef PColorVectorJIT<typename LatticeScalar<T>::Type_t>  Type_t;
 };
 
 
-#if 0
-template<class T1, class T2>
-struct UnaryReturn<PScalarJIT<T2>, OpCast<T1> > {
-  typedef PScalarJIT<typename UnaryReturn<T, OpCast>::Type_t>  Type_t;
-//  typedef T1 Type_t;
-};
-#endif
 
 
-// Assignment is different
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorVectorJIT<T1,N>, PColorVectorJIT<T2,N>, OpAssign > {
-  typedef PColorVectorJIT<T1,N> &Type_t;
+
+
+template<class T1, class Op>
+struct UnaryReturn<PColorVectorJIT<T1>, Op> {
+  typedef PColorVectorJIT<typename UnaryReturn<T1, Op>::Type_t>  Type_t;
 };
 
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorVectorJIT<T1,N>, PColorVectorJIT<T2,N>, OpAddAssign > {
-  typedef PColorVectorJIT<T1,N> &Type_t;
-};
- 
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorVectorJIT<T1,N>, PColorVectorJIT<T2,N>, OpSubtractAssign > {
-  typedef PColorVectorJIT<T1,N> &Type_t;
-};
- 
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorVectorJIT<T1,N>, PScalarJIT<T2>, OpMultiplyAssign > {
-  typedef PColorVectorJIT<T1,N> &Type_t;
-};
- 
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorVectorJIT<T1,N>, PScalarJIT<T2>, OpDivideAssign > {
-  typedef PColorVectorJIT<T1,N> &Type_t;
-};
- 
 
-// ColorVector
-template<class T, int N>
-struct UnaryReturn<PColorVectorJIT<T,N>, FnNorm2 > {
+template<class T1>
+struct UnaryReturn<PColorVectorJIT<T1>, FnIsFinite> {
+  typedef PScalarJIT<  typename UnaryReturn<T1, FnIsFinite>::Type_t > Type_t;
+};
+
+  
+
+template<class T1, class T2, class Op>
+struct BinaryReturn<PScalarJIT<T1>, PColorVectorJIT<T2>, Op> {
+  typedef PColorVectorJIT<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
+};
+
+
+
+template<class T1, class T2, class Op>
+struct BinaryReturn<PColorMatrixJIT<T1>, PColorVectorJIT<T2>, Op> {
+  typedef PColorVectorJIT<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
+};
+
+  
+
+template<class T1, class T2, class Op>
+struct BinaryReturn<PColorVectorJIT<T1>, PScalarJIT<T2>, Op> {
+  typedef PColorVectorJIT<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
+};
+
+
+template<class T1, class T2, class Op>
+struct BinaryReturn<PColorVectorJIT<T1>, PColorVectorJIT<T2>, Op> {
+  typedef PColorVectorJIT<typename BinaryReturn<T1, T2, Op>::Type_t>  Type_t;
+};
+
+
+
+
+
+
+
+
+
+template<class T>
+struct UnaryReturn<PColorVectorJIT<T>, FnNorm2 > {
   typedef PScalarJIT<typename UnaryReturn<T, FnNorm2>::Type_t>  Type_t;
 };
 
-template<class T, int N>
-struct UnaryReturn<PColorVectorJIT<T,N>, FnLocalNorm2 > {
+template<class T>
+struct UnaryReturn<PColorVectorJIT<T>, FnLocalNorm2 > {
   typedef PScalarJIT<typename UnaryReturn<T, FnLocalNorm2>::Type_t>  Type_t;
 };
 
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorVectorJIT<T1,N>, PColorVectorJIT<T2,N>, FnInnerProduct> {
+template<class T1, class T2>
+struct BinaryReturn<PColorVectorJIT<T1>, PColorVectorJIT<T2>, FnInnerProduct> {
   typedef PScalarJIT<typename BinaryReturn<T1, T2, FnInnerProduct>::Type_t>  Type_t;
 };
 
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorVectorJIT<T1,N>, PColorVectorJIT<T2,N>, FnLocalInnerProduct> {
+template<class T1, class T2>
+struct BinaryReturn<PColorVectorJIT<T1>, PColorVectorJIT<T2>, FnLocalInnerProduct> {
   typedef PScalarJIT<typename BinaryReturn<T1, T2, FnLocalInnerProduct>::Type_t>  Type_t;
 };
 
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorVectorJIT<T1,N>, PColorVectorJIT<T2,N>, FnLocalColorInnerProduct> {
+template<class T1, class T2>
+struct BinaryReturn<PColorVectorJIT<T1>, PColorVectorJIT<T2>, FnLocalColorInnerProduct> {
   typedef PScalarJIT<typename BinaryReturn<T1, T2, FnLocalColorInnerProduct>::Type_t>  Type_t;
 };
 
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorVectorJIT<T1,N>, PColorVectorJIT<T2,N>, FnInnerProductReal> {
+template<class T1, class T2>
+struct BinaryReturn<PColorVectorJIT<T1>, PColorVectorJIT<T2>, FnInnerProductReal> {
   typedef PScalarJIT<typename BinaryReturn<T1, T2, FnInnerProductReal>::Type_t>  Type_t;
 };
 
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorVectorJIT<T1,N>, PColorVectorJIT<T2,N>, FnLocalInnerProductReal> {
+template<class T1, class T2>
+struct BinaryReturn<PColorVectorJIT<T1>, PColorVectorJIT<T2>, FnLocalInnerProductReal> {
   typedef PScalarJIT<typename BinaryReturn<T1, T2, FnLocalInnerProductReal>::Type_t>  Type_t;
 };
 
 
 
 
-//-----------------------------------------------------------------------------
-// Operators
-//-----------------------------------------------------------------------------
-
-// Peeking and poking
-//! Extract color vector components 
-template<class T, int N>
-struct UnaryReturn<PColorVectorJIT<T,N>, FnPeekColorVectorREG > {
-  typedef PScalarJIT<typename UnaryReturn<T, FnPeekColorVectorREG >::Type_t>  Type_t;
-};
-
-
-//! Insert color vector components
-template<class T1, class T2, int N>
-inline PColorVectorJIT<T1,N>&
-pokeColor(PColorVectorJIT<T1,N>& l, const PScalarREG<T2>& r, llvm::Value * row)
+template<class T1, class T2>
+PScalarJIT<typename BinaryReturn<T1, T2, FnLocalColorInnerProduct>::Type_t>
+localColorInnerProduct(PColorVectorJIT<T1> s1, PColorVectorJIT<T2> s2)
 {
-  l.getJitElem(row) = r.elem();
-  return l;
+  assert(s1.getN() == s2.getN());
+
+  auto d = binary_return<FnLocalColorInnerProduct>( s1 , s2 );
+
+  d.elem() = adj( s1.elem(0) ) * s2.elem(0);
+  JitForLoop i( 1 , s1.getN() );
+  {
+    d.elem() += adj( s1.elem(i) ) * s2.elem(i);
+  }
+  i.end();
+  
+  return d;
 }
 
 
-//-----------------------------------------------------------------------------
-// Contraction for color vectors
-// colorContract 
-template<class T1, class T2, class T3, int N>
-struct TrinaryReturn<PColorVectorJIT<T1,N>, PColorVectorJIT<T2,N>, PColorVectorJIT<T3,N>, FnColorContract> {
+
+template<class T>
+struct UnaryReturn<PColorVectorJIT<T>, FnPeekColorVectorJIT > {
+  typedef PScalarJIT<T>  Type_t;
+};
+
+
+template<class T>
+struct UnaryReturn<PColorVectorJIT<T>, FnPeekColorVector > {
+  typedef PScalarJIT<T>  Type_t;
+};
+
+
+
+template<class T>
+typename UnaryReturn<PColorVectorJIT<T>, FnPeekColorVectorJIT >::Type_t
+peekColor(PColorVectorJIT<T> l, llvm::Value * row)
+{
+  auto d = unary_return<FnPeekColorVectorJIT>(l);
+  d.elem() = l.elem(row);
+  return d;
+}
+
+
+
+
+
+template<class T1, class T2>
+void
+pokeColor(PColorVectorJIT<T1> l, PScalarJIT<T2> r, llvm::Value * row)
+{
+  l.elem(row) = r.elem();
+}
+
+
+
+template<class T1, class T2, class T3>
+struct TrinaryReturn<PColorVectorJIT<T1>, PColorVectorJIT<T2>, PColorVectorJIT<T3>, FnColorContract> {
   typedef PScalarJIT<typename TrinaryReturn<T1, T2, T3, FnColorContract>::Type_t>  Type_t;
 };
 
-//! dest  = colorContract(Qvec1,Qvec2,Qvec3)
-/*!
- * Performs:
- *  \f$dest = \sum_{i,j,k} \epsilon^{i,j,k} V1^{i} V2^{j} V3^{k}\f$
- *
- * This routine is completely unrolled for 3 colors
- */
+
 template<class T1, class T2, class T3>
-inline typename TrinaryReturn<PColorVectorJIT<T1,3>, PColorVectorJIT<T2,3>, PColorVectorJIT<T3,3>, FnColorContract>::Type_t
-colorContract(const PColorVectorJIT<T1,3>& s1, const PColorVectorJIT<T2,3>& s2, const PColorVectorJIT<T3,3>& s3)
+typename TrinaryReturn<PColorVectorJIT<T1>, PColorVectorJIT<T2>, PColorVectorJIT<T3>, FnColorContract>::Type_t
+colorContract(PColorVectorJIT<T1> s1, PColorVectorJIT<T2> s2, PColorVectorJIT<T3> s3)
 {
-  typename TrinaryReturn<PColorVectorJIT<T1,3>, PColorVectorJIT<T2,3>, PColorVectorJIT<T3,3>, FnColorContract>::Type_t  d;
+  auto d = trinary_return<FnColorContract>( s1 , s2 , s3 );
 
   // Permutations: +(0,1,2)+(1,2,0)+(2,0,1)-(1,0,2)-(0,2,1)-(2,1,0)
 
@@ -321,54 +283,47 @@ colorContract(const PColorVectorJIT<T1,3>& s1, const PColorVectorJIT<T2,3>& s2, 
 }
 
 
-//-----------------------------------------------------------------------------
-// Contraction for color vectors
-// colorContract 
-template<class T1, class T2, int N>
-struct BinaryReturn<PColorVectorJIT<T1,N>, PColorVectorJIT<T2,N>, FnColorVectorContract> {
+
+template<class T1, class T2>
+struct BinaryReturn<PColorVectorJIT<T1>, PColorVectorJIT<T2>, FnColorVectorContract> {
   typedef PScalarJIT<typename BinaryReturn<T1, T2, FnColorVectorContract>::Type_t>  Type_t;
 };
 
-//! dest  = colorVectorContract(Qvec1,Qvec2)
-/*!
- * Performs:
- *  \f$dest = \sum_{i} V1^{i} V2^{i}\f$
- */
-template<class T1, class T2, int N>
-inline typename BinaryReturn<PColorVectorJIT<T1,N>, PColorVectorJIT<T2,N>, FnColorVectorContract>::Type_t
-colorVectorContract(const PColorVectorJIT<T1,N>& s1, const PColorVectorJIT<T2,N>& s2)
+
+
+template<class T1, class T2>
+typename BinaryReturn<PColorVectorJIT<T1>, PColorVectorJIT<T2>, FnColorVectorContract>::Type_t
+colorVectorContract(PColorVectorJIT<T1> s1, PColorVectorJIT<T2> s2)
 {
-  typename BinaryReturn<PColorVectorJIT<T1,N>, PColorVectorJIT<T2,N>, FnColorVectorContract>::Type_t  d;
+  assert(s1.getN() == s2.getN());
 
-  // d = V1^{i} V2^{i}
+  auto d = binary_return<FnColorVectorContract>( s1 , s2 );
+
   d.elem() = s1.elem(0)*s2.elem(0);
-  for(int i=1; i < N; ++i)
+  JitForLoop i( 1 , s1.getN() );
+  {
     d.elem() += s1.elem(i)*s2.elem(i);
-
+  }
+  i.end();
+  
   return d;
 }
 
 
-//-----------------------------------------------------------------------------
-// diquark color cross product   s1 X s2
-//! Contraction for color vectors
+
 template<class T1, class T2>
-struct BinaryReturn<PColorVectorJIT<T1,3>, PColorVectorJIT<T2,3>, FnColorCrossProduct> {
-  typedef PColorVectorJIT<typename BinaryReturn<T1, T2, FnColorCrossProduct>::Type_t, 3>  Type_t;
+struct BinaryReturn<PColorVectorJIT<T1>, PColorVectorJIT<T2>, FnColorCrossProduct> {
+  typedef PColorVectorJIT<typename BinaryReturn<T1, T2, FnColorCrossProduct>::Type_t>  Type_t;
 };
 
-//! dest  = colorCrossProduct(Qvec1,Qvec2)
-/*!
- * Performs:
- *  \f$dest^{i} = \sum_{j,k} \epsilon^{i,j,k} V1^{j} V2^{k}\f$
- *
- * This routine is completely unrolled for 3 colors
- */
+
 template<class T1, class T2>
-inline typename BinaryReturn<PColorVectorJIT<T1,3>, PColorVectorJIT<T2,3>, FnColorCrossProduct>::Type_t
-colorCrossProduct(const PColorVectorJIT<T1,3>& s1, const PColorVectorJIT<T2,3>& s2)
+typename BinaryReturn<PColorVectorJIT<T1>, PColorVectorJIT<T2>, FnColorCrossProduct>::Type_t
+colorCrossProduct(PColorVectorJIT<T1> s1, PColorVectorJIT<T2> s2)
 {
-  typename BinaryReturn<PColorVectorJIT<T1,3>, PColorVectorJIT<T2,3>, FnColorCrossProduct>::Type_t  d;
+  assert(s1.getN() == s2.getN());
+
+  auto d = binary_return<FnColorCrossProduct>( s1 , s2 );
   
   d.elem(0) = s1.elem(1)*s2.elem(2) - s1.elem(2)*s2.elem(1);
   d.elem(1) = s1.elem(2)*s2.elem(0) - s1.elem(0)*s2.elem(2);
@@ -377,25 +332,11 @@ colorCrossProduct(const PColorVectorJIT<T1,3>& s1, const PColorVectorJIT<T2,3>& 
  return d;
 }
 
-//! dest  = random
-template<class T, int N,  class T1, class T2, class T3>
-inline void
-fill_random_jit(PColorVectorJIT<T,N> d, T1 seed, T2 skewed_seed, const T3& seed_mult)
-{
-  // Loop over rows the slowest
-  for(int i=0; i < N; ++i)
-    fill_random_jit(d.elem(i), seed, skewed_seed, seed_mult);
-}
 
-//! dest  = gaussian
-template<class T,class T2, int N>
-inline void
-fill_gaussian(PColorVectorJIT<T,N> d, PColorVectorREG<T2,N>& r1, PColorVectorREG<T2,N>& r2)
-{
-  for(int i=0; i < N; ++i)
-    fill_gaussian(d.elem(i), r1.elem(i), r2.elem(i));
-}
-
+template<class T1, class T2, class T3>
+struct TrinaryReturn<PScalarJIT<T1>, PColorVectorJIT<T2>, PColorVectorJIT<T3>, FnWhere> {
+  typedef PColorVectorJIT<typename TrinaryReturn<T1, T2, T3, FnWhere>::Type_t>  Type_t;
+};
 
 
 

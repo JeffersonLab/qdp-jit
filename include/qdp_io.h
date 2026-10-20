@@ -1,11 +1,9 @@
-// -*- C++ -*-
+#ifndef QDP_IO_H
+#define QDP_IO_H
 
 /*! @file
  * @brief IO support
  */
-
-#ifndef QDP_IO_H
-#define QDP_IO_H
 
 #include <string>
 #include <iostream>

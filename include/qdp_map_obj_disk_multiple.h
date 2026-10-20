@@ -1,11 +1,9 @@
-// -*- C++ -*-
+#ifndef QDP_MAP_OBJ_DISK_MULTIPLE_H
+#define QDP_MAP_OBJ_DISK_MULTIPLE_H
+
 /*! \file
  *  \brief A Map Object that works lazily from Disk
  */
-
-
-#ifndef __qdp_map_obj_disk_multiple_h__
-#define __qdp_map_obj_disk_multiple_h__
 
 #include "qdp_map_obj_disk.h"
 #include <vector>

@@ -5,38 +5,38 @@
 namespace QDP {
 
   template<class T>
-  class OSubLatticeJIT//: public QDPTypeJIT<T, OSubLatticeJIT<T> >
+  class OSubLatticeJIT
   {
   public:
-    OSubLatticeJIT( ParamRef base_ ) : base_m(base_) {}
-    OSubLatticeJIT( const OSubLatticeJIT& rhs ) : base_m(rhs.base_m) {}
+    OSubLatticeJIT( ParamRef base_ , ParamRef latsize_ , Shape shape , JitDataFormat fmt ): base_m(base_), latsize_m(latsize_), shape_(shape), data_format_(fmt) {}
+    OSubLatticeJIT( const OSubLatticeJIT& rhs ) : base_m(rhs.base_m), latsize_m(rhs.latsize_m), shape_(rhs.shape_), data_format_(rhs.data_format_) {}
 
-    T elem( JitDeviceLayout lay , llvm::Value * index ) const
-    {
-      T F;
-      IndexDomainVector args;
-      args.push_back( make_pair( Layout::sitesOnNode() , index ) );
-      F.setup( llvm_derefParam(base_m) , lay , args );
-      return F;
-    }
+    
 
-    typename ScalarType<T>::Type_t elemScalar( JitDeviceLayout lay , llvm::Value * index ) const
-    {
-      typename ScalarType<T>::Type_t F;
-      IndexDomainVector args;
-      args.push_back( make_pair( Layout::sitesOnNode() , index ) );
-      F.setup( llvm_derefParam(base_m) , lay , args );
+    T elem( llvm::Value * index ) const
+    {     
+      NestedIndex idv;
+      idv.push_back( latsize_m , index );
+
+      T F( llvm_derefParam(base_m) , data_format_ , idv , shape_ );
+      
       return F;
     }
 
 
-    void set_base( ParamRef p ) const
+    void set_base( ParamRef p ) 
     {
       base_m = p;
     }
 
   private:
-    mutable ParamRef    base_m;
+    void operator=(const OSubLatticeJIT& a);
+
+    ParamRef    base_m;
+    ParamRef latsize_m;
+    Shape shape_;
+    JitDataFormat data_format_ = JitDataOrder::SiteFast;
+
   };
 
 

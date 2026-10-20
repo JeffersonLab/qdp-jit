@@ -1,29 +1,15 @@
-// -*- C++ -*-
-
-/*! @file
- * @brief Outer lattice routines specific to a parallel platform with scalar layout
- */
-
 #ifndef QDP_PARSCALAR_MAPRESOURCE_H
 #define QDP_PARSCALAR_MAPRESOURCE_H
+
 
 #include "qmp.h"
 
 namespace QDP {
 
 
-  // The MPI resources class for an FnMap.
-  // An instance for each (dest/src node,msg_size) combination
-  // exists so they can be reused over the whole program lifetime.
-  // Can't allocate resources in constructor, since I use ::operator new
-  // to allocate a whole array of them. This is necessary since if a 
-  // size of 2 occurs in the logical machine grid, then forward/backward
-  // points to the same MPI node.
-
 struct FnMapRsrc
 {
 private:
-  FnMapRsrc(const FnMapRsrc&);
   int send_buf_id = -1;
   int recv_buf_id = -1;
 public:

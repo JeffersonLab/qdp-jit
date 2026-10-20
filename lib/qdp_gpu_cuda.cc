@@ -7,21 +7,28 @@
 
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <iterator>
 
 #include "cuda.h"
 
-#ifdef QDP_THRUSTALIGN
-#include "cuda_runtime.h"
-#endif
 
 #include <unistd.h>
 
 
 #include "cudaProfiler.h"
 
+namespace {
+  std::string buffer;
+  std::stringstream delayed(buffer);
+}
 
 namespace QDP {
+
+  void gpu_print_info()
+  {
+    QDPIO::cout << delayed.str() << std::endl;
+  }
 
   namespace {
 #if defined (CUDA_VERSION)
@@ -34,9 +41,6 @@ namespace QDP {
     
     CUdevice cuDevice;
     CUcontext cuContext;
-#ifdef QDP_THRUSTALIGN
-    bool deviceSet = false;
-#endif
 
     CUevent evStart;
     CUevent evStop;
@@ -103,39 +107,25 @@ namespace QDP {
     }
   }
 
-#ifdef QDP_THRUSTALIGN
-  void CudaCheckResult(cudaError_t result)
-  {
-    if (result != cudaSuccess) {
-      QDP_error_exit("CUDA error %s: %s", cudaGetErrorName(result) , cudaGetErrorString(result));
-    }
-  }
-#endif
 
   void gpu_create_events()
   {
-#ifdef QDP_THRUSTALIGN
-    CudaCheckResult(cuCtxSetCurrent(cuContext));
-#endif
     CUresult res = cuEventCreate ( &evStart, 0 );
     if (res != CUDA_SUCCESS)
       {
-	QDPIO::cout << "error event creation start\n";
+	printf("error event creation start\n");
 	QDP_abort(1);
       }
     res = cuEventCreate ( &evStop, 0 );
     if (res != CUDA_SUCCESS)
       {
-	QDPIO::cout << "error event creation stop\n";
+	printf("error event creation stop\n");
 	QDP_abort(1);
       }
   }
 
   void gpu_record_start()
   {
-#ifdef QDP_THRUSTALIGN
-    CudaCheckResult(cuCtxSetCurrent(cuContext));
-#endif
     CUresult res = cuEventRecord ( evStart, 0 );
     if (res != CUDA_SUCCESS)
       {
@@ -147,9 +137,6 @@ namespace QDP {
 
   float gpu_record_stop_sync_time()
   {
-#ifdef QDP_THRUSTALIGN
-    CudaCheckResult(cuCtxSetCurrent(cuContext));
-#endif
     // stop
     CUresult res = cuEventRecord ( evStop, 0 );
     if (res != CUDA_SUCCESS)
@@ -179,9 +166,22 @@ namespace QDP {
   }
 
 
+  void CudaRes(const std::string& s,CUresult ret);
+  int CudaGetConfig(int what);
+
   size_t gpu_mem_free()
   {
+    size_t total;
+    CUresult ret = cuMemGetInfo( &mem_free , &total );
+    CudaRes("cuMemGetInfo",ret);
     return mem_free;
+  }
+
+
+  size_t gpu_get_max_resident_threads()
+  {
+    return (size_t)CudaGetConfig( CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT ) *
+      (size_t)CudaGetConfig( CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_MULTIPROCESSOR );
   }
   
   size_t gpu_mem_total()
@@ -197,21 +197,13 @@ namespace QDP {
   }
 
 
-
-
-
-
   
   int CudaGetAttributesLocalSize( JitFunction& f )
   {
     int local_mem = 0;
-#ifdef QDP_THRUSTALIGN
-    CudaCheckResult(cuCtxSetCurrent(cuContext));
-#endif
     cuFuncGetAttribute( &local_mem , CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES , (CUfunction)f.get_function() );
     return local_mem;
   }
-
 
 
 
@@ -225,12 +217,31 @@ namespace QDP {
 	gpu_record_start();
       }
     
-#ifdef QDP_THRUSTALIGN
-    CudaCheckResult(cuCtxSetCurrent(cuContext));
-#endif
     CUresult res = cuLaunchKernel((CUfunction)f.get_function(), gridDimX, gridDimY, gridDimZ, 
 				  blockDimX, blockDimY, blockDimZ, 
 				  sharedMemBytes, 0, (void**)&kernelArgs[0], 0 );
+
+    if (qdp_jit_config_get_gpu_sync())
+      {
+	CUresult sync_ret = cuCtxSynchronize();
+
+	if (sync_ret != CUDA_SUCCESS) {
+	  const char* error_name = nullptr;
+	  const char* error_string = nullptr;
+      
+	  cuGetErrorName(sync_ret, &error_name);
+	  cuGetErrorString(sync_ret, &error_string);
+      
+	  QDPIO::cerr
+	    << "CUDA error AFTER launching kernel " << f.get_kernel_name() << "\n"
+	    << "CUDA error: "
+	    << (error_name ? error_name : "unknown") << "\n"
+	    << "Description: "
+	    << (error_string ? error_string : "unknown") << "\n";
+      
+	  QDP_abort(1);
+	}
+      }
     
     if (gpu_get_record_stats() && Layout::primaryNode())
       {
@@ -240,12 +251,22 @@ namespace QDP {
   
     JitResult ret;
 
+    if ( res != CUDA_SUCCESS )
+      {
+	const char* errstr;
+	cuGetErrorString(res, &errstr);
+	printf("CUDA Driver Failure: returned 0x%x (%s)\n", res, errstr);
+      }
+
     switch (res) {
     case CUDA_SUCCESS:
       ret = JitResult::JitSuccess;
       break;
     case CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES:
       ret = JitResult::JitResource;
+      break;
+    case CUDA_ERROR_OUT_OF_MEMORY:
+      ret = JitResult::JitOutOfMemory;
       break;
     default:
       ret = JitResult::JitError;
@@ -254,8 +275,6 @@ namespace QDP {
     return ret;
   }
 
-
-    
 
 
   void CudaRes(const std::string& s,CUresult ret) {
@@ -267,54 +286,6 @@ namespace QDP {
     }
   }
 
-
-#if 0
-  int CudaAttributeNumRegs( JitFunction& f ) {
-    int pi;
-    CUresult res;
-    res = cuFuncGetAttribute ( &pi, CU_FUNC_ATTRIBUTE_NUM_REGS , (CUfunction)f.get_function() );
-    CudaRes("CudaAttributeNumRegs",res);
-    return pi;
-  }
-
-  int CudaAttributeLocalSize( JitFunction& f ) {
-    int pi;
-    CUresult res;
-    res = cuFuncGetAttribute ( &pi, CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES , (CUfunction)f.get_function() );
-    CudaRes("CudaAttributeLocalSize",res);
-    return pi;
-  }
-
-  int CudaAttributeConstSize( JitFunction& f ) {
-    int pi;
-    CUresult res;
-    res = cuFuncGetAttribute ( &pi, CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES , (CUfunction)f.get_function() );
-    CudaRes("CudaAttributeConstSize",res);
-    return pi;
-  }
-
-  void CudaProfilerInitialize()
-  {
-    CUresult res;
-    std::cout << "CUDA Profiler Initializing ...\n";
-    res = cuProfilerInitialize( "prof.cfg" , "prof.out" , CU_OUT_CSV );
-    CudaRes("cuProfilerInitialize",res);
-  }
-
-  void CudaProfilerStart()
-  {
-    CUresult res;
-    res = cuProfilerStart();
-    CudaRes("cuProfilerStart",res);
-  }
-
-  void CudaProfilerStop()
-  {
-    CUresult res;
-    res = cuProfilerStop();
-    CudaRes("cuProfilerStop",res);
-  }
-#endif
 
 
   int CudaGetConfig(int what)
@@ -345,8 +316,6 @@ namespace QDP {
   }
 
   
-
-  
   void gpu_done() {
   }
     
@@ -363,39 +332,19 @@ namespace QDP {
 
 
 
-
-
   void gpu_set_device(int dev)
   {
-#ifdef QDP_THRUSTALIGN
     CUresult ret;
 
-    if (cudaSetDevice(dev) != cudaSuccess)
-    {
-      std::cout << "Error setting device.\n"; 
-      exit(1);
-    }
 
     ret = cuDeviceGet(&cuDevice, dev);
     CudaRes(__func__,ret);
 
-    ret = cuDevicePrimaryCtxRetain(&cuContext, dev);
+    ret = cuDevicePrimaryCtxRetain(&cuContext, cuDevice);
     CudaRes(__func__,ret);
 
     ret = cuCtxPushCurrent(cuContext);
     CudaRes(__func__,ret);
-#else
-    CUresult ret;
-
-    ret = cuDeviceGet(&cuDevice, dev);
-    CudaRes(__func__,ret);
-
-    ret = cuDevicePrimaryCtxRetain(&cuContext, dev);
-    CudaRes(__func__,ret);
-
-    ret = cuCtxPushCurrent(cuContext);
-    CudaRes(__func__,ret);
-#endif
 
     //std::cout << "creating CUDA events\n";
     gpu_create_events();
@@ -426,13 +375,13 @@ namespace QDP {
       int arch = atoi(qdpjit_cuda_arch);
       major = arch/10;
       minor = arch%10;
-      QDPIO::cout << "Overriding Compute capability for JIT: " << qdpjit_cuda_arch << "\n";
+      delayed << "Overriding Compute capability for JIT: " << qdpjit_cuda_arch << "\n";
     }
     
-    QDPIO::cout << "  Compute capability (major,minor)    : " << major << "," << minor << "\n";
-    QDPIO::cout << "  Shared memory                       : " << smem/1024  << " KB\n";
-    QDPIO::cout << "  Max grid  (x,y,z)                   : (" << max_gridx << "," << max_gridy << "," << max_gridz << ")\n";
-    QDPIO::cout << "  Max block (x,y,z)                   : (" << max_blockx << "," << max_blocky << "," << max_blockz << ")\n";
+    delayed << "  Compute capability (major,minor)    : " << major << "," << minor << "\n";
+    delayed << "  Shared memory                       : " << smem/1024  << " KB\n";
+    delayed << "  Max grid  (x,y,z)                   : (" << max_gridx << "," << max_gridy << "," << max_gridz << ")\n";
+    delayed << "  Max block (x,y,z)                   : (" << max_blockx << "," << max_blocky << "," << max_blockz << ")\n";
   }
 
 
@@ -441,15 +390,15 @@ namespace QDP {
   {
     CUresult ret;
 
-    QDPIO::cout << "GPU properties\n";
-
+    delayed << "GPU properties\n";
+    
     // Get the device properties
     gpu_get_device_props();
     
     ret = cuMemGetInfo( &mem_free , &mem_total );
     CudaRes("cuMemGetInfo",ret);
 
-    QDPIO::cout << "  GPU memory (free,total)             : " << mem_free/1024/1024 << "/" << mem_total/1024/1024 << " MB\n";
+    delayed << "  GPU memory (free,total)             : " << mem_free/1024/1024 << "/" << mem_total/1024/1024 << " MB\n";
 
 
     ret = cuCtxSetCacheConfig(CU_FUNC_CACHE_PREFER_L1);
@@ -467,9 +416,6 @@ namespace QDP {
   void gpu_host_alloc(void **mem , const size_t size)
   {
     CUresult ret;
-#ifdef QDP_THRUSTALIGN
-    CudaCheckResult(cuCtxSetCurrent(cuContext));
-#endif
     ret = cuMemHostAlloc(mem,size,0);
     CudaRes("cudaHostAlloc",ret);
   }
@@ -483,9 +429,6 @@ namespace QDP {
 	return;
       }
     CUresult ret;
-#ifdef QDP_THRUSTALIGN
-    CudaCheckResult(cuCtxSetCurrent(cuContext));
-#endif
     ret = cuMemFreeHost(mem);
     CudaRes("cuMemFreeHost",ret);
   }
@@ -493,7 +436,7 @@ namespace QDP {
 
 
 
-#if defined (QDP_ENABLE_MANAGED_MEMORY)
+
   void gpu_memcpy( void * dest , const void * src , size_t size )
   {
     CUresult ret;
@@ -511,23 +454,12 @@ namespace QDP {
     return ret == CUDA_SUCCESS;
   }
 
-  // void gpu_prefetch(void *mem,  size_t size)
-  // {
-  //   cuMemPrefetchAsync ( (CUdeviceptr)mem, size,  cuDevice, prefetchStream  );
-  // }
-#endif
-
-
   
   void gpu_memcpy_h2d( void * dest , const void * src , size_t size )
   {
     CUresult ret;
 #ifdef GPU_DEBUG_DEEP
     QDP_debug_deep("CudaMemcpyH2D dest=%p src=%p size=%d" ,  dest , src , size );
-#endif
-    //std::cout << "H2D " << size << std::endl;
-#ifdef QDP_THRUSTALIGN
-    CudaCheckResult(cuCtxSetCurrent(cuContext));
 #endif
     ret = cuMemcpyHtoD((CUdeviceptr)const_cast<void*>(dest), src, size);
     CudaRes("cuMemcpyH2D",ret);
@@ -539,57 +471,29 @@ namespace QDP {
 #ifdef GPU_DEBUG_DEEP
     QDP_debug_deep("CudaMemcpyD2H dest=%p src=%p size=%d" ,  dest , src , size );
 #endif
-    //std::cout << "D2H " << size << std::endl;
-#ifdef QDP_THRUSTALIGN
-    CudaCheckResult(cuCtxSetCurrent(cuContext));
-#endif
     ret = cuMemcpyDtoH( dest, (CUdeviceptr)const_cast<void*>(src), size);
     CudaRes("cuMemcpyD2H",ret);
   }
 
   
-  
-
   bool gpu_malloc(void **mem , size_t size )
   {
-#ifdef QDP_THRUSTALIGN
-    if (size == 0)
-      *mem = nullptr;
-    CUresult ret;
-    CudaCheckResult(cuCtxSetCurrent(cuContext));   
-    CudaCheckResult(cudaMalloc(mem, size));
-    return ret == CUDA_SUCCESS;
-#else
     CUresult ret;
     ret = cuMemAlloc( (CUdeviceptr*)mem,size);
     return ret == CUDA_SUCCESS;
-#endif
   }
-
-
-
 
   
   void gpu_free(const void *mem )
   {
-#ifdef QDP_THRUSTALIGN
-	  if (mem == nullptr) return;
-#endif
-
     if (!QDP_isInitialized())
       {
-	//std::cout << "GPU free, QDP not initialized" << std::endl;
 	return;
       }
 
     CUresult ret;
-#ifdef QDP_THRUSTALIGN
-    CudaCheckResult(cuCtxSetCurrent(cuContext));
-    CudaCheckResult(cudaFree((void*)mem));
-#else
     ret = cuMemFree((CUdeviceptr)const_cast<void*>(mem));
     CudaRes("cuMemFree",ret);
-#endif
   }
 
 
@@ -597,9 +501,6 @@ namespace QDP {
   void gpu_memset( void * dest , unsigned char val , size_t N )
   {
     CUresult ret;
-#ifdef QDP_THRUSTALIGN
-    CudaCheckResult(cuCtxSetCurrent(cuContext));
-#endif
     ret = cuMemsetD8((CUdeviceptr)dest, val, N);
     CudaRes("cuMemsetD8",ret);
   }
@@ -609,7 +510,6 @@ namespace QDP {
   void gpu_sync()
   {
     CUresult ret = cuCtxSynchronize();
-    //CUresult ret = cuStreamSynchronize( 0 );
     CudaRes("cuCtxSynchronize",ret);
   }
 
@@ -629,22 +529,20 @@ namespace QDP {
   }
 
 
-  bool get_jitf(JitFunction& func,
-		const std::string& kernel_ptx,
-		const std::string& kernel_name,
-		const std::string& pretty,
-		const std::string& str_compute)
+  bool get_jitf( JitFunction& func, const std::string& kernel_ptx , const std::string& kernel_name , const std::string& pretty , const std::string& str_compute )
   {
     CUresult ret;
     CUmodule cuModule;
 
-    func.set_kernel_name(kernel_name);
-    func.set_pretty(pretty);
-
-#ifdef QDP_THRUSTALIGN
-    CudaCheckResult(cuCtxSetCurrent(cuContext));
-#endif
-
+    if (jit_config_get_verbose_output())
+      {
+	QDPIO::cout << "Kernel PTX:\n" << kernel_ptx << "\n-----\n\n";
+	QDPIO::cout << "Kernel name:\n" << kernel_name << "\n-----\n\n";
+      }
+    
+    func.set_kernel_name( kernel_name );
+    func.set_pretty( pretty );
+    
     constexpr size_t log_size = 16384;
 
     char error_log[log_size] = {};
@@ -700,44 +598,33 @@ namespace QDP {
       QDP_abort(1);
     }
 
-    CUfunction cuf;
 
-    ret = cuModuleGetFunction(&cuf, cuModule, kernel_name.c_str());
-
+    
     if (ret != CUDA_SUCCESS) {
-      const char* error_name = nullptr;
-      const char* error_string = nullptr;
-
-      cuGetErrorName(ret, &error_name);
-      cuGetErrorString(ret, &error_string);
-
-      QDPIO::cerr
-	<< "cuModuleGetFunction failed for "
-	<< kernel_name << ": "
-	<< (error_name ? error_name : "unknown")
-	<< ": "
-	<< (error_string ? error_string : "unknown")
-	<< "\n";
-
+      QDPIO::cerr << "Error loading external data.\n";
+      raise(SIGSEGV);
       QDP_abort(1);
     }
 
-    func.set_function(cuf);
-
-    mapCUFuncPTX[func.get_function()] = kernel_ptx;
-
-    if (Layout::primaryNode()) {
-      func.set_regs(
-		    cuda_get_attribute(CU_FUNC_ATTRIBUTE_NUM_REGS, cuf));
-      func.set_stack(
-		     cuda_get_attribute(CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES, cuf));
-      func.set_cmem(
-		    cuda_get_attribute(CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES, cuf));
+    CUfunction cuf;
+    ret = cuModuleGetFunction( &cuf , cuModule , kernel_name.c_str() );
+    if (ret != CUDA_SUCCESS) {
+      QDPIO::cerr << "Error getting function: " << kernel_name << std::endl;
+      QDPIO::cerr << std::endl;
+      raise(SIGSEGV);
+      QDP_abort(1);
     }
 
+    func.set_function( cuf );
+    
+    mapCUFuncPTX[func.get_function()] = kernel_ptx;
+
+    func.set_regs ( cuda_get_attribute( CU_FUNC_ATTRIBUTE_NUM_REGS , cuf ) );
+    func.set_stack( cuda_get_attribute( CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES , cuf ) );
+    func.set_cmem ( cuda_get_attribute( CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES , cuf ) );
+    
     return true;
   }
-
 
 
 
@@ -775,3 +662,5 @@ namespace QDP {
   
   
 }
+
+

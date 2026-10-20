@@ -1,11 +1,18 @@
-#ifndef QDP_JITFUNCUTIL_H
-#define QDP_JITFUNCUTIL_H
+#ifndef QDP_JIT_UTIL_H
+#define QDP_JIT_UTIL_H
 
 namespace QDP {
 
+  class JitValue
+  {
+    llvm::Value* value;
+  public:
+    JitValue( llvm::Value* v ): value(v) {}
+    JitValue& operator++() { value = llvm_add( value , llvm_create_value(1) ); return *this; }
+    operator llvm::Value*() const { return value; }
+  };
 
-  //template<class T> ParamRef jit_add_param();
-
+  
   class RingBuffer
   {
     std::vector<int> ringBufferOScalar;
@@ -21,8 +28,6 @@ namespace QDP {
 
 
     
-  int jit_util_get_tune_count();
-
   void jit_get_function(JitFunction&);
 
   void jit_util_sync_init();
@@ -33,11 +38,15 @@ namespace QDP {
   
 
   void jit_launch       ( JitFunction& function , int th_count , std::vector<QDPCache::ArgKey>& ids , bool set_l0_event = false );
-  void jit_launch_explicit_geom( JitFunction& function , std::vector<QDPCache::ArgKey>& ids , const kernel_geom_t& geom , unsigned int shared );
+  bool jit_launch_explicit_geom( JitFunction& function , std::vector<QDPCache::ArgKey>& ids , const kernel_geom_t& geom , unsigned int shared );
 
-  void db_tune_write( std::string filename );
-  void db_tune_read( std::string filename );
+#ifdef QDP_DEEP_LOG
+  //void jit_deep_log(JitFunction& f);
+#endif
 
+
+
+  
 
   template<class T>
   typename JITType<T>::Type_t stack_alloc()
@@ -46,30 +55,254 @@ namespace QDP {
     llvm::Value * ptr = llvm_alloca( llvm_get_type< typename WordType< T >::Type_t >() , type_size );
       
     typename JITType<T>::Type_t t_jit_stack;
-    t_jit_stack.setup( ptr , JitDeviceLayout::Scalar );
+    t_jit_stack.setup( ptr , JitDataOrder::SiteSlow );
 
     return t_jit_stack;
   }
 
 
+  template<class T>
+  class StackAllocJit
+  {
+  public:
+    static T alloc( const Shape& shape )
+    {
+      const int words = WordSize<T>::value(shape);
+      if (words == 0)
+	QDP_error_exit("StackAllocJit: zero words for Ns=%d, Nc=%d", shape.ns(), shape.nc());
+      llvm::Value * ptr = llvm_alloca( llvm_get_type< typename WordType< T >::Type_t >() , words );
+      T t( ptr , JitDataOrder::SiteSlow , NestedIndex() , shape );
+      return t;
+    }
+    static T alloc()
+    {
+      return alloc( Shape() );
+    }
+  };    
+  template<class T>
+  class StackAllocJit< WordJIT<T> >
+  {
+  public:
+    static WordJIT<T> alloc( const Shape& shape )
+    {
+      llvm::Value * ptr = llvm_alloca( llvm_get_type< typename WordType< T >::Type_t >() , 1 );
+      //QDPIO::cout << "stack alloc jit: words = " << WordSize<T>::value(shape) << std::endl;
+      WordJIT<T> t( ptr , JitDataOrder::SiteSlow , NestedIndex() );
+      return t;
+    }
+  };    
+
+  template<class T>
+  T stack_alloc_jit( const Shape& shape )
+  {
+    return StackAllocJit< T >::alloc( shape );
+  }
+  template<class T>
+  T stack_alloc_jit()
+  {
+    Shape shape;
+    return StackAllocJit< T >::alloc( shape );
+  }
+
+
+
+  
+  template<class T>
+  std::vector< T > stack_alloc_array_jit(int n)
+  {
+    std::vector<T> ret;
+    for (int i = 0 ; i < n ; ++i )
+      {
+	ret.push_back( StackAllocJit<T>::alloc() );
+      }
+    return ret;
+  }
+  
+  
+  
+  template<class T>
+  WordJIT<T> create_word(T val)
+  {
+    WordJIT<T> t( llvm_alloca( llvm_get_type< T >() , 1 ) , JitDataOrder::SiteSlow );
+    
+    t = llvm_create_value(val);
+    
+    return t;
+  }
+
+
+  template<class T>
+  WordJIT<T> create_word()
+  {
+    WordJIT<T> t( llvm_alloca( llvm_get_type< T >() , 1 ) , JitDataOrder::SiteSlow );
+    return t;
+  }
+
+
+
+
+
+
+  template<class Result, class Op, class A>
+  inline Shape unary_result_shape(const A& a)
+  {
+    // Inherit the already-evaluated child metadata.
+    Shape shape = a.shape();
+
+    // Apply exceptional changes such as Ns: 4 -> 2.
+    UnaryShapeTransform<Op,A>::apply( shape , a );
+
+    // Remove dimensions absent from Result.
+    shape = fit_shape_jit<Result>(shape);
+
+    return shape;
+  }
+
+  
+  template<class Op, class T1>
+  typename UnaryReturn<T1, Op>::Type_t
+  unary_return(T1 a)
+  {
+    using Result =
+      typename UnaryReturn<T1, Op>::Type_t;
+
+    const Shape shape =
+      unary_result_shape<Result,Op>(a);
+
+    return StackAllocJit<Result>::alloc(shape);
+  }
+
+
+  
+
+  template<class Result, class Op, class A, class B>
+  inline Shape binary_result_shape(const A& a,
+			     const B& b)
+  {
+    // QDPIO::cout << "binary_result_shape, a: " << a.shape() << "\n";
+    // QDPIO::cout << "binary_result_shape, b: " << b.shape() << "\n";
+
+    // Combine the already-evaluated child metadata.
+    Shape shape = merge_operand_shapes(a, b);
+
+    //QDPIO::cout << "binary_result_shape, after merge: " << shape << "\n";
+
+    // Apply exceptional operation-specific changes.
+    BinaryShapeTransform<Op,A,B>::apply( shape, a, b);
+
+    //QDPIO::cout << "binary_result_shape, after transform: " << shape << "\n";
+
+    // Remove dimensions absent from Result.
+    shape = fit_shape_jit<Result>(shape);
+
+    //QDPIO::cout << "binary_result_shape, after restrict: " << shape << "\n";
+
+    return shape;
+  }
+
+
+  
+  template<class Op, class T1, class T2>
+  typename BinaryReturn<T1, T2, Op>::Type_t
+  binary_return(T1 lhs, T2 rhs)
+  {
+    using Result =
+      typename BinaryReturn<T1, T2, Op>::Type_t;
+
+    const Shape shape =
+      binary_result_shape<Result,Op>(lhs, rhs);
+
+    return StackAllocJit<Result>::alloc(shape);
+  }
+
+
+
+  template<class Result, class Op, class A, class B, class C>
+  inline Shape trinary_result_shape(const A& a,
+			      const B& b,
+			      const C& c)
+  {
+    // Combine the already-evaluated child metadata.
+    Shape shape = merge_operand_shapes(a, b, c);
+
+    // Apply exceptional operation-specific changes.
+    TrinaryShapeTransform<Op,A,B,C>::apply( shape, a, b, c);
+
+    // Remove dimensions absent from Result.
+    shape = fit_shape_jit<Result>(shape);
+
+    return shape;
+  }
+
+  
+
+  template< class Op , class T1 , class T2 , class T3 >
+  typename TrinaryReturn< T1 , T2 , T3 , Op >::Type_t trinary_return( T1 a , T2 b , T3 c )
+  {
+    using Result =
+      typename TrinaryReturn< T1, T2, T3, Op >::Type_t;
+
+    const Shape shape = trinary_result_shape<Result,Op>(a,b,c);
+
+    return StackAllocJit< Result >::alloc( shape );
+  }
+
+  
+  
+
+
+  
+  template< class Op , class T1 >
+  typename UnaryReturn< WordJIT<T1> , Op >::Type_t unary_return( WordJIT<T1> l )
+  {
+    typedef typename UnaryReturn< WordJIT<T1> , Op >::Type_t  T_;
+
+    Shape shape;
+    T_ d = StackAllocJit< T_ >::alloc(shape);
+
+    return d;
+  }
+
+  
+
+  
 
   class JitForLoop
   {
   public:
+    ~JitForLoop() { if (!closed) { QDPIO::cout << "jit loop not closed" << std::endl; QDP_abort(1);} }
     JitForLoop( int start          , int end ):           JitForLoop( llvm_create_value(start) , llvm_create_value(end) ) {}
     JitForLoop( int start          , llvm::Value*  end ): JitForLoop( llvm_create_value(start) , end ) {}
     JitForLoop( llvm::Value* start , int  end ):          JitForLoop( start , llvm_create_value(end) ) {}
     JitForLoop( llvm::Value* start , llvm::Value*  end );
-    llvm::Value * index();
+    llvm::Value * index() const;
+    JitValue jit() const;
+    void unroll_full() { full_unroll = true; }
     void end();
+    operator llvm::Value*() const { return index(); }
   private:
     llvm::BasicBlock * block_outer;
     llvm::BasicBlock * block_loop_cond;
     llvm::BasicBlock * block_loop_body;
     llvm::BasicBlock * block_loop_exit;
     llvm::Value * r_i;
+    llvm::Value * r_start;
+    llvm::Value * r_end;
+    bool closed = false;
+    bool full_unroll = false;
   };
 
+
+  llvm::Value* operator+( const JitForLoop& loop , int i );
+  llvm::Value* operator-( const JitForLoop& loop , int i );
+  llvm::Value* operator*( const JitForLoop& loop , int i );
+
+  llvm::Value* operator+( int i , const JitForLoop& loop );
+  llvm::Value* operator-( int i , const JitForLoop& loop );
+  llvm::Value* operator*( int i , const JitForLoop& loop );
+
+
+  
 
   class JitForLoopPower
   {
@@ -105,6 +338,10 @@ namespace QDP {
       llvm_set_insert_point(block_true);
     }
 
+    template<class T>
+    JitIf( const WordJIT<T>& cond ): JitIf( cond.elem() ) {}
+
+    
     
     void els()
     {
@@ -175,296 +412,8 @@ namespace QDP {
 
   
 
-
-  template<class T, int N>
-  class JitStackArray
-  {
-    typedef typename JITType<  T >::Type_t T_jit;
-    typedef typename WordType< T >::Type_t W;
-    BaseJIT<T_jit,N> array;
-    llvm::Value * ptr;
-
-  public:
-    template<class C>
-    JitStackArray( const C& c )
-    {
-      if (IsWordVec<T>::value)
-	ptr = llvm_alloca( llvm_get_vectype<W>() , N * T_jit::ScalarSize_t );
-      else
-	ptr = llvm_alloca( llvm_get_type<W>() , N * T_jit::ScalarSize_t );
-      
-      array.setup( ptr , JitDeviceLayout::Scalar );
-
-      for( int i = 0 ; i < N ; ++i )
-	array.arrayF(i) = c.elem( i );
-      
-    }
-
-    JitStackArray()
-    {
-      if (IsWordVec<T>::value)
-	ptr = llvm_alloca( llvm_get_vectype<W>() , N * T_jit::ScalarSize_t );
-      else
-	ptr = llvm_alloca( llvm_get_type<W>() , N * T_jit::ScalarSize_t );
-
-      array.setup( ptr , JitDeviceLayout::Scalar );
-    }
-
-    
-    T_jit elemJITvalue(llvm::Value * index)
-    {
-      return array.getJitElem(index);
-    }
-
-    T_jit elemJITint(int i)
-    {
-      return array.arrayF(i);
-    }
-
-    T elemREGvalue(llvm::Value * index)
-    {
-      return array.getRegElem(index);
-    }
-
-    T elemREGint(int i)
-    {
-      return array.getRegElem(llvm_create_value(i));
-    }
-
-  };
-
-
-
   
 
-
-
-  template<class T, int N>
-  class JitStackMatrix
-  {
-    typedef typename JITType<  T >::Type_t T_jit;
-    typedef typename WordType< T >::Type_t W;
-    BaseJIT<T_jit,N*N> array;
-    llvm::Value * ptr;
-
-  public:
-    template<class C>
-    JitStackMatrix( const C& c )
-    {
-      // QDPIO::cout << "Size = " << T_jit::ScalarSize_t << "\n";
-      // QDPIO::cout << "N    = " << N << "\n";
-
-      ptr = llvm_alloca( llvm_get_type<W>() , N * N * T_jit::ScalarSize_t );
-
-      array.setup( ptr , JitDeviceLayout::Scalar );
-
-      for( int i = 0 ; i < N ; ++i )
-	for( int j = 0 ; j < N ; ++j )
-	  array.arrayF(j+N*i) = c.elem( i , j );
-      
-    }
-
-    JitStackMatrix()
-    {
-      // QDPIO::cout << "Size = " << T_jit::ScalarSize_t << "\n";
-      // QDPIO::cout << "N    = " << N << "\n";
-
-      ptr = llvm_alloca( llvm_get_type<W>() , N * N * T_jit::ScalarSize_t );
-
-      array.setup( ptr , JitDeviceLayout::Scalar );
-    }
-
-    T_jit elemJIT(int i,int j)
-    {
-      return array.arrayF( i * N + j );
-    }
-
-    T_jit elemJIT(llvm::Value * i,llvm::Value * j)
-    {
-      return array.getJitElem(llvm_add( llvm_mul( i , llvm_create_value( N ) ) , j ));
-    }
-
-    T elemREG(llvm::Value * i,llvm::Value * j)
-    {
-      return array.getRegElem(llvm_add( llvm_mul( i , llvm_create_value( N ) ) , j ));
-    }
-    
-  };
-
-
-
-
-#if 0
-  template<class T, int N>
-  class JitSharedArray
-  {
-    typedef typename JITType<  T >::Type_t T_jit;
-    typedef typename WordType< T >::Type_t W;
-    BaseJIT<T_jit,N> array;
-
-  public:
-    template<class C>
-    JitSharedArray( const C& c )
-    {
-      // QDPIO::cout << "Size = " << T_jit::ScalarSize_t << "\n";
-      // QDPIO::cout << "N    = " << N << "\n";
-
-      llvm::Value * ptr_base = llvm_get_shared_ptr( llvm_get_type<W>() );
-      llvm::Value * ptr_adv = llvm_createGEP( ptr_base ,
-					      llvm_mul( llvm_call_special_tidx() ,
-							llvm_create_value( N * T_jit::ScalarSize_t )
-							)
-					      );
-      array.setup( ptr_adv , JitDeviceLayout::Scalar );
-
-      for( int i = 0 ; i < N ; ++i )
-	array.arrayF(i) = c.elem( i );
-      
-    }
-
-    JitSharedArray()
-    {
-      // QDPIO::cout << "Size = " << T_jit::ScalarSize_t << "\n";
-      // QDPIO::cout << "N    = " << N << "\n";
-
-      llvm::Value * ptr_base = llvm_get_shared_ptr( llvm_get_type<W>() );
-      llvm::Value * ptr_adv = llvm_createGEP( ptr_base ,
-					      llvm_mul( llvm_call_special_tidx() ,
-							llvm_create_value( N * T_jit::ScalarSize_t )
-							)
-					      );
-      array.setup( ptr_adv , JitDeviceLayout::Scalar );
-    }
-
-    
-    T_jit elemJIT(int i)
-    {
-      return array.arrayF(i);
-    }
-
-    T_jit elemJIT(llvm::Value * index)
-    {
-      return array.getJitElem(index);
-    }
-
-    T elemREG(llvm::Value * index)
-    {
-      return array.getRegElem(index);
-    }
-  };
-
-  
-
-
-  template<class T, int N>
-  class JitSharedMatrix
-  {
-    typedef typename JITType<  T >::Type_t T_jit;
-    typedef typename WordType< T >::Type_t W;
-    BaseJIT<T_jit,N*N> array;
-
-  public:
-    template<class C>
-    JitSharedMatrix( const C& c )
-    {
-      // QDPIO::cout << "Size = " << T_jit::ScalarSize_t << "\n";
-      // QDPIO::cout << "N    = " << N << "\n";
-
-      llvm::Value * ptr_base = llvm_get_shared_ptr( llvm_get_type<W>() );
-
-      llvm::Value * ptr_adv = llvm_createGEP( ptr_base ,
-					      llvm_mul( llvm_call_special_tidx() ,
-							llvm_create_value( N * N * T_jit::ScalarSize_t )
-							)
-					      );
-      
-      array.setup( ptr_adv , JitDeviceLayout::Scalar );
-
-      for( int i = 0 ; i < N ; ++i )
-	for( int j = 0 ; j < N ; ++j )
-	  array.arrayF( j + N * i ) = c.elem( i , j );
-      
-    }
-
-    JitSharedMatrix()
-    {
-      // QDPIO::cout << "Size = " << T_jit::ScalarSize_t << "\n";
-      // QDPIO::cout << "N    = " << N << "\n";
-
-      llvm::Value * ptr_base = llvm_get_shared_ptr( llvm_get_type<W>() );
-      
-      llvm::Value * ptr_adv = llvm_createGEP( ptr_base ,
-					      llvm_mul( llvm_call_special_tidx() ,
-							llvm_create_value( N * N * T_jit::ScalarSize_t )
-							)
-					      );
-      
-      array.setup( ptr_adv , JitDeviceLayout::Scalar );
-    }
-
-    
-    T_jit elemJIT(int i,int j)
-    {
-      return array.arrayF( i * N + j );
-    }
-
-    T_jit elemJIT(llvm::Value * i,llvm::Value * j)
-    {
-      return array.getJitElem(llvm_add( llvm_mul( i , llvm_create_value( N ) ) , j ));
-    }
-
-    T elemREG(llvm::Value * i,llvm::Value * j)
-    {
-      return array.getRegElem(llvm_add( llvm_mul( i , llvm_create_value( N ) ) , j ));
-    }
-
-    
-  };
-#endif
-  
-
-  class WorkgroupGuard
-  {
-    ParamRef p_th_count;
-  public:
-    WorkgroupGuard()
-    {
-#if defined (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_L0)
-      p_th_count = llvm_add_param<int>();
-#endif
-    }
-    void check( llvm::Value* r_idx )
-    {
-#if defined (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_L0)
-      llvm::Value * r_th_count     = llvm_derefParam( p_th_count );
-      llvm_cond_exit( llvm_ge( r_idx , r_th_count ) );
-#endif
-    }
-  };
-
-
-  class WorkgroupGuardExec
-  {
-#if defined (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_L0)
-    JitParam jit_th_count;
-#endif
-  public:
-#if defined (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_L0)
-    WorkgroupGuardExec( int th_count ): jit_th_count( QDP_get_global_cache().addJitParamInt( th_count ) )
-    {
-    }
-#else
-    WorkgroupGuardExec( int th_count )
-    {
-    }
-#endif
-    void check(std::vector<QDPCache::ArgKey>& ids)
-    {
-#if defined (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_L0)
-      ids.push_back( jit_th_count.get_id() );
-#endif
-    }
-  };
   
 
   llvm::Value* jit_ternary( llvm::Value* cond , llvm::Value* val_true , llvm::Value* val_false );
@@ -493,6 +442,133 @@ namespace QDP {
 
   };
 
+
+  template<class T, class C> 
+  Shape shape_of(const QDPType< T , C >& rhs)
+  {
+    return rhs.shape();
+  }
+
+
+  
+  template<class RHS, class T1>
+  Shape shape_of(const QDPExpr<RHS, OLattice<T1> >& rhs)
+  {
+    DummyJitLeaf jitleaf;
+
+    Shape shape = forEach( rhs , jitleaf , OpEvalShape() ).shape();
+
+    return shape;
+  }
+
+  
+  template<class RHS, class T1>
+  Shape shape_of(const QDPExpr<RHS, OScalar<T1> >& rhs)
+  {
+    DummyJitLeaf jitleaf;
+
+    Shape shape = forEach( rhs , jitleaf , OpEvalShape() ).shape();
+
+    return shape;
+  }
+
+
+
+  template<class T, class C>
+  bool shape_accepts_rhs(const Shape& lhs, const QDPType< T , C >& rhs)
+  {
+    return shape_accepts_jit<typename JITType<T>::Type_t>(lhs, rhs.shape());
+  }
+
+  template<class RHS, class T1>
+  bool shape_accepts_rhs(const Shape& lhs, const QDPExpr<RHS, OLattice<T1> >& rhs)
+  {
+    return shape_accepts_jit<typename JITType<T1>::Type_t>(lhs, shape_of(rhs));
+  }
+
+  template<class RHS, class T1>
+  bool shape_accepts_rhs(const Shape& lhs, const QDPExpr<RHS, OScalar<T1> >& rhs)
+  {
+    return shape_accepts_jit<typename JITType<T1>::Type_t>(lhs, shape_of(rhs));
+  }
+
+  template<class RHS>
+  void check_shape_accepts_rhs(const char* who, const Shape& lhs, const RHS& rhs)
+  {
+    if (!shape_accepts_rhs(lhs, rhs))
+      incompatible_shapes_exit(who, lhs, shape_of(rhs));
+  }
+
+
+
+  
+
+  JitValue operator+( const JitValue& l , const JitValue& r );
+  JitValue operator-( const JitValue& l , const JitValue& r );
+  JitValue operator*( const JitValue& l , const JitValue& r );
+  JitValue operator/( const JitValue& l , const JitValue& r );
+  JitValue operator%( const JitValue& l , const JitValue& r );
+
+  
+  template<Arithmetic A>
+  JitValue operator+( A l , const JitValue& r )
+  {
+    return JitValue(llvm_create_value(l)) + r;
+  }
+
+  template<Arithmetic A>
+  JitValue operator+( const JitValue& l , A r )
+  {
+    return l + JitValue(llvm_create_value(r));
+  }
+
+  template<Arithmetic A>
+  JitValue operator-( A l , const JitValue& r )
+  {
+    return JitValue(llvm_create_value(l)) - r;
+  }
+
+  template<Arithmetic A>
+  JitValue operator-( const JitValue& l , A r )
+  {
+    return l - JitValue(llvm_create_value(r));
+  }
+
+  template<Arithmetic A>
+  JitValue operator*( A l , const JitValue& r )
+  {
+    return JitValue(llvm_create_value(l)) * r;
+  }
+
+  template<Arithmetic A>
+  JitValue operator*( const JitValue& l , A r )
+  {
+    return l * JitValue(llvm_create_value(r));
+  }
+
+  template<Arithmetic A>
+  JitValue operator/( A l , const JitValue& r )
+  {
+    return JitValue(llvm_create_value(l)) / r;
+  }
+
+  template<Arithmetic A>
+  JitValue operator/( const JitValue& l , A r )
+  {
+    return l / JitValue(llvm_create_value(r));
+  }
+  
+  template<Arithmetic A>
+  JitValue operator%( A l , const JitValue& r )
+  {
+    return JitValue(llvm_create_value(l)) % r;
+  }
+
+  template<Arithmetic A>
+  JitValue operator%( const JitValue& l , A r )
+  {
+    return l % JitValue(llvm_create_value(r));
+  }
   
 
 } // namespace

@@ -33,12 +33,15 @@ int main(int argc, char *argv[])
   Layout::create();
   XMLFileWriter xml("t_cugauge.xml");
 
+
   // Do some wonderful and amazing things - impress your friends
   multi1d<LatticeColorMatrix> u(Nd);
   Double w_plaq, s_plaq, t_plaq, link;
   QDPIO::cout << "Trying to read config" << endl;
   XMLReader gauge_xml;
   readArchiv(gauge_xml, u, "test_lattice");
+#if 0
+
 
   QDPIO::cout << "Dump the gauge xml" << endl;
   xml << gauge_xml;
@@ -52,5 +55,6 @@ int main(int argc, char *argv[])
   // Possibly shutdown the machine
   QDP_finalize();
 
-  exit(0);
+  //exit(0);
+#endif
 }

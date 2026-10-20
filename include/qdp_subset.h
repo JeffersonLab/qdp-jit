@@ -1,190 +1,171 @@
-// -*- C++ -*-
-/*! @file
- * @brief Sets and subsets
- */
-
 #ifndef QDP_SUBSET_H
 #define QDP_SUBSET_H
 
+
 namespace QDP {
 
-/*! @defgroup subsets Sets and Subsets
- *
- * Sets are the objects that facilitate colorings of the lattice.
- * Subsets are groups of sites that are all of one color.
- * Subsets (and in a few cases Sets) can be used to restrict operations
- * to only a particular coloring of the lattice.
- *
- * @{
- */
-
-//-----------------------------------------------------------------------
-//! SetMap
 class SetFunc
 {
 public:
-  // Virtual destructor to stop compiler warnings - no cleanup needed
   virtual ~SetFunc() {}
   virtual int operator() (const multi1d<int>& coordinate) const = 0;
   virtual int numSubsets() const = 0;
 };
 
-//-----------------------------------------------------------------------
-// Forward declaration
 class Set;
 
-//-----------------------------------------------------------------------
-//! Subsets - controls how lattices are looped
 class Subset 
 {
+  friend class Set;
 public:
-  //! There can be an empty constructor
   Subset();
-
-  //! Copy constructor
   Subset(const Subset& s);
-
-
-  // Simple constructor
   void make(const Subset& s);
-
-  int getIdSiteTable() const {
-    return *idSiteTable;
+  int getIdSiteTable(LatticeLayout layout) const
+  {
+    return *table( layout.index() , "getIdSiteTable" ).idSiteTable;
   }
+  int getIdSiteTable() const { return getIdSiteTable( Layout::current() ); }
 
-  int getIdMemberTable() const {
-    return *idMemberTable;
-  }
-
-  //! The = operator
   Subset& operator=(const Subset& s);
-
-  //! Access the coloring for this subset
   int color() const {return sub_index;}
 
-  multi1d<bool>& getIsElement() const       { return *membertable; }
-  bool           isElement(int index) const { return (*membertable)[index]; }
+  multi1d<bool>& getIsElement(LatticeLayout layout) const
+  {
+    return *table( layout.index() , "getIsElement" ).membertable;
+  }
+  multi1d<bool>& getIsElement() const { return getIsElement( Layout::current() ); }
+
+  bool isElement(LatticeLayout layout, int index) const
+  {
+    return (*table( layout.index() , "isElement" ).membertable)[index];
+  }
+  bool isElement(int index) const { return isElement( Layout::current() , index ); }
 
   void setId(int _id) { id = _id; }
   int getId() const { return id; }
 
+  const multi1d<int>& siteTable(LatticeLayout layout) const
+  {
+    return *table( layout.index() , "siteTable" ).sitetable;
+  }
+  const multi1d<int>& siteTable() const { return siteTable( Layout::current() ); }
+
+  int numSiteTable(LatticeLayout layout) const
+  {
+    return table( layout.index() , "numSiteTable" ).sitetable->size();
+  }
+  int numSiteTable() const { return numSiteTable( Layout::current() ); }
+
+  const Set& getSet() const
+  {
+     return *set;
+  }
+
+
+  std::pair<int,int> getIndexPair() const;
+  
 
 protected:
-  // Simple constructor
-  void make(bool rep, int start, int end, multi1d<int>* ind, int* ind_id, int cb, Set* set, multi1d<bool>* memb, int* memb_id , int id );
+  void make(int layout_ref, multi1d<int>* ind, int* ind_id, int cb, Set* set, multi1d<bool>* memb );
 
 private:
-  bool ordRep;
-  int startSite;
-  int endSite;
+  struct subset_t;
+
+  const subset_t& table( int ref , const char* m ) const
+  {
+    auto it = layouts->find( ref );
+    if ( it == layouts->end() )
+      {
+	QDPIO::cerr << "Subset " << m << ": no site tables for layout " << ref << std::endl;
+	QDP_abort(1);
+      }
+    return it->second;
+  }
+
+  
+  struct subset_t
+  {
+    multi1d<int>* sitetable;
+    int* idSiteTable;
+    multi1d<bool>* membertable;
+  };
+
+  std::shared_ptr< std::map< int , subset_t > > layouts;
+  
+  Set *set;
   int sub_index;
 
-  //! Site lookup table
-  multi1d<int>* sitetable;
-  int* idSiteTable;
-
-  //! Original set
-  Set *set;
-
-  // Constant time to know whether linear index in this subset
-  multi1d<bool>* membertable;
-  int* idMemberTable;
-
-  int id; // masterset
-  
-public:
-  inline bool hasOrderedRep() const {return ordRep;}
-  inline int start() const {return startSite;}
-  inline int end() const {return endSite;}
-
-  const multi1d<int>& siteTable() const {return *sitetable;}
-  inline int numSiteTable() const {return sitetable->size();}
-
-  //! The super-set of this subset
-  const Set& getSet() const { return *set; }
-
-  friend class Set;
+  int id;
 };
 
 
-//-----------------------------------------------------------------------
-//! Set - collection of subsets controlling which sites are involved in an operation
 class Set 
 {
 public:
-  //! There can be an empty constructor
   Set();
-
-  //! Constructor from a function object
   Set(const SetFunc& fn);
-
-  //! Constructor from a function object
   void make(const SetFunc& fn);
-
-  //! Index operator selects a subset from a set
   const Subset& operator[](int subset_index) const {return sub[subset_index];}
         Subset& operator[](int subset_index)       {return sub[subset_index];}
-
-  //! Return number of subsets
   int numSubsets() const {return sub.size();}
-
-  //! Destructor for a set
   ~Set();
-
-  //! The = operator
-  Set& operator=(const Set& s);
-
   void signOffTables();
 
+  Set & operator=(const Set&) = delete;
+  Set(const Set&) = delete;
 
-protected:
-  //! A set is composed of an array of subsets
-  multi1d<Subset> sub;
-
-  //! Index or color array of lattice
-  multi1d<int> lat_color;
-
-  //! Array of sitetable arrays
-  multi1d<multi1d<int> > sitetables;
-
-  //! Array of sitetable arrays
-  multi1d<multi1d<bool> > membertables;
-
-  multi1d<int> idSiteTable;
-  multi1d<int> idMemberTable;
+  bool layout_done( int ref ) const
+  {
+    for(auto const& it: lat_color )
+      {
+	if ( it.first == ref )
+	  return true;
+      }
+    return false;
+  }
   
-  // Cache registered
+  int getIndex() const
+  {
+    assert(set_index >= 0);
+    return set_index;
+  }
+
+  
+protected:
+  multi1d<Subset> sub;
+  std::map< int , multi1d<int> > lat_color;
+  std::map< int , multi1d<multi1d<int> > > sitetables;
+  std::map< int , multi1d<multi1d<bool> > > membertables;
+  std::map< int , multi1d<int> > idSiteTable;
   bool registered;
-
-
+  static int set_counter;
+  int set_index = -1;
+  
 public:
-  //! The coloring of the lattice sites
-  const multi1d<int>& latticeColoring() const {return lat_color;}
+  const multi1d<int>& latticeColoring(LatticeLayout layout) const
+  {
+    if ( lat_color.count( layout.index() ) < 1 )
+      {
+	QDPIO::cout << "Set::latticeColoring() ref (" << layout.index() << ") not initialized." << std::endl;
+	sleep(1);
+	QDP_abort(1);
+      }
+
+    return lat_color.at(layout.index());
+  }
 };
 
 
 
-//-----------------------------------------------------------------------
-//! Default all subset
+
 extern Subset all;
-
-//! Experimental 3d checkerboarding for temp_precond
 extern Set rb3;
-  
-//! Default 2-checkerboard (red/black) subset
 extern Set rb;
-
-//! Default 2^{Nd+1}-checkerboard subset. Useful for pure gauge updating.
 extern Set mcb;
-
-//! Default even subset
 extern Subset even;
-
-//! Default odd subset
 extern Subset odd;
 
-
-/** @} */ // end of group subsetss
 
 } // namespace QDP
 

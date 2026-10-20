@@ -1,162 +1,251 @@
-#ifndef QDP_PRIMJITBASE
-#define QDP_PRIMJITBASE
+#ifndef QDP_BASEJIT_H
+#define QDP_BASEJIT_H
 
 namespace QDP {
 
-  template<class T, int N >
-  class BaseJIT {
-
-    std::array<T,N> F;
-    bool setup_m;
-
-    llvm::Value *       m_base;
-    IndexDomainVector partial_offset;
-    JitDeviceLayout   layout;
+  template<class T>
+  class BaseJIT
+  {
+    llvm::Value *     m_base = nullptr;
+    NestedIndex index;
+    JitDataFormat data_format_;
+    Shape                shape_;
 
   public:
-    enum { ThisSize = N };                 // Size in T's
-    enum { ScalarSize_t = static_cast<int>(ThisSize) * static_cast<int>(T::ScalarSize_t)}; // Size in registers
 
-    
-    //Default constructor
-    BaseJIT(): setup_m(false)
+    BaseJIT()    {  }
+
+    BaseJIT(const BaseJIT& rhs): m_base(rhs.m_base), index(rhs.index), data_format_(rhs.data_format_), shape_(rhs.shape_)
     {
     }
 
-    
-    //Copy constructor
-    BaseJIT(const BaseJIT& rhs): partial_offset(rhs.partial_offset),
-				 setup_m(rhs.setup_m),      
-				 m_base(rhs.m_base),
-				 layout(rhs.layout),
-				 F(rhs.F)
-    {
-    }
+
+    BaseJIT( Shape shape ) : shape_(shape) {}
 
     
-    //Copy assignment
-    BaseJIT& operator=(const BaseJIT& rhs)
-    {
-      if(&rhs == this)
-	return *this;
-      
-      for ( int i = 0 ; i < N ; ++i )
-	F[i] = rhs.F[i];
-      partial_offset = rhs.partial_offset;
-      setup_m = rhs.setup_m;
-      m_base  = rhs.m_base;
-      layout  = rhs.layout;
-      return *this;
-    }
-
-
-    
-    T& arrayF(int i)
-    {
-      assert(setup_m);
-      return F[i];
-    }
-    
-    const T& arrayF(int i) const
-    {
-      assert(setup_m);
-      return F[i];
-    }
+    BaseJIT( llvm::Value * base , JitDataFormat fmt , NestedIndex args , Shape shape ) : m_base(base), index(args) , data_format_(fmt), shape_(shape) {}
 
 
 
-    void setup( llvm::Value * base , JitDeviceLayout lay , IndexDomainVector args = IndexDomainVector() )
+    void setup( llvm::Value * base , JitDataFormat fmt , NestedIndex args )
     {
       m_base = base;
-      layout = lay;
-      partial_offset = args;
+      data_format_ = fmt;
+      index = args;
+    }
+
+    
+    void setup( llvm::Value * base , JitDataFormat fmt , NestedIndex args , Shape shape )
+    {
+      m_base = base;
+      data_format_ = fmt;
+      index = args;
+      shape_ = shape;
+    }
+
+    virtual void post_setup() {}
+
+    virtual int this_size() const = 0;
+
+    virtual int getN() const = 0;
+
+
+    
+    int words( Shape shape )
+    {
+      shape_ = shape;
+      post_setup();
       
-      for (int i = 0 ; i < N ; i++ )
-	{
-	  IndexDomainVector args_curry = args;
-	  args_curry.push_back( make_pair( N , llvm_create_value(i) ) );
-	  F[i].setup( m_base , lay , args_curry );
-	}
-      
-      setup_m = true;
+      return this_size() * elem(0).words();
     }
 
 
-    T getJitElem( llvm::Value * index ) const
+    int words() const
     {
-      if (!setup_m)
-	{
-	  QDPIO::cerr << "qdp-jit internal error: BaseJIT::getJitElem elem not set up.\n";
-	  QDP_abort(1);
-	}
-      T ret;
-      IndexDomainVector args = partial_offset;
-      args.push_back( make_pair( N , index ) );
-      ret.setup( m_base , layout , args );
-      return ret;
+      return this_size() * elem(0).words();
     }
-
-
-    T getJitElem() const
+    
+    
+    void setup( const T& rhs )
     {
-      if (!setup_m)
-	{
-	  QDPIO::cerr << "qdp-jit internal error: BaseJIT::getJitElem elem not set up.\n";
-	  QDP_abort(1);
-	}
-      T ret;
-      IndexDomainVector args = partial_offset;
-      args.push_back( make_pair( N , llvm_create_value(0) ) );
-      ret.setup( m_base , layout , args );
-      return ret;
-    }
-
-
-    typename REGType<T>::Type_t getRegElem( llvm::Value * index ) const
-    {
-      if (!setup_m)
-	{
-	  QDPIO::cerr << "qdp-jit internal error: BaseJIT::getRegElem(index) elem not set up.\n";
-	  QDP_abort(1);
-	}
-      T jit;
-      IndexDomainVector args = partial_offset;
-      args.push_back( make_pair( N , index ) );
-      jit.setup( m_base , layout , args );
-      typename REGType<T>::Type_t ret_reg;
-      ret_reg.setup( jit );
-      return ret_reg;
-    }
-
-
-
-    typename REGType<T>::Type_t getRegElem() const
-    {
-      if (!setup_m)
-	{
-	  QDPIO::cerr << "qdp-jit internal error: BaseJIT::getRegElem() elem not set up.\n";
-	  QDP_abort(1);
-	}
-      if (N != 1)
-	{
-	  QDPIO::cout << "qdp-jit internal error: BaseJIT::getRegElem() not size 1.\n";
-	  QDP_abort(1);
-	}
-      T jit;
-      IndexDomainVector args = partial_offset;
-      args.push_back( make_pair( N , llvm_create_value(0) ) );
-      jit.setup( m_base , layout , args );
-      typename REGType<T>::Type_t ret_reg;
-      ret_reg.setup( jit );
-      return ret_reg;
+      m_base = rhs.get_base();
+      index = rhs.get_index();
+      data_format_ = rhs.data_format();
+      shape_ = rhs.shape();
     }
 
 
     
+
+    
+
+    llvm::Value *     get_base() const { return m_base; }
+    NestedIndex get_index() const { return index; }
+    JitDataFormat data_format() const { return data_format_; }
+    Shape shape() const { return shape_; }
+
+    
+    
+    T elem() const
+    {
+      NestedIndex idv(index);
+      T F( m_base , data_format_ , idv , shape_ );
+      return F;
+    }
+
+    
+    T elem(llvm::Value* i) const
+    {
+      NestedIndex idv(index);
+      idv.push_back( llvm_create_value(getN()) , i );
+      T F( m_base , data_format_ , idv , shape_ );
+      return F;
+    }
+
+    
+    T elem(int i) const
+    {
+      NestedIndex idv(index);
+      idv.push_back( llvm_create_value(getN()) , llvm_create_value(i) );
+      T F( m_base , data_format_ , idv , shape_ );
+      return F;
+    }
+
+    
+    T elem( llvm::Value* i , llvm::Value* j ) const
+    {
+      NestedIndex idv(index);
+      idv.push_back( llvm_create_value(this_size()) , llvm_add( j , llvm_mul( llvm_create_value( getN() ) , i ) ) );
+      T F( m_base , data_format_ , idv , shape_ );
+      return F;
+    }
+    
+    
+    T elem( int i , llvm::Value* j ) const
+    {
+      NestedIndex idv(index);
+      idv.push_back( llvm_create_value(this_size()) , llvm_add( j , llvm_mul( llvm_create_value( getN() ) , llvm_create_value(i) ) ) );
+      T F( m_base , data_format_ , idv , shape_ );
+      return F;
+    }
+
+    
+    T elem( llvm::Value* i , int j ) const
+    {
+      NestedIndex idv(index);
+      idv.push_back( llvm_create_value(this_size()) , llvm_add( llvm_create_value(j) , llvm_mul( llvm_create_value( getN() ) , i ) ) );
+      T F( m_base , data_format_ , idv , shape_ );
+      return F;
+    }
+    
+
+    T elem( int i , int j ) const
+    {
+      NestedIndex idv(index);
+      idv.push_back( llvm_create_value(this_size()) , llvm_add( llvm_create_value(j) , llvm_mul( llvm_create_value(getN()) , llvm_create_value(i) ) ) );
+      T F( m_base , data_format_ , idv , shape_ );
+      return F;
+    }
+
+    
+    T real() const
+    {
+      NestedIndex idv(index);
+      idv.push_back( llvm_create_value(this_size()) , llvm_create_value(0) );
+      T F( m_base , data_format_ , idv , shape_ );
+      return F;
+    }
+
+    
+    T imag() const
+    {
+      NestedIndex idv(index);
+      idv.push_back( llvm_create_value(this_size()) , llvm_create_value(1) );
+      T F( m_base , data_format_ , idv , shape_ );
+      return F;
+    }
+
   };
 
 
-  
+
+
+
+  template<class T>
+  class BaseJIT< WordJIT<T> >
+  {
+    llvm::Value *     m_base;
+    NestedIndex index;
+    JitDataFormat data_format_;
+    
+  public:
+    BaseJIT() {}
+
+    BaseJIT( llvm::Value * base , JitDataFormat fmt , NestedIndex args ) : m_base(base), index(args) , data_format_(fmt) {}
+
+    Shape shape() const { return Shape(); }
+
+    void setup( WordJIT<T> rhs )
+    {
+      m_base = rhs.get_base();
+      index = rhs.get_index();
+      data_format_ = rhs.data_format();
+    }
+
+
+    void setup( llvm::Value * base , JitDataFormat fmt , NestedIndex args , Shape shape )
+    {
+      m_base = base;
+      data_format_ = fmt;
+      index = args;
+    }
+
+    
+    void setup( llvm::Value * base , JitDataFormat fmt , NestedIndex args )
+    {
+      m_base = base;
+      data_format_ = fmt;
+      index = args;
+    }
+
+    
+    void setup( llvm::Value * base , JitDataFormat fmt )
+    {
+      m_base = base;
+      data_format_ = fmt;
+    }
+
+
+    llvm::Value*      get_base() const { return m_base; }
+    NestedIndex get_index() const { return index; }
+    JitDataFormat data_format() const { return data_format_; }
+
+    
+    int words() const
+    {
+      return getN();
+    }
+    
+    int words( Shape shape )
+    {
+      return getN();
+    }
+
+    
+    
+    virtual int getN() const = 0;
+
+
+    WordJIT<T> elem( int i ) const
+    {
+      NestedIndex idv(index);
+      idv.push_back( llvm_create_value(getN()) , llvm_create_value(i) );
+      WordJIT<T> F( m_base , data_format_ , idv );
+      return F;
+    }
+
+  };
+
   
   
 }

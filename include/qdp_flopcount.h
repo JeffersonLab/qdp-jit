@@ -1,12 +1,11 @@
-// -*- C++ -*-
+#ifndef QDP_FLOPCOUNT_H
+#define QDP_FLOPCOUNT_H
+
 /*! @file
  * @brief Flop counters
  *
  * Flop counters
  */
-
-#ifndef QDP_FLOPCOUNT_H
-#define QDP_FLOPCOUNT_H
 
 namespace QDP
 {

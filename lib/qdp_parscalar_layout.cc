@@ -22,6 +22,21 @@
 namespace QDP 
 {
 
+#if 1
+  namespace
+  {
+    template<class T>
+    inline
+    StandardOutputStream& operator<<(StandardOutputStream& s, const multi1d<T>& d)
+    {
+      for(int i=0; i < d.size(); ++i)
+	s << d[i] << " ";
+      return s;
+    }
+  }
+#endif
+
+#if 0
 //-----------------------------------------------------------------------------
 // IO routine solely for debugging. Only defined here
   template<class T>
@@ -32,16 +47,35 @@ namespace QDP
 
     return s;
   }
+#endif
 
 
 
+  bool LayoutData::qmp_layout_done = false;
 
+  namespace Layout {
 
+    bool fits_node_grid( const multi1d<int>& nrow )
+    {
+      if (nrow.size() != Nd)
+	return false;
+
+      const multi1d<int> min_dim = LayoutData::minimalLayoutMapping();
+      const int* nodes = LayoutData::qmp_layout_done ? QMP_get_logical_dimensions() : nullptr;
+
+      for(int i=0; i < Nd; ++i)
+	{
+	  const int n = nodes ? nodes[i] : 1;
+	  if (nrow[i] <= 0 || nrow[i] % n != 0)
+	    return false;
+	  if ((nrow[i] / n) % min_dim[i] != 0)
+	    return false;
+	}
+      return true;
+    }
+  }
   
-
 //-----------------------------------------------------------------------------
-  namespace Layout
-  {
     //-----------------------------------------------------
     //! Local data specific to all architectures
     /*! 
@@ -49,97 +83,57 @@ namespace QDP
      * that subsequent groupings of namespaces can not just add onto the
      * current namespace.
      */
-    struct LocalLayout_t
-    {
-      //! Total lattice volume
-      size_t vol;
-
-      //! Lattice size
-      multi1d<int> nrow;
-
-      //! Subgrid lattice volume
-      int subgrid_vol;
-
-      //! Subgrid lattice size
-      multi1d<int> subgrid_nrow;
-
-      //! Logical node coordinates
-      multi1d<int> logical_coord;
-
-      //! Logical system size
-      multi1d<int> logical_size;
-
-      //! Node rank
-      int node_rank;
-
-      //! Total number of nodes
-      int num_nodes;
-
-	  bool iogrid_defined;
-      int  num_iogrid;
-	  multi1d<int> iogrid;
-
-      bool initialized = false;
-    } _layout;
 
 
     //-----------------------------------------------------
     // Functions
 
     //! Layout initialized ?
-    bool initialized() {return _layout.initialized;}
+    bool LayoutData::initialized() {return _initialized;}
     
     //! Main destruction routine
-    void destroy() {}
+    void LayoutData::destroy() {}
 
     //! Set virtual grid (problem grid) lattice size
-    void setLattSize(const multi1d<int>& nrows) {_layout.nrow = nrows;}
-
-    //! Set SMP flag -- true if using smp/multiprocessor mode on a node
-    /*! For now, this is ignored */
-    void setSMPFlag(bool flag) {}
-
-    //! Set number of processors in a multi-threaded implementation
-    /*! For now, this is ignored */
-    void setNumProc(int N) {}
+    void LayoutData::setLattSize(const multi1d<int>& nrows) {nrow = nrows; }
 
     //! Virtual grid (problem grid) lattice size
-    const multi1d<int>& lattSize() {return _layout.nrow;}
+    const multi1d<int>& LayoutData::lattSize() {return nrow;}
 
     //! Total lattice volume
-    size_t vol() {return _layout.vol;}
+    size_t LayoutData::vol() {return _vol;}
 
     //! Subgrid lattice volume
-    int sitesOnNode() {return _layout.subgrid_vol;}
+    int LayoutData::sitesOnNode() {return subgrid_vol;}
 
     //! Returns whether this is the primary node
-    bool primaryNode() {return (_layout.node_rank == 0) ? true : false;}
+    bool LayoutData::primaryNode() {return (node_rank == 0) ? true : false;}
 
     //! Subgrid (grid on each node) lattice size
-    const multi1d<int>& subgridLattSize() {return _layout.subgrid_nrow;}
+    const multi1d<int>& LayoutData::subgridLattSize() {return subgrid_nrow;}
 
     //! Returns the node number of this node
-    int nodeNumber() {return _layout.node_rank;}
+    int LayoutData::nodeNumber() {return node_rank;}
 
     //! Returns the number of nodes
-    int numNodes() {return _layout.num_nodes;}
+    int LayoutData::numNodes() {return num_nodes;}
 
     //! Returns the logical node coordinates for this node
-    const multi1d<int>& nodeCoord() {return _layout.logical_coord;}
+    const multi1d<int>& LayoutData::nodeCoord() {return logical_coord;}
 
     //! Returns the logical size of this machine
-    const multi1d<int>& logicalSize() {return _layout.logical_size;}
+    const multi1d<int>& LayoutData::logicalSize() {return logical_size;}
 
     //! Returns the node number given some logical node coordinate
     /*! This is not meant to be speedy */
-    int getNodeNumberFrom(const multi1d<int>& node_coord) 
+    int LayoutData::getNodeNumberFrom(const multi1d<int>& node_coord) 
     {
       return QMP_get_node_number_from(node_coord.slice());
     }
 
     //! Returns the logical node coordinates given some node number
     /*! This is not meant to be speedy */
-    multi1d<int> getLogicalCoordFrom(int node) 
+    multi1d<int> LayoutData::getLogicalCoordFrom(int node) 
     {
       multi1d<int> node_coord(Nd);
       const int* node_crd = QMP_get_logical_coordinates_from(node);  // QMP mallocs here
@@ -155,24 +149,36 @@ namespace QDP
     }
 
     //! Return the smallest lattice size per node allowed
-    multi1d<int> minimalLayoutMapping();
+  //multi1d<int> LayoutData::minimalLayoutMapping();
 
     //! Initializer for layout
-    void init()
+    void LayoutData::init(int _pos)
     {
-      _layout.num_nodes = QMP_get_number_of_nodes();
-      _layout.node_rank = QMP_get_node_number();
+      num_nodes = QMP_get_number_of_nodes();
+      node_rank = QMP_get_node_number();
 		
-	  // Default should be current behaviour (as of 7/4/12)
-	  // No iogrid is defined -> each node is its own I/O node
-	  _layout.iogrid_defined = false;  
-	  _layout.num_iogrid = _layout.num_nodes;
+      // Default should be current behaviour (as of 7/4/12)
+      // No iogrid is defined -> each node is its own I/O node
+      iogrid_defined = false;  
+      num_iogrid = num_nodes;
+
+      pos = _pos;
     }
 
 
+    int LayoutData::ref() const
+    {
+      if ( pos < 0 )
+	{
+	  QDPIO::cout << "LayoutData::ref(), pos not initialized." << std::endl;
+	  sleep(1);
+	  QDP_abort(1);
+	}
+      return pos;
+    }
 
     //! The linearized site index for the corresponding lexicographic site
-    int linearSiteIndex(int site)
+    int LayoutData::linearSiteIndex(int site)
     { 
       multi1d<int> coord = crtesn(site, lattSize());
     
@@ -183,84 +189,84 @@ namespace QDP
 	  
 	  //! check if I/O grid is defined
 	  /*! Always defined for scalar node: it is 1x1x1x1 */
-	  bool isIOGridDefined(void) QDP_CONST 
+	  bool LayoutData::isIOGridDefined(void) 
 	  { 
-		  return _layout.iogrid_defined; 
+	    return iogrid_defined; 
 	  }
 	  
 	  //! number of I/O nodes
-	  int numIONodeGrid(void) QDP_CONST
+	  int LayoutData::numIONodeGrid(void)
 	  {
-		
-		  
-		  return _layout.num_iogrid;
-		  
+	    return num_iogrid;	  
 	  }
 	  
 	  //! Set the I/O Node grid -- satisfy interface
-	  void setIONodeGrid(const multi1d<int>& io_grid) 
+	  void LayoutData::setIONodeGrid(const multi1d<int>& io_grid) 
 	  {
-		_layout.iogrid.resize(Nd);	
+		iogrid.resize(Nd);	
 		for(int mu=0; mu < Nd; mu++) {
-		  _layout.iogrid[mu] = io_grid[mu];
+		  iogrid[mu] = io_grid[mu];
 		}
-		_layout.num_iogrid = io_grid[0];
+		num_iogrid = io_grid[0];
 		for(int mu=1; mu < Nd; mu++) { 
-		  _layout.num_iogrid *= io_grid[mu];
+		  num_iogrid *= io_grid[mu];
 		}
-		_layout.iogrid_defined = true;
+		iogrid_defined = true;
 	  }
 	  
 	  //! Get the I/O Node grid
-	  const multi1d<int>& getIONodeGrid() QDP_CONST
+	  const multi1d<int>& LayoutData::getIONodeGrid()
 	  {
-		  return _layout.iogrid;
+		  return iogrid;
 	  }
 	  
     //! Initializer for all the layout defaults
-    void initDefaults()
+    void LayoutData::initDefaults(bool verbose)
     {
-      jit_config_print();
+      if (verbose)
+	jit_config_print();
       
 #if QDP_DEBUG >= 2
       QDP_info("Create default subsets");
 #endif
 
-#if QDP_USE_VNODE_LAYOUT == 1
-      // Set vnode default
-      initVirtualNode();
-      printVirtualNodeInfo();
-#endif
-
+      if (verbose)
+	QDPIO::cout << "initDefaultSets()" << endl;
       // Default set and subsets
       initDefaultSets();
 
+      if (verbose)
+	QDPIO::cout << "initDefaultMaps()" << endl;
       // Default maps
       initDefaultMaps();
       
+      if (verbose)
+	QDPIO::cout << "initDefaultRNG()" << endl;
       // Initialize RNG
       RNG::initDefaultRNG();
+      if (verbose)
+	QDPIO::cout << "Finished init of RNG" << endl;
       
       // Set default profile level
-      setProfileLevel(getProgramProfileLevel());
+      //setProfileLevel(getProgramProfileLevel());
     }
 
 
     //! Main lattice creation routine
-    void create()
+    void LayoutData::create()
     {
       if ( ! QDP_isInitialized() )
 	QDP_error_exit("QDP is not initialized");
 
-      if (_layout.nrow.size() != Nd)
+      if (nrow.size() != Nd)
 	QDP_error_exit("dimension of lattice size not the same as the default");
 
-      _layout.vol=1;
+      _vol=1;
       for(int i=0; i < Nd; ++i) 
-	_layout.vol *= _layout.nrow[i];
+	_vol *= nrow[i];
   
 #if QDP_DEBUG >= 2
-      QDP_info("vol=%d",_layout.vol);
+      QDP_info("vol=%d",_layout._vol);
 #endif
 
 #if QDP_DEBUG >= 2
@@ -270,90 +276,115 @@ namespace QDP
       // Simple check - we insist here that the total volume is divisible
       // by the number of processors. Will also insist that the problem
       // size is regular on each node
-      if (_layout.vol % numNodes() != 0)
-	QDP_error_exit("Layout::create - problem size not divisible by number of processors");
+      if (_vol % numNodes() != 0)
+	QDP_error_exit("LayoutData::create - problem size not divisible by number of processors");
 
     
       // Return the smallest lattice size per node allowed
       multi1d<int> min_dim = minimalLayoutMapping();
 
+      //QDPIO::cout << "minimal layout mapping = " << min_dim << std::endl;
+      
       // Another sanity check - if the specified lattice size is not a multiple
       // of the minimal size, then barf
       for(int i=0; i < Nd; ++i)
-	if (_layout.nrow[i] % min_dim[i] != 0)
-	  QDP_error_exit("Layout::create - Error: problem size not multiple of smallest size allowed for this type of layout");
+	if (nrow[i] % min_dim[i] != 0)
+	  QDP_error_exit("LayoutData::create - Error: problem size not multiple of smallest size allowed for this type of layout");
 
 
       // Now, layout the machine. Note, if the logical_machine size was set previously
       // it will be used
-      multi1d<int> nrow(Nd);
+      multi1d<int> nrow_layout(Nd);
       for(int i=0; i < Nd; ++i)
-	nrow[i] = _layout.nrow[i] / min_dim[i];
+	nrow_layout[i] = nrow[i] / min_dim[i];
 
-      int* nrow_slice=const_cast<int*>(nrow.slice());
-      QMP_layout_grid(nrow_slice, Nd);
+      const bool verbose = !qmp_layout_done || jit_config_get_debug_layout();
 
-
+      if (!qmp_layout_done)
+	{
+	  QDPIO::cout << "calling QMP_layout_grid" << std::endl;
+	  int* nrow_slice=const_cast<int*>(nrow_layout.slice());
+	  QMP_layout_grid(nrow_slice, Nd);
+	  qmp_layout_done = true;
+	}
+      else
+	{
+	  if (verbose)
+	    QDPIO::cout << "skip calling QMP_layout_grid" << std::endl;
+	}
+      
       // Pull out useful stuff
       const int* phys_size = QMP_get_logical_dimensions();
       const int* phys_coord = QMP_get_logical_coordinates();
 
-      _layout.subgrid_nrow.resize(Nd);
-      _layout.logical_coord.resize(Nd);
-      _layout.logical_size.resize(Nd);
+      if (!Layout::fits_node_grid(nrow))
+	{
+	  QDPIO::cerr << "LayoutData::create - problem size " << nrow << "does not fit the node grid";
+	  for(int i=0; i < Nd; ++i)
+	    QDPIO::cerr << " " << phys_size[i];
+	  QDPIO::cerr << " with a subgrid that is a multiple of " << min_dim << std::endl;
+	  QDP_abort(1);
+	}
 
-      _layout.subgrid_vol = 1;
+      subgrid_nrow.resize(Nd);
+      logical_coord.resize(Nd);
+      logical_size.resize(Nd);
+
+      subgrid_vol = 1;
 
       for(int i=0; i < Nd; ++i)
       {
-	_layout.logical_coord[i] = phys_coord[i];
-	_layout.logical_size[i] = phys_size[i];
-	_layout.subgrid_nrow[i] = _layout.nrow[i] / _layout.logical_size[i];
+	logical_coord[i] = phys_coord[i];
+	logical_size[i] = phys_size[i];
+	subgrid_nrow[i] = nrow[i] / logical_size[i];
 
-	_layout.subgrid_vol *= _layout.subgrid_nrow[i];
+	subgrid_vol *= subgrid_nrow[i];
       }
 
       // Diagnostics
-      QDPIO::cout << "Lattice initialized:\n";
-      QDPIO::cout << "  problem size =";
-      for(int i=0; i < Nd; ++i)
-	QDPIO::cout << " " << _layout.nrow[i];
-      QDPIO::cout << endl;
+      if (verbose)
+	{
+	  QDPIO::cout << "Lattice initialized:\n";
+	  QDPIO::cout << "  problem size =";
+	  for(int i=0; i < Nd; ++i)
+	    QDPIO::cout << " " << nrow[i];
+	  QDPIO::cout << endl;
 
-      QDPIO::cout << "  layout size =";
-      for(int i=0; i < Nd; ++i)
-	QDPIO::cout << " " << nrow[i];
-      QDPIO::cout << endl;
+	  QDPIO::cout << "  layout size =";
+	  for(int i=0; i < Nd; ++i)
+	    QDPIO::cout << " " << nrow_layout[i];
+	  QDPIO::cout << endl;
 
-      QDPIO::cout << "  logical machine size =";
-      for(int i=0; i < Nd; ++i)
-	QDPIO::cout << " " << _layout.logical_size[i];
-      QDPIO::cout << endl;
+	  QDPIO::cout << "  logical machine size =";
+	  for(int i=0; i < Nd; ++i)
+	    QDPIO::cout << " " << logical_size[i];
+	  QDPIO::cout << endl;
 
-      QDPIO::cout << "  subgrid size =";
-      for(int i=0; i < Nd; ++i)
-	QDPIO::cout << " " << _layout.subgrid_nrow[i];
-      QDPIO::cout << endl;
+	  QDPIO::cout << "  subgrid size =";
+	  for(int i=0; i < Nd; ++i)
+	    QDPIO::cout << " " << subgrid_nrow[i];
+	  QDPIO::cout << endl;
 
-      QDPIO::cout << "  total number of nodes = " << Layout::numNodes() << endl;
-      QDPIO::cout << "  total volume = " << _layout.vol << endl;
-      QDPIO::cout << "  subgrid volume = " << _layout.subgrid_vol << endl;
-      if ( _layout.iogrid_defined ) { 
-        QDPIO::cout << "  Number of IO nodes = " << _layout.num_iogrid << endl;
-        QDPIO::cout << "  IO grid size =";
-        for(int i=0; i < Nd; i++) 
- 	  QDPIO::cout << " " << _layout.iogrid[i];
-        QDPIO::cout << endl;
-      } 
+	  QDPIO::cout << "  total number of nodes = " << numNodes() << endl;
+	  QDPIO::cout << "  total volume = " << _vol << endl;
+	  QDPIO::cout << "  subgrid volume = " << subgrid_vol << endl;
+	  if ( iogrid_defined ) {
+	    QDPIO::cout << "  Number of IO nodes = " << num_iogrid << endl;
+	    QDPIO::cout << "  IO grid size =";
+	    for(int i=0; i < Nd; i++)
+	      QDPIO::cout << " " << iogrid[i];
+	    QDPIO::cout << endl;
+	  }
+	}
 
       // Sanity check - check the QMP node number functions
-      for(int node=0; node < Layout::numNodes(); ++node)
+      for(int node=0; node < numNodes(); ++node)
       { 
-	multi1d<int> coord = Layout::getLogicalCoordFrom(node);
-	int node2 = Layout::getNodeNumberFrom(coord);
+	multi1d<int> coord = getLogicalCoordFrom(node);
+	int node2 = getNodeNumberFrom(coord);
 
 	if (node != node2)
-	  QDP_error_exit("Layout::create - Layout problems, the QMP logical to physical node map functions do not work correctly with this lattice size");
+	  QDP_error_exit("LayoutData::create - Layout problems, the QMP logical to physical node map functions do not work correctly with this lattice size");
       }
 
       // Sanity check - check the layout functions make sense
@@ -378,69 +409,65 @@ namespace QDP
 		 j);
 #endif
 	if (site != j)
-	  QDP_error_exit("Layout::create - Layout problems, the layout functions do not work correctly with this lattice size");
+	  QDP_error_exit("LayoutData::create - Layout problems, the layout functions do not work correctly with this lattice size");
       }
 #endif
       // Initialize various defaults
-      initDefaults();
+      initDefaults(verbose);
 
       // Set layout init to 'true'
-      _layout.initialized = true;
+      _initialized = true;
       
-      QDPIO::cout << "Finished lattice layout" << endl;
+      if (verbose)
+	QDPIO::cout << "Finished lattice layout" << endl;
 
 #if QDP_DEBUG >= 2
       QDP_info("Layout successfully initialized");
 #endif
     }
-  }
 
 
 //-----------------------------------------------------------------------------
 #if QDP_USE_LEXICO_LAYOUT == 1
 
-#warning "Using a lexicographic layout"
-
-  namespace Layout
-  {
     //! The linearized site index for the corresponding coordinate
     /*! This layout is a simple lexicographic lattice ordering */
-    int linearSiteIndex(const multi1d<int>& coord)
+    int LayoutData::linearSiteIndex(const multi1d<int>& coord)
     {
       multi1d<int> tmp_coord(Nd);
 
       for(int i=0; i < coord.size(); ++i)
-	tmp_coord[i] = coord[i] % Layout::subgridLattSize()[i];
+	tmp_coord[i] = coord[i] % LayoutData::subgridLattSize()[i];
     
-      return local_site(tmp_coord, Layout::subgridLattSize());
+      return local_site(tmp_coord, LayoutData::subgridLattSize());
     }
 
 
     //! The node number for the corresponding lattice coordinate
     /*! This layout is a simple lexicographic lattice ordering */
-    int nodeNumber(const multi1d<int>& coord)
+    int LayoutData::nodeNumber(const multi1d<int>& coord)
     {
       multi1d<int> tmp_coord(Nd);
 
       for(int i=0; i < coord.size(); ++i)
-	tmp_coord[i] = coord[i] / Layout::subgridLattSize()[i];
+	tmp_coord[i] = coord[i] / LayoutData::subgridLattSize()[i];
     
-      return Layout::getNodeNumberFrom(tmp_coord);
+      return LayoutData::getNodeNumberFrom(tmp_coord);
     }
 
 
     //! Returns the lattice site for some input node and linear index
     /*! This layout is a simple lexicographic lattice ordering */
-    multi1d<int> siteCoords(int node, int linear)
+    multi1d<int> LayoutData::siteCoords(int node, int linear)
     {
       multi1d<int> coord = getLogicalCoordFrom(node);
 
       // Get the base (origins) of the absolute lattice coord
-      coord *= Layout::subgridLattSize();
+      coord *= LayoutData::subgridLattSize();
     
       // Find the coordinate within a node and accumulate
       // This is a lexicographic ordering
-      coord += crtesn(linear, Layout::subgridLattSize());
+      coord += crtesn(linear, LayoutData::subgridLattSize());
 
       return coord;
     }
@@ -448,29 +475,25 @@ namespace QDP
 
     //! Return the smallest lattice size per node allowed
     /*! This layout is a simple lexicographic lattice ordering */
-    multi1d<int> minimalLayoutMapping()
+    multi1d<int> LayoutData::minimalLayoutMapping()
     {
       multi1d<int> dim(Nd);
       dim = 1;
 
       return dim;
     }
-  }
 
 //-----------------------------------------------------------------------------
 
 #elif QDP_USE_CB2_LAYOUT == 1
 
-#warning "Using a 2 checkerboard (red/black) layout"
 
-  namespace Layout
-  {
     //! The linearized site index for the corresponding coordinate
     /*! This layout is appropriate for a 2 checkerboard (red/black) lattice */
-    int linearSiteIndex(const multi1d<int>& coord)
+    int LayoutData::linearSiteIndex(const multi1d<int>& coord)
     {
-      int subgrid_vol_cb = Layout::sitesOnNode() >> 1;
-      multi1d<int> subgrid_cb_nrow = Layout::subgridLattSize();
+      int subgrid_vol_cb = sitesOnNode() >> 1;
+      multi1d<int> subgrid_cb_nrow = subgridLattSize();
       subgrid_cb_nrow[0] >>= 1;
 
       int cb = 0;
@@ -493,14 +516,14 @@ namespace QDP
      * but to find the nodeNumber this function resembles a simple lexicographic 
      * layout
      */
-    int nodeNumber(const multi1d<int>& coord)
+    int LayoutData::nodeNumber(const multi1d<int>& coord)
     {
       multi1d<int> tmp_coord(Nd);
 
       for(int i=0; i < coord.size(); ++i)
-	tmp_coord[i] = coord[i] / Layout::subgridLattSize()[i];
+	tmp_coord[i] = coord[i] / subgridLattSize()[i];
     
-      return Layout::getNodeNumberFrom(tmp_coord);
+      return getNodeNumberFrom(tmp_coord);
     }
 
 
@@ -509,15 +532,15 @@ namespace QDP
      * This is the inverse of the nodeNumber and linearSiteIndex functions.
      * The API requires this function to be here.
      */
-    multi1d<int> siteCoords(int node, int linearsite) // ignore node
+    multi1d<int> LayoutData::siteCoords(int node, int linearsite) // ignore node
     {
-      int subgrid_vol_cb = Layout::sitesOnNode() >> 1;
-      multi1d<int> subgrid_cb_nrow = Layout::subgridLattSize();
+      int subgrid_vol_cb = sitesOnNode() >> 1;
+      multi1d<int> subgrid_cb_nrow = subgridLattSize();
       subgrid_cb_nrow[0] >>= 1;
 
       // Get the base (origins) of the absolute lattice coord
       multi1d<int> coord = getLogicalCoordFrom(node);
-      coord *= Layout::subgridLattSize();
+      coord *= subgridLattSize();
     
       int cb = linearsite / subgrid_vol_cb;
       multi1d<int> tmp_coord = crtesn(linearsite % subgrid_vol_cb, subgrid_cb_nrow);
@@ -540,7 +563,7 @@ namespace QDP
 
     //! Return the smallest lattice size per node allowed
     /*! This layout is appropriate for a 2 checkerboard (red/black) lattice */
-    multi1d<int> minimalLayoutMapping()
+    multi1d<int> LayoutData::minimalLayoutMapping()
     {
       multi1d<int> dim(Nd);
       dim = 1;
@@ -548,22 +571,18 @@ namespace QDP
 
       return dim;
     }
-  }
 
 //-----------------------------------------------------------------------------
 
 #elif QDP_USE_CB3D_LAYOUT == 1
 
-#warning "Using a 3D checkerboard (red/black) layout"
 
-  namespace Layout
-  {
     //! The linearized site index for the corresponding coordinate
     /*! This layout is appropriate for a 2 checkerboard (red/black) lattice */
-    int linearSiteIndex(const multi1d<int>& coord)
+    int LayoutData::linearSiteIndex(const multi1d<int>& coord)
     {
-      int subgrid_vol_cb = Layout::sitesOnNode() / 2;
-      multi1d<int> subgrid_cb_nrow = Layout::subgridLattSize();
+      int subgrid_vol_cb = LayoutData::sitesOnNode() / 2;
+      multi1d<int> subgrid_cb_nrow = LayoutData::subgridLattSize();
       subgrid_cb_nrow[0] /= 2;
 
       int cb = 0;
@@ -587,14 +606,14 @@ namespace QDP
      * but to find the nodeNumber this function resembles a simple lexicographic 
      * layout
      */
-    int nodeNumber(const multi1d<int>& coord)
+    int LayoutData::nodeNumber(const multi1d<int>& coord)
     {
       multi1d<int> tmp_coord(Nd);
 
       for(int i=0; i < coord.size(); ++i)
-	tmp_coord[i] = coord[i] / Layout::subgridLattSize()[i];
+	tmp_coord[i] = coord[i] / LayoutData::subgridLattSize()[i];
     
-      return Layout::getNodeNumberFrom(tmp_coord);
+      return LayoutData::getNodeNumberFrom(tmp_coord);
     }
 
 
@@ -603,16 +622,16 @@ namespace QDP
      * This is the inverse of the nodeNumber and linearSiteIndex functions.
      * The API requires this function to be here.
      */
-    multi1d<int> siteCoords(int node, int linearsite) // ignore node
+    multi1d<int> LayoutData::siteCoords(int node, int linearsite) // ignore node
     {
-      int subgrid_vol_cb = Layout::sitesOnNode() / 2;
-      multi1d<int> subgrid_cb_nrow = Layout::subgridLattSize();
+      int subgrid_vol_cb = LayoutData::sitesOnNode() / 2;
+      multi1d<int> subgrid_cb_nrow = LayoutData::subgridLattSize();
       subgrid_cb_nrow[0] /= 2;
 
 
       // Get the base (origins) of the absolute lattice coord
       multi1d<int> coord = getLogicalCoordFrom(node);
-      coord *= Layout::subgridLattSize();
+      coord *= LayoutData::subgridLattSize();
     
       int cb = linearsite / subgrid_vol_cb;
       multi1d<int> tmp_coord = crtesn(linearsite % subgrid_vol_cb, subgrid_cb_nrow);
@@ -641,16 +660,14 @@ namespace QDP
 
     //! Return the smallest lattice size per node allowed
     /*! This layout is appropriate for a 2 checkerboard (red/black) lattice */
-    multi1d<int> minimalLayoutMapping()
+    multi1d<int> LayoutData::minimalLayoutMapping()
     {
       multi1d<int> dim(Nd);
-      multi1d<int> lsize=Layout::lattSize(); // Full lattice size;
       dim = 1;
       dim[0] = 2;       // must have multiple length 2 for cb
 
       return dim;
     }
-  }
 
 
 //-----------------------------------------------------------------------------
@@ -667,8 +684,8 @@ namespace QDP
     /*! This layout is appropriate for a 32-style checkerboard lattice */
     int linearSiteIndex(const multi1d<int>& coord)
     {
-      int subgrid_vol_cb = Layout::sitesOnNode() >> (Nd+1);
-      multi1d<int> subgrid_cb_nrow = Layout::subgridLattSize();
+      int subgrid_vol_cb = LayoutData::sitesOnNode() >> (Nd+1);
+      multi1d<int> subgrid_cb_nrow = LayoutData::subgridLattSize();
       subgrid_cb_nrow[0] >>= 2;
       for(int i=1; i < Nd; ++i) 
 	subgrid_cb_nrow[i] >>= 1;
@@ -705,9 +722,9 @@ namespace QDP
       multi1d<int> tmp_coord(Nd);
 
       for(int i=0; i < coord.size(); ++i)
-	tmp_coord[i] = coord[i] / Layout::subgridLattSize()[i];
+	tmp_coord[i] = coord[i] / LayoutData::subgridLattSize()[i];
     
-      return Layout::getNodeNumberFrom(tmp_coord);
+      return LayoutData::getNodeNumberFrom(tmp_coord);
     }
 
 
@@ -718,15 +735,15 @@ namespace QDP
      */
     multi1d<int> siteCoords(int node, int linearsite) // ignore node
     {
-      int subgrid_vol_cb = Layout::sitesOnNode() >> (Nd+1);
-      multi1d<int> subgrid_cb_nrow = Layout::subgridLattSize();
+      int subgrid_vol_cb = LayoutData::sitesOnNode() >> (Nd+1);
+      multi1d<int> subgrid_cb_nrow = LayoutData::subgridLattSize();
       subgrid_cb_nrow[0] >>= 2;
       for(int i=1; i < Nd; ++i) 
 	subgrid_cb_nrow[i] >>= 1;
 
       // Get the base (origins) of the absolute lattice coord
-      multi1d<int> coord = Layout::getLogicalCoordFrom(node);
-      coord *= Layout::subgridLattSize();
+      multi1d<int> coord = LayoutData::getLogicalCoordFrom(node);
+      coord *= LayoutData::subgridLattSize();
     
       int subl = linearsite / subgrid_vol_cb;
       multi1d<int> tmp_coord = crtesn(linearsite % subgrid_vol_cb, subgrid_cb_nrow);
@@ -765,81 +782,6 @@ namespace QDP
     }
   }
 
-#elif QDP_USE_VNODE_LAYOUT == 1
-
-#warning "Using a virtual node layout"
-
-  namespace Layout
-  {
-    int linearSiteIndex(const multi1d<int>& coord)
-    {
-      multi1d<int> local_coord(Nd);
-      multi1d<int> vnode_coord(Nd);
-      multi1d<int> vnode_site_coord(Nd);
-
-      for(int i=0; i < coord.size(); ++i)
-	local_coord[i] = coord[i] % Layout::subgridLattSize()[i];
-
-      for(int i=0; i < coord.size(); ++i)
-	vnode_coord[i] = local_coord[i] / Layout::virtualNodeSubgridLattSize()[i];
-
-      for(int i=0; i < coord.size(); ++i)
-	vnode_site_coord[i] = local_coord[i] % Layout::virtualNodeSubgridLattSize()[i];
-    
-      int inner_vnode = local_site(vnode_coord, Layout::virtualNodeGeom());
-
-      int outer_vnode = local_site(vnode_site_coord, Layout::virtualNodeSubgridLattSize());
-
-      return outer_vnode * Layout::virtualNodeNumber() + inner_vnode;
-    }
-
-
-    multi1d<int> siteCoords(int node, int linear)
-    {
-      multi1d<int> coord = Layout::getLogicalCoordFrom(node);
-
-      coord *= Layout::subgridLattSize();
-    
-      int outer_vnode  = linear / Layout::virtualNodeNumber();
-      int inner_vnode  = linear % Layout::virtualNodeNumber();
-
-      multi1d<int> vnode_coord(Nd);
-      multi1d<int> vnode_site_coord(Nd);
-
-      vnode_coord = crtesn( inner_vnode , Layout::virtualNodeGeom() );
-
-      vnode_site_coord = crtesn( outer_vnode , Layout::virtualNodeSubgridLattSize() );
-
-      coord += vnode_coord * Layout::virtualNodeSubgridLattSize();
-  
-      coord += vnode_site_coord;
-  
-      return coord;
-    }
-
-
-
-    multi1d<int> minimalLayoutMapping()
-    {
-      multi1d<int> dim(Nd);
-      dim = 1;
-      //dim[0] = 2;
-
-      return dim;
-    }
-
-
-    int nodeNumber(const multi1d<int>& coord)
-    {
-      multi1d<int> tmp_coord(Nd);
-
-      for(int i=0; i < coord.size(); ++i)
-	tmp_coord[i] = coord[i] / Layout::subgridLattSize()[i];
-    
-      return Layout::getNodeNumberFrom(tmp_coord);
-    }
-  }
-  
 #else
 
 #error "no appropriate layout defined"

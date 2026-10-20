@@ -8,6 +8,9 @@
 
 using namespace QDP;
 
+
+
+
 int main(int argc, char *argv[])
 {
   START_CODE();
@@ -64,15 +67,15 @@ int main(int argc, char *argv[])
   xml.close();
 #endif
 
+  
   // 
-  QDPIO::cout << "rb[0] has ordered rep=" << rb[0].hasOrderedRep() << endl;
-  QDPIO::cout << "rb[1] has ordered rep=" << rb[1].hasOrderedRep() << endl;
+  // QDPIO::cout << "rb[0] has ordered rep=" << rb[0].hasOrderedRep() << endl;
+  // QDPIO::cout << "rb[1] has ordered rep=" << rb[1].hasOrderedRep() << endl;
 
-  QDPIO::cout << "rb3[0] has ordered rep=" << rb3[0].hasOrderedRep() << endl;
-  QDPIO::cout << "rb3[1] has ordered rep=" << rb3[1].hasOrderedRep() << endl;
+  // QDPIO::cout << "rb3[0] has ordered rep=" << rb3[0].hasOrderedRep() << endl;
+  // QDPIO::cout << "rb3[1] has ordered rep=" << rb3[1].hasOrderedRep() << endl;
   // Time to bolt
   QDP_finalize();
 
   END_CODE();
-  exit(0);
 }

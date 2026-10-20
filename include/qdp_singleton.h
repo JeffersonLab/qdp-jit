@@ -1,10 +1,9 @@
-// -*- C++ -*-
+#ifndef QDP_SINGLETON_H
+#define QDP_SINGLETON_H
+
 /*! @file
  * @brief Singleton support
  */
-
-#ifndef __qdp_singleton_h__
-#define __qdp_singleton_h__
 
 namespace QDP
 {
@@ -49,7 +48,7 @@ namespace QDP
     }
   };
 
-} // namespace Chroma
+} // namespace QDP
 
 
 #endif

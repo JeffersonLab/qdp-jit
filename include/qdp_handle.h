@@ -1,4 +1,6 @@
-// -*- C++ -*-
+#ifndef QDP_HANDLE_H
+#define QDP_HANDLE_H
+
 // $Id: handle.h,v 3.4 2007-08-12 20:35:11 edwards Exp $
 /*! @file
  * @brief  Class for counted reference semantics
@@ -13,9 +15,6 @@
  * 3rd ed., Section 25.7. The names used there are used for this class.
  *
  */
-
-#ifndef __qdp_handle_h__
-#define __qdp_handle_h__
 
 using namespace QDP;
 

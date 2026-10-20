@@ -1,10 +1,49 @@
-#ifndef QDP_FORWARD
-#define QDP_FORWARD
+#ifndef QDP_FORWARD_H
+#define QDP_FORWARD_H
+
+namespace llvm
+{
+  struct Value;
+}
+
+namespace JIT
+{
+  class Compiler;
+}
 
 namespace QDP
 {
+  typedef int ParamRef; // this repeated in qdp_llvm.h
 
-  enum class JitDeviceLayout { Coalesced , Scalar , Coalesced_scalar_idx };
+  class Shape;
+
+  template<class T> struct ShapeAxes;
+
+  template<class Op, class A>
+  struct UnaryShapeTransform;
+
+  template<class Op, class LHS, class RHS>
+  struct BinaryShapeTransform;
+
+  
+  template<class T, int N> 
+  struct GetLimit
+  {
+    static int limit(const Shape& shape)
+    {
+      return GetLimit<typename T::Sub_t,N-1>::limit(shape);
+    }
+  };
+
+
+      
+  
+  
+
+
+  
+  
+  //enum class JitDataOrder { SiteFast , SiteSlow };
 
   class FnMapRsrc;
 
@@ -15,35 +54,12 @@ namespace QDP
   class BinaryWriter;
 
 
-  // Forward declarations
-  //! dest  = random
-  template<class T1, class T2>
-  inline void
-  fill_random(float& d, T1& seed, T2& skewed_seed, const T1& seed_mult);
-
-  //! dest  = random
-  template<class T1, class T2>
-  inline void
-  fill_random(double& d, T1& seed, T2& skewed_seed, const T1& seed_mult);
-
-  //! dest  = random
-  template<class T1, class T2, int N>
-  inline void
-  fill_random(float* d, T1& seed, T2& skewed_seed, const T1& seed_mult);
-
-  //! dest  = random
-  template<class T1, class T2, int N>
-  inline void
-  fill_random(double* d, T1& seed, T2& skewed_seed, const T1& seed_mult);
-
-
-
-
-  template<class T> class FirstWord;
   
 
   template<class T> class JITType;
-  template<class T, int N > class BaseJIT;
+  template<class T> class BaseJIT;
+
+  template<class T> class WordSize;
 
   
   // Inner
@@ -53,12 +69,10 @@ namespace QDP
   // Word
   template<class T> class Word;
   template<class T> class WordJIT;
-  template<class T> class WordREG;
 
   // WordVec
   template<class T> class WordVec;
   template<class T> class WordVecJIT;
-  template<class T> class WordVecREG;
 
   
   // Reality
@@ -66,47 +80,41 @@ namespace QDP
   template<class T> class RComplex;
   template<class T> class RScalarJIT;
   template<class T> class RComplexJIT;
-  template<class T> class RScalarREG;
-  template<class T> class RComplexREG;
 
   // Primitives
   template<class T> class PScalar;
-  template <class T, int N, template<class,int> class C> class PMatrix;
-  template <class T, int N, template<class,int> class C> class PVector;
-  template <class T, int N> class PColorVector;
-  template <class T, int N> class PSpinVector;
-  template <class T, int N> class PColorMatrix;
-  template <class T, int N> class PSpinMatrix;
+  template <class T, template<class> class C> class PMatrix;
+  template <class T, template<class> class C> class PVector;
+  template <class T> class PColorVector;
+  template <class T> class PSpinVector;
+  template <class T> class PColorMatrix;
+  template <class T> class PSpinMatrix;
   template <class T> class PSeed;
 
   template<class T> class PScalarJIT;
-  template <class T, int N, template<class,int> class C> class PMatrixJIT;
-  template <class T, int N, template<class,int> class C> class PVectorJIT;
-  template <class T, int N> class PColorVectorJIT;
-  template <class T, int N> class PSpinVectorJIT;
-  template <class T, int N> class PColorMatrixJIT;
-  template <class T, int N> class PSpinMatrixJIT;
+  template <class T, template<class> class C> class PMatrixJIT;
+  template <class T, template<class> class C> class PVectorJIT;
+  template <class T> class PColorVectorJIT;
+  template <class T> class PSpinVectorJIT;
+  template <class T> class PColorMatrixJIT;
+  template <class T> class PSpinMatrixJIT;
   template <class T> class PSeedJIT;
 
-  template<class T> class PScalarREG;
-  template <class T, int N, template<class,int> class C> class PMatrixREG;
-  template <class T, int N, template<class,int> class C> class PVectorREG;
-  template <class T, int N> class PColorVectorREG;
-  template <class T, int N> class PSpinVectorREG;
-  template <class T, int N> class PColorMatrixREG;
-  template <class T, int N> class PSpinMatrixREG;
-  template <class T> class PSeedREG;
+  
+  class GammaType;
+  class GammaTypeDP;
 
-  template<int N> class GammaType;
-  template<int N> class GammaTypeDP;
-
+  struct OpMultiplyGammaType;
+  struct OpGammaTypeMultiply;
+  
   // Outer
   template<class T> class OScalar;
   template<class T> class OLattice;
   template<class T> class OScalarJIT;
   template<class T> class OLatticeJIT;
-  template<class T> class OScalarREG;
-  template<class T> class OLatticeREG;
+
+  template<class T> class OScalarStaggeredPropagator;
+  template<class T1> class OLatticeDiracFermionF3;
 
   // Outer types narrowed to a subset
   template<class T> class OSubScalar;
@@ -133,6 +141,23 @@ namespace QDP
   template<class T> struct DoublePrecType;
   template<class T> struct ScalarType;
   template<class T> struct IsWordVec;
+
+#if 0
+template<>
+struct RealScalar<int> {
+  typedef REAL32  Type_t;
+};
+
+template<>
+struct RealScalar<float> {
+  typedef REAL32  Type_t;
+};
+
+template<>
+struct RealScalar<double> {
+  typedef REAL64  Type_t;
+};
+#endif
   
   // Empty leaf functor tag
   struct ElemLeaf;
@@ -142,6 +167,7 @@ namespace QDP
 
   struct ShiftPhase1;
   struct ShiftPhase2;
+  //struct EvalQV {};
   class Map;
   struct FnMap;
   class ArrayBiDirectionalMap;
@@ -155,9 +181,24 @@ namespace QDP
   class DynKey;
 
 
-  // template<class T, class T1, class RHS>
-  // JitFunction
-  // function_gather_build( void* send_buf , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs );
+  struct CollectLayouts;
+
+
+
+  template<typename T>
+  int jit_sizeof(const T& t)
+  {
+    int w = WordSize<T>::value(t.shape());
+    return w * sizeof( typename WordType<T>::Type_t );
+  }
+
+  template<typename T>
+  int jit_sizeof_words(const T& t)
+  {
+    return WordSize<T>::value(t.shape());
+  }
+
+  
 
   namespace RNG 
   {

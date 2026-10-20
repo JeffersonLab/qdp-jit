@@ -1,53 +1,30 @@
-// -*- C++ -*-
-
-/*! @file
- * @brief Main type class for QDP
- */
-
 #ifndef QDP_QDPTYPE_H
 #define QDP_QDPTYPE_H
+
 
 namespace QDP {
 
 
-/*! \addtogroup group1 QDP main operations
- *
- *  Lattice site-wide operations that can be applied to QDPTypes.
- *  All operations can be used in expressions
- *
- * @{
- */
-
-
-//! QDPType - major type class/container for all QDP objects
-/*! 
- * This is the top level class all users should access for functional
- * and infix operations
- */
 template<class T, class C> 
 class QDPType
 {
 public:
-  //! Type of the first argument
   typedef T Subtype_t;
-
-  //! Type of the container class
   typedef C Container_t;
 
-  //! Main constructor 
-  QDPType() {}
+  void print() const {}
+  
+  Shape shape() const { return static_cast<const C*>(this)->shape(); }
 
-  //! Copy constructor
-  QDPType(const QDPType&) = delete;
+  
+  JitDataFormat data_format() const { return static_cast<const C*>(this)->data_format(); }
 
-  //! Destructor
-  ~QDPType(){}
+  
+  QDPType()  {}
+
+  QDPType(const QDPType& rhs) = delete;
 
 
-  //---------------------------------------------------------
-  // Operators
-
-  inline
   C& assign(const typename WordType<T>::Type_t& rhs)
     {
       C* me = static_cast<C*>(this);
@@ -56,7 +33,7 @@ public:
       return *me;
     }
 
-  inline
+
   C& assign(const Zero&)
     {
       C* me = static_cast<C*>(this);
@@ -64,365 +41,290 @@ public:
       return *me;
     }
 
+  
   template<class T1,class C1>
-  inline
   C& assign(const QDPType<T1,C1>& rhs)
     {
       C* me = static_cast<C*>(this);
+
       evaluate(*me,OpAssign(),PETE_identity(rhs),all);
       return *me;
     }
 
   template<class T1,class C1>
-  inline
   C& assign(const QDPExpr<T1,C1>& rhs)
     {
       C* me = static_cast<C*>(this);
+
       evaluate(*me,OpAssign(),rhs,all);
       return *me;
     }
 
 
-  template<class T1>
-  inline
-  //void assign(const QDPSubType<T1,C1>& rhs)
-  void assign(const OSubLattice<T1>& rhs)
-  {
-    if (!rhs.getOwnsMemory()) 
-      QDP_error_exit("Assigning subtype(view) to qdptype is not supported");
-
-    C* me = static_cast<C*>(this);
-
-    operator_type_subtype(*me,OpAssign(),rhs,rhs.subset());
-  }
-
-
-
-  //! Use this for default operator=
-  inline
   C& operator=(const QDPType& rhs)
     {
       return assign(rhs);
     }
 
 
-  inline
+  
+  template<class Op, class RHS>
+  C& compound_assign(Op op, const RHS& rhs)
+  {
+    C& self = static_cast<C&>(*this);
+    self.check_shape(rhs);
+    evaluate(self, op, rhs, all);
+    return self;
+  }
+
+
+  
   C& operator+=(const typename WordType<T>::Type_t& rhs)
     {
-      C* me = static_cast<C*>(this);
       typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
-      evaluate(*me,OpAddAssign(),PETE_identity(Scalar_t(rhs)),all);
-      return *me;
+      return compound_assign(OpAddAssign{}, PETE_identity(Scalar_t(rhs)));
     }
 
+
   template<class T1,class C1>
-  inline
   C& operator+=(const QDPType<T1,C1>& rhs)
     {
-      C* me = static_cast<C*>(this);
-      evaluate(*me,OpAddAssign(),PETE_identity(rhs),all);
-      return *me;
+      return compound_assign(OpAddAssign{}, PETE_identity(rhs));
     }
 
+
   template<class T1,class C1>
-  inline
   C& operator+=(const QDPExpr<T1,C1>& rhs)
     {
-      C* me = static_cast<C*>(this);
-      evaluate(*me,OpAddAssign(),rhs,all);
-      return *me;
+      return compound_assign(OpAddAssign{}, rhs);
     }
 
-
-  inline
+  
   C& operator-=(const typename WordType<T>::Type_t& rhs)
     {
-      C* me = static_cast<C*>(this);
       typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
-      evaluate(*me,OpSubtractAssign(),PETE_identity(Scalar_t(rhs)),all);
-      return *me;
+      return compound_assign(OpSubtractAssign{}, PETE_identity(Scalar_t(rhs)));
     }
 
+
   template<class T1,class C1>
-  inline
   C& operator-=(const QDPType<T1,C1>& rhs)
     {
-      C* me = static_cast<C*>(this);
-      evaluate(*me,OpSubtractAssign(),PETE_identity(rhs),all);
-      return *me;
+      return compound_assign(OpSubtractAssign{}, PETE_identity(rhs));
     }
 
+
   template<class T1,class C1>
-  inline
   C& operator-=(const QDPExpr<T1,C1>& rhs)
     {
-      C* me = static_cast<C*>(this);
-      evaluate(*me,OpSubtractAssign(),rhs,all);
-      return *me;
+      return compound_assign(OpSubtractAssign{}, rhs);
     }
 
 
-  inline
   C& operator*=(const typename WordType<T>::Type_t& rhs)
     {
-      C* me = static_cast<C*>(this);
       typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
-      evaluate(*me,OpMultiplyAssign(),PETE_identity(Scalar_t(rhs)),all);
-      return *me;
+      return compound_assign(OpMultiplyAssign{}, PETE_identity(Scalar_t(rhs)));
     }
 
+
   template<class T1,class C1>
-  inline
   C& operator*=(const QDPType<T1,C1>& rhs)
     {
-      C* me = static_cast<C*>(this);
-      evaluate(*me,OpMultiplyAssign(),PETE_identity(rhs),all);
-      return *me;
+      return compound_assign(OpMultiplyAssign{}, PETE_identity(rhs));
     }
 
+
   template<class T1,class C1>
-  inline
   C& operator*=(const QDPExpr<T1,C1>& rhs)
     {
-      C* me = static_cast<C*>(this);
-      evaluate(*me,OpMultiplyAssign(),rhs,all);
-      return *me;
+      return compound_assign(OpMultiplyAssign{}, rhs);
     }
 
 
-  inline
+  
   C& operator/=(const typename WordType<T>::Type_t& rhs)
     {
-      C* me = static_cast<C*>(this);
       typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
-      evaluate(*me,OpDivideAssign(),PETE_identity(Scalar_t(rhs)),all);
-      return *me;
+      return compound_assign(OpDivideAssign{}, PETE_identity(Scalar_t(rhs)));
     }
 
+
   template<class T1,class C1>
-  inline
   C& operator/=(const QDPType<T1,C1>& rhs)
     {
-      C* me = static_cast<C*>(this);
-      evaluate(*me,OpDivideAssign(),PETE_identity(rhs),all);
-      return *me;
+      return compound_assign(OpDivideAssign{}, PETE_identity(rhs));
     }
 
+
   template<class T1,class C1>
-  inline
   C& operator/=(const QDPExpr<T1,C1>& rhs)
     {
-      C* me = static_cast<C*>(this);
-      evaluate(*me,OpDivideAssign(),rhs,all);
-      return *me;
+      return compound_assign(OpDivideAssign{}, rhs);
     }
 
 
-  inline
   C& operator%=(const typename WordType<T>::Type_t& rhs)
     {
-      C* me = static_cast<C*>(this);
       typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
-      evaluate(*me,OpModAssign(),PETE_identity(Scalar_t(rhs)),all);
-      return *me;
+      return compound_assign(OpModAssign{}, PETE_identity(Scalar_t(rhs)));
     }
 
+
   template<class T1,class C1>
-  inline
   C& operator%=(const QDPType<T1,C1>& rhs)
     {
-      C* me = static_cast<C*>(this);
-      evaluate(*me,OpModAssign(),PETE_identity(rhs),all);
-      return *me;
+      return compound_assign(OpModAssign{}, PETE_identity(rhs));
     }
 
+
   template<class T1,class C1>
-  inline
   C& operator%=(const QDPExpr<T1,C1>& rhs)
     {
-      C* me = static_cast<C*>(this);
-      evaluate(*me,OpModAssign(),rhs,all);
-      return *me;
+      return compound_assign(OpModAssign{}, rhs);
     }
 
 
-  inline
   C& operator|=(const typename WordType<T>::Type_t& rhs)
     {
-      C* me = static_cast<C*>(this);
       typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
-      evaluate(*me,OpBitwiseOrAssign(),PETE_identity(Scalar_t(rhs)),all);
-      return *me;
+      return compound_assign(OpBitwiseOrAssign{}, PETE_identity(Scalar_t(rhs)));
     }
 
+
   template<class T1,class C1>
-  inline
   C& operator|=(const QDPType<T1,C1>& rhs)
     {
-      C* me = static_cast<C*>(this);
-      evaluate(*me,OpBitwiseOrAssign(),PETE_identity(rhs),all);
-      return *me;
+      return compound_assign(OpBitwiseOrAssign{}, PETE_identity(rhs));
     }
 
+
   template<class T1,class C1>
-  inline
   C& operator|=(const QDPExpr<T1,C1>& rhs)
     {
-      C* me = static_cast<C*>(this);
-      evaluate(*me,OpBitwiseOrAssign(),PETE_identity(rhs),all);
-      return *me;
+      return compound_assign(OpBitwiseOrAssign{}, rhs);
     }
 
-
-  inline
+  
   C& operator&=(const typename WordType<T>::Type_t& rhs)
     {
-      C* me = static_cast<C*>(this);
       typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
-      evaluate(*me,OpBitwiseAndAssign(),PETE_identity(Scalar_t(rhs)),all);
-      return *me;
+      return compound_assign(OpBitwiseAndAssign{}, PETE_identity(Scalar_t(rhs)));
     }
 
+
   template<class T1,class C1>
-  inline
   C& operator&=(const QDPType<T1,C1>& rhs)
     {
-      C* me = static_cast<C*>(this);
-      evaluate(*me,OpBitwiseAndAssign(),PETE_identity(rhs),all);
-      return *me;
+      return compound_assign(OpBitwiseAndAssign{}, PETE_identity(rhs));
     }
 
+
   template<class T1,class C1>
-  inline
   C& operator&=(const QDPExpr<T1,C1>& rhs)
     {
-      C* me = static_cast<C*>(this);
-      evaluate(*me,OpBitwiseAndAssign(),rhs,all);
-      return *me;
+      return compound_assign(OpBitwiseAndAssign{}, rhs);
     }
 
-
-  inline
+  
   C& operator^=(const typename WordType<T>::Type_t& rhs)
     {
-      C* me = static_cast<C*>(this);
       typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
-      evaluate(*me,OpBitwiseXorAssign(),PETE_identity(Scalar_t(rhs)),all);
-      return *me;
+      return compound_assign(OpBitwiseXorAssign{}, PETE_identity(Scalar_t(rhs)));
     }
 
+
   template<class T1,class C1>
-  inline
   C& operator^=(const QDPType<T1,C1>& rhs)
     {
-      C* me = static_cast<C*>(this);
-      evaluate(*me,OpBitwiseXorAssign(),PETE_identity(rhs),all);
-      return *me;
+      return compound_assign(OpBitwiseXorAssign{}, PETE_identity(rhs));
     }
 
+
   template<class T1,class C1>
-  inline
   C& operator^=(const QDPExpr<T1,C1>& rhs)
     {
-      C* me = static_cast<C*>(this);
-      evaluate(*me,OpBitwiseXorAssign(),rhs,all);
-      return *me;
+      return compound_assign(OpBitwiseXorAssign{}, rhs);
     }
 
 
-  inline
   C& operator<<=(const typename WordType<T>::Type_t& rhs)
     {
-      C* me = static_cast<C*>(this);
       typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
-      evaluate(*me,OpLeftShiftAssign(),PETE_identity(Scalar_t(rhs)),all);
-      return *me;
+      return compound_assign(OpLeftShiftAssign{}, PETE_identity(Scalar_t(rhs)));
     }
 
+
   template<class T1,class C1>
-  inline
   C& operator<<=(const QDPType<T1,C1>& rhs)
     {
-      C* me = static_cast<C*>(this);
-      evaluate(*me,OpLeftShiftAssign(),PETE_identity(rhs),all);
-      return *me;
+      return compound_assign(OpLeftShiftAssign{}, PETE_identity(rhs));
     }
 
+
   template<class T1,class C1>
-  inline
   C& operator<<=(const QDPExpr<T1,C1>& rhs)
     {
-      C* me = static_cast<C*>(this);
-      evaluate(*me,OpLeftShiftAssign(),rhs,all);
-      return *me;
+      return compound_assign(OpLeftShiftAssign{}, rhs);
     }
 
 
-  inline
   C& operator>>=(const typename WordType<T>::Type_t& rhs)
     {
-      C* me = static_cast<C*>(this);
       typedef typename SimpleScalar<typename WordType<T>::Type_t>::Type_t  Scalar_t;
-      evaluate(*me,OpRightShiftAssign(),PETE_identity(Scalar_t(rhs)),all);
-      return *me;
+      return compound_assign(OpRightShiftAssign{}, PETE_identity(Scalar_t(rhs)));
     }
 
+
   template<class T1,class C1>
-  inline
   C& operator>>=(const QDPType<T1,C1>& rhs)
     {
-      C* me = static_cast<C*>(this);
-      evaluate(*me,OpRightShiftAssign(),PETE_identity(rhs),all);
-      return *me;
+      return compound_assign(OpRightShiftAssign{}, PETE_identity(rhs));
     }
+
 
   template<class T1,class C1>
-  inline
   C& operator>>=(const QDPExpr<T1,C1>& rhs)
     {
-      C* me = static_cast<C*>(this);
-      evaluate(*me,OpRightShiftAssign(),rhs,all);
-      return *me;
+      return compound_assign(OpRightShiftAssign{}, rhs);
     }
 
-public:
-  typename WordType<T>::Type_t get_word_value() const { return static_cast<const C*>(this)->get_word_value();}
 
-  int getId() const { return static_cast<const C*>(this)->getId(); }
+  LatticeLayout layout() const { return static_cast<const C*>(this)->layout(); }
+  
 
-  T* getF() {return static_cast<const C*>(this)->getF();}
-  const T* getF() const {return static_cast<const C*>(this)->getF();}
-
-        T& elem(int i)       {return static_cast<const C*>(this)->elem(i);}
-  const T& elem(int i) const {return static_cast<const C*>(this)->elem(i);}
-
-        T& elem()       {return static_cast<const C*>(this)->elem();}
-  const T& elem() const {return static_cast<const C*>(this)->elem();}
+  T elem(int i) const {return static_cast<const C*>(this)->elem(i);}
+  T elem()      const {return static_cast<const C*>(this)->elem();}
 };
 
-/*! @} */ // end of group1
 
-//-----------------------------------------------------------------------------
-// Traits classes to support return types
-//-----------------------------------------------------------------------------
+  template<class T>
+  int jit_words()
+  {
+    T tmp(nullptr);
+    return tmp.words();
+  }
 
-// Default unary(QDPType) -> QDPType
+
+
+
+
+
+
 template<class T1, class C1, class Op>
 struct UnaryReturn<QDPType<T1,C1>, Op> {
   typedef QDPType<typename UnaryReturn<T1, Op>::Type_t,
 		  typename UnaryReturn<C1, Op>::Type_t>  Type_t;
 };
 
-// Default binary(QDPType,QDPType) -> QDPType
+
 template<class T1, class C1, class T2, class C2, class Op>
 struct BinaryReturn<QDPType<T1,C1>, QDPType<T2,C2>, Op> {
   typedef QDPType<typename BinaryReturn<T1, T2, Op>::Type_t,
 		  typename BinaryReturn<C1, C2, Op>::Type_t>  Type_t;
 };
 
-// Currently, the only trinary operator is ``where'', so return 
-// based on T2 and T3
-// Default trinary(QDPType,QDPType,QDPType) -> QDPType
+
 template<class T1, class C1, class T2, class C2, class T3, class C3, class Op>
 struct TrinaryReturn<QDPType<T1,C1>, QDPType<T2,C2>, QDPType<T3,C3>, Op> {
   typedef QDPType<typename BinaryReturn<T2, T3, Op>::Type_t,
@@ -430,34 +332,29 @@ struct TrinaryReturn<QDPType<T1,C1>, QDPType<T2,C2>, QDPType<T3,C3>, Op> {
 };
 
 
-//-----------------------------------------------------------------------------
-// We need to specialize CreateLeaf<T> for our class, so that operators
-// know what to stick in the leaves of the expression tree.
-//-----------------------------------------------------------------------------
 
 template<class T, class C>
 struct CreateLeaf<QDPType<T,C> >
 {
   typedef QDPType<T,C> Inp_t;
   typedef Reference<Inp_t> Leaf_t;
-//  typedef Inp_t Leaf_t;
-  inline static
-  Leaf_t make(const Inp_t &a) { return Leaf_t(a); }
+  //typedef Inp_t Leaf_t;
+   static
+  Leaf_t make(const Inp_t &a)
+  {
+    return Leaf_t(a);
+  }
 };
 
 
-//-----------------------------------------------------------------------------
-// Specialization of LeafFunctor class for applying the EvalLeaf1
-// tag to a QDPType. The apply method simply returns the array
-// evaluated at the point.
-//-----------------------------------------------------------------------------
+
 
 template<class T, class C>
 struct LeafFunctor<QDPType<T,C>, ElemLeaf>
 {
-  typedef Reference<T> Type_t;
-//  typedef T Type_t;
-  inline static Type_t apply(const QDPType<T,C> &a, const ElemLeaf &f)
+  //  typedef Reference<T> Type_t;
+  typedef T Type_t;
+   static Type_t apply(const QDPType<T,C> &a, ElemLeaf &f)
     { 
       return Type_t(a.elem());
     }
@@ -466,138 +363,87 @@ struct LeafFunctor<QDPType<T,C>, ElemLeaf>
 template<class T, class C>
 struct LeafFunctor<QDPType<T,C>, EvalLeaf1>
 {
-  typedef Reference<T> Type_t;
-//  typedef T Type_t;
-  inline static Type_t apply(const QDPType<T,C> &a, const EvalLeaf1 &f)
+  //  typedef Reference<T> Type_t;
+  typedef T Type_t;
+   static Type_t apply(const QDPType<T,C> &a, EvalLeaf1 &f)
     { 
       return Type_t(a.elem(f.val1()));
     }
 };
 
 
-
 template<class T>
-struct LeafFunctor<QDPType<T,OLattice<T> >, ParamLeaf>
+struct LeafFunctor<QDPType<T,OLattice<T> >, MGParamLeaf>
 {
-  typedef typename JITType< OLattice<T> >::Type_t  TypeA_t;
-  typedef TypeA_t  Type_t;
-  inline static Type_t apply(const QDPType<T,OLattice<T> > &a, const ParamLeaf& p)
+  typedef typename JITType< OLattice<T> >::Type_t  Type_t;
+  static Type_t apply(const QDPType<T,OLattice<T> > &a, MGParamLeaf& p)
   {
-    ParamRef    base_addr = llvm_add_param< typename WordType<T>::Type_t * >();
-    return Type_t( base_addr );
-  }
-};
-
-template<class T>
-struct LeafFunctor<QDPType<T,OScalar<T> >, ParamLeaf>
-{
-  typedef typename JITType< OScalar<T> >::Type_t  Type_t;
-  inline static Type_t apply(const QDPType<T,OScalar<T> > &a, const ParamLeaf& p)
-  {
-    return Type_t( llvm_add_param< typename WordType<T>::Type_t * >() );
-  }
-};
-
-template<class T>
-struct LeafFunctor<QDPType<PScalar< PScalar < RScalar< Word< T > > > >,OScalar<PScalar< PScalar < RScalar< Word< T > > > > > >, ParamLeaf>
-{
-  typedef typename JITType< OScalar<PScalar< PScalar < RScalar< Word< T > > > > > >::Type_t  Type_t;
-  inline static Type_t apply(const QDPType<PScalar< PScalar < RScalar< Word< T > > > >,OScalar<PScalar< PScalar < RScalar< Word< T > > > > > > &a, const ParamLeaf& p)
-  {
-    return Type_t( llvm_add_param< T >() );
+    // 1. base addr
+    // 2. local lattice size (optional)
+    // 3. translation table (optional)
+    const PlanEntry& e = p.next( PlanEntry::Kind::Lattice );
+    ParamRef    base_addr = p.lattice_base< typename WordType<T>::Type_t >();
+    return Type_t( base_addr , p.getLatSizeParamRef( e.layout_slot ) , e.shape , e.layout_slot , e.data_format );
   }
 };
 
 
-
-
-
 template<class T>
-struct LeafFunctor<QDPType<T,OLattice<T> >, ParamLeafScalar>
-{
-  typedef typename JITType< OLattice<typename ScalarType<T>::Type_t > >::Type_t  Type_t;
-  inline static Type_t apply(const QDPType<T,OLattice<T> > &a, const ParamLeafScalar& p)
-  {
-    ParamRef    base_addr = llvm_add_param< typename WordType<T>::Type_t * >();
-    return Type_t( base_addr );
-  }
-};
-
-template<class T>
-struct LeafFunctor<QDPType<T,OScalar<T> >, ParamLeafScalar>
+struct LeafFunctor<QDPType<T,OScalar<T> >, MGParamLeaf>
 {
   typedef typename JITType< OScalar<T> >::Type_t  Type_t;
-  inline static Type_t apply(const QDPType<T,OScalar<T> > &a, const ParamLeafScalar& p)
+   static Type_t apply(const QDPType<T,OScalar<T> > &a, MGParamLeaf& p)
   {
-    return Type_t( llvm_add_param< typename WordType<T>::Type_t * >() );
+    const PlanEntry& e = p.next( PlanEntry::Kind::Scalar );
+    return Type_t( llvm_add_param< typename WordType<T>::Type_t * >() , e.shape );
   }
 };
 
+
 template<class T>
-struct LeafFunctor<QDPType<PScalar< PScalar < RScalar< Word< T > > > >,OScalar<PScalar< PScalar < RScalar< Word< T > > > > > >, ParamLeafScalar>
+struct LeafFunctor<QDPType<PScalar< PScalar < RScalar< Word< T > > > >,OScalar<PScalar< PScalar < RScalar< Word< T > > > > > >, MGParamLeaf>
 {
   typedef typename JITType< OScalar<PScalar< PScalar < RScalar< Word< T > > > > > >::Type_t  Type_t;
-  inline static Type_t apply(const QDPType<PScalar< PScalar < RScalar< Word< T > > > >,OScalar<PScalar< PScalar < RScalar< Word< T > > > > > > &a, const ParamLeafScalar& p)
+   static Type_t apply(const QDPType<PScalar< PScalar < RScalar< Word< T > > > >,OScalar<PScalar< PScalar < RScalar< Word< T > > > > > > &a, MGParamLeaf& p)
   {
-    return Type_t( llvm_add_param< T >() );
+    p.next( PlanEntry::Kind::Literal );
+    return Type_t( llvm_add_param< T >() , true );
   }
 };
-
 
 
 
 
 template<class T>
-struct LeafFunctor<QDPType<T,OLattice<T> >, AddressLeaf>
+struct LeafFunctor<QDPType<T,OLattice<T> >, DummyJitLeaf>
 {
-  typedef int Type_t;
-  inline static
-  Type_t apply(const QDPType<T,OLattice<T> >& s, const AddressLeaf& p) 
+  //typedef typename JITType< OLattice<T> >::Type_t  Type_t;
+  typedef typename JITType< T >::Type_t  Type_t;
+  static Type_t apply(const QDPType<T,OLattice<T> > &a, DummyJitLeaf& p)
   {
-    p.setId( static_cast<const OLattice<T>*>(&s)->getId() );
-    return 0;
+    return Type_t( a.shape() );
   }
 };
-
-
-  
-
-template<class T>
-struct LeafFunctor<QDPType<T,OScalar<T> >, AddressLeaf>
-{
-  typedef int Type_t;
-  inline static
-  Type_t apply(const QDPType<T,OScalar<T> >& s, const AddressLeaf& p) 
-  {
-    int id = QDP_get_global_ring_buffer().allocate( sizeof(T) , s.getF() );
-    p.setId( id );
-    return 0;
-  }
-};
-
 
 
 template<class T>
-struct LeafFunctor<QDPType<PScalar< PScalar < RScalar< Word< T > > > > ,OScalar<PScalar< PScalar < RScalar< Word< T > > > > > >, AddressLeaf>
+struct LeafFunctor<QDPType<T,OScalar<T> >, DummyJitLeaf>
 {
-  typedef int Type_t;
-  inline static
-  Type_t apply(const QDPType<PScalar< PScalar < RScalar< Word< T > > > > , OScalar<PScalar< PScalar < RScalar< Word< T > > > > > >& s, const AddressLeaf& p) 
+  //typedef typename JITType< OScalar<T> >::Type_t  Type_t;
+  typedef typename JITType< T >::Type_t  Type_t;
+  static Type_t apply(const QDPType<T,OScalar<T> > &a, DummyJitLeaf& p)
   {
-    p.setLit< T >( s.get_word_value() );
-    return 0;
+    return Type_t( a.shape() );
   }
 };
-
-
 
 
 template<class T, class C>
 struct LeafFunctor<QDPType<T,C>, ShiftPhase1>
 {
   typedef int Type_t;
-  static int apply(const QDPType<T,C> &s, const ShiftPhase1 &f) {
-    return 0;
+  static int apply(const QDPType<T,C> &s, ShiftPhase1 &f) {
+    return LeafFunctor<C, ShiftPhase1>::apply(static_cast<const C&>(s), f);
   }
 };
 
@@ -607,7 +453,7 @@ template<class T, class C>
 struct LeafFunctor<QDPType<T,C>, ShiftPhase2>
 {
   typedef int Type_t;
-  static int apply(const QDPType<T,C> &s, const ShiftPhase2 &f) {
+  static int apply(const QDPType<T,C> &s, ShiftPhase2 &f) {
     return 0;
   }
 };
@@ -619,14 +465,26 @@ template<class T>
 struct LeafFunctor<QDPType<T,OLattice<T> >, SelfAssignTag>
 {
   typedef int Type_t;
-  inline static
-  Type_t apply(const QDPType<T,OLattice<T> >& s, const SelfAssignTag& p) 
+   static
+  Type_t apply(const QDPType<T,OLattice<T> >& s, SelfAssignTag& p) 
   {
-    return s.getId() == p.id ? 1:0;
+    return ( p.shift_depth > 0 && static_cast<const OLattice<T>&>(s).getId() == p.id ) ? 1:0;
   }
 };
 
 
+
+template<class T>
+struct LeafFunctor<QDPType<T,OLattice<T> >, CollectLayouts>
+{
+  typedef int Type_t;
+   static
+  Type_t apply(const QDPType<T,OLattice<T> >& s, CollectLayouts& p) 
+  {
+    p.layouts.push_back( s.layout().index() );
+    return 0;
+  }
+};
 
 
 } // namespace QDP

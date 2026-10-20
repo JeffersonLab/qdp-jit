@@ -1,10 +1,9 @@
-// -*- C++ -*-
+#ifndef QDP_MAP_OBJ_NULL_H
+#define QDP_MAP_OBJ_NULL_H
+
 /*! \file
  *  \brief A null map object 
  */
-
-#ifndef __qdp_map_obj_null_h__
-#define __qdp_map_obj_null_h__
 
 #include "qdp_map_obj.h"
 #include <vector>

@@ -5,76 +5,39 @@ include(CheckSymbolExists)
 include(CheckFunctionExists)
 include(GNUInstallDirs)
 
-include(FindOpenMP)          # Gives us find_package() for OpenMP
-
-# I have not actually used these -- I dont know if they are nHAVE_STRNLENHAVE_STRNLENeeded
-#
 include(CheckIncludeFile)
 include(CheckSymbolExists)
 include(CheckTypeSize)
 
 
-set(QDP_ENABLE_BACKEND "CUDA" CACHE STRING "The backend, can be either CUDA, ROCM, AVX, or L0")
-set_property(CACHE QDP_ENABLE_BACKEND PROPERTY STRINGS CUDA ROCM AVX L0)
+set(QDP_ENABLE_BACKEND "CUDA" CACHE STRING "The backend, can be either CUDA, ROCM, or L0")
+set_property(CACHE QDP_ENABLE_BACKEND PROPERTY STRINGS CUDA ROCM L0)
 
 set(CUDA_TOOLKIT_ROOT_DIR "/usr/local/cuda" CACHE STRING "Root dir for CUDA")
 
 option(QDP_ENABLE_PROFILING "Enable profiling" OFF)
 option(QDP_ENABLE_ROCM_STATS "Enable ROCM statistics" OFF)
-option(QDP_ENABLE_MANAGED_MEMORY "Enable CUDA/HIP/LevelZero Managed Memory" OFF)
+option(QDP_JIT_ROCM_COMGR_LINK "ROCm: link JIT code objects in-process with amd_comgr instead of ld.lld" ON)
+
 
 set(QDP_USE_PROFILING ${QDP_ENABLE_PROFILING})
 
-option(QDP_ENABLE_CUSTOM_KERNELS "Enable Custom Kernels" OFF)
 option(QDP_ENABLE_DEEP_LOG "Enable Deep logging" OFF)
 set(QDP_DEEP_LOG ${QDP_ENABLE_DEEP_LOG})
+
+option(QDP_ENABLE_HOST_COMPILER "Enable the host compiler" OFF)
+set(QDP_HOST_COMPILER ${QDP_ENABLE_HOST_COMPILER})
 
 
 #set(QDP_ENABLE_CUDA_NVCC "nvcc" CACHE STRING "Path to cuda NVCC")
 #set(CUDA_NVCC ${QDP_ENABLE_CUDA_NVCCC})
 
-option(QDP_ENABLE_LLVM14 "Enable changes to compile with LLVM14 release" OFF)
-option(QDP_ENABLE_LLVM15 "Enable changes to compile with LLVM15 release" OFF)
-option(QDP_ENABLE_LLVM16 "Enable changes to compile with LLVM16 release" OFF)
-option(QDP_ENABLE_LLVM17 "Enable changes to compile with LLVM17 release" OFF)
-option(QDP_ENABLE_LLVM18 "Enable changes to compile with LLVM18 release" OFF)
-option(QDP_ENABLE_LLVM19 "Enable changes to compile with LLVM19 release" OFF)
-option(QDP_ENABLE_LLVM20 "Enable changes to compile with LLVM20 release" OFF)
-option(QDP_ENABLE_LLVM22 "Enable changes to compile with LLVM22 release" OFF)
+# qdp-jit requires LLVM 22 or newer; this only asserts that LLVM 22 is found
+option(QDP_ENABLE_LLVM22 "Require LLVM 22 exactly (the tested version)" OFF)
+
 option(QDP_BUILD_EXAMPLES "Build examples" ON)
 
-option(QDP_PROP_OPT "Propagator optimizations" ON)
 
-
-if(QDP_ENABLE_CODEGEN_VECTOR)
-  message(STATUS "LLVM codegen uses vector instructions")
-  set(QDP_CODEGEN_VECTOR "1")
-endif()
-
-if( QDP_ENABLE_LLVM14 )
-  set(QDP_LLVM14 "1")
-endif()
-if( QDP_ENABLE_LLVM15 )
-  set(QDP_LLVM15 "1")
-endif()
-if( QDP_ENABLE_LLVM16 )
-  set(QDP_LLVM16 "1")
-endif()
-if( QDP_ENABLE_LLVM17 )
-  set(QDP_LLVM17 "1")
-endif()
-if( QDP_ENABLE_LLVM18 )
-  set(QDP_LLVM18 "1")
-endif()
-if( QDP_ENABLE_LLVM19 )
-  set(QDP_LLVM19 "1")
-endif()
-if( QDP_ENABLE_LLVM20 )
-  set(QDP_LLVM20 "1")
-endif()
-if( QDP_ENABLE_LLVM22 )
-  set(QDP_LLVM22 "1")
-endif()
 
 
 option(QDP_ENABLE_COMM_SPLIT_DEVICEINIT "Enable using MPI_Comm_split when initializing devices" OFF)
@@ -96,16 +59,11 @@ if( ${QDP_ENABLE_BACKEND} STREQUAL "L0")
   set(QDP_BACKEND_L0  "1")
   find_package(PkgConfig REQUIRED)
   pkg_search_module(PKG_LLVMSPIRV REQUIRED LLVMSPIRVLib)
+  # Remember where LLVMSPIRVLib.pc lives so QDPXXConfig.cmake can find it again
+  pkg_get_variable(QDP_LLVMSPIRV_PCFILEDIR LLVMSPIRVLib pcfiledir)
   find_package(LevelZero REQUIRED)
 endif()
 
-
-if( ${QDP_ENABLE_BACKEND} STREQUAL "AVX")
-  message(STATUS "Building For AVX")
-  find_package(OpenMP)
-  set(QDP_BACKEND_AVX  "1")
-  set(GPU_LIBS "OpenMP::OpenMP_CXX")
-endif()
 
 if( ${QDP_ENABLE_BACKEND} STREQUAL "CUDA")
   message(STATUS "Building For CUDA")
@@ -116,24 +74,15 @@ endif()
 
  
 set(QDP_IS_QDPJIT "1")
-
-if ( QDP_ENABLE_CUSTOM_KERNELS )
-  set(QDP_CUSTOM_KERNELS "yes" )
-endif()
-
-# Config parameters: ARCHs - one can turn them on/off
-set(QDP_PARALLEL_ARCH "parscalar" CACHE STRING "The Parallel ARCH. One of scalar, parscalar")
-set_property(CACHE QDP_PARALLEL_ARCH PROPERTY
-		STRINGS scalar parscalar
-) # FOR GUIs
+set(QDP_IS_QDPJIT2 "1")
 
 set(QDP_PRECISION "double" CACHE STRING "THe Base Precision: single or double (default is double)")
 set_property(CACHE QDP_PRECISION PROPERTY
 		   STRINGS single double) # For GUIs
 
-set(QDP_LAYOUT "cb2" CACHE STRING "The QDP layout: lexico, cb2, cb32, cb3d, vnode (default is cb2)")
+set(QDP_LAYOUT "cb2" CACHE STRING "The QDP layout: lexico, cb2, cb32, cb3d (default is cb2)")
 set_property(CACHE QDP_LAYOUT PROPERTY 
-		  STRINGS  lexico cb2 cb32 cb3d vnode) # For GUIs
+		  STRINGS  lexico cb2 cb32 cb3d) # For GUIs
 
 # NC, ND, NS
 set(QDP_ND 4 CACHE STRING "Number of Spacetime Dimension (default 4)")
@@ -141,12 +90,6 @@ set(QDP_NC 3 CACHE STRING "Number of colors (default 3)")
 set(QDP_NS 4 CACHE STRING "Number of spins (default 4)")
 
 
-# Alignment for OLattice stuff (64=512 bits e.g. KNL, Xeon)
-set(QDP_ALIGNMENT_SIZE "64" CACHE STRING "OLattice memory alignment size in bytes (default 512)")
-
-
-# Memory debugging
-option(QDP_DEBUG_MEMORY "Enable Memory Debugging" OFF)
 
 # LibXML on by default
 option(QDP_USE_LIBXML2 "Use Libxml2 library" ON)
@@ -167,9 +110,8 @@ option(QDP_EXTRA_MESSAGES "Enable Extra diagnostic messages during compile time"
 option(QDP_ENABLE_SANITIZERS "Enable Address and Undefined Behaviour Sanitizers" OFF)
 
 # These options will only apperar in ccmake if you toggle advanced features
-mark_as_advanced(QDP_NC, QDP_ND, QDP_NS, QDP_ALIGNMENT_SIZE, QDP_USE_PROFILING, QDP_DEBUG_MEMORY, QDP_USE_HDF5)
+mark_as_advanced(QDP_NC, QDP_ND, QDP_NS, QDP_USE_PROFILING, QDP_USE_HDF5)
 
-string(TOLOWER ${QDP_PARALLEL_ARCH} qdpParArch)
 string(TOLOWER ${QDP_PRECISION} qdpPrecision)
 string(TOLOWER ${QDP_LAYOUT} qdpLayout)
 
@@ -187,26 +129,8 @@ endif()
 
 
 
-if ( ${qdpParArch} STREQUAL "parscalar" )
-	message(STATUS "QDP++: Configuring for Parscalar build" )
-	
-	# Turn on Parallel QIO
-	set(QIO_ENABLE_PARALLEL_BUILD ON CACHE BOOL "Parscalar build: force QIO Parallel build" FORCE)
-		
-	set(QDP_ARCH_PARSCALAR ON)  # Build System
-	set(ARCH_PARSCALAR 1)      # Configured header file (should rationalize these)
-
-elseif( ${qdpParArch} STREQUAL "scalar" )
-  message(STATUS "QDP++: Configuring for Scalar build" ) 
-     
-  # Set QIO Parallel build to false
-	set(QIO_ENABLE_PARALLEL_BUILD OFF CACHE BOOL "Scalar buld: Force QIO Scalar build" FORCE )
-        
-  set(QDP_ARCH_SCALAR ON)		# Build system 
-	set(ARCH_SCALAR 1)   		# Configured header file (should rationalize this
-else()
-    message(ERROR "QDP++: Unknown architecture. Please set QDP_PARALLEL_ARCH to either scalar, parscalar, scalarvec or parscalarvec")
-endif()
+# The only architecture is parscalar (QMP/MPI); QIO is built parallel
+set(QIO_ENABLE_PARALLEL_BUILD ON CACHE BOOL "Parscalar build: force QIO Parallel build" FORCE)
 
 
 if( ${qdpLayout} STREQUAL "lexico") 
@@ -225,12 +149,8 @@ elseif( ${qdpLayout} STREQUAL "cb3d")
   message( STATUS "QDP++: Enabling CB3D (3D checkerboarded ) Layout" )
   set(QDP_USE_CB3D_LAYOUT 1)
 
-elseif( ${qdpLayout} STREQUAL "vnode")
-  message( STATUS "QDP++: Enabling vnode (virtual node) Layout" )
-  set(QDP_USE_VNODE_LAYOUT 1)
-
 else()
-  message( ERROR "QDP++: Unknown layout. Please set either QDP_LAYOUT_LEXICO, QDP_LAYOUT_CB2, QDP_LAYOUT_CB3D, QDP_LAYOUT_CB32 or QDP_LAYOUT_VNODE")
+  message( FATAL_ERROR "QDP++: Unknown layout ${QDP_LAYOUT}. Please set QDP_LAYOUT to lexico, cb2, cb32 or cb3d")
 endif()
 
 if( ${qdpPrecision} STREQUAL "single")
@@ -251,14 +171,8 @@ if( QDP_ENABLE_EXTRA_MESSAGES )
   message( STATUS "QDP++: Enabling pragma messages" )
 endif()	
 
-# Autoconf variable name backard compatibility 
-set(QDP_AC_ALIGNMENT_SIZE ${QDP_ALIGNMENT_SIZE})
-message( STATUS "QDP++: Setting alignment size to ${QDP_ALIGNMENT_SIZE}")
 
 # CHeck for Strnlen which seems to be needed
-check_function_exists("gethostname" HAVE_GETHOSTNAME)
-check_function_exists("strnlen" HAVE_STRNLEN)
-
 
 if(QDP_ENABLE_BACKEND STREQUAL "ROCM")
   message(STATUS "Building for ROCM")
@@ -287,8 +201,13 @@ if(QDP_ENABLE_BACKEND STREQUAL "ROCM")
     "${ROCM_PATH}/lib/llvm"
   )
 
+  # hip-config overwrites ROCM_PATH with $ENV{ROCM_PATH}; keep ours so ld.lld
+  # and device bitcode come from the same ROCm as HIP.
+  set(_qdp_rocm_path "${ROCM_PATH}")
   find_package(hip REQUIRED)
+  set(ROCM_PATH "${_qdp_rocm_path}")
 
+if(NOT QDP_JIT_ROCM_COMGR_LINK)
 find_program(QDP_ROCM_LD_LLD
   NAMES ld.lld
   PATHS
@@ -305,13 +224,18 @@ if(NOT QDP_ROCM_LD_LLD)
 endif()
 
 message(STATUS "Using ROCm ld.lld: ${QDP_ROCM_LD_LLD}")
+endif()
 
 
   set(GPU_LIBS hip::amdhip64)
 
+  if(QDP_JIT_ROCM_COMGR_LINK OR QDP_ENABLE_ROCM_STATS)
+    find_package(amd_comgr CONFIG REQUIRED)
+    message(STATUS "Using amd_comgr: ${amd_comgr_DIR}")
+  endif()
+
   if(QDP_ENABLE_ROCM_STATS)
     set(QDP_USE_ROCM_STATS "1")
-    find_package(amd_comgr REQUIRED)
     set(GPU_LIBS ${GPU_LIBS} amd_comgr)
   endif()
 
@@ -327,26 +251,26 @@ message(STATUS "Using LLVMConfig.cmake in ${LLVM_DIR}")
 set(QDP_LLVM_VERSION_MAJOR ${LLVM_VERSION_MAJOR})
 set(QDP_LLVM_VERSION_MINOR ${LLVM_VERSION_MINOR})
 
-if(LLVM_VERSION_MAJOR EQUAL 14)
-  set(QDP_LLVM14 1)
-elseif(LLVM_VERSION_MAJOR EQUAL 15)
-  set(QDP_LLVM15 1)
-elseif(LLVM_VERSION_MAJOR EQUAL 16)
-  set(QDP_LLVM16 1)
-elseif(LLVM_VERSION_MAJOR EQUAL 17)
-  set(QDP_LLVM17 1)
-elseif(LLVM_VERSION_MAJOR EQUAL 18)
-  set(QDP_LLVM18 1)
-elseif(LLVM_VERSION_MAJOR EQUAL 19)
-  set(QDP_LLVM19 1)
-elseif(LLVM_VERSION_MAJOR EQUAL 20)
-  set(QDP_LLVM20 1)
-elseif(LLVM_VERSION_MAJOR GREATER_EQUAL 22)
-  set(QDP_LLVM22 1)
-else()
+# LLVM 22 or newer is required; 22 is the tested version.
+if(QDP_ENABLE_BACKEND STREQUAL "ROCM")
+  set(_qdp_llvm_hint " With the ROCM backend, LLVM_DIR defaults to ROCm's bundled LLVM (${ROCM_PATH}/lib/llvm) unless set explicitly.")
+endif()
+
+if(LLVM_VERSION_MAJOR LESS 22)
   message(FATAL_ERROR
-    "Unsupported LLVM major version ${LLVM_VERSION_MAJOR}. "
-    "Please add a QDP_LLVM${LLVM_VERSION_MAJOR} compatibility block.")
+    "qdp-jit requires LLVM 22 or newer, but found LLVM ${LLVM_PACKAGE_VERSION} "
+    "in ${LLVM_DIR}. Point LLVM_DIR at an LLVM 22 installation.${_qdp_llvm_hint}")
+endif()
+
+if(QDP_ENABLE_LLVM22 AND NOT LLVM_VERSION_MAJOR EQUAL 22)
+  message(FATAL_ERROR
+    "QDP_ENABLE_LLVM22=ON but found LLVM ${LLVM_PACKAGE_VERSION} "
+    "in ${LLVM_DIR}. Point LLVM_DIR at an LLVM 22 installation "
+    "or drop QDP_ENABLE_LLVM22.${_qdp_llvm_hint}")
+endif()
+
+if(LLVM_VERSION_MAJOR GREATER 22)
+  message(WARNING "Found LLVM ${LLVM_PACKAGE_VERSION}; qdp-jit is tested with LLVM 22.")
 endif()
 
 
@@ -401,10 +325,7 @@ endif()
 
 
 
-# If we are parallel we need QMP
-if ( QDP_ARCH_PARSCALAR  OR  QDP_ARCH_PARSCALARVEC )
-  find_package(QMP REQUIRED)
-endif()
+find_package(QMP REQUIRED)
 
 # If we use HDF5 we need HDF5
 if ( QDP_USE_HDF5 ) 
@@ -465,13 +386,11 @@ endif()
 add_subdirectory(other_libs/qio)
 add_subdirectory(lib)
 
+
 # The examples and nersc2ildg etc
 if( QDP_BUILD_EXAMPLES )
   add_subdirectory(examples)
 endif()
-
-# The tests -- test primarily whether SSE implementations 
-# are correct so we can do that
 
 #Install config files.
 # Make the config file

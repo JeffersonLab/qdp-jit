@@ -1,22 +1,12 @@
-// -*- C++ -*-
+#ifndef QDP_PROFILE_H
+#define QDP_PROFILE_H
 
-/*! @file
- * @brief Print profiling info
- *
- * Diagnostics to print profiling.
- */
-
-#ifndef QDP_PROFILE_INCLUDE
-#define QDP_PROFILE_INCLUDE
 
 namespace QDP {
 
 typedef unsigned long  QDPTime_t;
 
-//! Get the wallclock time
-/*!
-  \return The wallclock time (since Epoch) in seconds.
-*/
+
 QDPTime_t getClockTime();
 void initProfile(const std::string& file, const std::string& caller, int line);
 void closeProfile();
@@ -391,4 +381,4 @@ struct QDPProfileHead_t
 
 } // namespace QDP
 
-#endif  // QDP_PROFILE_INCLUDE
+#endif

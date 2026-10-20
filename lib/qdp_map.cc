@@ -1,30 +1,28 @@
-
-/*! @file
- * @brief Support routines for Maps
- * 
- * Common routines for implementation of Maps
- */
-
 #include "qdp.h"
 #include "qdp_util.h"
 
 namespace QDP {
 
+  FnMap::FnMap(const Map& m): map(m)
+  {
+  }
+  
+  FnMap::FnMap(const FnMap& f) : map(f.map) , pRsrc(f.pRsrc)
+  {
+  }
 
-  FnMap::FnMap(const Map& m): map(m), pRsrc(new RsrcWrapper( m.get_destnodes() , m.get_srcenodes() )) {}
-  FnMap::FnMap(const FnMap& f) : map(f.map) , pRsrc(f.pRsrc) {}
+  void FnMap::init_wrapper(int layout_ref)
+  {
+    pRsrc = make_shared<RsrcWrapper>( map.get_destnode(layout_ref) , map.get_srcenode(layout_ref) );
+  }
 
 
-
-//! Definition of shift function object
 ArrayBiDirectionalMap  shift;
 
-//! Function object used for constructing the default nearest neighbor map
 struct NearestNeighborMapFunc : public ArrayMapFunc
 {
   NearestNeighborMapFunc() {}
 
-  // Virtual destructor - no cleanup needed
   virtual ~NearestNeighborMapFunc() {} 
 
   virtual multi1d<int> operator() (const multi1d<int>& coord, int sign, int dir) const
@@ -44,18 +42,13 @@ private:
 }; 
 
 
-//! Initializer for maps
 void initDefaultMaps()
 {
-  // Initialize the nearest neighbor map
   NearestNeighborMapFunc bbb;
 
   shift.make(bbb);
 }
 
-
-//----------------------------------------------------------------------------
-// ArrayMap
 
 // This class is is used for binding the direction index of an ArrayMapFunc
 // so as to construct a MapFunc
@@ -76,7 +69,6 @@ private:
 }; 
 
 
-//! Initializer for an array of maps
 void ArrayMap::make(const ArrayMapFunc& func)
 {
   // We are allowed to declare a mapsa, but not allocate one.
@@ -94,16 +86,10 @@ void ArrayMap::make(const ArrayMapFunc& func)
 }
 
 
-//----------------------------------------------------------------------------
-// BiDirectionalMap
-
-// This class is is used for binding the direction index of an BiDirectionalMapFunc
-// so as to construct a MapFunc
 struct PackageBiDirectionalMapFunc : public MapFunc
 {
   PackageBiDirectionalMapFunc(const MapFunc& mm, int mmult): pmap(mm), mult(mmult) {}
 
-  // Virtual destructor -- no real cleanup needed
   virtual ~PackageBiDirectionalMapFunc() {}
   virtual multi1d<int> operator() (const multi1d<int>& coord, int isign) const
     {
@@ -116,15 +102,10 @@ private:
 }; 
 
 
-//! Initializer for a generic bi-directional maps
 void BiDirectionalMap::make(const MapFunc& func)
 {
-  // We are allowed to declare a bimaps, but not allocate one.
-  // There is an empty constructor for Map. Hence, the resize will
-  // actually allocate the space.
   bimaps.resize(2);
 
-  // Construct maps for each sign
   PackageBiDirectionalMapFunc  my_neg_map(func,-1);
   bimaps[0].make(my_neg_map);
 
@@ -133,11 +114,6 @@ void BiDirectionalMap::make(const MapFunc& func)
 }
 
 
-//----------------------------------------------------------------------------
-// ArrayBiDirectionalMap
-
-// This class is is used for binding the direction index of an ArrayBiDirectionalMapFunc
-// so as to construct a MapFunc
 struct PackageArrayBiDirectionalMapFunc : public MapFunc
 {
   PackageArrayBiDirectionalMapFunc(const ArrayMapFunc& mm, int mmult, int dd) : 
@@ -155,18 +131,13 @@ private:
 }; 
 
 
-//! Initializer for an array of bi-directional maps
 void ArrayBiDirectionalMap::make(const ArrayMapFunc& func)
 {
-  // We are allowed to declare a mapsa, but not allocate one.
-  // There is an empty constructor for Map. Hence, the resize will
-  // actually allocate the space.
-  bimapsa.resize(2,func.numArray());
+  if (bimapsa.size2() != 2 || bimapsa.size1() != func.numArray() )
+    bimapsa.resize(2,func.numArray());
 
-  // Loop over each direction making the Map
   for(int dir=0; dir < func.numArray(); ++dir)
   {
-    // Construct maps for each sign
     PackageArrayBiDirectionalMapFunc  my_neg_map(func,-1,dir);
     bimapsa(0,dir).make(my_neg_map);
 
@@ -175,8 +146,6 @@ void ArrayBiDirectionalMap::make(const ArrayMapFunc& func)
   }
 }
 
-
-//-----------------------------------------------------------------------------
 
 
 } // namespace QDP;

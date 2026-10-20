@@ -7,14 +7,20 @@
 
 namespace QDP {
 
-  enum class JitResult { JitSuccess , JitError , JitResource };
+  enum class JitResult { JitSuccess , JitError , JitResource , JitOutOfMemory };
 
+#ifdef QDP_DEEP_LOG
+  //void gpu_deep_logger( void* host_ptr , std::string type_W , size_t field_size , std::string pretty );
+  //void gpu_deep_logger_close();
+#endif
 
 #ifdef QDP_BACKEND_CUDA
   int gpu_SDK_version_major();
   int gpu_SDK_version_minor();
 #endif
-  
+
+  void gpu_print_info();
+
   void gpu_create_events();
   void gpu_record_start();
   float gpu_record_stop_sync_time();
@@ -25,10 +31,10 @@ namespace QDP {
   
   std::string gpu_get_arch();
 
-  //void gpu_auto_detect();
-
   size_t gpu_mem_free();
   size_t gpu_mem_total();
+
+  size_t gpu_get_max_resident_threads();
 
   int gpu_get_device_count();
 
@@ -37,12 +43,8 @@ namespace QDP {
   void gpu_host_alloc(void **mem , const size_t size);
   void gpu_host_free(void *mem);
 
-
-#if defined (QDP_ENABLE_MANAGED_MEMORY)
   void gpu_memcpy( void * dest , const void * src , size_t size );
   bool gpu_malloc_managed( void **mem , size_t size );
-  //void gpu_prefetch(void *mem,   size_t  size);
-#endif
 
   void gpu_memcpy_h2d( void * dest , const void * src , size_t size );
   void gpu_memcpy_d2h( void * dest , const void * src , size_t size );
@@ -63,7 +65,6 @@ namespace QDP {
 #endif
 
   
-  //JitFunction get_fptr_from_ptx( const char* fname , const std::string& kernel );
   bool get_jitf( JitFunction& func, const std::string& kernel , const std::string& func_name , const std::string& pretty , const std::string& compute );
 
   std::string getPTXfromCUFunc(JitFunction& f);
@@ -92,10 +93,7 @@ namespace QDP {
 
   unsigned gpu_getMajor();
   unsigned gpu_getMinor();
-  
 
-
-  
 }
 
 #endif

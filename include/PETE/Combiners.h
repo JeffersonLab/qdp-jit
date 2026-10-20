@@ -1,4 +1,6 @@
-// -*- C++ -*-
+#ifndef QDP_PETE_COMBINERS_H
+#define QDP_PETE_COMBINERS_H
+
 // ACL:license
 // ----------------------------------------------------------------------
 // This software and ancillary information (herein called "SOFTWARE")
@@ -25,9 +27,6 @@
 // or visit the PETE web page at http://www.acl.lanl.gov/pete/.
 // ----------------------------------------------------------------------
 // ACL:license
-
-#ifndef PETE_PETE_COMBINERS_H
-#define PETE_PETE_COMBINERS_H
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -254,6 +253,69 @@ struct Combine3<A, B, C, Op, OpCombine>
 };
 
 
+
+
+
+struct OpEvalShape
+{
+  PETE_EMPTY_CONSTRUCTORS(OpEvalShape)
+};
+
+
+template<class A,class Op>
+struct Combine1<A, Op, OpEvalShape>
+{
+  typedef typename UnaryReturn<A, Op>::Type_t Type_t;
+  inline static
+  Type_t combine(const A& a, const Op& op, OpEvalShape)
+  {
+    NestedIndex idv;
+
+    const Shape shape = unary_result_shape<Type_t, Op>(a);
+
+    return Type_t( nullptr , JitDataOrder::SiteFast , idv , shape );
+  }
+};
+
+
+
+
+template<class A,class B,class Op>
+struct Combine2<A, B, Op, OpEvalShape>
+{
+  typedef typename BinaryReturn<A, B, Op>::Type_t Type_t;
+  inline static
+  Type_t combine(const A& a, const B& b, const Op& op, OpEvalShape)
+  {
+    NestedIndex idv;
+
+    const Shape shape = binary_result_shape<Type_t, Op>(a, b);
+
+    return Type_t( nullptr , JitDataOrder::SiteFast , idv , shape );
+  }
+};
+
+
+template<class A,class B,class C,class Op>
+struct Combine3<A, B, C, Op, OpEvalShape>
+{
+  typedef typename TrinaryReturn<A, B, C, Op>::Type_t Type_t;
+  inline static
+  Type_t combine(const A& a, const B& b, const C& c, const Op& op, OpEvalShape)
+  {
+    NestedIndex idv;
+
+    const Shape shape = trinary_result_shape<Type_t, Op>(a, b, c);
+
+    return Type_t( nullptr , JitDataOrder::SiteFast , idv , shape );
+  }
+};
+
+
+
+
+
+
 //-----------------------------------------------------------------------------
 //
 // CLASS NAME
@@ -380,7 +442,7 @@ struct Combine2<int, int, Op, SumCombine>
 };
 
 
-#endif // PETE_PETE_COMBINERS_H
+#endif
 
 // ACL:rcsinfo
 // ----------------------------------------------------------------------

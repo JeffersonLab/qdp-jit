@@ -1,0 +1,47 @@
+site_name: qdp-jit
+site_description: QDP++ with JIT-compiled kernels and multigrid extensions
+site_url: https://jeffersonlab.github.io/qdp-jit/
+
+repo_url: https://github.com/JeffersonLab/qdp-jit
+repo_name: JeffersonLab/qdp-jit
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - content.code.copy
+    - search.highlight
+    - search.suggest
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - Home: index.md
+  - Download and build: building.md
+  - Concepts: concepts.md
+  - Layouts and shapes:
+      - Layouts: layouts.md
+      - Scopes: scopes.md
+      - Shape (Ns, Nc): shape.md
+      - Data format: data-format.md
+      - Construction and copying: construction.md
+  - Multigrid operations:
+      - blockSum: block-sum.md
+      - Mixed-layout expressions: mixed-layouts.md
+  - Running:
+      - Timing: timing.md
+      - Command-line options: options.md

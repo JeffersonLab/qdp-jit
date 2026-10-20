@@ -1,4 +1,6 @@
-// -*- C++ -*-
+#ifndef QDP_PETE_SCALAR_H
+#define QDP_PETE_SCALAR_H
+
 // ACL:license
 // ----------------------------------------------------------------------
 // This software and ancillary information (herein called "SOFTWARE")
@@ -25,9 +27,6 @@
 // or visit the PETE web page at http://www.acl.lanl.gov/pete/.
 // ----------------------------------------------------------------------
 // ACL:license
-
-#ifndef PETE_PETE_SCALAR_H
-#define PETE_PETE_SCALAR_H
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -121,7 +120,7 @@ private:
 };
 
 
-#endif // PETE_PETE_SCALAR_H
+#endif
 
 // ACL:rcsinfo
 // ----------------------------------------------------------------------

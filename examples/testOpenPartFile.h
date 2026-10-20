@@ -1,5 +1,5 @@
-#ifndef TEST_OPEN_PARTFILE_H
-#define TEST_OPEN_PARTFILE_H
+#ifndef QDP_EXAMPLES_TESTOPENPARTFILE_H
+#define QDP_EXAMPLES_TESTOPENPARTFILE_H
 
 #include "qdp.h"
 #include "unittest.h"

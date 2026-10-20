@@ -1,10 +1,9 @@
-// -*- C++ -*-
+#ifndef QDP_MAP_OBJ_MEMORY_H
+#define QDP_MAP_OBJ_MEMORY_H
+
 /*! \file
  *  \brief A memory based map object 
  */
-
-#ifndef __qdp_map_obj_memory_h__
-#define __qdp_map_obj_memory_h__
 
 #include "qdp_map_obj.h"
 #include <vector>

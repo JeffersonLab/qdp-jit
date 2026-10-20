@@ -12,70 +12,53 @@ set( PETE_HDRS PETE/Combiners.h
              
 install(FILES ${PETE_HDRS} DESTINATION include/PETE)
 
-set( MEMORY_HDRS qdp_allocator.h
-  qdp_singleton.h
-  qdp_default_allocator.h)
+set( MEMORY_HDRS qdp_singleton.h
+  qdp_allocator.h)
 
 install(FILES ${MEMORY_HDRS} DESTINATION include)
 
 set( CUDA_HDRS qdp_gpu.h
   qdp_cache.h
   qdp_alloc_cache.h
-  qdp_quda.h
   qdp_mapresource.h
   qdp_pool_allocator.h
-  qdp_cuda_allocator.h
   qdp_llvm.h
-  qdp_viewleaf.h
+  qdp_llvm_includes.h
+  qdp_jit.h
   qdp_word.h
   qdp_wordjit.h
-  qdp_wordreg.h
-  qdp_jitfunction.h
-  qdp_jitf_op.h
-  qdp_jitf_extract.h
-  qdp_jitf_spinloop.h
-  qdp_jitf_eval.h
-  qdp_jitf_subtype.h
-  qdp_jitf_latsca.h
-  qdp_jitf_pokesite.h
-  qdp_jitf_zerorep.h
-  qdp_jitf_random.h
-  qdp_jitf_gather.h
+  qdp_kernels.h
+  qdp_kernel_extract.h
+  qdp_kernel_eval.h
+  qdp_kernel_site.h
+  qdp_kernel_zerorep.h
+  qdp_kernel_random.h
+  qdp_kernel_gather.h
+  qdp_kernel_scalar_eval.h
   qdp_jit_util.h
+  qdp_jit_translation.h
   qdp_pete_visitors.h
   qdp_outerjit.h
   qdp_realityjit.h
-  qdp_realityreg.h
   qdp_primscalarjit.h
-  qdp_primscalarreg.h
   qdp_basejit.h
+  qdp_baseview.h
   qdp_primmatrixjit.h
   qdp_primcolormatjit.h
   qdp_primspinmatjit.h
-  qdp_primmatrixreg.h
-  qdp_primcolormatreg.h
-  qdp_primspinmatreg.h 
   qdp_primseedjit.h
-  qdp_primseedreg.h
   qdp_primvectorjit.h
   qdp_primspinvecjit.h
   qdp_primcolorvecjit.h 
-  qdp_primvectorreg.h
-  qdp_primspinvecreg.h
-  qdp_primcolorvecreg.h
   qdp_primgamma.h
-  qdp_handle.h
   qdp_mastermap.h
   qdp_masterset.h
-  qdp_sum.h
   qdp_datalayout.h
-  qdp_jitf_copymask.h
-  qdp_jitf_sum.h
-  qdp_jitf_summulti.h
-  qdp_jitf_globalmax.h
-  qdp_jitf_gaussian.h
+  qdp_kernel_copymask.h
+  qdp_kernel_reduce.h
+  qdp_kernel_blocksum.h
   qdp_internal.h
-  qdp_newopsreg.h
+  qdp_newopsjit.h
   qdp_jit_function.h
   qdp_expr_writer.h
   qdp_jit_config.h
@@ -84,18 +67,14 @@ set( CUDA_HDRS qdp_gpu.h
 
 install(FILES ${CUDA_HDRS} DESTINATION include)
 
-set( QDP_CUSTOM_HDRS
-  custom_kernels/custom_kernels.h
-  custom_kernels/stream_local_inner_product.h
-  )
-
-install(FILES ${QDP_CUSTOM_HDRS} DESTINATION include/)
-
 install(FILES ${QDP_SPECIAL_HDRS} DESTINATION include/)
 
 set( QDP_HDRS
+  qdp_shape.h
+  qdp_shape_traits.h
   qdp_config.h
   qdp_forward.h
+  qdp_forward_jit.h
   qdp_globalfuncs.h
   qdp_globalfuncs_subtype.h
   qdp_init.h
@@ -144,16 +123,15 @@ set( QDP_HDRS
   qdp_traits.h
   qdp_dispatch.h
   qdp_dyn_functions.h
+  qdp_jit_plan.h
+  qdp_jit_plan_leaves.h
   qdp_functions.h
   qdp_parscalar_specific.h
   qdp_parscalar_mapresource.h
   qdp_parscalar_internal.h
-  qdp_scalar_specific.h
-  qdp_scalar_internal.h
-  qdp_scalar_mapresource.h
   qdp_defs.h
   qdp_scalarsite_defs.h
-  qdp_strnlen.h
+  qdp_scalarsite_defs2.h
   qdp_db.h
   qdp_db_imp.h
   qdp_db_stub.h
@@ -164,6 +142,7 @@ set( QDP_HDRS
   qdp_map_obj_disk_multiple.h
   qdp_hdf5.h
   qdp_disk_map_slice.h
+  qdp_lattice_layout.h
   )
 
-install( FILES ${QDP_HDRS} DESTINATION include ) 
+install( FILES ${QDP_HDRS} DESTINATION include )

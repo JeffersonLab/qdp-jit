@@ -1,30 +1,17 @@
 #include "qdp.h"
 
-#if defined(QDP_BACKEND_AVX)
-#include <omp.h>
-#endif
 
 namespace QDP {
-
 
   namespace {
     void *sync_hst_ptr;
     void *sync_dev_ptr;
   }
 
-  namespace
-  {
-    typedef std::map< std::string , int > DBTuneType;
-    DBTuneType db_tune;
-    bool db_tune_modified = false;
-    int db_tune_count = 0;
-  }
-
-
-
   namespace {
     RingBuffer* __global_ring_buffer;
   }
+
 
   RingBuffer& QDP_get_global_ring_buffer()
   {
@@ -48,15 +35,12 @@ namespace QDP {
 
     if ( buf_elem >= 0)
       {
-	//QDPIO::cout << "ringBuffer: sign off " << buf_elem << std::endl;
       	QDP_get_global_cache().signoff( buf_elem );
       }
     
     buf_elem = QDP_get_global_cache().addOwnHostMemNoPage( size, hstPtr );
-    //QDPIO::cout << "ringBuffer: allocated " << buf_elem << " (" << size << ")" << std::endl;
 
     ringBufferNext = ( ringBufferNext + 1 ) % ringBufferOScalar.size();
-    //QDPIO::cout << "ringBufferNext = " << ringBufferNext << std::endl;
 
     return buf_elem;
   }
@@ -71,99 +55,17 @@ namespace QDP {
       }
   }
 
-  
 
-  int jit_util_get_tune_count()
+
+  DynKey get_dyn_key( const Shape& shape )
   {
-    return db_tune_count;
-  }
-  
-  void db_tune_write( std::string filename )
-  {
-    if (!db_tune_modified)
-      return;
-    
-    BinaryFileWriter db(filename);
-
-    write( db , (int)db_tune.size() );
-    for ( DBTuneType::iterator it = db_tune.begin() ; it != db_tune.end() ; ++it ) 
-      {
-	write(db , it->first);
-	write(db , it->second);
-      }
-    db.close();
-    QDPIO::cout << "  tuning file updated" << std::endl;
-  }
-
-  
-  void db_tune_read( std::string filename )
-  {
-    QDPIO::cout << "Tuning DB" << std::endl;
-    QDPIO::cout << "  checking file                       : " << filename << std::endl;
-    {
-      ifstream f(filename.c_str());
-      if (! f.good() )
-	{
-	  QDPIO::cout << "  creating new tuning file" << std::endl;
-	  return;
-	}
-    }
-    
-    QDPIO::cout << "  opening file" << std::endl;
-
-    BinaryFileReader db(filename);
-
-    int n;
-    read( db , n );
-    
-    QDPIO::cout << "  number of tuning records            : " << n << std::endl;
-
-    for( int i = 0 ; i < n ; ++i )
-      {
-	std::string key;
-	int config;
-
-	read( db , key , 10*1024 );
-	read( db , config );
-
-	db_tune[ key ] = config;
-
-	//QDPIO::cout << "read: " << config << "\t" << key << std::endl;
-      }
-    db.close();
-
-    QDPIO::cout << "  done reading tuning file" << std::endl;
-  }
-
-  
-  bool db_tune_find_info( JitFunction& function )
-  {
-    std::string key = jit_util_get_static_dynamic_string( function.get_pretty() );
-    
-    DBTuneType::iterator it = db_tune.find( key );
-
-    if ( it != db_tune.end() )
-      {
-	function.set_threads_per_block( it->second );
-	return true;
-      }
-
-    return false;
-  }
-
-  
-  void db_tune_insert_info( JitFunction& function , int config )
-  {
-    std::string key = jit_util_get_static_dynamic_string( function.get_pretty() );
-    db_tune[key] = config;
-    db_tune_modified = true;
-    db_tune_count++;
+    DynKey key;
+    key.add( shape );
+    return key;
   }
 
   
 
-
-  
   void jit_util_sync_init()
   {
     gpu_host_alloc( &sync_hst_ptr , sizeof(int) );
@@ -182,19 +84,34 @@ namespace QDP {
     gpu_memcpy_d2h( sync_hst_ptr , sync_dev_ptr , sizeof(int) );
   }
 
-  // For AMD the workgroup sizes are passed as kernel parameters
-  // For now as placeholder values
-  //
-  void JIT_AMD_add_workgroup_sizes( std::vector<QDPCache::ArgKey>& ids )
-  {
-    JitParam jit_ntidx( QDP_get_global_cache().addJitParamInt( -1 ) );
-    JitParam jit_nctaidx( QDP_get_global_cache().addJitParamInt( -1 ) );
 
-    ids.insert(ids.begin(), jit_nctaidx.get_id() );
-    ids.insert(ids.begin(), jit_ntidx.get_id() );
+
+
+  void jit_check_num_args( JitFunction& function , const std::vector<QDPCache::ArgKey>& ids )
+  {
+    if ( function.get_num_params() >= 0 && function.get_num_params() != (int)ids.size() )
+      {
+	QDPIO::cerr << "JIT launch: kernel " << function.get_kernel_name()
+		    << " expects " << function.get_num_params()
+		    << " arguments, but " << ids.size() << " were given" << std::endl;
+	QDPIO::cerr << function.get_pretty() << std::endl;
+	QDP_abort(1);
+      }
   }
 
 
+  void jit_check_workgroup_bound( JitFunction& function , int threads_per_block )
+  {
+    if ( function.get_workgroup_bound() > 0 && threads_per_block > function.get_workgroup_bound() )
+      {
+	QDPIO::cerr << "JIT launch: kernel " << function.get_kernel_name()
+		    << " was compiled for at most " << function.get_workgroup_bound()
+		    << " threads per block, but launched with " << threads_per_block
+		    << " (build functions of kernels launched with explicit geometry must call set_explicit_geom)" << std::endl;
+	QDPIO::cerr << function.get_pretty() << std::endl;
+	QDP_abort(1);
+      }
+  }
 
 
   void jit_get_function(JitFunction& f)
@@ -205,8 +122,6 @@ namespace QDP {
   }
 
 
-
-  
 
   llvm::Value* llvm_epsilon_1st( int p1 , llvm::Value* j )
   {
@@ -231,135 +146,34 @@ namespace QDP {
 
   
 
-  
-  
-  
 
-#if defined(QDP_BACKEND_CUDA) || defined(QDP_BACKEND_ROCM) || defined(QDP_BACKEND_L0)
-  void jit_tune( JitFunction& function , int th_count , QDPCache::KernelArgs_t& args)
+  void jit_report_launch_out_of_memory( JitFunction& function )
   {
-    if ( ! function.get_enable_tuning() )
-      {
-	//QDPIO::cout << "Tuning disabled for: " << function.get_kernel_name() << std::endl;
-	function.set_threads_per_block( jit_config_get_threads_per_block() );
-	return;
-      }
+    const size_t stack    = function.get_stack();
+    const size_t resident = gpu_get_max_resident_threads();
+    const size_t free_mem = gpu_mem_free();
 
-
-    if (db_tune_find_info( function ))
-      {
-	return;
-      }
-    
-
-    size_t field_size      = QDP_get_global_cache().getSize       ( function.get_dest_id() );
-
-    void* dev_ptr = QDP_get_global_cache().get_dev_ptr( function.get_dest_id() );
-  
-    void* host_ptr;
-
-    if ( ! (host_ptr = malloc( field_size )) )
-      {
-	QDPIO::cout << "Tuning: Cannot allocate host memory!" << endl;
-	QDP_abort(1);
-      }
-    
-    if (jit_config_get_tuning_verbose())
-      {
-	QDPIO::cout << "Starting tuning of: " << function.get_kernel_name() << std::endl;
-	QDPIO::cout << function.get_pretty() << std::endl;
-      }
-
-
-    //QDPIO::cout << "d2h: start = " << f.start << "  count = " << f.count << "  size_T = " << f.size_T << "   \t";
-    
-    gpu_memcpy_d2h( host_ptr , dev_ptr , field_size );
-
-    // --------------------
-    // Main tuning loop
-
-    int config = -1;
-    double best_time;
-
-
-    for( int threads_per_block = jit_config_get_threads_per_block_min() ;
-	 threads_per_block <= jit_config_get_threads_per_block_max() ;
-	 threads_per_block += jit_config_get_threads_per_block_step() )
-      {
-	kernel_geom_t geom = getGeom( th_count , threads_per_block );
-
-	StopWatch w;
-	int loops = jit_config_get_threads_per_block_loops();
-
-	
-	for( int i = 0 ; i < loops+5 ; ++i )
-	  {
-	    if (i==5)
-	      gpu_record_start();
-
-	    JitResult result = gpu_launch_kernel( function,
-						  geom.Nblock_x,geom.Nblock_y,1,
-						  geom.threads_per_block,1,1,
-						  0, // shared mem
-						  args );
-	  
-	    if (result != JitResult::JitSuccess) {
-	      QDPIO::cerr << "Tuning: jit launch error, grid=(" << geom.Nblock_x << "," << geom.Nblock_y << "1), block=(" << threads_per_block << ",1,1)\n";
-	      QDP_abort(1);
-	    }
-
-	  }
-	
-	//w.stop();
-	//gpu_record_stop();
-	//gpu_event_sync();
-	float ms = gpu_record_stop_sync_time();
-
-	//double ms = w.getTimeInMicroseconds();
-
-	if (jit_config_get_tuning_verbose())
-	  {
-	    QDPIO::cout << "blocksize\t" << threads_per_block << "\ttime = \t" << ms << std::endl;
-	  }
-	
-	if (config == -1 || best_time > ms)
-	  {
-	    best_time = ms;
-
-	    config = threads_per_block;
-	  }
-      }
-
-    if (jit_config_get_tuning_verbose())
-      {
-	QDPIO::cout << "best   \t" << config << "\ttime = \t" << best_time << std::endl;
-      }
-    
-    function.set_threads_per_block( config );
-
-    // DB tune
-    db_tune_insert_info( function , config );
-
-    // -------------------
-
-    // Restore memory for 'dest'
-    gpu_memcpy_h2d( dev_ptr , host_ptr , field_size );
-    
-    free( host_ptr );
+    QDPIO::cerr << "Kernel launch failed: out of device memory.\n"
+		<< "  The kernel uses " << stack << " bytes of stack (local memory) per thread.\n";
+    if ( resident > 0 && stack > 0 )
+      QDPIO::cerr << "  The driver reserves it for all " << resident << " threads that can be resident on the device: "
+		  << stack * resident / 1024 / 1024 << " MB.\n";
+    QDPIO::cerr << "  Free device memory outside the memory pool: " << free_mem / 1024 / 1024 << " MB";
+    if ( jit_config_get_pool_reserve() > 0 )
+      QDPIO::cerr << " (-pool-reserve " << jit_config_get_pool_reserve() / 1024 / 1024 << " MB)";
+    QDPIO::cerr << ".\n";
+    if ( resident > 0 && stack > 0 )
+      QDPIO::cerr << "  Keep at least " << ( stack * resident / 1024 / 1024 + 256 )
+		  << " MB outside the pool: -pool-reserve " << ( stack * resident / 1024 / 1024 + 256 ) << "m, or reduce -poolsize.\n";
+    else
+      QDPIO::cerr << "  Keep more memory outside the pool: -pool-reserve, or reduce -poolsize.\n";
+    QDPIO::cerr << "  Kernel: " << function.get_kernel_name() << std::endl;
   }
-#endif  
 
 
-#if defined(QDP_BACKEND_CUDA) || defined(QDP_BACKEND_ROCM) || defined(QDP_BACKEND_L0)
-  void jit_launch( JitFunction& function , int th_count , std::vector<QDPCache::ArgKey>& ids , bool set_l0_event )
+  void jit_launch_gpu( JitFunction& function , int th_count , std::vector<QDPCache::ArgKey>& ids , bool set_l0_event )
   {
-    //QDPIO::cerr << "jit launch, grid=(" << geom.Nblock_x << "," << geom.Nblock_y << ",1), block=(" << threads_per_block << ",1,1)\n";
-
-    // For ROCm we add the __threads_per_group and 
-    // __grid_size_x as parameters to the kernel.
-#ifdef QDP_BACKEND_ROCM
-    JIT_AMD_add_workgroup_sizes( ids );
-#endif
+    jit_check_num_args( function , ids );
     
     QDPCache::KernelArgs_t args( QDP_get_global_cache().get_kernel_args(ids) );
 
@@ -370,27 +184,11 @@ namespace QDP {
     // Increment the call counter
     function.inc_call_counter();
 
-    
-#if defined(QDP_BACKEND_CUDA) || defined(QDP_BACKEND_ROCM) || defined(QDP_BACKEND_L0)
-    if (  jit_config_get_tuning()  &&  function.get_threads_per_block() == -1  )
-      {
-	jit_tune( function , th_count , args );
-      }
-#endif
-    
-    int threads_per_block;
-
-    if ( function.get_threads_per_block() == -1 )
-      {
-	threads_per_block = std::min( jit_config_get_threads_per_block() , th_count );
-      }
-    else
-      {
-	threads_per_block = function.get_threads_per_block();
-      }
-
+    int threads_per_block = std::min( jit_config_get_threads_per_block() , th_count );
 
     kernel_geom_t geom = getGeom( th_count , threads_per_block );
+
+    jit_check_workgroup_bound( function , geom.threads_per_block );
 
     JitResult result = gpu_launch_kernel( function,
 					  geom.Nblock_x,geom.Nblock_y,1,
@@ -398,52 +196,54 @@ namespace QDP {
 					  0, // shared mem
 					  args ,
 					  set_l0_event );
+    
+    if (result == JitResult::JitOutOfMemory)
+      jit_report_launch_out_of_memory( function );
 
     if (result != JitResult::JitSuccess) {
-      QDPIO::cerr << "jit launch error, grid=(" << geom.Nblock_x << "," << geom.Nblock_y << ",1), block=(" << threads_per_block << ",1,1)\n";
+      QDPIO::cerr << "jit launch error, grid=(" << geom.Nblock_x << "," << geom.Nblock_y << ",1), block=(" << geom.threads_per_block << ",1,1)\n";
+      QDPIO::cerr << "kernel: regs = " << function.get_regs() << ", stack = " << function.get_stack() << ", cmem = " << function.get_cmem() << std::endl;      
       QDP_abort(1);
     }
   }
-#elif defined(QDP_BACKEND_AVX)
-  void jit_launch(JitFunction& f,int th_count,std::vector<QDPCache::ArgKey>& ids)
+
+
+  void jit_launch_host( JitFunction& function , std::vector<QDPCache::ArgKey>& ids )
   {
-    QDPCache::KernelArgs_t args( QDP_get_global_cache().get_kernel_args(ids) );
+    jit_check_num_args( function , ids );
 
-    if ( th_count == 0 )
-      return;
+    QDPCache::HostArgs_t args( QDP_get_global_cache().get_host_args(ids) );
 
-    void (*FP)(int,void*) = (void (*)(int,void*))(intptr_t)f.get_function();
+    void (*FP)(void*) = (void (*)(void*))(intptr_t)function.get_function();
 
-    //std::cout << "max threads = " << omp_get_max_threads() << "\n";
+    FP( args.data() );
 
-    //#pragma omp for
-    for ( int i = 0 ; i < th_count ; i++ )
-      {
-	FP( i , args.data() );
-      }
-
-    // Increment the call counter
-    f.inc_call_counter();
+    function.inc_call_counter();
   }
-#else
-#error "No LLVM backend specified."
-#endif
-
 
 
   
-
-
-  
-  void jit_launch_explicit_geom( JitFunction& function , std::vector<QDPCache::ArgKey>& ids , const kernel_geom_t& geom , unsigned int shared )
+  void jit_launch( JitFunction& function , int th_count , std::vector<QDPCache::ArgKey>& ids , bool set_l0_event )
   {
-    //QDPIO::cerr << "jit launch explicit geom, grid=(" << geom.Nblock_x << "," << geom.Nblock_y << ",1), block=(" << geom.threads_per_block << ",1,1) shared=" << shared << "\n";
+    if (function.isGPU())
+      {
+	jit_launch_gpu( function , th_count , ids , set_l0_event );
+      }
+    else
+      {
+	jit_launch_host( function , ids );
+      }
+  }
 
-    // For ROCm we add the __threads_per_group and 
-    // __grid_size_x as parameters to the kernel.
-#ifdef QDP_BACKEND_ROCM
-    JIT_AMD_add_workgroup_sizes( ids );
-#endif
+
+
+
+
+  
+  bool jit_launch_explicit_geom( JitFunction& function , std::vector<QDPCache::ArgKey>& ids , const kernel_geom_t& geom , unsigned int shared )
+  {
+    jit_check_num_args( function , ids );
+    jit_check_workgroup_bound( function , geom.threads_per_block );
 
     QDPCache::KernelArgs_t args( QDP_get_global_cache().get_kernel_args(ids) );
 
@@ -453,10 +253,11 @@ namespace QDP {
 #if defined (QDP_BACKEND_CUDA)
     if ( geom.threads_per_block * function.get_regs() > jit_config_get_max_regs_per_block() )
       {
-	QDPIO::cerr << "jit launch explicit, grid=(" << geom.Nblock_x << "," << geom.Nblock_y << ",1), block=(" << geom.threads_per_block << ",1,1)" << std::endl;
-	QDPIO::cerr << "kernel: regs = " << function.get_regs() << ", stack = " << function.get_stack() << ", cmem = " << function.get_cmem() << std::endl;
-	QDPIO::cerr << "resulting in " << geom.threads_per_block * function.get_regs() << " registers, exceeding hardware limit " << jit_config_get_max_regs_per_block() << std::endl;
-	QDP_abort(1);
+	// since this case is appropiately handled, don't verbose print
+	// cout << "jit launch explicit, grid=(" << geom.Nblock_x << "," << geom.Nblock_y << ",1), block=(" << geom.threads_per_block << ",1,1)" << std::endl;
+	// cout << "kernel: regs = " << function.get_regs() << ", stack = " << function.get_stack() << ", cmem = " << function.get_cmem() << std::endl;
+	// cout << "resulting in " << geom.threads_per_block * function.get_regs() << " registers, exceeding hardware limit " << jit_config_get_max_regs_per_block() << std::endl;
+	return false;
       }
 #endif
     
@@ -466,10 +267,15 @@ namespace QDP {
 					  shared,
 					  args );
 
+    if (result == JitResult::JitOutOfMemory)
+      jit_report_launch_out_of_memory( function );
+
     if (result != JitResult::JitSuccess) {
       QDPIO::cerr << "jit launch explicit geom error, grid=(" << geom.Nblock_x << "," << geom.Nblock_y << ",1), block=(" << geom.threads_per_block << ",1,1)\n";
       QDP_abort(1);
     }
+
+    return true;
   }
 
 
@@ -495,7 +301,11 @@ namespace QDP {
   
   
 
-  JitForLoop::JitForLoop( llvm::Value* start , llvm::Value* end )
+  namespace {
+    const int small_trip_count = 4;
+  }
+
+  JitForLoop::JitForLoop( llvm::Value* start , llvm::Value* end ) : r_start(start), r_end(end)
   {
     block_outer = llvm_get_insert_point();
     block_loop_cond = llvm_new_basic_block();
@@ -513,9 +323,13 @@ namespace QDP {
 
     llvm_set_insert_point( block_loop_body );
   }
-  llvm::Value * JitForLoop::index()
+  llvm::Value * JitForLoop::index() const
   {
     return r_i;
+  }
+  JitValue JitForLoop::jit() const
+  {
+    return JitValue(r_i);
   }
   void JitForLoop::end()
   {
@@ -525,11 +339,56 @@ namespace QDP {
   
     llvm_branch( block_loop_cond );
 
+    if (!full_unroll)
+      {
+	int n = llvm_const_trip_count( r_start , r_end );
+	if ( n > 0 && n <= small_trip_count )
+	  full_unroll = true;
+      }
+
+    if (full_unroll)
+      llvm_loop_unroll_full_latch();
+
     llvm_set_insert_point(block_loop_exit);
+
+    closed = true;
   }
 
 
 
+  llvm::Value* operator+( const JitForLoop& loop , int i )
+  {
+    return llvm_add( loop.index() , llvm_create_value(i) );
+  }
+
+  llvm::Value* operator-( const JitForLoop& loop , int i )
+  {
+    return llvm_sub( loop.index() , llvm_create_value(i) );
+  }
+
+  llvm::Value* operator*( const JitForLoop& loop , int i )
+  {
+    return llvm_mul( loop.index() , llvm_create_value(i) );
+  }
+
+
+  llvm::Value* operator+( int i , const JitForLoop& loop )
+  {
+    return llvm_add( llvm_create_value(i) , loop.index() );
+  }
+
+  llvm::Value* operator-( int i , const JitForLoop& loop )
+  {
+    return llvm_sub( llvm_create_value(i) , loop.index() );
+  }
+
+  llvm::Value* operator*( int i , const JitForLoop& loop )
+  {
+    return llvm_mul( llvm_create_value(i) , loop.index() );
+  }
+
+
+  
 
   JitForLoopPower::JitForLoopPower( llvm::Value* i_start  )
   {
@@ -565,7 +424,31 @@ namespace QDP {
 
 
 
+  JitValue operator+( const JitValue& l , const JitValue& r )
+  {
+    return llvm_add(l,r);
+  }
   
+  JitValue operator-( const JitValue& l , const JitValue& r )
+  {
+    return llvm_sub(l,r);
+  }
+  
+  JitValue operator*( const JitValue& l , const JitValue& r )
+  {
+    return llvm_mul(l,r);
+  }
+  
+  JitValue operator/( const JitValue& l , const JitValue& r )
+  {
+    return llvm_div(l,r);
+  }
+
+  JitValue operator%( const JitValue& l , const JitValue& r )
+  {
+    return llvm_rem(l,r);
+  }
+
   
 
 } //namespace

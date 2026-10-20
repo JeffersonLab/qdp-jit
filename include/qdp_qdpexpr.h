@@ -1,64 +1,48 @@
-// -*- C++ -*-
-
-/*! @file
- * @brief Expression class for QDP
- */
-
 #ifndef QDP_QDPEXPR_H
 #define QDP_QDPEXPR_H
 
 namespace QDP {
 
 
-//! Expression class for QDP
 template<class T, class C>
 class QDPExpr
 {
 public:
-  //! Type of the first argument.
+
   typedef T Subtype_t;
 
-  //! Type of the expression.
+
   typedef T Expression_t;
 
-  //! Type of the container class
+
   typedef C Container_t;
 
-  //! Construct from an expression.
+
   QDPExpr(const T& expr) : expr_m(expr)
   {    
   }
 
-  //! Accessor that returns the expression.
+
   const Expression_t& expression() const
   {
     return expr_m;
   }
 
 private:
-  /*! 
-   * Store the expression by value since it is a temporary produced
-   * by operator functions.
-   */
-
   T expr_m;
 };
 
 
-//-----------------------------------------------------------------------------
-// For Expressions, we strip the QDPExpr<> wrapper since it is intended
-// to wrap the whole expression. (QDPExpr<Scalar<>>+QDPExpr<BinaryNode<>>
-// becomes QDPExpr<BinaryNode<OpAdd,Scalar<>,BinaryNode<>>>)
-//-----------------------------------------------------------------------------
 
 template<class T, class C>
 struct MakeReturn
 {
   typedef QDPExpr<T, C>  Expression_t;
   inline static
-  Expression_t make(const T &a) {     
+  Expression_t make(const T &a) {
     return Expression_t(a); }
 };
+
 
 template<class T, class C>
 struct CreateLeaf<QDPExpr<T,C> >
@@ -79,7 +63,7 @@ struct ForEach<QDPExpr<T,DTag>, FTag, CTag>
 {
   typedef typename ForEach<T, FTag, CTag>::Type_t Type_t;
   inline static
-  Type_t apply(const QDPExpr<T,DTag>& expr, const FTag &f, 
+  Type_t apply(const QDPExpr<T,DTag>& expr, FTag &f, 
 	       const CTag &c) 
   {
     return ForEach<T, FTag, CTag>::apply(expr.expression(), f, c);
@@ -87,9 +71,7 @@ struct ForEach<QDPExpr<T,DTag>, FTag, CTag>
 };
 
 
-//-----------------------------------------------------------------------------
-// Alternative OpCombiner's that deal explicitly with references
-//-----------------------------------------------------------------------------
+
 
 template<class A,class Op>
 struct Combine1<Reference<A>, Op, OpCombine>
@@ -98,6 +80,7 @@ struct Combine1<Reference<A>, Op, OpCombine>
   inline static
   Type_t combine(Reference<A> a, const Op& op, OpCombine) { return op(a.reference()); }
 };
+
 
 template<class A,class B,class Op>
 struct Combine2<Reference<A>, Reference<B>, Op, OpCombine>
@@ -110,6 +93,7 @@ struct Combine2<Reference<A>, Reference<B>, Op, OpCombine>
   }
 };
 
+
 template<class A,class B,class Op>
 struct Combine2<Reference<A>, B, Op, OpCombine>
 {
@@ -120,6 +104,7 @@ struct Combine2<Reference<A>, B, Op, OpCombine>
     return op(a.reference(), b);
   }
 };
+
 
 template<class A,class B,class Op>
 struct Combine2<A, Reference<B>, Op, OpCombine>
@@ -144,6 +129,7 @@ struct Combine3<Reference<A>, B, C, Op, OpCombine>
   }
 };
 
+
 template<class A,class B,class C,class Op>
 struct Combine3<A, Reference<B>, C, Op, OpCombine>
 {
@@ -154,6 +140,7 @@ struct Combine3<A, Reference<B>, C, Op, OpCombine>
     return op(a, b.reference(), c);
   }
 };
+
 
 template<class A,class B,class C,class Op>
 struct Combine3<A, B, Reference<C>, Op, OpCombine>
@@ -178,6 +165,7 @@ struct Combine3<Reference<A>, Reference<B>, C, Op, OpCombine>
   }
 };
 
+
 template<class A,class B,class C,class Op>
 struct Combine3<A, Reference<B>, Reference<C>, Op, OpCombine>
 {
@@ -188,6 +176,7 @@ struct Combine3<A, Reference<B>, Reference<C>, Op, OpCombine>
     return op(a, b.reference(), c.reference());
   }
 };
+
 
 template<class A,class B,class C,class Op>
 struct Combine3<Reference<A>, B, Reference<C>, Op, OpCombine>
@@ -200,6 +189,7 @@ struct Combine3<Reference<A>, B, Reference<C>, Op, OpCombine>
   }
 };
 
+
 template<class A,class B,class C,class Op>
 struct Combine3<Reference<A>, Reference<B>, Reference<C>, Op, OpCombine>
 {
@@ -210,6 +200,7 @@ struct Combine3<Reference<A>, Reference<B>, Reference<C>, Op, OpCombine>
     return op(a.reference(), b.reference(), c.reference());
   }
 };
+
 
 } // namespace QDP
 

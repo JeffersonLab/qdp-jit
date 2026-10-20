@@ -1,10 +1,9 @@
-// -*- C++ -*-
+#ifndef QDP_DB_IMP_H
+#define QDP_DB_IMP_H
+
 /*! @file
  * @brief Support for filedb
  */
-
-#ifndef QDP_DB_IMP_H
-#define QDP_DB_IMP_H
 
 #include "qdp_layout.h"
 #include "ConfDataStoreDB.h"

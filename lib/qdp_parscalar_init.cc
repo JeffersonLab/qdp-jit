@@ -1,19 +1,11 @@
-
-/*! @file
- * @brief Parscalar init routines
- * 
- * Initialization routines for parscalar implementation
- */
-
 #include <stdlib.h>
 #include <unistd.h>
 #include <numeric>
-//#include <iomanip>
 
 #include "qdp.h"
 #include "qmp.h"
-
 #include "qdp_init.h"
+
 #include <sys/stat.h> // Wanna use <filesystem> but not there...
 
 #if defined(QDP_USE_COMM_SPLIT_INIT)
@@ -23,31 +15,38 @@
 namespace QDP {
 
   namespace Layout {
-    // Destroy lattice coordinate
     void destroyLatticeCoordinate();
   }
 
-  //! Private flag for status
-  static bool isInit = false;
+  bool isInit = false;
+
+  bool libdevice_path_set = false;
+  bool libdevice_name_set = false;
+  
   bool setGeomP = false;
   bool setIOGeomP = false;
   multi1d<int> logical_geom(Nd);   // apriori logical geometry of the machine
-  multi1d<int> logical_iogeom(Nd); // apriori logical 	
+  multi1d<int> logical_iogeom(Nd); // apriori logical
 
   namespace {
-    size_t parse_memory_size(const char* text)
+    size_t parse_memory_size( const char* text )
     {
+      auto invalid = [text]() {
+	std::cerr << "Invalid memory size: " << text << " (expected a number with an optional k, m, g or t suffix)" << std::endl;
+	exit(1);
+      };
+
       char* suffix;
-      double value = strtod(text, &suffix);
+      double value = strtod( text , &suffix );
       double multiplier = 1.;
 
       if (suffix == text || value < 0.)
-	QDP_error_exit("Invalid memory size: %s", text);
+	invalid();
 
       if (*suffix != '\0')
 	{
 	  if (suffix[1] != '\0')
-	    QDP_error_exit("Invalid memory size suffix: %s", text);
+	    invalid();
 
 	  switch (tolower(*suffix))
 	    {
@@ -55,39 +54,40 @@ namespace QDP {
 	    case 'm': multiplier = 1024.*1024.; break;
 	    case 'g': multiplier = 1024.*1024.*1024.; break;
 	    case 't': multiplier = 1024.*1024.*1024.*1024.; break;
-	    default: QDP_error_exit("Invalid memory size suffix: %s", text);
+	    default: invalid();
 	    }
 	}
 
-      return (size_t)(value * multiplier);
+      return (size_t)( value * multiplier );
     }
-  }
+
+    void check_option_values( int argc , char** argv , int i , int n )
+    {
+      if ( i + n >= argc )
+	{
+	  std::cerr << "QDP_initialize: " << argv[i] << " needs " << n << ( n == 1 ? " value" : " values" ) << std::endl;
+	  exit(1);
+	}
+    }
+
+    const char* option_value( int argc , char** argv , int& i )
+    {
+      check_option_values( argc , argv , i , 1 );
+      return argv[++i];
+    }
+  } 	
   
 
   
 
   void QDP_startGPU()
   {
-    // print the delayed messages
     jit_config_print_delayed_message();
-
-    // Getting GPU device properties
-    //gpu_auto_detect();
-
-    // Set the pool size
     QDP_get_global_cache().setPoolSize( jit_config_get_pool_size() );
-    
-    // Initialize the LLVM wrapper
-    llvm_backend_init();
-
-    if (jit_config_get_tuning())
-      {
-	db_tune_read( jit_config_get_tuning_file() );
-      }
+    llvm_factory_init( Layout::primaryNode() , Layout::nodeNumber() );
   }
 
 
-  //! Set the GPU device
   int QDP_setGPU()
   {
     int deviceCount = gpu_get_device_count();
@@ -130,6 +130,7 @@ namespace QDP {
 	jit_config_delayed_message("Selecting device " + std::to_string(dev) + " as per user request.");
       }
 
+
     //std::cout << "Setting GPU device to " << dev << "\n";
     gpu_set_device( dev );
 
@@ -170,6 +171,7 @@ namespace QDP {
   }
 #endif
 
+  
   void QDP_initialize(int *argc, char ***argv) 
   {
     QDP_initialize_CUDA(argc, argv);
@@ -187,6 +189,8 @@ namespace QDP {
   //! Turn on the machine
   void QDP_initialize_CUDA(int *argc, char ***argv)
   {
+    Shape::push(Shape(Ns, Nc));
+      
     if (sizeof(bool) != 1)
       {
 	std::cout << "Error: sizeof(bool) == " << sizeof(bool) << "   (1 is required)" << endl;
@@ -203,7 +207,7 @@ namespace QDP {
     QDPIO::cin.init(&std::cin);
     QDPIO::cout.init(&std::cout);
     QDPIO::cerr.init(&std::cerr);
-    
+
     //
     // Init CUDA
     //
@@ -213,71 +217,15 @@ namespace QDP {
     // Process command line
     //
 		
-    // Look for help
-    bool help_flag = false;
-    for (int i=0; i<*argc; i++) 
-      {
-	if (strcmp((*argv)[i], "-h")==0)
-	  help_flag = true;
-      }
-
-    bool libdevice_path_set = false;
-    bool libdevice_name_set = false;
-
     setGeomP = false;
     logical_geom = 0;
 		
     setIOGeomP = false;
     logical_iogeom = 0;
 		
-#ifdef USE_REMOTE_QIO
-    int rtiP = 0;
-#endif
     int QMP_verboseP = 0;
-    const int maxlen = 256;
-    char rtinode[maxlen];
-    strncpy(rtinode, "your_local_food_store", maxlen);
 		
-    // Usage
-    if (Layout::primaryNode())  {
-      if (help_flag) 
-	{
-	  fprintf(stderr,"Usage:    %s options\n",(*argv)[0]);
-	  fprintf(stderr,"options:\n");
-	  fprintf(stderr,"    -h        help\n");
-	  fprintf(stderr,"    -V        %%d [%d] verbose mode for QMP\n", 
-		  QMP_verboseP);
-#if ! defined (QDP_ENABLE_MANAGED_MEMORY)
-	  fprintf(stderr,"    -poolsize %%s requested device pool size\n");
-	  fprintf(stderr,"    -pool-reserve %%s minimum device memory left outside the pool\n");
-#endif
-#if defined(QDP_USE_PROFILING)   
-	  fprintf(stderr,"    -p        %%d [%d] profile level\n", 
-		  getProfileLevel());
-#endif
-				
-	  // logical geometry info
-	  fprintf(stderr,"    -geom     %%d");
-	  for(int i=1; i < Nd; i++) 
-	    fprintf(stderr," %%d");
-				
-	  fprintf(stderr," [-1");
-	  for(int i=1; i < Nd; i++) 
-	    fprintf(stderr,",-1");
-	  fprintf(stderr,"] logical machine geometry\n");
-				
-#ifdef USE_REMOTE_QIO
-	  fprintf(stderr,"    -cd       %%s [.] set working dir for QIO interface\n");
-	  fprintf(stderr,"    -rti      %%d [%d] use run-time interface\n", 
-		  rtiP);
-	  fprintf(stderr,"    -rtinode  %%s [%s] run-time interface fileserver node\n", 
-		  rtinode);
-#endif
-				
-	  QDP_abort(1);
-	}
-    }
-
+    
     for (int i=1; i<*argc; i++) 
       {
 	if (strcmp((*argv)[i], "-V")==0) 
@@ -288,95 +236,111 @@ namespace QDP {
 	else if (strcmp((*argv)[i], "-p")==0) 
 	  {
 	    int lev;
-	    sscanf((*argv)[++i], "%d", &lev);
+	    sscanf(option_value( *argc , *argv , i ), "%d", &lev);
 	    setProgramProfileLevel(lev);
 	  }
 #endif
-#if ! defined (QDP_ENABLE_MANAGED_MEMORY)
+	else if (strcmp((*argv)[i], "-gpu-sync")==0) 
+	  {
+	    qdp_jit_config_set_gpu_sync(true);
+	  }
+	else if (strcmp((*argv)[i], "-managed")==0) 
+	  {
+	    qdp_jit_config_set_managed(true);
+	  }
+	else if (strcmp((*argv)[i], "-default-data-order-site-slow")==0) 
+	  {
+	    qdp_jit_config_set_default_data_order( JitDataOrder::SiteSlow );
+	    jit_config_delayed_message("JIT default data order: site-slow");
+	  }
 	else if (strcmp((*argv)[i], "-poolsize")==0) 
 	  {
-	    jit_config_set_pool_size(parse_memory_size((*argv)[++i]));
+	    jit_config_set_pool_size( parse_memory_size( option_value( *argc , *argv , i ) ) );
 	  }
-	else if (strcmp((*argv)[i], "-pool-reserve")==0)
+	else if (strcmp((*argv)[i], "-pool-reserve")==0) 
 	  {
-	    jit_config_set_pool_reserve(parse_memory_size((*argv)[++i]));
+	    jit_config_set_pool_reserve( parse_memory_size( option_value( *argc , *argv , i ) ) );
 	  }
 	else if (strcmp((*argv)[i], "-poolmemset")==0) 
 	  {
 	    unsigned val;
-	    sscanf((*argv)[++i],"%u",&val);
+	    sscanf(option_value( *argc , *argv , i ),"%u",&val);
 	    QDP_get_global_cache().enableMemset(val);
+	  }
+	else if (strcmp((*argv)[i], "-blocksum")==0) 
+	  {
+	    unsigned val;
+	    sscanf(option_value( *argc , *argv , i ),"%u",&val);
+	    qdp_jit_config_set_blocksum( (int)val );
 	  }
 	else if (strcmp((*argv)[i], "-pool-max-alloc")==0) 
 	  {
 	    int val;
-	    sscanf((*argv)[++i],"%d",&val);
+	    sscanf(option_value( *argc , *argv , i ),"%d",&val);
 	    jit_config_set_max_allocation( val );
 	  }
 	else if (strcmp((*argv)[i], "-pool-alignment")==0) 
 	  {
 	    unsigned val;
-	    sscanf((*argv)[++i],"%u",&val);
+	    sscanf(option_value( *argc , *argv , i ),"%u",&val);
+	    if ( val == 0 || ( val & (val - 1) ) != 0 )
+	      {
+		std::cerr << "-pool-alignment must be a power of 2, got " << val << std::endl;
+		QDP_abort(1);
+	      }
 	    jit_config_set_pool_alignment( val );
 	  }
 	else if (strcmp((*argv)[i], "-pool-stats")==0) 
 	  {
 	    jit_set_config_pool_stats();
 	  }
-#endif
 	else if (strcmp((*argv)[i], "-blocksize")==0)
 	  {
 	    unsigned val;
-	    sscanf((*argv)[++i],"%u",&val);
+	    sscanf(option_value( *argc , *argv , i ),"%u",&val);
 	    jit_config_set_threads_per_block( val );
 	  }
+#if defined (QDP_BACKEND_ROCM)
+	else if (strcmp((*argv)[i], "-workgroup-bound")==0)
+	  {
+	    jit_config_set_workgroup_bound( true );
+	  }
+	else if (strcmp((*argv)[i], "-no-workgroup-bound")==0)
+	  {
+	    jit_config_set_workgroup_bound( false );
+	  }
+	else if (strcmp((*argv)[i], "-opt-prepass")==0)
+	  {
+	    jit_config_set_opt_prepass( true );
+	  }
+	else if (strcmp((*argv)[i], "-no-opt-prepass")==0)
+	  {
+	    jit_config_set_opt_prepass( false );
+	  }
+#endif
+#if defined (QDP_HOST_COMPILER)
+	else if (strcmp((*argv)[i], "-enable-hostjit")==0) 
+	  {
+	    qdp_jit_config_set_hostjit( true );
+	  }
+	else if (strcmp((*argv)[i], "-disable-hostjit")==0) 
+	  {
+	    qdp_jit_config_set_hostjit( false );
+	  }
+#endif
 	else if (strcmp((*argv)[i], "-stats")==0) 
 	  {
 	    gpu_set_record_stats();
-	  }
-	else if (strcmp((*argv)[i], "-tune")==0) 
-	  {
-	    jit_config_set_tuning(true);
 	  }
 	else if (strcmp((*argv)[i], "-timing-run")==0) 
 	  {
 	    jit_config_set_timing_run(true);
 	  }
-	else if (strcmp((*argv)[i], "-tuneverbose")==0) 
-	  {
-	    jit_config_set_tuning(true);
-	    jit_config_set_tuning_verbose(true);
-	  }
-	else if (strcmp((*argv)[i], "-tuneconfig")==0) 
-	  {
-	    int min,max,step,loops;
-	    sscanf( (*argv)[++i], "%d", &min );
-	    sscanf( (*argv)[++i], "%d", &max );
-	    sscanf( (*argv)[++i], "%d", &step );
-	    sscanf( (*argv)[++i], "%d", &loops );
-	    
-	    jit_config_set_threads_per_block_min( min );
-	    jit_config_set_threads_per_block_max( max );
-	    jit_config_set_threads_per_block_step( step );
-	    jit_config_set_threads_per_block_loops( loops );
-
-	    jit_config_set_tuning(true);
-	  }
-	else if (strcmp((*argv)[i], "-clang-codegen")==0) 
-	  {
-	    llvm_set_clang_codegen();
-	  }
-	else if (strcmp((*argv)[i], "-clang-opt")==0)
-	  {
-	    char tmp[1024];
-	    sscanf((*argv)[++i], "%s", &tmp[0]);
-	    llvm_set_clang_opt(tmp);
-	  }
 #ifdef QDP_DEEP_LOG
 	else if (strcmp((*argv)[i], "-deep-log-create")==0)
 	  {
 	    char tmp[1024];
-	    sscanf((*argv)[++i], "%s", &tmp[0]);
+	    sscanf(option_value( *argc , *argv , i ), "%s", &tmp[0]);
 	    jit_config_deep_set( tmp , true );
 	    QDP_get_global_logger().setCreate();
 	    QDP_get_global_logger().setName(tmp);
@@ -384,7 +348,7 @@ namespace QDP {
 	else if (strcmp((*argv)[i], "-deep-log-compare")==0)
 	  {
 	    char tmp[1024];
-	    sscanf((*argv)[++i], "%s", &tmp[0]);
+	    sscanf(option_value( *argc , *argv , i ), "%s", &tmp[0]);
 	    jit_config_deep_set( tmp , false );
 	    QDP_get_global_logger().setCompare();
 	    QDP_get_global_logger().setName(tmp);
@@ -392,26 +356,39 @@ namespace QDP {
 	else if (strcmp((*argv)[i], "-deep-log-tolerance")==0)
 	  {
 	    double d;
-	    sscanf((*argv)[++i], "%lf", &d);
+	    sscanf(option_value( *argc , *argv , i ), "%lf", &d);
 	    jit_config_set_tolerance(d);
 	  }
 	else if (strcmp((*argv)[i], "-deep-log-fuzzfactor")==0)
 	  {
 	    double d;
-	    sscanf((*argv)[++i], "%lf", &d);
+	    sscanf(option_value( *argc , *argv , i ), "%lf", &d);
 	    jit_config_set_fuzzfactor(d);
 	  }
 	else if (strcmp((*argv)[i], "-deep-log-events")==0)
 	  {
 	    unsigned val;
-	    sscanf((*argv)[++i],"%u",&val);
+	    sscanf(option_value( *argc , *argv , i ),"%u",&val);
 	    jit_config_set_log_events( val );
 	  }
+	else if (strcmp((*argv)[i], "-deep-log-memset")==0)
+	  {
+	    unsigned val;
+	    sscanf(option_value( *argc , *argv , i ),"%u",&val);
+	    jit_config_set_log_events( val );
+	    jit_config_set_memset_value( (unsigned char)val );
+	  }
 #endif
+	else if (strcmp((*argv)[i], "-opt")==0)
+	  {
+	    unsigned val;
+	    sscanf(option_value( *argc , *argv , i ),"%u",&val);
+	    jit_config_set_codegen_opt( val );
+	  }
 #ifdef QDP_BACKEND_ROCM
 	else if (strcmp((*argv)[i], "-temp-files-path")==0) { 
 	  char tmp[2048];
-	  sscanf((*argv)[++i], "%s", &tmp[0]);
+	  sscanf(option_value( *argc , *argv , i ), "%s", &tmp[0]);
 	  std::string stmp(tmp);
 	  if ( stmp.front() == '-' ) {
 	    // argument missing
@@ -451,26 +428,14 @@ namespace QDP {
 	  }
 	  jit_config_set_prepend_path(stmp); 				
 	}
-	else if (strcmp((*argv)[i], "-opt")==0)
-	  {
-	    unsigned val;
-	    sscanf((*argv)[++i],"%u",&val);
-	    jit_config_set_codegen_opt( val );
-	  }
 	else if (strcmp((*argv)[i], "-libdevice-extra")==0) 
 	  {
 	    char tmp[2048];
-	    sscanf((*argv)[++i], "%s", &tmp[0]);
+	    sscanf(option_value( *argc , *argv , i ), "%s", &tmp[0]);
 	    jit_config_add_extra_lib(tmp);
 	  }
-	else if (strcmp((*argv)[i], "-setdevice")==0) 
-	  {
-	    unsigned val;
-	    sscanf((*argv)[++i],"%u",&val);
-	    qdp_jit_config_set_rocm_set_device(val);
-	  }
 #endif
-#if defined(QDP_BACKEND_ROCM) || (QDP_BACKEND_L0)	
+#if defined(QDP_BACKEND_ROCM) || defined(QDP_BACKEND_L0)	
 	else if (strcmp((*argv)[i], "-keep-files")==0) 
 	  {
 	    jit_config_set_keepfiles(true);
@@ -480,53 +445,31 @@ namespace QDP {
 	else if (strcmp((*argv)[i], "-cuda-ftz")==0)
 	  {
 	    unsigned val;
-	    sscanf((*argv)[++i],"%u",&val);
+	    sscanf(option_value( *argc , *argv , i ),"%u",&val);
 	    jit_config_set_CUDA_FTZ( val );
 	  }
 #endif
-	else if (strcmp((*argv)[i], "-opt-inline")==0) 
-	  {
-	    int active;
-	    sscanf((*argv)[++i], "%d", &active);
-	    jit_config_set_inline( active != 0 );
-	  }
-	else if (strcmp((*argv)[i], "-opt-instcombine")==0) 
-	  {
-	    int active;
-	    sscanf((*argv)[++i], "%d", &active);
-	    jit_config_set_instcombine( active != 0 );
-	  }
 	else if (strcmp((*argv)[i], "-gpudirect")==0) 
 	  {
 	    jit_config_set_gpu_direct(true);
 	  }
-	else if (strcmp((*argv)[i], "-opt-shift")==0) 
-	  {
-	    qdp_jit_config_set_opt_shifts(true); 
-	  }
-	else if (strcmp((*argv)[i], "-threadstack")==0)
-	  {
-	    int stack;
-	    sscanf((*argv)[++i], "%d", &stack);
-	    jit_config_set_thread_stack(stack);
-	  }
 	else if (strcmp((*argv)[i], "-ringbuffersize")==0)
 	  {
 	    int s;
-	    sscanf((*argv)[++i], "%d", &s);
+	    sscanf(option_value( *argc , *argv , i ), "%d", &s);
 	    jit_config_set_oscalar_ringbuffer_size(s);
 	  }
 	else if (strcmp((*argv)[i], "-libdevice-path")==0) 
 	  {
 	    char tmp[1024];
-	    sscanf((*argv)[++i], "%s", &tmp[0]);
+	    sscanf(option_value( *argc , *argv , i ), "%s", &tmp[0]);
 	    llvm_set_libdevice_path(tmp);
 	    libdevice_path_set = true;
 	  }
 	else if (strcmp((*argv)[i], "-libdevice-name")==0) 
 	  {
 	    char tmp[1024];
-	    sscanf((*argv)[++i], "%s", &tmp[0]);
+	    sscanf(option_value( *argc , *argv , i ), "%s", &tmp[0]);
 	    llvm_set_libdevice_name(tmp);
 	    libdevice_name_set = true;
 	  }
@@ -538,98 +481,41 @@ namespace QDP {
 	  {
 	    jit_config_set_verbose_output(true);
 	  }
+	else if (strcmp((*argv)[i], "-debug-layout")==0) 
+	  {
+	    jit_config_set_debug_layout(true);
+	  }
 	else if (strcmp((*argv)[i], "-use-gpu")==0) 
 	  {
 	    int ngpu;
-	    sscanf((*argv)[++i], "%d", &ngpu);
+	    sscanf(option_value( *argc , *argv , i ), "%d", &ngpu);
 	    std::cout << "usegpu " << ngpu << "\n";
 	    qdp_jit_config_set_use_gpu(ngpu);
 	  }
-#if QDP_USE_VNODE_LAYOUT == 1
-	else if (strcmp((*argv)[i], "-vnodegeom")==0) 
-	  {
-	    multi1d<int> nrow(Nd);
-	    for(int j=0; j < Nd; j++) 
-	      {
-		int uu;
-		sscanf((*argv)[++i], "%d", &uu);
-		nrow[j] = uu;
-	      }
-	    Layout::setVirtualNodeGeom(nrow);
-	  }
-#endif
 	else if (strcmp((*argv)[i], "-geom")==0) 
 	  {
+	    check_option_values( *argc , *argv , i , Nd );
 	    setGeomP = true;
 	    for(int j=0; j < Nd; j++) 
 	      {
 		int uu;
-		sscanf((*argv)[++i], "%d", &uu);
+		sscanf(option_value( *argc , *argv , i ), "%d", &uu);
 		logical_geom[j] = uu;
 	      }
 	  }
 	else if (strcmp((*argv)[i], "-iogeom")==0) 
 	  {
+	    check_option_values( *argc , *argv , i , Nd );
 	    setIOGeomP = true;
 	    for(int j=0; j < Nd; j++) 
 	      {
 		int uu;
-		sscanf((*argv)[++i], "%d", &uu);
+		sscanf(option_value( *argc , *argv , i ), "%d", &uu);
 		logical_iogeom[j] = uu;
 	      }
 	  }
-#ifdef USE_REMOTE_QIO
-	else if (strcmp((*argv)[i], "-cd")==0) 
-	  {
-	    /* push the dir into the environment vars so qio.c can pick it up */
-	    setenv("QHOSTDIR", (*argv)[++i], 0);
-	  }
-	else if (strcmp((*argv)[i], "-rti")==0) 
-	  {
-	    sscanf((*argv)[++i], "%d", &rtiP);
-	  }
-	else if (strcmp((*argv)[i], "-rtinode")==0) 
-	  {
-	    int n = strlen((*argv)[++i]);
-	    if (n >= maxlen)
-	      {
-		QDPIO::cerr << __func__ << ": rtinode name too long" << endl;
-		QDP_abort(1);
-	      }
-	    sscanf((*argv)[i], "%s", rtinode);
-	  }
-#endif
-#if 0
-	else 
-	  {
-	    QDPIO::cerr << __func__ << ": Unknown argument = " << (*argv)[i] << endl;
-	    QDP_abort(1);
-	  }
-#endif
-			
-	if (i >= *argc) 
-	  {
-	    std::cerr << __func__ << ": missing argument at the end" << endl;
-	    QDP_abort(1);
-	  }
       }
 
-#if 0
-#ifdef QDP_BACKEND_ROCM
-    if (!libdevice_path_set)
-      {
-	std::string tmp_path = std::string(QDPJIT_INSTALL_DIR) + jit_config_get_libdevice_path();
-	llvm_set_libdevice_path( tmp_path.c_str() );
-	jit_config_delayed_message("ROCm: libdevice path set to: " + tmp_path);
-      }
-    if (!libdevice_name_set)
-      {
-	std::string tmp_name = jit_config_get_libdevice_name();
-	llvm_set_libdevice_name( tmp_name.c_str() );
-	jit_config_delayed_message("ROCm: libdevice name set to: " + tmp_name);
-      }
-#endif
-#endif
     
     //QDPIO::cout << "Not setting QMP verbosity level\n";
     QMP_verbose (QMP_verboseP);
@@ -644,68 +530,36 @@ namespace QDP {
 
 
 
-
-		// -------------------------------------------------------------------------------------------
-
 	void QDP_initialize_QMP(int *argc, char ***argv)
 	{
-
-#if QDP_DEBUG >= 1
-	  QDP_info("Now initialize QMP");
-#endif
-		
 	  if (QMP_is_initialized() == QMP_FALSE)
 	    {
 	      QMP_thread_level_t prv;
 	      if (QMP_init_msg_passing(argc, argv, QMP_THREAD_SINGLE, &prv) != QMP_SUCCESS)
 		{
-		  QDPIO::cerr << __func__ << ": QMP_init_msg_passing failed" << endl;
+		  std::cerr << __func__ << ": QMP_init_msg_passing failed" << endl;
 		  QDP_abort(1);
 		}
 	    }
 		
-#if QDP_DEBUG >= 1
-	  QDP_info("QMP inititalized");
-#endif
-		
 	  if (setGeomP)
 	    if (QMP_declare_logical_topology(logical_geom.slice(), Nd) != QMP_SUCCESS)
 	      {
-		QDPIO::cerr << __func__ << ": QMP_declare_logical_topology failed" << endl;
+		std::cerr << __func__ << ": QMP_declare_logical_topology failed" << endl;
 		QDP_abort(1);
 	      }
-		
-#if QDP_DEBUG >= 1
-	  QDP_info("Some layout init");
-#endif
 		
 	  Layout::init();   // setup extremely basic functionality in Layout
 		
 	  isInit = true;
 		
-#if QDP_DEBUG >= 1
-	  QDP_info("Init qio");
-#endif
-	  // OK, I need to set up the IO geometry here...
-	  // I should make it part of layout...
 	  if( setIOGeomP ) { 
-#if QDP_DEBUG >=1
-	    std::ostringstream outbuf;
-	    for(int mu=0; mu < Nd; mu++) { 
-	      outbuf << " " << logical_iogeom[mu];
-	    }
-			
-	    QDP_info("Setting IO Geometry: %s\n", outbuf.str().c_str());
-#endif
-			
 	    Layout::setIONodeGrid(logical_iogeom);
-			
 	  }
 
 	  initProfile(__FILE__, __func__, __LINE__);
 		
 	  QDPIO::cout << "Initialize done" << std::endl;
-
 	}
 
 
@@ -717,6 +571,7 @@ namespace QDP {
 	void QDP_finalize()
 	{
 #ifdef QDP_DEEP_LOG
+	  //gpu_deep_logger_close();
 	  QDP_get_global_logger().close();
 #endif
 
@@ -735,16 +590,19 @@ namespace QDP {
 
 		// Close RNG
 		RNG::doneDefaultRNG();
-		
+
+		// Cleanup translation
+		destroy_translation_sitetable();
 		
 		// Finalize ring buffer
 		//
 		QDP_get_global_ring_buffer().done();
 
 
-#if defined (QDP_ENABLE_MANAGED_MEMORY)
-		QDP_get_global_alloc_cache().freeAllUnused();
-#endif
+		if (qdp_jit_config_get_managed())
+		  {
+		    QDP_get_global_alloc_cache().freeAllUnused();
+		  }
 
 		gpu_done();
 		
@@ -754,53 +612,47 @@ namespace QDP {
 		QDPIO::cout << "        ------------------------\n";
 		QDPIO::cout << "\n";
 		QDPIO::cout << "Memory cache \n";
-		QDPIO::cout << "  lattice objects copied to host memory:   " << get_jit_stats_lattice2dev() << "\n";
-		QDPIO::cout << "  lattice objects copied to device memory: " << get_jit_stats_lattice2host() << "\n";
+		QDPIO::cout << "  lattice objects copied to host memory:   " << llvm_get_jit_stats_lattice2dev() << "\n";
+		QDPIO::cout << "  lattice objects copied to device memory: " << llvm_get_jit_stats_lattice2host() << "\n";
 		QDPIO::cout << "\n";
-#if ! defined (QDP_ENABLE_MANAGED_MEMORY)
-		QDPIO::cout << "Pool allocator \n";
-		QDPIO::cout << "  peak memory usage:                       " << QDP_get_global_cache().get_max_allocated() << "\n";
-		if (jit_config_pool_stats())
+
+		if (!qdp_jit_config_get_managed())
 		  {
-		    QDPIO::cout << "  memory allocation count: \n";
-		    auto& count = QDP_get_global_cache().get_alloc_count();
-		    for ( auto i = count.begin() ; i != count.end() ; ++i )
+		    QDPIO::cout << "Pool allocator \n";
+		    QDPIO::cout << "  peak memory usage:                       " << QDP_get_global_cache().get_max_allocated() << "\n";
+		    if (jit_config_pool_stats())
 		      {
-			QDPIO::cout << "  " << i->first << " bytes \t\t" << i->second << std::endl;
+			QDPIO::cout << "  memory allocation count: \n";
+			auto& count = QDP_get_global_cache().get_alloc_count();
+			for ( auto i = count.begin() ; i != count.end() ; ++i )
+			  {
+			    QDPIO::cout << "  " << i->first << " bytes \t\t" << i->second << std::endl;
+			  }
+			QDPIO::cout << "\n";
 		      }
-		    QDPIO::cout << "\n";
 		  }
-#endif
+
 		if (jit_config_get_gpu_direct())
 		  {
-		    double current_bytes = QDP_get_global_cache().get_direct_device_current_bytes();
-		    double peak_bytes = QDP_get_global_cache().get_direct_device_peak_bytes();
-		    double total_bytes = QDP_get_global_cache().get_direct_device_total_bytes();
-		    double largest_allocation = QDP_get_global_cache().get_direct_device_largest_allocation();
-		    double allocation_count = QDP_get_global_cache().get_direct_device_allocation_count();
-		    double active_allocations = QDP_get_global_cache().get_direct_device_active_allocations();
-		    double peak_allocations = QDP_get_global_cache().get_direct_device_peak_allocations();
+		    const QDPCache::DirectDeviceStats& s = QDP_get_global_cache().get_direct_device_stats();
+		    double v[] = { (double)s.current_bytes , (double)s.peak_bytes , (double)s.largest_allocation ,
+				   (double)s.allocations , (double)s.peak_active };
+		    for ( double& x : v )
+		      QMP_max_double( &x );
 
-		    QMP_max_double(&current_bytes);
-		    QMP_max_double(&peak_bytes);
-		    QMP_max_double(&total_bytes);
-		    QMP_max_double(&largest_allocation);
-		    QMP_max_double(&allocation_count);
-		    QMP_max_double(&active_allocations);
-		    QMP_max_double(&peak_allocations);
-
-		    QDPIO::cout << "Direct device communication buffers (maximum over ranks)\n";
-		    QDPIO::cout << "  current allocated bytes:                 " << (size_t)current_bytes << "\n";
-		    QDPIO::cout << "  peak allocated bytes:                    " << (size_t)peak_bytes << "\n";
-		    QDPIO::cout << "  cumulative allocated bytes:              " << (size_t)total_bytes << "\n";
-		    QDPIO::cout << "  largest allocation:                      " << (size_t)largest_allocation << "\n";
-		    QDPIO::cout << "  allocation count:                        " << (size_t)allocation_count << "\n";
-		    QDPIO::cout << "  current active allocations:              " << (size_t)active_allocations << "\n";
-		    QDPIO::cout << "  peak active allocations:                 " << (size_t)peak_allocations << "\n";
+		    QDPIO::cout << "Communication buffers outside the pool (maximum over ranks)\n";
+		    QDPIO::cout << "  allocated bytes (now, peak):             " << (size_t)v[0] << ", " << (size_t)v[1] << "\n";
+		    QDPIO::cout << "  largest allocation:                      " << (size_t)v[2] << "\n";
+		    QDPIO::cout << "  allocations (all, peak active):          " << (size_t)v[3] << ", " << (size_t)v[4] << "\n";
 		    QDPIO::cout << "\n";
 		  }
+		
 		QDPIO::cout << "Code generator \n";
-		QDPIO::cout << "  functions jit-compiled:                  " << get_jit_stats_jitted() << "\n";
+		QDPIO::cout << "  functions jit-compiled (GPU)             " << llvm_get_jit_stats_jitted(true) << "\n";
+		if (qdp_jit_config_get_hostjit())
+		  {
+		    QDPIO::cout << "  functions jit-compiled (CPU)             " << llvm_get_jit_stats_jitted(false) << "\n";
+		  }
 
 		{
 		  std::vector<JitFunction*>& all = gpu_get_functions();
@@ -809,9 +661,7 @@ namespace QDP {
 		  double time_passes = 0.;
 		  double time_codegen = 0.;
 		  double time_dynload = 0.;
-#ifdef QDP_BACKEND_ROCM
 		  double time_linking = 0.;
-#endif
 		  for ( int i = 0 ; i < all.size() ; ++i )
 		    {
 		      time_builder += all.at(i)->time_builder;
@@ -819,9 +669,7 @@ namespace QDP {
 		      time_passes  += all.at(i)->time_passes;
 		      time_codegen += all.at(i)->time_codegen;
 		      time_dynload += all.at(i)->time_dynload;
-#ifdef QDP_BACKEND_ROCM
 		      time_linking += all.at(i)->time_linking;
-#endif
 		    }
 		  QDPIO::cout << "  total time for IR builder:               " << time_builder/1.e6 << " s\n";
 		  QDPIO::cout << "  total time for libm IR linking:          " << time_math/1.e6 << " s\n";
@@ -833,12 +681,6 @@ namespace QDP {
 		  QDPIO::cout << "  total time for dynamic loading:          " << time_dynload/1.e6 << " s\n";
 		}
 
-#ifdef QDP_CUDA_SPECIAL
-		for ( auto it = get_jit_stats_special_names().begin() ; it != get_jit_stats_special_names().end(); it++ )
-		  {
-		    QDPIO::cout << it->first << ": [" << it->second << "] = " << get_jit_stats_special( it->first ) << "\n";
-		  }
-#endif
 		if ( gpu_get_record_stats() )
 		  {
 		    QDPIO::cout << "#" << "\t";
@@ -862,7 +704,6 @@ namespace QDP {
 		    
 		    std::vector<JitFunction*>& all = gpu_get_functions();
 
-#if 1
 		    struct compare_t
 		    {
 		      inline bool operator() ( JitFunction*& lhs,  JitFunction*& rhs)
@@ -874,7 +715,6 @@ namespace QDP {
 		    };
 
 		    std::sort(all.begin(), all.end(), compare_t());
-#endif
 
 		    TextFileWriter f_stats("qdp_jit_stats.txt");
 
@@ -910,8 +750,6 @@ namespace QDP {
 			
 			QDPIO::cout << all.at(i)->get_kernel_name() << "\n";
 
-#if 1
-			//f_stats << std::fixed << std::setw( 11 );
 			f_stats << i << "\t";
 			f_stats << all.at(i)->get_call_counter() << "\t";
 #ifdef QDP_USE_ROCM_STATS
@@ -931,10 +769,8 @@ namespace QDP {
 			
 			f_stats << (float)sum << "\t" << (float)mean << "\t" << (float)stdev << "\t";
 			f_stats << all.at(i)->get_kernel_name() << "\n";
-#endif
 		      }
 
-#if 1
 		    f_stats << "\n\n";
 		    for ( int i = 0 ; i < all.size() ; ++i )
 		      {
@@ -945,21 +781,8 @@ namespace QDP {
 		    // Close file
 		    f_stats.flush();
 		    f_stats.close();
-#endif
-		    
-
 		  }
 
-
-
-		if (jit_config_get_tuning())
-		  {
-		    QDPIO::cout << "Kernel auto-tuner"  << std::endl;
-		    QDPIO::cout << "  kernels tuned in this run:               " << jit_util_get_tune_count() << std::endl;
-		    db_tune_write( jit_config_get_tuning_file() );
-		  }
-		
-		
 		FnMapRsrcMatrix::Instance().cleanup();
 
 		// Sync done
@@ -969,7 +792,6 @@ namespace QDP {
                 H5close();
 #endif
 
-		// Finalize pool allocator
 		Allocator::theQDPAllocator::DestroySingleton();
 
 		printProfile();
@@ -989,14 +811,20 @@ namespace QDP {
 #endif
 		
 		QMP_finalize_msg_passing();
-		
+
+		// Destroy layouts
+		Layout::finalize();
+
+		Shape::pop();
+
 		isInit = false;
 	}
 	
 	//! Panic button
 	void QDP_abort(int status)
 	{
-		QMP_abort(status); 
+	  sleep(1);
+	  QMP_abort(status); 
 	}
 	
 	//! Resumes QDP communications

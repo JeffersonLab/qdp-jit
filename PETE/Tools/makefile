@@ -42,7 +42,7 @@ MakeOperators: MakeOperators.cpp ClassDescriptor.h Header.h \
 	Options.cpp PAssert.cpp PeteOps.cpp Join.cpp
 
 newpeteops: MakeOperators
-	MakeOperators --operators PeteOps.in --guard "" --insert-op \
+	./MakeOperators --operators PeteOps.in --guard "" --insert-op \
 	--lanl-boilerplate --o PeteOps.cpp
 
 fixpeteops:
@@ -52,7 +52,7 @@ fixpeteops:
 peteheaders: OperatorTags.h
 
 OperatorTags.h: MakeOperators
-	MakeOperators --guard PETE_PETE_OPERATORTAGS_H --op-tags \
+	./MakeOperators --guard PETE_PETE_OPERATORTAGS_H --op-tags \
 	--operators PeteOps.in --lanl-boilerplate --o OperatorTags.h
 
 fixheaders:

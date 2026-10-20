@@ -1,11 +1,9 @@
-// -*- C++ -*-
+#ifndef QDP_BYTEORDER_H
+#define QDP_BYTEORDER_H
 
 /*! \file
  * \brief Byte manipulation
  */
-
-#ifndef __qdp_byteorder_h__
-#define __qdp_byteorder_h__
 
 #include <cstdio>
 

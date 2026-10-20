@@ -1,10 +1,9 @@
-// -*- C++ -*-
+#ifndef QDP_ARRAYS_H
+#define QDP_ARRAYS_H
+
 /*! \file
  *  \brief One based arrays
  */
-
-#ifndef __QDP_ARRAYS_H__
-#define __QDP_ARRAYS_H__
 
 #include <vector>
 

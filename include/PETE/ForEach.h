@@ -1,4 +1,6 @@
-// -*- C++ -*-
+#ifndef QDP_PETE_FOREACH_H
+#define QDP_PETE_FOREACH_H
+
 // ACL:license
 // ----------------------------------------------------------------------
 // This software and ancillary information (herein called "SOFTWARE")
@@ -25,9 +27,6 @@
 // or visit the PETE web page at http://www.acl.lanl.gov/pete/.
 // ----------------------------------------------------------------------
 // ACL:license
-
-#ifndef PETE_PETE_FOREACH_H
-#define PETE_PETE_FOREACH_H
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -76,7 +75,7 @@ struct ForEach
 {
   typedef typename LeafFunctor<Expr, FTag>::Type_t Type_t;
   inline static
-  Type_t apply(const Expr &expr, const FTag &f, const CTag &)
+  Type_t apply(const Expr &expr, FTag &f, const CTag &)
   {
     return LeafFunctor<Expr, FTag>::apply(expr, f);
   }
@@ -84,18 +83,19 @@ struct ForEach
 
 template<class Expr, class FTag, class CTag>
 inline typename ForEach<Expr,FTag,CTag>::Type_t
-forEach(const Expr &e, const FTag &f, const CTag &c)
+forEach(const Expr &e, FTag &f, const CTag &c)
 {
   return ForEach<Expr, FTag, CTag>::apply(e, f, c);
 }
 
+
 template<class Op, class A, class FTag, class CTag>
 struct ForEach<UnaryNode<Op, A>, FTag, CTag>
 {
-  typedef typename ForEach<A, FTag, CTag>::Type_t TypeA_t;
+  typedef typename ForEach<A, FTag, CTag>::Type_t TypeA_t; 
   typedef typename Combine1<TypeA_t, Op, CTag>::Type_t Type_t;
   inline static
-  Type_t apply(const UnaryNode<Op, A> &expr, const FTag &f, 
+  Type_t apply(const UnaryNode<Op, A> &expr, FTag &f, 
     const CTag &c) 
   {
     return Combine1<TypeA_t, Op, CTag>::
@@ -111,7 +111,7 @@ struct ForEach<BinaryNode<Op, A, B>, FTag, CTag >
   typedef typename ForEach<B, FTag, CTag>::Type_t TypeB_t;
   typedef typename Combine2<TypeA_t, TypeB_t, Op, CTag>::Type_t Type_t;
   inline static
-  Type_t apply(const BinaryNode<Op, A, B> &expr, const FTag &f,
+  Type_t apply(const BinaryNode<Op, A, B> &expr, FTag &f,
 	       const CTag &c) 
   {
     return Combine2<TypeA_t, TypeB_t, Op, CTag>::
@@ -130,7 +130,7 @@ struct ForEach<TrinaryNode<Op, A, B, C>, FTag, CTag >
   typedef typename Combine3<TypeA_t, TypeB_t, TypeC_t, Op, CTag>::Type_t 
     Type_t;
   inline static
-  Type_t apply(const TrinaryNode<Op, A, B, C> &expr, const FTag &f,
+  Type_t apply(const TrinaryNode<Op, A, B, C> &expr, FTag &f,
 	       const CTag &c) 
   {
     return Combine3<TypeA_t, TypeB_t, TypeC_t, Op, CTag>::
@@ -150,7 +150,7 @@ struct ForEach<Expression<T>, FTag, CTag>
 {
   typedef typename ForEach<T, FTag, CTag>::Type_t Type_t;
   inline static
-  Type_t apply(const Expression<T> &expr, const FTag &f, 
+  Type_t apply(const Expression<T> &expr, FTag &f, 
 	       const CTag &c) 
   {
     return ForEach<T, FTag, CTag>::apply(expr.expression(), f, c);
@@ -166,14 +166,14 @@ struct ForEach<Reference<T>, FTag, CTag>
 {
   typedef typename ForEach<T, FTag, CTag>::Type_t Type_t;
   inline static
-  Type_t apply(const Reference<T> &ref, const FTag &f, 
+  Type_t apply(const Reference<T> &ref, FTag &f, 
 	       const CTag &c) 
   {
     return ForEach<T, FTag, CTag>::apply(ref.reference(), f, c);
   }
 };
 
-#endif // PETE_PETE_FOREACH_H
+#endif
 
 // ACL:rcsinfo
 // ----------------------------------------------------------------------

@@ -1,43 +1,21 @@
-#ifndef QDP_MAPRESOURCE
-#define QDP_MAPRESOURCE
+#ifndef QDP_MAPRESOURCE_H
+#define QDP_MAPRESOURCE_H
 
 
 
 
 namespace QDP {
 
-  // A 2D container of resource classes.
-  // The indexed msg_size and dest_node are taken as the
-  // index into the matrix.
 
-class FnMapRsrcMatrix {
+class FnMapRsrcMatrix
+{
+  std::map< std::pair<int,int> , std::pair< int , std::vector<FnMapRsrc*> > > m2d; // [send msg size , dest node] --> (count , vector of resources)
 
-  multi2d< std::pair< int , std::vector<FnMapRsrc*> >* > m2d;
-  std::vector<int> sendMsgSize;
-  std::vector<int> destNode;
-  unsigned int numSendMsgSize;
-  unsigned int numDestNode;
-
-  FnMapRsrcMatrix(): sendMsgSize(0),
-		             destNode(0),
-		             numSendMsgSize(32),
-		             numDestNode(Nd*2) {
-    m2d.resize(numSendMsgSize,numDestNode);
-
-    for(unsigned int i=0;i<numSendMsgSize;i++) {
-      for(unsigned int q=0;q<numDestNode;q++) {
-	m2d(i,q)=new std::pair< int , std::vector<FnMapRsrc*> >;
-	(*m2d(i,q)).first=0;
-      }
-    }
-  }
-
-
-  public:
+public:
 
   void cleanup();
 
-  std::pair< int , std::vector<FnMapRsrc*> >* get(int _destNode,int _srcNode,
+  std::pair< int , std::vector<FnMapRsrc*> >& get(int _destNode,int _srcNode,
 						  int _sendMsgSize,int _rcvMsgSize);
   
   static FnMapRsrcMatrix& Instance() {
@@ -48,31 +26,28 @@ class FnMapRsrcMatrix {
 };
 
 
-  // This wrapper is used, since FnMap's are copy-constructed
-  // during recursing down the expression with forEach. Thus a
-  // shared_ptr to this wrapper ensures that the original and copy
-  // point to the same resource class.
 
 class RsrcWrapper
 {
-  const multi1d<int>& destnodes;
-  const multi1d<int>& srcenodes;
-  std::pair< int , std::vector<FnMapRsrc*> > * pPair;
+  int destnode;
+  int srcenode;
+  
+  std::pair< int , std::vector<FnMapRsrc*> >* pPair;
   const FnMapRsrc* cached;
   bool rAlloc;
 public:
   ~RsrcWrapper() {
     if (rAlloc) {
       pPair->first--;
-      //QDPIO::cout << "wrapper destructor: counting down to " << pPair->first << "\n";
 #if QDP_DEBUG >= 3
       if (pPair->first < 0)
 	QDP_error_exit("<0");
 #endif
     }
   }
-  RsrcWrapper(  const multi1d<int>& destnodes_, const multi1d<int>& srcenodes_): 
-    destnodes(destnodes_),srcenodes(srcenodes_),cached(NULL),rAlloc(false) {
+  
+  RsrcWrapper( int destnode_ , int srcenode_): destnode(destnode_) , srcenode(srcenode_) , cached(nullptr) , rAlloc(false)
+  {
   }
 
   const FnMapRsrc& getResource(int srcnum_, int dstnum_) {
@@ -80,7 +55,7 @@ public:
     if ( !srcenodes.size() || !destnodes.size() )
       QDP_error_exit("FnMapRsrc& getResource srcnode_size=%d destnode_size=%d", srcenodes.size() , destnodes.size() );
 #endif
-    pPair = FnMapRsrcMatrix::Instance().get( destnodes[0] , srcenodes[0] , dstnum_ , srcnum_ );
+    pPair = &FnMapRsrcMatrix::Instance().get( destnode , srcenode , dstnum_ , srcnum_ );
     cached = pPair->second.at(pPair->first++);
     rAlloc=true;
     return *cached;

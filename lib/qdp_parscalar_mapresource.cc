@@ -1,10 +1,3 @@
-/*! @file
- * @brief Parscalar specific routines
- * 
- * Routines for parscalar implementation
- */
-
-
 #include "qdp.h"
 #include "qdp_util.h"
 #include "qmp.h"
@@ -80,10 +73,6 @@ namespace QDP {
       // QMP_free_msghandle(mh_a[0]);
       QMP_free_msgmem(msg[1]);
       QMP_free_msgmem(msg[0]);
-#if 0
-      QMP_free_memory(recv_buf_mem);
-      QMP_free_memory(send_buf_mem);
-#endif
       QDP_get_global_cache().signoff( send_buf_id );
       QDP_get_global_cache().signoff( recv_buf_id );
      
@@ -91,6 +80,7 @@ namespace QDP {
         gpu_host_free(send_buf);
         gpu_host_free(recv_buf);
       }
+
       bSet=false;
     }
   }
@@ -104,43 +94,16 @@ namespace QDP {
     if (!jit_config_get_gpu_direct()) {
       gpu_memcpy_h2d( recv_buf_dev , recv_buf , srcnum );
     }
-
-#if QDP_DEBUG >= 3
-    QDP_info("Map: calling free msgs");
-#endif
   }
 
 
   void FnMapRsrc::send_receive() const {
-
     QMP_status_t err;
-#if QDP_DEBUG >= 3
-    QDP_info("Map: send = 0x%x  recv = 0x%x",send_buf,recv_buf);
-    QDP_info("Map: establish send=%d recv=%d",destnodes[0],srcenodes[0]);
-    {
-      const multi1d<int>& me = Layout::nodeCoord();
-      multi1d<int> scrd = Layout::getLogicalCoordFrom(destnodes[0]);
-      multi1d<int> rcrd = Layout::getLogicalCoordFrom(srcenodes[0]);
-
-      QDP_info("Map: establish-info   my_crds=[%d,%d,%d,%d]",me[0],me[1],me[2],me[3]);
-      QDP_info("Map: establish-info send_crds=[%d,%d,%d,%d]",scrd[0],scrd[1],scrd[2],scrd[3]);
-      QDP_info("Map: establish-info recv_crds=[%d,%d,%d,%d]",rcrd[0],rcrd[1],rcrd[2],rcrd[3]);
-    }
-#endif
-
-#if QDP_DEBUG >= 3
-    QDP_info("Map: calling start send=%d recv=%d",destnodes[0],srcenodes[0]);
-#endif
-
-#ifdef GPU_DEBUG_DEEP
-    QDP_info("D2H %d bytes receive buffer",dstnum);
-#endif
 
     if (!jit_config_get_gpu_direct()) {
       gpu_memcpy_d2h( send_buf , send_buf_dev , dstnum );
     }
 
-    // Launch the faces
     if ((err = QMP_start(mh)) != QMP_SUCCESS)
       QDP_error_exit(QMP_error_string(err));
   }

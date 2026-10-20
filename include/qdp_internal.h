@@ -1,5 +1,5 @@
-#ifndef QDP_INTERNAL
-#define QDP_INTERNAL
+#ifndef QDP_INTERNAL_H
+#define QDP_INTERNAL_H
 
 namespace QDP
 {
@@ -27,98 +27,29 @@ namespace QDPInternal
     if (srcnode != 0)
     {
       if (Layout::primaryNode())
-	recvFromWait((void *)&dest, srcnode, sizeof(T));
+	recvFromWait((void *)dest.get_ptr(), srcnode, jit_sizeof(dest));
 
       if (Layout::nodeNumber() == srcnode)
-	sendToWait((void *)&dest, 0, sizeof(T));
+	sendToWait((void *)dest.get_ptr(), 0, jit_sizeof(dest));
     }
   }
 
 
 
-  ///////////////////////////////////
-#if 0
-  //! Global sum on a multi1d
-  template<class T>
-  inline void globalSumArray(multi1d<T>& dest)
-  {
-    // The implementation here is relying on the structure being packed
-    // tightly in memory - no padding
-    typedef typename WordType<T>::Type_t  W;   // find the machine word type
-
-#if 1
-    QDPIO::cout << "sizeof(T) = " << sizeof(T) << endl;
-    QDPIO::cout << "sizeof(W) = " << sizeof(W) << endl;
-    QDPIO::cout << "Calling multi1d global sum array with length " << dest.size()*sizeof(T)/sizeof(W) << endl;
-#endif
-    globalSumArray((W *)dest.slice(), dest.size()*sizeof(T)/sizeof(W)); // call appropriate hook
-  }
-#endif
-  //////////////////////////////////
-
-
-  //! Global sum on a multi1d
-  template<class T>
-  inline void globalSumArray(multi1d<T>& dest)
-  {
-  // The implementation here is relying on the structure being packed
-  // tightly in memory - no padding
-  typedef typename WordType<T>::Type_t  W;   // find the machine word type
-  typedef typename T::SubType_t         P;   // Primitive type
-
-#if 0
-  QDPIO::cout << "sizeof(P) = " << sizeof(P) << endl;
-  QDPIO::cout << "sizeof(W) = " << sizeof(W) << endl;
-  QDPIO::cout << "Calling " << dest.size() << "x global sum array with length " << sizeof(P)/sizeof(W) << endl;
-#endif
-
-#if 0
-  for (int i = 0 ; i < dest.size() ; ++i )
-    globalSumArray( (W *)dest[i].getF(), sizeof(P)/sizeof(W)); // call appropriate hook
-#else
-    globalSumArray((W *)dest.slice(), dest.size()*sizeof(P)/sizeof(W)); // call appropriate hook
-#endif  
-}
-
-
-    //! Global sum on a multi1d
   template<class T1>
   inline void globalSumArray(multi1d< OScalar<T1> >& dest)
   {
-    //QDPIO::cout << "globalSumArray special " << endl;
-    // The implementation here is relying on the structure being packed
-    // tightly in memory - no padding
     typedef typename WordType<T1>::Type_t  W;   // find the machine word type
-    typedef          T1                    P;   // Primitive type
 
-#if 0
-    QDPIO::cout << "sizeof(P) = " << sizeof(P) << endl;
-    QDPIO::cout << "sizeof(W) = " << sizeof(W) << endl;
-    QDPIO::cout << "Calling multi1d global sum array with length " << dest.size()*sizeof(P)/sizeof(W) << endl;
-#endif
+    if (dest.size() < 1)
+      {
+	QDPIO::cout << "globalSumArray(multi1d<OScalar>& dest) with zero-size argument\n";
+	QDP_abort(1);
+      }
 
-    globalSumArray((W *)dest.slice(), dest.size()*sizeof(P)/sizeof(W)); // call appropriate hook
+    for (int i = 0 ; i < dest.size() ; ++i )
+      globalSumArray( (W *)dest[i].get_ptr(), jit_sizeof(dest[i])/sizeof(W)); // call appropriate hook
   }
-
-
-  //! Global sum on a multi2d
-  template<class T>
-  inline void globalSumArray(multi2d<T>& dest)
-  {
-    // The implementation here is relying on the structure being packed
-    // tightly in memory - no padding
-    typedef typename WordType<T>::Type_t  W;   // find the machine word type
-
-#if 0
-    QDPIO::cout << "sizeof(T) = " << sizeof(T) << endl;
-    QDPIO::cout << "sizeof(W) = " << sizeof(W) << endl;
-    QDPIO::cout << "Calling multi2d global sum array with length " << dest.size1()*dest.size2()*sizeof(T)/sizeof(W) << endl;
-#endif
-    // call appropriate hook
-    globalSumArray((W *)dest.slice(0), dest.size1()*dest.size2()*sizeof(T)/sizeof(W));
-  }
-
-
 
 
   //! Broadcast from primary node to all other nodes

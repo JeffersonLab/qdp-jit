@@ -1,11 +1,6 @@
-// -*- C++ -*-
-//
-// QDP data parallel interface
-//
-// Random number support
-
 #ifndef QDP_RANDOM_H
 #define QDP_RANDOM_H
+
 
 namespace QDP {
 
@@ -13,23 +8,16 @@ namespace QDP {
   {
     struct RNG_Internals_t
     {
-      //! Global (current) seed
       Seed ran_seed;
-      //! RNG multiplier
       Seed ran_mult;
-      //! RNG multiplier raised to the volume+1
       Seed ran_mult_n;
-      //! The lattice of skewed RNG multipliers
       LatticeSeed lattice_ran_mult;
-
       LatticeSeed lat_ran_mult_n;
       LatticeSeed lat_ran_seed;
     };
 
-    std::shared_ptr<RNG_Internals_t> get_RNG_Internals();
-
+    RNG_Internals_t& get_RNG_Internals( LatticeLayout layout = Layout::current() );
   }
-
 
 
 //! Random number generator namespace
@@ -42,73 +30,14 @@ namespace QDP {
 
 namespace RNG
 {
-  //! Default initialization of the RNG
-  /*! Uses arbitrary internal seed to initialize the RNG */
   void initDefaultRNG(void);
-
-  // Finalization of RNG
   void doneDefaultRNG(void);
-
-  //! Initialize the internals of the RNG
   void initRNG(void);
-
-  //! Initialize the RNG seed
-  /*!
-   * Seeds are big-ints
-   */
   void setrn(const Seed& lseed);
-
-  //! Recover the current RNG seed
-  /*!
-   * Seeds are big-ints
-   */
   void savern(Seed& lseed);
-
-
-  //! Internal seed multiplier
-  float sranf(Seed& seed, Seed&, const Seed&);
-
-  //! Internal seed multiplier
-  void sranf(float* d, int N, Seed& seed, ILatticeSeed&, const Seed&);
 }
 
-//! dest  = random
-template<class T1, class T2>
-inline void
-fill_random( float& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
-{
-  const_cast<float&>(d) = float(RNG::sranf(seed, skewed_seed, seed_mult));
-}
-
-//! dest  = random
-template<class T1, class T2>
-inline void
-fill_random( double& d, T1& seed, T2& skewed_seed, const T1& seed_mult)
-{
-  const_cast<double&>(d) = double(RNG::sranf(seed, skewed_seed, seed_mult));
-}
-
-
-//! dest  = random
-template<class T1, class T2, int N>
-inline void
-fill_random(float* d, T1& seed, T2& skewed_seed, const T1& seed_mult)
-{
-  RNG::sranf(d, N, seed, skewed_seed, seed_mult);
-}
-
-
-//! dest  = random
-template<class T1, class T2, int N>
-inline void
-fill_random(double* d, T1& seed, T2& skewed_seed, const T1& seed_mult)
-{
-  float dd[N];
-  RNG::sranf(dd, N, seed, skewed_seed, seed_mult);
-  for(int i=0; i < N; ++i)
-    d[i] = float(dd[i]);
-}
-
+  
 } // namespace QDP
 
 #endif

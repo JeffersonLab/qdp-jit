@@ -8,14 +8,17 @@
 #include <iostream>
 #include <string>
 
-#define __HIP_PLATFORM_AMD__
 #include <hip/hip_runtime.h>
 
 #include <unistd.h>
 
 
 #ifdef QDP_USE_ROCM_STATS
-#include "amd_comgr.h"
+#if __has_include(<amd_comgr/amd_comgr.h>)
+#include <amd_comgr/amd_comgr.h>
+#else
+#include <amd_comgr.h>
+#endif
 #endif
 
 
@@ -30,6 +33,7 @@ namespace QDP {
     std::string gcnArchName;
 
     size_t mem_free, mem_total;
+    size_t max_resident_threads = 0;
 
     std::string envvar;
     bool GPUDirect;
@@ -58,7 +62,6 @@ namespace QDP {
   }
 
   void gpu_auto_detect();
-  void CheckError(const std::string& s,hipError_t ret);
 
 
 #ifdef QDP_USE_ROCM_STATS
@@ -433,8 +436,6 @@ namespace QDP {
 
   void gpu_create_events()
   {
-    if (qdp_jit_config_get_rocm_set_device())
-      CheckError("hipSetDevice", hipSetDevice(deviceId));
     hipError_t res = hipEventCreate ( &evStart );
     if (res != hipSuccess)
       {
@@ -451,8 +452,6 @@ namespace QDP {
 
   void gpu_record_start()
   {
-    if (qdp_jit_config_get_rocm_set_device())
-      CheckError("hipSetDevice", hipSetDevice(deviceId));
     hipError_t res = hipEventRecord ( evStart , NULL );
     if (res != hipSuccess)
       {
@@ -465,8 +464,6 @@ namespace QDP {
   
   float gpu_record_stop_sync_time()
   {
-    if (qdp_jit_config_get_rocm_set_device())
-      CheckError("hipSetDevice", hipSetDevice(deviceId));
     //stop
     hipError_t res = hipEventRecord ( evStop, NULL );
     if (res != hipSuccess)
@@ -501,47 +498,36 @@ namespace QDP {
 			       unsigned int  blockDimX, unsigned int  blockDimY, unsigned int  blockDimZ, 
 			       unsigned int  sharedMemBytes, QDPCache::KernelArgs_t kernelArgs , bool set_l0_event )
   {
-    // For AMD:
-    // Now that they are known must copy in the actual values for the workgroup sizes
-    //
-    ((int*)kernelArgs.data())[0] = (int)blockDimX;
-    ((int*)kernelArgs.data())[1] = (int)gridDimX;
-
-    //std::cout << "workgroup sizes copied in: " << ((int*)kernelArgs.data())[0] << " and  " << ((int*)kernelArgs.data())[1] << "\n";
-    
     auto size = kernelArgs.size();
     //std::cout << "HipLaunchKernelNoSync: kernel params size: " << size << "\n";
     void* config[] = {HIP_LAUNCH_PARAM_BUFFER_POINTER, kernelArgs.data(),
 		      HIP_LAUNCH_PARAM_BUFFER_SIZE, &size,
 		      HIP_LAUNCH_PARAM_END};
     
-#if 1
     if (gpu_get_record_stats() && Layout::primaryNode())
       {
 	gpu_record_start();
       }
-#endif
 
-    if (qdp_jit_config_get_rocm_set_device())
-      CheckError("hipSetDevice", hipSetDevice(deviceId));
     hipError_t res = hipModuleLaunchKernel((hipFunction_t)f.get_function(),  
 					   gridDimX, gridDimY, gridDimZ, 
 					   blockDimX, blockDimY, blockDimZ, 
 					   sharedMemBytes, nullptr, nullptr, config);
 
-#if 1
     if (gpu_get_record_stats() && Layout::primaryNode())
       {
 	float time = gpu_record_stop_sync_time();
 	f.add_timing( time );
       }
-#endif
     
     JitResult ret;
 
     switch (res) {
     case hipSuccess:
       ret = JitResult::JitSuccess;
+      break;
+    case hipErrorOutOfMemory:
+      ret = JitResult::JitOutOfMemory;
       break;
     default:
       ret = JitResult::JitError;
@@ -566,7 +552,7 @@ namespace QDP {
     
 	gpu_memcpy_d2h( host_ptr , dev_ptr , field_size );
 
-	QDPIO::cout << "DEEP_LOG: not yet for ROCM" << std::endl;
+	gpu_deep_logger( host_ptr , f.type_W , field_size , f.get_pretty() , f.get_is_lat() );
 
 	free( host_ptr );
       }
@@ -596,59 +582,7 @@ namespace QDP {
 
 
 
-#if 0
-  int CudaAttributeNumRegs( JitFunction& f ) {
-    int pi;
-    hipError_t res;
-    res = cuFuncGetAttribute ( &pi, CU_FUNC_ATTRIBUTE_NUM_REGS , (CUfunction)f.get_function() );
-    CheckError("CudaAttributeNumRegs",res);
-    return pi;
-  }
-
-  int CudaAttributeLocalSize( JitFunction& f ) {
-    int pi;
-    hipError_t res;
-    res = cuFuncGetAttribute ( &pi, CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES , (CUfunction)f.get_function() );
-    CheckError("CudaAttributeLocalSize",res);
-    return pi;
-  }
-
-  int CudaAttributeConstSize( JitFunction& f ) {
-    int pi;
-    hipError_t res;
-    res = cuFuncGetAttribute ( &pi, CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES , (CUfunction)f.get_function() );
-    CheckError("CudaAttributeConstSize",res);
-    return pi;
-  }
-
-  void CudaProfilerInitialize()
-  {
-    hipError_t res;
-    std::cout << "CUDA Profiler Initializing ...\n";
-    res = cuProfilerInitialize( "prof.cfg" , "prof.out" , CU_OUT_CSV );
-    CheckError("cuProfilerInitialize",res);
-  }
-
-  void CudaProfilerStart()
-  {
-    hipError_t res;
-    res = cuProfilerStart();
-    CheckError("cuProfilerStart",res);
-  }
-
-  void CudaProfilerStop()
-  {
-    hipError_t res;
-    res = cuProfilerStop();
-    CheckError("cuProfilerStop",res);
-  }
-#endif
-
-
-
   void gpu_init() {
-    // no need to initialize in ROCm
-
     hipError_t ret = hipGetDeviceCount(&deviceCount);
     CheckError("hipGetDeviceCount",ret);
     
@@ -665,15 +599,12 @@ namespace QDP {
 
 
 
-
-
   void gpu_set_device(int dev)
   {
     hipError_t ret;
 
-    deviceId = dev;
     ret = hipSetDevice(dev);
-    CheckError("hitSetDevice", ret);
+    CheckError("hitSetDevice",ret);
 
     gpu_create_events();
 
@@ -688,6 +619,7 @@ namespace QDP {
     hipError_t ret = hipGetDeviceProperties ( &prop , deviceId );
       
     smem = prop.sharedMemPerBlock;
+    max_resident_threads = (size_t)prop.multiProcessorCount * (size_t)prop.maxThreadsPerMultiProcessor;
     max_gridx = roundDown2pow( prop.maxGridSize[0] );
     max_gridy = roundDown2pow( prop.maxGridSize[1] );
     max_gridz = roundDown2pow( prop.maxGridSize[2] );
@@ -697,20 +629,33 @@ namespace QDP {
 
     std::string tmp(prop.gcnArchName);
     gcnArchName = tmp.substr(0, tmp.find(":"));
-    
-    QDPIO::cout << "GPU autodetect\n";
-    QDPIO::cout << "  Device name                         : " << std::string( prop.name ) << "\n";
-    QDPIO::cout << "  GCN Architecture (reported)         : " << std::string( prop.gcnArchName ) << "\n";
-    QDPIO::cout << "  GCN Architecture (using)            : " << gcnArchName << "\n";
-    QDPIO::cout << "  Shared memory                       : " << smem/1024  << " KB\n";
-    QDPIO::cout << "  Max grid  (x,y,z)                   : (" << max_gridx << "," << max_gridy << "," << max_gridz << ")\n";
-    QDPIO::cout << "  Max block (x,y,z)                   : (" << max_blockx << "," << max_blocky << "," << max_blockz << ")\n";
+
+    jit_config_delayed_message("GPU autodetect");
+    jit_config_delayed_message( "  Device name                         : " + std::string( prop.name ) );
+    jit_config_delayed_message( "  GCN Architecture (reported)         : " + std::string( prop.gcnArchName ) );
+    jit_config_delayed_message( "  GCN Architecture (using)            : " + gcnArchName );
+    jit_config_delayed_message( "  Shared memory                       : " + std::to_string( smem/1024 ) + " KB" );
+    jit_config_delayed_message( "  Max grid  (x,y,z)                   : (" + to_string( max_gridx ) + "," + to_string(max_gridy) + "," + to_string(max_gridz) + ")");
+    jit_config_delayed_message( "  Max block (x,y,z)                   : (" + to_string( max_blockx ) + "," + to_string(max_blocky) + "," + to_string(max_blockz) + ")");
   }
 
   
   size_t gpu_mem_free()
   {
+    size_t total;
+    hipError_t ret = hipMemGetInfo( &mem_free , &total );
+    if (ret != hipSuccess)
+      {
+	QDPIO::cerr << "hipMemGetInfo failed" << std::endl;
+	QDP_abort(1);
+      }
     return mem_free;
+  }
+
+
+  size_t gpu_get_max_resident_threads()
+  {
+    return max_resident_threads;
   }
   
   size_t gpu_mem_total()
@@ -729,13 +674,8 @@ namespace QDP {
     ret = hipMemGetInfo (&mem_free, &mem_total);
     CheckError("hipMemGetInfo",ret);
 
-    QDPIO::cout << "  GPU memory (free,total)             : " << mem_free/1024/1024 << "/" << mem_total/1024/1024 << " MB\n";
-
-#if 0
-    ret = cuCtxSetCacheConfig(CU_FUNC_CACHE_PREFER_L1);
-    CheckError("cuCtxSetCacheConfig",ret);
-#endif
-  }
+    jit_config_delayed_message( "  GPU memory (free,total)             : " + to_string( mem_free/1024/1024 ) + "/" + to_string( mem_total/1024/1024 ) + " MB");
+}
 
 
   int gpu_get_device_count()
@@ -749,8 +689,6 @@ namespace QDP {
   void gpu_host_alloc(void **mem , const size_t size)
   {
     hipError_t ret;
-    if (qdp_jit_config_get_rocm_set_device())
-      CheckError("hipSetDevice", hipSetDevice(deviceId));
     ret = hipHostMalloc ( mem , size , 0 );
     CheckError("hipHostMalloc",ret);
   }
@@ -760,25 +698,18 @@ namespace QDP {
   {
     if (!QDP_isInitialized())
       {
-	//std::cout << "host free, QDP not initialized" << std::endl;
 	return;
       }
     hipError_t ret;
-    if (qdp_jit_config_get_rocm_set_device())
-      CheckError("hipSetDevice", hipSetDevice(deviceId));
     ret = hipHostFree ( mem );
     CheckError("hipHostFree",ret);
   }
 
 
 
-
-
   void gpu_memcpy_h2d( void * dest , const void * src , size_t size )
   {
     hipError_t ret;
-    if (qdp_jit_config_get_rocm_set_device())
-      CheckError("hipSetDevice", hipSetDevice(deviceId));
     ret = hipMemcpyHtoD( (hipDeviceptr_t)const_cast<void*>(dest) , (void*)src , size );
     CheckError("hipMemcpyHtoD",ret);
   }
@@ -786,18 +717,28 @@ namespace QDP {
   void gpu_memcpy_d2h( void * dest , const void * src , size_t size )
   {
     hipError_t ret;
-    if (qdp_jit_config_get_rocm_set_device())
-      CheckError("hipSetDevice", hipSetDevice(deviceId));
     ret = hipMemcpyDtoH( dest , (hipDeviceptr_t)const_cast<void*>(src) , size );
     CheckError("hipMemcpyDtoH",ret);
+  }
+
+  void gpu_memcpy( void * dest , const void * src , size_t size )
+  {
+    hipError_t ret;
+    ret = hipMemcpy( dest , src , size , hipMemcpyDefault );
+    CheckError("hipMemcpy",ret);
+  }
+
+  bool gpu_malloc_managed(void **mem , size_t size )
+  {
+    hipError_t ret;
+    ret = hipMallocManaged( mem , size , hipMemAttachGlobal );
+    return ret == hipSuccess;
   }
 
 
   bool gpu_malloc(void **mem , size_t size )
   {
     hipError_t ret;
-    if (qdp_jit_config_get_rocm_set_device())
-      CheckError("hipSetDevice", hipSetDevice(deviceId));
     ret = hipMalloc ( mem , size);
     return ret == hipSuccess;
   }
@@ -806,12 +747,9 @@ namespace QDP {
   {
     if (!QDP_isInitialized())
       {
-	//std::cout << "GPU free, QDP not initialized" << std::endl;
 	return;
       }
     hipError_t ret;
-    if (qdp_jit_config_get_rocm_set_device())
-      CheckError("hipSetDevice", hipSetDevice(deviceId));
     ret = hipFree( (void*)mem );
     CheckError("hipFree",ret);
   }
@@ -821,8 +759,6 @@ namespace QDP {
   void gpu_memset( void * dest , unsigned char val , size_t N )
   {
     hipError_t ret;
-    if (qdp_jit_config_get_rocm_set_device())
-      CheckError("hipSetDevice", hipSetDevice(deviceId));
     ret = hipMemsetD8( dest , val , N );
     CheckError("hipMemset",ret);
   }
@@ -850,8 +786,6 @@ namespace QDP {
     func.set_kernel_name( kernel_name );
     func.set_pretty( pretty );
 
-    if (qdp_jit_config_get_rocm_set_device())
-      CheckError("hipSetDevice", hipSetDevice(deviceId));
     ret = hipModuleLoadData(&module, shared.data() );
     if (ret != hipSuccess)
       {
@@ -883,8 +817,6 @@ namespace QDP {
   void gpu_sync()
   {
     hipError_t ret;
-    if (qdp_jit_config_get_rocm_set_device())
-      CheckError("hipSetDevice", hipSetDevice(deviceId));
     ret = hipStreamSynchronize(NULL);
     
     if (ret != hipSuccess)

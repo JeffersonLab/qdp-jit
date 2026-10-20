@@ -1,38 +1,28 @@
-//
-// Random number generator support
-
-
 #include "qdp.h"
 
-#if 1
 
 namespace QDP {
 
-// Random number generator namespace
-/* 
- * A collection of routines and data for supporting random numbers
- * 
- * It is a linear congruential with modulus m = 2**47, increment c = 0,
- * and multiplier a = (2**36)*m3 + (2**24)*m2 + (2**12)*m1 + m0.  
- */
-
   namespace Layout {
-  // lattice coordinate
   LatticeInteger latticeCoordinate(int mu);
   }
 
   
 namespace RNG
 {
+  std::map< int , RNG_Internals_t > RNG_Internals;
 
-  std::shared_ptr<RNG_Internals_t> RNG_Internals;
-
-  std::shared_ptr<RNG_Internals_t> get_RNG_Internals()
+  RNG_Internals_t& get_RNG_Internals(LatticeLayout layout)
   {
-    return RNG_Internals;
+    if ( !RNG_Internals.count( layout.index() ) )
+      {
+	QDPIO::cerr << "get_RNG_Internals: layout not found " << layout.index() << std::endl;
+	sleep(1);
+	QDP_abort(1);
+      }
+    return RNG_Internals[ layout.index() ];
   }
-
-    //! Find the number of bits required to represent x.
+  
   int numbits(size_t x)
   {
     int num = 1;
@@ -47,11 +37,8 @@ namespace RNG
   }
 
 
-  //! Initialize the random number generator with a default seed
   void initDefaultRNG()
   {
-    RNG_Internals = std::make_shared< RNG_Internals_t >();
-    
     RNG::initRNG();
 
     Seed seed = 11;
@@ -60,17 +47,16 @@ namespace RNG
 
   void doneDefaultRNG()
   {
-    RNG_Internals.reset();
+    RNG_Internals.clear();
   }
 
   
-
-  //! Initialize the internals of the random number generator
   void initRNG()
   {
+    int ref = Layout::current().index();
+
     int old_profile_level = setProfileLevel(0);
 
-    /* Multiplier used. Use big integer arithmetic */
     Seed seed_tmp3;
     Seed seed_tmp2;
     Seed seed_tmp1;
@@ -81,10 +67,8 @@ namespace RNG
     seed_tmp1 = (seed_tmp2 << 12) | 712;
     seed_tmp0 = (seed_tmp1 << 12) | 1645;
 
-    RNG_Internals->ran_mult = seed_tmp0;
+    RNG_Internals[ref].ran_mult = seed_tmp0;
 
-    // Find the number of bits it takes to represent the total lattice volume.
-    // NOTE: there are no lattice size restrictions here.
     int nbits = numbits(Layout::vol());
 
     /* Get the lattice coordinate of each site (note the origin is 0) and
@@ -105,18 +89,9 @@ namespace RNG
 
     lexoc += 1;
 
-    /*
-     * Setup single multiplier ( a^1 ) on each site 
-     */
     LatticeSeed laa;
-    laa = RNG_Internals->ran_mult;
-
-    /*
-     * Calculate the multiplier  a^n  where n = lexicographic numbering of the site.
-     *   Put one into each an_f, then multiply them by  a^(2^i) under the context
-     *   flag where i is the bit number of the lexicographic numbering.
-     *   In other words, the very first site is multiplied by a.
-     */
+    laa = RNG_Internals[ref].ran_mult;
+    
     LatticeSeed lattice_ran_mult_tmp;
     lattice_ran_mult_tmp = 1;
 
@@ -136,162 +111,59 @@ namespace RNG
       laa = laamult;
     }
 
-    // Calculate separately the multiplier for the highest lexicographically ordered site.
-    // NOTE: I'm changing the meaning here slightly, but in an important way.
-    // Technically, ran_mult_n = ran_mult^{vol} . Instead, I'm going to throw
-    // away an rng call after every lattice call. So, I will DEFINE
-    //
-    //   ran_mult_n = ran_mult^{vol + 1}
-    //
     bool bit;
     Seed aa;
     Seed aamult;
 
     size_t ibit = Layout::vol();
-    aa = RNG_Internals->ran_mult;
-//    ran_mult_n = 1;    // produces def    ran_mult_n = ran_mult^{vol}
-    RNG_Internals->ran_mult_n = RNG_Internals->ran_mult;   // produces def  ran_mult_n = ran_mult^{vol+1}
+    aa = RNG_Internals[ref].ran_mult;
+    RNG_Internals[ref].ran_mult_n = RNG_Internals[ref].ran_mult;   // produces def  ran_mult_n = ran_mult^{vol+1}
 
     for(int i=0; i<nbits; ++i)
     {
       bit = (ibit & 1) > 0;
 
-      aamult = RNG_Internals->ran_mult_n * aa;
+      aamult = RNG_Internals[ref].ran_mult_n * aa;
       if (bit)
-	RNG_Internals->ran_mult_n = aamult;
+	RNG_Internals[ref].ran_mult_n = aamult;
 
       ibit >>= 1;
       aamult = aa * aa;
       aa = aamult;
     }
 
-    RNG_Internals->lattice_ran_mult = lattice_ran_mult_tmp;
-    QDPIO::cout << "Finished init of RNG" << endl; 
+    RNG_Internals[ref].lattice_ran_mult = lattice_ran_mult_tmp;
 
-    RNG_Internals->lat_ran_seed.elem(0) = RNG_Internals->ran_seed.elem();
-    for( int i = 1 ; i < Layout::sitesOnNode() ; i++ )    
-      RNG_Internals->lat_ran_seed.elem(i) = RNG_Internals->lat_ran_seed.elem(i-1) * RNG_Internals->ran_mult_n.elem();
-
-    RNG_Internals->lat_ran_mult_n = RNG_Internals->ran_mult_n;
+    for (int node = 0 ; node < Layout::numNodes() ; ++node )
+      {
+	multi1d<int> coord = Layout::siteCoords( node , 0 );
+	pokeSite( RNG_Internals[ref].lat_ran_seed , RNG_Internals[ref].ran_seed , coord );
+      }
+    Random::run_seedinit( RNG_Internals[ref].lat_ran_seed , RNG_Internals[ref].ran_mult_n );
+    
+    RNG_Internals[ref].lat_ran_mult_n = RNG_Internals[ref].ran_mult_n;
 
     setProfileLevel(old_profile_level);
   }
 
 
-  //! Initialize the random number generator seed
   void setrn(const Seed& seed)
   {
-    RNG_Internals->ran_seed = seed;
+    int ref = Layout::current().index();
+    RNG_Internals[ref].ran_seed = seed;
   }
 
 
-  //! Return a copy of the random number seed
   void savern(Seed& seed)
   {
-    seed = RNG_Internals->ran_seed;
+    int ref = Layout::current().index();
+    seed = RNG_Internals[ref].ran_seed;
   }
-
-
-  //! Scalar random number generator. Done on the front end. */
-  /*! 
-   * It is linear congruential with modulus m = 2**47, increment c = 0,
-   * and multiplier a = (2**36)*m3 + (2**24)*m2 + (2**12)*m1 + m0.  
-   */
-  float sranf(Seed& seed, Seed& skewed_seed, const Seed& seed_mult)
-  {
-    /* Calculate the random number and update the seed according to the
-     * following algorithm
-     *
-     * FILL(twom11,TWOM11);
-     * FILL(twom12,TWOM12);
-     * i3 = ran_seed(3)*ran_mult(0) + ran_seed(2)*ran_mult(1)
-     *    + ran_seed(1)*ran_mult(2) + ran_seed(0)*ran_mult(3);
-     * i2 = ran_seed(2)*ran_mult(0) + ran_seed(1)*ran_mult(1)
-     *    + ran_seed(0)*ran_mult(2);
-     * i1 = ran_seed(1)*ran_mult(0) + ran_seed(0)*ran_mult(1);
-     * i0 = ran_seed(0)*ran_mult(0);
-     *
-     * ran_seed(0) = mod(i0, 4096);
-     * i1          = i1 + i0/4096;
-     * ran_seed(1) = mod(i1, 4096);
-     * i2          = i2 + i1/4096;
-     * ran_seed(2) = mod(i2, 4096);
-     * ran_seed(3) = mod(i3 + i2/4096, 2048);
-     *
-     * sranf = twom11*(TO_REAL32(VALUE(ran_seed(3)))
-     *       + twom12*(TO_REAL32(VALUE(ran_seed(2)))
-     *       + twom12*(TO_REAL32(VALUE(ran_seed(1)))
-     *       + twom12*(TO_REAL32(VALUE(ran_seed(0)))))));
-     */
-    Real _sranf;
-    float _ssranf;
-    Seed ran_tmp;
-
-    _sranf = seedToFloat(skewed_seed);
-    cast_rep(_ssranf, _sranf);
-
-    ran_tmp = seed * seed_mult;
-    seed = ran_tmp;
-
-    ran_tmp = skewed_seed * seed_mult;
-    skewed_seed = ran_tmp;
-
-    return _ssranf;
-  }
-
-
-  //! Scalar random number generator. Done on the front end. */
-  /*! 
-   * It is linear congruential with modulus m = 2**47, increment c = 0,
-   * and multiplier a = (2**36)*m3 + (2**24)*m2 + (2**12)*m1 + m0.  
-   */
-  void sranf(float* d, int N, Seed& seed, ILatticeSeed& skewed_seed, const Seed& seed_mult)
-  {
-    /* Calculate the random number and update the seed according to the
-     * following algorithm
-     *
-     * FILL(twom11,TWOM11);
-     * FILL(twom12,TWOM12);
-     * i3 = ran_seed(3)*ran_mult(0) + ran_seed(2)*ran_mult(1)
-     *    + ran_seed(1)*ran_mult(2) + ran_seed(0)*ran_mult(3);
-     * i2 = ran_seed(2)*ran_mult(0) + ran_seed(1)*ran_mult(1)
-     *    + ran_seed(0)*ran_mult(2);
-     * i1 = ran_seed(1)*ran_mult(0) + ran_seed(0)*ran_mult(1);
-     * i0 = ran_seed(0)*ran_mult(0);
-     *
-     * ran_seed(0) = mod(i0, 4096);
-     * i1          = i1 + i0/4096;
-     * ran_seed(1) = mod(i1, 4096);
-     * i2          = i2 + i1/4096;
-     * ran_seed(2) = mod(i2, 4096);
-     * ran_seed(3) = mod(i3 + i2/4096, 2048);
-     *
-     * sranf = twom11*(TO_REAL32(VALUE(ran_seed(3)))
-     *       + twom12*(TO_REAL32(VALUE(ran_seed(2)))
-     *       + twom12*(TO_REAL32(VALUE(ran_seed(1)))
-     *       + twom12*(TO_REAL32(VALUE(ran_seed(0)))))));
-     */
-    ILatticeReal _sranf;
-    Seed ran_tmp1;
-    ILatticeSeed ran_tmp2;
-
-    _sranf = seedToFloat(skewed_seed);
-    for(int i=0; i < N; ++i)
-    {
-      cast_rep(d[i], getSite(_sranf,i));
-    }
-
-    ran_tmp1 = seed * seed_mult;
-    seed = ran_tmp1;
-
-    ran_tmp2 = skewed_seed * seed_mult;
-    skewed_seed = ran_tmp2;
-  }
-
+  
 }
 
 
 } // namespace QDP;
 
-#endif
+
 

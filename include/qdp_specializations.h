@@ -1,41 +1,31 @@
-// -*- C++ -*-
-//
-// QDP data parallel interface
-//
-
 #ifndef QDP_SPECIALIZATIONS_H
 #define QDP_SPECIALIZATIONS_H
 
+
 namespace QDP {
 
-//
-// Conversion routines. These cannot be implicit conversion functions
-// since they foul up the PETE defs in QDPOperators.h using primitive
-// types
-//
-
-//! Make an int from an Integer
+  
 inline int 
 toInt(const Integer& s) 
 {
   return toInt(s.elem());
 }
 
-//! Make a float from a Real32
+
 inline float
 toFloat(const Real32& s) 
 {
   return toFloat(s.elem());
 }
 
-//! Make a double from a Real64
+
 inline double
 toDouble(const Real64& s) 
 {
   return toDouble(s.elem());
 }
 
-//! Make a bool from a Boolean
+
 inline bool
 toBool(const Boolean& s) 
 {
@@ -101,30 +91,30 @@ void write(XMLWriter& xml, const string& s, const std::list<Boolean>& d);
 
 #endif
 
-//
-// Return an equivalent QDP type given some simple machine type
-//
+
+  
+
 template<>
 struct SimpleScalar<float>
 {
   typedef Real32   Type_t;
 };
 
-// Construct simple float word
+
 template<>
 struct SimpleScalar<int>
 {
   typedef Integer   Type_t;
 };
 
-// Construct simple double word
+
 template<>
 struct SimpleScalar<double>
 {
   typedef Real64   Type_t;
 };
 
-// Construct simple boolean word
+
 template<>
 struct SimpleScalar<bool>
 {
@@ -132,12 +122,7 @@ struct SimpleScalar<bool>
 };
 
 
-//
-// Type constructors for QDP types within the type system. Namely,
-// at some level like a primitive, sometimes scalar temporaries are needed
-// These are the bottom most constructors given a machine type
-//
-// Construct simple word
+
 template<>
 struct InternalScalar<float>
 {
@@ -163,7 +148,8 @@ struct InternalScalar<bool>
 };
 
 
-// Makes a primitive scalar leaving grid alone
+
+
 template<>
 struct PrimitiveScalar<float>
 {
@@ -190,7 +176,6 @@ struct PrimitiveScalar<bool>
 
 
 
-// Makes a lattice scalar leaving primitive indices alone
 template<>
 struct LatticeScalar<float>
 {
@@ -217,7 +202,6 @@ struct LatticeScalar<bool>
 
 
 
-// Internally used real scalars
 template<>
 struct RealScalar<int> {
   typedef REAL32  Type_t;
@@ -233,83 +217,6 @@ struct RealScalar<double> {
   typedef REAL64  Type_t;
 };
 
-
-
-//
-// Leaf constructors for simple machine types. These are a specialization over the
-// default constructors. The point is to avoid wrapping the simple types in
-// references which do not help much (primitive objects are word size!), 
-// but get in the way of type computations.
-//
-template<>
-struct CreateLeaf<int>
-{
-  typedef int Inp_t;
-  typedef Integer  Leaf_t;
-  inline static
-  Leaf_t make(const Inp_t &a) { return Leaf_t(a); }
-};
-
-template<>
-struct CreateLeaf<float>
-{
-  typedef float Inp_t;
-  typedef Real32  Leaf_t;
-  inline static
-  Leaf_t make(const Inp_t &a) { return Leaf_t(a); }
-};
-
-template<>
-struct CreateLeaf<double>
-{
-  typedef double Inp_t;
-  typedef Real64  Leaf_t;
-  inline static
-  Leaf_t make(const Inp_t &a) { return Leaf_t(a); }
-};
-
-template<>
-struct CreateLeaf<bool>
-{
-  typedef bool Inp_t;
-  typedef Boolean  Leaf_t;
-  inline static
-  Leaf_t make(const Inp_t &a) { return Leaf_t(a); }
-};
-
-
-template<>
-struct CreateLeaf<OScalar<IntReal32> >
-{
-  typedef OScalar<IntReal32> Leaf_t;
-  inline static
-  Leaf_t make(const OScalar<IntReal32> &a) { return Leaf_t(a); }
-};
-
-template<>
-struct CreateLeaf<OScalar<IntReal64> >
-{
-  typedef OScalar<IntReal64> Leaf_t;
-  inline static
-  Leaf_t make(const OScalar<IntReal64> &a) { return Leaf_t(a); }
-};
-
-template<>
-struct CreateLeaf<OScalar<IntInteger> >
-{
-  typedef OScalar<IntInteger> Leaf_t;
-  inline static
-  Leaf_t make(const OScalar<IntInteger> &a) { return Leaf_t(a); }
-};
-
-
-template<>
-struct CreateLeaf<OScalar<IntBoolean> >
-{
-  typedef OScalar<IntBoolean> Leaf_t;
-  inline static
-  Leaf_t make(const OScalar<IntBoolean> &a) { return Leaf_t(a); }
-};
 
 
 } // namespace QDP

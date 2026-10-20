@@ -1,12 +1,11 @@
-// -*- C++ -*-
+#ifndef QDP_PETE_OPERATORTAGS_H
+#define QDP_PETE_OPERATORTAGS_H
+
 // $Id: Header.h,v 1.3 2002-10-14 02:06:56 edwards Exp $
 
 /*! @file
  * @brief Bulk of QDP operators produced by PETE
  */
-
-#ifndef PETE_PETE_OPERATORTAGS_H
-#define PETE_PETE_OPERATORTAGS_H
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -21,12 +20,13 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 
+
 struct FnArcCos
 {
   PETE_EMPTY_CONSTRUCTORS(FnArcCos)
   template<class T>
   inline typename UnaryReturn<T, FnArcCos >::Type_t
-  operator()(const T &a) const
+  operator()(T a) const
   {
     return (acos(a));
   }
@@ -37,7 +37,7 @@ struct FnArcSin
   PETE_EMPTY_CONSTRUCTORS(FnArcSin)
   template<class T>
   inline typename UnaryReturn<T, FnArcSin >::Type_t
-  operator()(const T &a) const
+  operator()(T a) const
   {
     return (asin(a));
   }
@@ -48,7 +48,7 @@ struct FnArcTan
   PETE_EMPTY_CONSTRUCTORS(FnArcTan)
   template<class T>
   inline typename UnaryReturn<T, FnArcTan >::Type_t
-  operator()(const T &a) const
+  operator()(T a) const
   {
     return (atan(a));
   }
@@ -59,7 +59,7 @@ struct FnCeil
   PETE_EMPTY_CONSTRUCTORS(FnCeil)
   template<class T>
   inline typename UnaryReturn<T, FnCeil >::Type_t
-  operator()(const T &a) const
+  operator()(T a) const
   {
     return (ceil(a));
   }
@@ -70,7 +70,7 @@ struct FnCos
   PETE_EMPTY_CONSTRUCTORS(FnCos)
   template<class T>
   inline typename UnaryReturn<T, FnCos >::Type_t
-  operator()(const T &a) const
+  operator()(T a) const
   {
     return (cos(a));
   }
@@ -81,7 +81,7 @@ struct FnHypCos
   PETE_EMPTY_CONSTRUCTORS(FnHypCos)
   template<class T>
   inline typename UnaryReturn<T, FnHypCos >::Type_t
-  operator()(const T &a) const
+  operator()(T a) const
   {
     return (cosh(a));
   }
@@ -92,7 +92,7 @@ struct FnExp
   PETE_EMPTY_CONSTRUCTORS(FnExp)
   template<class T>
   inline typename UnaryReturn<T, FnExp >::Type_t
-  operator()(const T &a) const
+  operator()(T a) const
   {
     return (exp(a));
   }
@@ -103,7 +103,7 @@ struct FnFabs
   PETE_EMPTY_CONSTRUCTORS(FnFabs)
   template<class T>
   inline typename UnaryReturn<T, FnFabs >::Type_t
-  operator()(const T &a) const
+  operator()(T a) const
   {
     return (fabs(a));
   }
@@ -114,7 +114,7 @@ struct FnFloor
   PETE_EMPTY_CONSTRUCTORS(FnFloor)
   template<class T>
   inline typename UnaryReturn<T, FnFloor >::Type_t
-  operator()(const T &a) const
+  operator()(T a) const
   {
     return (floor(a));
   }
@@ -125,7 +125,7 @@ struct FnLog
   PETE_EMPTY_CONSTRUCTORS(FnLog)
   template<class T>
   inline typename UnaryReturn<T, FnLog >::Type_t
-  operator()(const T &a) const
+  operator()(T a) const
   {
     return (log(a));
   }
@@ -136,7 +136,7 @@ struct FnLog10
   PETE_EMPTY_CONSTRUCTORS(FnLog10)
   template<class T>
   inline typename UnaryReturn<T, FnLog10 >::Type_t
-  operator()(const T &a) const
+  operator()(T a) const
   {
     return (log10(a));
   }
@@ -147,7 +147,7 @@ struct FnSin
   PETE_EMPTY_CONSTRUCTORS(FnSin)
   template<class T>
   inline typename UnaryReturn<T, FnSin >::Type_t
-  operator()(const T &a) const
+  operator()(T a) const
   {
     return (sin(a));
   }
@@ -158,7 +158,7 @@ struct FnHypSin
   PETE_EMPTY_CONSTRUCTORS(FnHypSin)
   template<class T>
   inline typename UnaryReturn<T, FnHypSin >::Type_t
-  operator()(const T &a) const
+  operator()(T a) const
   {
     return (sinh(a));
   }
@@ -169,7 +169,7 @@ struct FnSqrt
   PETE_EMPTY_CONSTRUCTORS(FnSqrt)
   template<class T>
   inline typename UnaryReturn<T, FnSqrt >::Type_t
-  operator()(const T &a) const
+  operator()(T a) const
   {
     return (sqrt(a));
   }
@@ -180,7 +180,7 @@ struct FnTan
   PETE_EMPTY_CONSTRUCTORS(FnTan)
   template<class T>
   inline typename UnaryReturn<T, FnTan >::Type_t
-  operator()(const T &a) const
+  operator()(T a) const
   {
     return (tan(a));
   }
@@ -191,7 +191,7 @@ struct FnHypTan
   PETE_EMPTY_CONSTRUCTORS(FnHypTan)
   template<class T>
   inline typename UnaryReturn<T, FnHypTan >::Type_t
-  operator()(const T &a) const
+  operator()(T a) const
   {
     return (tanh(a));
   }
@@ -202,7 +202,7 @@ struct OpUnaryMinus
   PETE_EMPTY_CONSTRUCTORS(OpUnaryMinus)
   template<class T>
   inline typename UnaryReturn<T, OpUnaryMinus >::Type_t
-  operator()(const T &a) const
+  operator()(T a) const
   {
     return (-a);
   }
@@ -213,7 +213,7 @@ struct OpUnaryPlus
   PETE_EMPTY_CONSTRUCTORS(OpUnaryPlus)
   template<class T>
   inline typename UnaryReturn<T, OpUnaryPlus >::Type_t
-  operator()(const T &a) const
+  operator()(T a) const
   {
     return (+a);
   }
@@ -224,7 +224,7 @@ struct OpBitwiseNot
   PETE_EMPTY_CONSTRUCTORS(OpBitwiseNot)
   template<class T>
   inline typename UnaryReturn<T, OpBitwiseNot >::Type_t
-  operator()(const T &a) const
+  operator()(T a) const
   {
     return (~a);
   }
@@ -235,7 +235,7 @@ struct OpIdentity
   PETE_EMPTY_CONSTRUCTORS(OpIdentity)
   template<class T>
   inline typename UnaryReturn<T, OpIdentity >::Type_t
-  operator()(const T &a) const
+  operator()(T a) const
   {
     return (a);
   }
@@ -246,23 +246,25 @@ struct OpNot
   PETE_EMPTY_CONSTRUCTORS(OpNot)
   template<class T>
   inline typename UnaryReturn<T, OpNot >::Type_t
-  operator()(const T &a) const
+  operator()(T a) const
   {
     return (!a);
   }
 };
 
-template<class T >
+
+template<Arithmetic T >
 struct UnaryReturn<T, OpNot > {
   typedef bool Type_t;
 };
+
 
 struct OpAdd
 {
   PETE_EMPTY_CONSTRUCTORS(OpAdd)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, OpAdd >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
     return (a + b);
   }
@@ -273,29 +275,31 @@ struct OpSubtract
   PETE_EMPTY_CONSTRUCTORS(OpSubtract)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, OpSubtract >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
     return (a - b);
   }
 };
+
 
 struct OpMultiply
 {
   PETE_EMPTY_CONSTRUCTORS(OpMultiply)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, OpMultiply >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
     return (a * b);
   }
 };
+
 
 struct OpDivide
 {
   PETE_EMPTY_CONSTRUCTORS(OpDivide)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, OpDivide >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
     return (a / b);
   }
@@ -306,7 +310,7 @@ struct OpMod
   PETE_EMPTY_CONSTRUCTORS(OpMod)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, OpMod >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
     return (a % b);
   }
@@ -317,7 +321,7 @@ struct OpBitwiseAnd
   PETE_EMPTY_CONSTRUCTORS(OpBitwiseAnd)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, OpBitwiseAnd >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
     return (a & b);
   }
@@ -328,7 +332,7 @@ struct OpBitwiseOr
   PETE_EMPTY_CONSTRUCTORS(OpBitwiseOr)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, OpBitwiseOr >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
     return (a | b);
   }
@@ -339,7 +343,7 @@ struct OpBitwiseXor
   PETE_EMPTY_CONSTRUCTORS(OpBitwiseXor)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, OpBitwiseXor >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
     return (a ^ b);
   }
@@ -350,7 +354,7 @@ struct FnLdexp
   PETE_EMPTY_CONSTRUCTORS(FnLdexp)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, FnLdexp >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
     return (ldexp(a,b));
   }
@@ -361,7 +365,7 @@ struct FnPow
   PETE_EMPTY_CONSTRUCTORS(FnPow)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, FnPow >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
     return (pow(a,b));
   }
@@ -372,7 +376,7 @@ struct FnFmod
   PETE_EMPTY_CONSTRUCTORS(FnFmod)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, FnFmod >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
     return (fmod(a,b));
   }
@@ -383,7 +387,7 @@ struct FnArcTan2
   PETE_EMPTY_CONSTRUCTORS(FnArcTan2)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, FnArcTan2 >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
     return (atan2(a,b));
   }
@@ -394,13 +398,13 @@ struct OpLT
   PETE_EMPTY_CONSTRUCTORS(OpLT)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, OpLT >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
     return (a < b);
   }
 };
 
-template<class T1, class T2 >
+template<Arithmetic T1, Arithmetic T2 >
 struct BinaryReturn<T1, T2, OpLT > {
   typedef bool Type_t;
 };
@@ -410,13 +414,13 @@ struct OpLE
   PETE_EMPTY_CONSTRUCTORS(OpLE)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, OpLE >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
     return (a <= b);
   }
 };
 
-template<class T1, class T2 >
+template<Arithmetic T1, Arithmetic T2 >
 struct BinaryReturn<T1, T2, OpLE > {
   typedef bool Type_t;
 };
@@ -426,29 +430,32 @@ struct OpGT
   PETE_EMPTY_CONSTRUCTORS(OpGT)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, OpGT >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
     return (a > b);
   }
 };
 
-template<class T1, class T2 >
+template<Arithmetic T1, Arithmetic T2 >
 struct BinaryReturn<T1, T2, OpGT > {
   typedef bool Type_t;
 };
+
+
+
 
 struct OpGE
 {
   PETE_EMPTY_CONSTRUCTORS(OpGE)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, OpGE >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
     return (a >= b);
   }
 };
 
-template<class T1, class T2 >
+template<Arithmetic T1, Arithmetic T2 >
 struct BinaryReturn<T1, T2, OpGE > {
   typedef bool Type_t;
 };
@@ -458,13 +465,13 @@ struct OpEQ
   PETE_EMPTY_CONSTRUCTORS(OpEQ)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, OpEQ >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
     return (a == b);
   }
 };
 
-template<class T1, class T2 >
+template<Arithmetic T1, Arithmetic T2 >
 struct BinaryReturn<T1, T2, OpEQ > {
   typedef bool Type_t;
 };
@@ -474,13 +481,13 @@ struct OpNE
   PETE_EMPTY_CONSTRUCTORS(OpNE)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, OpNE >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
     return (a != b);
   }
 };
 
-template<class T1, class T2 >
+template<Arithmetic T1, Arithmetic T2 >
 struct BinaryReturn<T1, T2, OpNE > {
   typedef bool Type_t;
 };
@@ -490,13 +497,13 @@ struct OpAnd
   PETE_EMPTY_CONSTRUCTORS(OpAnd)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, OpAnd >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
     return (a && b);
   }
 };
 
-template<class T1, class T2 >
+template<Arithmetic T1, Arithmetic T2 >
 struct BinaryReturn<T1, T2, OpAnd > {
   typedef bool Type_t;
 };
@@ -506,13 +513,13 @@ struct OpOr
   PETE_EMPTY_CONSTRUCTORS(OpOr)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, OpOr >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
     return (a || b);
   }
 };
 
-template<class T1, class T2 >
+template<Arithmetic T1, Arithmetic T2 >
 struct BinaryReturn<T1, T2, OpOr > {
   typedef bool Type_t;
 };
@@ -522,13 +529,13 @@ struct OpLeftShift
   PETE_EMPTY_CONSTRUCTORS(OpLeftShift)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, OpLeftShift >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
     return (a << b);
   }
 };
 
-template<class T1, class T2 >
+template<Arithmetic T1, Arithmetic T2 >
 struct BinaryReturn<T1, T2, OpLeftShift > {
   typedef T1 Type_t;
 };
@@ -538,13 +545,13 @@ struct OpRightShift
   PETE_EMPTY_CONSTRUCTORS(OpRightShift)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, OpRightShift >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
     return (a >> b);
   }
 };
 
-template<class T1, class T2 >
+template<Arithmetic T1, Arithmetic T2 >
 struct BinaryReturn<T1, T2, OpRightShift > {
   typedef T1 Type_t;
 };
@@ -554,31 +561,33 @@ struct OpAddAssign
   PETE_EMPTY_CONSTRUCTORS(OpAddAssign)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, OpAddAssign >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
-    (const_cast<T1 &>(a) += b); return const_cast<T1 &>(a);
+    return a += b;
   }
 };
 
-template<class T1, class T2 >
+
+template<Arithmetic T1, Arithmetic T2 >
 struct BinaryReturn<T1, T2, OpAddAssign > {
-  typedef T1 &Type_t;
+  typedef T1 Type_t;
 };
+
 
 struct OpSubtractAssign
 {
   PETE_EMPTY_CONSTRUCTORS(OpSubtractAssign)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, OpSubtractAssign >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
-    (const_cast<T1 &>(a) -= b); return const_cast<T1 &>(a);
+    return a -= b;
   }
 };
 
-template<class T1, class T2 >
+template<Arithmetic T1, Arithmetic T2 >
 struct BinaryReturn<T1, T2, OpSubtractAssign > {
-  typedef T1 &Type_t;
+  typedef T1 Type_t;
 };
 
 struct OpMultiplyAssign
@@ -586,15 +595,15 @@ struct OpMultiplyAssign
   PETE_EMPTY_CONSTRUCTORS(OpMultiplyAssign)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, OpMultiplyAssign >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
-    (const_cast<T1 &>(a) *= b); return const_cast<T1 &>(a);
+    return a *= b;
   }
 };
 
-template<class T1, class T2 >
+template<Arithmetic T1, Arithmetic T2 >
 struct BinaryReturn<T1, T2, OpMultiplyAssign > {
-  typedef T1 &Type_t;
+  typedef T1 Type_t;
 };
 
 struct OpDivideAssign
@@ -602,15 +611,15 @@ struct OpDivideAssign
   PETE_EMPTY_CONSTRUCTORS(OpDivideAssign)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, OpDivideAssign >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
-    (const_cast<T1 &>(a) /= b); return const_cast<T1 &>(a);
+    return a /= b;
   }
 };
 
-template<class T1, class T2 >
+template<Arithmetic T1, Arithmetic T2 >
 struct BinaryReturn<T1, T2, OpDivideAssign > {
-  typedef T1 &Type_t;
+  typedef T1 Type_t;
 };
 
 struct OpModAssign
@@ -618,15 +627,15 @@ struct OpModAssign
   PETE_EMPTY_CONSTRUCTORS(OpModAssign)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, OpModAssign >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
-    (const_cast<T1 &>(a) %= b); return const_cast<T1 &>(a);
+    return a %= b;
   }
 };
 
-template<class T1, class T2 >
+template<Arithmetic T1, Arithmetic T2 >
 struct BinaryReturn<T1, T2, OpModAssign > {
-  typedef T1 &Type_t;
+  typedef T1 Type_t;
 };
 
 struct OpBitwiseOrAssign
@@ -634,15 +643,15 @@ struct OpBitwiseOrAssign
   PETE_EMPTY_CONSTRUCTORS(OpBitwiseOrAssign)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, OpBitwiseOrAssign >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
-    (const_cast<T1 &>(a) |= b); return const_cast<T1 &>(a);
+    return a |= b;
   }
 };
 
-template<class T1, class T2 >
+template<Arithmetic T1, Arithmetic T2 >
 struct BinaryReturn<T1, T2, OpBitwiseOrAssign > {
-  typedef T1 &Type_t;
+  typedef T1 Type_t;
 };
 
 struct OpBitwiseAndAssign
@@ -650,15 +659,15 @@ struct OpBitwiseAndAssign
   PETE_EMPTY_CONSTRUCTORS(OpBitwiseAndAssign)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, OpBitwiseAndAssign >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
-    (const_cast<T1 &>(a) &= b); return const_cast<T1 &>(a);
+    return a &= b;
   }
 };
 
-template<class T1, class T2 >
+template<Arithmetic T1, Arithmetic T2 >
 struct BinaryReturn<T1, T2, OpBitwiseAndAssign > {
-  typedef T1 &Type_t;
+  typedef T1 Type_t;
 };
 
 struct OpBitwiseXorAssign
@@ -666,15 +675,15 @@ struct OpBitwiseXorAssign
   PETE_EMPTY_CONSTRUCTORS(OpBitwiseXorAssign)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, OpBitwiseXorAssign >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
-    (const_cast<T1 &>(a) ^= b); return const_cast<T1 &>(a);
+    return a ^= b;
   }
 };
 
-template<class T1, class T2 >
+template<Arithmetic T1, Arithmetic T2 >
 struct BinaryReturn<T1, T2, OpBitwiseXorAssign > {
-  typedef T1 &Type_t;
+  typedef T1 Type_t;
 };
 
 struct OpLeftShiftAssign
@@ -682,15 +691,15 @@ struct OpLeftShiftAssign
   PETE_EMPTY_CONSTRUCTORS(OpLeftShiftAssign)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, OpLeftShiftAssign >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
-    (const_cast<T1 &>(a) <<= b); return const_cast<T1 &>(a);
+    return a <<= b;
   }
 };
 
-template<class T1, class T2 >
+template<Arithmetic T1, Arithmetic T2 >
 struct BinaryReturn<T1, T2, OpLeftShiftAssign > {
-  typedef T1 &Type_t;
+  typedef T1 Type_t;
 };
 
 struct OpRightShiftAssign
@@ -698,15 +707,16 @@ struct OpRightShiftAssign
   PETE_EMPTY_CONSTRUCTORS(OpRightShiftAssign)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, OpRightShiftAssign >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
-    (const_cast<T1 &>(a) >>= b); return const_cast<T1 &>(a);
+    return a >>= b;
   }
 };
 
-template<class T1, class T2 >
+
+template<Arithmetic T1, Arithmetic T2 >
 struct BinaryReturn<T1, T2, OpRightShiftAssign > {
-  typedef T1 &Type_t;
+  typedef T1 Type_t;
 };
 
 struct OpAssign
@@ -714,16 +724,20 @@ struct OpAssign
   PETE_EMPTY_CONSTRUCTORS(OpAssign)
   template<class T1, class T2>
   inline typename BinaryReturn<T1, T2, OpAssign >::Type_t
-  operator()(const T1 &a, const T2 &b) const
+  operator()(T1 a, T2 b) const
   {
-    return (const_cast<T1 &>(a) = b);
+    //return (const_cast<T1 &>(a) = b);
+    a = b;
+    return a;
   }
 };
 
-template<class T1, class T2 >
+
+template<Arithmetic T1, Arithmetic T2 >
 struct BinaryReturn<T1, T2, OpAssign > {
-  typedef T1 &Type_t;
+  typedef T1 Type_t;
 };
+
 
 struct FnWhere
 {
@@ -731,11 +745,11 @@ struct FnWhere
   template<class T1, class T2, class T3>
   inline typename TrinaryReturn<T1, T2, T3, FnWhere >
   ::Type_t
-  operator()(const T1 &a, const T2 &b, const T3 &c) const
+  operator()(T1 a, T2 b, T3 c) const
   {
     return where(a,b,c);
   }
 };
 
-#endif // PETE_PETE_OPERATORTAGS_H
+#endif
 

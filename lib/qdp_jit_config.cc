@@ -5,43 +5,49 @@ namespace QDP
 {
   namespace
   {
-    // LLVM opt
-    bool llvm_opt_instcombine = true;
-    bool llvm_opt_inline = false;
+#if defined (QDP_HOST_COMPILER)
+    bool host_jit = true;
+#else
+    bool host_jit = false;
+#endif
+    bool gpu_ctxsync = false;
+    
+    bool managed = false;
+    JitDataFormat default_data_format;
+
     
     // Memory Pool
-    size_t thread_stack = 512 * sizeof(REAL);
     bool use_total_pool_size = false;
-    size_t pool_size = 0;
     size_t requested_pool_size = 0;
+    size_t pool_size = 0;
+
     bool use_pool_reserve = false;
     size_t pool_reserve = 0;
     size_t effective_pool_reserve = 0;
+    double gpu_direct_reserve_fraction = 0.10;
     int max_allocation_size = -1;
-    size_t pool_alignment = 128;
+    size_t pool_alignment = 256;
     size_t min_total_reserved_GPU_memory = 50*1024*1024; // 50 MB
-    double free_mem_fraction = 0.90;
     
-    enum PoolSetMethod { User , PerThread , Automatic };
-    PoolSetMethod poolSetMethod = PoolSetMethod::PerThread;
-    
-    // In case memory allocation fails, decrease Pool size by this amount for next try.
-    size_t pool_size_decrement = 10 * 1024*1024;   // 10MB
+    // In case the Layout is not initialized when the pool size is set
+    // use this fraction of free GPU memory to determine the pool size
+    double free_mem_fraction = 0.92; 
 
+    enum PoolSetMethod { User , Fraction };
+    PoolSetMethod poolSetMethod = PoolSetMethod::Fraction;
+    
     bool pool_count_allocations = false;
 
     bool verbose_output = false;
 
-    // Kernel Launch & Tuning
+    bool debug_layout = false;
+
     //
-    bool tuning = false;
-    bool tuning_verbose = false;
     int threads_per_block = 128;        // default value
-    int threads_per_block_min = 8;
-    int threads_per_block_max = 256;
-    int threads_per_block_step = 8;
-    int threads_per_block_loops = 1000; // Number of loops to measure (after dry run of 5)
-    std::string tuning_file = "qdp-jit.tuning.dat";
+#ifdef QDP_BACKEND_ROCM
+    bool workgroup_bound = true;
+    bool opt_prepass = true;
+#endif
 
     // Delay output when QDPIO is not ready yet
     std::vector<std::string> delayed_output;
@@ -51,17 +57,21 @@ namespace QDP
 
     // Timing run?
     bool timing_run = false;
+
+#if defined (QDP_BACKEND_ROCM)
+    int  codegen_opt = 1;
+#elif defined (QDP_BACKEND_CUDA)
+    int  codegen_opt = 3;
+#else
+    int  codegen_opt = -1;
+#endif
     
 #ifdef QDP_BACKEND_ROCM
-    int  codegen_opt = 1;
-    
     std::vector<std::string> extra_libs;
     std::string prepend_path = "./";
 
     std::string libdevice_name = "libomptarget-new-amdgpu-gfx90a-5.4.3.bc";
     std::string libdevice_path = "/libdevice/";
-
-    int rocm_set_device = 1;
 #endif
 
 #ifdef QDP_BACKEND_CUDA
@@ -74,6 +84,7 @@ namespace QDP
 #endif
     
 #ifdef QDP_DEEP_LOG
+    unsigned char memset_value = 0;
     bool deep_log = false;
     bool deep_log_create = false;
     std::string deep_log_name = "qdp-jit-log.dat";
@@ -82,13 +93,7 @@ namespace QDP
     size_t deep_log_events = 0;
 #endif
 
-    int addressspace_local = 3;
-
-#if defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_ROCM)
-    int addressspace_global = 0;
-#elif defined (QDP_BACKEND_L0)
-    int addressspace_global = 1;
-#else
+#if ! defined (QDP_BACKEND_CUDA) && ! defined (QDP_BACKEND_ROCM) && ! defined (QDP_BACKEND_L0)
 #error "No backend specified"
 #endif
 
@@ -97,25 +102,56 @@ namespace QDP
     int use_gpu = -1;
     
     bool gpu_direct = false;
-    bool opt_shifts = false;
 
+    //bool var_adapt    = true;
+    bool var_warnings = false;
+    bool var_raise    = false;
+
+    int type_of_blocksum = 0;
   }
 
 
-  int  qdp_jit_config_get_global_addrspace()      { return addressspace_global;}
-  void qdp_jit_config_set_global_addrspace(int v) { addressspace_global = v; }
+  JitDataOrder qdp_jit_config_get_default_data_order() { return default_data_format.order; }
+  void         qdp_jit_config_set_default_data_order( JitDataOrder o )
+  {
+    default_data_format.order = o;
+  }
 
-  int  qdp_jit_config_get_local_addrspace()      { return addressspace_local;}
-  void qdp_jit_config_set_local_addrspace(int v) { addressspace_local = v; }
+  JitDataFormat qdp_jit_config_get_default_data_format() { return default_data_format; }
+  void          qdp_jit_config_set_default_data_format( JitDataFormat fmt ) { default_data_format = fmt; }
+
+  bool qdp_jit_config_get_gpu_sync() { return gpu_ctxsync; }
+  void qdp_jit_config_set_gpu_sync(bool b) { gpu_ctxsync = b; }
+
+
+  bool qdp_jit_config_get_managed() { return managed; }
+  void qdp_jit_config_set_managed(bool b)
+  {
+    managed = b;
+  }
+
+
   
-  bool qdp_jit_config_get_opt_shifts() {return opt_shifts;}
-  void qdp_jit_config_set_opt_shifts(bool v) { opt_shifts = v; } 
+  bool qdp_jit_config_get_var_warnings() { return var_warnings; }
+  void qdp_jit_config_set_var_warnings(bool b)
+  {
+    var_warnings = b;
+    std::string tmp = "Setting variable Nc/Ns adaptation warnings " + std::to_string( b?1:0 );
+    jit_config_delayed_message(tmp);
+  }
 
-  bool jit_config_get_instcombine() { return llvm_opt_instcombine; }
-  bool jit_config_get_inline()      { return llvm_opt_inline; }
 
-  void jit_config_set_instcombine(bool b) { llvm_opt_instcombine = b; }
-  void jit_config_set_inline(bool b)      { llvm_opt_inline = b; }
+  bool qdp_jit_config_get_var_raise() { return var_raise; }
+  void qdp_jit_config_set_var_raise(bool b)
+  {
+    var_raise = b;
+    std::string tmp = "Setting variable Nc/Ns adaptation raise    " + std::to_string( b?1:0 );
+    jit_config_delayed_message(tmp);
+  }
+
+  
+  bool qdp_jit_config_get_hostjit() { return host_jit; }
+  void qdp_jit_config_set_hostjit( bool b ) { host_jit = b; }
 
   int  qdp_jit_config_get_use_gpu() {return use_gpu;}
   void qdp_jit_config_set_use_gpu(int v) { use_gpu = v; } 
@@ -127,7 +163,6 @@ namespace QDP
 
   int  jit_config_get_max_regs_per_block()   { return max_regs_per_block; }
 #endif
-
 
   bool jit_config_get_timing_run() { return timing_run; }
   void jit_config_set_timing_run(bool v) { timing_run = v; }
@@ -144,91 +179,96 @@ namespace QDP
       {
 	QDPIO::cout << i << std::endl;
       }
+    delayed_output.clear();
   }
   
   void jit_config_print()
   {
-#if defined (QDP_ENABLE_MANAGED_MEMORY)
-    QDPIO::cout << "Using managed GPU memory\n";
-#else
-#if ! defined(QDP_BACKEND_AVX)
-    QDPIO::cout << "Memory pool config:\n";
-
-    switch (poolSetMethod) {
-    case PoolSetMethod::PerThread:
-      QDPIO::cout << "  reserved memory per thread          : " << thread_stack << " bytes\n";
-      QDPIO::cout << "  resulting memory pool size          : " << pool_size/1024/1024 << " MB\n";
-      break;
-    case PoolSetMethod::User:
-      QDPIO::cout << "  memory pool size (user request)     : " << requested_pool_size/1024/1024 << " MB\n";
-      QDPIO::cout << "  resulting memory pool size          : " << pool_size/1024/1024 << " MB\n";
-      break;
-    case PoolSetMethod::Automatic:
-      QDPIO::cout << "  memory pool size (automatic)        : " << pool_size/1024/1024 << " MB\n";
-      break;
-    }
-    QDPIO::cout << "  non-pool device memory reserve      : " << effective_pool_reserve/1024/1024 << " MB\n";
-#endif
+#if QDP_USE_LEXICO_LAYOUT == 1
+    QDPIO::cout << "Data layout: lexicographic" << endl;
+#elif QDP_USE_CB2_LAYOUT == 1
+    QDPIO::cout << "Data layout: 2 checkerboard (red/black)" << endl;
+#elif QDP_USE_CB3D_LAYOUT == 1
+    QDPIO::cout << "Data layout: 3D checkerboard (red/black)" << endl;
+#elif QDP_USE_CB32_LAYOUT == 1
+    QDPIO::cout << "Data layout: 32 checkerboard layout (experimental)" << endl;
 #endif
 
+
+    if (qdp_jit_config_get_managed())
+      {
+	QDPIO::cout << "Using managed GPU memory\n";
+      }
+    else
+      {
+	QDPIO::cout << "Memory pool config:\n";
+
+	switch (poolSetMethod) {
+	case PoolSetMethod::User:
+	  QDPIO::cout << "  memory pool size (user request)     : " << requested_pool_size/1024/1024 << " MB\n";
+	  if (pool_size != requested_pool_size)
+	    QDPIO::cout << "  resulting memory pool size          : " << pool_size/1024/1024 << " MB\n";
+	  break;
+	case PoolSetMethod::Fraction:
+	  QDPIO::cout << "  memory pool size (per fraction)     : " << pool_size/1024/1024 << " MB\n";
+	  break;
+	}
+	if (effective_pool_reserve > 0)
+	  QDPIO::cout << "  device memory reserved outside pool : " << effective_pool_reserve/1024/1024 << " MB\n";
+      }
     
-    QDPIO::cout << "Base precision                        : " << (int)BASE_PRECISION << "\n";
-    
+    QDPIO::cout << "Floating point base precision (bits)  : " << (int)BASE_PRECISION << "\n";
     QDPIO::cout << "Accurate timing                       : " << (int)jit_config_get_timing_run() << "\n";
-
     
     QDPIO::cout << "Code generation:\n";
 #if defined (QDP_BACKEND_CUDA)
     QDPIO::cout << "  CUDA flush denormals to zero        : " << (int)jit_config_get_CUDA_FTZ() << "\n";
 #endif
-    QDPIO::cout << "  Shift optimization                  : " << (int)qdp_jit_config_get_opt_shifts() << "\n";
-    QDPIO::cout << "  Propagator optimization             : ";
-#if defined (QDP_PROP_OPT)
-    QDPIO::cout << "1\n";
-#else
-    QDPIO::cout << "0\n";
+    QDPIO::cout << "  Standard compiler optimization      : " << (int)jit_config_get_codegen_opt() << "\n";
+#if defined (QDP_HOST_COMPILER)
+    QDPIO::cout << "  Host JIT for scalar expressions     : " << (qdp_jit_config_get_hostjit() ? "on" : "off") << "\n";
+#endif
+    if (qdp_jit_config_get_blocksum())
+      {
+	QDPIO::cout << "  blockSum threads per tile           : " << (int)qdp_jit_config_get_blocksum() << "\n";
+      }
+    
+#ifdef QDP_BACKEND_ROCM
+    QDPIO::cout << "  Pre-pass instead of generic opt     : " << (int)opt_prepass << "\n";
+    QDPIO::cout <<"  Temp Files Prepend path              : " <<  jit_config_get_prepend_path() << "\n";
 #endif
 
-#ifdef QDP_BACKEND_ROCM
-    QDPIO::cout << "  Temp Files Prepend path             : " <<  jit_config_get_prepend_path() << "\n";
-    QDPIO::cout << "  Set GPU device before each HIP call : " <<  qdp_jit_config_get_rocm_set_device() << "\n";
-#endif
+    if (qdp_jit_config_get_gpu_sync())
+      QDPIO::cout << "GPU context sync after kernel launch  : 1\n";
     
     QDPIO::cout << "Launch configuration:\n";
     QDPIO::cout << "  Threads per block                   : " << threads_per_block << "\n";
-#if defined (QDP_BACKEND_CUDA) || defined (QDP_BACKEND_ROCM) || defined (QDP_BACKEND_L0)
-    QDPIO::cout << "  Using GPU direct                    : " << (int)jit_config_get_gpu_direct() << "\n";
+#ifdef QDP_BACKEND_ROCM
+    QDPIO::cout << "  Workgroup-size bound on kernels     : " << (int)workgroup_bound << "\n";
 #endif
+    QDPIO::cout << "  Using GPU-aware MPI                 : " << (int)jit_config_get_gpu_direct() << "\n";
   }
 
-
-  std::string jit_config_get_tuning_file() { return tuning_file; }
-  void jit_config_set_tuning_file( std::string v) { tuning_file = v; }
-  
-  bool jit_config_get_tuning() { return tuning; }
-  void jit_config_set_tuning(bool v) { tuning = v; }
-
-  bool jit_config_get_tuning_verbose() { return tuning_verbose; }
-  void jit_config_set_tuning_verbose(bool v) { tuning_verbose = v; }
 
   bool jit_config_get_verbose_output() { return verbose_output; }
   void jit_config_set_verbose_output(bool v) { verbose_output = v; }
 
+  bool jit_config_get_debug_layout() { return debug_layout; }
+  void jit_config_set_debug_layout(bool v) { debug_layout = v; }
+
   int jit_config_get_oscalar_ringbuffer_size() { return oscalar_ringbuffer_size; }
   void jit_config_set_oscalar_ringbuffer_size(int n) { oscalar_ringbuffer_size = n; }
 
-  
+  int jit_config_get_codegen_opt() { return codegen_opt; }
+  void jit_config_set_codegen_opt(int opt) { codegen_opt = opt; }
+
 #ifdef QDP_BACKEND_ROCM
   std::string jit_config_get_libdevice_path() { return libdevice_path; }
   std::string jit_config_get_libdevice_name() { return libdevice_name; }
-
   
   std::string jit_config_get_prepend_path() { return prepend_path; }
   void        jit_config_set_prepend_path(std::string s) { prepend_path = s; }
   
-  int jit_config_get_codegen_opt() { return codegen_opt; }
-  void jit_config_set_codegen_opt(int opt) { codegen_opt = opt; }
-
   void jit_config_add_extra_lib( std::string l )
   {
     extra_libs.push_back( l );
@@ -237,9 +277,6 @@ namespace QDP
   {
     return extra_libs;
   }
-
-  int qdp_jit_config_get_rocm_set_device()       { return   rocm_set_device; }
-  void qdp_jit_config_set_rocm_set_device(int b) { rocm_set_device=b; }
 #endif
 
   
@@ -254,12 +291,20 @@ namespace QDP
   
   int jit_config_get_max_allocation() { return max_allocation_size; }
   void jit_config_set_max_allocation(int size ) { max_allocation_size = size; }
+
+  int  qdp_jit_config_get_blocksum() { return type_of_blocksum; }
+  void qdp_jit_config_set_blocksum(int v) { type_of_blocksum = v;};
+
   
   bool jit_config_pool_stats() { return pool_count_allocations; }
   void jit_set_config_pool_stats() { pool_count_allocations = true; }
 
 
 #ifdef QDP_DEEP_LOG
+  unsigned char jit_config_get_memset_value() { return memset_value; }
+  void jit_config_set_memset_value( unsigned char uc ) { memset_value = uc; }
+  
+  
   size_t jit_config_get_log_events() { return deep_log_events; }
   void jit_config_set_log_events( unsigned e ) { deep_log_events = e; }
 
@@ -287,10 +332,6 @@ namespace QDP
   
   
 
-  size_t qdp_jit_config_pool_size_decrement()
-  {
-    return pool_size_decrement;
-  }
   
   
   void jit_config_set_threads_per_block( int t )
@@ -303,19 +344,13 @@ namespace QDP
     return threads_per_block;
   }
 
+#ifdef QDP_BACKEND_ROCM
+  void jit_config_set_workgroup_bound( bool b ) { workgroup_bound = b; }
+  bool jit_config_get_workgroup_bound() { return workgroup_bound; }
 
-
-  void jit_config_set_threads_per_block_min( int t )  {    threads_per_block_min = t;  }
-  void jit_config_set_threads_per_block_max( int t )  {    threads_per_block_max = t;  }
-  void jit_config_set_threads_per_block_step( int t )  {   threads_per_block_step = t;  }
-  void jit_config_set_threads_per_block_loops( int t )  {   threads_per_block_loops = t;  }
-  int jit_config_get_threads_per_block_min()  {    return threads_per_block_min;  }
-  int jit_config_get_threads_per_block_max()  {    return threads_per_block_max;  }
-  int jit_config_get_threads_per_block_step()  {   return threads_per_block_step; }
-  int jit_config_get_threads_per_block_loops()  {  return threads_per_block_loops; }
-
-  
-
+  void jit_config_set_opt_prepass( bool b ) { opt_prepass = b; }
+  bool jit_config_get_opt_prepass() { return opt_prepass; }
+#endif
 
   void jit_config_set_pool_size( size_t val )
   {
@@ -328,22 +363,27 @@ namespace QDP
     use_pool_reserve = true;
     pool_reserve = val;
   }
-  
-  void jit_config_set_thread_stack( int stack )
-  {
-    thread_stack = stack;
-  }
 
+  size_t jit_config_get_pool_reserve()
+  {
+    return effective_pool_reserve;
+  }
+  
   size_t jit_config_get_pool_size()
   {
     const size_t free_memory = gpu_mem_free();
-    effective_pool_reserve = use_pool_reserve
-      ? pool_reserve
-      : free_memory - (size_t)((double)free_memory * free_mem_fraction);
+
+    if (use_pool_reserve)
+      effective_pool_reserve = pool_reserve;
+    else if (jit_config_get_gpu_direct())
+      effective_pool_reserve = (size_t)((double)free_memory * gpu_direct_reserve_fraction);
+    else
+      effective_pool_reserve = 0;
 
     if (effective_pool_reserve >= free_memory)
       {
-	QDP_error_exit("Requested non-pool device memory reserve is not smaller than free device memory");
+	QDP_error_exit("Device memory reserve outside the pool (%zu MB) is not smaller than the free device memory (%zu MB)",
+		       effective_pool_reserve/1024/1024 , free_memory/1024/1024 );
       }
 
     const size_t maximum_pool_size = free_memory - effective_pool_reserve;
@@ -351,37 +391,23 @@ namespace QDP
     if (use_total_pool_size)
       {
 	poolSetMethod = PoolSetMethod::User;
-	pool_size = std::min(requested_pool_size, maximum_pool_size);
-	return pool_size;
+	pool_size = requested_pool_size;
+
+	if (effective_pool_reserve > 0 && pool_size > maximum_pool_size)
+	  {
+	    QDPIO::cout << "Reducing the memory pool from " << pool_size/1024/1024 << " MB to "
+			<< maximum_pool_size/1024/1024 << " MB to keep " << effective_pool_reserve/1024/1024
+			<< " MB outside the pool" << std::endl;
+	    pool_size = maximum_pool_size;
+	  }
       }
     else
       {
-	size_t size;
-
-	if (Layout::initialized())
-	  {
-	    const size_t layout_reserve = std::max((size_t)Layout::sitesOnNode() * thread_stack,
-					   min_total_reserved_GPU_memory);
-	    size = layout_reserve < free_memory ? free_memory - layout_reserve : 0;
-	    size = std::min(size, maximum_pool_size);
-
-	    poolSetMethod = PoolSetMethod::PerThread;
-	    pool_size = size;
-	  }
-	else
-	  {
-	    size = maximum_pool_size;
-	    poolSetMethod = PoolSetMethod::Automatic;
-	    pool_size = size;
-	  }
-	  
-	return size;
+	poolSetMethod = PoolSetMethod::Fraction;
+	pool_size = std::min( (size_t)((double)free_memory * free_mem_fraction) , maximum_pool_size );
       }
-  }
 
-  size_t jit_config_get_pool_reserve()
-  {
-    return effective_pool_reserve;
+    return pool_size;
   }
 
 

@@ -1,4 +1,5 @@
-// -*- C++ -*-
+#ifndef QDP_IOGAUGE_H
+#define QDP_IOGAUGE_H
 
 /*! @file
  * @brief NERSC Gauge Connection Archive gauge support
@@ -8,9 +9,6 @@
 
    See http://qcd.nersc.gov/ for details.
  */
-
-#ifndef QDP_IOGAUGE_H
-#define QDP_IOGAUGE_H
 
 
 namespace QDP {

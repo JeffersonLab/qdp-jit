@@ -1,11 +1,9 @@
-// -*- C++ -*-
+#ifndef QDP_DISK_MAP_SLICE_H
+#define QDP_DISK_MAP_SLICE_H
+
 /*! \file
  *  \brief Useful for QDP to read/write slices of a lattice object
  */
-
-
-#ifndef __qdp_disk_map_slice_h__
-#define __qdp_disk_map_slice_h__
 
 #include "qdp.h"
 #include "qdp_util.h"

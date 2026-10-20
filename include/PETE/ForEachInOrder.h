@@ -1,4 +1,6 @@
-// -*- C++ -*-
+#ifndef QDP_PETE_FOREACHINORDER_H
+#define QDP_PETE_FOREACHINORDER_H
+
 // ACL:license
 // ----------------------------------------------------------------------
 // This software and ancillary information (herein called "SOFTWARE")
@@ -31,9 +33,6 @@
 // ForEachInOrder
 // TagVisitor
 //-----------------------------------------------------------------------------
-
-#ifndef POOMA_PETE_FOREACHINORDER_H
-#define POOMA_PETE_FOREACHINORDER_H
 
 //-----------------------------------------------------------------------------
 // Overview: 

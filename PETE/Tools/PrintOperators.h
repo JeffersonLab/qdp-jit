@@ -111,7 +111,7 @@ public:
     ostr << "  template<class T>" << endl
 	 << "  inline typename UnaryReturn<T, " << opdef.tag()
 	 << " >::Type_t" << endl
-	 << "  operator()(const T &a) const" << endl
+	 << "  operator()(T a) const" << endl
 	 << "  {" << endl
 	 << "    " << opdef.expression() << endl
 	 << "  }" << endl
@@ -157,7 +157,7 @@ public:
 
     // Print UnaryReturn specialization:
     
-    string args = joinWithComma("class T", opdef.argDef());
+    string args = joinWithComma("Arithmetic T", opdef.argDef());
     
     ostr << endl << "template<" << args << " >" << endl
 	 << "struct UnaryReturn<T, " << opdef.tag() << " > {"
@@ -190,7 +190,7 @@ public:
 	 << opdef.tag(false) << ", T1)" << endl
 	 << "  template<class T2>" << endl
 	 << "  inline UnaryReturn<T2, " << opdef.tag() << "<T1> >" << endl
-	 << "  operator()(const T2 &a) const" << endl
+	 << "  operator()(T2 ) const" << endl
 	 << "  {" << endl
 	 << "    " << opdef.expression() << endl
 	 << "  }" << endl
@@ -240,7 +240,7 @@ public:
     ostr << "  template<class T1, class T2>" << endl
          << "  inline typename BinaryReturn<T1, T2, "
          << opdef.tag() << " >::Type_t" << endl
-         << "  operator()(const T1 &a, const T2 &b) const"
+         << "  operator()(T1 a, T2 b) const"
          << endl
          << "  {" << endl
          << "    " << opdef.expression() << endl
@@ -287,7 +287,7 @@ public:
     
     // Print BinaryReturn specialization:
 
-    string args = joinWithComma("class T1, class T2", 
+    string args = joinWithComma("Arithmetic T1, Arithmetic T2", 
 				     opdef.argDef());
   
     ostr << endl << "template<" << args << " >" << endl
@@ -319,7 +319,7 @@ public:
 
     // Print BinaryReturn specialization:
 
-    string args = joinWithComma("class T1, class T2",
+    string args = joinWithComma("Arithmetic T1, Arithmetic T2",
                                      opdef.argDef());
 
     ostr << endl << "template<" << args << " >" << endl
@@ -366,7 +366,7 @@ public:
     ostr << "  template<class T1, class T2>" << endl
          << "  inline typename BinaryReturn<T1, T2, "
          << opdef.tag() << " >::Type_t" << endl
-         << "  operator()(const T1 &a, const T2 &b) const"
+         << "  operator()(T1 a, T2 b) const"
          << endl
          << "  {" << endl
          << "    " << opdef.expression() << endl
@@ -375,14 +375,14 @@ public:
 
     // Print BinaryReturn specialization:
 
-    string args = joinWithComma("class T1, class T2",
+    string args = joinWithComma("Arithmetic T1, Arithmetic T2",
                                      opdef.argDef());
 
     ostr << endl << "template<" << args << " >" << endl
          << "struct BinaryReturn<T1, T2, "
          << opdef.tag() << " > {"
          << endl
-         << "  typedef T1 &Type_t;" << endl
+         << "  typedef T1 Type_t;" << endl
          << "};" << endl;
   }
 };
@@ -423,7 +423,7 @@ public:
     ostr << "  template<class T1, class T2>" << endl
          << "  inline typename BinaryReturn<T1, T2, "
          << opdef.tag() << " >::Type_t" << endl
-         << "  operator()(const T1 &a, const T2 &b) const"
+         << "  operator()(T1 a, T2 b) const"
          << endl
          << "  {" << endl
          << "    " << opdef.expression() << endl
@@ -432,7 +432,7 @@ public:
 
     // Print BinaryReturn specialization:
 
-    string args = joinWithComma("class T1, class T2",
+    string args = joinWithComma("Arithmetic T1, Arithmetic T2",
                                      opdef.argDef());
 
     ostr << endl << "template<" << args << " >" << endl
@@ -482,7 +482,7 @@ public:
 	 << "TrinaryReturn<T1, T2, T3, "
 	 << opdef.tag() << " >" << endl
 	 << "  ::Type_t" << endl
-         << "  operator()(const T1 &a, const T2 &b, const T3 &c) const" << endl
+         << "  operator()(T1 a, T2 b, T3 c) const" << endl
          << "  {" << endl
          << "    " << opdef.expression() << endl
          << "  }" << endl

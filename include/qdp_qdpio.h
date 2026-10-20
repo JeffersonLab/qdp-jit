@@ -1,11 +1,6 @@
-// -*- C++ -*-
-
-/*! @file
- * @brief IO support via QIO
- */
-
 #ifndef QDP_QDPIO_H
 #define QDP_QDPIO_H
+
 
 #include "qio.h"
 #include <sstream>
@@ -17,11 +12,10 @@ using namespace std;
 namespace QDP 
 {
 
-  /*! @defgroup qio QIO
-   *
-   *
-   * @{
-   */
+  namespace {
+    Shape shape_;
+  }
+
 
   //! File access mode
   enum QDP_serialparallel_t
@@ -55,32 +49,6 @@ namespace QDP
     QDPIO_badbit   = 0x0100,
   };
 
-#if 0
-  // This code was to support better partfile IO on the QCDOC 
-  // However I have commented it out because it is not clear
-  // at this time in the API how to pass this information 
-  // town to the QIO. A straightforward hack is to modify 
-  // the QIO_Layout structure, but we have not actually agreed
-  // with Carleton that that is what I should do. The placement
-  // of the choice for a particular kind of partitioning scheme
-  // is not yet present -- will it be in QIO, will it be in QMP?
-  // will it be here? WIll it be configure/runtime? We just don't
-  // know.
-  namespace SingleFileIONode { 
-    int IONode(int node);
-    int masterIONode(void);
-  };
-
-  namespace MultiFileIONode {
-    int IONode(int node);
-    int masterIONode(void);
-  };
-
-  namespace PartFileIONode { 
-    int IONode(int node);
-    int masterIONode(void);
-  };
-#endif
 
   //! QIO Type and precision strings. 
   //  Using the magic of C++ I can define the right type and precision
@@ -160,18 +128,19 @@ namespace QDP
 
   template<>
   const char* QIOStringTraits<int>::tprec;
-  
-  template<>
-  const char* QIOStringTraits< multi1d<LatticeColorMatrixF3> >::tname;
-  
-  template<>
-  const char* QIOStringTraits< multi1d<LatticeColorMatrixD3> >::tname;
+
 
   template<>
-  const char* QIOStringTraits< multi1d<LatticeDiracFermionF3> >::tname;
+  const char* QIOStringTraits< multi1d<LatticeColorMatrixF> >::tname;
   
   template<>
-  const char* QIOStringTraits< multi1d<LatticeDiracFermionD3> >::tname;
+  const char* QIOStringTraits< multi1d<LatticeColorMatrixD> >::tname;
+
+  template<>
+  const char* QIOStringTraits< multi1d<LatticeFermionF> >::tname;
+  
+  template<>
+  const char* QIOStringTraits< multi1d<LatticeFermionD> >::tname;
 
 
   //--------------------------------------------------------------------------------
@@ -703,14 +672,35 @@ namespace QDP
   */
   template<class T> void QDPOScalarFactoryPut(char *buf, size_t linear, int count, void *arg) 
   {
-    /* Translate arg */
-    T *field = (T *)arg;
+    OScalar<T> dummy(shape_);
+    size_t sizeT = jit_sizeof(dummy);
 
-    void *dest = (void*)(field+linear);
-    memcpy(dest,(const void*)buf,count*sizeof(T));
+    void *dest = static_cast<char*>(arg) + linear * sizeT;
+    memcpy(dest,(const void*)buf , count * sizeT);
+  }
+
+  template<>
+  void QDPOScalarFactoryPut<char>(char *buf, size_t linear, int count, void *arg);
+  
+
+  template<class T> void QDPOScalarFactoryPutArray(char *buf, size_t linear, int count, void *arg)
+  {
+    /* Translate arg */
+    multi1d< OScalar<T> >& field = *(multi1d< OScalar<T> > *)arg;
+
+    OScalar<T> dummy(shape_);
+    size_t sizeT = jit_sizeof(dummy);
+
+    for(int i=0; i < field.size(); ++i)
+    {
+      void *dest = (char*)( field[i].get_ptr() ) + linear * sizeT;
+      memcpy( dest , (const void*)buf , sizeT );
+      buf += sizeT;
+    }
   }
 
 
+  
   //! Reads an OScalar object
   /*!
     This implementation is only correct for scalar ILattice
@@ -721,6 +711,16 @@ namespace QDP
   template<typename T>
   void QDPFileReader::read(XMLReader& rec_xml, OScalar<T>& s1)
   {
+    shape_ = s1.shape();
+
+    typedef typename SinglePrecType<T>::Type_t TF;
+    typedef typename DoublePrecType<T>::Type_t TD;
+
+    OScalar<T>  dummyT(shape_);
+    OScalar<TF> dummyF(shape_);
+    OScalar<TD> dummyD(shape_);
+
+    
     /* For now I may not be able to read Dirk's stuff, but I should
      * be able to read what I wrote */
     QIO_RecordInfo rec_info;
@@ -738,12 +738,12 @@ namespace QDP
     case 'F' :
     {
       QDPIO::cout << "Single Precision Read" << endl;
-      OScalar< typename SinglePrecType<T>::Type_t > from_disk;
+      OScalar< TF > from_disk;
       status = QIO_read_record_data(qio_in,
-				    &(QDPOScalarFactoryPut<typename SinglePrecType<T>::Type_t> ),
-				    sizeof(typename SinglePrecType<T>::Type_t),
-				    sizeof(typename WordType< typename SinglePrecType<T>::Type_t >::Type_t),
-				    (void *)(&(from_disk.elem())));
+				    &(QDPOScalarFactoryPut< TF >),
+				    jit_sizeof(dummyF),
+				    sizeof(typename WordType< TF >::Type_t),
+				    from_disk.get_ptr() );
       if (status != QIO_SUCCESS) { 
 	QDPIO::cerr << "Failed to read data" << endl;
 	clear(QDPIO_badbit);
@@ -756,12 +756,12 @@ namespace QDP
     case 'D' :
     {
       QDPIO::cout << "Reading Double Precision" << endl;
-      OScalar< typename DoublePrecType<T>::Type_t > from_disk;
+      OScalar< TD > from_disk;
       status = QIO_read_record_data(qio_in,
-				    &(QDPOScalarFactoryPut< typename DoublePrecType<T>::Type_t > ),
-				    sizeof(typename DoublePrecType<T>::Type_t),
-				    sizeof(typename WordType< typename DoublePrecType<T>::Type_t >::Type_t),
-				    (void *)(&(from_disk.elem())));
+				    &(QDPOScalarFactoryPut< TD > ),
+				    jit_sizeof(dummyD),
+				    sizeof(typename WordType< TD >::Type_t),
+				    from_disk.get_ptr() );
       if (status != QIO_SUCCESS) { 
 	QDPIO::cerr << "Failed to read data" << endl;
 	clear(QDPIO_badbit);
@@ -777,9 +777,9 @@ namespace QDP
       QDPIO::cout << "Reading I or U Precision" << endl;
       status = QIO_read_record_data(qio_in,
 				    &(QDPOScalarFactoryPut<T> ),
-				    sizeof(T),
+				    jit_sizeof(dummyT),
 				    sizeof(typename WordType<T>::Type_t),
-				    (void *)(&(s1.elem())));
+				    s1.get_ptr() );
       if (status != QIO_SUCCESS) { 
 	QDPIO::cerr << "Failed to read data" << endl;
 	clear(QDPIO_badbit);
@@ -812,11 +812,22 @@ namespace QDP
   template<typename T>
   void QDPFileReader::read(XMLReader& rec_xml, multi1d< OScalar<T> >& s1)
   {
+    QDP_error_exit("read multi1d<OScalar> not implemented");
+
     // Won't work since the OScalar has additional data
     // multi1d<Oscalar>.slice() does not point to pure payload
     //
-    assert(!"ni");
-#if 0
+    assert(s1.size());
+    shape_ = s1[0].shape();
+
+    typedef typename SinglePrecType<T>::Type_t TF;
+    typedef typename DoublePrecType<T>::Type_t TD;
+
+    OScalar<T> dummyT(shape_);
+    OScalar<TF> dummyF(shape_);
+    OScalar<TD> dummyD(shape_);
+
+    ShapeScope qv_scope( shape_ );
 
     /* For now I may not be able to read Dirk's stuff, but I should
      * be able to read what I wrote */
@@ -835,12 +846,12 @@ namespace QDP
     case 'F' :
     {
       QDPIO::cout << "Single Precision Read" << endl;
-      multi1d< OScalar< typename SinglePrecType<T>::Type_t > > from_disk(s1.size());
+      multi1d< OScalar< TF > > from_disk(s1.size());
       status = QIO_read_record_data(qio_in,
-				    &(QDPOScalarFactoryPut<typename SinglePrecType<T>::Type_t> ),
-				    s1.size()*sizeof(typename SinglePrecType<T>::Type_t),
-				    sizeof(typename WordType< typename SinglePrecType<T>::Type_t >::Type_t),
-				    (void *)from_disk.slice());
+				    &(QDPOScalarFactoryPutArray<TF> ),
+				    s1.size() * jit_sizeof(dummyF),
+				    sizeof(typename WordType< TF >::Type_t),
+				    (void *)&from_disk );
       if (status != QIO_SUCCESS) { 
 	QDPIO::cerr << "Failed to read data" << endl;
 	clear(QDPIO_badbit);
@@ -858,12 +869,12 @@ namespace QDP
     case 'D' :
     {
       QDPIO::cout << "Reading Double Precision" << endl;
-      multi1d< typename DoublePrecType< OScalar<T> >::Type_t > from_disk(s1.size());
+      multi1d< OScalar< TD > > from_disk(s1.size());
       status = QIO_read_record_data(qio_in,
-				    &(QDPOScalarFactoryPut< typename DoublePrecType<T>::Type_t > ),
-				    s1.size()*sizeof(typename DoublePrecType<T>::Type_t),
-				    sizeof(typename WordType< typename DoublePrecType<T>::Type_t >::Type_t),
-				    (void *)from_disk.slice());
+				    &(QDPOScalarFactoryPutArray< TD > ),
+				    s1.size() * jit_sizeof(dummyD),
+				    sizeof(typename WordType< TD >::Type_t),
+				    (void *)&from_disk);
       if (status != QIO_SUCCESS) { 
 	QDPIO::cerr << "Failed to read data" << endl;
 	clear(QDPIO_badbit);
@@ -881,11 +892,11 @@ namespace QDP
     {
       QDPIO::cout << "Reading I or U Precision" << endl;
       status = QIO_read_record_data(qio_in,
-				    &(QDPOScalarFactoryPut<T> ),
-				    s1.size()*sizeof(T),
+				    &(QDPOScalarFactoryPutArray<T> ),
+				    s1.size() * jit_sizeof(dummyT),
 				    sizeof(typename WordType<T>::Type_t),
-				    (void *)s1.slice());
-      if (status != QIO_SUCCESS) { 
+				    (void *)&s1);
+      if (status != QIO_SUCCESS) {
 	QDPIO::cerr << "Failed to read data" << endl;
 	clear(QDPIO_badbit);
 	QDP_abort(1);
@@ -903,7 +914,7 @@ namespace QDP
     rec_xml.open(ss);
   
     QIO_string_destroy(xml_c);
-#endif
+
   }
 
 
@@ -927,13 +938,37 @@ namespace QDP
 
   template<class T> void QDPOScalarFactoryGet(char *buf, size_t linear, int count, void *arg)
   {
-    /* Translate arg */
-    T *field = (T *)arg;
-
-    void *src = (void*)(field+linear);
-    memcpy(buf,(const void*)src,count*sizeof(T));
+    OScalar<T> dummy(shape_);
+    size_t sizeT = jit_sizeof(dummy);
+    
+    void *src = static_cast<char*>(arg) + linear * sizeT;
+    memcpy( buf , (const void*)src , count * sizeT );
   }
 
+
+  template<>
+  void QDPOScalarFactoryGet<char>(char *buf, size_t linear, int count, void *arg);
+
+
+  
+  template<class T> void QDPOScalarFactoryGetArray(char *buf, size_t linear, int count, void *arg)
+  {
+    /* Translate arg */
+    multi1d< OScalar<T> >& field = *(multi1d< OScalar<T> > *)arg;
+
+    OScalar<T> dummy(shape_);
+    size_t sizeT = jit_sizeof(dummy);
+
+    for(int i=0; i < field.size(); ++i)
+    {
+      void* src = (char*)( field[i].get_ptr() ) + linear * sizeT;
+      memcpy(buf,(const void*)src,sizeT);
+      buf += sizeT;
+    }
+  }
+
+
+  
 
   //! Writes an OScalar object
   /*!
@@ -945,11 +980,13 @@ namespace QDP
   template<class T>
   void QDPFileWriter::write(XMLBufferWriter& rec_xml, const OScalar<T>& s1)
   {
+    shape_ = s1.shape();
+
     QIO_RecordInfo* info = QIO_create_record_info(QIO_GLOBAL, NULL, NULL, 0,
 						  const_cast<char *>(QIOStringTraits< OScalar<T> >::tname),
 						  const_cast<char *>(QIOStringTraits< typename WordType<T>::Type_t >::tprec),
-						  Nc, Ns, 
-						  sizeof(T), 1);
+						  shape_.nc() , shape_.ns() ,
+						  jit_sizeof(s1), 1);
 
     // Copy metadata string into simple qio string container
     QIO_String* xml_c = QIO_string_create();
@@ -967,9 +1004,9 @@ namespace QDP
   
     if (QIO_write(get(), info, xml_c,
 		  &(QDPOScalarFactoryGet<T>),
-		  sizeof(T), 
+		  jit_sizeof(s1), 
 		  sizeof(typename WordType<T>::Type_t), 
-		  (void *)(&(s1.elem()))) != QIO_SUCCESS)
+		  (void*)s1.get_ptr()) != QIO_SUCCESS)
     {
       QDPIO::cerr << "QDPFileWriter: error in write" << endl;
       clear(QDPIO_badbit);
@@ -1000,16 +1037,21 @@ namespace QDP
   template<class T>
   void QDPFileWriter::write(XMLBufferWriter& rec_xml, const multi1d< OScalar<T> >& s1)
   {
+    QDP_error_exit("write multi1d<OScalar> not implemented");
+
     // This routine is not working as the OScalar has additional data
     // thus, the multi1d<Oscal<T>>.slice() is not pointing to pure payload
     //
-    assert(!"ni");
-#if 0
+    assert(s1.size());
+	
+    shape_ = s1[0].shape();
+    OScalar<T> dummy(shape_);
+
     QIO_RecordInfo* info = QIO_create_record_info(QIO_GLOBAL, NULL, NULL, 0,
 						  const_cast<char *>(QIOStringTraits<multi1d< OScalar<T> > >::tname),
 						  const_cast<char *>(QIOStringTraits<typename WordType<T>::Type_t>::tprec), 
-						  Nc, Ns, 
-						  sizeof(T), s1.size());
+						  shape_.nc() , shape_.ns() ,
+						  jit_sizeof(dummy), s1.size());
 
 
     // Copy metadata string into simple qio string container
@@ -1025,10 +1067,10 @@ namespace QDP
 
     // Big call to qio
     if (QIO_write(get(), info, xml_c,
-		  &(QDPOScalarFactoryGet<T>),
-		  s1.size()*sizeof(T), 
+		  &(QDPOScalarFactoryGetArray<T>),
+		  s1.size() * jit_sizeof(dummy), 
 		  sizeof(typename WordType<T>::Type_t), 
-		  (void *)s1.slice()) != QIO_SUCCESS)
+		  (void *)&s1 ) != QIO_SUCCESS)
     {
       QDPIO::cerr << "QDPFileWriter: error in write" << endl;
       clear(QDPIO_badbit);
@@ -1037,7 +1079,6 @@ namespace QDP
     // Cleanup
     QIO_string_destroy(xml_c);
     QIO_destroy_record_info(info);
-#endif
   }
 
 
@@ -1065,11 +1106,21 @@ namespace QDP
   */
   template<class T> void QDPOLatticeFactoryPut(char *buf, size_t linear, int count, void *arg)
   {
-    /* Translate arg */
-    T *field = (T *)arg;
+    // /* Translate arg */
+    // T *field = (T *)arg;
 
-    void *dest = (void*)(field+linear);
-    memcpy(dest,(const void*)buf,count*sizeof(T));
+    // void *dest = (void*)(field+linear);
+    // memcpy(dest,(const void*)buf,count*sizeof(T));
+
+
+    assert(shape_.nc());
+    assert(shape_.ns());
+    OScalar<T> dummy(shape_);
+    size_t sizeT = jit_sizeof(dummy);
+    
+    void *dest = static_cast<char*>(arg) + linear * sizeT;
+    memcpy(dest,(const void*)buf,count*sizeT);
+
   }
 
   //! Function for moving array data
@@ -1088,11 +1139,14 @@ namespace QDP
     /* Translate arg */
     multi1d< OLattice<T> >& field = *(multi1d< OLattice<T> > *)arg;
 
+    OScalar<T> dummy(shape_);
+    size_t sizeT = jit_sizeof(dummy);
+
     for(int i=0; i < field.size(); ++i)
     {
-      void *dest = (void*)&(field[i].elem(linear));
-      memcpy(dest,(const void*)buf,sizeof(T));
-      buf += sizeof(T);
+      void *dest = (char*)( field[i].get_ptr() ) + linear * sizeT;
+      memcpy( dest , (const void*)buf , sizeT );
+      buf += sizeT;
     }
   }
 
@@ -1107,6 +1161,16 @@ namespace QDP
   template<class T>
   void QDPFileReader::read(XMLReader& rec_xml, OLattice<T>& s1)
   {
+    shape_ = s1.shape();
+
+    typedef typename SinglePrecType<T>::Type_t TF;
+    typedef typename DoublePrecType<T>::Type_t TD;
+
+    OScalar<T> dummyT(shape_);
+    OScalar<TF> dummyF(shape_);
+    OScalar<TD> dummyD(shape_);
+
+    
     /* For now I may not be able to read Dirk's stuff, but I should
      * be able to read what I wrote */
     QIO_RecordInfo rec_info;
@@ -1123,15 +1187,15 @@ namespace QDP
     case 'F' :
     {
       QDPIO::cout << "Single Precision Read" << endl;
-      OLattice< typename SinglePrecType<T>::Type_t > from_disk;
+      OLattice< TF > from_disk(shape_);
       zero_rep(from_disk);
 
       
       status = QIO_read_record_data(qio_in,
-				    &(QDPOLatticeFactoryPut<typename SinglePrecType<T>::Type_t> ),
-				    sizeof(typename SinglePrecType<T>::Type_t),
-				    sizeof(typename WordType< typename SinglePrecType<T>::Type_t >::Type_t),
-				    (void *)from_disk.getF());
+				    &(QDPOLatticeFactoryPut< TF > ),
+				    jit_sizeof(dummyF),
+				    sizeof(typename WordType< TF >::Type_t),
+				    (void *)from_disk.get_ptr());
       
       if (status != QIO_SUCCESS) { 
 	QDPIO::cerr << "Failed to read data" << endl;
@@ -1145,15 +1209,15 @@ namespace QDP
     case 'D' :
     {
       QDPIO::cout << "Reading Double Precision" << endl;
-      OLattice< typename DoublePrecType<T>::Type_t > from_disk;
+      OLattice< TD > from_disk(shape_);
       zero_rep(from_disk);
 
       /* Disagnostics */
       status = QIO_read_record_data(qio_in,
-				    &(QDPOLatticeFactoryPut< typename DoublePrecType<T>::Type_t>),
-				    sizeof(typename DoublePrecType<T>::Type_t),
-				    sizeof(typename WordType< typename DoublePrecType<T>::Type_t >::Type_t),
-				    (void *)from_disk.getF());
+				    &(QDPOLatticeFactoryPut< TD >),
+				    jit_sizeof(dummyD),
+				    sizeof(typename WordType< TD >::Type_t),
+				    (void *)from_disk.get_ptr());
       
       if (status != QIO_SUCCESS) { 
 	QDPIO::cerr << "Failed to read data" << endl;
@@ -1172,9 +1236,9 @@ namespace QDP
       QDPIO::cout << "Reading I or U precisions" << endl;
       status = QIO_read_record_data(qio_in,
 				    &(QDPOLatticeFactoryPut<T>),
-				    sizeof(T),
+				    jit_sizeof(dummyT),
 				    sizeof(typename WordType<T>::Type_t),
-				    (void *)s1.getF());
+				    (void *)s1.get_ptr());
      
       if (status != QIO_SUCCESS) { 
 	QDPIO::cerr << "Failed to read data" << endl;
@@ -1206,6 +1270,20 @@ namespace QDP
   template<typename T>
   void QDPFileReader::read(XMLReader& rec_xml, multi1d< OLattice<T> >& s1)
   {
+    assert(s1.size());
+	
+    shape_ = s1[0].shape();
+
+    typedef typename SinglePrecType<T>::Type_t TF;
+    typedef typename DoublePrecType<T>::Type_t TD;
+
+    OScalar<T>  dummyT(shape_);
+    OScalar<TF> dummyF(shape_);
+    OScalar<TD> dummyD(shape_);
+
+    ShapeScope qv_scope( shape_ );
+    
+    
     /* For now I may not be able to read Dirk's stuff, but I should
      * be able to read what I wrote */
     QIO_RecordInfo rec_info;
@@ -1223,13 +1301,13 @@ namespace QDP
     case 'F' :
     {
       QDPIO::cout << "Single Precision Read" << endl;
-      multi1d< OLattice< typename SinglePrecType<T>::Type_t > > from_disk(s1.size());
+      multi1d< OLattice< TF > > from_disk(s1.size());
       for(int i=0; i < s1.size(); i++) { zero_rep(from_disk[i]); }
 
       status = QIO_read_record_data(qio_in,
-				    &(QDPOLatticeFactoryPutArray<typename SinglePrecType<T>::Type_t> ),
-				    s1.size()*sizeof(typename SinglePrecType<T>::Type_t),
-				    sizeof(typename WordType< typename SinglePrecType<T>::Type_t >::Type_t),
+				    &(QDPOLatticeFactoryPutArray<TF> ),
+				    s1.size() * jit_sizeof(dummyF),
+				    sizeof(typename WordType< TF >::Type_t),
 				    (void *)&from_disk);
       if (status != QIO_SUCCESS) { 
 	QDPIO::cerr << "Failed to read data" << endl;
@@ -1237,7 +1315,7 @@ namespace QDP
 	QDP_abort(1);
       }
       QDPIO::cout << "QIO_read_finished" << endl;
-      
+
       // Cast appropriately
       for(int i=0; i < from_disk.size(); i++) { 
 	s1[i] = from_disk[i];
@@ -1248,13 +1326,13 @@ namespace QDP
     case 'D' :
     {
       QDPIO::cout << "Reading Double Precision" << endl;
-      multi1d< typename DoublePrecType< OLattice<T> >::Type_t > from_disk(s1.size());
+      multi1d< OLattice< TD > > from_disk(s1.size());
       for(int i=0; i < s1.size(); i++) { zero_rep(from_disk[i]); }
 
       status = QIO_read_record_data(qio_in,
-				    &(QDPOLatticeFactoryPutArray< typename DoublePrecType<T>::Type_t > ),
-				    s1.size()*sizeof(typename DoublePrecType<T>::Type_t),
-				    sizeof(typename WordType< typename DoublePrecType<T>::Type_t >::Type_t),
+				    &(QDPOLatticeFactoryPutArray< TD > ),
+				    s1.size() * jit_sizeof(dummyD),
+				    sizeof(typename WordType< TD >::Type_t),
 				    (void *)&from_disk);
       if (status != QIO_SUCCESS) { 
 	QDPIO::cerr << "Failed to read data" << endl;
@@ -1274,7 +1352,7 @@ namespace QDP
       QDPIO::cout << "Reading I or U Precision" << endl;
       status = QIO_read_record_data(qio_in,
 				    &(QDPOLatticeFactoryPutArray<T> ),
-				    s1.size()*sizeof(T),
+				    s1.size() * jit_sizeof(dummyT),
 				    sizeof(typename WordType<T>::Type_t),
 				    (void *)&s1);
       if (status != QIO_SUCCESS) { 
@@ -1301,6 +1379,7 @@ namespace QDP
     }
   
     QIO_string_destroy(xml_c);
+
   }
 
   //! Function for moving data
@@ -1313,13 +1392,17 @@ namespace QDP
     \param arg The source buffer.
   */
 
+
+
   template<class T> void QDPOLatticeFactoryGet(char *buf, size_t linear, int count, void *arg)
   {
-    /* Translate arg */
-    T *field = (T *)arg;
-
-    void *src = (void*)(field+linear);
-    memcpy(buf,(const void*)src,count*sizeof(T));
+    assert(shape_.nc());
+    assert(shape_.ns());
+    OScalar<T> dummy(shape_);
+    size_t sizeT = jit_sizeof(dummy);
+    
+    void *src = static_cast<char*>(arg) + linear * sizeT;
+    memcpy(buf,(const void*)src,count*sizeT);
   }
 
   //! Function for moving array data
@@ -1337,11 +1420,14 @@ namespace QDP
     /* Translate arg */
     multi1d< OLattice<T> >& field = *(multi1d< OLattice<T> > *)arg;
 
+    OScalar<T> dummy(shape_);
+    size_t sizeT = jit_sizeof(dummy);
+
     for(int i=0; i < field.size(); ++i)
     {
-      void *src = (void*)&(field[i].elem(linear));
-      memcpy(buf,(const void*)src,sizeof(T));
-      buf += sizeof(T);
+      void* src = (char*)( field[i].get_ptr() ) + linear * sizeT;
+      memcpy(buf,(const void*)src,sizeT);
+      buf += sizeT;
     }
   }
 
@@ -1357,11 +1443,14 @@ namespace QDP
   template<class T>
   void QDPFileWriter::write(XMLBufferWriter& rec_xml, const OLattice<T>& s1)
   {
+    shape_ = s1.shape();
+    OScalar<T> dummy(shape_);
+
     QIO_RecordInfo* info = QIO_create_record_info(QIO_FIELD, NULL, NULL,0,
 						  const_cast<char *>(QIOStringTraits< OLattice<T> >::tname),
 						  const_cast<char *>(QIOStringTraits<typename WordType<T>::Type_t >::tprec),
-						  Nc, Ns, 
-						  sizeof(T),1 );
+						  shape_.nc(), shape_.ns(), 
+						  jit_sizeof(dummy),1 );
   
     // Copy metadata string into simple qio string container
     QIO_String* xml_c = QIO_string_create();
@@ -1377,9 +1466,9 @@ namespace QDP
     // Big call to qio
     if (QIO_write(get(), info, xml_c,
 		  &(QDPOLatticeFactoryGet<T>),
-		  sizeof(T), 
+		  jit_sizeof(dummy), 
 		  sizeof(typename WordType<T>::Type_t), 
-		  (void *)s1.getF()) != QIO_SUCCESS)
+		  (void *)s1.get_ptr()) != QIO_SUCCESS)
     {
       QDPIO::cerr << "QDPFileWriter: error in write" << endl;
       clear(QDPIO_badbit);
@@ -1403,6 +1492,8 @@ namespace QDP
   template<class T>
   void QDPFileWriter::write(XMLBufferWriter& rec_xml, const OLattice<T>& s1, const multi1d<int>& lower_left, const multi1d<int>& upper_right)
   {
+    shape_ = s1.shape();
+    OScalar<T> dummy(shape_);
 
     // Sanity check...
     if( lower_left.size() != upper_right.size()) {
@@ -1416,8 +1507,8 @@ namespace QDP
 						  lower_left.size(),
 						  const_cast<char *>(QIOStringTraits< OLattice<T> >::tname),
 						  const_cast<char *>(QIOStringTraits<typename WordType<T>::Type_t >::tprec),
-						  Nc, Ns, 
-						  sizeof(T),1 );
+						  shape_.nc(), shape_.ns(), 
+						  jit_sizeof(dummy), 1 );
   
     // Copy metadata string into simple qio string container
     QIO_String* xml_c = QIO_string_create();
@@ -1433,9 +1524,9 @@ namespace QDP
     // Big call to qio
     if (QIO_write(get(), info, xml_c,
 		  &(QDPOLatticeFactoryGet<T>),
-		  sizeof(T), 
+		  jit_sizeof(dummy), 
 		  sizeof(typename WordType<T>::Type_t), 
-		  (void *)s1.getF()) != QIO_SUCCESS)
+		  (void *)s1.get_ptr()) != QIO_SUCCESS)
     {
       QDPIO::cerr << "QDPFileWriter: error in write" << endl;
       clear(QDPIO_badbit);
@@ -1457,12 +1548,17 @@ namespace QDP
   template<class T>
   void QDPFileWriter::write(XMLBufferWriter& rec_xml, const multi1d< OLattice<T> >& s1)
   {
+    assert(s1.size());
+	
+    shape_ = s1[0].shape();
+    OScalar<T> dummy(shape_);
+
     QIO_RecordInfo* info = QIO_create_record_info(QIO_FIELD, 
 						  NULL, NULL, 0,
 						  const_cast<char *>(QIOStringTraits<multi1d< OLattice<T> > >::tname),
 						  const_cast<char *>(QIOStringTraits<typename WordType<T>::Type_t>::tprec),
-						  Nc, Ns, 
-						  sizeof(T), s1.size() );
+						  shape_.nc(), shape_.ns(), 
+						  jit_sizeof(dummy), s1.size() );
 
     // Copy metadata string into simple qio string container
     QIO_String* xml_c = QIO_string_create();
@@ -1478,7 +1574,7 @@ namespace QDP
     // Big call to qio
     if (QIO_write(get(), info, xml_c,
 		  &(QDPOLatticeFactoryGetArray<T>),
-		  s1.size()*sizeof(T), 
+		  s1.size()*jit_sizeof(dummy), 
 		  sizeof(typename WordType<T>::Type_t), 
 		  const_cast<void*>(static_cast<const void*>(&s1))) != QIO_SUCCESS)
     {
@@ -1506,6 +1602,8 @@ namespace QDP
   template<class T>
   void QDPFileWriter::write(XMLBufferWriter& rec_xml, const multi1d< OLattice<T> >& s1, const multi1d<int>& lower_left, const multi1d<int>& upper_right)
   {
+    shape_ = s1[0].shape();
+    OScalar<T> dummy(shape_);
 
     // Sanity check...
     if( lower_left.size() != upper_right.size()) {
@@ -1519,8 +1617,8 @@ namespace QDP
 						  lower_left.size(),
 						  const_cast<char *>(QIOStringTraits<multi1d< OLattice<T> > >::tname),
 						  const_cast<char *>(QIOStringTraits<typename WordType<T>::Type_t>::tprec),
-						  Nc, Ns, 
-						  sizeof(T), s1.size() );
+						  shape_.nc(), shape_.ns(), 
+						  jit_sizeof(dummy), s1.size() );
 
     // Copy metadata string into simple qio string container
     QIO_String* xml_c = QIO_string_create();
@@ -1536,7 +1634,7 @@ namespace QDP
     // Big call to qio
     if (QIO_write(get(), info, xml_c,
 		  &(QDPOLatticeFactoryGetArray<T>),
-		  s1.size()*sizeof(T), 
+		  s1.size()*jit_sizeof(dummy), 
 		  sizeof(typename WordType<T>::Type_t), 
 		  (void*)&s1) != QIO_SUCCESS)
     {

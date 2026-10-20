@@ -1,10 +1,3 @@
-//
-// QDP data parallel interface
-/*!
- * @file
- * @brief  Various gauge readers/writers and propagator readers/writers.
- */
-
 #include "qdp.h"
 #include "qdp_iogauge.h"
 
@@ -14,25 +7,17 @@
 #include <string>
 using std::string;
 
-// QCDOC HACK. QCDOC Does not have gethostname
-// provided in qdp_util.cc
-#ifndef HAVE_GETHOSTNAME
-extern int gethostname(char *, size_t);
-#endif
 
-#if 1
+
+
 namespace QDP {
 
-
-// Anonymous namespace
 namespace
 {
-  // Float tolerance
-  const Double tol = 1.e-5;  /* tolerance for floating point checks */
-
-  // Grrh, I do not want to expose the plaquette code.
   void mesplq(Double& w_plaq, Double& link, const multi1d<LatticeColorMatrix>& u)
   {
+    const LatticeLayout layout = u[0].layout();
+
     w_plaq = link = 0.0;
 
     // Compute the average plaquettes
@@ -54,13 +39,13 @@ namespace
     }
   
     // NERSC normalization
-    w_plaq *= 2.0 / double(Layout::vol()*Nd*(Nd-1)*Nc);
+    w_plaq *= 2.0 / double(layout.vol()*Nd*(Nd-1)*Nc);
   
     // Compute the average link
     for(int mu=0; mu < Nd; ++mu)
       link += sum(real(trace(u[mu])));
 
-    link /= double(Layout::vol()*Nd*Nc);
+    link /= double(layout.vol()*Nd*Nc);
   }
 
 } // end anonymous namespace
@@ -497,6 +482,9 @@ void readArchiv(BinaryReader& cfg_in, multi1d<LatticeColorMatrix>& u,
  */    
 void readArchiv(ArchivGauge_t& header, multi1d<LatticeColorMatrix>& u, const string& file)
 {
+  // Float tolerance
+  const Double tol = 1.e-5;  /* tolerance for floating point checks */
+
   BinaryFileReader cfg_in(file);
 
   readArchivHeader(cfg_in, header);   // read header
@@ -749,6 +737,7 @@ void writeArchiv(const multi1d<LatticeColorMatrix>& u,
 
 
 } // namespace QDP;
-#endif
+
+
 
 

@@ -1,10 +1,3 @@
-/*! @file
- * @brief Timer support
- *
- * A stopwatch like timer.
- */
-
-
 #include "qdp.h"
 #include<sys/time.h>
 

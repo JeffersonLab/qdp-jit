@@ -1,3 +1,6 @@
+#ifndef QDP_EXAMPLES_EXAMPLES_H
+#define QDP_EXAMPLES_EXAMPLES_H
+
 // -*- C++ -*-
 // $Id: examples.h,v 1.8 2007-02-24 01:00:29 bjoo Exp $
 //
@@ -7,15 +10,8 @@
 
 using namespace QDP;
 
-#if defined(QDP_DEBUG_MEMORY)
-#define START_CODE() QDP::Allocator::theQDPAllocator::Instance().pushFunc(__func__, __LINE__)
-#define END_CODE()   QDP::Allocator::theQDPAllocator::Instance().popFunc()
-
-#else
 #define START_CODE() QDP_PUSH_PROFILE(QDP::getProfileLevel())
 #define END_CODE()   QDP_POP_PROFILE()
-
-#endif
 
 
 enum Reunitarize {REUNITARIZE, REUNITARIZE_ERROR, REUNITARIZE_LABEL};
@@ -58,3 +54,5 @@ void rgauge(multi1d<LatticeColorMatrix>& u, LatticeColorMatrix& g);
 void taproj(LatticeColorMatrix& a);
 
 void polylp(const multi1d<LatticeColorMatrix>& u, DComplex& poly_loop, int mu);
+
+#endif

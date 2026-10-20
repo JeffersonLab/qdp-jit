@@ -1,44 +1,11 @@
-//
-/*! 
- * @file
- * @brief Utility routines like info and error reporting
- */
-
 #include <cstdarg>
 #include <unistd.h>
 
 #include "qdp.h"
 
 
-// QCDOC Hack. QCDOC doesn't have gethostname(char *hostname, size_t size)
-// Must provide a suitable stub
-#ifndef HAVE_GETHOSTNAME
-
-#include "qdp_strnlen.h"
-
-int gethostname(char *hostname, size_t size)
-{
-   const char *my_host_name="node";
-
-   // My Host Size returns either the length of my_host_name
-   // or the size of the supplied array - 1 char
-   // (this means that if size -1 is passed it wastes 1 char
-   size_t my_host_size=strnlen(my_host_name, size-1);
-  
-   strncpy(hostname, my_host_name, my_host_size);
-
-   // Null terminate. This should be ok, because my_host_size is at most
-   // size-1;
-   hostname[my_host_size]='\0'; 
-   return 0;
-} 
-#endif
-
 namespace QDP {
 
-/**
- * Simple information display routine
- */
 int
 QDP_info (const char* format, ...)
 {
@@ -193,6 +160,8 @@ QDP_error_exit (const char* format, ...)
 
   fprintf (stderr, "%s %s\n", info, buffer);
 
+  raise(SIGSEGV);
+  
   QDP_abort(1);  // Abort knows how to shutdown the machine
 }
 

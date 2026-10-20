@@ -1,5 +1,5 @@
-#ifndef UNITTEST_H
-#define UNITTEST_H
+#ifndef QDP_EXAMPLES_UNITTEST_H
+#define QDP_EXAMPLES_UNITTEST_H
 
 #include "qdp.h"
 #include <vector>

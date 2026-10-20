@@ -9,7 +9,7 @@
 #include "linalg.h"
 
 using namespace QDP;
-#define TIME_OPS
+//#define TIME_OPS
 
 int main(int argc, char *argv[])
 {
@@ -17,7 +17,11 @@ int main(int argc, char *argv[])
   QDP_initialize(&argc, &argv);
 
   // Setup the layout
+#if defined(TIME_OPS)
   const int foo[] = {16,16,16,16};
+#else
+  const int foo[] = {4,4,4,4};
+#endif
   multi1d<int> nrow(Nd);
   nrow = foo;  // Use only Nd elements
   Layout::setLattSize(nrow);
@@ -43,16 +47,14 @@ int main(int argc, char *argv[])
 
   int icnt;
   double tt;
-
-#define TIME_OPS 
+  double rescale;
+  
   // Test M = M
   LatticeColorMatrix m1, m2;
   m1 = zero;
   gaussian(m2);
 
-  for(int i=all.start(); i <= all.end(); i++) { 
-    m1.elem(i) -= m2.elem(i);
-  }
+  m1 -= m2;
 
   LatticeColorMatrix m3=zero;
   m3 -= m2;
@@ -62,20 +64,6 @@ int main(int argc, char *argv[])
   QDP::StopWatch swatch;
   swatch.reset();
   double time = 0;
-  icnt = 1;
-  while(time <= 1000000) { 
-    swatch.start();
-    for(int j=0; j < icnt; j++) {
-      for(int i=all.start(); i <= all.end(); i++) { 
-	m1.elem(i) -= m2.elem(i);
-      }
-    }
-    swatch.stop();
-    time = swatch.getTimeInMicroseconds();
-    swatch.reset();
-    icnt*=2;
-  }
-  QDPIO::cout << "Call time (old M=M) = " << time / icnt << " us per call" << endl;
   
   swatch.reset();
   time = 0;
@@ -110,7 +98,7 @@ int main(int argc, char *argv[])
 #endif
   }
 
-  double rescale = 1000*1000 / double(Layout::sitesOnNode()) / icnt;
+  rescale = 1000*1000 / double(Layout::sitesOnNode()) / icnt;
 
   tt *= rescale;
   int Nflops = Nc*Nc*(4*Nc + (4*Nc-2));
@@ -126,7 +114,8 @@ int main(int argc, char *argv[])
 #endif
 
 #endif
-  
+
+
   // Test  M=adj(M)*M
   QDPIO::cout << "calling M=adj(M)*M " << icnt << " times" << endl;
   tt = rescale * QDP_M_eq_Ma_times_M(c, a, b, icnt);
@@ -288,7 +277,7 @@ int main(int argc, char *argv[])
 #ifndef QDP_NO_LIBXML2
   push(xml,"QDP_M_meq_M_times_Ma");
   write(xml,"c",c);
-  pop(xml)
+  pop(xml);
 #endif
 #endif
 
@@ -340,7 +329,7 @@ int main(int argc, char *argv[])
 #ifndef QDP_NO_LIBXML2
   push(xml,"QDP_V_eq_M_times_V");
   write(xml,"lv2",lv2);
-  pop(xml)
+  pop(xml);
 #endif
 #endif
 
@@ -394,7 +383,7 @@ int main(int argc, char *argv[])
 
 
 //----------------------------------------------------------------------------
-  LatticeDiracFermion lf1,lf2,lf3;
+  LatticeFermion lf1,lf2,lf3;
   gaussian(lf1);
   gaussian(lf2);
 
@@ -427,6 +416,7 @@ int main(int argc, char *argv[])
 #endif
 #endif
 
+
   // Test LatticeDiracFermion = adj(LatticeColorMatrix) * LatticeDiracFermion
   QDPIO::cout << "calling D=adj(M)*D " << icnt << " times" << endl;
   tt = rescale * QDP_D_eq_Ma_times_D(lf2, a, lf1, icnt);
@@ -443,8 +433,11 @@ int main(int argc, char *argv[])
 #endif
 
 
+
 //----------------------------------------------------------------------------
-  LatticeHalfFermion lh1,lh2,lh3;
+  ShapeScope qv_scope(Shape(2, Shape::current().nc()));
+  LatticeFermion lh1,lh2,lh3;
+  qv_scope.close();
   gaussian(lh1);
   gaussian(lh2);
 
@@ -452,7 +445,8 @@ int main(int argc, char *argv[])
   for(icnt=1; ; icnt <<= 1)
   {
     QDPIO::cout << "calling H=M*H " << icnt << " times" << endl;
-    tt = QDP_H_eq_M_times_H(lh2, a, lh1, icnt);
+    tt = QDP_D_eq_M_times_D(lh2, a, lh1, icnt);
+    tt =1;
 #if defined(TIME_OPS)
     if (tt > 1)
       break;
@@ -480,7 +474,7 @@ int main(int argc, char *argv[])
 
   // Test LatticeHalfFermion = adj(LatticeColorMatrix) * LatticeHalfFermion
   QDPIO::cout << "calling H=adj(M)*H " << icnt << " times" << endl;
-  tt = rescale * QDP_H_eq_Ma_times_H(lh2, a, lh1, icnt);
+  tt = rescale * QDP_D_eq_Ma_times_D(lh2, a, lh1, icnt);
 #if defined(TIME_OPS)
   QDPIO::cout << "time(H=adj(M)*H) = " << tt
 	      << " micro-secs/site/iteration" 
@@ -493,6 +487,7 @@ int main(int argc, char *argv[])
 #endif
 
 #endif
+
 
 
 #ifndef QDP_NO_LIBXML2

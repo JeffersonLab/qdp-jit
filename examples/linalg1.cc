@@ -284,9 +284,9 @@ double QDP_V_eq_V_plus_V(LatticeColorVector& dest,
 }
 
 
-double QDP_D_eq_M_times_D(LatticeDiracFermion& dest, 
+double QDP_D_eq_M_times_D(LatticeFermion& dest, 
 			  const LatticeColorMatrix& s1, 
-			  const LatticeDiracFermion& s2,
+			  const LatticeFermion& s2,
 			  int cnt)
 {
   StopWatch swatch;
@@ -302,9 +302,9 @@ double QDP_D_eq_M_times_D(LatticeDiracFermion& dest,
 }
 
 
-double QDP_D_eq_Ma_times_D(LatticeDiracFermion& dest, 
+double QDP_D_eq_Ma_times_D(LatticeFermion& dest, 
 			   const LatticeColorMatrix& s1, 
-			   const LatticeDiracFermion& s2,
+			   const LatticeFermion& s2,
 			   int cnt)
 {
 
@@ -323,38 +323,38 @@ double QDP_D_eq_Ma_times_D(LatticeDiracFermion& dest,
 }
 
 
-double QDP_H_eq_M_times_H(LatticeHalfFermion& dest, 
-			  const LatticeColorMatrix& s1, 
-			  const LatticeHalfFermion& s2,
-			  int cnt)
-{
+// double QDP_H_eq_M_times_H(LatticeFermion& dest, 
+// 			  const LatticeColorMatrix& s1, 
+// 			  const LatticeFermion& s2,
+// 			  int cnt)
+// {
 
-  StopWatch swatch;
+//   StopWatch swatch;
 
-  swatch.start();
-  for (; cnt-- > 0; )
-    dest = s1 * s2;
-  swatch.stop();
+//   swatch.start();
+//   for (; cnt-- > 0; )
+//     dest = s1 * s2;
+//   swatch.stop();
 
-  return swatch.getTimeInSeconds();
-//    return 2.0;
-}
+//   return swatch.getTimeInSeconds();
+// //    return 2.0;
+// }
 
 
-double QDP_H_eq_Ma_times_H(LatticeHalfFermion& dest, 
-		 	   const LatticeColorMatrix& s1, 
-			   const LatticeHalfFermion& s2,
-			   int cnt)
-{
-  StopWatch swatch;
+// double QDP_H_eq_Ma_times_H(LatticeFermion& dest, 
+// 		 	   const LatticeColorMatrix& s1, 
+// 			   const LatticeFermion& s2,
+// 			   int cnt)
+// {
+//   StopWatch swatch;
 
-  swatch.start();
-  for (; cnt-- > 0; )
-    dest = adj(s1) * s2;
-  swatch.stop();
+//   swatch.start();
+//   for (; cnt-- > 0; )
+//     dest = adj(s1) * s2;
+//   swatch.stop();
 
-  return swatch.getTimeInSeconds();
-//    return 2.0;
-}
+//   return swatch.getTimeInSeconds();
+// //    return 2.0;
+// }
 
 

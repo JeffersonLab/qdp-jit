@@ -1,4 +1,5 @@
-// -*- C++ -*-
+#ifndef QDP_RANNYU_H
+#define QDP_RANNYU_H
 
 /*! \file
  * \brief Yet another random number generator
@@ -7,9 +8,6 @@
  *
  * Seeds are four 12 bit integers
  */
-
-#ifndef QDP_RANNYU_H
-#define QDP_RANNYU_H
 
 #include "qdp.h"
 

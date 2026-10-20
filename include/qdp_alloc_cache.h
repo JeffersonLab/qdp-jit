@@ -1,5 +1,5 @@
-#ifndef QDP_ALLOC_CACHE
-#define QDP_ALLOC_CACHE
+#ifndef QDP_ALLOC_CACHE_H
+#define QDP_ALLOC_CACHE_H
 
 #include <string>
 #include <list>

@@ -1,4 +1,6 @@
-// -*- C++ -*-
+#ifndef QDP_PETE_TREENODES_H
+#define QDP_PETE_TREENODES_H
+
 // ACL:license
 // ----------------------------------------------------------------------
 // This software and ancillary information (herein called "SOFTWARE")
@@ -26,17 +28,11 @@
 // ----------------------------------------------------------------------
 // ACL:license
 
-#ifndef PETE_PETE_TREENODES_H
-#define PETE_PETE_TREENODES_H
-
 ///////////////////////////////////////////////////////////////////////////////
 //
 // WARNING: THIS FILE IS FOR INTERNAL PETE USE. DON'T INCLUDE IT YOURSELF
 //
 ///////////////////////////////////////////////////////////////////////////////
-
-// For some reason, IBM xlC barfs on these usages. Turn them off.
-#define MAKES_XLC_BARF
 
 //-----------------------------------------------------------------------------
 //
@@ -64,7 +60,9 @@ struct Reference
   inline
   Reference(const T &reference)
     : reference_m(reference)
-  { }
+  {
+
+  }
 
   //---------------------------------------------------------------------------
   // Copy constructor
@@ -72,7 +70,8 @@ struct Reference
   inline
   Reference(const Reference<T> &model)
     : reference_m(model.reference())
-  { }
+  {
+  }
 
   //---------------------------------------------------------------------------
   // Reference can be converted to a const ref
@@ -126,15 +125,6 @@ struct DeReference<Reference<T> >
   }
 };
 
-template<class T>
-struct DeReference<QDP::QDPTypeJIT< T, QDP::OLatticeJIT<T> > >
-{
-  typedef const QDP::QDPTypeJIT< T, QDP::OLatticeJIT<T> > &Return_t;
-  typedef QDP::QDPTypeJIT< T, QDP::OLatticeJIT<T> > Type_t;
-  static inline Return_t apply(const QDP::QDPTypeJIT< T, QDP::OLatticeJIT<T> > &a) {
-    return a; 
-  }
-};
 
 
 
@@ -207,33 +197,7 @@ public:
   UnaryNode(const UnaryNode<Op, OtherChild> &t)
     : op_m(t.operation()), child_m(t.child()) { }
 
-#if ! defined(MAKES_XLC_BARF)
-  //---------------------------------------------------------------------------
-  // Constructor using a UnaryNode with a different child,
-  // some arbitrary argument, and a different storage tag.
-  // Note: for this to work, a Child must be constructable
-  // from an OtherChild and an Arg.
 
-  template<class OtherChild, class Arg>
-  inline
-  UnaryNode(const UnaryNode<Op, OtherChild> &t, const Arg &a)
-    : op_m(t.operation()), child_m(t.child(), a) { }
-#endif
-
-#if ! defined(MAKES_XLC_BARF)
-  //---------------------------------------------------------------------------
-  // Constructor using a BinaryNode with a different Child and
-  // two arbitrary arguments.
-  // Note: for this to work, a Child  must be constructable
-  // from an OtherChild and an Arg1 & Arg2.
-
-  template<class OtherChild, class Arg1, class Arg2>
-  inline
-  UnaryNode(const UnaryNode<Op, OtherChild> &t, 
-    const Arg1 &a1, const Arg2 &a2)
-    : op_m(t.operation()), child_m(t.child(), a1, a2)
-    { }
-#endif
 
 private:
 
@@ -327,36 +291,7 @@ public:
     : op_m(t.operation()), left_m(t.left()), right_m(t.right())
   { }
 
-#if ! defined(MAKES_XLC_BARF)
-  //---------------------------------------------------------------------------
-  // Constructor using a BinaryNode with a different Left/Right and
-  // some arbitrary argument.
-  // Note: for this to work, a Left/Right must be constructable
-  // from an OtherLeft/OtherRight and an Arg.
 
-  template<class OtherLeft, class OtherRight, class Arg>
-  inline
-  BinaryNode(const BinaryNode<Op, OtherLeft, OtherRight> &t, 
-	     const Arg &a)
-    : op_m(t.operation()), left_m(t.left(), a), right_m(t.right(), a)
-  { }
-#endif
-
-#if ! defined(MAKES_XLC_BARF)
-  //---------------------------------------------------------------------------
-  // Constructor using a BinaryNode with a different Left/Right and
-  // two arbitrary arguments.
-  // Note: for this to work, a Left/Right must be constructable
-  // from an OtherLeft/OtherRight and an Arg1 & Arg2.
-
-  template<class OtherLeft, class OtherRight, class Arg1, class Arg2>
-  inline
-  BinaryNode(const BinaryNode<Op, OtherLeft, OtherRight> &t, 
-	     const Arg1 &a1, const Arg2 &a2)
-    : op_m(t.operation()),
-      left_m(t.left(), a1, a2), right_m(t.right(), a1, a2) 
-  { }
-#endif
 
 private:
 
@@ -447,38 +382,7 @@ public:
       right_m(t.right())
   { }
 
-#if ! defined(MAKES_XLC_BARF)
-  //---------------------------------------------------------------------------
-  // Constructor using a TrinaryNode with a different Left/Middle/Right and
-  // some arbitrary argument.
-  // Note: for this to work, a Left/Middle/Right must be constructable
-  // from an OtherLeft/OtherMiddle/OtherRight and an Arg.
 
-  template<class OtherLeft, class OtherMiddle, class OtherRight, class Arg>
-  inline
-  TrinaryNode(const TrinaryNode<Op, OtherLeft, OtherMiddle, OtherRight> &t,
-    const Arg &a)
-    : op_m(t.operation()), left_m(t.left(), a), middle_m(t.middle(), a), 
-      right_m(t.right(), a)
-  { }
-#endif
-
-#if ! defined(MAKES_XLC_BARF)
-  //---------------------------------------------------------------------------
-  // Constructor using a TrinaryNode with a different Left/Middle/Right and
-  // two arbitrary arguments.
-  // Note: for this to work, a Left/Middle/Right must be constructable
-  // from an OtherLeft/OtherMiddle/OtherRight and an Arg1 & Arg2.
-
-  template<class OtherLeft, class OtherMiddle, class OtherRight, 
-    class Arg1, class Arg2>
-  inline
-  TrinaryNode(const TrinaryNode<Op, OtherLeft, OtherMiddle, OtherRight> &t, 
-	      const Arg1 &a1, const Arg2 &a2)
-    : op_m(t.operation()), left_m(t.left(), a1, a2), 
-      middle_m(t.middle(), a1, a2) , right_m(t.right(), a1, a2) 
-  { }
-#endif
 
 private:
 
@@ -492,7 +396,7 @@ private:
 
 };
 
-#endif // PETE_PETE_TREENODES_H
+#endif
 
 // ACL:rcsinfo
 // ----------------------------------------------------------------------

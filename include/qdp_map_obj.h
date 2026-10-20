@@ -1,10 +1,9 @@
-// -*- C++ -*-
+#ifndef QDP_MAP_OBJ_H
+#define QDP_MAP_OBJ_H
+
 /*! \file
  * \brief Wrapper over maps
  */
-
-#ifndef __qdp_map_obj_h__
-#define __qdp_map_obj_h__
 
 #include <map>
 #include <vector>

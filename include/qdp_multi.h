@@ -1,4 +1,5 @@
-// -*- C++ -*-
+#ifndef QDP_MULTI_H
+#define QDP_MULTI_H
 
 /*! @file
  * @brief Multi-dimensional arrays
@@ -6,10 +7,10 @@
  * Support for reference semantic multi-dimensional arrays
  */
 
-#ifndef MULTI_INCLUDE
-#define MULTI_INCLUDE
-
 //#include "qdp_config.h"
+
+#include <type_traits>
+#include <new>
 
 namespace QDP {
 
@@ -21,18 +22,40 @@ namespace QDP {
  * @{
  */
 
+template<class T>
+inline void multi1d_copy_construct( T& dst , const T& src )
+{
+  if constexpr ( std::is_trivially_copyable_v<T> )
+    dst = src;
+  else
+    {
+      dst.~T();
+      ::new ( static_cast<void*>( &dst ) ) T( src );
+    }
+}
+
+
 //! Container for a multi-dimensional 1D array
 template<class T> class multi1d
 {
 public:
   // Basic cosntructor. Null (0x0) array_pointer, no copymem, no fast memory
-  multi1d() {F=0;n1=0;copymem=false;fast_mem_hint=false;}
+  multi1d() {F=0;n1=0;copymem=false;}
 
   // Placement constructor. Copy pointer, copymem=true, fast_mem_hint is false
-  multi1d(T *f, int ns1) {F=f; n1=ns1;copymem=true; fast_mem_hint=false;}
+  multi1d(T *f, int ns1) {F=f; n1=ns1;copymem=true;}
 
   // Explicit constructor, copymem is false, fast_mem is false, call resize
-  explicit multi1d(int ns1) {copymem=false;F=0;fast_mem_hint=false;resize(ns1);}
+  explicit multi1d(int ns1) {copymem=false;F=0;resize(ns1);}
+
+  multi1d( std::initializer_list<int> c )
+  {
+    copymem=false;
+    F=0;
+    resize(c.size());
+    std::copy( c.begin() , c.end(), F );
+  }
+
   // Destructor
   ~multi1d() {
     // If not created with placement, delete array
@@ -43,13 +66,12 @@ public:
 
 
   //! Copy constructor
-  // Copy from s, into slow memory
-  multi1d(const multi1d& s): copymem(false), fast_mem_hint(false), n1(s.n1), F(0)
+  multi1d(const multi1d& s): copymem(false), n1(s.n1), F(0)
     {
       resize(n1);
 
       for(int i=0; i < n1; ++i)
-	F[i] = s.F[i];
+	multi1d_copy_construct( F[i] , s.F[i] );
     }
 
   //! Resize routine, call a templated resize, using *this to disambiguate
@@ -66,7 +88,13 @@ public:
   multi1d& operator=(const multi1d& s1)
     {
       if (size() != s1.size())   // a simple check avoids resizing always
-	resize(s1.size());
+	{
+	  resize(s1.size());
+
+	  for(int i=0; i < n1; ++i)
+	    multi1d_copy_construct( F[i] , s1.F[i] );
+	  return *this;
+	}
 
       for(int i=0; i < n1; ++i)
 	F[i] = s1.F[i];
@@ -245,20 +273,6 @@ public:
     //assert( i >= 0 && i < n1 );
     return F[i];}
 
-  //! moveToFastMemoryHint for the whole multi1d if the 
-  //! internal type T supports it. Calls templated
-  //! moveToFastMemoryHint, using *this to disambiguate type
-  inline void moveToFastMemoryHint(bool copy=false) {
-    moveToFastMemoryHint(*this, copy);
-  }
-
-  //! revertFromFastMemoryHint for the whole multi1d if the 
-  //! internal type T supports it. Calls templated revertFrom
-  //! fast memory hint, using *this to disambiguate template type.
-  inline void revertFromFastMemoryHint(bool copy=false) { 
-    revertFromFastMemoryHint(*this, copy);
-  }
-
 private:
   //! Resize for most types
   template<typename I>
@@ -278,7 +292,6 @@ private:
 
 
   bool copymem;
-  bool fast_mem_hint;
   int n1;
   T *F;
 };
@@ -672,7 +685,7 @@ public:
     if(copymem) {
       cerr <<"multi2d: invalid resize of a copy of memory" << endl;
       exit(1);
-    }  
+    }
     delete[] F; 
     n1=ns1; 
     n2=ns2;  

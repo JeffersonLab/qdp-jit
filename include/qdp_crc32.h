@@ -1,3 +1,6 @@
+#ifndef QDP_CRC32_H
+#define QDP_CRC32_H
+
 /* Code source 
    http://www.ovmj.org/GNUnet/doxygen/html/crc32_8h-source.html
 */
@@ -19,9 +22,6 @@
      Free Software Foundation, Inc., 59 Temple Place - Suite 330,
      Boston, MA 02111-1307, USA.
 */
-
-#ifndef __qdp_crc32_h__
-#define __qdp_crc32_h__
 
 // #include <qio_stdint.h>
 

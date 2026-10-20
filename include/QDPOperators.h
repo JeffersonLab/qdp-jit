@@ -1,12 +1,11 @@
-// -*- C++ -*-
+#ifndef QDP_QDPOPERATORS_H
+#define QDP_QDPOPERATORS_H
+
 // $Id: Header.h,v 1.3 2002-10-14 02:06:56 edwards Exp $
 
 /*! @file
  * @brief Bulk of QDP operators produced by PETE
  */
-
-#ifndef QDPOPS_H
-#define QDPOPS_H
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -7308,5 +7307,5 @@ where(const QDPExpr<T1,C1> & a,const QDPType<T2,C2> & b,const QDPExpr<T3,C3> & c
 }
 #endif  // PETE_EXPRESSION_OPERATORS
 
-#endif // QDPOPS_H
+#endif
 

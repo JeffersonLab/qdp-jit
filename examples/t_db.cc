@@ -317,10 +317,9 @@ int main(int argc, char *argv[])
   // Done
   pop(xml);
 
+  QDPIO::cout << "finished" << endl;
+  
   // Time to bolt
   QDP_finalize();
-
-  QDPIO::cout << "finished" << endl;
-  exit(0);
 }
 

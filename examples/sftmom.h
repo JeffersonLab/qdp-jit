@@ -1,11 +1,10 @@
-// -*- C++ -*-
+#ifndef QDP_EXAMPLES_SFTMOM_H
+#define QDP_EXAMPLES_SFTMOM_H
+
 //  $Id: sftmom.h,v 3.9 2009-02-17 16:33:38 edwards Exp $
 /*! \file
  *  \brief Fourier transform phase factor support
  */
-
-#ifndef __sftmom_h__
-#define __sftmom_h__
 
 //#include "chromabase.h"
 #include "qdp.h"

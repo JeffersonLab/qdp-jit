@@ -1,11 +1,9 @@
-// -*- C++ -*-
+#ifndef QDP_NEWOPS_H
+#define QDP_NEWOPS_H
 
 /*! @file
  * @brief Additional operations on QDPTypes
  */
-
-#ifndef QDP_NEWOPS_H
-#define QDP_NEWOPS_H
 
 namespace QDP {
 
@@ -298,7 +296,6 @@ struct FnPeekSpinVector
   }
 
   int getRow() const { return row; }
-  //  int getCol() const { return col; }
 
 private:
   int row;
@@ -346,14 +343,6 @@ struct FnPokeColorMatrix
 
   FnPokeColorMatrix(int _row, int _col): row(_row), col(_col) {}
   
-  template<class T1, class T2>
-  inline typename BinaryReturn<T1, T2, FnPokeColorMatrix>::Type_t
-  operator()(const T1 &a, const T2 &b) const
-  {
-    pokeColor(const_cast<T1&>(a),b,row,col);
-    return const_cast<T1&>(a);
-  }
-
   int getRow() const { return row; }
   int getCol() const { return col; }
 
@@ -375,8 +364,14 @@ template<class T1,class C1,class T2,class C2>
 inline C1& 
 pokeColor(QDPType<T1,C1> & l, const QDPType<T2,C2>& r, int row, int col)
 {
+  if (row >= l.shape().nc() || col >= l.shape().nc())
+    {
+      QDPIO::cout << "pokeColor: out of bounds" << std::endl;
+      QDP_abort(1);
+    }
+
   C1& ll = static_cast<C1&>(l);
-  evaluate(ll,FnPokeColorMatrix(row,col),PETE_identity(r),all);
+  evaluate(ll,FnPokeColorMatrix(row,col),PETE_identity(r),all);  // DEEP_LOG ,false
   return ll;
 }
 
@@ -385,18 +380,28 @@ template<class T1,class C1,class T2,class C2>
 inline C1& 
 pokeColor(QDPType<T1,C1> & l, const QDPExpr<T2,C2>& r, int row, int col)
 {
+  if (row >= l.shape().nc() || col >= l.shape().nc())
+    {
+      QDPIO::cout << "pokeColor: out of bounds" << std::endl;
+      QDP_abort(1);
+    }
   C1& ll = static_cast<C1&>(l);
-  evaluate(ll,FnPokeColorMatrix(row,col),r,all);
+  evaluate(ll,FnPokeColorMatrix(row,col),r,all); // DEEP_LOG ,false
   return ll;
 }
 
 
 template<class T1,class C1,class T2,class C2>
-inline C1
+inline C1&
 pokeColor(const QDPSubType<T1,C1>& l, const QDPType<T2,C2>& r, int row, int col)
 {
-  //C1& ll = const_cast<QDPSubType<T1,C1>&>(l).field();
-  C1 ll( l.getId() , 1.0 );
+  if (row >= l.shape().nc() || col >= l.shape().nc())
+    {
+      QDPIO::cout << "pokeColor: out of bounds" << std::endl;
+      QDP_abort(1);
+    }
+
+  C1& ll = const_cast<QDPSubType<T1,C1>&>(l).me();
   const Subset& s = l.subset();
 
   evaluate(ll,FnPokeColorMatrix(row,col),PETE_identity(r),s);
@@ -405,11 +410,16 @@ pokeColor(const QDPSubType<T1,C1>& l, const QDPType<T2,C2>& r, int row, int col)
 
 
 template<class T1,class C1,class T2,class C2>
-inline C1
+inline C1&
 pokeColor(const QDPSubType<T1,C1>& l, const QDPExpr<T2,C2>& r, int row, int col)
 {
-  //C1& ll = const_cast<QDPSubType<T1,C1>&>(l).field();
-  C1 ll( l.getId() , 1.0 );
+  if (row >= l.shape().nc() || col >= l.shape().nc())
+    {
+      QDPIO::cout << "pokeColor: out of bounds" << std::endl;
+      QDP_abort(1);
+    }
+
+  C1& ll = const_cast<QDPSubType<T1,C1>&>(l).me();
   const Subset& s = l.subset();
 
   evaluate(ll,FnPokeColorMatrix(row,col),r,s);
@@ -424,16 +434,7 @@ struct FnPokeColorVector
 
   FnPokeColorVector(int _row): row(_row) {}
   
-  template<class T1, class T2>
-  inline typename BinaryReturn<T1, T2, FnPokeColorVector>::Type_t
-  operator()(const T1 &a, const T2 &b) const
-  {
-    pokeColor(const_cast<T1&>(a),b,row);
-    return const_cast<T1&>(a);
-  }
-
   int getRow() const { return row; }
-  //  int getCol() const { return col; }
 
 private:
   int row;
@@ -453,8 +454,13 @@ template<class T1,class C1,class T2,class C2>
 inline C1& 
 pokeColor(QDPType<T1,C1>& l, const QDPType<T2,C2>& r, int row)
 {
+  if (row >= l.shape().nc())
+    {
+      QDPIO::cout << "pokeColor: out of bounds" << std::endl;
+      QDP_abort(1);
+    }
   C1& ll = static_cast<C1&>(l);
-  evaluate(ll,FnPokeColorVector(row),PETE_identity(r),all);
+  evaluate(ll,FnPokeColorVector(row),PETE_identity(r),all);  // DEEP_LOG ,false
   return ll;
 }
 
@@ -462,19 +468,27 @@ template<class T1,class C1,class T2,class C2>
 inline C1& 
 pokeColor(QDPType<T1,C1>& l, const QDPExpr<T2,C2>& r, int row)
 {
+  if (row >= l.shape().nc())
+    {
+      QDPIO::cout << "pokeColor: out of bounds" << std::endl;
+      QDP_abort(1);
+    }
   C1& ll = static_cast<C1&>(l);
-  evaluate(ll,FnPokeColorVector(row),r,all);
+  evaluate(ll,FnPokeColorVector(row),r,all);  // DEEP_LOG ,false
   return ll;
 }
 
 
 template<class T1,class C1,class T2,class C2>
-inline C1
+inline C1&
 pokeColor(const QDPSubType<T1,C1>& l, const QDPType<T2,C2>& r, int row)
 {
-  //C1& ll = const_cast<QDPSubType<T1,C1>&>(l).field();
-  C1 ll( l.getId() , 1.0 );
-
+  if (row >= l.shape().nc())
+    {
+      QDPIO::cout << "pokeColor: out of bounds" << std::endl;
+      QDP_abort(1);
+    }
+  C1& ll = const_cast<QDPSubType<T1,C1>&>(l).me();
   const Subset& s = l.subset();
 
   evaluate(ll,FnPokeColorVector(row),PETE_identity(r),s);
@@ -483,12 +497,15 @@ pokeColor(const QDPSubType<T1,C1>& l, const QDPType<T2,C2>& r, int row)
 
 
 template<class T1,class C1,class T2,class C2>
-inline C1
+inline C1&
 pokeColor(const QDPSubType<T1,C1>& l, const QDPExpr<T2,C2>& r, int row)
 {
-  //C1& ll = const_cast<QDPSubType<T1,C1>&>(l).field();
-  C1 ll( l.getId() , 1.0 );
-
+  if (row >= l.shape().nc())
+    {
+      QDPIO::cout << "pokeColor: out of bounds" << std::endl;
+      QDP_abort(1);
+    }
+  C1& ll = const_cast<QDPSubType<T1,C1>&>(l).me();
   const Subset& s = l.subset();
 
   evaluate(ll,FnPokeColorVector(row),r,s);
@@ -503,14 +520,6 @@ struct FnPokeSpinMatrix
 
   FnPokeSpinMatrix(int _row, int _col): row(_row), col(_col) {}
   
-  template<class T1, class T2>
-  inline typename BinaryReturn<T1, T2, FnPokeSpinMatrix>::Type_t
-  operator()(const T1 &a, const T2 &b) const
-  {
-    pokeSpin(const_cast<T1&>(a),b,row,col);
-    return const_cast<T1&>(a);
-  }
-
   int getRow() const { return row; }
   int getCol() const { return col; }
 
@@ -531,8 +540,13 @@ template<class T1,class C1,class T2,class C2>
 inline C1& 
 pokeSpin(QDPType<T1,C1> & l, const QDPType<T2,C2>& r, int row, int col)
 {
+  if (row >= l.shape().ns() || col >= l.shape().ns())
+    {
+      QDPIO::cout << "pokeSpin: out of bounds" << std::endl;
+      QDP_abort(1);
+    }
   C1& ll = static_cast<C1&>(l);
-  evaluate(ll,FnPokeSpinMatrix(row,col),PETE_identity(r),all);
+  evaluate(ll,FnPokeSpinMatrix(row,col),PETE_identity(r),all); // DEEP_LOG ,false
   return ll;
 }
 
@@ -541,19 +555,27 @@ template<class T1,class C1,class T2,class C2>
 inline C1& 
 pokeSpin(QDPType<T1,C1> & l, const QDPExpr<T2,C2>& r, int row, int col)
 {
+  if (row >= l.shape().ns() || col >= l.shape().ns())
+    {
+      QDPIO::cout << "pokeSpin: out of bounds" << std::endl;
+      QDP_abort(1);
+    }
   C1& ll = static_cast<C1&>(l);
-  evaluate(ll,FnPokeSpinMatrix(row,col),r,all);
+  evaluate(ll,FnPokeSpinMatrix(row,col),r,all); // DEEP_LOG ,false
   return ll;
 }
 
 
 template<class T1,class C1,class T2,class C2>
-inline C1
+inline C1&
 pokeSpin(const QDPSubType<T1,C1>& l, const QDPType<T2,C2>& r, int row, int col)
 {
-  //C1& ll = const_cast<QDPSubType<T1,C1>&>(l).field();
-  C1 ll( l.getId() , 1.0 );
-
+  if (row >= l.shape().ns() || col >= l.shape().ns())
+    {
+      QDPIO::cout << "pokeSpin: out of bounds" << std::endl;
+      QDP_abort(1);
+    }
+  C1& ll = const_cast<QDPSubType<T1,C1>&>(l).me();
   const Subset& s = l.subset();
 
   evaluate(ll,FnPokeSpinMatrix(row,col),PETE_identity(r),s);
@@ -562,12 +584,15 @@ pokeSpin(const QDPSubType<T1,C1>& l, const QDPType<T2,C2>& r, int row, int col)
 
 
 template<class T1,class C1,class T2,class C2>
-inline C1
+inline C1&
 pokeSpin(const QDPSubType<T1,C1>& l, const QDPExpr<T2,C2>& r, int row, int col)
 {
-  //C1& ll = const_cast<QDPSubType<T1,C1>&>(l).field();
-  C1 ll( l.getId() , 1.0 );
-
+  if (row >= l.shape().ns() || col >= l.shape().ns())
+    {
+      QDPIO::cout << "pokeSpin: out of bounds" << std::endl;
+      QDP_abort(1);
+    }
+  C1& ll = const_cast<QDPSubType<T1,C1>&>(l).me();
   const Subset& s = l.subset();
 
   evaluate(ll,FnPokeSpinMatrix(row,col),r,s);
@@ -583,16 +608,7 @@ struct FnPokeSpinVector
 
   FnPokeSpinVector(int _row): row(_row) {}
   
-  template<class T1, class T2>
-  inline typename BinaryReturn<T1, T2, FnPokeSpinVector>::Type_t
-  operator()(const T1 &a, const T2 &b) const
-  {
-    pokeSpin(const_cast<T1&>(a),b,row);
-    return const_cast<T1&>(a);
-  }
-
   int getRow() const { return row; }
-  //  int getCol() const { return col; }
 
 private:
   int row;
@@ -611,8 +627,13 @@ template<class T1,class C1,class T2,class C2>
 inline C1& 
 pokeSpin(QDPType<T1,C1>& l, const QDPType<T2,C2>& r, int row)
 {
+  if (row >= l.shape().ns())
+    {
+      QDPIO::cout << "pokeSpin: out of bounds" << std::endl;
+      QDP_abort(1);
+    }
   C1& ll = static_cast<C1&>(l);
-  evaluate(ll,FnPokeSpinVector(row),PETE_identity(r),all);
+  evaluate(ll,FnPokeSpinVector(row),PETE_identity(r),all); // DEEP_LOG ,false
   return ll;
 }
 
@@ -620,19 +641,27 @@ template<class T1,class C1,class T2,class C2>
 inline C1& 
 pokeSpin(QDPType<T1,C1>& l, const QDPExpr<T2,C2>& r, int row)
 {
+  if (row >= l.shape().ns())
+    {
+      QDPIO::cout << "pokeSpin: out of bounds" << std::endl;
+      QDP_abort(1);
+    }
   C1& ll = static_cast<C1&>(l);
-  evaluate(ll,FnPokeSpinVector(row),r,all);
+  evaluate(ll,FnPokeSpinVector(row),r,all); // DEEP_LOG ,false
   return ll;
 }
 
 
 template<class T1,class C1,class T2,class C2>
-inline C1
+inline C1&
 pokeSpin(const QDPSubType<T1,C1>& l, const QDPType<T2,C2>& r, int row)
 {
-  //C1& ll = const_cast<QDPSubType<T1,C1>&>(l).field();
-  C1 ll( l.getId() , 1.0 );
-
+  if (row >= l.shape().ns())
+    {
+      QDPIO::cout << "pokeSpin: out of bounds" << std::endl;
+      QDP_abort(1);
+    }
+  C1& ll = const_cast<QDPSubType<T1,C1>&>(l).me();
   const Subset& s = l.subset();
 
   evaluate(ll,FnPokeSpinVector(row),PETE_identity(r),s);
@@ -641,12 +670,15 @@ pokeSpin(const QDPSubType<T1,C1>& l, const QDPType<T2,C2>& r, int row)
 
 
 template<class T1,class C1,class T2,class C2>
-inline C1
+inline C1&
 pokeSpin(const QDPSubType<T1,C1>& l, const QDPExpr<T2,C2>& r, int row)
 {
-  //C1& ll = const_cast<QDPSubType<T1,C1>&>(l).field();
-  C1 ll( l.getId() , 1.0 );
-
+  if (row >= l.shape().ns())
+    {
+      QDPIO::cout << "pokeSpin: out of bounds" << std::endl;
+      QDP_abort(1);
+    }
+  C1& ll = const_cast<QDPSubType<T1,C1>&>(l).me();
   const Subset& s = l.subset();
 
   evaluate(ll,FnPokeSpinVector(row),r,s);
@@ -664,16 +696,16 @@ pokeSpin(const QDPSubType<T1,C1>& l, const QDPExpr<T2,C2>& r, int row)
 struct OpGammaTypeMultiply
 {
   PETE_EMPTY_CONSTRUCTORS(OpGammaTypeMultiply)
-  template<int N, class T>
+  template<class T>
   inline T
-  operator()(const GammaType<N>& a, const T &b) const
+  operator()(const GammaType& a, const T &b) const
   {
     return (a * b);
   }
 
-  template<int N, class T>
+  template<class T>
   inline T
-  operator()(const GammaTypeDP<N>& a, const T &b) const
+  operator()(const GammaTypeDP& a, const T &b) const
   {
     return (a * b);
   }
@@ -684,16 +716,16 @@ struct OpGammaTypeMultiply
 struct OpMultiplyGammaType
 {
   PETE_EMPTY_CONSTRUCTORS(OpMultiplyGammaType)
-  template<class T, int N>
+  template<class T>
   inline T
-  operator()(const T &a, const GammaType<N>& b) const
+  operator()(const T &a, const GammaType& b) const
   {
     return (a * b);
   }
 
-  template<class T, int N>
+  template<class T>
   inline T
-  operator()(const T &a, const GammaTypeDP<N>& b) const
+  operator()(const T &a, const GammaTypeDP& b) const
   {
     return (a * b);
   }
@@ -709,10 +741,11 @@ struct OpMultiplyGammaType
 // Leaf stuff
 //-----------------------------------------------------------------------------
 
-template<int N>
-struct CreateLeaf<GammaType<N> >
+
+template <>
+struct CreateLeaf<GammaType >
 {
-  typedef GammaType<N> Input_t;
+  typedef GammaType Input_t;
   typedef Input_t Leaf_t;
 //  typedef Reference<Input_t> Leaf_t;
 
@@ -720,30 +753,31 @@ struct CreateLeaf<GammaType<N> >
   Leaf_t make(const Input_t& a) { return Leaf_t(a); }
 };
 
-template<int N>
-struct LeafFunctor<GammaType<N>, ElemLeaf>
+
+template <>
+struct LeafFunctor<GammaType, ElemLeaf>
 {
-  typedef GammaType<N> Type_t;
-  inline static Type_t apply(const GammaType<N> &a, const ElemLeaf &f)
+  typedef GammaType Type_t;
+  inline static Type_t apply(const GammaType &a, ElemLeaf &f)
     {return a;}
 };
 
 
-template<int N>
-struct LeafFunctor<GammaType<N>, EvalLeaf1>
+template <>
+struct LeafFunctor<GammaType, EvalLeaf1>
 {
-  typedef GammaType<N> Type_t;
-  inline static Type_t apply(const GammaType<N> &a, const EvalLeaf1 &f)
+  typedef GammaType Type_t;
+  inline static Type_t apply(const GammaType &a, EvalLeaf1 &f)
     {return a;}
 };
 
 
 // ---- DP
 
-template<int N>
-struct CreateLeaf<GammaTypeDP<N> >
+template <>
+struct CreateLeaf<GammaTypeDP >
 {
-  typedef GammaTypeDP<N> Input_t;
+  typedef GammaTypeDP Input_t;
   typedef Input_t Leaf_t;
 //  typedef Reference<Input_t> Leaf_t;
 
@@ -751,20 +785,20 @@ struct CreateLeaf<GammaTypeDP<N> >
   Leaf_t make(const Input_t& a) { return Leaf_t(a); }
 };
 
-template<int N>
-struct LeafFunctor<GammaTypeDP<N>, ElemLeaf>
+template <>
+struct LeafFunctor<GammaTypeDP, ElemLeaf>
 {
-  typedef GammaTypeDP<N> Type_t;
-  inline static Type_t apply(const GammaTypeDP<N> &a, const ElemLeaf &f)
+  typedef GammaTypeDP Type_t;
+  inline static Type_t apply(const GammaTypeDP &a, ElemLeaf &f)
     {return a;}
 };
 
 
-template<int N>
-struct LeafFunctor<GammaTypeDP<N>, EvalLeaf1>
+template <>
+struct LeafFunctor<GammaTypeDP, EvalLeaf1>
 {
-  typedef GammaTypeDP<N> Type_t;
-  inline static Type_t apply(const GammaTypeDP<N> &a, const EvalLeaf1 &f)
+  typedef GammaTypeDP Type_t;
+  inline static Type_t apply(const GammaTypeDP &a, EvalLeaf1 &f)
     {return a;}
 };
 
@@ -781,72 +815,72 @@ struct LeafFunctor<GammaTypeDP<N>, EvalLeaf1>
 
 //! GammaType * QDPType
 /*! @ingroup group1 */
-template<int N,class T2,class C2>
+template<class T2,class C2>
 inline typename MakeReturn<BinaryNode<OpGammaTypeMultiply,
-  typename CreateLeaf<GammaType<N> >::Leaf_t,
+  typename CreateLeaf<GammaType >::Leaf_t,
   typename CreateLeaf<QDPType<T2,C2> >::Leaf_t>,
-  typename BinaryReturn<GammaType<N>,C2,OpGammaTypeMultiply>::Type_t >::Expression_t
-operator*(const GammaType<N> & l,const QDPType<T2,C2> & r)
+  typename BinaryReturn<GammaType,C2,OpGammaTypeMultiply>::Type_t >::Expression_t
+operator*(const GammaType & l,const QDPType<T2,C2> & r)
 {
   typedef BinaryNode<OpGammaTypeMultiply,
-    typename CreateLeaf<GammaType<N> >::Leaf_t,
+    typename CreateLeaf<GammaType >::Leaf_t,
     typename CreateLeaf<QDPType<T2,C2> >::Leaf_t> Tree_t;
-  typedef typename BinaryReturn<GammaType<N>,C2,OpGammaTypeMultiply>::Type_t Container_t;
+  typedef typename BinaryReturn<GammaType,C2,OpGammaTypeMultiply>::Type_t Container_t;
   return MakeReturn<Tree_t,Container_t>::make(Tree_t(
-    CreateLeaf<GammaType<N> >::make(l),
+    CreateLeaf<GammaType >::make(l),
     CreateLeaf<QDPType<T2,C2> >::make(r)));
 }
 
 //! GammaType * QDPExpr
-template<int N,class T2,class C2>
+template<class T2,class C2>
 inline typename MakeReturn<BinaryNode<OpGammaTypeMultiply,
-  typename CreateLeaf<GammaType<N> >::Leaf_t,
+  typename CreateLeaf<GammaType >::Leaf_t,
   typename CreateLeaf<QDPExpr<T2,C2> >::Leaf_t>,
-  typename BinaryReturn<GammaType<N>,C2,OpGammaTypeMultiply>::Type_t >::Expression_t
-operator*(const GammaType<N> & l,const QDPExpr<T2,C2> & r)
+  typename BinaryReturn<GammaType,C2,OpGammaTypeMultiply>::Type_t >::Expression_t
+operator*(const GammaType & l,const QDPExpr<T2,C2> & r)
 {
   typedef BinaryNode<OpGammaTypeMultiply,
-    typename CreateLeaf<GammaType<N> >::Leaf_t,
+    typename CreateLeaf<GammaType >::Leaf_t,
     typename CreateLeaf<QDPExpr<T2,C2> >::Leaf_t> Tree_t;
-  typedef typename BinaryReturn<GammaType<N>,C2,OpGammaTypeMultiply>::Type_t Container_t;
+  typedef typename BinaryReturn<GammaType,C2,OpGammaTypeMultiply>::Type_t Container_t;
   return MakeReturn<Tree_t,Container_t>::make(Tree_t(
-    CreateLeaf<GammaType<N> >::make(l),
+    CreateLeaf<GammaType >::make(l),
     CreateLeaf<QDPExpr<T2,C2> >::make(r)));
 }
 
 //! QDPType * GammaType
 /*! @ingroup group1 */
-template<class T1,class C1,int N>
+template<class T1,class C1>
 inline typename MakeReturn<BinaryNode<OpMultiplyGammaType,
   typename CreateLeaf<QDPType<T1,C1> >::Leaf_t,
-  typename CreateLeaf<GammaType<N> >::Leaf_t>,
-  typename BinaryReturn<C1,GammaType<N>,OpMultiplyGammaType>::Type_t >::Expression_t
-operator*(const QDPType<T1,C1> & l,const GammaType<N> & r)
+  typename CreateLeaf<GammaType >::Leaf_t>,
+  typename BinaryReturn<C1,GammaType,OpMultiplyGammaType>::Type_t >::Expression_t
+operator*(const QDPType<T1,C1> & l,const GammaType & r)
 {
   typedef BinaryNode<OpMultiplyGammaType,
     typename CreateLeaf<QDPType<T1,C1> >::Leaf_t,
-    typename CreateLeaf<GammaType<N> >::Leaf_t> Tree_t;
-  typedef typename BinaryReturn<C1,GammaType<N>,OpMultiplyGammaType>::Type_t Container_t;
+    typename CreateLeaf<GammaType >::Leaf_t> Tree_t;
+  typedef typename BinaryReturn<C1,GammaType,OpMultiplyGammaType>::Type_t Container_t;
   return MakeReturn<Tree_t,Container_t>::make(Tree_t(
     CreateLeaf<QDPType<T1,C1> >::make(l),
-    CreateLeaf<GammaType<N> >::make(r)));
+    CreateLeaf<GammaType >::make(r)));
 }
 
 //! QDPExpr * GammaType
-template<class T1,class C1,int N>
+template<class T1,class C1>
 inline typename MakeReturn<BinaryNode<OpMultiplyGammaType,
   typename CreateLeaf<QDPExpr<T1,C1> >::Leaf_t,
-  typename CreateLeaf<GammaType<N> >::Leaf_t>,
-  typename BinaryReturn<C1,GammaType<N>,OpMultiplyGammaType>::Type_t >::Expression_t
-operator*(const QDPExpr<T1,C1> & l,const GammaType<N> & r)
+  typename CreateLeaf<GammaType >::Leaf_t>,
+  typename BinaryReturn<C1,GammaType,OpMultiplyGammaType>::Type_t >::Expression_t
+operator*(const QDPExpr<T1,C1> & l,const GammaType & r)
 {
   typedef BinaryNode<OpMultiplyGammaType,
     typename CreateLeaf<QDPExpr<T1,C1> >::Leaf_t,
-    typename CreateLeaf<GammaType<N> >::Leaf_t> Tree_t;
-  typedef typename BinaryReturn<C1,GammaType<N>,OpMultiplyGammaType>::Type_t Container_t;
+    typename CreateLeaf<GammaType >::Leaf_t> Tree_t;
+  typedef typename BinaryReturn<C1,GammaType,OpMultiplyGammaType>::Type_t Container_t;
   return MakeReturn<Tree_t,Container_t>::make(Tree_t(
     CreateLeaf<QDPExpr<T1,C1> >::make(l),
-    CreateLeaf<GammaType<N> >::make(r)));
+    CreateLeaf<GammaType >::make(r)));
 }
 
 
@@ -856,97 +890,75 @@ operator*(const QDPExpr<T1,C1> & l,const GammaType<N> & r)
 
 //! GammaType * QDPType
 /*! @ingroup group1 */
-template<int N,class T2,class C2>
+template<class T2,class C2>
 inline typename MakeReturn<BinaryNode<OpGammaTypeMultiply,
-  typename CreateLeaf<GammaTypeDP<N> >::Leaf_t,
+  typename CreateLeaf<GammaTypeDP >::Leaf_t,
   typename CreateLeaf<QDPType<T2,C2> >::Leaf_t>,
-  typename BinaryReturn<GammaTypeDP<N>,C2,OpGammaTypeMultiply>::Type_t >::Expression_t
-operator*(const GammaTypeDP<N> & l,const QDPType<T2,C2> & r)
+  typename BinaryReturn<GammaTypeDP,C2,OpGammaTypeMultiply>::Type_t >::Expression_t
+operator*(const GammaTypeDP & l,const QDPType<T2,C2> & r)
 {
   typedef BinaryNode<OpGammaTypeMultiply,
-    typename CreateLeaf<GammaTypeDP<N> >::Leaf_t,
+    typename CreateLeaf<GammaTypeDP >::Leaf_t,
     typename CreateLeaf<QDPType<T2,C2> >::Leaf_t> Tree_t;
-  typedef typename BinaryReturn<GammaTypeDP<N>,C2,OpGammaTypeMultiply>::Type_t Container_t;
+  typedef typename BinaryReturn<GammaTypeDP,C2,OpGammaTypeMultiply>::Type_t Container_t;
   return MakeReturn<Tree_t,Container_t>::make(Tree_t(
-    CreateLeaf<GammaTypeDP<N> >::make(l),
+    CreateLeaf<GammaTypeDP >::make(l),
     CreateLeaf<QDPType<T2,C2> >::make(r)));
 }
 
 //! GammaTypeDP * QDPExpr
-template<int N,class T2,class C2>
+template<class T2,class C2>
 inline typename MakeReturn<BinaryNode<OpGammaTypeMultiply,
-  typename CreateLeaf<GammaTypeDP<N> >::Leaf_t,
+  typename CreateLeaf<GammaTypeDP >::Leaf_t,
   typename CreateLeaf<QDPExpr<T2,C2> >::Leaf_t>,
-  typename BinaryReturn<GammaTypeDP<N>,C2,OpGammaTypeMultiply>::Type_t >::Expression_t
-operator*(const GammaTypeDP<N> & l,const QDPExpr<T2,C2> & r)
+  typename BinaryReturn<GammaTypeDP,C2,OpGammaTypeMultiply>::Type_t >::Expression_t
+operator*(const GammaTypeDP & l,const QDPExpr<T2,C2> & r)
 {
   typedef BinaryNode<OpGammaTypeMultiply,
-    typename CreateLeaf<GammaTypeDP<N> >::Leaf_t,
+    typename CreateLeaf<GammaTypeDP >::Leaf_t,
     typename CreateLeaf<QDPExpr<T2,C2> >::Leaf_t> Tree_t;
-  typedef typename BinaryReturn<GammaTypeDP<N>,C2,OpGammaTypeMultiply>::Type_t Container_t;
+  typedef typename BinaryReturn<GammaTypeDP,C2,OpGammaTypeMultiply>::Type_t Container_t;
   return MakeReturn<Tree_t,Container_t>::make(Tree_t(
-    CreateLeaf<GammaTypeDP<N> >::make(l),
+    CreateLeaf<GammaTypeDP >::make(l),
     CreateLeaf<QDPExpr<T2,C2> >::make(r)));
 }
 
 //! QDPType * GammaTypeDP
 /*! @ingroup group1 */
-template<class T1,class C1,int N>
+template<class T1,class C1>
 inline typename MakeReturn<BinaryNode<OpMultiplyGammaType,
   typename CreateLeaf<QDPType<T1,C1> >::Leaf_t,
-  typename CreateLeaf<GammaTypeDP<N> >::Leaf_t>,
-  typename BinaryReturn<C1,GammaTypeDP<N>,OpMultiplyGammaType>::Type_t >::Expression_t
-operator*(const QDPType<T1,C1> & l,const GammaTypeDP<N> & r)
+  typename CreateLeaf<GammaTypeDP >::Leaf_t>,
+  typename BinaryReturn<C1,GammaTypeDP,OpMultiplyGammaType>::Type_t >::Expression_t
+operator*(const QDPType<T1,C1> & l,const GammaTypeDP & r)
 {
   typedef BinaryNode<OpMultiplyGammaType,
     typename CreateLeaf<QDPType<T1,C1> >::Leaf_t,
-    typename CreateLeaf<GammaTypeDP<N> >::Leaf_t> Tree_t;
-  typedef typename BinaryReturn<C1,GammaTypeDP<N>,OpMultiplyGammaType>::Type_t Container_t;
+    typename CreateLeaf<GammaTypeDP >::Leaf_t> Tree_t;
+  typedef typename BinaryReturn<C1,GammaTypeDP,OpMultiplyGammaType>::Type_t Container_t;
   return MakeReturn<Tree_t,Container_t>::make(Tree_t(
     CreateLeaf<QDPType<T1,C1> >::make(l),
-    CreateLeaf<GammaTypeDP<N> >::make(r)));
+    CreateLeaf<GammaTypeDP >::make(r)));
 }
 
 //! QDPExpr * GammaTypeDP
-template<class T1,class C1,int N>
+template<class T1,class C1>
 inline typename MakeReturn<BinaryNode<OpMultiplyGammaType,
   typename CreateLeaf<QDPExpr<T1,C1> >::Leaf_t,
-  typename CreateLeaf<GammaTypeDP<N> >::Leaf_t>,
-  typename BinaryReturn<C1,GammaTypeDP<N>,OpMultiplyGammaType>::Type_t >::Expression_t
-operator*(const QDPExpr<T1,C1> & l,const GammaTypeDP<N> & r)
+  typename CreateLeaf<GammaTypeDP >::Leaf_t>,
+  typename BinaryReturn<C1,GammaTypeDP,OpMultiplyGammaType>::Type_t >::Expression_t
+operator*(const QDPExpr<T1,C1> & l,const GammaTypeDP & r)
 {
   typedef BinaryNode<OpMultiplyGammaType,
     typename CreateLeaf<QDPExpr<T1,C1> >::Leaf_t,
-    typename CreateLeaf<GammaTypeDP<N> >::Leaf_t> Tree_t;
-  typedef typename BinaryReturn<C1,GammaTypeDP<N>,OpMultiplyGammaType>::Type_t Container_t;
+    typename CreateLeaf<GammaTypeDP >::Leaf_t> Tree_t;
+  typedef typename BinaryReturn<C1,GammaTypeDP,OpMultiplyGammaType>::Type_t Container_t;
   return MakeReturn<Tree_t,Container_t>::make(Tree_t(
     CreateLeaf<QDPExpr<T1,C1> >::make(l),
-    CreateLeaf<GammaTypeDP<N> >::make(r)));
+    CreateLeaf<GammaTypeDP >::make(r)));
 }
 
 
-
-
-
-//-----------------------------------------------------------------------------
-// Additional operators
-//-----------------------------------------------------------------------------
-
-#if 0
-// Explicit casts
-template<class T1,class T2,class C2>
-inline typename MakeReturn<UnaryNode<OpCast<T1>,
-  typename CreateLeaf<QDPType<T2,C2> >::Leaf_t>,
-  typename UnaryReturn<C2,OpCast<T1> >::Type_t>::Expression_t
-peteCast(const T1&, const QDPType<T2,C2>& l)
-{
-  typedef UnaryNode<OpCast<T1>,
-    typename CreateLeaf<QDPType<T2,C2> >::Leaf_t> Tree_t;
-  typedef typename UnaryReturn<C2,OpCast<T1> >::Type_t Container_t;
-  return MakeReturn<Tree_t,Container_t>::make(Tree_t(
-    CreateLeaf<QDPType<T2,C2> >::make(l)));
-}
-#endif
 
 } // namespace QDP
 

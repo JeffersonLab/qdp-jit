@@ -1,4 +1,6 @@
-// -*- C++ -*-
+#ifndef QDP_PETE_CREATELEAF_H
+#define QDP_PETE_CREATELEAF_H
+
 // ACL:license
 // ----------------------------------------------------------------------
 // This software and ancillary information (herein called "SOFTWARE")
@@ -25,9 +27,6 @@
 // or visit the PETE web page at http://www.acl.lanl.gov/pete/.
 // ----------------------------------------------------------------------
 // ACL:license
-
-#ifndef PETE_PETE_CREATELEAF_H
-#define PETE_PETE_CREATELEAF_H
 
 //-----------------------------------------------------------------------------
 // Expression<T> - a class that wraps the contents of an expression
@@ -146,7 +145,7 @@ struct MakeReturn
 #endif // !PETE_USER_DEFINED_EXPRESSION
 
 
-#endif // PETE_PETE_CREATELEAF_H
+#endif
 
 // ACL:rcsinfo
 // ----------------------------------------------------------------------

@@ -1,11 +1,3 @@
-// -*- C++ -*-
-
-/*! @file
- * @brief Profiling info
- *
- * Diagnostics to print profiling info.
- */
-
 #include "qdp.h"
 #include <time.h>
 

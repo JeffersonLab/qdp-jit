@@ -1,12 +1,9 @@
 @PACKAGE_INIT@
 include(CMakeFindDependencyMacro)
 
-set(QDP_PARALLEL_ARCH @qdpParArch@)
-if( QDP_PARALLEL_ARCH STREQUAL "scalar")
-  set(QDP_ARCH_SCALAR ON)
-elseif( QDP_PARALLEL_ARCH STREQUAL "parscalar" )
-  set(QDP_ARCH_PARSCALAR ON)
-endif()
+# parscalar is the only architecture (kept for downstream projects)
+set(QDP_PARALLEL_ARCH parscalar)
+set(QDP_ARCH_PARSCALAR ON)
 
 set(QDP_PRECISION @QDP_PRECISION@)
 set(QDP_LAYOUT @QDP_LAYOUT@)
@@ -14,7 +11,6 @@ set(QDP_LAYOUT @QDP_LAYOUT@)
 set(QDP_ND @QDP_ND@)
 set(QDP_NC @QDP_NC@)
 set(QDP_NS @QDP_NS@)
-set(QDP_ALIGNMENT_SIZE @QDP_ALIGNMENT_SIZE@)
 message(STATUS "QDP++:  Configuring System")
 message(STATUS "QDP++:  Nc=${QDP_NC}")
 message(STATUS "QDP++:  Nd=${QDP_ND}")
@@ -26,11 +22,6 @@ else()
   set(BUILD_WILSON_EXAMPLES ON)
 endif()
 
-if ( QDP_PARALLEL_ARCH STREQUAL "parscalar" )
-  message(STATUS "QDP++: Parscalar build" )
-elseif( QDP_PARALLEL_ARCH STREQUAL "scalar" )
-  message(STATUS "QDP++: Scalar build" )
-endif()
 
 if( QDP_LAYOUT STREQUAL "lexico")
   message( STATUS "QDP++: Lexicographic Layout" )
@@ -49,37 +40,29 @@ if( QDP_ENABLE_BACKEND STREQUAL "ROCM" )
   set(QDP_BACKEND_ROCM 1)
 elseif( QDP_ENABLE_BACKEND STREQUAL "CUDA")
   set(QDP_BACKEND_CUDA 1)
-elseif( QDP_ENABLE_BACKEND STREQUAL "AVX")
-  set(QDP_BACKEND_AVX 1)
 elseif( QDP_ENABLE_BACKEND STREQUAL "L0")
   set(QDP_BACKEND_L0 1)
 endif()
 
-# Check if we need QMP
-if( QDP_ARCH_PARSCALAR )
-  find_dependency(QMP REQUIRED)
-endif()
+find_dependency(QMP REQUIRED)
 
 
-set(QDP_ENABLE_CODEGEN_VECTOR @QDP_ENABLE_CODEGEN_VECTOR)
-
-if(QDP_ENABLE_CODEGEN_VECTOR)
-  set(QDP_CODEGEN_VECTOR "1")
+if(QDP_HOST_COMPILER)
+  set(QDP_HOST_COMPILER "1")
 endif()
 
 
 
 
 
-set(QDP_PROP_OPT @QDP_PROP_OPT@)
 
 set(QDP_IS_QDPJIT 1)
+set(QDP_IS_QDPJIT2 1)
 
 # This is just in case we want to rebuild the examples as 
 # an external
 set(QDP_PRECISION @qdpPrecision@)
 set(QDP_LAYOUT    @qdpLayout@)
-set(QDP_USE_OMP_THREADS @QDP_USE_OMP_THREADS@)
  
 # Find submodules.
 # I am working on the premise that in a regular build currently
@@ -148,26 +131,6 @@ endif()
 message(STATUS "QDPXX: Found compatible LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "QDPXX: Using LLVMConfig.cmake in ${LLVM_DIR}")
 
-if(LLVM_VERSION_MAJOR EQUAL 14)
-  set(QDP_LLVM14 1)
-elseif(LLVM_VERSION_MAJOR EQUAL 15)
-  set(QDP_LLVM15 1)
-elseif(LLVM_VERSION_MAJOR EQUAL 16)
-  set(QDP_LLVM16 1)
-elseif(LLVM_VERSION_MAJOR EQUAL 17)
-  set(QDP_LLVM17 1)
-elseif(LLVM_VERSION_MAJOR EQUAL 18)
-  set(QDP_LLVM18 1)
-elseif(LLVM_VERSION_MAJOR EQUAL 19)
-  set(QDP_LLVM19 1)
-elseif(LLVM_VERSION_MAJOR EQUAL 20)
-  set(QDP_LLVM20 1)
-elseif(LLVM_VERSION_MAJOR GREATER_EQUAL 22)
-  set(QDP_LLVM22 1)
-else()
-  message(FATAL_ERROR
-    "Unsupported LLVM major version ${LLVM_VERSION_MAJOR}.")
-endif()
 
 
 
@@ -188,11 +151,6 @@ endif()
 if(@QDP_USE_HDF5@)
   find_dependency(HDF5 REQUIRED)
 endif()
-
-# OpenMP is always a dependency now
-#if( NOT OpenMP_FOUND )
-#  find_dependency(OpenMP REQUIRED)
-#endif()
 
 if(NOT Threads_FOUND )
   find_dependency(Threads REQUIRED)
@@ -226,11 +184,27 @@ elseif(QDP_BACKEND_ROCM)
   find_dependency(hip REQUIRED)
 
   set(QDP_USE_ROCM_STATS @QDP_USE_ROCM_STATS@)
-  if(QDP_USE_ROCM_STATS)
-    find_dependency(amd_comgr REQUIRED)
+  set(QDP_JIT_ROCM_COMGR_LINK @QDP_JIT_ROCM_COMGR_LINK@)
+  if(QDP_USE_ROCM_STATS OR QDP_JIT_ROCM_COMGR_LINK)
+    find_dependency(amd_comgr CONFIG REQUIRED)
   endif()
 elseif( QDP_BACKEND_L0 )
   find_dependency(LevelZero REQUIRED)
+
+  # QDPXX::jit links against PkgConfig::PKG_LLVMSPIRV (the SPIR-V translator).
+  # Recreate that imported target, looking first where it was found at build time.
+  if(NOT TARGET PkgConfig::PKG_LLVMSPIRV)
+    find_dependency(PkgConfig REQUIRED)
+    set(QDP_LLVMSPIRV_PCFILEDIR "@QDP_LLVMSPIRV_PCFILEDIR@")
+    if(QDP_LLVMSPIRV_PCFILEDIR)
+      if(DEFINED ENV{PKG_CONFIG_PATH} AND NOT "$ENV{PKG_CONFIG_PATH}" STREQUAL "")
+        set(ENV{PKG_CONFIG_PATH} "${QDP_LLVMSPIRV_PCFILEDIR}:$ENV{PKG_CONFIG_PATH}")
+      else()
+        set(ENV{PKG_CONFIG_PATH} "${QDP_LLVMSPIRV_PCFILEDIR}")
+      endif()
+    endif()
+    pkg_check_modules(PKG_LLVMSPIRV REQUIRED IMPORTED_TARGET LLVMSPIRVLib)
+  endif()
 endif()
 
 

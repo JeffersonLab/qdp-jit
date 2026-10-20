@@ -100,6 +100,12 @@ namespace QDP {
 
 
 
+  size_t gpu_get_max_resident_threads()
+  {
+    return 0;
+  }
+
+
   size_t gpu_mem_free()
   {
     // Discover memories on device
@@ -125,16 +131,7 @@ namespace QDP {
       pExtMemProps[i].pNext = nullptr;
     }
 
-    // Obtain memory & extended memory properties
-    //std::cout << "calling zeDeviceGetMemoryProperties\n";
     zeDeviceGetMemoryProperties(hDevice, &memCount, pMemProps);
-    //std::cout << "done calling\n";
-    
-    //std::cout << "Memory properties:\n";
-    //std::cout << "flags = " << pMemProps[0].flags << "\n";
-    //std::cout << "clock = " << pMemProps[0].maxClockRate << "\n";
-    //std::cout << "maxBusWidth = " << pMemProps[0].maxBusWidth << "\n";
-    //std::cout << "totalSize = " << pMemProps[0].totalSize << "\n";
 
     return pMemProps[0].totalSize;
   }
@@ -217,7 +214,7 @@ namespace QDP {
 
     if (driverCount < 1)
       {
-	QDPIO::cerr << "Expected driver count of at least 1\n";
+	std::cerr << "Expected driver count of at least 1\n";
 	QDP_abort(1);
       }
 
@@ -242,7 +239,7 @@ namespace QDP {
 
     if (deviceCount < 1)
       {
-	QDPIO::cerr << "Expected device count of at least 1\n";
+	std::cerr << "Expected device count of at least 1\n";
 	QDP_abort(1);
       }
 
@@ -379,32 +376,7 @@ namespace QDP {
   void gpu_auto_detect()
   {
     VALIDATECALL(zeDeviceGetProperties(hDevice, &deviceProperties));
-
-#if 0
-    QDPIO::cout << "Device                         : " << deviceProperties.name << "\n" 
-              << "Type                           : " << ((deviceProperties.type == ZE_DEVICE_TYPE_GPU) ? "GPU" : "FPGA") << "\n"
-              << "Vendor ID                      : " << std::hex << deviceProperties.vendorId << std::dec << "\n"
-	      << "Max alloc                      : " << deviceProperties.maxMemAllocSize << "\n"
-	      << "Number of threads per EU       : " << deviceProperties.numThreadsPerEU << "\n"
-	      << "The physical EU SIMD width     : " << deviceProperties.physicalEUSimdWidth << "\n"
-	      << "Number of EUs per sub-slice    : " << deviceProperties.numEUsPerSubslice << "\n"
-	      << "Number of sub-slices per slice : " << deviceProperties.numSubslicesPerSlice << "\n"
-	      << "Number of slices               : " << deviceProperties.numSlices << "\n"
-      ;
-#endif
-
     VALIDATECALL(zeDeviceGetComputeProperties(hDevice, &deviceComputeProperties));
-#if 0
-    QDPIO::cout << "Maximum group size total       : " << deviceComputeProperties.maxTotalGroupSize << "\n" ;
-    QDPIO::cout << "Maximum group size X           : " << deviceComputeProperties.maxGroupSizeX << "\n" ;
-    QDPIO::cout << "Maximum group size Y           : " << deviceComputeProperties.maxGroupSizeY << "\n" ;
-    QDPIO::cout << "Maximum group size Z           : " << deviceComputeProperties.maxGroupSizeZ << "\n" ;
-    QDPIO::cout << "Maximum group count X          : " << deviceComputeProperties.maxGroupCountX << "\n" ;
-    QDPIO::cout << "Maximum group count Y          : " << deviceComputeProperties.maxGroupCountY << "\n" ;
-    QDPIO::cout << "Maximum group count Z          : " << deviceComputeProperties.maxGroupCountZ << "\n" ;
-    QDPIO::cout << "Maximum shared local memory    : " << deviceComputeProperties.maxSharedLocalMemory << "\n" ;
-    QDPIO::cout << "Maximum Number of subgroups    : " << deviceComputeProperties.numSubGroupSizes << "\n" ;
-#endif
   }
 
 
@@ -424,15 +396,12 @@ namespace QDP {
   
   void gpu_host_alloc(void **mem , const size_t size)
   {
-
     ze_host_mem_alloc_desc_t hostDesc;
     hostDesc.stype = ZE_STRUCTURE_TYPE_HOST_MEM_ALLOC_DESC;
     hostDesc.pNext = nullptr;
     hostDesc.flags = 0;
     
     VALIDATECALL(zeMemAllocHost(hContext, &hostDesc, size , jit_config_get_pool_alignment() , mem));
-
-    //std::cout << "gpu_host_alloc size = " << size << "  addr = " << *mem << "\n";
   }
 
 
@@ -452,9 +421,7 @@ namespace QDP {
   void gpu_memcpy_h2d( void * dest , const void * src , size_t size )
   {
     VALIDATECALL(zeCommandListAppendBarrier( cmdList, nullptr, 0, nullptr));
-
     VALIDATECALL(zeCommandListAppendMemoryCopy( cmdList , dest , src , size , ev0 , 0 , nullptr ));
-
     VALIDATECALL(zeEventHostSynchronize(ev0, UINT64_MAX));
     VALIDATECALL(zeEventHostReset( ev0 ));
   }
@@ -463,9 +430,7 @@ namespace QDP {
   void gpu_memcpy_d2h( void * dest , const void * src , size_t size )
   {
     VALIDATECALL(zeCommandListAppendBarrier( cmdList, nullptr, 0, nullptr));
-
     VALIDATECALL(zeCommandListAppendMemoryCopy( cmdList , dest , src , size , ev0 , 0 , nullptr ));
-
     VALIDATECALL(zeEventHostSynchronize( ev0 , UINT64_MAX));
     VALIDATECALL(zeEventHostReset( ev0 ));
   }
@@ -475,8 +440,6 @@ namespace QDP {
 
   bool gpu_malloc(void **mem , size_t size )
   {
-    //std::cout << __PRETTY_FUNCTION__ << " size = " << size << "\n";
-
     ze_device_mem_alloc_desc_t memAllocDesc;
     memAllocDesc.stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC;
     memAllocDesc.pNext = nullptr;
@@ -502,7 +465,7 @@ namespace QDP {
   }
 
 
-#if defined (QDP_ENABLE_MANAGED_MEMORY)
+
   void gpu_memcpy( void * dest , const void * src , size_t size )
   {
     VALIDATECALL(zeCommandListAppendBarrier( cmdList, nullptr, 0, nullptr));
@@ -529,9 +492,7 @@ namespace QDP {
 
     return true;
   }
-#endif
 
-  
   
   void gpu_free(const void *mem )
   {
@@ -551,9 +512,119 @@ namespace QDP {
   {
   }
 
+#if 1
+  bool get_jitf(JitFunction& func,
+              const std::string& fname_spirv,
+              const std::string& kernel_name,
+              const std::string& pretty,
+              const std::string& str_compute)
+{
+  if (jit_config_get_verbose_output()) {
+    QDPIO::cout << "get_jitf enter\n";
+  }
 
+  func.set_kernel_name(kernel_name);
+  func.set_pretty(pretty);
 
+  ze_module_handle_t module = nullptr;
+  ze_kernel_handle_t kernel = nullptr;
+  ze_module_build_log_handle_t buildLog = nullptr;
 
+  std::ifstream file(fname_spirv.c_str(), std::ios::binary);
+  if (!file.is_open()) {
+    QDPIO::cerr << "Error reading file: " << fname_spirv << "\n";
+    return false;
+  }
+
+  if (jit_config_get_verbose_output()) {
+    QDPIO::cout << "get_jitf opened file\n";
+  }
+
+  file.seekg(0, std::ios::end);
+  std::streamoff end = file.tellg();
+  file.seekg(0, std::ios::beg);
+
+  if (end <= 0) {
+    QDPIO::cerr << "SPIR-V file is empty: " << fname_spirv << "\n";
+    return false;
+  }
+
+  const size_t length = static_cast<size_t>(end);
+  std::vector<uint8_t> spirvInput(length);
+  file.read(reinterpret_cast<char*>(spirvInput.data()), length);
+
+  if (!file) {
+    QDPIO::cerr << "Failed to read full SPIR-V file: " << fname_spirv << "\n";
+    return false;
+  }
+
+  ze_module_desc_t moduleDesc = {};
+  moduleDesc.stype = ZE_STRUCTURE_TYPE_MODULE_DESC;
+  moduleDesc.pNext = nullptr;
+  moduleDesc.format = ZE_MODULE_FORMAT_IL_SPIRV;
+  moduleDesc.inputSize = length;
+  moduleDesc.pInputModule = spirvInput.data();
+  moduleDesc.pBuildFlags = "";
+  moduleDesc.pConstants = nullptr;
+
+  if (jit_config_get_verbose_output()) {
+    QDPIO::cout << "get_jitf module create ...\n";
+  }
+
+  ze_result_t status = zeModuleCreate(hContext, hDevice, &moduleDesc, &module, &buildLog);
+
+  if (jit_config_get_verbose_output()) {
+    QDPIO::cout << "get_jitf module created, status = " << status << "\n";
+  }
+
+  if (buildLog != nullptr) {
+    size_t szLog = 0;
+    ze_result_t logStatus = zeModuleBuildLogGetString(buildLog, &szLog, nullptr);
+    if (logStatus == ZE_RESULT_SUCCESS && szLog > 1) {
+      std::string log(szLog, '\0');
+      logStatus = zeModuleBuildLogGetString(buildLog, &szLog, log.data());
+      if (logStatus == ZE_RESULT_SUCCESS) {
+        QDPIO::cout << "Build log: " << log.c_str() << "\n";
+      }
+    }
+    zeModuleBuildLogDestroy(buildLog);
+    buildLog = nullptr;
+  }
+
+  if (status != ZE_RESULT_SUCCESS || module == nullptr) {
+    QDPIO::cerr << "zeModuleCreate failed for kernel " << kernel_name
+                << " from file " << fname_spirv
+                << " with status " << status << "\n";
+    return false;
+  }
+
+  ze_kernel_desc_t kernelDesc = {};
+  kernelDesc.stype = ZE_STRUCTURE_TYPE_KERNEL_DESC;
+  kernelDesc.pNext = nullptr;
+  kernelDesc.flags = 0;
+  kernelDesc.pKernelName = kernel_name.c_str();
+
+  if (jit_config_get_verbose_output()) {
+    QDPIO::cout << "get_jitf kernel create ...\n";
+  }
+
+  status = zeKernelCreate(module, &kernelDesc, &kernel);
+  if (status != ZE_RESULT_SUCCESS || kernel == nullptr) {
+    QDPIO::cerr << "zeKernelCreate failed for kernel " << kernel_name
+                << " with status " << status << "\n";
+    zeModuleDestroy(module);
+    return false;
+  }
+
+  func.set_function(reinterpret_cast<void*>(kernel));
+
+  if (jit_config_get_verbose_output()) {
+    QDPIO::cout << "Got function!\n";
+  }
+
+  return true;
+}
+#else
   bool get_jitf( JitFunction& func, const std::string& fname_spirv , const std::string& kernel_name , const std::string& pretty , const std::string& str_compute )
   {
     if (jit_config_get_verbose_output())
@@ -572,13 +643,13 @@ namespace QDP {
 
     if (!file.is_open())
       {
-	std::cout << "Error reading file: " << fname_spirv << "\n";
+	QDPIO::cout << "Error reading file: " << fname_spirv << "\n";
 	QDP_abort(1);
       }
 
     if (jit_config_get_verbose_output())
       {
-	QDPIO::cout << "get_jitf opened file\n";
+	QDPIO::cout << "get_jitf opened file: " <<  fname_spirv << std::endl;
       }
 
     file.seekg(0, file.end);
@@ -638,24 +709,11 @@ namespace QDP {
       {
 	QDPIO::cout << "Got function!\n";
       }
-
-    
-    if ( Layout::primaryNode() )
-      {
-        ze_kernel_properties_t pKernelProperties;
-        pKernelProperties.stype = ZE_STRUCTURE_TYPE_KERNEL_PROPERTIES;
-        pKernelProperties.pNext = nullptr;
-        
-        VALIDATECALL(zeKernelGetProperties( kernel , &pKernelProperties ));
-
-        func.set_regs ( pKernelProperties.privateMemSize );
-        func.set_stack( pKernelProperties.spillMemSize );
-        func.set_cmem ( pKernelProperties.localMemSize );
-      }
     
     return true;
   }
-
+#endif
+  
   
   size_t gpu_getMaxGridX()  {return deviceComputeProperties.maxGroupCountX;}
   size_t gpu_getMaxGridY()  {return deviceComputeProperties.maxGroupCountY;}

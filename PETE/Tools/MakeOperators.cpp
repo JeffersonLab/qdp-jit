@@ -328,6 +328,7 @@ int main(int argc, char *argv[])
   
   if (printTags)
   {
+    *ofl << "template <typename T> concept Arithmetic = std::is_arithmetic_v<T>;" << endl << endl;
     printList(*ofl,UnaryOp(),           inputOps["unaryOps"]);
     printList(*ofl,UnaryBoolOp(),       inputOps["unaryBoolOps"]);
     printList(*ofl,UnaryCastOp(),       inputOps["unaryCastOps"]);

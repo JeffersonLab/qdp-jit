@@ -1,16 +1,9 @@
+#ifndef QDP_CONFIG_INTERNAL_H
+#define QDP_CONFIG_INTERNAL_H
+
 /* include/qdp_config_internal.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Parallel-scalar architecture */
-#cmakedefine ARCH_PARSCALAR  @ARCH_PARSCALAR@
-
-/* Parallel-scalar with vector extensions layout */
-#cmakedefine ARCH_PARSCALARVEC 	@ARCH_PARSCLARVEC@ 
-
-/* Scalar architecture */
-#cmakedefine ARCH_SCALAR	@ARCH_SCALAR@
-
-/* Scalar with vector extensions architecture */
-#cmakedefine ARCH_SCALARVEC	@ARCH_SCALARVEC@
+#define ARCH_PARSCALAR 1
 
 /* Double precision */
 #cmakedefine BASE_PRECISION	@BASE_PRECISION@
@@ -18,54 +11,9 @@
 /* Build filedb */
 #cmakedefine BUILD_FILEDB	@BUILD_FILEDB@
 
-/* Propagator optimizations */
-#cmakedefine QDP_PROP_OPT      @QDP_PROP_OPT@
-
 /* CUDA install path */
 #cmakedefine CUDA_DIR		@CUDA_DIR@
 
-/* CUDA C/C++ Compiler */
-#cmakedefine CUDA_GCC		@CUDA_GCC@
-
-/* Define to 1 if you have the `gethostname' function. */
-#cmakedefine HAVE_GETHOSTNAME	@HAVE_GETHOSTNAME@ 
-
-/* Define to 1 if you have the `QMP_abort' function. */
-#cmakedefine HAVE_QMP_ABORT
-
-/* Define to 1 if you have the `QMP_error_exit' function. */
-#cmakedefine HAVE_QMP_ERROR_EXIT
-
-/* Define to 1 if you have the `QMP_verbose' function. */
-#cmakedefine HAVE_QMP_VERBOSE
-
-#cmakedefine HAVE_STRNLEN 	@HAVE_STRNLEN@
-/* Name of package */
-#undef PACKAGE
-
-/* Define to the address where bug reports for this package should be sent. */
-#undef PACKAGE_BUGREPORT
-
-/* Define to the full name of this package. */
-#undef PACKAGE_NAME
-
-/* Define to the full name and version of this package. */
-#undef PACKAGE_STRING
-
-/* Define to the one symbol short name of this package. */
-#undef PACKAGE_TARNAME
-
-/* Define to the home page for this package. */
-#undef PACKAGE_URL
-
-/* Define to the version of this package. */
-#undef PACKAGE_VERSION
-
-/* Enable GPU/JIT */
-#cmakedefine QDPJIT_IS_QDPJITNVVM		@QDPJIT_IS_QDPJITNVVM@
-
-/* Alignment for OLattice */
-#cmakedefine QDP_AC_ALIGNMENT_SIZE		@QDP_AC_ALIGNMENT_SIZE@
 
 /* CUDA */
 #cmakedefine QDP_BACKEND_CUDA			@QDP_BACKEND_CUDA@
@@ -73,20 +21,9 @@
 /* ROCM */
 #cmakedefine QDP_BACKEND_ROCM			@QDP_BACKEND_ROCM@
 
-/* AVX */
-#cmakedefine QDP_BACKEND_AVX			@QDP_BACKEND_AVX@
 
 /* L0 */
 #cmakedefine QDP_BACKEND_L0			@QDP_BACKEND_L0@
-
-/* Include CUDA special kernels */
-#cmakedefine QDP_CUDA_SPECIAL			@QDP_CUDA_SPECIAL@
-
-/* Include custom kernels */
-#cmakedefine QDP_CUSTOM_KERNELS			@QDP_CUSTOM_KERNELS@
-
-/* Enable memory debugging */
-#cmakedefine QDP_DEBUG_MEMORY			@QDP_DEBUG_MEMORY@
 
 /* Deep log facility */
 #cmakedefine QDP_DEEP_LOG			@QDP_DEEP_LOG@
@@ -94,32 +31,11 @@
 /* Enable GPU/JIT */
 #cmakedefine QDP_IS_QDPJIT			@QDP_IS_QDPJIT@
 
-/* Compile for LLVM 14.0 series */	
-#cmakedefine QDP_LLVM14				@QDP_LLVM14@
+/* Enable GPU/JIT */
+#cmakedefine QDP_IS_QDPJIT2			@QDP_IS_QDPJIT2@
 
-/* Compile for LLVM 15.0 series */	
-#cmakedefine QDP_LLVM15				@QDP_LLVM15@
-
-/* Compile for LLVM 16.0 series */	
-#cmakedefine QDP_LLVM16				@QDP_LLVM16@
-
-/* Compile for LLVM 17.0 series */	
-#cmakedefine QDP_LLVM17				@QDP_LLVM17@
-
-/* Compile for LLVM 18.0 series */	
-#cmakedefine QDP_LLVM18				@QDP_LLVM18@
-
-/* Compile for LLVM 19.0 series */
-#cmakedefine QDP_LLVM19             @QDP_LLVM19@
-
-/* Compile for LLVM 20 series */
-#cmakedefine QDP_LLVM20				@QDP_LLVM20@
-
-/* Compile for LLVM 22 series */
-#cmakedefine QDP_LLVM22				@QDP_LLVM22@
-
-/* Codegen uses vector instructions */	
-#cmakedefine QDP_CODEGEN_VECTOR			@QDP_CODEGEN_VECTOR@
+/* Host compiler */
+#cmakedefine QDP_HOST_COMPILER		        @QDP_HOST_COMPILER@
 
 /* Number of color components */
 #cmakedefine QDP_NC				@QDP_NC@
@@ -129,9 +45,6 @@
 
 /* Number of spin components */
 #cmakedefine QDP_NS				@QDP_NS@
-
-/* Use checkerboarded layout */
-#cmakedefine QDP_USE_VNODE_LAYOUT		@QDP_USE_VNODE_LAYOUT@
 
 /* Use checkerboarded layout */
 #cmakedefine QDP_USE_CB2_LAYOUT			@QDP_USE_CB2_LAYOUT@
@@ -144,16 +57,6 @@
 
 /* Comm split for local ranks */
 #cmakedefine QDP_USE_COMM_SPLIT_INIT	        @QDP_USE_COMM_SPLIT_INIT@
-
-/* CUDA use managed memory */
-#cmakedefine QDP_ENABLE_MANAGED_MEMORY	        @QDP_ENABLE_MANAGED_MEMORY@
-
-/* Fix for ROCM5 */
-#cmakedefine QDP_ROCM5FIX                       @QDP_ROCM5FIX@
-#cmakedefine QDP_ROCM553FIX                     @QDP_ROCM553FIX@
-
-/* For ROCMs earlier than 5.2.x */
-#cmakedefine QDP_ROCM_PRE                       @QDP_ROCM_PRE@
 
 /* Enable HDF5 support */
 #cmakedefine QDP_USE_HDF5			@QDP_USE_HDF5@
@@ -173,8 +76,10 @@
 /* ROCM install path */
 #cmakedefine ROCM_DIR				"@ROCM_DIR@"
 
+/* QDP-JIT install path */
 #cmakedefine QDPJIT_INSTALL_DIR			"@QDPJIT_INSTALL_DIR@"
 
+#define QDP_CONFIG_PACKAGE_STRING  "@PROJECT_NAME@"
+#define QDP_CONFIG_PACKAGE_VERSION "@QDP-JIT_VERSION@"
 
-#define PACKAGE_STRING  "@PROJECT_NAME@"
-#define PACKAGE_VERSION "@QDP-JIT_VERSION@"
+#endif

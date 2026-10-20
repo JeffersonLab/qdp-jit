@@ -2,7 +2,8 @@
 #define QDP_JIT_FUNCTION_H
 
 #include <cassert>
-#include<signal.h>
+#include <signal.h>
+#include <unistd.h>
 
 namespace QDP {
 
@@ -13,46 +14,50 @@ namespace QDP {
   
   class DynKey
   {
-    mutable std::vector<int> keys;
-    mutable bool offnode_comms = false;
+    std::vector<int> keys;
     
   public:
-    void add( int i ) const
+    void add( int i ) 
     {
       keys.push_back( i );
     }
 
-    void set_offnode_comms( bool s ) const
+    void add( const Shape& shape ) 
     {
-      offnode_comms = s;
+      add( shape.ns() );
+      add( shape.nc() );
     }
 
-    bool get_offnode_comms() const
+    void add( JitDataFormat data_format ) 
     {
-      return offnode_comms;
+      add( data_format.order == JitDataOrder::SiteSlow ? 10 : 11 );
+      add( data_format.storage == JitStorage::Half ? 21 : 20 );
     }
 
-  
-    bool operator <(const DynKey& rhs) const
-    {
-      if ( rhs.keys.size() != keys.size() )
-	{
-	  std::cout << " DynKey: some weird error" << std::endl;
-	  QDP_abort(1);
-	}
 
-      for ( int i = 0 ; i < keys.size() ; ++i )
-	{
-	  if ( keys.at(i) > rhs.keys.at(i) )
-	    {
-	      return false;
-	    }
-	  if ( keys.at(i) < rhs.keys.at(i) )
-	    {
-	      return true;
-	    }
-	}
-      return false;
+    int size() const
+    {
+      return keys.size();
+    }
+
+    void reserve( size_t n )
+    {
+      keys.reserve( n );
+    }
+
+    void add( const DynKey& k )
+    {
+      keys.insert( keys.end() , k.keys.begin() , k.keys.end() );
+    }
+
+    bool operator<(const DynKey& rhs) const
+    {
+      return keys < rhs.keys;
+    }
+
+    bool operator==(const DynKey& rhs) const
+    {
+      return keys == rhs.keys;
     }
 
     friend std::ostream& operator<<(std::ostream &os, const DynKey& rhs);
@@ -102,6 +107,9 @@ namespace QDP {
     void set_kernel_name( const std::string& s ) { kernel_name = s; }
     void set_pretty( const std::string& s ) { pretty = s; }
     void add_timing( float t ) { timings.push_back(t); }
+
+    void setIsGPU(bool g) { gpu = g; }
+    bool isGPU() const {return gpu;}
     
     int get_stack() { return stack; }
     int get_spill_store() { return spill_store; }
@@ -118,13 +126,19 @@ namespace QDP {
 
     void set_dest_id( int i ) { dest_id = i; }
     int  get_dest_id() { return dest_id; }
+    
 
-    
-    void set_enable_tuning() { enable_tuning = true; }
-    bool get_enable_tuning() { return enable_tuning; }
-    
-    void set_threads_per_block( int i ) { threads_per_block = i; }
-    int  get_threads_per_block() { return threads_per_block; }
+    void set_explicit_geom() { explicit_geom = true; }
+    bool get_explicit_geom() const { return explicit_geom; }
+
+    void set_workgroup_bound( int n ) { workgroup_bound = n; }
+    int  get_workgroup_bound() const { return workgroup_bound; }
+
+    void set_num_params( int n ) { num_params = n; }
+    int  get_num_params() const { return num_params; }
+
+    void set_plan_structure( std::vector<int> s ) { plan_structure = std::move(s); }
+    const std::vector<int>& get_plan_structure() const { return plan_structure; }
 
 #ifdef QDP_DEEP_LOG
     void set_is_lat( bool lat ) { isLat = lat ? 1 : 0; }
@@ -136,9 +150,6 @@ namespace QDP {
 	}
       return isLat == 1;
     }
-    // int start;
-    // int count;   // number of elements of size T
-    // int size_T;
     std::string type_W;
   private:
     int isLat = -1;
@@ -150,9 +161,7 @@ namespace QDP {
     double time_passes = 0.;
     double time_codegen = 0.;
     double time_dynload = 0.;
-#ifdef QDP_BACKEND_ROCM
     double time_linking = 0.;
-#endif
     
   private:
     void check_empty();
@@ -177,24 +186,21 @@ namespace QDP {
 
     std::vector<float> timings;
 
-    // for tuning
     int dest_id  = -1;
-    bool enable_tuning = false;
-    
-    // Best configuration resulting from tuning
-    int  threads_per_block = -1;
-    bool tuned = false;
 
+    bool explicit_geom   = false;
+    int  workgroup_bound = 0;
+
+    int  num_params = -1;
+
+    std::vector<int> plan_structure;
+
+    bool gpu;
   };
 
 
   std::vector<JitFunction*>& gpu_get_functions();
 
-#if defined (QDP_CODEGEN_VECTOR)
-  typedef std::map< DynKey , std::array<JitFunction,2> >  JitFunctionMap;
-#else
-  typedef std::map< DynKey , JitFunction >  JitFunctionMap;
-#endif
   
 } // namespace
 

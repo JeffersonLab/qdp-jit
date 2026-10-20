@@ -1,12 +1,9 @@
-#ifndef QDP_FILE_DEEP_LOG
-#define QDP_FILE_DEEP_LOG
-
-#include <unistd.h>  // for sleep()
-#include <csignal>   // for raise() and SIGSEGV
+#ifndef QDP_DEEP_LOG_H
+#define QDP_DEEP_LOG_H
 
 namespace QDP {
 
-
+#if 1
 class JITLog
 {
   std::fstream logger_cmp;
@@ -39,7 +36,7 @@ public:
   void log( const OLattice<T>& dest , const Subset& s )
   {
     if (!logging) return;
-
+    
     check_created();
 
     if (compare)
@@ -49,16 +46,13 @@ public:
   }
 
   
-  // template<class T> void log_create( const OLattice<T>& dest , const Subset& s );  
-  // template<class T> void log_compare( const OLattice<T>& dest , const Subset& s );
-
   template<class T>
   void log_create( const OLattice<T>& dest , const Subset& s )
   {
-    QDPIO::cout << "log " << log_count++ << " add lattice, sitecount = " << s.numSiteTable() << endl;
-    for (int i = 0 ; i < s.numSiteTable() ; ++i )
+    QDPIO::cout << "log " << log_count++ << " add lattice, sitecount = " << s.numSiteTable(dest.layout()) << endl;
+    for (int i = 0 ; i < s.numSiteTable(dest.layout()) ; ++i )
       {
-	dest.writeElemTo( s.siteTable()[i] , logger_cmp );
+	dest.writeElemTo( s.siteTable(dest.layout())[i] , logger_cmp );
       }
   }
 
@@ -66,18 +60,18 @@ public:
   template<class T>
   void log_compare( const OLattice<T>& dest , const Subset& s )
   {
-    OScalar<T> disk;
-    OScalar<T> mem;
+    OScalar<T> disk(dest.shape());
+    OScalar<T> mem(dest.shape());
 
-    QDPIO::cout << "log: compare lattice, sitecount = " << s.numSiteTable() << endl;
+    QDPIO::cout << "log: compare lattice, sitecount = " << s.numSiteTable(dest.layout()) << endl;
 
-    for (int i = 0 ; i < s.numSiteTable() ; ++i )
+    for (int i = 0 ; i < s.numSiteTable(dest.layout()) ; ++i )
       {
 	//QDPIO::cout << "site = " << i << std::endl;
 	
 	disk.readFrom( logger_cmp );
 
-	mem.elem() = dest.elem( s.siteTable()[i] );
+	mem.elem() = dest.elem( s.siteTable(dest.layout())[i] );
 
 	
 	auto ptr_disk = disk.get_ptr();
@@ -98,6 +92,7 @@ public:
       }
   }
 
+  
 
   template<class T>
   void log( const OScalar<T>& dest )
@@ -124,7 +119,7 @@ public:
   template<class T>
   void log_compare( const OScalar<T>& mem )
   {
-    OScalar<T> disk;
+    OScalar<T> disk(mem.shape());
 
     QDPIO::cout << "log: compare scalar" << endl;
 
@@ -150,12 +145,16 @@ public:
   void check_created();
 
 };
-
+#endif
 
   JITLog& QDP_get_global_logger();
 
   
   
+#ifdef QDP_DEEP_LOG
+  //void gpu_deep_logger_close();
+  //void gpu_deep_logger        ( const void* host_ptr , std::string type_W , size_t field_size , std::string pretty , bool isLat );
+#endif
   
 }
 #endif

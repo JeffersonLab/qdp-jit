@@ -1,13 +1,11 @@
-// -*- C++ -*-
+#ifndef QDP_MAP_H
+#define QDP_MAP_H
 
 /*! @file
  * @brief Map classes
  *
  * Support classes for maps/shifts
  */
-
-#ifndef QDP_MAP_H
-#define QDP_MAP_H
 
 //#include <signal.h>
 
@@ -70,12 +68,12 @@ private:
 
 public:
   const Map& map;
-  //std::shared_ptr<RsrcWrapper> pRsrc;
-  QDPHandle::Handle<RsrcWrapper> pRsrc;
+  shared_ptr<RsrcWrapper> pRsrc;
 
   FnMap(const Map& m);
   FnMap(const FnMap& f);
-
+  void init_wrapper(int layout_ref);
+  
   const FnMapRsrc& getResource(int srcnum_, int dstnum_) {
     //assert(pRsrc);
     return pRsrc->getResource( srcnum_ , dstnum_ );
@@ -97,6 +95,41 @@ public:
 
 
 
+template<class T>
+struct HasShift
+{
+  constexpr static bool value = false;
+};
+
+template<class Op, class A, class B>
+struct HasShift< BinaryNode<Op,A,B> >
+{
+  constexpr static bool value = HasShift<A>::value || HasShift<B>::value;
+};
+
+template<class Op, class A, class B, class C>
+struct HasShift< TrinaryNode<Op,A,B,C> >
+{
+  constexpr static bool value = HasShift<A>::value || HasShift<B>::value || HasShift<C>::value;
+};
+
+template<class Op, class A>
+struct HasShift< UnaryNode<Op,A> >
+{
+  constexpr static bool value = HasShift<A>::value;
+};
+
+template<class A>
+struct HasShift< UnaryNode<FnMap,A> >
+{
+  constexpr static bool value = true;
+};
+
+template<typename T> concept ConceptHasShift   =  HasShift<T>::value;
+template<typename T> concept ConceptHasNoShift = !HasShift<T>::value;
+
+
+
 //! General permutation map class for communications
 class Map
 {
@@ -104,8 +137,7 @@ public:
   //! Constructor - does nothing really
   Map() {}
 
-  //! Destructor
-  ~Map() {}
+  ~Map();
 
   //! Constructor from a function object
   Map(const MapFunc& fn) {make(fn);}
@@ -139,64 +171,21 @@ public:
     }
 
 
-public:
-  void make_lazy(const Subset& s) const;
-  //! Accessor to offsets
-  const multi1d<int>& goffset(const Subset& s) const {
-    if (!lazy_done_s(s))
-      QDP_error_exit("goffest used before lazy component was called");
-    assert( s.getId() >= 0 && s.getId() < goffsets.size() && "goffset: subset Id out of range");
-    return goffsets[s.getId()];
-  }
-  const multi1d<int>& soffset(const Subset& s) const {
-    if (!lazy_done_s(s))
-      QDP_error_exit("soffest used before lazy component was called");
-    assert( s.getId() >= 0 && s.getId() < soffsets.size() && "soffset: subset Id out of range");
-    return soffsets[s.getId()];
-  }
-  const multi1d<int>& roffset(const Subset& s) const {
-    if (!lazy_done_s(s))
-      QDP_error_exit("roffest used before lazy component was called");
-    assert( s.getId() >= 0 && s.getId() < roffsets.size() && "roffset: subset Id out of range");
-    return roffsets[s.getId()];
-  }
-#ifdef QDP_CODEGEN_VECTOR
-  const std::vector<int>& loffset(const Subset& s) const {
-    if (!lazy_done_s(s))
-      QDP_error_exit("loffest used before lazy component was called");
-    assert( s.getId() >= 0 && s.getId() < loffsets.size() && "loffset: subset Id out of range");
-    return loffsets[s.getId()];
-  }
-#endif
-  int getRoffsetsId(const Subset& s) const { 
-    if (!lazy_done_s(s))
-      make_lazy(s);
-    assert( s.getId() >= 0 && s.getId() < roffsets.size() && "roffset: subset Id out of range");
-    return roffsetsId[s.getId()];
-  }
-  int getSoffsetsId(const Subset& s) const { 
-    if (!lazy_done_s(s))
-      make_lazy(s);
-    assert( s.getId() >= 0 && s.getId() < soffsets.size() && "soffset: subset Id out of range");
-    return soffsetsId[s.getId()];
-  }
-  int getGoffsetsId(const Subset& s) const { 
-    if (!lazy_done_s(s))
-      make_lazy(s);
-    assert( s.getId() >= 0 && s.getId() < goffsets.size() && "goffset: subset Id out of range");
-    return goffsetsId[s.getId()];
-  }
-  const multi1d<int>& get_destnodes_num(const Subset& s) const {
-    if (!lazy_done_s(s))
-      make_lazy(s);
-    return destnodes_num[s.getId()];
-  }
-  const multi1d<int>& get_srcenodes_num(const Subset& s) const {
-    if (!lazy_done_s(s))
-      make_lazy(s);
-    return srcenodes_num[s.getId()];
-  }
+  void make_lazy(const Subset& s, int ref) const;
+
+  const multi1d<int>& goffset(const Subset& s, int ref) const { return done( s , ref , "goffset" ).goffsets; }
+  const multi1d<int>& soffset(const Subset& s, int ref) const { return done( s , ref , "soffset" ).soffsets; }
+  const multi1d<int>& roffset(const Subset& s, int ref) const { return done( s , ref , "roffset" ).roffsets; }
+
+  int getRoffsetsId   (const Subset& s, int ref) const { return lazy(s,ref).roffsetsId; }
+  int getSoffsetsId   (const Subset& s, int ref) const { return lazy(s,ref).soffsetsId; }
+  int getGoffsetsId   (const Subset& s, int ref) const { return lazy(s,ref).goffsetsId; }
+  int get_destnode_num(const Subset& s, int ref) const { return lazy(s,ref).destnode_num; }
+  int get_srcenode_num(const Subset& s, int ref) const { return lazy(s,ref).srcenode_num; }
+
   int getId() const {
+    if (!offnodeP)
+      return 0;
     if (myId < 0)
       {
 	QDPIO::cout << "internal error. Map::getId called before lazy evaluation for any subset\n";
@@ -207,63 +196,102 @@ public:
   }
   bool get_offnodeP() const { return offnodeP; }
   bool hasOffnode() const   { return offnodeP; }
-  const multi1d<int>& get_destnodes() const {
-    return destnodes;
-  }
-  const multi1d<int>& get_srcenodes() const {
-    return srcenodes;
-  }
-  bool lazy_done_s(const Subset& s) const {
-    if (lazy_done.size() > 0  &&  lazy_done.size() < s.getId() ) {
-      QDPIO::cout << "subset Id out of range. Shifts on a user-defined subset are not supported.\n";
-      QDP_error_exit("giving up");
-    }
-    if (lazy_done.size() < 1)
+
+  int get_destnode(int ref) const { return layout( ref , "get_destnode" ).destnode; }
+  int get_srcenode(int ref) const { return layout( ref , "get_srcenode" ).srcenode; }
+
+  bool lazy_done_s(const Subset& s, int ref) const {
+    const int id = s.getId();
+    if (id < 0)
+      {
+	QDPIO::cerr << "Map: subset without id (not part of a set)" << std::endl;
+	QDP_abort(1);
+      }
+    auto it = layouts.find( ref );
+    if ( it == layouts.end() )
       return false;
-    return lazy_done[ s.getId() ];
+    const std::deque<subset_t>& subsets = it->second.subsets;
+    return id < (int)subsets.size() && subsets[id].done &&
+      subsets[id].generation == MasterSet::Instance().generation( id );
   }
 
 
-
-private:
   //! Hide copy constructor
-  Map(const Map&) {}
+  Map(const Map&) = delete;
 
-  //! Hide operator=
-  void operator=(const Map&) {}
+  //! Hide assignment operator
+  Map& operator=(const Map&) = delete;
 
 private:
-  mutable multi1d< multi1d<int> > goffsets;    // [subset no.][linear index] > 0 local, < 0 receive buffer index
-  mutable multi1d< multi1d<int> > soffsets;    // [subset no.][0..N] = linear index   N = destnodes_num
-  mutable multi1d< multi1d<int> > roffsets;    // [subset no.][0..N] = linear index   N = srcenodes_num
+  struct subset_t
+  {
+    multi1d<int> goffsets;
+    multi1d<int> soffsets;
+    multi1d<int> roffsets;
+
+    int goffsetsId = -1;
+    int soffsetsId = -1;
+    int roffsetsId = -1;
+
+    int srcenode_num = 0;
+    int destnode_num = 0;
+
+    bool done = false;
+    int  generation = 0;
+  };
+
+  struct map_t
+  {
+    std::deque<subset_t> subsets;
+
+    // LAZY
+    multi1d< multi1d<int> > lazy_fcoord;
+    multi1d< multi1d<int> > lazy_bcoord;
+    multi1d<int>    srcnode;
+    multi1d< multi1d<int> > lazy_destnode_fcoord;
+
+    int srcenode;
+    int destnode;
+  };
+
+
+  const subset_t& lazy(const Subset& s, int ref) const
+  {
+    if (!lazy_done_s(s,ref))
+      make_lazy(s,ref);
+    return layouts[ ref ].subsets[ s.getId() ];
+  }
+
+  const subset_t& done(const Subset& s, int ref, const char* what) const
+  {
+    if (!lazy_done_s(s,ref))
+      {
+	QDPIO::cerr << "Map: " << what << " used before the lazy component was built" << std::endl;
+	QDP_abort(1);
+      }
+    return layouts[ ref ].subsets[ s.getId() ];
+  }
+
+  const map_t& layout( int ref , const char* what ) const
+  {
+    auto it = layouts.find( ref );
+    if ( it == layouts.end() )
+      {
+	QDPIO::cerr << "Map " << what << ": map not made for layout " << ref << std::endl;
+	QDP_abort(1);
+      }
+    return it->second;
+  }
+
+  void signoff_lazy( subset_t& l ) const;
+
+
+  mutable std::map< int , map_t > layouts;
   
-  mutable multi1d<int> roffsetsId; // [subset no.]
-  mutable multi1d<int> soffsetsId; // [subset no.]
-  mutable multi1d<int> goffsetsId; // [subset no.]
-
-#if defined (QDP_CODEGEN_VECTOR)
-  mutable std::vector< std::vector<int> > loffsets;    // [subset no.][0..N] = linear index   N = srcenodes_num
-  mutable multi1d<int> loffsetsId; // [subset no.]
-#endif
-
   mutable int myId = -1; // master map id
 
-  multi1d<int> srcenodes;                   // node number index = node number
-  multi1d<int> destnodes;                   // node number index = node number
-
-  mutable multi1d< multi1d<int> > srcenodes_num;    // [subset no.][node number index] = number of sites
-  mutable multi1d< multi1d<int> > destnodes_num;    // [subset no.][node number index] = number of sites
-
   // Indicate off-node communications is needed;
-  bool offnodeP;
-
-
-  // LAZY
-  multi1d< multi1d<int> > lazy_fcoord;
-  multi1d< multi1d<int> > lazy_bcoord;
-  mutable multi1d<int>    srcnode;
-  multi1d< multi1d<int> > lazy_destnodes0_fcoord;
-  mutable multi1d<bool>   lazy_done;                  // [subset no.]
+  bool offnodeP = false;
 };
 
 
@@ -271,12 +299,17 @@ private:
 
 
 
+namespace Gather {
+  template<class T1, class RHS>
+  void run( int send_buf_id , const Map& map , const QDPExpr<RHS,OLattice<T1> >& rhs , const Subset& subset , int layout_ref , bool set_l0_event );
+}
+
+
 struct FnMapJIT
 {
   IndexRet index;
   const Map& map;
-  //std::shared_ptr<RsrcWrapper> pRsrc;
-  QDPHandle::Handle<RsrcWrapper> pRsrc;
+  shared_ptr<RsrcWrapper> pRsrc;
 
   FnMapJIT(const FnMap& fnmap,const IndexRet& i): 
     index(i), map(fnmap.map), pRsrc(fnmap.pRsrc)  {}
@@ -295,411 +328,105 @@ struct FnMapJIT
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 template<class A>
-struct ForEach<UnaryNode<FnMap, A>, ParamLeaf, TreeCombine>
+struct ForEach<UnaryNode<FnMap, A>, MGParamLeaf, TreeCombine>
 {
-  typedef typename ForEach<A, EvalLeaf1, OpCombine>::Type_t InnerTypeA_t;
-  typedef typename Combine1<InnerTypeA_t, FnMap, OpCombine>::Type_t InnerType_t;
-  typedef typename ForEach< UnaryNode<FnMapJIT, A> , ParamLeaf, TreeCombine>::Type_t Type_t;
+  typedef typename ForEach<A, EvalLeaf1, OpCombine>::Type_t InnerType_t;
+  typedef typename ForEach< UnaryNode<FnMapJIT, A> , MGParamLeaf, TreeCombine>::Type_t Type_t;
   inline
-  static Type_t apply(const UnaryNode<FnMap, A>& expr, const ParamLeaf &p, const TreeCombine &c)
+  static Type_t apply(const UnaryNode<FnMap, A>& expr, MGParamLeaf &p, const TreeCombine &c)
   {
-    const Map& map = expr.operation().map;
-    FnMap& fnmap = const_cast<FnMap&>(expr.operation());
     typedef typename WordType<InnerType_t>::Type_t AWordType_t;
+
+    const PlanEntry& e = p.next( PlanEntry::Kind::Shift );
 
     IndexRet index_pack;
     index_pack.p_multi_index = llvm_add_param<int*>();
-
-    if (qdp_jit_config_get_opt_shifts())
-      {
-	if (map.hasOffnode())
-	  {      
-	    index_pack.p_recv_buf    = llvm_add_param<AWordType_t*>();
-	  }
-      }
-    else
-      {
-	index_pack.p_recv_buf    = llvm_add_param<AWordType_t*>();
-      }
-
-    
-    return Type_t( FnMapJIT( expr.operation() , index_pack ) , 
-		   ForEach< A , ParamLeaf , TreeCombine >::apply( expr.child() , p , c ) );
-  }
-};
-
-
-template<class A>
-struct ForEach<UnaryNode<FnMap, A>, ParamLeafScalar, TreeCombine>
-{
-  typedef typename ForEach<A, EvalLeaf1, OpCombine>::Type_t InnerTypeA_t;
-  typedef typename Combine1<InnerTypeA_t, FnMap, OpCombine>::Type_t InnerType_t;
-  typedef typename ForEach< UnaryNode<FnMapJIT, A> , ParamLeafScalar, TreeCombine>::Type_t Type_t;
-  inline
-  static Type_t apply(const UnaryNode<FnMap, A>& expr, const ParamLeafScalar &p, const TreeCombine &c)
-  {
-    const Map& map = expr.operation().map;
-    FnMap& fnmap = const_cast<FnMap&>(expr.operation());
-    typedef typename WordType<InnerType_t>::Type_t AWordType_t;
-
-    IndexRet index_pack;
-    index_pack.p_multi_index = llvm_add_param<int*>();
-
-    if (qdp_jit_config_get_opt_shifts())
-      {
-	if (map.hasOffnode())
-	  {      
-	    index_pack.p_recv_buf    = llvm_add_param<AWordType_t*>();
-	  }
-      }
-    else
-      {
-	index_pack.p_recv_buf    = llvm_add_param<AWordType_t*>();
-      }
+    index_pack.p_recv_buf    = llvm_add_param<AWordType_t*>();
+    index_pack.offnode       = e.offnode != 0;
 
     return Type_t( FnMapJIT( expr.operation() , index_pack ) , 
-		   ForEach< A , ParamLeafScalar , TreeCombine >::apply( expr.child() , p , c ) );
+		   ForEach< A , MGParamLeaf , TreeCombine >::apply( expr.child() , p , c ) );
   }
 };
 
 
-
-
-
-
-template<class A>
-struct ForEach<UnaryNode<FnMapJIT, A>, ViewLeaf, OpCombine>
-  {
-    typedef typename ForEach<A, ViewLeaf, OpCombine>::Type_t TypeA_t;
-    typedef typename Combine1<TypeA_t, FnMapJIT , OpCombine>::Type_t Type_t; // This is a REG container
-    inline
-    static Type_t apply(const UnaryNode<FnMapJIT, A>& expr, const ViewLeaf &v, const OpCombine &o)
-    {
-      //
-      // ViewLeaf::handle_multi_index turned off removed the multi-index conditional in the SIMD 'interior' code
-      // even in the case the map has offnode comms. The correctness is given by the sitetable.
-      //
-      if (qdp_jit_config_get_opt_shifts())
-	{
-	  if (v.handle_multi_index && expr.operation().map.hasOffnode())
-	    {
-	      Type_t ret;
-	      Type_t ret_phi0;
-	      Type_t ret_phi1;
-      
-	      IndexRet index = expr.operation().index;
-
-	      llvm::Value * r_multi_index = llvm_array_type_indirection<int>( index.p_multi_index , v.getIndex() );
-
-	      JitIf inRecvBuffer( llvm_lt( r_multi_index , llvm_create_value(0) ) );
-	      {
-		llvm::Value *idx_buf = llvm_sub ( llvm_neg ( r_multi_index ) , llvm_create_value(1) );
-
-		IndexDomainVector args;
-		args.push_back( make_pair( Layout::sitesOnNode() , idx_buf ) );
-		args.push_back( make_pair( 1 , llvm_create_value(0) ) );
-
-		typename JITType<Type_t>::Type_t t_jit_recv;
-		t_jit_recv.setup( llvm_derefParam(index.p_recv_buf) ,
-				  JitDeviceLayout::Scalar ,
-				  args );
-
-		ret_phi0.setup( t_jit_recv );
-	      }
-	      inRecvBuffer.els();
-	      {
-		ViewLeaf vv( JitDeviceLayout::Coalesced , r_multi_index );
-		ret_phi1 = Combine1<TypeA_t, 
-				    FnMapJIT , 
-				    OpCombine>::combine(ForEach<A, ViewLeaf, OpCombine>::apply(expr.child(), vv, o) , 
-							expr.operation(), o);
-	      }
-	      inRecvBuffer.end();
-
-	      qdpPHI( ret , 
-		      ret_phi0 , inRecvBuffer.get_block_true() ,
-		      ret_phi1 , inRecvBuffer.get_block_false() );
-      
-	      return ret;
-	    }
-	  else
-	    {
-	      IndexRet index = expr.operation().index;
-
-	      llvm::Value * r_multi_index = llvm_array_type_indirection<int>( index.p_multi_index , v.getIndex() );
-
-	      ViewLeaf vv( JitDeviceLayout::Coalesced , r_multi_index );
-
-	      return Combine1<TypeA_t, 
-			      FnMapJIT , 
-			      OpCombine>::combine(ForEach<A, ViewLeaf, OpCombine>::apply(expr.child(), vv, o) , 
-						  expr.operation(), o);
-	    }
-	}
-      else
-	{
-	  Type_t ret;
-	  Type_t ret_phi0;
-	  Type_t ret_phi1;
-      
-	  IndexRet index = expr.operation().index;
-
-	  llvm::Value * r_multi_index = llvm_array_type_indirection<int>( index.p_multi_index , v.getIndex() );
-
-	  JitIf inRecvBuffer( llvm_lt( r_multi_index , llvm_create_value(0) ) );
-	  {
-	    llvm::Value *idx_buf = llvm_sub ( llvm_neg ( r_multi_index ) , llvm_create_value(1) );
-
-	    IndexDomainVector args;
-	    args.push_back( make_pair( Layout::sitesOnNode() , idx_buf ) );
-	    args.push_back( make_pair( 1 , llvm_create_value(0) ) );
-
-	    typename JITType<Type_t>::Type_t t_jit_recv;
-	    t_jit_recv.setup( llvm_derefParam(index.p_recv_buf) ,
-			      JitDeviceLayout::Scalar ,
-			      args );
-
-	    ret_phi0.setup( t_jit_recv );
-	  }
-	  inRecvBuffer.els();
-	  {
-	    ViewLeaf vv( JitDeviceLayout::Coalesced , r_multi_index );
-	    ret_phi1 = Combine1<TypeA_t, 
-				FnMapJIT , 
-				OpCombine>::combine(ForEach<A, ViewLeaf, OpCombine>::apply(expr.child(), vv, o) , 
-						    expr.operation(), o);
-	  }
-	  inRecvBuffer.end();
-
-	  qdpPHI( ret , 
-		  ret_phi0 , inRecvBuffer.get_block_true() ,
-		  ret_phi1 , inRecvBuffer.get_block_false() );
-      
-	  return ret;
-	}
-    }
-  };
-
-
-
-
-
-template<class T,int N>
-T viewSpinJit( PSpinMatrixJIT<T,N>& dest , const ViewSpinLeaf& v )
-{
-  if (v.indices.size() != 2)
-    {
-      QDPIO::cout << "at viewSpinJit(spinmat) but not 2 indices provided" << std::endl;
-      QDP_abort(1);
-    }
-  
-  return dest.getJitElem( v.indices[0] , v.indices[1] );
-}
-
-template<class T,int N>
-T viewSpinJit( PSpinVectorJIT<T,N>& dest , const ViewSpinLeaf& v )
-{
-  if (v.indices.size() != 1)
-    {
-      QDPIO::cout << "at viewSpinJit(spinvec) but not 1 index provided" << std::endl;
-      QDP_abort(1);
-    }
-  
-  return dest.getJitElem( v.indices[0] );
-}
-
-template<class T>
-T viewSpinJit( PScalarJIT<T>& dest , const ViewSpinLeaf& v )
-{
-  if (v.indices.size() != 0)
-    {
-      QDPIO::cout << "at viewSpinJit(spinscalar) but not 0 indices provided" << std::endl;
-      QDP_abort(1);
-    }
-  
-  return dest.getJitElem();
-}
-
-
-
-
-
+template<class A> struct IsLatticeLeafJIT : std::false_type {};
+template<class T> struct IsLatticeLeafJIT< OLatticeJIT<T> > : std::true_type {};
+template<class T> struct IsLatticeLeafJIT< Reference< OLatticeJIT<T> > > : std::true_type {};
 
 
 template<class A>
-struct ForEach<UnaryNode<FnMapJIT, A>, ViewSpinLeaf, OpCombine>
-  {
-    typedef typename ForEach<A, ViewSpinLeaf, OpCombine>::Type_t TypeA_t;
-    typedef typename Combine1<TypeA_t, FnMapJIT , OpCombine>::Type_t Type_t; // This is a REG container
-    inline
-    static Type_t apply(const UnaryNode<FnMapJIT, A>& expr, const ViewSpinLeaf &v, const OpCombine &o)
-    {
-      if (qdp_jit_config_get_opt_shifts())
-	{
-	  if (v.handle_multi_index && expr.operation().map.hasOffnode())
-	    {
-	      // multiindex/PHI
-	      Type_t ret;
-	      Type_t ret_phi0;
-	      Type_t ret_phi1;
-
-	      typedef typename ForEach<A, ViewLeaf, OpCombine>::Type_t FullSpinTypeA_t;
-
-	      IndexRet index = expr.operation().index;
-
-	      llvm::Value * r_multi_index = llvm_array_type_indirection<int>( index.p_multi_index , v.getIndex() );
-
-	      JitIf inRecvBuffer( llvm_lt( r_multi_index , llvm_create_value(0) ) );
-	      {
-		llvm::Value *idx_buf = llvm_sub ( llvm_neg ( r_multi_index ) , llvm_create_value(1) );
-
-		IndexDomainVector args;
-		args.push_back( make_pair( Layout::sitesOnNode() , idx_buf ) );
-		args.push_back( make_pair( 1 , llvm_create_value(0) ) );
-
-		typename JITType<FullSpinTypeA_t>::Type_t t_jit_recv;
-		t_jit_recv.setup( llvm_derefParam(index.p_recv_buf) ,
-				  JitDeviceLayout::Scalar ,
-				  args );
-		
-		ret_phi0.setup( viewSpinJit( t_jit_recv , v ) );
-	      }
-	      inRecvBuffer.els();
-	      {
-		ViewSpinLeaf vv( JitDeviceLayout::Coalesced , r_multi_index , v.getIndices() );
-		ret_phi1 = Combine1<TypeA_t, 
-				    FnMapJIT , 
-				    OpCombine>::combine(ForEach<A, ViewSpinLeaf, OpCombine>::apply(expr.child(), vv, o) , 
-							expr.operation(), o);
-	      }
-	      inRecvBuffer.end();
-      
-	      qdpPHI( ret , 
-		      ret_phi0 , inRecvBuffer.get_block_true() ,
-		      ret_phi1 , inRecvBuffer.get_block_false() );
-      
-	      return ret;
-	    }
-	  else
-	    {
-	      // straight return
-	      IndexRet index = expr.operation().index;
-
-	      llvm::Value * r_new_index = llvm_array_type_indirection<int>( index.p_multi_index , v.getIndex() );
-
-	      ViewSpinLeaf vv( JitDeviceLayout::Coalesced , r_new_index , v.getIndices() );
-
-	      return Combine1<TypeA_t, 
-			      FnMapJIT , 
-			      OpCombine>::combine(ForEach<A, ViewSpinLeaf, OpCombine>::apply(expr.child(), vv, o) , 
-						  expr.operation(), o);
-	    }
-	}
-      else
-	{
-	  // multiindex/PHI
-	  Type_t ret;
-	  Type_t ret_phi0;
-	  Type_t ret_phi1;
-
-	  typedef typename ForEach<A, ViewLeaf, OpCombine>::Type_t FullSpinTypeA_t;
-
-	  IndexRet index = expr.operation().index;
-
-	  llvm::Value * r_multi_index = llvm_array_type_indirection<int>( index.p_multi_index , v.getIndex() );
-
-	  JitIf inRecvBuffer( llvm_lt( r_multi_index , llvm_create_value(0) ) );
-	  {
-	    llvm::Value *idx_buf = llvm_sub ( llvm_neg ( r_multi_index ) , llvm_create_value(1) );
-
-	    IndexDomainVector args;
-	    args.push_back( make_pair( Layout::sitesOnNode() , idx_buf ) );
-	    args.push_back( make_pair( 1 , llvm_create_value(0) ) );
-
-	    typename JITType<FullSpinTypeA_t>::Type_t t_jit_recv;
-	    t_jit_recv.setup( llvm_derefParam(index.p_recv_buf) ,
-			      JitDeviceLayout::Scalar ,
-			      args );
-		
-	    ret_phi0.setup( viewSpinJit( t_jit_recv , v ) );
-	  }
-	  inRecvBuffer.els();
-	  {
-	    ViewSpinLeaf vv( JitDeviceLayout::Coalesced , r_multi_index , v.getIndices() );
-	    ret_phi1 = Combine1<TypeA_t, 
-				FnMapJIT , 
-				OpCombine>::combine(ForEach<A, ViewSpinLeaf, OpCombine>::apply(expr.child(), vv, o) , 
-						    expr.operation(), o);
-	  }
-	  inRecvBuffer.end();
-      
-	  qdpPHI( ret , 
-		  ret_phi0 , inRecvBuffer.get_block_true() ,
-		  ret_phi1 , inRecvBuffer.get_block_false() );
-      
-	  return ret;
-	}
-    }
-};
-
-
-
-
-
-
-template<class A>
-struct ForEach<UnaryNode<FnMap, A>, DynKeyTag , OrCombine>
+struct ForEach<UnaryNode<FnMapJIT, A>, MGViewLeaf, OpCombine>
 {
-  typedef typename ForEach< A , DynKeyTag, OrCombine>::Type_t Type_t;
+  typedef typename ForEach<A, MGViewLeaf, OpCombine>::Type_t TypeA_t;
+  typedef typename Combine1<TypeA_t, FnMapJIT , OpCombine>::Type_t Type_t; // This is a JIT container (now)
   inline
-  static Type_t apply(const UnaryNode<FnMap, A>& expr, const DynKeyTag& a, const OrCombine &n)
+  static Type_t apply(const UnaryNode<FnMapJIT, A>& expr, MGViewLeaf &v, const OpCombine &o)
   {
-    const Map& map = expr.operation().map;
-    FnMap& fnmap = const_cast<FnMap&>(expr.operation());
+    IndexRet index = expr.operation().index;
 
-    a.key.add( map.hasOffnode() ? 1 : 0 );
+    llvm::Value * r_multi_index = llvm_array_type_indirection<int>( index.p_multi_index , v.getIndex( 0 ) );
 
-    return map.hasOffnode() || ForEach<A, DynKeyTag , OrCombine>::apply( expr.child() , a , n );
+    if ( IsLatticeLeafJIT<A>::value && !index.offnode )
+      {
+	MGViewLeaf vv( r_multi_index , v.param_leaf() );
+	return Combine1<TypeA_t, 
+			FnMapJIT , 
+			OpCombine>::combine(ForEach<A, MGViewLeaf, OpCombine>::apply(expr.child(), vv, o) , 
+					    expr.operation(), o);
+      }
+
+    DummyJitLeaf jitleaf;
+    Shape shape = forEach( expr.child() , jitleaf , OpEvalShape() ).shape();
+	  
+    Type_t ret = stack_alloc_jit< Type_t >(shape);
+	  
+    JitIf inRecvBuffer( llvm_lt( r_multi_index , llvm_create_value(0) ) );
+    {
+      llvm::Value *idx_buf = llvm_sub ( llvm_neg ( r_multi_index ) , llvm_create_value(1) );
+
+      NestedIndex args;
+      args.push_back( llvm_create_value( Layout::sitesOnNode() ) , idx_buf );
+      args.push_back( llvm_create_value(1) , llvm_create_value(0) );
+
+      Type_t t_jit_recv( llvm_derefParam(index.p_recv_buf) , JitDataOrder::SiteSlow ,args , shape );
+
+      ret = t_jit_recv;
+    }
+    inRecvBuffer.els();
+    {
+      MGViewLeaf vv( r_multi_index , v.param_leaf() );
+      ret = Combine1<TypeA_t, 
+		     FnMapJIT , 
+		     OpCombine>::combine(ForEach<A, MGViewLeaf, OpCombine>::apply(expr.child(), vv, o) , 
+					 expr.operation(), o);
+    }
+    inRecvBuffer.end();
+
+    return ret;
   }
 };
 
 
 
-template<class A>
-struct ForEach<UnaryNode<FnMap, A>, AddressLeaf, NullCombine>
-  {
-    typedef typename ForEach< A , AddressLeaf, NullCombine>::Type_t TypeA_t;
-    typedef TypeA_t Type_t;
-    inline
-    static Type_t apply(const UnaryNode<FnMap, A>& expr, const AddressLeaf &a, const NullCombine &n)
-    {
-      if (qdp_jit_config_get_opt_shifts())
-	{
-	  const Map& map = expr.operation().map;
-	  FnMap& fnmap = const_cast<FnMap&>(expr.operation());
 
-	  a.setId( expr.operation().map.getGoffsetsId(a.subset) );
 
-	  if (map.hasOffnode())
-	    {
-	      a.setId( fnmap.getCached().getRecvBufId() );
-	    }
-      
-	  return Type_t( ForEach<A, AddressLeaf, NullCombine>::apply( expr.child() , a , n ) );
-	}
-      else
-	{
-	  const Map& map = expr.operation().map;
-	  FnMap& fnmap = const_cast<FnMap&>(expr.operation());
 
-	  a.setId( expr.operation().map.getGoffsetsId(a.subset) );
-	  a.setId( map.hasOffnode() ? fnmap.getCached().getRecvBufId() : -1 );
-      
-	  return Type_t( ForEach<A, AddressLeaf, NullCombine>::apply( expr.child() , a , n ) );
-	}
-    }
-  };
+
+
 
 
 
@@ -713,46 +440,49 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
   typedef int Type_t;
   typedef QDPExpr<A,OLattice<InnerType_t> > Expr;
   inline static
-  Type_t apply(const UnaryNode<FnMap, A> &expr, const ShiftPhase1 &f, const BitOrCombine &c)
+  Type_t apply(const UnaryNode<FnMap, A> &expr, ShiftPhase1 &f, const BitOrCombine &c)
   {
     const Map& map = expr.operation().map;
-    FnMap& fnmap = const_cast<FnMap&>(expr.operation());
 
+    FnMap& fnmap = const_cast<FnMap&>(expr.operation());
+    
     Expr subexpr(expr.child());
 
-    if (forEach(subexpr, f , BitOrCombine()) > 0)
+    if (f.in_shift)
       {
 	QDPIO::cerr << "shift of shift is not supported" << std::endl;
 	QDP_abort(1);
       }
-
+    f.in_shift = true;
+    forEach(subexpr, f , BitOrCombine());
+    f.in_shift = false;
 
     if (map.get_offnodeP())
       {
 #if QDP_DEBUG >= 3
 	QDP_info("Map: off-node communications required");
 #endif
+	fnmap.init_wrapper( f.layout_ref );
 
-	int dstnum = map.get_destnodes_num(f.subset)[0]*sizeof(InnerType_t);
-	int srcnum = map.get_srcenodes_num(f.subset)[0]*sizeof(InnerType_t);
+	Shape shape = shape_of( subexpr );
+	//std::cout << "shift phase 1: shape = " << shape;
+	OScalar<InnerType_t> dummy(shape);
+
+	int size_inner = jit_sizeof(dummy);
+	
+	int dstnum = map.get_destnode_num(f.subset,f.layout_ref) * size_inner;
+	int srcnum = map.get_srcenode_num(f.subset,f.layout_ref) * size_inner;
 
 	const FnMapRsrc& rRSrc = fnmap.getResource(srcnum,dstnum);
 
-	static JitFunction function;
-
-	if (function.empty())
-	  {
-	    function_gather_build<InnerType_t>( function , subexpr );
-	  }
-
 #ifdef QDP_BACKEND_L0
-	function_gather_exec(function, rRSrc.getSendBufId() , map , subexpr , f.subset , jit_config_get_gpu_direct() );
+	Gather::run( rRSrc.getSendBufId() , map , subexpr , f.subset , f.layout_ref , jit_config_get_gpu_direct() );
 	if ( jit_config_get_gpu_direct() )
 	  {
 	    gpu_wait_l0_event();
 	  }
 #else
-	function_gather_exec(function, rRSrc.getSendBufId() , map , subexpr , f.subset );
+	Gather::run( rRSrc.getSendBufId() , map , subexpr , f.subset , f.layout_ref , false );
 
 	if ( jit_config_get_gpu_direct() )
 	  {
@@ -761,13 +491,31 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase1 , BitOrCombine>
 #endif
 	
 	rRSrc.send_receive();
-      }
 
-    map.make_lazy(f.subset);
+      }
+    map.make_lazy(f.subset,f.layout_ref);
+    
+
     return map.getId();
   }
 };
 
+
+
+
+template<class A>
+struct ForEach<UnaryNode<FnMap, A>, SelfAssignTag , BitOrCombine>
+{
+  typedef typename ForEach<A, SelfAssignTag, BitOrCombine>::Type_t Type_t;
+  inline static
+  Type_t apply(const UnaryNode<FnMap, A> &expr, SelfAssignTag &f, const BitOrCombine &c)
+  {
+    ++f.shift_depth;
+    Type_t ret = ForEach<A, SelfAssignTag, BitOrCombine>::apply(expr.child(), f, c);
+    --f.shift_depth;
+    return ret;
+  }
+};
 
 
 
@@ -776,7 +524,7 @@ struct ForEach<UnaryNode<FnMap, A>, ShiftPhase2 , CTag>
 {
   typedef int Type_t;
   inline static
-  Type_t apply(const UnaryNode<FnMap, A> &expr, const ShiftPhase2 &f, const CTag &c)
+  Type_t apply(const UnaryNode<FnMap, A> &expr, ShiftPhase2 &f, const CTag &c)
   {
     const Map& map = expr.operation().map;
     FnMap& fnmap = const_cast<FnMap&>(expr.operation());

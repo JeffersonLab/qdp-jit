@@ -1,4 +1,6 @@
-// -*- C++ -*-
+#ifndef QDP_PETE_PETE_H
+#define QDP_PETE_PETE_H
+
 // ACL:license
 // ----------------------------------------------------------------------
 // This software and ancillary information (herein called "SOFTWARE")
@@ -25,9 +27,6 @@
 // or visit the PETE web page at http://www.acl.lanl.gov/pete/.
 // ----------------------------------------------------------------------
 // ACL:license
-
-#ifndef PETE_PETE_PETE_H
-#define PETE_PETE_PETE_H
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -77,7 +76,7 @@
 #define PETE_VERSION_STRING                "PETE 2.1.1"
 #define PETE_VERSION_NUM_STRING            "2.1.1"
 
-#endif // PETE_PETE_PETE_H
+#endif
 
 // ACL:rcsinfo
 // ----------------------------------------------------------------------

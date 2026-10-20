@@ -1,11 +1,6 @@
-// -*- C++ -*-
-
-/*! @file
- * @brief XML IO support
- */
-
 #ifndef QDP_XMLIO_H
 #define QDP_XMLIO_H
+
 
 #include <string>
 #include <sstream>
@@ -13,15 +8,12 @@
 #include <list>
 #include <vector>
 #include <map>
-#include <complex>
 
 #include "xml_simplewriter.h"
 #include "basic_xpath_reader.h"
 
 namespace QDP 
 {
-
-  // Forward declarations
   class XMLReader;
   class XMLWriter;
   class XMLBufferWriter;
@@ -29,96 +21,41 @@ namespace QDP
   class XMLArrayWriter;
 
 
-  /*! @ingroup io
-   * @{
-   */
-
-  //--------------------------------------------------------------------------------
-  //! XML reader class
-  /*!
-    This is used to read data from an XML file using Xpath.
-
-    Note that only the primary node opens and reads XML files. Results from
-    Xpath queries are broadcast to all nodes.
-  */
   class XMLReader : protected XMLXPathReader::BasicXPathReader
   {
   public:
-    //! Empty constructor
     XMLReader();
 
-    //! Construct from contents of file
-    /*!
-      Opens and reads an XML file.
-      \param filename The name of the file.
-    */
     XMLReader(const std::string& filename);
 
-    //! Construct from contents of stream
     XMLReader(std::istream& is);
 
-    //! Construct from contents of a XMLBufferWriter
     XMLReader(const XMLBufferWriter& mw);
 
-    //! Clone a reader but with a possibly different path
     XMLReader(XMLReader& old, const std::string& xpath);
     ~XMLReader();
 
-    /* The meaning of these should be clear to you */
-
-    //! Opens and reads an XML file.
-    /*!
-      \param filename The name of the file
-      \post Any previously opened file is closed.
-    */
     void open(const std::string& filename);
 
-    //! Opens and reads an XML file.
-    /*!
-      \param id The input stream of the file
-      \post Any previously opened file is closed      
-    */
     void open(std::istream& is);
 
-    //! Reads content of a  XMLBufferWriter
     void open(const XMLBufferWriter& mw);
 
-    //! Queries whether the binary file is open
-    /*!
-      \return true if the binary file is open; false otherwise.
-    */
     bool is_open();
 
-    //! Queries whether the XML data has been obtained from another XMLReader
-    /*!
-      A private method allows this XMLReader to be copy the contents of
-      another.
-    */
     bool is_derived() const;
 
-    //! Closes the last file opened
     void close();
     
-    /* So should these, there is just a lot of overloading */
-    //! Xpath query
     void get(const std::string& xpath, std::string& result);
-    //! Xpath query
     void get(const std::string& xpath, int& result);
-    //! Xpath query
     void get(const std::string& xpath, unsigned int& result);
-    //! Xpath query
     void get(const std::string& xpath, short int& result);
-    //! Xpath query
     void get(const std::string& xpath, unsigned short int& result);
-    //! Xpath query
     void get(const std::string& xpath, long int& result);
-    //! Xpath query
     void get(const std::string& xpath, unsigned long int& result);
-    //! Xpath query
     void get(const std::string& xpath, float& result);
-    //! Xpath query
     void get(const std::string& xpath, double& result);
-    //! Xpath query
     void get(const std::string& xpath, bool& result);
 
     //! read integer attributes so that I can read Matrices in XML
@@ -198,15 +135,10 @@ namespace QDP
   //! Xpath query
   void read(XMLReader& xml, const std::string& s, bool& input);
 
-  //! Complex reader
-  void read(XMLReader& xml, const std::string& s, std::complex<float>& param);
-  void read(XMLReader& xml, const std::string& s, std::complex<double>& param);
-
 
   //! Read a XML multi1d element
-  template<class T>
-  inline
-  void read(XMLReader& xml, const std::string& s, multi1d<T>& input)
+  template<class T1>
+  void read(XMLReader& xml, const std::string& s, multi1d< T1 >& input)
   {
     XMLReader arraytop(xml, s);
 
@@ -251,6 +183,10 @@ namespace QDP
     }
   }
 
+
+
+
+  
 
   // Specialized versions for basic types
   template<>
@@ -728,11 +664,6 @@ namespace QDP
     \param output The  contents
   */
   void write(XMLWriter& xml, const std::string& s, const bool& output);
-
-  //! Complex writer
-  void write(XMLWriter& xml, const std::string& s, const std::complex<float>& param);
-  void write(XMLWriter& xml, const std::string& s, const std::complex<double>& param);
-  
 
   // Versions that do not print a name
   XMLWriter& operator<<(XMLWriter& xml, const std::string& output);

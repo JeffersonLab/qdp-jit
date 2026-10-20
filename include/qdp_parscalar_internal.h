@@ -1,58 +1,45 @@
-// -*- C++ -*-
-
-/*! @file
- * @brief Outer lattice routines specific to a parallel platform with scalar layout
- */
-
 #ifndef QDP_PARSCALAR_INTERNAL_H
 #define QDP_PARSCALAR_INTERNAL_H
+
 
 #include "qmp.h"
 
 namespace QDP {
   namespace QDPInternal
   {
-    //! Unsigned accumulate
     inline void sumAnUnsigned(void* inout, void* in)
     {
       *(unsigned int*)inout += *(unsigned int*)in;
     }
 
-    //! Global And
     inline void globalCheckAnd(void* inout, void* in)
     {
       *(unsigned int*)inout = *(unsigned int*)inout & *(unsigned int*)in;
     }
 
-
-    //! Wrapper to get a functional unsigned global sum
     inline void globalSumArray(unsigned int *dest, int len)
     {
       for(int i=0; i < len; i++, dest++)
 	QMP_binary_reduction(dest, sizeof(unsigned int), sumAnUnsigned);
     }
 
-    //! Low level hook to QMP_global_sum
     inline void globalSumArray(int *dest, int len)
     {
       for(int i=0; i < len; i++, dest++)
 	QMP_sum_int(dest);
     }
 
-    //! Low level hook to QMP_global_sum
     inline void globalSumArray(float *dest, int len)
     {
       QMP_sum_float_array(dest, len);
     }
 
-    //! Low level hook to QMP_global_sum
     inline void globalSumArray(double *dest, int len)
     {
       QMP_sum_double_array(dest, len);
     }
 
-    //! Sum across all nodes
-    template<class T>
+    template<Arithmetic T>
     inline void globalSum(T& dest)
     {
       // The implementation here is relying on the structure being packed
@@ -66,7 +53,7 @@ namespace QDP {
 #endif
       globalSumArray((W *)&dest, int(sizeof(T)/sizeof(W))); // call appropriate hook
     }
-
+    
 
 
     template<class T>
@@ -82,7 +69,8 @@ namespace QDP {
       QDPIO::cout << "Calling global sum array with length " << sizeof(T)/sizeof(W) << endl;
 #endif
       if (QMP_get_number_of_nodes() > 1) {
-	globalSumArray((W *)dest.getF(), int(sizeof(T)/sizeof(W))); // call appropriate hook
+	//globalSumArray((W *)dest.get_ptr(), int(sizeof(T)/sizeof(W))); // call appropriate hook
+	globalSumArray((W *)dest.get_ptr(), int( jit_sizeof(dest)/sizeof(W))); // call appropriate hook
       } else {
 #ifdef GPU_DEBUG
 	QDP_debug("global sum: no MPI reduction");
@@ -93,35 +81,29 @@ namespace QDP {
     template<>
     inline void globalSum(double& dest)
     {
-#if 0 
-      QDPIO::cout << "Using simple sum_double" << endl;
-#endif
       QMP_sum_double(&dest);
     }
 
 
-
-    //! Low level hook to QMP_max_double
     inline void globalMaxValue(float* dest)
     {
       QMP_max_float(dest);
     }
 
-    //! Low level hook to QMP_max_double
+
     inline void globalMaxValue(double* dest)
     {
       QMP_max_double(dest);
     }
 
 
-    //! Global max across all nodes
     template<class T>
     inline void globalMax(T& dest)
     {
       typedef typename WordType<T>::Type_t  W;   // find the machine word type
 
       if (QMP_get_number_of_nodes() > 1) {
-	globalMaxValue((W *)dest.getF());
+	globalMaxValue((W *)dest.get_ptr());
       } else {
 #ifdef GPU_DEBUG    
 	QDP_debug("global max: no MPI reduction");
@@ -132,53 +114,47 @@ namespace QDP {
 
 
 
-    //! Low level hook to QMP_min_float
-    inline void globalMinValue(float* dest)
-    {
-      QMP_min_float(dest);
-    }
-
-    //! Low level hook to QMP_min_double
-    inline void globalMinValue(double* dest)
-    {
-      QMP_min_double(dest);
-    }
-
-    //! Global min across all nodes
     template<class T>
-    inline void globalMin(T& dest)
+    struct Broadcaster
     {
-      typedef typename WordType<T>::Type_t  W;   // find the machine word type
-
-      if (QMP_get_number_of_nodes() > 1) {
-	globalMinValue((W *)dest.getF());
-      } else {
-#ifdef GPU_DEBUG    
-	QDP_debug("global min: no MPI reduction");
-#endif      
+      static void send(const T& dest)
+      {
+	static_assert(std::is_trivially_copyable_v<T> && !requires(const T& t) { t.get_ptr(); },
+		      "Broadcaster: only plain data is broadcast by value");
+	QMP_broadcast((void *)&dest, sizeof(T));
       }
-    }
+    };
 
 
-    //! Broadcast from primary node to all other nodes
+    template<class T>
+    struct Broadcaster< OScalar<T> >
+    {
+      static void send(const OScalar<T>& dest)
+      {
+	QMP_broadcast((void *)dest.get_ptr(), jit_sizeof(dest));
+      }
+    };
+
+
+
     template<class T>
     inline void broadcast(T& dest)
     {
-      QMP_broadcast((void *)&dest, sizeof(T));
+      Broadcaster<T>::send(dest);
     }
 
-    //! Broadcast from primary node to all other nodes
+    
     inline void broadcast(void* dest, size_t nbytes)
     {
       QMP_broadcast(dest, nbytes);
     }
 
 
-    //! Wrapper to get a functional global And
     inline void globalAnd(bool& dest)
     {
       QMP_binary_reduction(&dest, sizeof(bool), globalCheckAnd);
     }
+
 
     inline void barrier()
     {

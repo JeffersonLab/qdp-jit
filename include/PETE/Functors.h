@@ -1,4 +1,6 @@
-// -*- C++ -*-
+#ifndef QDP_PETE_FUNCTORS_H
+#define QDP_PETE_FUNCTORS_H
+
 // ACL:license
 // ----------------------------------------------------------------------
 // This software and ancillary information (herein called "SOFTWARE")
@@ -25,9 +27,6 @@
 // or visit the PETE web page at http://www.acl.lanl.gov/pete/.
 // ----------------------------------------------------------------------
 // ACL:license
-
-#ifndef PETE_PETE_FUNCTORS_H
-#define PETE_PETE_FUNCTORS_H
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -101,7 +100,7 @@ struct LeafFunctor<Scalar<T>, EvalLeaf1>
 {
   typedef T Type_t;
   inline static
-  const Type_t &apply(const Scalar<T> &s, const EvalLeaf1 &) 
+  const Type_t &apply(const Scalar<T> &s, EvalLeaf1 &) 
   {
     return s.value();
   }
@@ -122,7 +121,7 @@ struct LeafFunctor<Scalar<T>, EvalLeaf2>
 {
   typedef T Type_t;
   inline static
-  const Type_t &apply(const Scalar<T> &s, const EvalLeaf2 &) 
+  const Type_t &apply(const Scalar<T> &s, EvalLeaf2 &) 
   {
     return s.value();
   }
@@ -145,7 +144,7 @@ struct LeafFunctor<Scalar<T>, EvalLeaf3>
 {
   typedef T Type_t;
   inline static
-  const Type_t &apply(const Scalar<T> &s, const EvalLeaf3 &) 
+  const Type_t &apply(const Scalar<T> &s, EvalLeaf3 &) 
   {
     return s.value();
   }
@@ -169,7 +168,7 @@ struct LeafFunctor<Scalar<T>, EvalLeaf4>
 {
   typedef T Type_t;
   inline static
-  const Type_t &apply(const Scalar<T> &s, const EvalLeaf4 &) 
+  const Type_t &apply(const Scalar<T> &s, EvalLeaf4 &) 
   {
     return s.value();
   }
@@ -194,7 +193,7 @@ struct LeafFunctor<Scalar<T>, EvalLeaf5>
 {
   typedef T Type_t;
   inline static
-  const Type_t &apply(const Scalar<T> &s, const EvalLeaf5 &)
+  const Type_t &apply(const Scalar<T> &s, EvalLeaf5 &)
   {
     return s.value();
   }
@@ -220,7 +219,7 @@ struct LeafFunctor<Scalar<T>, EvalLeaf6>
 {
   typedef T Type_t;
   inline static
-  const Type_t &apply(const Scalar<T> &s, const EvalLeaf6 &) 
+  const Type_t &apply(const Scalar<T> &s, EvalLeaf6 &) 
   {
     return s.value();
   }
@@ -248,7 +247,7 @@ struct LeafFunctor<Scalar<T>, EvalLeaf7>
 {
   typedef T Type_t;
   inline static
-  const Type_t &apply(const Scalar<T> &s, const EvalLeaf7 &) 
+  const Type_t &apply(const Scalar<T> &s, EvalLeaf7 &) 
   {
     return s.value();
   }
@@ -274,7 +273,7 @@ struct LeafFunctor<T, IncrementLeaf>
 {
   typedef int Type_t;
   inline static
-  Type_t apply(const T &cl, const IncrementLeaf &) 
+  Type_t apply(const T &cl, IncrementLeaf &) 
   {
     T &l = const_cast<T &>(cl);
     ++l;
@@ -282,31 +281,13 @@ struct LeafFunctor<T, IncrementLeaf>
   }
 };
 
-#if defined(__MWERKS__)
-
-// Workaround for screwy CWPro 4.1 bug.
-
-template <class T>
-struct LeafFunctor<const T*, IncrementLeaf> 
-{
-  typedef int Type_t;
-  inline static
-  Type_t apply(const T* & const ci, const IncrementLeaf &)
-  {
-    T* &i = const_cast<T* &>(ci);
-    ++i;
-    return 0;
-  }
-};
-
-#endif
   
 template<class T>
 struct LeafFunctor<Scalar<T>, IncrementLeaf>
 {
   typedef int Type_t;
   inline static
-  Type_t apply(const Scalar<T> &, const IncrementLeaf &) 
+  Type_t apply(const Scalar<T> &, IncrementLeaf &) 
   {
     return 0;
   }
@@ -332,7 +313,7 @@ struct LeafFunctor<T, DecrementLeaf>
 {
   typedef int Type_t;
   inline static
-  Type_t apply(const T &cl, const DecrementLeaf &) 
+  Type_t apply(const T &cl, DecrementLeaf &) 
   {
     T &l = const_cast<T &>(cl);
     --l;
@@ -340,28 +321,13 @@ struct LeafFunctor<T, DecrementLeaf>
   }
 };
 
-#if defined(__MWERKS__)
-// Workaround for screwy CWPro 4.1 bug.
-template <class T>
-struct LeafFunctor<const T*, DecrementLeaf> 
-{
-  typedef int Type_t;
-  inline static
-  Type_t apply(const T* & const ci, const IncrementLeaf &)
-  {
-    T* &i = const_cast<T* &>(ci);
-    --i;
-    return 0;
-  }
-};
-#endif
   
 template<class T>
 struct LeafFunctor<Scalar<T>, DecrementLeaf>
 {
   typedef int Type_t;
   inline static
-  Type_t apply(const Scalar<T> &, const DecrementLeaf &) 
+  Type_t apply(const Scalar<T> &, DecrementLeaf &) 
   {
     return 0;
   }
@@ -394,19 +360,6 @@ struct LeafFunctor<ForwardIterator, DereferenceLeaf>
 };
 #endif
 
-#if defined(__MWERKS__)
-// Workaround for screwy CWPro 4.1 bug.
-template <class T>
-struct LeafFunctor<const T*, DereferenceLeaf> 
-{
-  typedef T Type_t;
-  inline static
-  Type_t apply(const T *i, const DereferenceLeaf &)
-  {
-    return *i;
-  }
-};
-#endif
   
 template<class T>
 struct LeafFunctor<Scalar<T>, DereferenceLeaf>
@@ -420,7 +373,7 @@ struct LeafFunctor<Scalar<T>, DereferenceLeaf>
 };
 
 
-#endif // PETE_PETE_FUNCTORS_H
+#endif
 
 // ACL:rcsinfo
 // ----------------------------------------------------------------------

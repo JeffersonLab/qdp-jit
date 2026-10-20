@@ -1,5 +1,5 @@
-#ifndef QDP_EXPR_WRITER
-#define QDP_EXPR_WRITER
+#ifndef QDP_EXPR_WRITER_H
+#define QDP_EXPR_WRITER_H
 
 namespace QDP {
 
@@ -382,21 +382,6 @@ struct LeafFunctor<Word<T>, PrintTag>
 };
 
 
-#if defined (QDP_CODEGEN_VECTOR)  
-template<class T>
-struct LeafFunctor<WordVec<T>, PrintTag>
-{
-  typedef int Type_t;
-  static int apply(const PrintTag &f)
-    {
-      f.os_m << "WordVec<"; 
-      LeafFunctor<T,PrintTag>::apply(f);
-      f.os_m << ">"; 
-      return 0;
-    }
-};
-#endif
-
 
 template<class T>
 struct LeafFunctor<RComplex<T>, PrintTag>
@@ -437,75 +422,75 @@ struct LeafFunctor<PSeed<T>, PrintTag>
     }
 };
 
-template <class T, int N>
-struct LeafFunctor<PColorMatrix<T,N>, PrintTag>
+template <class T>
+struct LeafFunctor<PColorMatrix<T>, PrintTag>
 {
   typedef int Type_t;
   static int apply(const PrintTag &f)
     { 
       f.os_m << "CMat<"; 
       LeafFunctor<T,PrintTag>::apply(f);
-      f.os_m << "," << N << ">"; 
+      //f.os_m << "," << "N" << ">"; 
       return 0;
     }
 };
 
-template <class T, int N>
-struct LeafFunctor<PSpinMatrix<T,N>, PrintTag>
+template <class T>
+struct LeafFunctor<PSpinMatrix<T>, PrintTag>
 {
   typedef int Type_t;
   static int apply(const PrintTag &f)
     { 
       f.os_m << "SMat<"; 
       LeafFunctor<T,PrintTag>::apply(f);
-      f.os_m << "," << N << ">"; 
+      //f.os_m << "," << N << ">"; 
       return 0;
     }
 };
 
-template <class T, int N>
-struct LeafFunctor<PColorVector<T,N>, PrintTag>
+template <class T>
+struct LeafFunctor<PColorVector<T>, PrintTag>
 {
   typedef int Type_t;
   static int apply(const PrintTag &f)
     { 
       f.os_m << "ColorVec<"; 
       LeafFunctor<T,PrintTag>::apply(f);
-      f.os_m << "," << N << ">"; 
+      //f.os_m << "," << N << ">"; 
       return 0;
     }
 };
 
-template <class T, int N>
-struct LeafFunctor<PSpinVector<T,N>, PrintTag>
+template <class T>
+struct LeafFunctor<PSpinVector<T>, PrintTag>
 {
   typedef int Type_t;
   static int apply(const PrintTag &f)
     { 
       f.os_m << "SpinVec<"; 
       LeafFunctor<T,PrintTag>::apply(f);
-      f.os_m << "," << N << ">"; 
+      //f.os_m << "," << N << ">"; 
       return 0;
     }
 };
 
-template <class T, int N, template<class,int> class C>
-struct LeafFunctor<PMatrix<T,N,C>, PrintTag>
+template <class T, template<class> class C>
+struct LeafFunctor<PMatrix<T,C>, PrintTag>
 {
   typedef int Type_t;
   static int apply(const PrintTag &f)
     { 
-      return LeafFunctor<C<T,N>,PrintTag>::apply(f);
+      return LeafFunctor<C<T>,PrintTag>::apply(f);
     }
 };
 
-template <class T, int N, template<class,int> class C>
-struct LeafFunctor<PVector<T,N,C>, PrintTag>
+template <class T, template<class> class C>
+struct LeafFunctor<PVector<T,C>, PrintTag>
 {
   typedef int Type_t;
   static int apply(const PrintTag &f)
     { 
-      return LeafFunctor<C<T,N>,PrintTag>::apply(f);
+      return LeafFunctor<C<T>,PrintTag>::apply(f);
     }
 };
 
@@ -580,8 +565,8 @@ struct LeafFunctor<multi2d<T>, PrintTag>
 
 
 
-template<int N>
-struct LeafFunctor<GammaType<N>, PrintTag>
+template <>
+struct LeafFunctor<GammaType, PrintTag>
 {
   typedef int Type_t;
   static int apply(const PrintTag &f)
@@ -591,8 +576,9 @@ struct LeafFunctor<GammaType<N>, PrintTag>
     }
 };
 
-template<int N>
-struct LeafFunctor<GammaTypeDP<N>, PrintTag>
+
+template <>
+struct LeafFunctor<GammaTypeDP, PrintTag>
 {
   typedef int Type_t;
   static int apply(const PrintTag &f)
@@ -603,6 +589,34 @@ struct LeafFunctor<GammaTypeDP<N>, PrintTag>
 };
 
 
+#if 0
+template <class T>
+struct LeafFunctor<VarColorVector<T>, PrintTag>
+{
+  typedef int Type_t;
+  static int apply(const PrintTag &f)
+    { 
+      f.os_m << "VarColorVec<"; 
+      LeafFunctor<T,PrintTag>::apply(f);
+      f.os_m << ">";
+      return 0;
+    }
+};
+
+
+template <class T>
+struct LeafFunctor<VarColorMatrix<T>, PrintTag>
+{
+  typedef int Type_t;
+  static int apply(const PrintTag &f)
+    { 
+      f.os_m << "VarColorMat<";
+      LeafFunctor<T,PrintTag>::apply(f);
+      f.os_m << ">";
+      return 0;
+    }
+};
+#endif
 
 //
 // struct ParenPrinter

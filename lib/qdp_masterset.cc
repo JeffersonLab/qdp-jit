@@ -1,10 +1,7 @@
-// -*- C++ -*-
-
 #include "qdp.h"
 #include "qdp_util.h"
 
 namespace QDP {
-
 
   MasterSet& MasterSet::Instance()
   {
@@ -13,25 +10,23 @@ namespace QDP {
   }
 
 
-  void MasterSet::registrate(Set& set)
+  void MasterSet::add(Set& set)
   {
-    //QDPIO::cerr << "masterset: register set with " << set.numSubsets() << " subsets\n";
-
-    for ( int i = 0 ; i < set.numSubsets() ; ++i ) {
-      //QDPIO::cerr << "subset no. " << vecSubset.size() << "\n";
-      set[i].setId( vecSubset.size() );
-      vecSubset.push_back( &set[i] );
-    }
+    for ( int i = 0 ; i < set.numSubsets() ; ++i )
+      {
+	set[i].setId( generations.size() );
+	generations.push_back( 0 );
+      }
   }
 
-  const Subset& MasterSet::getSubset(int id)
+  void MasterSet::remade(const Set& set)
   {
-    assert( id >= 0 && (unsigned)id < vecSubset.size() && "MasterSet::getSubset out of range");
-    return *vecSubset[id];
+    for ( int i = 0 ; i < set.numSubsets() ; ++i )
+      ++generations.at( set[i].getId() );
   }
 
   int MasterSet::numSubsets() const {
-    return vecSubset.size();
+    return generations.size();
   }
 
 

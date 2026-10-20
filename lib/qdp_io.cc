@@ -1,8 +1,3 @@
-// -*- C++ -*-
-/*! @file
- * @brief IO support
- */
-
 #include "qdp.h"
 #include "qdp_byteorder.h"
 #include <complex>

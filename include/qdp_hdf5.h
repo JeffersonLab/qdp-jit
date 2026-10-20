@@ -1,4 +1,5 @@
-// -*- C++ -*-
+#ifndef QDP_HDF5_H
+#define QDP_HDF5_H
 
 /*! @file
 * @brief HDF5 support
@@ -6,9 +7,6 @@
 * Functions for reading/writing files with hdf5
 
 */
-
-#ifndef QDP_HDF5_H
-#define QDP_HDF5_H
 
 #include <string>
 #include <sstream>
