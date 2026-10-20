@@ -25,7 +25,7 @@ set(QDP_USE_PROFILING ${QDP_ENABLE_PROFILING})
 option(QDP_ENABLE_DEEP_LOG "Enable Deep logging" OFF)
 set(QDP_DEEP_LOG ${QDP_ENABLE_DEEP_LOG})
 
-option(QDP_ENABLE_HOST_COMPILER "Enable the host compiler" OFF)
+option(QDP_ENABLE_HOST_COMPILER "Enable the host compiler" ON)
 set(QDP_HOST_COMPILER ${QDP_ENABLE_HOST_COMPILER})
 
 
