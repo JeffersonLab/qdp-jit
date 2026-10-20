@@ -117,10 +117,7 @@ set(QDPJIT_LLVM_COMPONENTS
   OrcJIT
   OrcShared
   OrcTargetProcess
-  X86CodeGen
-  X86AsmParser
-  X86Desc
-  X86Info
+  native
   Linker
   Demangle
   MCJIT

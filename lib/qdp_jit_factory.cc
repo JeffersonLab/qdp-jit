@@ -28,10 +28,24 @@ namespace JIT {
 
     JIT::globals::TSC = std::make_unique<ThreadSafeContext>( std::move( std::make_unique<LLVMContext>() ) );
 
-    llvm::InitializeAllTargets();
-    llvm::InitializeAllTargetMCs();
-    llvm::InitializeAllAsmPrinters();
-    llvm::InitializeAllAsmParsers();
+    llvm::InitializeNativeTarget();
+    llvm::InitializeNativeTargetAsmPrinter();
+    llvm::InitializeNativeTargetAsmParser();
+
+#if defined (QDP_BACKEND_CUDA)
+    LLVMInitializeNVPTXTargetInfo();
+    LLVMInitializeNVPTXTarget();
+    LLVMInitializeNVPTXTargetMC();
+    LLVMInitializeNVPTXAsmPrinter();
+#endif
+
+#if defined (QDP_BACKEND_ROCM)
+    LLVMInitializeAMDGPUTargetInfo();
+    LLVMInitializeAMDGPUTarget();
+    LLVMInitializeAMDGPUTargetMC();
+    LLVMInitializeAMDGPUAsmPrinter();
+    LLVMInitializeAMDGPUAsmParser();
+#endif
 
     llvm::PassRegistry *Registry = llvm::PassRegistry::getPassRegistry();
     llvm::initializeCore(*Registry);
