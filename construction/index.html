@@ -1,0 +1,1121 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="QDP++ with JIT-compiled kernels and multigrid extensions">
+      
+      
+      
+        <link rel="canonical" href="https://jeffersonlab.github.io/qdp-jit/construction/">
+      
+      
+        <link rel="prev" href="../data-format/">
+      
+      
+        <link rel="next" href="../block-sum/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.4.0">
+    
+    
+      
+        <title>Construction and copying - qdp-jit</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.9f615399.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#construction-and-copying" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="qdp-jit" class="md-header__button md-logo" aria-label="qdp-jit" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            qdp-jit
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Construction and copying
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/JeffersonLab/qdp-jit" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    JeffersonLab/qdp-jit
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="qdp-jit" class="md-nav__button md-logo" aria-label="qdp-jit" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    qdp-jit
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/JeffersonLab/qdp-jit" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    JeffersonLab/qdp-jit
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../building/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Download and build
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Concepts
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Layouts and shapes
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Layouts and shapes
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../layouts/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Layouts
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scopes/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Scopes
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../shape/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Shape (Ns, Nc)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data-format/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Data format
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Construction and copying
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Construction and copying
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    Summary
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#default-construction" class="md-nav__link">
+    Default construction
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#copies" class="md-nav__link">
+    Copies
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fields-computed-from-an-expression" class="md-nav__link">
+    Fields computed from an expression
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#moves-and-return-values" class="md-nav__link">
+    Moves and return values
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#assignment" class="md-nav__link">
+    Assignment
+  </a>
+  
+    <nav class="md-nav" aria-label="Assignment">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#move-assignment" class="md-nav__link">
+    Move assignment
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#arrays-of-fields" class="md-nav__link">
+    Arrays of fields
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scalars" class="md-nav__link">
+    Scalars
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Multigrid operations
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Multigrid operations
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../block-sum/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    blockSum
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mixed-layouts/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mixed-layout expressions
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Running
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Running
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../timing/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Timing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../options/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Command-line options
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    Summary
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#default-construction" class="md-nav__link">
+    Default construction
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#copies" class="md-nav__link">
+    Copies
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fields-computed-from-an-expression" class="md-nav__link">
+    Fields computed from an expression
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#moves-and-return-values" class="md-nav__link">
+    Moves and return values
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#assignment" class="md-nav__link">
+    Assignment
+  </a>
+  
+    <nav class="md-nav" aria-label="Assignment">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#move-assignment" class="md-nav__link">
+    Move assignment
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#arrays-of-fields" class="md-nav__link">
+    Arrays of fields
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scalars" class="md-nav__link">
+    Scalars
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="construction-and-copying">Construction and copying<a class="headerlink" href="#construction-and-copying" title="Permanent link">&para;</a></h1>
+<p>Every lattice field carries a <a href="../layouts/">layout</a>, a <a href="../shape/">shape</a> and a
+<a href="../data-format/">data format</a>. All three are set when the field is constructed
+and never change afterwards. This page says where each constructor takes them
+from, and what assignment does with them.</p>
+<p>There are three sources:</p>
+<ul>
+<li>the <strong>ambient</strong> settings: the current layout <code>Layout::current()</code>, the
+  current shape <code>Shape::current()</code> and the default data format, all set by
+  <a href="../scopes/">scopes</a>;</li>
+<li>a <strong>source</strong> field the new field is copied from;</li>
+<li>an <strong>expression</strong> the new field is computed from.</li>
+</ul>
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Construction</th>
+<th>Layout</th>
+<th>Shape</th>
+<th>Data format</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>T f;</code> <code>T f = zero;</code> <code>T f = 1.5;</code></td>
+<td>current</td>
+<td>current</td>
+<td>default</td>
+</tr>
+<tr>
+<td><code>T f(shape)</code> <code>T f(shape, zero)</code></td>
+<td>current</td>
+<td><code>shape</code></td>
+<td>default</td>
+</tr>
+<tr>
+<td><code>T f(layout, shape)</code></td>
+<td><code>layout</code></td>
+<td><code>shape</code></td>
+<td>default</td>
+</tr>
+<tr>
+<td><code>T f(format)</code></td>
+<td>current</td>
+<td>current</td>
+<td><code>format</code></td>
+</tr>
+<tr>
+<td><code>T f(a)</code> <code>T f = a</code> (copy)</td>
+<td><code>a</code>'s</td>
+<td><code>a</code>'s</td>
+<td><code>a</code>'s</td>
+</tr>
+<tr>
+<td><code>T f(a)</code> with <code>a</code> of another type, e.g. <code>LatticeFermionD f(aF)</code></td>
+<td><code>a</code>'s</td>
+<td><code>a</code>'s</td>
+<td><code>a</code>'s</td>
+</tr>
+<tr>
+<td><code>T f(shape, a)</code></td>
+<td><code>a</code>'s</td>
+<td><code>shape</code></td>
+<td><code>a</code>'s</td>
+</tr>
+<tr>
+<td><code>T f(expr)</code> <code>T f = expr</code></td>
+<td>the finest leaf's</td>
+<td>the expression's</td>
+<td>default</td>
+</tr>
+<tr>
+<td><code>T f(expr)</code> with only scalar leaves, <code>T f(s)</code> with <code>s</code> a scalar</td>
+<td>current</td>
+<td>the expression's</td>
+<td>default</td>
+</tr>
+<tr>
+<td><code>T f(std::move(a))</code>, a field returned by value</td>
+<td><code>a</code>'s</td>
+<td><code>a</code>'s</td>
+<td><code>a</code>'s</td>
+</tr>
+</tbody>
+</table>
+<p>"Current" and "default" mean the values in effect where the constructor runs.
+In every row, extents the type does not have are dropped (a
+<code>LatticeColorMatrix</code> has Ns = 1), and an index the source or the expression
+does not have takes its extent from the current shape (a <code>LatticeColorMatrix</code>
+made from a <code>LatticeReal</code> expression gets the current Nc). See
+<a href="../shape/#creating-a-field-with-a-given-shape">Shape</a>.</p>
+<h2 id="default-construction">Default construction<a class="headerlink" href="#default-construction" title="Permanent link">&para;</a></h2>
+<p>A field constructed without a source takes everything from the ambient
+settings:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="n">LayoutShapeScope</span><span class="w"> </span><span class="nf">coarse_grid</span><span class="p">(</span><span class="n">coarse</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">24</span><span class="p">);</span>
+<span class="w">  </span><span class="n">JitDataFormatScope</span><span class="w"> </span><span class="nf">half</span><span class="p">(</span><span class="n">JitDataFormat</span><span class="p">(</span><span class="n">JitDataOrder</span><span class="o">::</span><span class="n">SiteFast</span><span class="p">,</span><span class="w"> </span><span class="n">JitStorage</span><span class="o">::</span><span class="n">Half</span><span class="p">));</span>
+<span class="w">  </span><span class="n">LatticeFermion</span><span class="w"> </span><span class="n">psi</span><span class="p">;</span><span class="w">          </span><span class="c1">// coarse, (2, 24), half</span>
+<span class="w">  </span><span class="n">LatticeFermion</span><span class="w"> </span><span class="n">chi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">zero</span><span class="p">;</span><span class="w">   </span><span class="c1">// the same, set to zero</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>Constructors with a <code>Shape</code>, a <code>LatticeLayout</code> and <code>Shape</code>, or a
+<code>JitDataFormat</code> argument override the corresponding ambient setting and take
+the others from the ambient settings. See
+<a href="../layouts/#creating-a-field-on-a-given-layout">Layouts</a>,
+<a href="../shape/#creating-a-field-with-a-given-shape">Shape</a> and
+<a href="../data-format/#creating-a-field-with-a-given-format">Data format</a>.</p>
+<h2 id="copies">Copies<a class="headerlink" href="#copies" title="Permanent link">&para;</a></h2>
+<p>A copy takes all three from its source, whatever the ambient settings are:</p>
+<div class="highlight"><pre><span></span><code><span class="n">LatticeFermion</span><span class="w"> </span><span class="n">psi_c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">make_coarse_half_fermion</span><span class="p">();</span><span class="w">  </span><span class="c1">// coarse, (2, 24), half</span>
+
+<span class="n">LatticeFermion</span><span class="w">  </span><span class="nf">a</span><span class="p">(</span><span class="n">psi_c</span><span class="p">);</span><span class="w">     </span><span class="c1">// coarse, (2, 24), half</span>
+<span class="n">LatticeFermion</span><span class="w">  </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">psi_c</span><span class="p">;</span><span class="w">    </span><span class="c1">// the same</span>
+<span class="n">LatticeFermionD</span><span class="w"> </span><span class="nf">d</span><span class="p">(</span><span class="n">psi_c</span><span class="p">);</span><span class="w">     </span><span class="c1">// the same, at double precision</span>
+</code></pre></div>
+<p>This also holds for a conversion to another precision (<code>LatticeFermionD</code> from
+a <code>LatticeFermionF</code>), except that an integer or boolean field is always stored
+natively.</p>
+<p><code>T f(shape, a)</code> takes the layout and the format from <code>a</code> and the shape from
+the argument. <code>shape</code> must have the same extents as <code>a</code> (after dropping the
+extents <code>T</code> does not have); otherwise the program aborts with
+<code>OLattice: Incompatible tensor dimensions: …</code> (<code>OScalar: …</code> for a scalar).</p>
+<p>A <a href="../shape/#which-types-use-which-extent">named type that fixes an extent</a>,
+made from a plain field, keeps the source's other extent and requires the
+fixed one to match:</p>
+<div class="highlight"><pre><span></span><code><span class="n">LatticeFermion</span><span class="w"> </span><span class="nf">f</span><span class="p">(</span><span class="n">Shape</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">));</span>
+<span class="n">LatticeDiracFermion</span><span class="w"> </span><span class="nf">d</span><span class="p">(</span><span class="n">f</span><span class="p">);</span><span class="w">        </span><span class="c1">// (4, 5), whatever the current Nc</span>
+<span class="n">LatticeFermion</span><span class="w"> </span><span class="nf">h</span><span class="p">(</span><span class="n">Shape</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">));</span>
+<span class="n">LatticeDiracFermion</span><span class="w"> </span><span class="nf">e</span><span class="p">(</span><span class="n">h</span><span class="p">);</span><span class="w">        </span><span class="c1">// aborts: Ns = 4 is required</span>
+</code></pre></div>
+<h2 id="fields-computed-from-an-expression">Fields computed from an expression<a class="headerlink" href="#fields-computed-from-an-expression" title="Permanent link">&para;</a></h2>
+<p>A field constructed from an expression is computed on the finest layout among
+the expression's leaves (the one with the largest volume). Its shape is the
+shape of the expression, and its data format is the default, whatever the
+formats of the leaves:</p>
+<div class="highlight"><pre><span></span><code><span class="n">LatticeFermion</span><span class="w"> </span><span class="n">e1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">psi_c</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">psi_c</span><span class="p">;</span><span class="w">               </span><span class="c1">// coarse, (2, 24), default format</span>
+<span class="n">LatticeFermion</span><span class="w"> </span><span class="nf">e2</span><span class="p">(</span><span class="n">shift</span><span class="p">(</span><span class="n">psi_c</span><span class="p">,</span><span class="w"> </span><span class="n">FORWARD</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">));</span><span class="w">     </span><span class="c1">// the same</span>
+<span class="n">LatticeComplex</span><span class="w"> </span><span class="n">e3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">c_coarse</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">localInnerProduct</span><span class="p">(</span><span class="n">psi</span><span class="p">,</span><span class="w"> </span><span class="n">psi</span><span class="p">);</span><span class="w">   </span><span class="c1">// fine: psi is finer</span>
+</code></pre></div>
+<p>The ambient layout plays no part as long as the expression has a lattice leaf.
+An expression of scalars only, such as <code>LatticeReal r = Real(1) + Real(2)</code>,
+and a field made from a scalar, <code>LatticeFermion f(s)</code>, are on the current
+layout.</p>
+<p>Mixing layouts in one expression is described in
+<a href="../mixed-layouts/">Mixed layouts</a>.</p>
+<h2 id="moves-and-return-values">Moves and return values<a class="headerlink" href="#moves-and-return-values" title="Permanent link">&para;</a></h2>
+<p>A move takes over the source's storage together with its layout, shape and
+format. Returning a field by value is therefore cheap and keeps the field's
+metadata, even when the function opened scopes:</p>
+<div class="highlight"><pre><span></span><code><span class="n">LatticeFermion</span><span class="w"> </span><span class="nf">make_coarse_half_fermion</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="n">LayoutShapeScope</span><span class="w"> </span><span class="n">coarse_grid</span><span class="p">(</span><span class="n">coarse</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">24</span><span class="p">);</span>
+<span class="w">  </span><span class="n">JitDataFormatScope</span><span class="w"> </span><span class="n">half</span><span class="p">(</span><span class="n">JitDataFormat</span><span class="p">(</span><span class="n">JitDataOrder</span><span class="o">::</span><span class="n">SiteFast</span><span class="p">,</span><span class="w"> </span><span class="n">JitStorage</span><span class="o">::</span><span class="n">Half</span><span class="p">));</span>
+<span class="w">  </span><span class="n">LatticeFermion</span><span class="w"> </span><span class="n">c</span><span class="p">;</span>
+<span class="w">  </span><span class="n">gaussian</span><span class="p">(</span><span class="n">c</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">c</span><span class="p">;</span><span class="w">                    </span><span class="c1">// the caller gets a coarse, (2, 24), half field</span>
+<span class="p">}</span>
+</code></pre></div>
+<h2 id="assignment">Assignment<a class="headerlink" href="#assignment" title="Permanent link">&para;</a></h2>
+<p>Assignment never changes the destination's layout, shape or data format. It
+converts the right-hand side to them:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Rule</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Shape</td>
+<td>The right-hand side must have the destination's extents, except for an index its type does not have. Otherwise the program aborts with <code>OLattice: Incompatible tensor dimensions: …</code>. See <a href="../shape/#assignment">Shape</a>.</td>
+</tr>
+<tr>
+<td>Data format</td>
+<td>The values are converted to the destination's format: assigning to a half-precision field rounds them. See <a href="../data-format/#where-a-fields-format-comes-from">Data format</a>.</td>
+</tr>
+<tr>
+<td>Layout</td>
+<td>The right-hand side may live on a coarser layout whose blocks fit the destination's: each coarse value is broadcast to its block of fine sites. A right-hand side on a finer or incompatible layout aborts with <code>mixed-layout expression: the destination lattice … is not a multiple of the operand lattice …</code>. See <a href="../mixed-layouts/">Mixed layouts</a>.</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><span class="n">LatticeFermion</span><span class="w"> </span><span class="nf">h</span><span class="p">(</span><span class="n">JitDataFormat</span><span class="p">(</span><span class="n">JitDataOrder</span><span class="o">::</span><span class="n">SiteFast</span><span class="p">,</span><span class="w"> </span><span class="n">JitStorage</span><span class="o">::</span><span class="n">Half</span><span class="p">));</span>
+<span class="n">h</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">psi</span><span class="p">;</span><span class="w">                       </span><span class="c1">// still half: psi&#39;s values, rounded</span>
+
+<span class="n">LatticeFermion</span><span class="w"> </span><span class="nf">f</span><span class="p">(</span><span class="n">fine</span><span class="p">,</span><span class="w"> </span><span class="n">Shape</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">24</span><span class="p">));</span>
+<span class="n">f</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">psi_c</span><span class="p">;</span><span class="w">                     </span><span class="c1">// still fine: psi_c broadcast to the fine sites</span>
+</code></pre></div>
+<p>To get a field with the right-hand side's metadata, construct a new one
+instead of assigning to an existing one.</p>
+<h3 id="move-assignment">Move assignment<a class="headerlink" href="#move-assignment" title="Permanent link">&para;</a></h3>
+<p><code>a = std::move(b)</code> takes over <code>b</code>'s storage if <code>a</code> and <code>b</code> have the same
+layout, shape and data format and <code>b</code> owns its storage. <code>b</code> then holds <code>a</code>'s
+old storage and remains a valid field that can be assigned to. In all other
+cases move assignment is a copy assignment, following the rules above, and <code>b</code>
+is unchanged.</p>
+<h2 id="arrays-of-fields">Arrays of fields<a class="headerlink" href="#arrays-of-fields" title="Permanent link">&para;</a></h2>
+<p>A <code>multi1d</code> of fields constructs its elements by default construction, so they
+take the ambient settings at the point where the array is sized:</p>
+<div class="highlight"><pre><span></span><code><span class="n">multi1d</span><span class="o">&lt;</span><span class="n">LatticeColorMatrix</span><span class="o">&gt;</span><span class="w"> </span><span class="n">u_h</span><span class="p">;</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="n">JitDataFormatScope</span><span class="w"> </span><span class="nf">half</span><span class="p">(</span><span class="n">JitDataFormat</span><span class="p">(</span><span class="n">JitDataOrder</span><span class="o">::</span><span class="n">SiteFast</span><span class="p">,</span><span class="w"> </span><span class="n">JitStorage</span><span class="o">::</span><span class="n">Half</span><span class="p">));</span>
+<span class="w">  </span><span class="n">u_h</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="n">Nd</span><span class="p">);</span><span class="w">              </span><span class="c1">// Nd half-precision fields</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>Copying an array copies each element with its metadata:
+<code>multi1d&lt;LatticeFermion&gt; b(a)</code>, and <code>c = a</code> with <code>c</code> empty, give elements with
+the layouts, shapes and formats of <code>a</code>'s elements. Assigning to an array that
+already has the same size, <code>d = a</code>, assigns element by element and keeps <code>d</code>'s
+metadata.</p>
+<h2 id="scalars">Scalars<a class="headerlink" href="#scalars" title="Permanent link">&para;</a></h2>
+<p>Scalars (<code>OScalar</code>, for example <code>Complex</code> or <code>ColorMatrix</code>) have a shape but
+no layout or data format.</p>
+<table>
+<thead>
+<tr>
+<th>Construction</th>
+<th>Shape</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>T s;</code> <code>T s = zero;</code></td>
+<td>current</td>
+</tr>
+<tr>
+<td><code>T s(shape)</code></td>
+<td><code>shape</code></td>
+</tr>
+<tr>
+<td><code>T s(t)</code>, <code>T s(expr)</code></td>
+<td><code>t</code>'s or the expression's; an index the source lacks gets the current extent</td>
+</tr>
+</tbody>
+</table>
+<p>Unlike a lattice field, a scalar takes the right-hand side's shape on
+assignment when it does not fit, so <code>s = sum(psi)</code> works for a <code>psi</code> of any
+shape. See <a href="../shape/#assignment">Shape</a>.</p>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+            Back to top
+          </button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections", "navigation.indexes", "navigation.top", "content.code.copy", "search.highlight", "search.suggest"], "search": "../assets/javascripts/workers/search.a264c092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.4e0fa4ba.min.js"></script>
+      
+    
+  </body>
+</html>

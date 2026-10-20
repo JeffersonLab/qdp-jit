@@ -1,0 +1,1586 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="QDP++ with JIT-compiled kernels and multigrid extensions">
+      
+      
+      
+        <link rel="canonical" href="https://jeffersonlab.github.io/qdp-jit/layouts/">
+      
+      
+        <link rel="prev" href="../concepts/">
+      
+      
+        <link rel="next" href="../scopes/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.4.0">
+    
+    
+      
+        <title>Layouts - qdp-jit</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.9f615399.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#layouts" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="qdp-jit" class="md-header__button md-logo" aria-label="qdp-jit" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            qdp-jit
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Layouts
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/JeffersonLab/qdp-jit" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    JeffersonLab/qdp-jit
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="qdp-jit" class="md-nav__button md-logo" aria-label="qdp-jit" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    qdp-jit
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/JeffersonLab/qdp-jit" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    JeffersonLab/qdp-jit
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../building/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Download and build
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Concepts
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Layouts and shapes
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Layouts and shapes
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Layouts
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Layouts
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-a-layout-is" class="md-nav__link">
+    What a layout is
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#creating-coarse-layouts" class="md-nav__link">
+    Creating coarse layouts
+  </a>
+  
+    <nav class="md-nav" aria-label="Creating coarse layouts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#repeated-blocking" class="md-nav__link">
+    Repeated blocking
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#each-layout-must-fit-the-node-grid" class="md-nav__link">
+    Each layout must fit the node grid
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-layout-stack" class="md-nav__link">
+    The layout stack
+  </a>
+  
+    <nav class="md-nav" aria-label="The layout stack">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a-field-keeps-its-layout" class="md-nav__link">
+    A field keeps its layout
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#creating-a-field-on-a-given-layout" class="md-nav__link">
+    Creating a field on a given layout
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#operations-use-the-fields-layout" class="md-nav__link">
+    Operations use the field's layout
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-current-layout-affects" class="md-nav__link">
+    What the current layout affects
+  </a>
+  
+    <nav class="md-nav" aria-label="What the current layout affects">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lattice-coordinates" class="md-nav__link">
+    Lattice coordinates
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#random-numbers" class="md-nav__link">
+    Random numbers
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#subsets-and-maps" class="md-nav__link">
+    Subsets and maps
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reference" class="md-nav__link">
+    Reference
+  </a>
+  
+    <nav class="md-nav" aria-label="Reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-layout-namespace" class="md-nav__link">
+    The Layout namespace
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#latticelayout" class="md-nav__link">
+    LatticeLayout
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fields" class="md-nav__link">
+    Fields
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scopes/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Scopes
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../shape/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Shape (Ns, Nc)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data-format/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Data format
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../construction/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Construction and copying
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Multigrid operations
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Multigrid operations
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../block-sum/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    blockSum
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mixed-layouts/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mixed-layout expressions
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Running
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Running
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../timing/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Timing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../options/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Command-line options
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-a-layout-is" class="md-nav__link">
+    What a layout is
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#creating-coarse-layouts" class="md-nav__link">
+    Creating coarse layouts
+  </a>
+  
+    <nav class="md-nav" aria-label="Creating coarse layouts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#repeated-blocking" class="md-nav__link">
+    Repeated blocking
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#each-layout-must-fit-the-node-grid" class="md-nav__link">
+    Each layout must fit the node grid
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-layout-stack" class="md-nav__link">
+    The layout stack
+  </a>
+  
+    <nav class="md-nav" aria-label="The layout stack">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a-field-keeps-its-layout" class="md-nav__link">
+    A field keeps its layout
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#creating-a-field-on-a-given-layout" class="md-nav__link">
+    Creating a field on a given layout
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#operations-use-the-fields-layout" class="md-nav__link">
+    Operations use the field's layout
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-current-layout-affects" class="md-nav__link">
+    What the current layout affects
+  </a>
+  
+    <nav class="md-nav" aria-label="What the current layout affects">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lattice-coordinates" class="md-nav__link">
+    Lattice coordinates
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#random-numbers" class="md-nav__link">
+    Random numbers
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#subsets-and-maps" class="md-nav__link">
+    Subsets and maps
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reference" class="md-nav__link">
+    Reference
+  </a>
+  
+    <nav class="md-nav" aria-label="Reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-layout-namespace" class="md-nav__link">
+    The Layout namespace
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#latticelayout" class="md-nav__link">
+    LatticeLayout
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fields" class="md-nav__link">
+    Fields
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="layouts">Layouts<a class="headerlink" href="#layouts" title="Permanent link">&para;</a></h1>
+<p>QDP++ has a single lattice. qdp-jit can hold several lattice layouts at once,
+typically the fine lattice and the coarse lattices of a multigrid hierarchy.
+This page covers what a layout is, how coarse layouts are made, the layout
+stack, and which parts of QDP++ follow the current layout.</p>
+<h2 id="what-a-layout-is">What a layout is<a class="headerlink" href="#what-a-layout-is" title="Permanent link">&para;</a></h2>
+<p>A <code>LatticeLayout</code> is a lattice size together with its site tables: for every
+site, which rank holds it and its linear index on that rank, and the reverse
+map from rank and index back to coordinates (see <a href="../concepts/#layout">Concepts</a>).</p>
+<p>The first layout is set up exactly as in QDP++:</p>
+<div class="highlight"><pre><span></span><code><span class="n">QDP_initialize</span><span class="p">(</span><span class="o">&amp;</span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">argv</span><span class="p">);</span>
+
+<span class="n">multi1d</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">nrow</span><span class="p">(</span><span class="n">Nd</span><span class="p">);</span>
+<span class="n">nrow</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">16</span><span class="p">;</span>
+<span class="n">nrow</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">32</span><span class="p">;</span>
+<span class="n">Layout</span><span class="o">::</span><span class="n">setLattSize</span><span class="p">(</span><span class="n">nrow</span><span class="p">);</span>
+<span class="n">Layout</span><span class="o">::</span><span class="n">create</span><span class="p">();</span><span class="w">          </span><span class="c1">// creates the first (fine) layout</span>
+
+<span class="n">LatticeLayout</span><span class="w"> </span><span class="n">fine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Layout</span><span class="o">::</span><span class="n">current</span><span class="p">();</span>
+</code></pre></div>
+<p>A <code>LatticeLayout</code> is a small value-type handle; copy it freely. Two handles
+compare equal when they refer to the same layout, and since there is only one
+layout per lattice size (see <a href="#creating-coarse-layouts">below</a>), that is the
+same as having the same lattice size. Handles have <code>&lt;</code> and <code>std::hash</code>, so they
+can be keys of <code>std::map</code> and <code>std::unordered_map</code>. A default-constructed
+<code>LatticeLayout()</code> refers to no layout; its <code>index()</code> is <code>-1</code>.</p>
+<p>Layouts are never destroyed before <code>QDP_finalize</code>. A handle stays valid for the
+whole program from its point of creation.</p>
+<h2 id="creating-coarse-layouts">Creating coarse layouts<a class="headerlink" href="#creating-coarse-layouts" title="Permanent link">&para;</a></h2>
+<p>There are two ways to get another layout. Both return the layout without
+changing the <a href="#the-layout-stack">current layout</a>.</p>
+<p><strong>By blocking</strong> an existing layout. <code>layout.coarsen(blocking)</code> divides the
+lattice size by <code>blocking</code> in each dimension:</p>
+<div class="highlight"><pre><span></span><code><span class="n">multi1d</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">blocking</span><span class="p">(</span><span class="n">Nd</span><span class="p">);</span>
+<span class="n">blocking</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w">                                       </span><span class="c1">// 2^4 blocks</span>
+<span class="n">LatticeLayout</span><span class="w"> </span><span class="n">coarse</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fine</span><span class="p">.</span><span class="n">coarsen</span><span class="p">(</span><span class="n">blocking</span><span class="p">);</span><span class="w">      </span><span class="c1">// 8 8 8 16</span>
+</code></pre></div>
+<p>The blocking must divide the lattice size in every dimension, otherwise the
+program stops with</p>
+<div class="highlight"><pre><span></span><code>LatticeLayout::coarsen: blocking 3 1 1 1 does not divide the lattice 4 4 4 4
+</code></pre></div>
+<p>A blocking of 1 in every dimension returns the layout itself.</p>
+<p><strong>By lattice size.</strong> <code>Layout::find_or_create(nrow)</code> returns the layout with
+lattice size <code>nrow</code>, creating it if there is none yet:</p>
+<div class="highlight"><pre><span></span><code><span class="n">multi1d</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">nrow</span><span class="p">(</span><span class="n">Nd</span><span class="p">);</span>
+<span class="n">nrow</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">4</span><span class="p">;</span>
+<span class="n">LatticeLayout</span><span class="w"> </span><span class="n">l</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Layout</span><span class="o">::</span><span class="n">find_or_create</span><span class="p">(</span><span class="n">nrow</span><span class="p">);</span>
+</code></pre></div>
+<p><code>coarsen</code> is a shorthand for <code>find_or_create(lattSize() / blocking)</code>. There is
+never more than one layout for a given lattice size, so asking for the same
+size again, by either function, returns the same layout.</p>
+<h3 id="repeated-blocking">Repeated blocking<a class="headerlink" href="#repeated-blocking" title="Permanent link">&para;</a></h3>
+<p>Because layouts are identified by their lattice size, blocking in steps gives
+the same layout as blocking in one go:</p>
+<div class="highlight"><pre><span></span><code><span class="n">multi1d</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">bt</span><span class="p">(</span><span class="n">Nd</span><span class="p">),</span><span class="w"> </span><span class="n">bs</span><span class="p">(</span><span class="n">Nd</span><span class="p">),</span><span class="w"> </span><span class="n">b</span><span class="p">(</span><span class="n">Nd</span><span class="p">);</span>
+<span class="n">bt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="n">bt</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w">               </span><span class="c1">// 1 1 1 2</span>
+<span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w"> </span><span class="n">bs</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w">               </span><span class="c1">// 2 2 2 1</span>
+<span class="n">b</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w">                          </span><span class="c1">// 2 2 2 2</span>
+
+<span class="n">assert</span><span class="p">(</span><span class="n">fine</span><span class="p">.</span><span class="n">coarsen</span><span class="p">(</span><span class="n">bt</span><span class="p">).</span><span class="n">coarsen</span><span class="p">(</span><span class="n">bs</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">fine</span><span class="p">.</span><span class="n">coarsen</span><span class="p">(</span><span class="n">b</span><span class="p">));</span>
+</code></pre></div>
+<p>A multigrid hierarchy can therefore be built level by level, each level by
+coarsening the one above it, and fields on a level can be compared or combined
+with fields made from a different chain of blockings, as long as the lattice
+sizes agree.</p>
+<h2 id="each-layout-must-fit-the-node-grid">Each layout must fit the node grid<a class="headerlink" href="#each-layout-must-fit-the-node-grid" title="Permanent link">&para;</a></h2>
+<p>All layouts share the machine geometry: the logical grid of ranks, set with
+<code>-geom</code> or chosen by QMP when the first layout is created (see
+<a href="../concepts/#machine-geometry">Concepts</a>). Every rank holds part of every
+layout. A lattice size therefore fits only if, in every dimension:</p>
+<ul>
+<li>it is divisible by the number of ranks in that dimension, and</li>
+<li>the resulting subgrid extent is a multiple of the minimal extent of the site
+  layout qdp-jit was built with (<code>QDP_LAYOUT</code>):</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th><code>QDP_LAYOUT</code></th>
+<th>minimal subgrid extent</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>lexico</code></td>
+<td>1 in every dimension</td>
+</tr>
+<tr>
+<td><code>cb2</code> (default)</td>
+<td>2 in x, 1 otherwise</td>
+</tr>
+<tr>
+<td><code>cb3d</code></td>
+<td>2 in x, 1 otherwise</td>
+</tr>
+</tbody>
+</table>
+<p>This applies to coarse layouts too, and limits how far a lattice can be
+coarsened on a given number of ranks. If a layout does not fit, creating it
+stops the program, whether through <code>coarsen</code> or <code>find_or_create</code>:</p>
+<div class="highlight"><pre><span></span><code>LayoutData::create - problem size 4 4 4 1 does not fit the node grid 1 1 1 2
+with a subgrid that is a multiple of 2 1 1 1
+</code></pre></div>
+<p>This is with the lattice <code>4 4 4 4</code> on 2 ranks (<code>-geom 1 1 1 2</code>), blocked by 4
+in time: the coarse lattice has 1 site in time, which cannot be split over 2
+ranks. With <code>-geom 2 1 1 1</code> and the <code>cb2</code> site layout, blocking by 2 in x fails
+too: each rank would get 1 site in x, and <code>cb2</code> needs an even number.</p>
+<p>Two earlier checks report the same problem with other messages: a lattice
+whose volume is not divisible by the number of ranks stops with
+<code>LayoutData::create - problem size not divisible by number of processors</code>,
+and one whose size is not a multiple of the minimal subgrid extent (for
+example a coarse lattice with 1 site in x on one rank with <code>cb2</code>) stops with
+<code>LayoutData::create - Error: problem size not multiple of smallest size allowed
+for this type of layout</code>.</p>
+<p><code>Layout::fits_node_grid(nrow)</code> returns whether a lattice size fits, without
+creating a layout. Use it to choose a blocking that works on the current number
+of ranks.</p>
+<div class="highlight"><pre><span></span><code><span class="n">multi1d</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">nrow</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fine</span><span class="p">.</span><span class="n">lattSize</span><span class="p">()</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">blocking</span><span class="p">;</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">Layout</span><span class="o">::</span><span class="n">fits_node_grid</span><span class="p">(</span><span class="n">nrow</span><span class="p">))</span>
+<span class="w">  </span><span class="n">QDPIO</span><span class="o">::</span><span class="n">cerr</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;blocking too coarse for this node grid</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
+</code></pre></div>
+<h2 id="the-layout-stack">The layout stack<a class="headerlink" href="#the-layout-stack" title="Permanent link">&para;</a></h2>
+<p>qdp-jit keeps a stack of layouts. The layout on top is the <strong>current layout</strong>,
+<code>Layout::current()</code>. After <code>Layout::create()</code> the stack holds the first layout.</p>
+<div class="highlight"><pre><span></span><code><span class="n">Layout</span><span class="o">::</span><span class="n">push</span><span class="p">(</span><span class="n">coarse</span><span class="p">);</span><span class="w">        </span><span class="c1">// coarse is now current</span>
+<span class="n">LatticeFermion</span><span class="w"> </span><span class="n">c</span><span class="p">;</span><span class="w">            </span><span class="c1">// a field on the coarse layout</span>
+<span class="n">Layout</span><span class="o">::</span><span class="n">pop</span><span class="p">();</span><span class="w">               </span><span class="c1">// fine is current again</span>
+</code></pre></div>
+<p><code>push</code> and <code>pop</code> must be balanced. <code>Layout::push(LatticeLayout())</code> stops the
+program (<code>Layout::push called with invalid layout -1</code>), and so does a call of
+<code>Layout::current()</code> once the stack has been popped empty. Rather than calling
+<code>push</code> and <code>pop</code> by hand, use a <a href="../scopes/"><code>LayoutScope</code></a>, which pops when it
+goes out of scope, also when an exception is thrown.</p>
+<p>Layouts can be pushed in any order and any number of times. Pushing a layout
+that is already on the stack is allowed.</p>
+<h3 id="a-field-keeps-its-layout">A field keeps its layout<a class="headerlink" href="#a-field-keeps-its-layout" title="Permanent link">&para;</a></h3>
+<p>A field's layout is fixed when the field is constructed (see
+<a href="../construction/">Construction and copying</a> for where it comes from). Popping
+the stack does not change the layout of fields created while the layout was
+current:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="n">LayoutScope</span><span class="w"> </span><span class="nf">scope</span><span class="p">(</span><span class="n">coarse</span><span class="p">);</span>
+<span class="w">  </span><span class="n">LatticeReal</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">zero</span><span class="p">;</span><span class="w">      </span><span class="c1">// on the coarse layout</span>
+<span class="w">  </span><span class="p">...</span>
+<span class="p">}</span><span class="w">                            </span><span class="c1">// fine is current again; t is gone</span>
+
+<span class="n">LayoutScope</span><span class="w"> </span><span class="n">scope</span><span class="p">(</span><span class="n">coarse</span><span class="p">);</span>
+<span class="n">LatticeReal</span><span class="w"> </span><span class="n">d</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">zero</span><span class="p">;</span><span class="w">        </span><span class="c1">// on the coarse layout</span>
+<span class="n">scope</span><span class="p">.</span><span class="n">close</span><span class="p">();</span><span class="w">               </span><span class="c1">// pop now, d stays alive</span>
+
+<span class="n">assert</span><span class="p">(</span><span class="n">d</span><span class="p">.</span><span class="n">layout</span><span class="p">()</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">coarse</span><span class="p">);</span>
+<span class="n">d</span><span class="p">[</span><span class="n">rb</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Real</span><span class="p">(</span><span class="mf">1.0</span><span class="p">);</span><span class="w">        </span><span class="c1">// still evaluated on the coarse layout</span>
+<span class="n">Double</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sum</span><span class="p">(</span><span class="n">d</span><span class="p">);</span><span class="w">           </span><span class="c1">// coarse volume / 2</span>
+</code></pre></div>
+<h3 id="creating-a-field-on-a-given-layout">Creating a field on a given layout<a class="headerlink" href="#creating-a-field-on-a-given-layout" title="Permanent link">&para;</a></h3>
+<p>A field can also be created on a layout without touching the stack. The
+constructor <code>OLattice(LatticeLayout, Shape)</code> makes a field on the layout and
+with the shape you pass, whichever layout and shape are current:</p>
+<div class="highlight"><pre><span></span><code><span class="n">LayoutShapeScope</span><span class="w"> </span><span class="nf">coarse_grid</span><span class="p">(</span><span class="n">coarse</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">24</span><span class="p">);</span><span class="w">   </span><span class="c1">// coarse layout, Ns=2, Nc=24</span>
+
+<span class="n">LatticeFermion</span><span class="w"> </span><span class="n">c</span><span class="p">;</span><span class="w">                               </span><span class="c1">// coarse, Ns=2, Nc=24</span>
+<span class="n">LatticeFermion</span><span class="w"> </span><span class="nf">f</span><span class="p">(</span><span class="n">fine</span><span class="p">,</span><span class="w"> </span><span class="n">Shape</span><span class="p">(</span><span class="n">Ns</span><span class="p">,</span><span class="w"> </span><span class="n">Nc</span><span class="p">));</span><span class="w">          </span><span class="c1">// fine, the configured Ns and Nc</span>
+<span class="n">LatticeColorMatrix</span><span class="w"> </span><span class="nf">u</span><span class="p">(</span><span class="n">fine</span><span class="p">,</span><span class="w"> </span><span class="n">Shape</span><span class="p">(</span><span class="n">Ns</span><span class="p">,</span><span class="w"> </span><span class="n">Nc</span><span class="p">));</span><span class="w">      </span><span class="c1">// fine, shape (1, Nc)</span>
+</code></pre></div>
+<p>There is no constructor that takes only a layout, on purpose: inside a scope
+like the one above, the current shape belongs to the coarse grid, and a fine
+field would silently get it. Extents that the type
+does not have are set to 1: <code>u</code> above has the shape (1, Nc), since a color
+matrix has no spin index. The data format is the current default, as for a
+default-constructed field (see <a href="../data-format/">Data format</a>).</p>
+<p>This is the simplest way to make a field on another layout in the middle of
+code that runs on the current one, for example a fine-grid temporary inside a
+coarse-grid scope. The fields are ordinary fields: <code>f = psi;</code> with a fine
+<code>psi</code> works as usual.</p>
+<h3 id="operations-use-the-fields-layout">Operations use the field's layout<a class="headerlink" href="#operations-use-the-fields-layout" title="Permanent link">&para;</a></h3>
+<p>Operations on a field, such as assignment, <code>shift</code>, subsets, <code>random</code> and
+reductions, use the field's own layout, not the current one. The current layout
+matters only where no field says which layout to use; the
+<a href="#what-the-current-layout-affects">next section</a> lists these places.</p>
+<div class="admonition warning">
+<p class="admonition-title">Assignment does not move a field to another layout</p>
+<p><code>c = zero;</code> inside a <code>LayoutScope(coarse)</code> does not put <code>c</code> on the coarse
+layout if <code>c</code> was constructed on the fine one. Assignment keeps the
+destination's layout. Construct the field while the layout you want is
+current, or pass the layout to the constructor:
+<code>LatticeReal c(coarse, Shape());</code>.</p>
+</div>
+<h2 id="what-the-current-layout-affects">What the current layout affects<a class="headerlink" href="#what-the-current-layout-affects" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>What</th>
+<th>Uses</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>default-constructed fields</td>
+<td>the current layout (and shape)</td>
+</tr>
+<tr>
+<td>fields made with <code>OLattice(layout, shape)</code></td>
+<td>the layout passed</td>
+</tr>
+<tr>
+<td>the <code>Layout::</code> query functions</td>
+<td>the current layout</td>
+</tr>
+<tr>
+<td><code>Layout::latticeCoordinate(mu)</code></td>
+<td>the current layout</td>
+</tr>
+<tr>
+<td><code>RNG::setrn</code>, <code>RNG::savern</code></td>
+<td>the current layout's seed</td>
+</tr>
+<tr>
+<td><code>random(x)</code> for a scalar <code>x</code> (<code>Real</code>, …)</td>
+<td>the current layout's seed</td>
+</tr>
+<tr>
+<td><code>random(f)</code> for a lattice field <code>f</code></td>
+<td><code>f</code>'s layout and its seed</td>
+</tr>
+<tr>
+<td><code>Set::make</code>, <code>Map::make</code></td>
+<td>the current layout (see <a href="#subsets-and-maps">below</a>)</td>
+</tr>
+<tr>
+<td><code>subset.siteTable()</code>, <code>numSiteTable()</code>, …</td>
+<td>the current layout; pass a layout to choose another</td>
+</tr>
+<tr>
+<td>expressions, <code>shift</code>, subsets in <code>f[s] = …</code></td>
+<td>the layout of the fields involved</td>
+</tr>
+</tbody>
+</table>
+<h3 id="lattice-coordinates">Lattice coordinates<a class="headerlink" href="#lattice-coordinates" title="Permanent link">&para;</a></h3>
+<p><code>Layout::latticeCoordinate(mu)</code> returns a <code>LatticeInteger</code> on the current
+layout, holding each site's coordinate in direction <code>mu</code>. To get coordinates
+that match a given field, make the field's layout current first:</p>
+<div class="highlight"><pre><span></span><code><span class="n">LatticeFermion</span><span class="w"> </span><span class="nf">mask_boundary</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">LatticeFermion</span><span class="o">&amp;</span><span class="w"> </span><span class="n">in</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">multi1d</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;&amp;</span><span class="w"> </span><span class="n">block</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">mu</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="n">LayoutScope</span><span class="w"> </span><span class="n">scope</span><span class="p">(</span><span class="n">in</span><span class="p">.</span><span class="n">layout</span><span class="p">());</span>
+<span class="w">  </span><span class="n">LatticeReal</span><span class="w"> </span><span class="n">one</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="n">nil</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">zero</span><span class="p">;</span>
+<span class="w">  </span><span class="n">LatticeReal</span><span class="w"> </span><span class="n">m</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">where</span><span class="p">((</span><span class="n">Layout</span><span class="o">::</span><span class="n">latticeCoordinate</span><span class="p">(</span><span class="n">mu</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="n">block</span><span class="p">[</span><span class="n">mu</span><span class="p">]</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">one</span><span class="p">,</span><span class="w"> </span><span class="n">nil</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">m</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+<h3 id="random-numbers">Random numbers<a class="headerlink" href="#random-numbers" title="Permanent link">&para;</a></h3>
+<p>Each layout has its own random number generator state. When a layout is
+created, its seed is set to the same default value as the first layout's;
+seeding one layout does not seed the others. To seed a coarse layout, make it
+current:</p>
+<div class="highlight"><pre><span></span><code><span class="n">RNG</span><span class="o">::</span><span class="n">setrn</span><span class="p">(</span><span class="n">seed</span><span class="p">);</span><span class="w">                      </span><span class="c1">// seeds the fine layout only</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="n">LayoutScope</span><span class="w"> </span><span class="nf">scope</span><span class="p">(</span><span class="n">coarse</span><span class="p">);</span>
+<span class="w">  </span><span class="n">RNG</span><span class="o">::</span><span class="n">setrn</span><span class="p">(</span><span class="n">coarse_seed</span><span class="p">);</span><span class="w">             </span><span class="c1">// seeds the coarse layout</span>
+<span class="p">}</span>
+</code></pre></div>
+<p><code>random(f)</code> and <code>gaussian(f)</code> for a lattice field draw from the generator of
+<code>f</code>'s layout, whichever layout is current. Drawing on a coarse layout leaves
+the fine layout's stream unchanged. <code>random(x)</code> for a scalar draws from the
+current layout's generator.</p>
+<h3 id="subsets-and-maps">Subsets and maps<a class="headerlink" href="#subsets-and-maps" title="Permanent link">&para;</a></h3>
+<p>The predefined sets and subsets (<code>all</code>, <code>even</code>, <code>odd</code>, <code>rb</code>, <code>rb3</code>, <code>mcb</code>) and
+the nearest-neighbour shifts (<code>shift(f, FORWARD, mu)</code>, …) are set up on every
+layout when it is created. They work on fields of any layout, with no further
+action.</p>
+<p>A <code>Set</code> or <code>Map</code> you make yourself is different: <code>Set::make(fn)</code> and
+<code>Map::make(fn)</code> compute their tables for the current layout only, and the
+function <code>fn</code> sees that layout's coordinates (for example through
+<code>Layout::lattSize()</code>). To use one on another layout, call <code>make</code> again with
+that layout current. The tables for the other layouts are kept:</p>
+<div class="highlight"><pre><span></span><code><span class="n">Set</span><span class="w"> </span><span class="n">blocks</span><span class="p">;</span>
+<span class="n">blocks</span><span class="p">.</span><span class="n">make</span><span class="p">(</span><span class="n">MyBlockFunc</span><span class="p">());</span><span class="w">            </span><span class="c1">// tables for the fine layout</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="n">LayoutScope</span><span class="w"> </span><span class="nf">scope</span><span class="p">(</span><span class="n">coarse</span><span class="p">);</span>
+<span class="w">  </span><span class="n">blocks</span><span class="p">.</span><span class="n">make</span><span class="p">(</span><span class="n">MyBlockFunc</span><span class="p">());</span><span class="w">          </span><span class="c1">// and for the coarse layout</span>
+<span class="p">}</span>
+<span class="c1">// blocks[i] now works on fine and on coarse fields</span>
+</code></pre></div>
+<p>Using a user-made <code>Set</code> or <code>Map</code> on a layout it was not made for stops the
+program:</p>
+<div class="highlight"><pre><span></span><code>Subset numSiteTable: no site tables for layout 1
+Map make_lazy: map not made for layout 1
+</code></pre></div>
+<p>The site tables of a subset are queried for a given layout with
+<code>s.siteTable(layout)</code>, <code>s.numSiteTable(layout)</code>, <code>s.isElement(layout, i)</code> and
+so on. The versions without a layout argument use the current layout.</p>
+<h2 id="reference">Reference<a class="headerlink" href="#reference" title="Permanent link">&para;</a></h2>
+<h3 id="the-layout-namespace">The <code>Layout</code> namespace<a class="headerlink" href="#the-layout-namespace" title="Permanent link">&para;</a></h3>
+<p>Functions marked <em>current</em> act on the current layout.</p>
+<p><strong>Setting up the first layout</strong></p>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>void setLattSize(const multi1d&lt;int&gt;&amp; nrow)</code></td>
+<td>set the lattice size, before <code>create()</code></td>
+</tr>
+<tr>
+<td><code>void create()</code></td>
+<td>create the layout: site tables, default subsets and shifts, RNG</td>
+</tr>
+<tr>
+<td><code>void init()</code></td>
+<td>internal, called by <code>QDP_initialize</code></td>
+</tr>
+<tr>
+<td><code>void finalize()</code></td>
+<td>internal, called by <code>QDP_finalize</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>The layout stack and creating layouts</strong></p>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>LatticeLayout current()</code></td>
+<td>the layout on top of the stack</td>
+</tr>
+<tr>
+<td><code>void push(LatticeLayout l)</code></td>
+<td>make <code>l</code> current</td>
+</tr>
+<tr>
+<td><code>void pop()</code></td>
+<td>return to the previous layout</td>
+</tr>
+<tr>
+<td><code>LatticeLayout find_or_create(const multi1d&lt;int&gt;&amp; nrow)</code></td>
+<td>the layout with lattice size <code>nrow</code>, created if needed; the stack is unchanged</td>
+</tr>
+<tr>
+<td><code>bool fits_node_grid(const multi1d&lt;int&gt;&amp; nrow)</code></td>
+<td>whether a lattice of size <code>nrow</code> fits the node grid</td>
+</tr>
+<tr>
+<td><code>LatticeLayout from_index(int index)</code></td>
+<td>the layout with the given <code>index()</code></td>
+</tr>
+<tr>
+<td><code>LayoutData&amp; data(int index)</code></td>
+<td>internal: the layout's data</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Lattice and node geometry</strong> (<em>current</em>)</p>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>const multi1d&lt;int&gt;&amp; lattSize()</code></td>
+<td>lattice size</td>
+</tr>
+<tr>
+<td><code>size_t vol()</code></td>
+<td>lattice volume</td>
+</tr>
+<tr>
+<td><code>const multi1d&lt;int&gt;&amp; subgridLattSize()</code></td>
+<td>subgrid size on each rank</td>
+</tr>
+<tr>
+<td><code>int sitesOnNode()</code></td>
+<td>subgrid volume</td>
+</tr>
+<tr>
+<td><code>const multi1d&lt;int&gt;&amp; logicalSize()</code></td>
+<td>machine geometry</td>
+</tr>
+<tr>
+<td><code>int numNodes()</code></td>
+<td>number of ranks</td>
+</tr>
+<tr>
+<td><code>int nodeNumber()</code></td>
+<td>this rank</td>
+</tr>
+<tr>
+<td><code>bool primaryNode()</code></td>
+<td>whether this is rank 0</td>
+</tr>
+<tr>
+<td><code>const multi1d&lt;int&gt;&amp; nodeCoord()</code></td>
+<td>this rank's coordinates in the node grid</td>
+</tr>
+<tr>
+<td><code>LatticeInteger latticeCoordinate(int mu)</code></td>
+<td>each site's coordinate in direction <code>mu</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Site maps</strong> (<em>current</em>)</p>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>int nodeNumber(const multi1d&lt;int&gt;&amp; coord)</code></td>
+<td>rank that holds the site <code>coord</code></td>
+</tr>
+<tr>
+<td><code>int linearSiteIndex(const multi1d&lt;int&gt;&amp; coord)</code></td>
+<td>linear index of <code>coord</code> on its rank</td>
+</tr>
+<tr>
+<td><code>int linearSiteIndex(int lexicosite)</code></td>
+<td>linear index of a lexicographic site number</td>
+</tr>
+<tr>
+<td><code>multi1d&lt;int&gt; siteCoords(int node, int index)</code></td>
+<td>coordinates of the site at <code>index</code> on <code>node</code></td>
+</tr>
+<tr>
+<td><code>multi1d&lt;int&gt; nodeCoord(const multi1d&lt;int&gt;&amp; coord)</code></td>
+<td>node-grid coordinates of the rank that holds <code>coord</code></td>
+</tr>
+<tr>
+<td><code>int getNodeNumberFrom(const multi1d&lt;int&gt;&amp; node_coord)</code></td>
+<td>rank at the given node-grid coordinates</td>
+</tr>
+<tr>
+<td><code>multi1d&lt;int&gt; getLogicalCoordFrom(int node)</code></td>
+<td>node-grid coordinates of a rank</td>
+</tr>
+</tbody>
+</table>
+<p><strong>I/O node grid</strong> (<em>current</em>)</p>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>bool isIOGridDefined()</code></td>
+<td>whether an I/O grid is set</td>
+</tr>
+<tr>
+<td><code>void setIONodeGrid(const multi1d&lt;int&gt;&amp; io_grid)</code></td>
+<td>set the I/O grid</td>
+</tr>
+<tr>
+<td><code>int numIONodeGrid()</code></td>
+<td>number of I/O nodes</td>
+</tr>
+<tr>
+<td><code>const multi1d&lt;int&gt;&amp; getIONodeGrid()</code></td>
+<td>the I/O grid</td>
+</tr>
+</tbody>
+</table>
+<h3 id="latticelayout"><code>LatticeLayout</code><a class="headerlink" href="#latticelayout" title="Permanent link">&para;</a></h3>
+<p>The members of a <code>LatticeLayout</code> give the same information for that layout,
+whichever layout is current.</p>
+<table>
+<thead>
+<tr>
+<th>Member</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>int index() const</code></td>
+<td>the layout's number; <code>0</code> for the first layout, <code>-1</code> for none</td>
+</tr>
+<tr>
+<td><code>const multi1d&lt;int&gt;&amp; lattSize() const</code></td>
+<td>lattice size</td>
+</tr>
+<tr>
+<td><code>size_t vol() const</code></td>
+<td>lattice volume</td>
+</tr>
+<tr>
+<td><code>const multi1d&lt;int&gt;&amp; subgridLattSize() const</code></td>
+<td>subgrid size</td>
+</tr>
+<tr>
+<td><code>int sitesOnNode() const</code></td>
+<td>subgrid volume</td>
+</tr>
+<tr>
+<td><code>const multi1d&lt;int&gt;&amp; logicalSize() const</code></td>
+<td>machine geometry</td>
+</tr>
+<tr>
+<td><code>int numNodes() const</code></td>
+<td>number of ranks</td>
+</tr>
+<tr>
+<td><code>int nodeNumber() const</code></td>
+<td>this rank</td>
+</tr>
+<tr>
+<td><code>bool primaryNode() const</code></td>
+<td>whether this is rank 0</td>
+</tr>
+<tr>
+<td><code>int nodeNumber(const multi1d&lt;int&gt;&amp; coord) const</code></td>
+<td>rank that holds <code>coord</code></td>
+</tr>
+<tr>
+<td><code>int linearSiteIndex(const multi1d&lt;int&gt;&amp; coord) const</code></td>
+<td>linear index of <code>coord</code> on its rank</td>
+</tr>
+<tr>
+<td><code>multi1d&lt;int&gt; siteCoords(int node, int index) const</code></td>
+<td>coordinates of a site</td>
+</tr>
+<tr>
+<td><code>LatticeLayout coarsen(const multi1d&lt;int&gt;&amp; blocking) const</code></td>
+<td>the layout blocked by <code>blocking</code></td>
+</tr>
+<tr>
+<td><code>==</code>, <code>!=</code>, <code>&lt;</code>, <code>std::hash</code></td>
+<td>comparison, for use as a key</td>
+</tr>
+</tbody>
+</table>
+<h3 id="fields">Fields<a class="headerlink" href="#fields" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Constructor or member</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>OLattice()</code></td>
+<td>a field on the current layout, with the current shape</td>
+</tr>
+<tr>
+<td><code>OLattice(LatticeLayout layout, const Shape&amp; shape)</code></td>
+<td>a field on <code>layout</code> with <code>shape</code>, whichever layout and shape are current</td>
+</tr>
+<tr>
+<td><code>LatticeLayout layout() const</code></td>
+<td>the field's layout</td>
+</tr>
+</tbody>
+</table>
+<p>The other constructors, and where they take a field's layout from, are on
+<a href="../construction/">Construction and copying</a>.</p>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+            Back to top
+          </button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections", "navigation.indexes", "navigation.top", "content.code.copy", "search.highlight", "search.suggest"], "search": "../assets/javascripts/workers/search.a264c092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.4e0fa4ba.min.js"></script>
+      
+    
+  </body>
+</html>
