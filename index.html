@@ -818,8 +818,9 @@ a kernel for each expression at run time with LLVM and runs it on a GPU.</p>
 <ul>
 <li><strong>GPU backends:</strong> CUDA, ROCm and Intel Level Zero. The backend is chosen when
   qdp-jit is configured (<code>QDP_ENABLE_BACKEND=CUDA|ROCM|L0</code>).</li>
-<li><strong>Host JIT:</strong> when built with <code>QDP_ENABLE_HOST_COMPILER=ON</code>, expressions on
-  scalar (<code>OScalar</code>) values can also be JIT-compiled for the host CPU.</li>
+<li><strong>Host JIT:</strong> when built with <code>QDP_ENABLE_HOST_COMPILER=ON</code> (the default),
+  expressions on scalar (<code>OScalar</code>) values can also be JIT-compiled for the
+  host CPU.</li>
 </ul>
 <p>These pages assume you know QDP++. They describe what qdp-jit adds to QDP++
 and to earlier qdp-jit versions, and point out where it behaves differently.
