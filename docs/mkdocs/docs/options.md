@@ -62,7 +62,7 @@ all fields in it.
 
 | Option | Description |
 |---|---|
-| `-opt N` | the LLVM optimization level, 0 to 3. Default: 3 (CUDA), 1 (ROCm) |
+| `-opt N` | the LLVM optimization level, 0 to 3. Default: 3 (CUDA), 1 (ROCm), 2 (L0). `-opt -1` runs no LLVM passes. On L0, `-opt 0` also turns off the optimizations of the Intel graphics compiler (IGC), see [Level Zero](#level-zero) |
 | `-cuda-ftz N` | 1: flush denormal numbers to zero in kernels, 0: don't. Default: 0 (CUDA) |
 | `-libdevice-path DIR` | the directory of the device math library, if it is not found in the default locations |
 | `-libdevice-name NAME` | the file name of the device math library |
@@ -87,6 +87,31 @@ These options exist only in builds with the ROCm backend.
 | `-temp-files-path DIR` | the directory for the temporary files of the code generation. Default: the working directory |
 | `-libdevice-extra FILE` | link an extra device library into every kernel; can be given several times |
 | `-keep-files` | keep the temporary files of the code generation (also for the L0 backend) |
+
+## Level Zero
+
+These options exist only in builds with the L0 backend.
+
+The L0 backend translates each kernel to SPIR-V in memory and hands it to the
+Intel graphics compiler (IGC) through `zeModuleCreate`; no files are written
+unless `-keep-files` is given. IGC compiles the SPIR-V for the device and always
+optimizes, it has no numeric optimization level. `-opt N` therefore selects the
+LLVM passes that run before the SPIR-V translation; `-opt 0` additionally
+passes `-ze-opt-disable` to IGC, which compiles about 10 times faster but gives
+kernels several times slower.
+
+The defaults, `-opt 2` with IGC's automatic large register file, gave the
+fastest kernels on Aurora (PVC) for most expressions. `-opt 3` unrolls more and
+raises register pressure. Fields with half-precision storage in `SiteFast`
+order can run faster with `-opt -1`.
+
+| Option | Description |
+|---|---|
+| `-l0-build-flags "FLAGS"` | build flags passed to IGC for every kernel; they replace the default. Default: `-ze-intel-enable-auto-large-GRF-mode` (use 256 registers per thread when it avoids register spills). `-ze-opt-large-register-file` always uses 256 registers per thread; `-l0-build-flags ""` passes no flags (128 registers per thread) |
+
+The IGC build log, which also reports informational messages such as
+`[RetryManager] Start recompilation of the kernel`, is printed only when a
+kernel fails to compile, or with `-codegen-verbose`.
 
 ## Options of special builds
 

@@ -481,7 +481,7 @@ namespace JIT {
   class CompilerL0: public Compiler
   {
     CodeObject build_function_backend(JitFunction& func);
-    void build_function_levelzero_codegen(JitFunction& func, const std::string& spirv_path);
+    void build_function_levelzero_codegen(JitFunction& func, std::string& spirv);
     const TargetInfo& target_info();
   public:
     void setup(CompilerFactory* fac , string ftype , string pretty );

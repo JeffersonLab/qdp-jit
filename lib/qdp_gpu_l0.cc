@@ -169,13 +169,18 @@ namespace QDP {
     VALIDATECALL(zeKernelSetGroupSize( (ze_kernel_handle_t)f.get_function() , blockDimX , blockDimY , blockDimZ ));
 
 
-    if (set_l0_event)
+    ze_result_t res = zeCommandListAppendLaunchKernel( cmdList , (ze_kernel_handle_t)f.get_function() , &dispatch ,
+						       set_l0_event ? ev1 : nullptr , 0 , nullptr );
+
+    // The driver allocates the scratch memory (private memory and register
+    // spills of all resident threads) when the kernel is launched.
+    if (res == ZE_RESULT_ERROR_OUT_OF_DEVICE_MEMORY)
+      ret = JitResult::JitOutOfMemory;
+    else if (res != ZE_RESULT_SUCCESS)
       {
-	VALIDATECALL(zeCommandListAppendLaunchKernel( cmdList , (ze_kernel_handle_t)f.get_function() , &dispatch , ev1 , 0 , nullptr ));
-      }
-    else
-      {
-	VALIDATECALL(zeCommandListAppendLaunchKernel( cmdList , (ze_kernel_handle_t)f.get_function() , &dispatch , nullptr , 0 , nullptr ));
+	QDPIO::cerr << "zeCommandListAppendLaunchKernel failed for kernel " << f.get_kernel_name()
+		    << " with status " << res << "\n";
+	ret = JitResult::JitError;
       }
 
     return ret;
@@ -510,12 +515,29 @@ namespace QDP {
   {
   }
 
-#if 1
+  namespace {
+  // Build flags passed to IGC. IGC has no numeric optimization level,
+  // -opt 0 disables its optimizations, any other level uses the IGC default.
+  std::string l0_build_flags()
+  {
+    std::string flags;
+    if (jit_config_get_codegen_opt() == 0)
+      flags = "-ze-opt-disable";
+
+    const std::string user = jit_config_get_l0_build_flags();
+    if (!user.empty())
+      flags += (flags.empty() ? "" : " ") + user;
+
+    return flags;
+  }
+  }
+
+
   bool get_jitf(JitFunction& func,
-              const std::string& fname_spirv,
-              const std::string& kernel_name,
-              const std::string& pretty,
-              const std::string& str_compute)
+		const std::string& spirv,
+		const std::string& kernel_name,
+		const std::string& pretty,
+		const std::string& str_compute)
 {
   if (jit_config_get_verbose_output()) {
     QDPIO::cout << "get_jitf enter\n";
@@ -528,45 +550,24 @@ namespace QDP {
   ze_kernel_handle_t kernel = nullptr;
   ze_module_build_log_handle_t buildLog = nullptr;
 
-  std::ifstream file(fname_spirv.c_str(), std::ios::binary);
-  if (!file.is_open()) {
-    QDPIO::cerr << "Error reading file: " << fname_spirv << "\n";
+  if (spirv.empty()) {
+    QDPIO::cerr << "SPIR-V image is empty for kernel " << kernel_name << "\n";
     return false;
   }
 
-  if (jit_config_get_verbose_output()) {
-    QDPIO::cout << "get_jitf opened file\n";
-  }
-
-  file.seekg(0, std::ios::end);
-  std::streamoff end = file.tellg();
-  file.seekg(0, std::ios::beg);
-
-  if (end <= 0) {
-    QDPIO::cerr << "SPIR-V file is empty: " << fname_spirv << "\n";
-    return false;
-  }
-
-  const size_t length = static_cast<size_t>(end);
-  std::vector<uint8_t> spirvInput(length);
-  file.read(reinterpret_cast<char*>(spirvInput.data()), length);
-
-  if (!file) {
-    QDPIO::cerr << "Failed to read full SPIR-V file: " << fname_spirv << "\n";
-    return false;
-  }
+  static const std::string build_flags = l0_build_flags();
 
   ze_module_desc_t moduleDesc = {};
   moduleDesc.stype = ZE_STRUCTURE_TYPE_MODULE_DESC;
   moduleDesc.pNext = nullptr;
   moduleDesc.format = ZE_MODULE_FORMAT_IL_SPIRV;
-  moduleDesc.inputSize = length;
-  moduleDesc.pInputModule = spirvInput.data();
-  moduleDesc.pBuildFlags = "";
+  moduleDesc.inputSize = spirv.size();
+  moduleDesc.pInputModule = reinterpret_cast<const uint8_t*>(spirv.data());
+  moduleDesc.pBuildFlags = build_flags.c_str();
   moduleDesc.pConstants = nullptr;
 
   if (jit_config_get_verbose_output()) {
-    QDPIO::cout << "get_jitf module create ...\n";
+    QDPIO::cout << "get_jitf module create, build flags = '" << build_flags << "' ...\n";
   }
 
   ze_result_t status = zeModuleCreate(hContext, hDevice, &moduleDesc, &module, &buildLog);
@@ -575,23 +576,31 @@ namespace QDP {
     QDPIO::cout << "get_jitf module created, status = " << status << "\n";
   }
 
+  const bool failed = status != ZE_RESULT_SUCCESS || module == nullptr;
+
+  // IGC reports informational messages (e.g. RetryManager recompilation) in the
+  // build log of successful builds. Only show the log on failure or when verbose.
   if (buildLog != nullptr) {
-    size_t szLog = 0;
-    ze_result_t logStatus = zeModuleBuildLogGetString(buildLog, &szLog, nullptr);
-    if (logStatus == ZE_RESULT_SUCCESS && szLog > 1) {
-      std::string log(szLog, '\0');
-      logStatus = zeModuleBuildLogGetString(buildLog, &szLog, log.data());
-      if (logStatus == ZE_RESULT_SUCCESS) {
-        QDPIO::cout << "Build log: " << log.c_str() << "\n";
+    if (failed || jit_config_get_verbose_output()) {
+      size_t szLog = 0;
+      ze_result_t logStatus = zeModuleBuildLogGetString(buildLog, &szLog, nullptr);
+      if (logStatus == ZE_RESULT_SUCCESS && szLog > 1) {
+	std::string log(szLog, '\0');
+	logStatus = zeModuleBuildLogGetString(buildLog, &szLog, log.data());
+	if (logStatus == ZE_RESULT_SUCCESS) {
+	  if (failed)
+	    QDPIO::cerr << "Build log: " << log.c_str() << "\n";
+	  else
+	    QDPIO::cout << "Build log: " << log.c_str() << "\n";
+	}
       }
     }
     zeModuleBuildLogDestroy(buildLog);
     buildLog = nullptr;
   }
 
-  if (status != ZE_RESULT_SUCCESS || module == nullptr) {
+  if (failed) {
     QDPIO::cerr << "zeModuleCreate failed for kernel " << kernel_name
-                << " from file " << fname_spirv
                 << " with status " << status << "\n";
     return false;
   }
@@ -616,101 +625,21 @@ namespace QDP {
 
   func.set_function(reinterpret_cast<void*>(kernel));
 
+  // stack: scratch memory per thread (private memory and register spills),
+  // spill: register spill memory per thread
+  ze_kernel_properties_t kernelProps = {};
+  kernelProps.stype = ZE_STRUCTURE_TYPE_KERNEL_PROPERTIES;
+  if (zeKernelGetProperties(kernel, &kernelProps) == ZE_RESULT_SUCCESS) {
+    func.set_stack( kernelProps.privateMemSize + kernelProps.spillMemSize );
+    func.set_spill_store( kernelProps.spillMemSize );
+  }
+
   if (jit_config_get_verbose_output()) {
     QDPIO::cout << "Got function!\n";
   }
 
   return true;
 }
-#else
-  bool get_jitf( JitFunction& func, const std::string& fname_spirv , const std::string& kernel_name , const std::string& pretty , const std::string& str_compute )
-  {
-    if (jit_config_get_verbose_output())
-      {
-	QDPIO::cout << "get_jitf enter\n";
-      }
-
-    func.set_kernel_name( kernel_name );
-    func.set_pretty( pretty );
-
-    // Module Initialization
-    ze_module_handle_t module = nullptr;
-    ze_kernel_handle_t kernel = nullptr;
-
-    std::ifstream file( fname_spirv.c_str() , std::ios::binary );
-
-    if (!file.is_open())
-      {
-	QDPIO::cout << "Error reading file: " << fname_spirv << "\n";
-	QDP_abort(1);
-      }
-
-    if (jit_config_get_verbose_output())
-      {
-	QDPIO::cout << "get_jitf opened file: " <<  fname_spirv << std::endl;
-      }
-
-    file.seekg(0, file.end);
-    auto length = file.tellg();
-    file.seekg(0, file.beg);
-
-    std::unique_ptr<char[]> spirvInput(new char[length]);
-    file.read(spirvInput.get(), length);
-
-    ze_module_desc_t moduleDesc;
-    ze_module_build_log_handle_t buildLog;
-
-    moduleDesc.stype = ZE_STRUCTURE_TYPE_MODULE_DESC;
-    moduleDesc.pNext = nullptr;
-    moduleDesc.format = ZE_MODULE_FORMAT_IL_SPIRV;
-    moduleDesc.inputSize = length;
-    moduleDesc.pInputModule = reinterpret_cast<const uint8_t *>(spirvInput.get());
-    //moduleDesc.pBuildFlags = "-vc-codegen";
-    moduleDesc.pBuildFlags = "";
-    moduleDesc.pConstants = nullptr;
-
-    if (jit_config_get_verbose_output())
-      {
-	QDPIO::cout << "get_jitf module create ...\n";
-      }
-
-    ze_result_t status = zeModuleCreate(hContext, hDevice, &moduleDesc, &module, &buildLog);
-
-    if (jit_config_get_verbose_output())
-      {
-	QDPIO::cout << "get_jitf module created ...\n";
-      }
-    if (status != ZE_RESULT_SUCCESS) {
-      // print log
-      size_t szLog = 0;
-      zeModuleBuildLogGetString(buildLog, &szLog, nullptr);
-
-      char* stringLog = (char*)malloc(szLog);
-      zeModuleBuildLogGetString(buildLog, &szLog, stringLog);
-      std::cout << "Build log: " << stringLog << std::endl;
-    }
-    VALIDATECALL(zeModuleBuildLogDestroy(buildLog));
-
-    ze_kernel_desc_t kernelDesc;
-    kernelDesc.pKernelName = kernel_name.c_str();
-  
-    if (jit_config_get_verbose_output())
-      {
-	QDPIO::cout << "get_jitf kernel create ...\n";
-      }
-
-    VALIDATECALL(zeKernelCreate(module, &kernelDesc, &kernel));
-    
-    func.set_function( (void*)kernel );
-    
-    if (jit_config_get_verbose_output())
-      {
-	QDPIO::cout << "Got function!\n";
-      }
-    
-    return true;
-  }
-#endif
   
   
   size_t gpu_getMaxGridX()  {return deviceComputeProperties.maxGroupCountX;}

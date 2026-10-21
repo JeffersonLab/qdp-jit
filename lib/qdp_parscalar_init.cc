@@ -441,6 +441,12 @@ namespace QDP {
 	    jit_config_set_keepfiles(true);
 	  }
 #endif
+#ifdef QDP_BACKEND_L0
+	else if (strcmp((*argv)[i], "-l0-build-flags")==0) 
+	  {
+	    jit_config_set_l0_build_flags( option_value( *argc , *argv , i ) );
+	  }
+#endif
 #ifdef QDP_BACKEND_CUDA
 	else if (strcmp((*argv)[i], "-cuda-ftz")==0)
 	  {

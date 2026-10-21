@@ -13,6 +13,8 @@
 #include <unistd.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <sstream>
+#include <fstream>
 
 #include "qdp_jit.h"
 
@@ -137,14 +139,14 @@ namespace JIT {
 
 
 
-  void CompilerL0::build_function_levelzero_codegen(JitFunction& func, const std::string& spirv_path)
+  void CompilerL0::build_function_levelzero_codegen(JitFunction& func, std::string& spirv)
   {
     StopWatch swatch(false);
     func.time_math = 0.;
     swatch.reset();
     swatch.start();
 
-    //QDPIO::cout << "setting module data layout\n";
+    internalize_and_dce();
 
     if ( options().opt_level != -1 )
       {
@@ -180,14 +182,13 @@ namespace JIT {
       SPIRV::TranslatorOpts Opts(SPIRV::VersionNumber::MaximumVersion,
 				 ExtensionsStatus);
 
-      std::ofstream OutFile(spirv_path, std::ios::binary);
-      if (!llvm::writeSpirv(Mod.get(), Opts, OutFile, Err)) {
+      std::ostringstream OS(std::ios::binary);
+      if (!llvm::writeSpirv(Mod.get(), Opts, OS, Err)) {
 	QDPIO::cout << "writeSpirv failed: " << Err << "\n";
 	QDP_abort(1);
       }
 
-      OutFile.flush();
-      OutFile.close();
+      spirv = OS.str();
     }
     
     swatch.stop();
@@ -211,22 +212,22 @@ namespace JIT {
 	  }
       }
 
-    //node number
-    int nodeNumber = options().node;
-
-    std::string spirv_path =
-      "module_" + str_kernel_name +
-      "_node_" + std::to_string(nodeNumber) +
-      "_pid_" + std::to_string(::getpid()) +
-      ".spv";
-
-    // call codegen
-    build_function_levelzero_codegen( func , spirv_path );
-
+    // call codegen, SPIR-V binary stays in memory
     CodeObject obj;
-    obj.image = spirv_path;
-    if (! options().keepfiles )
-      obj.remove_after_load = spirv_path;
+    build_function_levelzero_codegen( func , obj.image );
+
+    if (options().keepfiles)
+      {
+	std::string spirv_path =
+	  "module_" + str_kernel_name +
+	  "_node_" + std::to_string(options().node) +
+	  "_pid_" + std::to_string(::getpid()) +
+	  ".spv";
+
+	std::ofstream OutFile(spirv_path, std::ios::binary);
+	OutFile.write( obj.image.data() , obj.image.size() );
+      }
+
     return obj;
   }
 

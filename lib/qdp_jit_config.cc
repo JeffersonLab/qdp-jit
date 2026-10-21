@@ -63,7 +63,7 @@ namespace QDP
 #elif defined (QDP_BACKEND_CUDA)
     int  codegen_opt = 3;
 #else
-    int  codegen_opt = -1;
+    int  codegen_opt = 2;
 #endif
     
 #ifdef QDP_BACKEND_ROCM
@@ -81,6 +81,11 @@ namespace QDP
 
 #if defined(QDP_BACKEND_ROCM) || defined (QDP_BACKEND_L0)
     bool codegen_keepfiles = false;
+#endif
+
+#ifdef QDP_BACKEND_L0
+    // 256 registers per thread where it avoids register spills
+    std::string l0_build_flags = "-ze-intel-enable-auto-large-GRF-mode";
 #endif
     
 #ifdef QDP_DEEP_LOG
@@ -233,6 +238,9 @@ namespace QDP
 	QDPIO::cout << "  blockSum threads per tile           : " << (int)qdp_jit_config_get_blocksum() << "\n";
       }
     
+#ifdef QDP_BACKEND_L0
+    QDPIO::cout << "  Level Zero build flags              : " << jit_config_get_l0_build_flags() << "\n";
+#endif
 #ifdef QDP_BACKEND_ROCM
     QDPIO::cout << "  Pre-pass instead of generic opt     : " << (int)opt_prepass << "\n";
     QDPIO::cout <<"  Temp Files Prepend path              : " <<  jit_config_get_prepend_path() << "\n";
@@ -283,6 +291,11 @@ namespace QDP
 #if defined(QDP_BACKEND_ROCM) || defined (QDP_BACKEND_L0)
   bool jit_config_get_keepfiles() { return codegen_keepfiles; }
   void jit_config_set_keepfiles(bool v) { codegen_keepfiles = v; }
+#endif
+
+#ifdef QDP_BACKEND_L0
+  std::string jit_config_get_l0_build_flags() { return l0_build_flags; }
+  void        jit_config_set_l0_build_flags(std::string s) { l0_build_flags = s; }
 #endif
 
   size_t jit_config_get_pool_alignment() { return pool_alignment; }

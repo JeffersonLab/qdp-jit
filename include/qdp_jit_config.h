@@ -88,6 +88,11 @@ namespace QDP
   void jit_config_set_keepfiles(bool v);
 #endif
 
+#ifdef QDP_BACKEND_L0
+  std::string jit_config_get_l0_build_flags();
+  void        jit_config_set_l0_build_flags(std::string s);
+#endif
+
   void jit_config_set_pool_size( size_t val );
   size_t jit_config_get_pool_size();
   void jit_config_set_pool_reserve( size_t val );

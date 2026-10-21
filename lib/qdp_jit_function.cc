@@ -28,7 +28,9 @@ namespace QDP {
   }
 
 
-  JitFunction::JitFunction(): isEmpty(true), called(0) {
+  JitFunction::JitFunction(): isEmpty(true), max_wg(0), called(0),
+			       stack(0), spill_store(0), vspill_store(0), spill_loads(0),
+			       regs(0), vregs(0), cmem(0), group_segment(0), private_segment(0) {
     vec_functions.push_back( this );
   }
 

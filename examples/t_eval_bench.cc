@@ -37,23 +37,32 @@ int main(int argc, char **argv)
 {
   QDP_initialize(&argc, &argv);
 
-  int lat  = 16;
+  multi1d<int> nrow(Nd);
+  nrow = 16;
   int iter = 1000;
 
   for (int i = 1; i < argc; i++)
     {
       if (strcmp(argv[i], "-lat") == 0)
-	sscanf(argv[++i], "%d", &lat);
-      if (strcmp(argv[i], "-iter") == 0)
+	{
+	  int lat;
+	  sscanf(argv[++i], "%d", &lat);
+	  nrow = lat;
+	}
+      else if (strcmp(argv[i], "-nrow") == 0)
+	for (int mu = 0; mu < Nd; ++mu)
+	  sscanf(argv[++i], "%d", &nrow[mu]);
+      else if (strcmp(argv[i], "-iter") == 0)
 	sscanf(argv[++i], "%d", &iter);
     }
 
-  multi1d<int> nrow(Nd);
-  nrow = lat;
   Layout::setLattSize(nrow);
   Layout::create();
 
-  QDPIO::cout << "lattice = " << lat << "^" << Nd
+  QDPIO::cout << "lattice =";
+  for (int mu = 0; mu < Nd; ++mu)
+    QDPIO::cout << " " << nrow[mu];
+  QDPIO::cout << ",  sites on node = " << Layout::sitesOnNode()
 	      << ",  iterations per measurement = " << iter << std::endl;
 
   Real a(2.0);
