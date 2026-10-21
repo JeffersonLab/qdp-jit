@@ -1,6 +1,4 @@
-// -*- c++ -*-
-
-#include "ze_api.h"
+#include <level_zero/ze_api.h>
 
 #include "qdp_config_internal.h" 
 #include "qdp.h"
