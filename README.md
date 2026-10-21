@@ -16,7 +16,7 @@ LLVM and runs it on the GPU.
   and used in ordinary expressions.
 - **Multigrid operations:** `blockSum` for restriction, and expressions that
   mix fine and coarse fields for prolongation.
-- **Host JIT (optional):** expressions on scalars can be compiled for the CPU.
+- **Host JIT:** expressions on scalars are compiled for the CPU (on by default).
 
 ## Documentation
 
@@ -34,9 +34,23 @@ and builds LLVM, QMP, qdp-jit and Chroma for one GPU architecture:
 git clone https://github.com/fwinter/package.git
 cd package
 ./download_sources_cuda.sh       # or _rocm.sh, _intel.sh
-cd cuda                          # or rocm-jit-noquda, level-zero
+cd cuda                          # or rocm, level-zero
 # edit env.sh: compilers (mpicxx, mpicc), modules
+# on ARM hosts: LLVM_TARGETS_TO_BUILD in build_llvm-22.sh, X86 -> AArch64
 ./build_all.sh
+```
+
+The download script fetches the LLVM sources, and LLVM is built for the GPU and
+the host CPU (`NVPTX;X86` for CUDA, `AMDGPU;X86` for ROCm, `X86` for Level Zero).
+LLVM is installed as shared libraries, and `env.sh` adds them to
+`LD_LIBRARY_PATH`. A job script can therefore set up the run-time environment
+by sourcing the same file, after changing to the architecture directory:
+
+```bash
+cd /path/to/package/cuda
+source ./env.sh
+cd /path/to/run
+srun ${INSTALLROOT}/chroma/bin/chroma -i input.xml -geom 1 1 1 4
 ```
 
 See [Download and build](https://jeffersonlab.github.io/qdp-jit/building/) for
@@ -76,7 +90,7 @@ make install
 | `QDP_PRECISION` | `single`, `double` (default) | the precision of `Real`, `LatticeFermion`, … |
 | `QDP_LAYOUT` | `cb2` (default), `lexico`, `cb3d` | the site layout |
 | `QDP_ND`, `QDP_NC`, `QDP_NS` | 4, 3, 4 (default) | the number of dimensions, and the initial Nc and Ns |
-| `QDP_ENABLE_HOST_COMPILER` | `ON`, `OFF` (default) | also JIT-compile scalar expressions for the CPU |
+| `QDP_ENABLE_HOST_COMPILER` | `ON` (default), `OFF` | also JIT-compile scalar expressions for the CPU; LLVM must include the host CPU target (`X86` or `AArch64`) |
 | `QDP_BUILD_EXAMPLES` | `ON` (default), `OFF` | build the programs in `examples/` |
 | `QDP_USE_HDF5` | `ON`, `OFF` (default) | HDF5 I/O |
 | `LLVM_DIR` | a path | the LLVM installation to use |
@@ -143,7 +157,16 @@ mpirun -np 4 ./my_program -geom 1 1 2 2
 
 At start-up qdp-jit allocates 92% of the free GPU memory as a memory pool.
 When several ranks share one GPU, give each a smaller pool with `-poolsize`,
-for example `-poolsize 5g`. For correct times with `StopWatch`, add
-`-timing-run`. All options are listed in
+for example `-poolsize 5g`.
+
+With a GPU-aware MPI, add `-gpudirect`: MPI then sends and receives directly
+from device memory, without copies through host memory. The communication
+buffers are allocated on the device outside the memory pool, so by default 10%
+of the free GPU memory is kept outside the pool for them. `-pool-reserve SIZE`
+sets that amount instead, for example `-pool-reserve 2g`. A `-poolsize` that
+would leave less than that is reduced.
+
+For correct times with `StopWatch`, add `-timing-run`. All options are listed
+in
 [Command-line options](https://jeffersonlab.github.io/qdp-jit/options/).
 

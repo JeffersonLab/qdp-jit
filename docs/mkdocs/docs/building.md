@@ -30,7 +30,7 @@ scripts:
 | GPU | Download script | Directory |
 |---|---|---|
 | NVIDIA | `download_sources_cuda.sh` | `cuda/` |
-| AMD | `download_sources_rocm.sh` | `rocm-jit-noquda/` |
+| AMD | `download_sources_rocm.sh` | `rocm/` |
 | Intel | `download_sources_intel.sh` | `level-zero/` |
 
 The examples below are for NVIDIA GPUs; replace `cuda` by the script and
@@ -68,7 +68,7 @@ On some systems the wrappers have other names; on Cray systems, for example,
 they are `CC` and `cc`.
 
 The directory also holds `env_*.sh` files for particular machines (for example
-`env_perlmutter.sh` in `cuda/`, `env_frontier.sh` in `rocm-jit-noquda/`).
+`env_perlmutter.sh` in `cuda/`, `env_frontier.sh` in `rocm/`).
 Use one of them as a starting point if your machine is among them.
 
 The rest of `env.sh` sets where the build happens. Keep it unless you want
@@ -80,14 +80,53 @@ another location:
 | `BUILDROOT` | `./build` | one build directory per package |
 | `INSTALLROOT` | `./install` | one install directory per package |
 
-## 4. Build
+`env.sh` also adds the LLVM libraries, `install/llvm-22/lib`, to
+`LD_LIBRARY_PATH`. The package builds LLVM as shared libraries, so qdp-jit
+programs such as `chroma` need this path at run time as well.
+
+A job script can therefore source the same `env.sh` to set up everything:
+the modules, the environment variables and the library search path. `env.sh`
+takes its paths from the current directory, so change to the architecture
+directory before sourcing it:
+
+```bash
+#!/bin/bash
+#SBATCH ...
+
+cd /path/to/package/cuda
+source ./env.sh
+
+cd /path/to/run
+srun ${INSTALLROOT}/chroma/bin/chroma -i input.xml -geom 1 1 1 4
+```
+
+## 4. Check the host CPU architecture
+
+Besides the GPU target, LLVM must be built for the CPU of the machine qdp-jit
+will run on: qdp-jit compiles expressions on scalars for the host CPU (the
+host JIT, on by default). Before building, check whether the compute nodes
+have x86 or ARM CPUs, and set `LLVM_TARGETS_TO_BUILD` in `build_llvm-22.sh`
+accordingly:
+
+| GPU | x86 host | ARM host |
+|---|---|---|
+| NVIDIA | `"NVPTX;X86"` | `"NVPTX;AArch64"` |
+| AMD | `"AMDGPU;X86"` | `"AMDGPU;AArch64"` |
+| Intel | `"X86"` | `"AArch64"` |
+
+The scripts are set up for x86 hosts. For a machine with ARM CPUs, such as
+NVIDIA Grace, change `X86` to `AArch64`. Intel GPUs need no GPU target in
+LLVM, because their kernels are translated to SPIR-V by a separate tool.
+
+## 5. Build
 
 ```bash
 ./build_all.sh
 ```
 
 `build_all.sh` runs the build scripts in order: LLVM, QMP, qdp-jit
-(`build_qdpxx.sh`) and Chroma (`build_chroma.sh`). Building LLVM takes the
+(`build_qdpxx.sh`) and Chroma (`build_chroma.sh`); in `level-zero/` it also
+builds the SPIR-V translator after LLVM. Building LLVM takes the
 longest. When it has finished, `install/` holds:
 
 | Directory | Contents |
@@ -111,9 +150,6 @@ against qdp-jit's headers:
 ./build_chroma.sh
 ```
 
-`clean.sh` removes the build and install directories of QMP, qdp-jit and
-Chroma (LLVM is kept).
-
 ## Build options of qdp-jit
 
 `build_qdpxx.sh` configures qdp-jit with CMake. To change an option, edit the
@@ -125,7 +161,7 @@ Chroma (LLVM is kept).
 | `QDP_PRECISION` | `single`, `double` (default) | the precision of `Real`, `LatticeFermion`, … |
 | `QDP_LAYOUT` | `cb2` (default), `lexico`, `cb3d` | the site layout, see [Layouts](layouts.md#each-layout-must-fit-the-node-grid) |
 | `QDP_ND`, `QDP_NC`, `QDP_NS` | 4, 3, 4 (default) | the number of dimensions, and the initial current shape (Ns, Nc), see [Shape](shape.md) |
-| `QDP_ENABLE_HOST_COMPILER` | `ON`, `OFF` (default) | also JIT-compile scalar expressions for the CPU |
+| `QDP_ENABLE_HOST_COMPILER` | `ON` (default), `OFF` | also JIT-compile scalar expressions for the CPU; needs the host CPU target in LLVM, see [step 4](#4-check-the-host-cpu-architecture) |
 | `LLVM_DIR` | a path | the LLVM installation to use; qdp-jit needs LLVM 22 or newer. With the ROCm backend it defaults to the LLVM that comes with ROCm |
 
 ## Using qdp-jit in your own program
