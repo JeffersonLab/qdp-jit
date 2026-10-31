@@ -2056,6 +2056,7 @@ void llvm_bar_sync()
 								  ABuilder) );
 
     builder->CreateCall(Bar);
+  }
 #endif
   
 
