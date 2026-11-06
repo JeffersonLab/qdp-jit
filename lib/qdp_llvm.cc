@@ -744,9 +744,9 @@ namespace QDP
     str_arch = gpu_get_arch();
 
     
-    TheTriple.setArch (llvm::Triple::ArchType::amdgcn);
-    TheTriple.setVendor (llvm::Triple::VendorType::AMD);
-    TheTriple.setOS (llvm::Triple::OSType::AMDHSA);
+    // Triple::ArchType::amdgcn was renamed to ::amdgpu in LLVM 24; the
+    // canonical string has been stable across every LLVM this file supports.
+    TheTriple.setTriple ("amdgcn-amd-amdhsa");
 
     if (jit_config_get_verbose_output())
       {
