@@ -376,8 +376,6 @@ if(QDP_ENABLE_BACKEND STREQUAL "ROCM")
     ocml.bc
     oclc_finite_only_off.bc
     oclc_unsafe_math_off.bc
-    oclc_daz_opt_off.bc
-    oclc_correctly_rounded_sqrt_on.bc
     oclc_abi_version_500.bc
   )
 

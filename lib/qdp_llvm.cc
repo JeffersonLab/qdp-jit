@@ -689,8 +689,19 @@ namespace QDP
     std::ifstream ftmp(FileName.c_str());
     if (!ftmp.good())
       {
+#if defined(QDP_BACKEND_ROCM)
+	// ROCm 7.14 and later ship no libdevice bitcode. llvm_init_ocml(),
+	// called next, reaches the same math through OCML.
+	if (jit_config_get_verbose_output())
+	  {
+	    QDPIO::cout << "libdevice not found; using OCML\n";
+	  }
+	module_libdevice.reset();
+	return;
+#else
 	QDPIO::cerr << "libdevice not found:" << FileName << "\n";
 	QDP_abort(1);
+#endif
       }
 
     
@@ -744,9 +755,9 @@ namespace QDP
     str_arch = gpu_get_arch();
 
     
-    TheTriple.setArch (llvm::Triple::ArchType::amdgcn);
-    TheTriple.setVendor (llvm::Triple::VendorType::AMD);
-    TheTriple.setOS (llvm::Triple::OSType::AMDHSA);
+    // Triple::ArchType::amdgcn was renamed to ::amdgpu in LLVM 24; the
+    // canonical string has been stable across every LLVM this file supports.
+    TheTriple.setTriple ("amdgcn-amd-amdhsa");
 
     if (jit_config_get_verbose_output())
       {
@@ -1205,6 +1216,14 @@ namespace QDP
 
 #if defined(QDP_BACKEND_CUDA) || defined(QDP_BACKEND_ROCM)
     Mod->setDataLayout(TargetMachine->createDataLayout());
+    // Without this the module carries no triple while being compiled for
+    // amdgcn-amd-amdhsa, and the in-process AMDGPU AsmPrinter crashes on the
+    // first kernel.
+#if defined (QDP_LLVM22)
+    Mod->setTargetTriple(TheTriple);
+#else
+    Mod->setTargetTriple(TheTriple.str());
+#endif
 #elif defined(QDP_BACKEND_AVX)
     //QDPIO::cout << "setting module data layout\n";
     Mod->setDataLayout(TheJIT->getDataLayout());
@@ -2606,9 +2625,11 @@ static void rewriteROCmLibmCallsToOCML(llvm::Module &M)
 #endif
 
 	std::string ErrorMsg;
-	if (llvm::Linker::linkModules( *Mod , std::move( module_libdevice ) )) {  // llvm::Linker::PreserveSource
-	  QDPIO::cerr << "Linking libdevice failed: " << ErrorMsg.c_str() << "\n";
-	  QDP_abort(1);
+	if (module_libdevice) {
+	  if (llvm::Linker::linkModules( *Mod , std::move( module_libdevice ) )) {  // llvm::Linker::PreserveSource
+	    QDPIO::cerr << "Linking libdevice failed: " << ErrorMsg.c_str() << "\n";
+	    QDP_abort(1);
+	  }
 	}
 
 	for ( int i = 0 ; i < module_ocml.size() ; ++i )

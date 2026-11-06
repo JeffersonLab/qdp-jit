@@ -201,6 +201,13 @@ llvm_map_components_to_libnames(QDPJIT_LLVM_LIBS
 
 target_link_libraries(jit PUBLIC ${QDPJIT_LLVM_LIBS})
 
+# LLVM arrives as static archives, so without this libjit.so re-exports ~29k
+# unversioned llvm:: symbols and the loader binds ROCm's own libLLVM.so into
+# this copy. Two LLVMs then share statics and glibc aborts at exit.
+if(NOT APPLE)
+  target_link_options(jit PRIVATE "LINKER:--exclude-libs,ALL")
+endif()
+
 target_link_libraries( jit PUBLIC QMP::qmp)
 
 
