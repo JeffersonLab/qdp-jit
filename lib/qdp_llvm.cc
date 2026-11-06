@@ -1216,6 +1216,14 @@ namespace QDP
 
 #if defined(QDP_BACKEND_CUDA) || defined(QDP_BACKEND_ROCM)
     Mod->setDataLayout(TargetMachine->createDataLayout());
+    // Without this the module carries no triple while being compiled for
+    // amdgcn-amd-amdhsa, and the in-process AMDGPU AsmPrinter crashes on the
+    // first kernel.
+#if defined (QDP_LLVM22)
+    Mod->setTargetTriple(TheTriple);
+#else
+    Mod->setTargetTriple(TheTriple.str());
+#endif
 #elif defined(QDP_BACKEND_AVX)
     //QDPIO::cout << "setting module data layout\n";
     Mod->setDataLayout(TheJIT->getDataLayout());
