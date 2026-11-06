@@ -689,8 +689,19 @@ namespace QDP
     std::ifstream ftmp(FileName.c_str());
     if (!ftmp.good())
       {
+#if defined(QDP_BACKEND_ROCM)
+	// ROCm 7.14 and later ship no libdevice bitcode. llvm_init_ocml(),
+	// called next, reaches the same math through OCML.
+	if (jit_config_get_verbose_output())
+	  {
+	    QDPIO::cout << "libdevice not found; using OCML\n";
+	  }
+	module_libdevice.reset();
+	return;
+#else
 	QDPIO::cerr << "libdevice not found:" << FileName << "\n";
 	QDP_abort(1);
+#endif
       }
 
     
@@ -2606,9 +2617,11 @@ static void rewriteROCmLibmCallsToOCML(llvm::Module &M)
 #endif
 
 	std::string ErrorMsg;
-	if (llvm::Linker::linkModules( *Mod , std::move( module_libdevice ) )) {  // llvm::Linker::PreserveSource
-	  QDPIO::cerr << "Linking libdevice failed: " << ErrorMsg.c_str() << "\n";
-	  QDP_abort(1);
+	if (module_libdevice) {
+	  if (llvm::Linker::linkModules( *Mod , std::move( module_libdevice ) )) {  // llvm::Linker::PreserveSource
+	    QDPIO::cerr << "Linking libdevice failed: " << ErrorMsg.c_str() << "\n";
+	    QDP_abort(1);
+	  }
 	}
 
 	for ( int i = 0 ; i < module_ocml.size() ; ++i )
